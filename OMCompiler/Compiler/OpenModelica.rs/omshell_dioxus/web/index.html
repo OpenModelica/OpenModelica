@@ -11,23 +11,15 @@
 <body>
   <div id="main"></div>
   <!--
-    cmake-driven launcher (no dx). Two wasm modules load here:
-      * ./omc/  — the compiler (libopenmodelica_compiler, web target)
-      * ./pkg/  — this GUI (omshell_dioxus)
-    The omc module is instantiated first and its interactive API published on
-    globalThis.__omc; omc_bridge.js (bundled into the GUI) forwards to it, so the
-    GUI's backend drives omc in-process. Then the GUI's init() runs main().
+    cmake-driven launcher (no dx). Only this GUI's wasm (./OMShell-dioxus/) loads
+    here; the omc compiler module (./omc/) is instantiated off the UI thread by
+    omc_worker.js, which the GUI spawns as a Web Worker. So a running command
+    never blocks the page.
   -->
   <script type="module">
-    import omcInit, { omc_set_env, omc_init, omc_eval } from './omc/OpenModelicaCompiler.js';
     import guiInit from './OMShell-dioxus/OMShell-dioxus.js';
 
-    (async () => {
-      await omcInit();
-      omc_set_env('OPENMODELICAHOME', '/usr'); // builtins resolve by basename
-      globalThis.__omc = { omc_init, omc_eval, omc_set_env };
-      await guiInit();
-    })().catch((e) => {
+    guiInit().catch((e) => {
       document.body.innerHTML = '<pre style="color:#f48771">Startup error: ' + e + '</pre>';
     });
   </script>

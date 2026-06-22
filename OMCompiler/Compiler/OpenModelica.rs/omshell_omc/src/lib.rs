@@ -9,7 +9,7 @@ pub fn backend() -> Box<dyn OmcBackend + Send> {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        Box::new(wasm::JsBackend)
+        Box::new(wasm::WorkerBackend)
     }
 }
 
@@ -20,6 +20,10 @@ pub fn backend() -> Box<dyn OmcBackend + Send> {
 /// (e.g. no network) must not stop the shell from starting, so only its
 /// diagnostics are surfaced (via getErrorString, called right after so it
 /// reflects the install and clears the buffer), not a hard error.
+///
+/// Native only: on wasm the omc module runs inside a Web Worker, which mirrors
+/// this orchestration in JS (see omc_worker.js).
+#[cfg(not(target_arch = "wasm32"))]
 fn init_session(install_modelica: bool, mut raw: impl FnMut(&str) -> (String, bool)) -> Init {
     if install_modelica {
         let _ = raw("installPackage(Modelica)");
@@ -33,7 +37,8 @@ fn init_session(install_modelica: bool, mut raw: impl FnMut(&str) -> (String, bo
 }
 
 /// Evaluate `command`, then `getErrorString()`, via the two raw closures.
-/// Shared between targets; mirrors `omcinteractiveenvironment.cpp`.
+/// Native only; the wasm worker mirrors this in JS (see omc_worker.js).
+#[cfg(not(target_arch = "wasm32"))]
 fn eval_with_errors(
     command: &str,
     mut raw: impl FnMut(&str) -> (String, bool),
@@ -87,29 +92,21 @@ mod native {
 #[cfg(target_arch = "wasm32")]
 mod wasm {
     use super::*;
-    use wasm_bindgen::prelude::*;
 
-    // Provided by omc_bridge.js, which forwards to the separately-built omc wasm
-    // module's omc_init/omc_eval (the host page instantiates it; see the bridge).
-    #[wasm_bindgen(module = "/omc_bridge.js")]
-    extern "C" {
-        fn omc_init() -> bool;
-        fn omc_eval(command: &str) -> String;
-    }
+    /// On wasm the omc module runs inside a dedicated Web Worker (omc_worker.js,
+    /// staged next to the omc module by the build). The driver posts commands to
+    /// that worker and receives replies asynchronously, so it never calls a
+    /// backend on this thread — but `Shell::with_backend` still takes one, so this
+    /// is an inert placeholder whose methods are never reached.
+    pub struct WorkerBackend;
 
-    pub struct JsBackend;
-
-    impl OmcBackend for JsBackend {
+    impl OmcBackend for WorkerBackend {
         fn init(&mut self) -> Result<Init, String> {
-            if !omc_init() {
-                return Err("omc_init() failed".to_owned());
-            }
-            Ok(init_session(|c| (omc_eval(c), true)))
+            unreachable!("wasm omc runs in a Web Worker; the driver bypasses the backend")
         }
 
-        fn eval(&mut self, command: &str) -> Eval {
-            let keep_running = command.trim() != "quit()";
-            eval_with_errors(command, |c| (omc_eval(c), keep_running))
+        fn eval(&mut self, _command: &str) -> Eval {
+            unreachable!("wasm omc runs in a Web Worker; the driver bypasses the backend")
         }
     }
 }

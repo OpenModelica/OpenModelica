@@ -627,6 +627,10 @@ function(omc_rust_omshell_web_page _label _binname _srcindex)
     COMMAND ${WASM_BINDGEN_EXECUTABLE} ${_gui_artifact} --out-dir ${_gui_pkgdir} --target web
     ${_opt}
     COMMAND ${CMAKE_COMMAND} -E copy ${_srcindex} ${_web_dir}/${_binname}.html
+    # The omc Web Worker the GUI spawns. Shared by every page (it imports the one
+    # web/omc/ module), so it lands at the web root; copying it per page is an
+    # idempotent no-op for the second page.
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     COMMENT "Rust: assembling ${_binname} web page -> ${_web_dir}/${_binname}.html"
     VERBATIM)
   # Target-level dependency on the omc module (rust_wasm), NOT its WASM_STAMP

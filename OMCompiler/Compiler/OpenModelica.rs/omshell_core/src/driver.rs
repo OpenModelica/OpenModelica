@@ -1,8 +1,10 @@
 //! Runs the backend off the UI. Native: a dedicated worker thread with a large
 //! stack (capi needs init+eval on one thread, and the port overflows the default
-//! 8 MiB). Wasm: single-threaded, so evaluate synchronously and queue the reply.
+//! 8 MiB). Wasm: a dedicated Web Worker (omc_worker.js) runs the omc module, so a
+//! command never blocks the UI thread; replies arrive asynchronously via
+//! postMessage and are drained by `try_recv`.
 
-use crate::backend::{Eval, Init, OmcBackend};
+use crate::backend::Init;
 
 pub enum DriverMsg {
     Ready(Result<Init, String>),
@@ -21,6 +23,7 @@ pub use wasm::Driver;
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use super::*;
+    use crate::backend::{Eval, OmcBackend};
     use std::sync::mpsc::{Receiver, Sender, channel};
     use std::thread;
 
@@ -78,56 +81,106 @@ mod native {
 #[cfg(target_arch = "wasm32")]
 mod wasm {
     use super::*;
+    use crate::backend::OmcBackend;
+    use std::cell::RefCell;
     use std::collections::VecDeque;
+    use std::rc::Rc;
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen::prelude::*;
+    use web_sys::{MessageEvent, Worker, WorkerOptions, WorkerType};
 
     pub struct Driver {
-        backend: Box<dyn OmcBackend + Send>,
-        queue: VecDeque<DriverMsg>,
-        pending: Option<String>,
+        worker: Worker,
+        queue: Rc<RefCell<VecDeque<DriverMsg>>>,
+        // The worker calls this for the lifetime of the Driver, so it must be kept
+        // alive here (dropping it would invalidate the JS callback).
+        _onmessage: Closure<dyn FnMut(MessageEvent)>,
+    }
+
+    fn field(data: &JsValue, key: &str) -> String {
+        js_sys::Reflect::get(data, &JsValue::from_str(key))
+            .ok()
+            .and_then(|v| v.as_string())
+            .unwrap_or_default()
+    }
+
+    fn flag(data: &JsValue, key: &str) -> bool {
+        js_sys::Reflect::get(data, &JsValue::from_str(key))
+            .ok()
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
+    // Decode a worker reply (see omc_worker.js for the message shapes).
+    fn decode(data: &JsValue) -> Option<DriverMsg> {
+        match field(data, "kind").as_str() {
+            "ready" => Some(if flag(data, "ok") {
+                DriverMsg::Ready(Ok(Init {
+                    version: field(data, "version"),
+                    message: field(data, "message"),
+                }))
+            } else {
+                DriverMsg::Ready(Err(field(data, "error")))
+            }),
+            "done" => Some(DriverMsg::Done {
+                result: field(data, "result"),
+                error: field(data, "error"),
+                keep_running: flag(data, "keep"),
+            }),
+            _ => None,
+        }
+    }
+
+    fn message(pairs: &[(&str, JsValue)]) -> JsValue {
+        let o = js_sys::Object::new();
+        for (k, v) in pairs {
+            let _ = js_sys::Reflect::set(&o, &JsValue::from_str(k), v);
+        }
+        o.into()
     }
 
     impl Driver {
         pub fn spawn(
-            mut backend: Box<dyn OmcBackend + Send>,
-            _repaint: impl Fn() + Send + 'static,
+            _backend: Box<dyn OmcBackend + Send>,
+            repaint: impl Fn() + Send + 'static,
         ) -> Self {
-            let mut queue = VecDeque::new();
-            queue.push_back(DriverMsg::Ready(backend.init()));
+            // omc lives in a dedicated Web Worker, so the passed-in backend is
+            // unused on wasm (it is an inert placeholder; see omshell_omc). The
+            // worker script is staged at the web root next to the omc module it
+            // imports, so the URL is relative to the GUI page.
+            let opts = WorkerOptions::new();
+            opts.set_type(WorkerType::Module);
+            let worker = Worker::new_with_options("omc_worker.js", &opts)
+                .expect("failed to spawn omc Web Worker");
+
+            let queue: Rc<RefCell<VecDeque<DriverMsg>>> = Rc::new(RefCell::new(VecDeque::new()));
+            let q = queue.clone();
+            let onmessage = Closure::<dyn FnMut(MessageEvent)>::new(move |e: MessageEvent| {
+                if let Some(msg) = decode(&e.data()) {
+                    q.borrow_mut().push_back(msg);
+                    repaint();
+                }
+            });
+            worker.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
+
+            let _ = worker.post_message(&message(&[("cmd", JsValue::from_str("init"))]));
+
             Driver {
-                backend,
+                worker,
                 queue,
-                pending: None,
+                _onmessage: onmessage,
             }
         }
 
         pub fn submit(&mut self, cmd: String) {
-            // eval is synchronous and blocks the single UI thread here, so don't
-            // run it now: just record the command. The shell has already pushed
-            // it to the scrollback and set `busy`, so the UI paints the command +
-            // spinner first; the eval then runs on the next `try_recv` (below).
-            self.pending = Some(cmd);
+            let _ = self.worker.post_message(&message(&[
+                ("cmd", JsValue::from_str("eval")),
+                ("src", JsValue::from_str(&cmd)),
+            ]));
         }
 
         pub fn try_recv(&mut self) -> Option<DriverMsg> {
-            if let Some(msg) = self.queue.pop_front() {
-                return Some(msg);
-            }
-            // Run the deferred command now — on a poll *after* the one that
-            // painted the busy state. (Still blocks while omc runs; a non-frozen
-            // spinner would need omc on a Web Worker.)
-            if let Some(cmd) = self.pending.take() {
-                let Eval {
-                    result,
-                    error,
-                    keep_running,
-                } = self.backend.eval(&cmd);
-                return Some(DriverMsg::Done {
-                    result,
-                    error,
-                    keep_running,
-                });
-            }
-            None
+            self.queue.borrow_mut().pop_front()
         }
     }
 }
