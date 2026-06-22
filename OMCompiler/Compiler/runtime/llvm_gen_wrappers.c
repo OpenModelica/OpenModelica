@@ -35,7 +35,7 @@
 
 #include "llvm_gen_wrappers.h"
 #ifdef __cplusplus
-gextern "C" {
+extern "C" {
 #endif
 
 /**/
