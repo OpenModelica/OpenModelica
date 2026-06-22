@@ -411,6 +411,52 @@ algorithm
   EXT_LLVM.finnishGen();
 end emitTrivialIntPtrPtrVoid;
 
+protected function emitTrivialDataVoid
+  "Emit  void <fname>(DATA *, threadData_t *) { }  -- the void
+   counterpart of emitTrivialDataReturnZero."
+  input String fname;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_VOID);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genReturnVoid();
+  EXT_LLVM.finnishGen();
+end emitTrivialDataVoid;
+
+protected function emitTrivialDataIntVoid
+  "Emit  void <fname>(DATA *, threadData_t *, long base_idx) { } "
+  input String fname;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "base_idx");
+  EXT_LLVM.genFunctionType(MODELICA_VOID);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genReturnVoid();
+  EXT_LLVM.finnishGen();
+end emitTrivialDataIntVoid;
+
+protected function emitTrivialDataIntIntReturnZero
+  "Emit  int <fname>(DATA *, threadData_t *, long, long) { return 0; }"
+  input String fname;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "base_idx");
+  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "sub_idx");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitTrivialDataIntIntReturnZero;
+
 protected function emitInlineSystemStub
   "<Model>_symbolicInlineSystem -- whole content of <Model>_17inl.c."
   input Absyn.Path modelName;
@@ -455,6 +501,22 @@ algorithm
      on x86-64 both register layouts read from edi/rdi, so the unused
      first arg is ABI-compatible. */
   emitTrivialIntPtrPtrVoid(prefix + "_initializeStateSets");
+  /* _08bnd.c -- updateBoundParameters is a trivial return-0 in CodegenC.
+     updateBoundVariableAttributes calls infoStreamPrint for OMC_LOG_INIT;
+     dropping the logging is harmless when that log scope is not enabled. */
+  emitTrivialDataReturnZero(prefix + "_updateBoundParameters");
+  emitTrivialDataReturnZero(prefix + "_updateBoundVariableAttributes");
+  /* _09alg.c -- functionAlgebraics in CodegenC increments a stat counter
+     and calls _function_savePreSynchronous. Dropping both is safe when
+     the model has no continuous-time algebraic systems (HelloWorld
+     does not). */
+  emitTrivialDataReturnZero(prefix + "_functionAlgebraics");
+  /* _15syn.c -- all four entries are empty bodies for non-synchronous
+     models. Different signatures need different helpers. */
+  emitTrivialDataVoid(prefix + "_function_savePreSynchronous");
+  emitTrivialDataVoid(prefix + "_function_initSynchronous");
+  emitTrivialDataIntVoid(prefix + "_function_updateSynchronous");
+  emitTrivialDataIntIntReturnZero(prefix + "_function_equationsSynchronous");
 end emitDisplacingStubs;
 
 protected function emitEquation
