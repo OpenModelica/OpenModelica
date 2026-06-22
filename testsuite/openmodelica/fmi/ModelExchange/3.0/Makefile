@@ -38,7 +38,7 @@ test:
 
 baseline:
 	@echo
-	@echo Updating badelines...
+	@echo Updating baselines...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) -b $(TESTFILES)

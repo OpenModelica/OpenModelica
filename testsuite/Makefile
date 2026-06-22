@@ -189,6 +189,7 @@ fmi_me_10.log \
 fmi_me_20.log \
 fmi_me_30.log \
 fmi_cs_30.log \
+fmi_se_30.log \
 omsimulator.log \
 fmi_cs_st.log \
 uncertainties.log \
