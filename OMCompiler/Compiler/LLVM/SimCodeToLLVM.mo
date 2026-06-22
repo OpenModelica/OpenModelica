@@ -199,8 +199,9 @@ algorithm
    * binds without any glue layer. Until then the function is
    * defined but unreferenced; dumpIR confirms its shape. */
   if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
-    emitODEEntryShell(name);
-    EXT_LLVM.dumpIR();
+    if emitODEEntryShell(name, recipes, layout) then
+      EXT_LLVM.dumpIR();
+    end if;
   end if;
 
   Error.addInternalError(
@@ -221,25 +222,55 @@ end genSim;
  *  IR emission                                                           *
  * ====================================================================== */
 
-protected constant Integer MODELICA_METATYPE = 4 "Opaque ptr in LLVM IR (matches MidToLLVM's constant).";
 protected constant Integer MODELICA_INTEGER  = 1 "i64 in LLVM IR.";
+protected constant Integer MODELICA_REAL     = 3 "double in LLVM IR.";
+protected constant Integer MODELICA_METATYPE = 4 "Opaque ptr in LLVM IR (matches MidToLLVM's constant).";
+protected constant Integer MODELICA_VOID     = 6 "void in LLVM IR (no return).";
+
+protected uniontype EmitCtx
+  "Carries the layout and a monotonic counter for generated temp
+   names. Passed through expression lowering so each emitted
+   call/op writes to a fresh alloca."
+  record EMIT_CTX
+    VarLayout layout;
+    Integer tmpCounter;
+  end EMIT_CTX;
+end EmitCtx;
+
+protected function freshTmp
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String name;
+algorithm
+  name := "%t_" + intString(ctx.tmpCounter);
+  outCtx := EMIT_CTX(ctx.layout, ctx.tmpCounter + 1);
+end freshTmp;
 
 protected function emitODEEntryShell
   "Emit the function definition
-       define i64 <prefix>_functionODE(ptr %data, ptr %threadData) {
-         ret i64 0
-       }
-   into a freshly-initialised LLVM module. Phase 5 will extend this
-   with the per-equation body; Phase 6 wires the C-runtime int (i32)
-   return type and connects the solver callback table.
 
-   For now the function is unreferenced from anywhere -- the module
-   is built only for inspection via dumpIR. The genSim caller still
-   returns false so the legacy template path takes over and runs the
-   actual simulation."
+     define i64 @<prefix>_functionODE(ptr %data, ptr %threadData) {
+       <per-equation body>
+       ret i64 0
+     }
+
+   into a freshly-initialised LLVM module. Returns Boolean ok -- if
+   any equation's RHS contains a construct the minimal DAE.Exp
+   lowering does not recognise, IR generation aborts (the partial
+   module is discarded by the caller) and the legacy template path
+   takes over.
+
+   Phase 6 will narrow the i64 return type to i32 once EXT_LLVM grows
+   a MODELICA_INT32 constant; the C runtime's
+       int (*functionODE)(DATA *, threadData_t *)
+   will then bind directly."
   input Absyn.Path modelName;
+  input list<EqRecipe> recipes;
+  input VarLayout layout;
+  output Boolean ok;
 protected
   String fname;
+  EmitCtx ctx;
 algorithm
   fname := odeEntryName(modelName);
   EXT_LLVM.initGen(fname);
@@ -249,14 +280,228 @@ algorithm
   EXT_LLVM.genFunctionType(MODELICA_INTEGER);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
-  /* TODO Phase 4.4: emit per-equation stores into
-   *   data->localData[0]->realVars[i]
-   * for each EQ_DERIVATIVE_ASSIGN / EQ_STATE_ASSIGN / EQ_ALG_ASSIGN
-   * recipe. Until then the body is empty and the function just
-   * returns 0 (success). */
+
+  ctx := EMIT_CTX(layout, 0);
+  ok := true;
+  for r in recipes loop
+    if ok then
+      (ctx, ok) := emitEquation(r, ctx);
+    end if;
+  end for;
+
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
 end emitODEEntryShell;
+
+protected function emitEquation
+  "Emit one EqRecipe's IR. Returns updated EmitCtx + Boolean ok.
+   On a recipe we cannot lower, ok is set to false and the caller
+   short-circuits the loop."
+  input EqRecipe r;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+algorithm
+  (outCtx, ok) := match r
+    local Integer slot;
+          DAE.Exp rhs;
+          EmitCtx ctx2;
+          String rhsTmp;
+          Boolean exprOk;
+    case EQ_DERIVATIVE_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
+        if exprOk then
+          emitWriteRealVar(absoluteSlot(VK_DERIVATIVE(), slot, ctx2.layout),
+                           rhsTmp);
+        end if;
+      then (ctx2, exprOk);
+    case EQ_STATE_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
+        if exprOk then
+          emitWriteRealVar(absoluteSlot(VK_STATE(), slot, ctx2.layout),
+                           rhsTmp);
+        end if;
+      then (ctx2, exprOk);
+    case EQ_ALG_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
+        if exprOk then
+          emitWriteRealVar(absoluteSlot(VK_ALG(), slot, ctx2.layout),
+                           rhsTmp);
+        end if;
+      then (ctx2, exprOk);
+    case EQ_UNSUPPORTED() then (ctx, false);
+  end match;
+end emitEquation;
+
+protected function absoluteSlot
+  "Translate a (kind, sub-index) into the absolute realVars[] slot
+   the C runtime uses. The canonical layout omc_init.c produces is
+     [ state0, state1, ..., der(state0), der(state1), ..., alg0, ... ]
+   The runtime helper omc_jit_get_real_var / omc_jit_set_real_var
+   indexes that flat array."
+  input VarKind kind;
+  input Integer subIndex;
+  input VarLayout layout;
+  output Integer slot;
+algorithm
+  slot := match kind
+    case VK_STATE()      then subIndex;
+    case VK_DERIVATIVE() then layout.nStates + subIndex;
+    case VK_ALG()        then 2 * layout.nStates + subIndex;
+    case VK_PARAM()      then 2 * layout.nStates + layout.nAlgs + subIndex;
+  end match;
+end absoluteSlot;
+
+protected function emitReadRealVar
+  "Emit  %dst = call double @omc_jit_get_real_var(ptr %data, i64 slot)
+   into the active function body, returning the name of the freshly
+   alloca'd double the call result is stored to."
+  input Integer slot;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCall("omc_jit_get_real_var", MODELICA_REAL, dst, true);
+end emitReadRealVar;
+
+protected function emitWriteRealVar
+  "Emit  call void @omc_jit_set_real_var(ptr %data, i64 slot, double %src)
+   into the active function body. No return value."
+  input Integer slot;
+  input String src;
+algorithm
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCallArg(src);
+  EXT_LLVM.genCall("omc_jit_set_real_var", MODELICA_VOID, "", false);
+end emitWriteRealVar;
+
+protected function emitExp
+  "Minimal DAE.Exp -> LLVM lowering. Recognises:
+     RCONST, ICONST                       -> literal store into a fresh alloca
+     CREF                                 -> emitReadRealVar via layout lookup
+     UNARY(UMINUS_REAL, e)                -> emitExp e, fneg
+     BINARY(e1, +/-/*//, e2)              -> emitExp both, fadd/fsub/fmul/fdiv
+   Returns the name of the alloca holding the result + Boolean ok.
+   Unsupported constructs return ok=false and a placeholder name so
+   the caller short-circuits without inspecting the alloca."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+algorithm
+  (outCtx, dst, ok) := match e
+    local
+      Real r;
+      Integer i;
+      DAE.ComponentRef cref;
+      DAE.Exp e1, e2, sub;
+      DAE.Operator op;
+      Option<VarSlot> os;
+      VarSlot vs;
+      EmitCtx ctx1, ctx2;
+      String tmp, dst1, dst2;
+      Boolean ok1, ok2;
+      Integer absSlot;
+    case DAE.RCONST(real=r)
+      algorithm
+        (ctx1, tmp) := freshTmp(ctx);
+        EXT_LLVM.genAllocaModelicaReal(tmp, false);
+        EXT_LLVM.genStoreLiteralReal(r, tmp);
+      then (ctx1, tmp, true);
+    case DAE.ICONST(integer=i)
+      algorithm
+        (ctx1, tmp) := freshTmp(ctx);
+        EXT_LLVM.genAllocaModelicaReal(tmp, false);
+        EXT_LLVM.genStoreLiteralReal(intReal(i), tmp);
+      then (ctx1, tmp, true);
+    case DAE.CREF(componentRef=cref)
+      algorithm
+        (ctx1, tmp, ok1) := emitCrefRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.UNARY(operator=DAE.UMINUS(), exp=sub)
+      algorithm
+        (ctx1, dst1, ok1) := emitExp(sub, ctx);
+        if ok1 then
+          (ctx2, tmp) := freshTmp(ctx1);
+          EXT_LLVM.genAllocaModelicaReal(tmp, false);
+          EXT_LLVM.genRUminus(dst1, tmp);
+        else
+          ctx2 := ctx1;
+          tmp := dst1;
+        end if;
+      then (ctx2, tmp, ok1);
+    case DAE.BINARY(exp1=e1, operator=op, exp2=e2)
+      algorithm
+        (ctx1, dst1, ok1) := emitExp(e1, ctx);
+        (ctx2, dst2, ok2) := emitExp(e2, ctx1);
+        if ok1 and ok2 then
+          (outCtx, tmp) := freshTmp(ctx2);
+          EXT_LLVM.genAllocaModelicaReal(tmp, false);
+          ok := emitBinaryReal(op, dst1, dst2, tmp);
+          dst := tmp;
+        else
+          outCtx := ctx2;
+          dst := "<sub-failed>";
+          ok := false;
+        end if;
+      then (outCtx, dst, ok);
+    else
+      then (ctx, "<unsupported-exp>", false);
+  end match;
+end emitExp;
+
+protected function emitCrefRead
+  "Resolve a cref via the layout, then emit a realVars load."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+  Integer absSlot;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, dst, ok) := match os
+    case SOME(vs)
+      algorithm
+        absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+        (outCtx, dst) := emitReadRealVar(absSlot, ctx);
+      then (outCtx, dst, true);
+    case NONE() then (ctx, "<unmapped-cref>", false);
+  end match;
+end emitCrefRead;
+
+protected function emitBinaryReal
+  "Dispatch a real-arithmetic binop to the EXT_LLVM primitive."
+  input DAE.Operator op;
+  input String lhs;
+  input String rhs;
+  input String dst;
+  output Boolean ok;
+algorithm
+  ok := match op
+    case DAE.ADD()
+      algorithm EXT_LLVM.genRAdd(dst, lhs, rhs); then true;
+    case DAE.SUB()
+      algorithm EXT_LLVM.genRSub(dst, lhs, rhs); then true;
+    case DAE.MUL()
+      algorithm EXT_LLVM.genRMul(dst, lhs, rhs); then true;
+    case DAE.DIV()
+      algorithm EXT_LLVM.genRDiv(dst, lhs, rhs); then true;
+    else false;
+  end match;
+end emitBinaryReal;
 
 protected function odeEntryName
   "Underscore-flatten the model's Absyn.Path and append the C-runtime

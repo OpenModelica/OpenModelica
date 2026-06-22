@@ -1240,12 +1240,16 @@ modelica_integer iMod(modelica_integer x, modelica_integer y)
  * the caller is responsible for translating that into the absolute
  * slot offset passed here.
  */
-double omc_jit_get_real_var(DATA *data, int slot)
+/* Use int64_t for the slot rather than int so the C ABI matches the
+ * LLVM IR the JIT emits -- the EXT_LLVM MODELICA_INTEGER constant
+ * resolves to i64 on the architectures we care about, and we want the
+ * helper's parameter to match without a per-call truncation. */
+double omc_jit_get_real_var(DATA *data, int64_t slot)
 {
   return data->localData[0]->realVars[slot];
 }
 
-void omc_jit_set_real_var(DATA *data, int slot, double value)
+void omc_jit_set_real_var(DATA *data, int64_t slot, double value)
 {
   data->localData[0]->realVars[slot] = value;
 }
