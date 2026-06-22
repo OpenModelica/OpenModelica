@@ -83,6 +83,7 @@ import AbsynUtil;
 import ComponentReferenceBasics;
 import DAE;
 import Error;
+import Flags;
 import List;
 import SimCodeVar;
 import SimCodeFunction;
@@ -187,6 +188,21 @@ algorithm
   nSupported   := List.fold(recipes, countSupported, 0);
   nUnsupported := List.fold(recipes, countUnsupported, 0);
 
+  /* Phase 4.2: emit the omc_<prefix>_functionODE shell into a fresh
+   * LLVM module. Body is just `return 0;` for now; per-equation IR
+   * lands in Phase 4.3-4.4. The shell deliberately matches the
+   * existing C runtime contract
+   *   int <prefix>_functionODE(DATA *data, threadData_t *threadData)
+   * so when Phase 5/6 connect a solver to the JIT module, the
+   * solver_main.c call site
+   *   data->callback->functionODE(data, threadData);
+   * binds without any glue layer. Until then the function is
+   * defined but unreferenced; dumpIR confirms its shape. */
+  if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
+    emitODEEntryShell(name);
+    EXT_LLVM.dumpIR();
+  end if;
+
   Error.addInternalError(
     "SimCodeToLLVM: model '" + AbsynUtil.pathString(name) +
     "' layout: nStates=" + intString(layout.nStates) +
@@ -194,11 +210,66 @@ algorithm
     " nParams=" + intString(layout.nParams) +
     "; eqs: supported=" + intString(nSupported) +
     " unsupported=" + intString(nUnsupported) +
-    " (Phase 4.1 -- per-equation IR emission not yet wired; falling " +
-    "back to legacy buildModel)\n",
+    " (Phase 4.2 -- ODE entry shell can be emitted with +d=jit_dump_ir;" +
+    " per-equation body and JIT execution not yet wired, falling back " +
+    "to legacy buildModel)\n",
     sourceInfo());
   success := false;
 end genSim;
+
+/* ====================================================================== *
+ *  IR emission                                                           *
+ * ====================================================================== */
+
+protected constant Integer MODELICA_METATYPE = 4 "Opaque ptr in LLVM IR (matches MidToLLVM's constant).";
+protected constant Integer MODELICA_INTEGER  = 1 "i64 in LLVM IR.";
+
+protected function emitODEEntryShell
+  "Emit the function definition
+       define i64 <prefix>_functionODE(ptr %data, ptr %threadData) {
+         ret i64 0
+       }
+   into a freshly-initialised LLVM module. Phase 5 will extend this
+   with the per-equation body; Phase 6 wires the C-runtime int (i32)
+   return type and connects the solver callback table.
+
+   For now the function is unreferenced from anywhere -- the module
+   is built only for inspection via dumpIR. The genSim caller still
+   returns false so the legacy template path takes over and runs the
+   actual simulation."
+  input Absyn.Path modelName;
+protected
+  String fname;
+algorithm
+  fname := odeEntryName(modelName);
+  EXT_LLVM.initGen(fname);
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  /* TODO Phase 4.4: emit per-equation stores into
+   *   data->localData[0]->realVars[i]
+   * for each EQ_DERIVATIVE_ASSIGN / EQ_STATE_ASSIGN / EQ_ALG_ASSIGN
+   * recipe. Until then the body is empty and the function just
+   * returns 0 (success). */
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitODEEntryShell;
+
+protected function odeEntryName
+  "Underscore-flatten the model's Absyn.Path and append the C-runtime
+   functionODE suffix. Mirrors what CodegenUtil.symbolName produces
+   on the legacy C side -- e.g. HelloWorldSim -> HelloWorldSim_functionODE,
+   M.Sub.X -> M_Sub_X_functionODE -- so when the solver call binds
+   through data->callback->functionODE the JIT-emitted symbol is the
+   one solver_main.c expects."
+  input Absyn.Path modelName;
+  output String name;
+algorithm
+  name := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_functionODE";
+end odeEntryName;
 
 /* ====================================================================== *
  *  SimCode field extractors (single-record uniontypes, so match)         *
