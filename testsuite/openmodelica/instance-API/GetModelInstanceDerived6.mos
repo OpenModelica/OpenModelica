@@ -1,0 +1,113 @@
+// name: GetModelInstanceDerived5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+package MWE
+  package Pack1
+    record Data
+    end Data;
+  end Pack1;
+
+  package Pack2
+    record Data
+    end Data;
+  end Pack2;
+
+  model test
+    model obj
+      replaceable package ActualPackage = Pack1;
+      parameter ActualPackage.Data data;
+    end obj;
+
+    obj obj1(redeclare package ActualPackage = MWE.Pack2);
+  end test;
+end MWE;
+");
+
+getModelInstance(MWE.test, prettyPrint = true); getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"MWE.test\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"obj1\",
+//       \"type\": {
+//         \"name\": \"MWE.test.obj\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"ActualPackage\",
+//             \"restriction\": \"package\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"baseClass\": \"MWE.Pack1\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 15,
+//               \"columnStart\": 19,
+//               \"lineEnd\": 15,
+//               \"columnEnd\": 48
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"data\",
+//             \"type\": {
+//               \"name\": \"MWE.Pack2.Data\",
+//               \"restriction\": \"record\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 9,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 13
+//               }
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 14,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 17,
+//           \"columnEnd\": 12
+//         }
+//       },
+//       \"modifiers\": {
+//         \"ActualPackage\": {
+//           \"$value\": {
+//             \"$kind\": \"class\",
+//             \"name\": \"ActualPackage\",
+//             \"restriction\": \"package\",
+//             \"prefixes\": {
+//               \"redeclare\": true
+//             },
+//             \"baseClass\": \"MWE.Pack2\"
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 13,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 20,
+//     \"columnEnd\": 11
+//   }
+// }"
+// ""
+// endResult
