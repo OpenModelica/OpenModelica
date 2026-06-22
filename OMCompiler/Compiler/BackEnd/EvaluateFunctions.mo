@@ -1547,7 +1547,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+        Error.terminate(getInstanceName() + " failed", sourceInfo());
       then
         fail();
 

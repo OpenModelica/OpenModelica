@@ -2326,7 +2326,8 @@ algorithm
         false,
         false,
         DAE.NO_INLINE(),
-        DAE.NO_TAIL()));
+        DAE.NO_TAIL(),
+        DAE.NoReturn.RETURNS));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;

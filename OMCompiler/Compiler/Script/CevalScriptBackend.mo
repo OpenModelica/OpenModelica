@@ -1054,7 +1054,7 @@ algorithm
           // Debugging code. Make sure the scanner works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.assertion(false, "Lexed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1066,7 +1066,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1083,7 +1083,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s2);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 

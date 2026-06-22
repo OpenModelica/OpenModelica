@@ -4561,7 +4561,7 @@ uniontype LinearJacobian
         then ();
 
         else algorithm
-          Error.assertion(false, getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
+          Error.terminate(getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
         then ();
        end match;
     end for;

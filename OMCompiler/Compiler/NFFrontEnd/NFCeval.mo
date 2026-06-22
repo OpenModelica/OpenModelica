@@ -3384,7 +3384,7 @@ algorithm
     case "max" then (evalBuiltinMax2, Expression.makeMinValue(ty));
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown reduction function " +
+        Error.terminate(getInstanceName() + " got unknown reduction function " +
           AbsynUtil.pathString(Function.name(fn)), sourceInfo());
       then
         fail();
@@ -3468,7 +3468,7 @@ algorithm
     result := Expression.mapSplitExpressions(e,
       function Expression.nthRecordElement(index = index));
   else
-    Error.assertion(false, getInstanceName() + " could not evaluate " +
+    Error.terminate(getInstanceName() + " could not evaluate " +
       Expression.toString(exp), sourceInfo());
   end try;
 end evalRecordElement;

@@ -1166,6 +1166,10 @@ public constant ErrorTypes.Message GENERATED_FUNCTION_UNASSIGNED_OUTPUT = ErrorT
   "Output %s of the generated function %s is never assigned a value. Using an uninitialized variable is an error; this indicates an error in the symbolic differentiation, please report it.");
 public constant ErrorTypes.Message GENERATED_FUNCTION_DEFAULT_INIT = ErrorTypes.MESSAGE(623, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Variable %s of the generated function %s will be initialized to %s because it could not be proven that it is always assigned before it is used.");
+public constant ErrorTypes.Message WARNING_DEF_USE_UNPROVEN = ErrorTypes.MESSAGE(624, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "%s was possibly used before it was defined (given a value): it is not defined on all control flow paths leading to the use. Per the Modelica specification using an uninitialized variable is an error.");
+public constant ErrorTypes.Message UNASSIGNED_FUNCTION_OUTPUT_UNPROVEN = ErrorTypes.MESSAGE(625, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "Output parameter %s was possibly not assigned a value: it is not assigned on all control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Local variable '%s' shadows another variable.");
@@ -1501,6 +1505,7 @@ public function addSourceMessageAndFail
 algorithm
   addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
   fail();
+  annotation(__OpenModelica_NoReturn = true);
 end addSourceMessageAndFail;
 
 public function addMultiSourceMessage
@@ -1743,6 +1748,18 @@ algorithm
     then fail();
   end match;
 end assertion;
+
+public function terminate "
+  Unconditionally reports a compiler-internal error and fails. Equivalent to
+  assertion(false, message, info); used for code paths that must never be
+  reached, and recognized by the def-use analysis as never returning."
+  input String message;
+  input SourceInfo info;
+algorithm
+  addSourceMessage(INTERNAL_ERROR, {message}, info);
+  fail();
+  annotation(__OpenModelica_NoReturn = true);
+end terminate;
 
 public function assertionOrAddSourceMessage "
   Used to make assertions. These messages are meant to be shown to a user when

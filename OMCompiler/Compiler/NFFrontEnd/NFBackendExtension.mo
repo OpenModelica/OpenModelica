@@ -1008,7 +1008,7 @@ public
         case VAR_ATTR_RECORD() then {attributes};
 
         else algorithm
-          Error.assertion(false, getInstanceName() + "failed. Not yet handled: " + toString(attributes), sourceInfo());
+          Error.terminate(getInstanceName() + "failed. Not yet handled: " + toString(attributes), sourceInfo());
         then fail();
       end match;
     end scalarize;
@@ -1025,7 +1025,7 @@ public
         case VAR_ATTR_STRING()  then Type.STRING();
         // should probably add enumeration but currently the needed info is not stored here
         else algorithm
-          Error.assertion(false, getInstanceName() + " cannot create type from attributes: " + toString(attr), sourceInfo());
+          Error.terminate(getInstanceName() + " cannot create type from attributes: " + toString(attr), sourceInfo());
         then fail();
       end match;
     end elemType;
@@ -1157,7 +1157,7 @@ public
           // unknown attributes here.
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
             then
               fail();
         end match;
@@ -1196,7 +1196,7 @@ public
             // unknown attributes here.
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
               then
                 fail();
           end match;
@@ -1232,7 +1232,7 @@ public
             // unknown attributes here.
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
               then
                 fail();
           end match;
@@ -1267,7 +1267,7 @@ public
             // unknown attributes here.
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
               then
                 fail();
           end match;
@@ -1305,7 +1305,7 @@ public
             // unknown attributes here.
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
               then
                 fail();
           end match;
@@ -1377,13 +1377,13 @@ public
         case Expression.ARRAY() algorithm
           arg :: rest := arrayList(exp.elements);
           if not (listEmpty(rest) or List.all(rest, function Expression.isEqual(exp2=arg))) then
-            Error.assertion(false, getInstanceName() +
+            Error.terminate(getInstanceName() +
               " cannot handle array StateSelect with different values yet:" + Expression.toString(exp), sourceInfo());
             fail();
           end if;
         then getStateSelectName(arg);
         else algorithm
-          Error.assertion(false, getInstanceName() +
+          Error.terminate(getInstanceName() +
             " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
         then fail();
       end match;
@@ -1401,7 +1401,7 @@ public
         case "always"   then StateSelect.ALWAYS;
         else
           algorithm
-            Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
+            Error.terminate(getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
           then
             fail();
       end match;

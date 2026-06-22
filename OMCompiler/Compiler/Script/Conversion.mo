@@ -412,7 +412,7 @@ protected
     input SourceInfo info;
     input output ConversionRules rules;
   algorithm
-    Error.assertion(false, getInstanceName() + ": not implemented", info);
+    Error.terminate(getInstanceName() + ": not implemented", info);
   end parseConvertClassIf;
 
   function parseConvertElement
