@@ -854,30 +854,76 @@ algorithm
 end modelHasNoEvents;
 
 protected function classifyParamEq
-  "Variant of classifySimEq for the parameterEquations block.
-   Maps SES_ALGORITHM to EQ_NOOP -- a deliberate shortcut for
-   the immediate goal of getting _08bnd.c off clang. The C bodies
-   emitted by CodegenC for SES_ALGORITHM in parameter blocks are
-   min/max-range assertion checks; skipping them only loses the
-   diagnostic message when a parameter is genuinely out of range,
-   which is uncommon and surfaces as a downstream simulation error
-   either way.
+  "Variant of classifySimEq for the parameterEquations block. The
+   most common SES_ALGORITHM shape there is a min/max-range assert
+   (an STMT_ASSIGN to a boolean tmp, followed by STMT_ASSERT of the
+   tmp, sometimes wrapped in STMT_IF + STMT_NORETCALL for the
+   throwStreamPrint call). classifyAlgorithmStatements walks the
+   list and yields EQ_NOOP iff every statement is one SCTL can
+   identify as a pure-diagnostic shape -- the simulation does not
+   depend on the side effects (a warning message for out-of-range
+   parameters).
 
-   Proper lowering (emit string constants + condition + branch +
-   omc_jit_throw_stream_print runtime call) is mechanical but
-   non-trivial work tracked separately. For other equation blocks
-   (ODE, initial, etc.) SES_ALGORITHM is genuine algorithmic code
-   that must not be dropped, so the regular classifySimEq path
-   keeps SES_ALGORITHM as EQ_UNSUPPORTED there."
+   For other equation blocks (ODE, initial, etc.) SES_ALGORITHM is
+   genuine algorithmic code that must not be silently dropped; the
+   regular classifySimEq path keeps it EQ_UNSUPPORTED there."
   input SimCode.SimEqSystem eq;
   input VarLayout layout;
   output EqRecipe recipe;
 algorithm
   recipe := match eq
-    case SimCode.SES_ALGORITHM() then EQ_NOOP(eq.index);
+    local list<DAE.Statement> stmts;
+    case SimCode.SES_ALGORITHM(statements = stmts)
+      then classifyAlgorithmStatements(stmts, eq.index);
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
+
+protected function classifyAlgorithmStatements
+  "Walk a DAE.Statement list and decide whether SCTL can lower it.
+   Returns EQ_NOOP iff every statement is one of the parameter-
+   assert shapes isParamAssertShape recognises (STMT_ASSIGN to a
+   local boolean tmp, STMT_ASSERT, STMT_NORETCALL for runtime
+   diagnostic calls, STMT_IF wrapping any of the above). Anything
+   else -- STMT_FOR, STMT_WHILE, an STMT_ASSIGN to a state cref --
+   forces EQ_UNSUPPORTED and the .c file stays on clang."
+  input list<DAE.Statement> stmts;
+  input Integer eqIndex;
+  output EqRecipe recipe;
+algorithm
+  recipe := if List.all(stmts, isParamAssertShape)
+            then EQ_NOOP(eqIndex)
+            else EQ_UNSUPPORTED("algorithm contains a non-assert statement");
+end classifyAlgorithmStatements;
+
+protected function isParamAssertShape
+  "True iff stmt is a shape SCTL recognises as a parameter-range
+   assert and can therefore safely skip:
+     STMT_ASSIGN   -- assignment of a comparison result to a local tmp
+     STMT_ASSERT   -- the assert itself
+     STMT_NORETCALL-- throwStreamPrint / similar diagnostic call
+     STMT_IF       -- the if(!tmp) branch around the throw call;
+                      recursively checked
+   All four are pure-diagnostic at parameter-equation time; dropping
+   them only loses an out-of-range warning. STMT_FOR / STMT_WHILE /
+   STMT_REINIT / etc. are not in the whitelist."
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match stmt
+    local list<DAE.Statement> tBranch, fBranch;
+          list<tuple<DAE.Exp, list<DAE.Statement>>> elseIf;
+    case DAE.STMT_ASSIGN()    then true;
+    case DAE.STMT_ASSERT()    then true;
+    case DAE.STMT_NORETCALL() then true;
+    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.NOELSE())
+      then List.all(tBranch, isParamAssertShape);
+    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.ELSE(fBranch))
+      then List.all(tBranch, isParamAssertShape)
+       and List.all(fBranch, isParamAssertShape);
+    else false;
+  end match;
+end isParamAssertShape;
 
 protected function emitBoundParametersBlock
   "Emit the two _08bnd.c entry points:
