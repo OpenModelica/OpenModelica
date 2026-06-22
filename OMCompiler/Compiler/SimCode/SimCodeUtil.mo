@@ -14432,40 +14432,47 @@ end numScalarElems;
 
 public function getFMI3ArrayStart
   "Space separated list of scalar start values for an FMI 3.0 array variable
-   (length = number of scalar elements). The non-scalarized runtime stores a
-   single broadcast start, so the (uniform) element value is repeated; returns
-   the empty string when there is no start value."
+   (length = number of scalar elements). Element-wise start values (e.g.
+   start = {1,2,3}) are listed per element; a single (broadcast) value, as
+   produced by 'each start = ...', is repeated for every element. Returns the
+   empty string when there is no start value."
   input SimCodeVar.SimVar var;
   output String out = "";
 protected
-  String sval;
+  list<String> svals;
   Integer n;
 algorithm
   out := match var.initialValue
     local DAE.Exp e;
     case SOME(e) algorithm
-        sval := getFMIArrayStartScalar(e);
+        svals := getFMIArrayStartValues(e);
         n := SimCodeUtilShared.getNumElems(var);
-      then if stringEq(sval, "") then "" else stringDelimitList(List.fill(sval, n), " ");
+      then
+        if listEmpty(svals) then ""
+        // a single (broadcast) start value is repeated for all elements
+        else if intEq(listLength(svals), 1) then stringDelimitList(List.fill(listHead(svals), n), " ")
+        else stringDelimitList(svals, " ");
     else "";
   end match;
 end getFMI3ArrayStart;
 
-protected function getFMIArrayStartScalar
-  "Extract the scalar (broadcast) value of an array start expression as a string."
+protected function getFMIArrayStartValues
+  "Flattened list of the scalar start values of a (possibly array) start
+   expression, in row major order. A scalar start expression yields a single
+   value (broadcast by the caller)."
   input DAE.Exp e;
-  output String s;
+  output list<String> vals;
 algorithm
-  s := match e
-    local DAE.Exp first; Real r; Integer i; Boolean b;
-    case DAE.RCONST(r) then realString(r);
-    case DAE.ICONST(i) then intString(i);
-    case DAE.BCONST(b) then if b then "true" else "false";
-    case DAE.ARRAY(array = first :: _) then getFMIArrayStartScalar(first);
-    case DAE.REDUCTION(expr = first) then getFMIArrayStartScalar(first);
-    else "";
+  vals := match e
+    local DAE.Exp first; list<DAE.Exp> arr; Real r; Integer i; Boolean b;
+    case DAE.RCONST(r) then {realString(r)};
+    case DAE.ICONST(i) then {intString(i)};
+    case DAE.BCONST(b) then {if b then "true" else "false"};
+    case DAE.ARRAY(array = arr) then List.flatten(list(getFMIArrayStartValues(el) for el in arr));
+    case DAE.REDUCTION(expr = first) then getFMIArrayStartValues(first);
+    else {};
   end match;
-end getFMIArrayStartScalar;
+end getFMIArrayStartValues;
 
 public function getFMIScalarVRs
   "Comma separated list of the scalar value references occupied by a (possibly
