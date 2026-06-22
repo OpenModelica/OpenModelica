@@ -5957,17 +5957,27 @@ protected function compileModelToBitcode
    linked LLVM bitcode module <prefix>.bc, using the clang/llvm-link that omc
    was configured against. The compile is driven by a generated shell script so
    the makefile's (already fully expanded) CPPFLAGS are reused verbatim via
-   `eval`, independent of the configured CC."
+   `eval`, independent of the configured CC.
+
+   The set of <Model>_*.c files skipped from clang is sourced from
+   SimCodeToLLVM.displacedSegmentFiles() (SCTL-emitted entry points) plus
+   a small set of files that CodegenC produces as pure includes-and-comments
+   for models that do not use the corresponding feature."
   input String prefix;
 protected
   String toolsDir, script, scriptFile;
   Integer rc;
+  list<String> skipFiles;
 algorithm
   toolsDir := EXT_LLVM.getLLVMToolsDir();
   if stringEmpty(toolsDir) then
     Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: this omc was built without LLVM JIT support."});
     fail();
   end if;
+  skipFiles := listAppend(SimCodeToLLVM.displacedSegmentFiles(),
+                          /* segments with no exported symbols at all */
+                          {"_02nls.c", "_03lsy.c", "_11mix.c",
+                           "_records.c", "_functions.c"});
   scriptFile := prefix + "_jitcompile.sh";
   script := stringAppendList({
     "#!/bin/bash\n",
@@ -5983,41 +5993,13 @@ algorithm
     "shopt -s nullglob\n",
     "BCS=()\n",
     "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
-    // SimCodeToLLVM emits these entry points in-memory and dumps the
-    // result to <prefix>_sctl.bc; skip the corresponding .c files so
-    // llvm-link does not see duplicate symbols. Every additional
-    // function SimCodeToLLVM grows to cover lets another .c file be
-    // skipped here.
+    // SimCodeToLLVM owns these entry points in-memory (either via a stub
+    // in the runtimeEntryCatalog or because the .c file is empty); skip
+    // clang so llvm-link does not see duplicate symbols and so we don't
+    // waste a clang invocation per file.
     "  case \"$f\" in\n",
-    // SCTL emits these entry points in-memory; skip clang on the
-    // matching .c files. The list must stay in sync with
-    // SimCodeToLLVM.emitDisplacingStubs -- every name there has a
-    // corresponding skip here.
-    "    ", prefix, "_17inl.c) continue ;;\n",
-    "    ", prefix, "_10asr.c) continue ;;\n",
-    "    ", prefix, "_07dly.c) continue ;;\n",
-    "    ", prefix, "_18spd.c) continue ;;\n",
-    "    ", prefix, "_16dae.c) continue ;;\n",
-    "    ", prefix, "_04set.c) continue ;;\n",
-    // The next three segments are produced by CodegenC as pure
-    // includes-and-comments for models without nonlinear systems,
-    // linear systems, mixed systems, or linearization. Their bitcode
-    // only carries TU-local 'static inline' helpers (arrayLength,
-    // boxptr_arrayUpdate*) that other TUs already define; skipping
-    // them is dead-code-elimination on the source side. If a feature
-    // is added that emits into one of these files this list must be
-    // re-evaluated.
-    "    ", prefix, "_02nls.c) continue ;;\n",
-    "    ", prefix, "_03lsy.c) continue ;;\n",
-    "    ", prefix, "_11mix.c) continue ;;\n",
-    "    ", prefix, "_records.c) continue ;;\n",
-    "    ", prefix, "_functions.c) continue ;;\n",
-    "    ", prefix, "_08bnd.c) continue ;;\n",
-    "    ", prefix, "_09alg.c) continue ;;\n",
-    "    ", prefix, "_15syn.c) continue ;;\n",
-    "    ", prefix, "_13opt.c) continue ;;\n",
-    "    ", prefix, "_05evt.c) continue ;;\n",
-    "    ", prefix, "_14lnz.c) continue ;;\n",
+    stringAppendList(list("    " + prefix + skip + ") continue ;;\n"
+                           for skip in skipFiles)),
     "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",

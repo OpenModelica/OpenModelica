@@ -310,6 +310,42 @@ end runtimeEntryCatalog;
  *  Entry point                                                           *
  * ====================================================================== */
 
+public function displacedSegmentFiles
+  "Distinct list of CodegenC segment .c files SCTL fully covers, derived
+   from the runtimeEntryCatalog. CevalScriptBackend.compileModelToBitcode
+   uses this list to drive the clang skip cases; the catalog is then
+   the single source of truth for both the IR emission and the
+   skip list."
+  output list<String> files = {};
+protected
+  Boolean seen;
+algorithm
+  for e in runtimeEntryCatalog() loop
+    if not isTodoBody(e.body) then
+      seen := false;
+      for f in files loop
+        if f == e.segmentFile then
+          seen := true;
+        end if;
+      end for;
+      if not seen then
+        files := e.segmentFile :: files;
+      end if;
+    end if;
+  end for;
+  files := listReverse(files);
+end displacedSegmentFiles;
+
+protected function isTodoBody
+  input EntryBody b;
+  output Boolean t;
+algorithm
+  t := match b
+    case EB_TODO() then true;
+    else false;
+  end match;
+end isTodoBody;
+
 public function genSim
   "Lower a SimCode.SIMCODE to in-memory LLVM IR + run the simulation
    driver against it. Returns true on success; false on any

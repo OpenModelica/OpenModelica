@@ -43,5 +43,9 @@ function genSim<T>
   output Boolean success = false;
 end genSim;
 
+function displacedSegmentFiles
+  output list<String> files = {};
+end displacedSegmentFiles;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeToLLVM;
