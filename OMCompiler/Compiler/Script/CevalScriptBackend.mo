@@ -6010,6 +6010,8 @@ algorithm
     "    ", prefix, "_02nls.c) continue ;;\n",
     "    ", prefix, "_03lsy.c) continue ;;\n",
     "    ", prefix, "_11mix.c) continue ;;\n",
+    "    ", prefix, "_records.c) continue ;;\n",
+    "    ", prefix, "_functions.c) continue ;;\n",
     "    ", prefix, "_08bnd.c) continue ;;\n",
     "    ", prefix, "_09alg.c) continue ;;\n",
     "    ", prefix, "_15syn.c) continue ;;\n",
