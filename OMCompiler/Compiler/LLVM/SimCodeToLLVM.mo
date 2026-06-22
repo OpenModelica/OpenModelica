@@ -936,8 +936,29 @@ algorithm
      *       (synthFn, synthName) := buildSyntheticAlgFunction(modelName, eq.index, stmts);
      *     then EQ_ALG_CALL(synthName, synthFn);
      */
+    /* Deeper finding from the MinAssert single-stmt probe: the assert
+     * body references the model parameter cref (x). My synthetic
+     * SimCodeFunction.FUNCTION wraps it as a stand-alone Modelica
+     * function and DAEToMid.crefToMidVar has no way to resolve a
+     * cref that is neither an input, an output, nor a declared local
+     * of the synthetic. The throw comes from there, not from any
+     * statement / DAE.Exp coverage gap.
+     *
+     * Routing this properly needs one of:
+     *  - pass the model's DATA* + all referenced model crefs as
+     *    synthetic-function inputs, rewriting the body's crefs to
+     *    read from those parameters before calling out;
+     *  - or stop trying to compile assert bodies as functions and
+     *    instead lower the STMT_ASSERT directly inline at the SCTL
+     *    side via the existing omc_jit_get_real_param accessor + a
+     *    new omc_jit_assert_warning runtime helper (proper STMT_ASSERT
+     *    IR: read cond exp, branch, runtime call on false).
+     *
+     * The second is much smaller and matches what jit_eval_func
+     * does for top-level expressions. Until that lands SES_ALGORITHM
+     * stays UNSUPPORTED. */
     case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM pending DAEToMid string-exp coverage");
+      then EQ_UNSUPPORTED("SES_ALGORITHM cref resolution -- needs SCTL inline emit");
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
