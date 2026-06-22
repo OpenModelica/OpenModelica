@@ -198,9 +198,17 @@ algorithm
    *   data->callback->functionODE(data, threadData);
    * binds without any glue layer. Until then the function is
    * defined but unreferenced; dumpIR confirms its shape. */
-  if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
+  /* Under -d=jitSimulate emit the ODE entry-point IR in memory and
+   * verify Phase 5 (LLJIT materialization) + Phase 6 (one-shot
+   * functionODE invocation) succeed. -d=jit_dump_ir additionally
+   * prints the IR text. The custom Euler / RK4 / implicit-Euler
+   * driver loops (Phase 7-9) are no longer invoked here: simulation
+   * itself stays on the legacy CodegenC + clang-via-Adrian path
+   * until SimCodeToLLVM emits enough of the model to plug into the
+   * existing DASSL runtime. */
+  if Flags.isSet(Flags.JIT_SIMULATE) and nUnsupported == 0 then
     if emitODEEntryShell(name, recipes, layout) then
-      EXT_LLVM.dumpIR();
+      if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
       finalizeAndReport(name, layout, vars);
     end if;
   end if;
@@ -248,22 +256,26 @@ algorithm
 end freshTmp;
 
 protected function finalizeAndReport
-  "Phase 5/6/7: materialize the current module into LLJIT, look up
-   <Model>_functionODE, invoke it once for a self-test (Phase 6), then
-   march a forward-Euler driver against it from t=0..1 (Phase 7) and
-   write a CSV next to omc's working directory. Reports via
-   Error.addInternalError so the diagnostic surfaces with the rest of
-   the genSim trace."
+  "Phase 5/6: materialize the current module into LLJIT, look up
+   <Model>_functionODE, and invoke it once against a fabricated
+   realVars buffer as a smoke-test that the in-memory IR runs.
+   Custom integrator loops (Phase 7-9: forward Euler / RK4 / implicit
+   Euler) are intentionally not called from here: the model's
+   numerical integration is supposed to come from the existing
+   simulation runtime (DASSL et al.) once SimCodeToLLVM emits enough
+   of the model to be hosted by that runtime.
+
+   The 'vars' input is currently unused but retained so the call site
+   can later thread initial values into the runtime hand-off."
   input Absyn.Path name;
   input VarLayout layout;
   input SimCodeVar.SimVars vars;
 protected
-  String odeSym, csvPath, modelStr;
-  Integer st, drv;
-  list<Real> rvIn, rvOut, startVals;
+  String odeSym;
+  Integer st;
+  list<Real> rvIn, rvOut;
 algorithm
-  modelStr := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
-  odeSym := modelStr + "_functionODE";
+  odeSym := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
   if st <> 0 then
     Error.addInternalError(
@@ -277,30 +289,6 @@ algorithm
     "SimCodeToLLVM Phase 6: jitInvokeFunctionODE('" + odeSym +
     "') with realVars=1.0 returned " + realVarsString(rvOut) + "\n",
     sourceInfo());
-
-  startVals := stateStartValues(vars);
-  csvPath := modelStr + "_jit.csv";
-  drv := EXT_LLVM.jitDriveForwardEuler(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
-                                       startVals, 0.0, 1.0, 0.01, csvPath);
-  Error.addInternalError(
-    "SimCodeToLLVM Phase 7: jitDriveForwardEuler('" + odeSym + "') t=[0,1] h=0.01" +
-    " startVals=" + realVarsString(startVals) +
-    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n",
-    sourceInfo());
-
-  csvPath := modelStr + "_jit_rk4.csv";
-  drv := EXT_LLVM.jitDriveRK4(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
-                              startVals, 0.0, 1.0, 0.01, csvPath);
-  Error.addInternalError(
-    "SimCodeToLLVM Phase 8: jitDriveRK4('" + odeSym + "') t=[0,1] h=0.01" +
-    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n", sourceInfo());
-
-  csvPath := modelStr + "_jit_imp_euler.csv";
-  drv := EXT_LLVM.jitDriveImplicitEuler(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
-                                        startVals, 0.0, 1.0, 0.01, csvPath);
-  Error.addInternalError(
-    "SimCodeToLLVM Phase 9: jitDriveImplicitEuler('" + odeSym + "') t=[0,1] h=0.01" +
-    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n", sourceInfo());
 end finalizeAndReport;
 
 protected function stateStartValues

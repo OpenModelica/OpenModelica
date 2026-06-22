@@ -312,15 +312,17 @@ algorithm
   end if;
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  /* SimCode JIT hook (LLVM JIT revive). When +d=jit_eval_func is set
+  /* SimCode JIT hook (LLVM JIT revive). When +d=jitSimulate is set
    * hand the freshly-built SimCode to SimCodeToLLVM.genSim before the
-   * legacy C-codegen path. genSim returns true if it has produced an
-   * in-memory module + driven the simulation; in that case we skip
-   * the template-based C-file emission entirely. On false (which is
-   * the current Phase-1 behaviour, and also the runtime answer for
-   * any model that uses constructs the SimCode JIT does not yet
-   * cover) the templates run as before. */
-  if Flags.isSet(Flags.JIT_EVAL_FUNC) and SimCodeToLLVM.genSim(simCode) then
+   * legacy C-codegen path. genSim returns true if it has produced a
+   * complete in-memory module that supersedes the templates; on false
+   * (current behaviour for any model whose constructs are not yet
+   * covered) the templates run as before and Adrian's
+   * compileModelToBitcode/runModelViaLLVMJIT keystone takes over for
+   * the simulate() call. jit_eval_func is a separate flag for
+   * function-level JIT-evaluation during interpretation and is not
+   * read here. */
+  if Flags.isSet(Flags.JIT_SIMULATE) and SimCodeToLLVM.genSim(simCode) then
     timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
     ExecStat.execStat("SimCode JIT");
   else
