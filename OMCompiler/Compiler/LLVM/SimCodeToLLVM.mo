@@ -86,6 +86,7 @@ import AbsynUtil;
 import BackendDAE;
 import ComponentReferenceBasics;
 import DAE;
+import DAEDump;
 import Error;
 import Flags;
 import Global;
@@ -913,17 +914,30 @@ algorithm
     local list<DAE.Statement> stmts;
           String synthName;
           SimCodeFunction.Function synthFn;
-    /* SES_ALGORITHM is the target of the synthetic-function pipeline
+    /* SES_ALGORITHM is wired through the synthetic-function pipeline
      * (buildSyntheticAlgFunction + extractAlgorithmLocals +
-     * emitSyntheticFunctions + EQ_ALG_CALL). The wiring is in place
-     * but DAEToMid.StmtsToMid / MidToLLVM.genProgram throws on the
-     * statement bodies CodegenC emits for parameter-range asserts
-     * (a small repro is `model M parameter Real x(min=0)=1;
-     * Real y; equation der(y)=x; end M;` -- Phase 6 smoke test passes
-     * but Pass 2 fails silently when emitSyntheticFunctions runs).
-     * The MidCode statement coverage debug is the next step. */
+     * emitSyntheticFunctions + EQ_ALG_CALL) but currently routes to
+     * EQ_UNSUPPORTED because DAEToMid.ExpToMid throws on the
+     * string-concatenation in the assert msg
+     * ("Variable violating min constraint: ..." + String(x, "g")).
+     * The single-statement MinAssert repro
+     *
+     *   model M parameter Real x(min=0)=1; Real y; equation der(y)=x; end M;
+     *
+     * produces exactly:
+     *   assert(x >= 0.0, "...: 0.0 <= x, has value: " + String(x, "g"));
+     *
+     * Flipping the case below to the active branch is one line, but
+     * needs DAEToMid's ExpToMid to grow string-typed DAE.ADD and/or
+     * DAE.CALL(String, ...) coverage first.
+     *
+     *   case SimCode.SES_ALGORITHM(statements = stmts)
+     *     algorithm
+     *       (synthFn, synthName) := buildSyntheticAlgFunction(modelName, eq.index, stmts);
+     *     then EQ_ALG_CALL(synthName, synthFn);
+     */
     case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM pending MidCode debug on MinAssert repro");
+      then EQ_UNSUPPORTED("SES_ALGORITHM pending DAEToMid string-exp coverage");
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
