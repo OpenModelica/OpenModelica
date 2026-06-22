@@ -159,6 +159,154 @@ public uniontype EqRecipe
 end EqRecipe;
 
 /* ====================================================================== *
+ *  Runtime entry-point catalog                                            *
+ *                                                                         *
+ *  The SimulationRuntime's CALLBACKS struct (openmodelica_func.h) holds   *
+ *  ~50 function pointers populated by <Model>_setupDataStruc. Every       *
+ *  symbol it points at must exist when the JIT links. The catalog below   *
+ *  enumerates the subset relevant to ODE-only simulation; each entry      *
+ *  declares the runtime signature plus what kind of body SCTL currently   *
+ *  emits for it.                                                          *
+ *                                                                         *
+ *  Body sources:                                                          *
+ *    STUB           - emit a trivial return-zero / return-void body.      *
+ *                     Safe whenever the runtime tolerates the call being  *
+ *                     a no-op for this model (most flag/log callbacks).   *
+ *    NULL_PTR       - emit a body returning the null pointer. For         *
+ *                     const-char* description callbacks that the runtime  *
+ *                     only consults from log scopes.                      *
+ *                                                                         *
+ *  Future tags (not yet wired -- they exist as TODO markers):             *
+ *    ODE_EQUATIONS  - lower SimCode.odeEquations through emitEquation.    *
+ *                     Already produced under a different entry by         *
+ *                     emitODEEntryShell (Pass 1 smoke-test).              *
+ *    INITIAL_EQS    - lower SimCode.initialEquations. Needs $START.x      *
+ *                     cref support and a body-validation pre-pass before  *
+ *                     it can replace _06inz.c.                            *
+ *    MIDCODE_FUNCS  - user-defined Modelica functions, already routed     *
+ *                     through DAEToMid + MidToLLVM by emitUserFunctions.  *
+ * ====================================================================== */
+
+public uniontype EntryBody
+  record EB_STUB end EB_STUB;
+  record EB_NULL_PTR end EB_NULL_PTR;
+  record EB_TODO
+    "Entry currently left to clang from <Model>_NN<tag>.c."
+    String reason;
+  end EB_TODO;
+end EntryBody;
+
+public uniontype RuntimeEntry
+  record RUNTIME_ENTRY
+    String nameSuffix       "appended after <prefix> -- e.g. _checkForAsserts";
+    Integer retTy           "MODELICA_INTEGER / MODELICA_VOID / MODELICA_METATYPE";
+    list<Integer> argTys    "ordered list of EXT_LLVM type codes";
+    EntryBody body;
+    String segmentFile      "name of the CodegenC .c file this entry lives in -- for the keep-in-sync invariant with compileModelToBitcode";
+  end RUNTIME_ENTRY;
+end RuntimeEntry;
+
+protected function runtimeEntryCatalog
+  "Single source of truth: every runtime entry point SCTL currently
+   emits, in declaration order. Adding an entry here is the only
+   change needed to grow SCTL's coverage of a new runtime symbol.
+
+   Type code shorthand:
+     MI = MODELICA_INTEGER   (i64)
+     MV = MODELICA_VOID
+     MM = MODELICA_METATYPE  (opaque ptr)"
+  output list<RuntimeEntry> entries;
+protected
+  constant Integer MI = MODELICA_INTEGER;
+  constant Integer MV = MODELICA_VOID;
+  constant Integer MM = MODELICA_METATYPE;
+algorithm
+  entries := {
+    /* -- _17inl.c -------------------------------------------------- */
+    RUNTIME_ENTRY("_symbolicInlineSystem", MI, {MM, MM}, EB_STUB(), "_17inl.c"),
+
+    /* -- _10asr.c -------------------------------------------------- */
+    RUNTIME_ENTRY("_checkForAsserts", MI, {MM, MM}, EB_STUB(), "_10asr.c"),
+
+    /* -- _07dly.c -------------------------------------------------- */
+    RUNTIME_ENTRY("_function_storeDelayed", MI, {MM, MM}, EB_STUB(), "_07dly.c"),
+
+    /* -- _18spd.c -------------------------------------------------- */
+    RUNTIME_ENTRY("_function_storeSpatialDistribution", MI, {MM, MM}, EB_STUB(), "_18spd.c"),
+    RUNTIME_ENTRY("_function_initSpatialDistribution",  MI, {MM, MM}, EB_STUB(), "_18spd.c"),
+
+    /* -- _16dae.c -- runtime returns -1 ("no DAE residuals"); 0 is
+                     also safe for the ODE path that DASSL drives. */
+    RUNTIME_ENTRY("_initializeDAEmodeData", MI, {MM, MM}, EB_STUB(), "_16dae.c"),
+
+    /* -- _04set.c -- (int nStateSets, STATE_SET_DATA*, DATA*) -> void.
+                     int widens to i64 (no MODELICA_INT32); the unused
+                     arg sits in the same register on x86-64. */
+    RUNTIME_ENTRY("_initializeStateSets", MV, {MI, MM, MM}, EB_STUB(), "_04set.c"),
+
+    /* -- _08bnd.c ------------------------------------------------- */
+    RUNTIME_ENTRY("_updateBoundParameters",         MI, {MM, MM}, EB_STUB(), "_08bnd.c"),
+    RUNTIME_ENTRY("_updateBoundVariableAttributes", MI, {MM, MM}, EB_STUB(), "_08bnd.c"),
+
+    /* -- _09alg.c -- ODE-only models have no continuous-time alg.
+                     CodegenC body increments a stat counter and calls
+                     _function_savePreSynchronous; both safely dropped. */
+    RUNTIME_ENTRY("_functionAlgebraics", MI, {MM, MM}, EB_STUB(), "_09alg.c"),
+
+    /* -- _15syn.c -- synchronous-language support. Empty bodies for
+                     non-synchronous models. */
+    RUNTIME_ENTRY("_function_savePreSynchronous",  MV, {MM, MM},          EB_STUB(), "_15syn.c"),
+    RUNTIME_ENTRY("_function_initSynchronous",     MV, {MM, MM},          EB_STUB(), "_15syn.c"),
+    RUNTIME_ENTRY("_function_updateSynchronous",   MV, {MM, MM, MI},      EB_STUB(), "_15syn.c"),
+    RUNTIME_ENTRY("_function_equationsSynchronous",MI, {MM, MM, MI, MI},  EB_STUB(), "_15syn.c"),
+
+    /* -- _13opt.c -- optimization (Optimica) callbacks. Stubs sit in
+                     the function pointer table populated by
+                     setupDataStruc but never get called for ODE-only
+                     simulation. */
+    RUNTIME_ENTRY("_mayer",                              MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_lagrange",                           MI, {MM, MM, MM, MM},                   EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_getInputVarIndicesInOptimization",   MI, {MM, MM},                           EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_pickUpBoundsForInputsInOptimization",MI, {MM, MM, MM, MM, MM, MM, MM, MM},   EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_setInputData",                       MI, {MM, MI},                           EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_getTimeGrid",                        MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c"),
+
+    /* -- _05evt.c -- event handling. ZeroCrossings* are int-returning;
+                     *Description return const char* (emitted as null
+                     pointer; runtime checks for non-null). */
+    RUNTIME_ENTRY("_function_initSample",              MV, {MM, MM},          EB_STUB(),     "_05evt.c"),
+    RUNTIME_ENTRY("_function_ZeroCrossingsEquations",  MI, {MM, MM},          EB_STUB(),     "_05evt.c"),
+    RUNTIME_ENTRY("_function_ZeroCrossings",           MI, {MM, MM, MM},      EB_STUB(),     "_05evt.c"),
+    RUNTIME_ENTRY("_function_updateRelations",         MI, {MM, MM, MI},      EB_STUB(),     "_05evt.c"),
+    RUNTIME_ENTRY("_zeroCrossingDescription",          MM, {MI, MM},          EB_NULL_PTR(), "_05evt.c"),
+    RUNTIME_ENTRY("_relationDescription",              MM, {MI},              EB_NULL_PTR(), "_05evt.c"),
+
+    /* -- _14lnz.c -- linearization frame strings. Returned only from
+                     -d=linearization paths; null suffices for ODE. */
+    RUNTIME_ENTRY("_linear_model_frame",               MM, {}, EB_NULL_PTR(), "_14lnz.c"),
+    RUNTIME_ENTRY("_linear_model_datarecovery_frame", MM, {}, EB_NULL_PTR(), "_14lnz.c"),
+
+    /* -- _06inz.c -- initial-equation block. TODO: lower
+                     SimCode.initialEquations once a body-validation
+                     pre-pass is in place. Until then we leave the
+                     three entry points to clang. */
+    RUNTIME_ENTRY("_functionInitialEquations_0",         MV, {MM, MM}, EB_TODO("needs INITIAL_EQS source + $START.x cref"), "_06inz.c"),
+    RUNTIME_ENTRY("_functionInitialEquations",           MI, {MM, MM}, EB_TODO("needs INITIAL_EQS source"),                 "_06inz.c"),
+    RUNTIME_ENTRY("_functionRemovedInitialEquations",    MI, {MM, MM}, EB_TODO("trivial stub OK; gated on _06inz.c skip"),  "_06inz.c"),
+
+    /* -- _01exo.c -- external object destructors. CodegenC frees
+                     data->simulationInfo->extObjs; SCTL needs an
+                     omc_jit_* runtime accessor to chase the struct. */
+    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_TODO("needs runtime accessor for data->simulationInfo->extObjs"), "_01exo.c")
+
+  /* Entries still owned entirely by <Model>.c and <Model>_12jac.c are
+     not in the catalog yet; they need real codegen
+     (functionODE_system0, setupDataStruc, main, the eqFunction_N
+     bodies, the function-pointer table, the Jacobian etc.). */
+  };
+end runtimeEntryCatalog;
+
+/* ====================================================================== *
  *  Entry point                                                           *
  * ====================================================================== */
 
@@ -596,128 +744,46 @@ algorithm
 end emitUserFunctions;
 
 protected function emitDisplacingStubs
-  "Emit the SCTL counterparts of every C function whose .c file we
-   want to skip in compileModelToBitcode. Each block below corresponds
-   to one CodegenC segment file; the comment names that file and the
-   entry points it owns. The keep-in-sync invariant: every name here
-   has a matching `case <prefix>_<NN><tag>.c) continue ;;` in
-   CevalScriptBackend.compileModelToBitcode's bash glob, and vice
-   versa."
+  "Walk the runtimeEntryCatalog and emit IR for every entry whose body
+   is not EB_TODO. The catalog is the single source of truth; this
+   function just drives EXT_LLVM through it.
+
+   Keep-in-sync invariant: the set of distinct segmentFile fields on
+   non-EB_TODO entries (returned by displacedSegmentFiles) must equal
+   the set of files compileModelToBitcode skips. CevalScriptBackend
+   currently mirrors the list manually; closing that loop is in
+   progress."
   input Absyn.Path modelName;
 protected
   String prefix;
 algorithm
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
-
-  /* _17inl.c  -- the entire file is one return-0 stub. */
-  emitRuntimeIntStub(prefix + "_symbolicInlineSystem");
-
-  /* _10asr.c  -- asserts after a step; HelloWorld has none. */
-  emitRuntimeIntStub(prefix + "_checkForAsserts");
-
-  /* _07dly.c  -- delay() storage; HelloWorld has no delays. */
-  emitRuntimeIntStub(prefix + "_function_storeDelayed");
-
-  /* _18spd.c  -- spatialDistribution() storage / init. */
-  emitRuntimeIntStub(prefix + "_function_storeSpatialDistribution");
-  emitRuntimeIntStub(prefix + "_function_initSpatialDistribution");
-
-  /* _16dae.c  -- DAE-residual setup. CodegenC returns -1 ("no DAE
-     residuals"); SCTL returns 0 instead. The DAE-mode path is unused
-     by DASSL/ODE so the difference is harmless. The DAEMODE_DATA*
-     second argument is opaque-ptr to LLVM, matching threadData_t* in
-     the IR signature. */
-  emitRuntimeIntStub(prefix + "_initializeDAEmodeData");
-
-  /* _04set.c  -- initial state-set setup. Empty body in CodegenC.
-     Signature is (int nStateSets, STATE_SET_DATA*, DATA*); the int
-     widens to i64 in IR which is ABI-compatible on x86-64 since the
-     argument is discarded. */
-  emitStub(prefix + "_initializeStateSets",
-           MODELICA_VOID,
-           {MODELICA_INTEGER, MODELICA_METATYPE, MODELICA_METATYPE});
-
-  /* _08bnd.c  -- bound-parameter / bound-attribute updates. The C
-     code only emits infoStreamPrint logging in OMC_LOG_INIT; dropping
-     it is harmless when that log scope is not enabled. */
-  emitRuntimeIntStub(prefix + "_updateBoundParameters");
-  emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
-
-  /* _09alg.c  -- continuous-time algebraic step. CodegenC increments
-     a stat counter and calls _function_savePreSynchronous; both are
-     safe to drop when the model has no algebraic systems. */
-  emitRuntimeIntStub(prefix + "_functionAlgebraics");
-
-  /* _15syn.c  -- synchronous-language support. All four functions
-     have empty bodies in CodegenC for non-synchronous models. */
-  emitRuntimeVoidStub(prefix + "_function_savePreSynchronous");
-  emitRuntimeVoidStub(prefix + "_function_initSynchronous");
-  emitStub(prefix + "_function_updateSynchronous",
-           MODELICA_VOID,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
-  emitStub(prefix + "_function_equationsSynchronous",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE,
-            MODELICA_INTEGER, MODELICA_INTEGER});
-
-  /* _13opt.c  -- optimization (Optimica) stubs. CodegenC throws a
-     "not compiled with -g=Optimica" message and returns 0; SCTL just
-     returns 0. These sit in the function-pointer table populated by
-     setupDataStruc so the symbols must exist at link time, but for
-     ODE-only simulation they are never called through. */
-  emitStub(prefix + "_mayer",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_lagrange",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE,
-            MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_getInputVarIndicesInOptimization",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_pickUpBoundsForInputsInOptimization",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
-            MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
-            MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_setInputData",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_INTEGER});
-  emitStub(prefix + "_getTimeGrid",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-
-  /* _05evt.c  -- event handling. ZeroCrossings and updateRelations
-     return int (return 0); zeroCrossingDescription and
-     relationDescription return const char*. For HelloWorld (no zero
-     crossings) the descriptions are only invoked from log scopes,
-     so returning a null pointer is acceptable -- the runtime checks
-     for non-null before reading. */
-  emitRuntimeVoidStub(prefix + "_function_initSample");
-  emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
-  emitStub(prefix + "_function_ZeroCrossings",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_function_updateRelations",
-           MODELICA_INTEGER,
-           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
-  emitStub(prefix + "_zeroCrossingDescription",
-           MODELICA_METATYPE,
-           {MODELICA_INTEGER, MODELICA_METATYPE});
-  emitStub(prefix + "_relationDescription",
-           MODELICA_METATYPE,
-           {MODELICA_INTEGER});
-
-  /* _14lnz.c  -- linearization frame strings. Returned only by
-     -d=linearization / -d=stateSelection diagnostic paths; null
-     suffices for the ODE simulation path. */
-  emitStub(prefix + "_linear_model_frame",
-           MODELICA_METATYPE,
-           {});
-  emitStub(prefix + "_linear_model_datarecovery_frame",
-           MODELICA_METATYPE,
-           {});
+  for e in runtimeEntryCatalog() loop
+    emitRuntimeEntry(prefix, e);
+  end for;
 end emitDisplacingStubs;
+
+protected function emitRuntimeEntry
+  "Emit one RuntimeEntry from the catalog into the active in-memory
+   module. EB_STUB and EB_NULL_PTR both lower through emitStub (which
+   emits `ret <zero of retTy>`; the zero of an opaque pointer is null,
+   so EB_NULL_PTR shares the same code path -- it exists in the
+   catalog as a separate tag only for human readability). EB_TODO
+   entries are skipped here -- the matching .c file stays in
+   compileModelToBitcode's clang loop."
+  input String prefix;
+  input RuntimeEntry entry;
+algorithm
+  () := match entry.body
+    case EB_STUB() algorithm
+      emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
+      then ();
+    case EB_NULL_PTR() algorithm
+      emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
+      then ();
+    case EB_TODO() then ();
+  end match;
+end emitRuntimeEntry;
 
 protected function emitEquation
   "Emit one EqRecipe's IR. Returns updated EmitCtx + Boolean ok.
