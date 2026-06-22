@@ -54,6 +54,7 @@
 #include "llvm_gen_modelica_constants.h"
 #include "meta_modelica_builtin.h"
 #include "real_array_jit.h"
+#include "simulation_data.h"
 #include "systemimpl.h"
 #include "util/read_write.h"
 #include "util/modelica_string_lit.h"

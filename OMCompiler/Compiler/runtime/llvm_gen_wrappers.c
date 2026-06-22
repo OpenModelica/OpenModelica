@@ -1221,6 +1221,40 @@ modelica_integer iMod(modelica_integer x, modelica_integer y)
   return (x % y + y) % y;
 }
 
+/* SimCodeToLLVM Phase 4.3 runtime helpers.
+ *
+ * The JIT-emitted <Model>_functionODE body reads and writes scalar
+ * realVars through these thunks rather than GEPing into the C-side
+ * SIMULATION_DATA struct directly. Keeping the struct layout knowledge
+ * here (instead of duplicating it into the LLVM IR) means the JIT
+ * tracks the C runtime automatically -- if SIMULATION_DATA gains a
+ * field, the IR does not need recompiling, only this one shim.
+ *
+ * data->localData is a SIMULATION_DATA** ringbuffer; [0] is the
+ * current (= "active") sample. realVars is the flat scalar real
+ * storage in the canonical layout the existing OMC C runtime uses:
+ *   slot 0..nStates-1                 : state values
+ *   slot nStates..2*nStates-1         : state derivatives
+ *   slot 2*nStates..2*nStates+nAlgs-1 : algebraic vars
+ * SimCodeToLLVM.VarLayout computes the (kind, sub-index) per cref;
+ * the caller is responsible for translating that into the absolute
+ * slot offset passed here.
+ */
+double omc_jit_get_real_var(DATA *data, int slot)
+{
+  return data->localData[0]->realVars[slot];
+}
+
+void omc_jit_set_real_var(DATA *data, int slot, double value)
+{
+  data->localData[0]->realVars[slot] = value;
+}
+
+double omc_jit_get_time(DATA *data)
+{
+  return data->localData[0]->timeValue;
+}
+
 #ifdef __cplusplus
 }
 #endif
