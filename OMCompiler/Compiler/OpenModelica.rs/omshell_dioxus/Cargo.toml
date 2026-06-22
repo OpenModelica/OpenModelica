@@ -1,0 +1,31 @@
+[package]
+name = "omshell_dioxus"
+version = "0.1.0"
+edition = "2024"
+
+# Dioxus front-end for OMShell. Renders to the DOM, so the same RSX builds for
+# the web target (`--features web`, default) and native desktop via a webview
+# (`--no-default-features --features desktop`).
+# Branded binary name (matches omshell_egui's OMShell-egui), so the artifacts are
+# OMShell-dioxus.{wasm,js} and the native binary is OMShell-dioxus.
+[[bin]]
+name = "OMShell-dioxus"
+path = "src/main.rs"
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+
+[dependencies]
+dioxus = "0.7"
+omshell_core = { path = "../omshell_core" }
+# The real OMC backend: the compiler linked in-process on native (desktop
+# webview), the omc wasm module's JS exports on web.
+omshell_omc = { path = "../omshell_omc" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-timers = { version = "0.3", features = ["futures"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["time"] }

@@ -27,9 +27,10 @@ arcstr.workspace = true
 libc.workspace = true
 
 # wasm build: the JS bindings (src/wasm_api.rs). Pinned to match the
-# wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock).
+# wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);
+# since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "=0.2.100"
+wasm-bindgen = "=0.2.125"
 openmodelica_vfs.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
@@ -40,7 +41,7 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # SVG backend (default features), so it builds for wasm32.
 charton = "0.5"
 # DOM access to insert the rendered SVG into the page's #log element.
-web-sys = { version = "0.3.77", features = ["Window", "Document", "Element", "Node"] }
+web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "Node"] }
 # charton → ahash seeds its hashmaps with getrandom, which needs the JS backend
 # explicitly selected on wasm (paired with the cfg in .cargo/config.toml).
 getrandom = { version = "0.3", features = ["wasm_js"] }

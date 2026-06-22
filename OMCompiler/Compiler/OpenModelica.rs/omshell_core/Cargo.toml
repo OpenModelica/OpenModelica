@@ -1,0 +1,17 @@
+[package]
+name = "omshell_core"
+version = "0.1.0"
+edition = "2024"
+
+# UI-agnostic OMShell logic shared by omshell_egui and omshell_dioxus: the
+# OmcBackend trait + mock, a cfg-split driver (native worker thread / wasm
+# synchronous), command completion, and the REPL state machine.
+#
+# This crate has NO dependency on the compiler. The real backend is wired through
+# FFI (libOpenModelicaCompiler.so) on native and the omc wasm module's JS
+# exports on web, so the compiler never enters the GUI cargo graph and the GUIs
+# can be built (e.g. via trunk) without dragging in the full compiler build.
+[lib]
+path = "src/lib.rs"
+
+[dependencies]

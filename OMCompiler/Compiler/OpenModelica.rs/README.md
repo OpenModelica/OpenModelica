@@ -37,7 +37,7 @@ rustup toolchain install nightly-2026-05-31 --profile minimal \
   --target wasm32-unknown-unknown
 # For the web targets:
 rustup target add wasm32-unknown-unknown
-export WASM_BINDGEN_VERSION=0.2.100 # See: ../../../.CI/cache/rust/Dockerfile in case this is stale
+export WASM_BINDGEN_VERSION=0.2.125 # See: ../../../.CI/cache/rust/Dockerfile in case this is stale
 cargo install wasm-bindgen-cli --version "${WASM_BINDGEN_VERSION}"
 ```
 

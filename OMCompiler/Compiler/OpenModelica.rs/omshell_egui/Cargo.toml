@@ -1,0 +1,33 @@
+[package]
+name = "omshell_egui"
+version = "0.1.0"
+edition = "2024"
+
+# egui front-end for OMShell. Native uses eframe's glow backend; the same code
+# builds for the web target (wasm32) via trunk. No wgpu.
+[[bin]]
+name = "OMShell-egui"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+omshell_core = { path = "../omshell_core" }
+# The real OMC backend: the compiler linked in-process on native, the omc wasm
+# module's JS exports on web.
+omshell_omc = { path = "../omshell_omc" }
+egui = "0.34"
+eframe = { version = "0.34", default-features = false, features = [
+    "glow",
+    "default_fonts",
+    "wayland",
+    "x11",
+] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = "0.15"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"

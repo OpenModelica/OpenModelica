@@ -465,6 +465,39 @@ function(omc_rust_setup_codegen)
           DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME omc COMPONENT omc)
   install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/libOpenModelicaCompiler.so
           DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+
+  # The native egui OMShell client (omshell_egui), built when the GUI clients are
+  # enabled (OM_ENABLE_GUI_CLIENTS, the same flag that drives OMEdit). It links the
+  # compiler in-process as an ordinary cargo dependency (omshell_omc ->
+  # openmodelica_backend_main), so building it compiles the compiler crates too;
+  # hence the DEPENDS on rust_codegen (the generated sources must exist first).
+  # The browser build of OMShell is handled by the wasm target (also gated on
+  # OM_ENABLE_GUI_CLIENTS).
+  if(OM_ENABLE_GUI_CLIENTS)
+    add_custom_target(rust_omshell_egui ALL
+      WORKING_DIRECTORY ${RUST_OMC_DIR}
+      JOB_SERVER_AWARE TRUE
+      COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p omshell_egui --bin OMShell-egui
+      DEPENDS rust_codegen
+      COMMENT "Rust: building OMShell-egui (${RUST_OMC_PROFILE})"
+      VERBATIM)
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui
+            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+
+    # The native dioxus desktop client (a webview via dioxus/desktop): drop the
+    # default `web` feature, select `desktop`. Same in-process compiler link as
+    # egui, so it also DEPENDS on rust_codegen.
+    add_custom_target(rust_omshell_dioxus ALL
+      WORKING_DIRECTORY ${RUST_OMC_DIR}
+      JOB_SERVER_AWARE TRUE
+      COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
+              -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features desktop
+      DEPENDS rust_codegen
+      COMMENT "Rust: building OMShell-dioxus (desktop, ${RUST_OMC_PROFILE})"
+      VERBATIM)
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus
+            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+  endif()
   install(FILES
             ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo
             ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo
@@ -559,6 +592,51 @@ endfunction()
 # client/library the wasm bundle does not use, so `make all` builds only this.
 # Called from Compiler/CMakeLists.txt in place of the native artifacts/omedit.
 # ---------------------------------------------------------------------------
+
+# Assemble one OMShell web page from an already-compiled GUI wasm, into the shared
+# ${_web_dir} tree: wasm-bindgen the `_binname`.wasm into web/<crate>/ and add the
+# static launcher `_srcindex` as web/<crate>.html. There is no per-page copy of
+# the omc module — every page imports the single web/omc/ produced by rust_wasm
+# (the launcher publishes its API on globalThis.__omc, which omc_bridge.js, bundled
+# into the GUI, forwards to). So the page drives omc in-browser with no duplicated
+# .wasm.
+#
+# The GUI crate itself is NOT compiled here: rust_wasm's single cargo invocation
+# already built it alongside the compiler (see _wasm_common). This step only runs
+# wasm-bindgen + assembly, so it just waits for rust_wasm, not a second cargo build.
+#
+# `_label` is a clean token for the cmake target name (egui/dioxus); `_binname`
+# is the GUI's bin/artifact name (OMShell-egui/OMShell-dioxus), which is also the
+# web dir and <name>.html so the page paths are self-consistent.
+#
+# Called from inside omc_rust_setup_wasm, so it reads that function's locals
+# (_wasm_target, _profile, _web_dir) plus the file-scope WASM_* / RUST_* variables.
+function(omc_rust_omshell_web_page _label _binname _srcindex)
+  set(_gui_artifact ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/${_binname}.wasm)
+  set(_gui_pkgdir ${_web_dir}/${_binname})
+  set(_opt "")
+  if(_profile STREQUAL "release" AND WASM_OPT_EXECUTABLE)
+    set(_opt COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
+        ${_gui_pkgdir}/${_binname}_bg.wasm -o ${_gui_pkgdir}/${_binname}_bg.wasm)
+  endif()
+  # rm only this page's own pkg dir (NOT ${_web_dir} — that holds the shared
+  # web/omc/ and the other page). rust_wasm has already cleaned+rebuilt the tree.
+  add_custom_target(rust_omshell_${_label}_web ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${_gui_pkgdir}
+    COMMAND ${WASM_BINDGEN_EXECUTABLE} ${_gui_artifact} --out-dir ${_gui_pkgdir} --target web
+    ${_opt}
+    COMMAND ${CMAKE_COMMAND} -E copy ${_srcindex} ${_web_dir}/${_binname}.html
+    COMMENT "Rust: assembling ${_binname} web page -> ${_web_dir}/${_binname}.html"
+    VERBATIM)
+  # Target-level dependency on the omc module (rust_wasm), NOT its WASM_STAMP
+  # file: make then builds the omc/codegen chain exactly once and orders the
+  # pages after it. rust_wasm compiles this GUI (single cargo), lays down
+  # web/omc/, and (re)creates ${_web_dir}; this page then adds its files. The
+  # single install(DIRECTORY ${_web_dir}) in omc_rust_setup_wasm stages it all.
+  add_dependencies(rust_omshell_${_label}_web rust_wasm)
+endfunction()
+
 function(omc_rust_setup_wasm)
   # RUST_OMC_WASM_MODE = <host>-<profile>: host selects the wasm-bindgen target
   # (nodejs / web), profile the cargo profile.
@@ -595,8 +673,25 @@ function(omc_rust_setup_wasm)
   set(_wasm_name OpenModelicaCompiler)
   # wasmtime has no wasm backend, so the wasm-jit engine must be wasmer (`js`);
   # the cdylib is built with no default features (drops the native-only deps).
-  set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
-                   --no-default-features --features engine-wasmer)
+  #
+  # When the OMShell web pages are wanted (GUI clients on, browser host) their
+  # crates are added to this *same* cargo invocation, so eframe/dioxus and their
+  # deps compile in parallel with the compiler rather than serially after it.
+  # --no-default-features then applies to all selected packages, so the features
+  # are package-qualified (omshell_egui has none; omshell_dioxus needs `web`).
+  set(_build_omshell_web FALSE)
+  if(OM_ENABLE_GUI_CLIENTS AND _host STREQUAL "web")
+    set(_build_omshell_web TRUE)
+  endif()
+  if(_build_omshell_web)
+    set(_wasm_common --target ${_wasm_target}
+                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus
+                     --no-default-features
+                     --features libopenmodelica_compiler/engine-wasmer,omshell_dioxus/web)
+  else()
+    set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
+                     --no-default-features --features engine-wasmer)
+  endif()
 
   if(_profile STREQUAL "release")
     set(_cargo_profile_flag --release)
@@ -609,14 +704,18 @@ function(omc_rust_setup_wasm)
   endif()
 
   set(_wasm_artifact ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/${_wasm_name}.wasm)
-  # Assemble the runnable bundle in the build tree (never the source tree).
+  # Assemble the runnable bundle in the build tree (never the source tree). The
+  # whole ${_web_dir} is installed as one tree, so this *is* the served layout:
+  #   web/index.html            + web/omc/*           (the omc module — shared)
+  #   web/omshell_egui.html      + web/omshell_egui/*   (added by the page helper)
+  #   web/omshell_dioxus.html    + web/omshell_dioxus/*
+  # The browser launcher imports ./omc/; Node keeps pkg-nodejs/ + omc-cli.js.
   set(_web_dir ${CMAKE_CURRENT_BINARY_DIR}/web)
-  set(_wasm_pkgdir ${_web_dir}/pkg-${_host})
-  # The launcher that loads pkg-<host>/: index.html for the browser, omc-cli.js
-  # for Node. (The other host's launcher would reference an absent pkg dir.)
   if(_host STREQUAL "web")
+    set(_wasm_pkgdir ${_web_dir}/omc)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/index.html)
   else()
+    set(_wasm_pkgdir ${_web_dir}/pkg-nodejs)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/omc-cli.js)
   endif()
 
@@ -636,12 +735,15 @@ function(omc_rust_setup_wasm)
   endif()
   list(APPEND _wasm_cargo ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
 
-  # Depend on the full transpile (same stamp rust_codegen uses): the wasm crate
-  # is built from the generated .rs.
-  set(CODEGEN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_codegen.stamp)
-  set(WASM_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_wasm.stamp)
-  add_custom_command(
-    OUTPUT ${WASM_STAMP}
+  # Always run the cargo build (no stamp), exactly like the native
+  # rust_libopenmodelica: cargo is incremental, so an unchanged tree is a fast
+  # no-op, but always invoking it means edits to *hand-written* crates (the
+  # OMShell GUIs, Curl_wasm.rs, …) are picked up. A stamp gated on the codegen
+  # output would NOT change for those — only .mo edits touch it — so a stamped
+  # build silently skipped hand-written source changes. DEPENDS the rust_codegen
+  # *target* so the transpile runs first (and once under make -jN). wasm-bindgen
+  # and the launcher copy re-run each build too; they are cheap next to cargo.
+  add_custom_target(rust_wasm ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
     JOB_SERVER_AWARE TRUE
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
@@ -650,15 +752,31 @@ function(omc_rust_setup_wasm)
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
-    COMMAND ${CMAKE_COMMAND} -E touch ${WASM_STAMP}
-    DEPENDS ${CODEGEN_STAMP} ${_web_launcher}
+    DEPENDS rust_codegen
     COMMENT "Rust: building wasm/web bundle (${RUST_OMC_WASM_MODE}) -> ${_web_dir}"
     VERBATIM)
-  add_custom_target(rust_wasm ALL DEPENDS ${WASM_STAMP})
 
-  # make install: stage the assembled bundle (pkg-<host>/ + launcher) in a clean,
-  # runnable location. The trailing slash installs the directory's *contents*.
+  # make install: stage the whole assembled tree (omc module + launcher, plus any
+  # OMShell pages added below) in one runnable location. The trailing slash
+  # installs the directory's *contents*. The omc module is installed once (web/omc)
+  # and shared by every page, so the .wasm is not duplicated.
   install(DIRECTORY ${_web_dir}/
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/web
           COMPONENT web)
+
+  # OMShell web GUIs (egui + dioxus): in the wasm build the GUI-clients flag
+  # (OM_ENABLE_GUI_CLIENTS, the Qt clients being unavailable here) selects the
+  # OMShell web pages instead. Each is assembled next to a copy of the omc module
+  # above so the page drives omc in-browser, and installed to
+  # <datarootdir>/omc/web-omshell-<gui>/. A Node host has no DOM, so the pages are
+  # built only for the browser host.
+  if(OM_ENABLE_GUI_CLIENTS)
+    if(_host STREQUAL "web")
+      omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)
+      omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
+    else()
+      message(STATUS "OMShell web pages skipped: RUST_OMC_WASM_MODE is a Node host "
+                     "(set web-release/web-debug to build them).")
+    endif()
+  endif()
 endfunction()

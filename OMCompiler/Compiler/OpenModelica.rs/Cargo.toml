@@ -13,7 +13,10 @@ overflow-checks = false
 
 [workspace]
 resolver = "3"
-members = ["mmtorust", "openmodelica", "openmodelica_util", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_nf_frontend", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_backend_main", "openmodelica_scripting_qt", "libopenmodelica_compiler", "daskr", "openmodelica_vfs", "openmodelica_scripting_api_gen"]
+members = ["mmtorust", "openmodelica", "openmodelica_util", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_nf_frontend", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_backend_main", "openmodelica_scripting_qt", "libopenmodelica_compiler", "daskr", "openmodelica_vfs", "openmodelica_scripting_api_gen", "omshell_core", "omshell_omc", "omshell_egui", "omshell_dioxus"]
+# The OMShell GUI crates pull modern UI frameworks (eframe/dioxus) that require a
+# recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
+# recent wasm-bindgen, so they share one resolution and are ordinary members.
 [workspace.dependencies]
 anyhow = "1.0.102"
 arcstr = "1.2.0"
@@ -64,7 +67,7 @@ wasm-encoder = "0.252"
 # browser-wasm build of omc, and which can also be selected natively
 # (`--features engine-wasmer`) to benchmark against wasmtime.
 wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation"] }
-wasmer = { version = "7.1", default-features = false, features = ["std", "wat"] }
+wasmer = { version = "7.2.0-alpha.3", default-features = false, features = ["std", "wat"] }
 openmodelica_codegen_wasm_jit = {path = "openmodelica_codegen_wasm_jit"}
 # Cycle-collecting garbage collector for reference cycles closed through
 # mutable cells (Mutable/Pointer). Only the `unsync` half is used: MetaModelica

@@ -626,8 +626,8 @@ pipeline {
           }
           steps {
             script {
-              def deps = docker.build('docker.openmodelica.org/build-deps:v1.22.4')
-              // deps.pull() // Already built...
+              def deps = docker.image('docker.openmodelica.org/build-deps:v1.22.4')
+              deps.pull()
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +

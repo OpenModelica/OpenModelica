@@ -13,6 +13,8 @@ wasm/pkg/
 wasm/pkg-nodejs/
 wasm/pkg-web/
 *.wasm
+# trunk build output for the egui OMShell page (regenerated; never committed)
+omshell_egui/dist/
 openmodelica_ast_collections/src/AvlSetPath.rs
 openmodelica_ast_collections/src/HashTable5.rs
 openmodelica_ast_collections/src/HashTableStringToPath.rs
