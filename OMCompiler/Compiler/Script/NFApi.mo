@@ -1195,7 +1195,7 @@ algorithm
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
 
-  json := JSON.addPair("name", dumpJSONNodePath(node, not isExtends), json);
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
