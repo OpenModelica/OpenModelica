@@ -228,6 +228,15 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
+    /* Initial-equation emission is staged but not wired yet -- the
+     * pre-validation pass needed to guarantee a clean emission is
+     * being added next. Wiring this without that pre-validation
+     * emits an empty _functionInitialEquations_0 body when any
+     * recipe's RHS fails mid-emit, which then collides with and
+     * silently wins over _06inz.c's real definition (initial
+     * values never get applied). Leaving _06inz.c to clang until
+     * the validator lands. */
+    /* _ := emitInitialEquationsBlock(simCode, layout); */
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -353,15 +362,31 @@ protected function emitODEEntryShell
   input list<EqRecipe> recipes;
   input VarLayout layout;
   output Boolean ok;
+algorithm
+  ok := emitEquationFunction(odeEntryName(modelName), recipes, layout, MODELICA_INTEGER);
+end emitODEEntryShell;
+
+protected function emitEquationFunction
+  "Emit one  <retTy> <fname>(DATA *, threadData_t *)  function whose body
+   is the concatenation of every recipe in 'recipes'. Returns true if
+   every recipe lowered cleanly. retTy = MODELICA_VOID emits 'ret void';
+   any other retTy emits 'ret <zero of retTy>'.
+
+   Used both for the runtime-contract _functionODE entry (returns int)
+   and for the per-block helpers _functionInitialEquations_0 etc.
+   (return void)."
+  input String fname;
+  input list<EqRecipe> recipes;
+  input VarLayout layout;
+  input Integer retTy;
+  output Boolean ok;
 protected
-  String fname;
   EmitCtx ctx;
 algorithm
-  fname := odeEntryName(modelName);
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
-  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionType(retTy);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
 
@@ -373,9 +398,13 @@ algorithm
     end if;
   end for;
 
-  EXT_LLVM.genReturnZero();
+  if retTy == MODELICA_VOID then
+    EXT_LLVM.genReturnVoid();
+  else
+    EXT_LLVM.genReturnZero();
+  end if;
   EXT_LLVM.finnishGen();
-end emitODEEntryShell;
+end emitEquationFunction;
 
 /* ====================================================================== *
  *  Stub emitter                                                           *
@@ -432,6 +461,108 @@ protected function emitRuntimeVoidStub
 algorithm
   emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
 end emitRuntimeVoidStub;
+
+protected function emitInitialEquationsBlock
+  "Emit the three runtime entry points produced by
+   <Model>_06inz.c:
+
+     void <prefix>_functionInitialEquations_0(DATA *, threadData_t *)
+     int  <prefix>_functionInitialEquations  (DATA *, threadData_t *)
+     int  <prefix>_functionRemovedInitialEquations(DATA *, threadData_t *)
+
+   The first contains the actual initial-equation bodies (same shape
+   as the ODE block, lowered through emitEquation). The second is a
+   thin wrapper around the first (CodegenC bookends it with
+   discreteCall++/--, which is observable only by event-handling
+   paths the JIT does not currently drive). The third is a no-op for
+   ODE-only models like HelloWorld.
+
+   Returns true only if every initial equation lowered cleanly. On
+   false the caller leaves _06inz.c to clang -- the SCTL output
+   would be unusable as a replacement."
+  input SimCode.SimCode simCode;
+  input VarLayout layout;
+  output Boolean ok;
+protected
+  list<SimCode.SimEqSystem> initEqs;
+  list<EqRecipe> recipes;
+  String prefix;
+  Absyn.Path name;
+algorithm
+  name := simCodeName(simCode);
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  initEqs := match simCode
+    case SimCode.SIMCODE(initialEquations = initEqs) then initEqs;
+  end match;
+  recipes := List.map1(initEqs, classifySimEq, layout);
+  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
+  if not ok then
+    /* Classify-time failure: at least one recipe is EQ_UNSUPPORTED.
+     * Leaving _06inz.c to clang for now; this branch fires whenever
+     * the model has an init eq the SCTL classifier does not yet
+     * cover (e.g. start-attribute reads $START.x, SES_LINEAR, ...) */
+    return;
+  end if;
+  ok := emitEquationFunction(prefix + "_functionInitialEquations_0",
+                             recipes, layout, MODELICA_VOID);
+  if not ok then
+    return;
+  end if;
+  /* Wrapper: CodegenC version calls _0 between discreteCall++/--.
+   * Dropping the bookend is harmless for the ODE-only initialisation
+   * path that DASSL drives. */
+  emitInitialEquationsWrapper(prefix + "_functionInitialEquations",
+                              prefix + "_functionInitialEquations_0");
+  /* No removed initial equations for the supported models so far. */
+  emitRuntimeIntStub(prefix + "_functionRemovedInitialEquations");
+end emitInitialEquationsBlock;
+
+protected function countUnsupportedAsBoolean
+  "List.fold seed: stays true while every recipe is supported."
+  input EqRecipe r;
+  input Boolean accIn;
+  output Boolean accOut;
+algorithm
+  accOut := match r
+    case EQ_UNSUPPORTED() then false;
+    else accIn;
+  end match;
+end countUnsupportedAsBoolean;
+
+protected function recipeKindString
+  input EqRecipe r;
+  output String s;
+algorithm
+  s := match r
+    local String why;
+    case EQ_DERIVATIVE_ASSIGN() then "DERIV(" + intString(r.slotIndex) + ")";
+    case EQ_STATE_ASSIGN()      then "STATE(" + intString(r.slotIndex) + ")";
+    case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
+    case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
+  end match;
+end recipeKindString;
+
+protected function emitInitialEquationsWrapper
+  "Emit  int <wrapper>(DATA *data, threadData_t *threadData) {
+            <inner>(data, threadData);
+            return 0;
+         }
+   into the current in-memory module."
+  input String wrapperName;
+  input String innerName;
+algorithm
+  EXT_LLVM.startFuncGen(wrapperName);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(wrapperName);
+  EXT_LLVM.genFunctionBody(wrapperName);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArg("threadData");
+  EXT_LLVM.genCall(innerName, MODELICA_VOID, "", false);
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitInitialEquationsWrapper;
 
 protected function emitUserFunctions
   "Lower the model's user-defined Modelica functions to LLVM IR in
