@@ -74,6 +74,17 @@ typedef struct {
 
 #define FMU3_W(instance) (reinterpret_cast<FMU3CppInstance*>(instance))
 
+/* Validate the opaque instance handle before any wrapper dereference. A bad or
+ * stale handle returns NULL so the caller can report fmi3Error instead of
+ * segfaulting. */
+static inline FMU3CppInstance* fmu3RequireInstance(fmi3Instance instance)
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (inst == NULL || inst->wrapper == NULL)
+    return NULL;
+  return inst;
+}
+
 #define FMU3_CATCH(inst) \
   catch (std::exception &e) { \
     if ((inst) != NULL && (inst)->logMessage != NULL) \
@@ -123,7 +134,8 @@ const char* fmi3GetVersion(void)
 fmi3Status fmi3SetDebugLogging(fmi3Instance instance, fmi3Boolean loggingOn,
     size_t nCategories, const fmi3String categories[])
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try {
     return (fmi3Status)inst->wrapper->setDebugLogging(loggingOn ? fmi3True : fmi3False,
                                                       nCategories, categories);
@@ -181,7 +193,8 @@ void fmi3FreeInstance(fmi3Instance instance)
 fmi3Status fmi3EnterInitializationMode(fmi3Instance instance, fmi3Boolean toleranceDefined,
     fmi3Float64 tolerance, fmi3Float64 startTime, fmi3Boolean stopTimeDefined, fmi3Float64 stopTime)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   inst->time = startTime;
   try {
     fmi3Status s = inst->wrapper->setupExperiment(toleranceDefined ? fmi3True : fmi3False,
@@ -194,7 +207,8 @@ fmi3Status fmi3EnterInitializationMode(fmi3Instance instance, fmi3Boolean tolera
 
 fmi3Status fmi3ExitInitializationMode(fmi3Instance instance)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->exitInitializationMode(); } FMU3_CATCH(inst)
 }
 
@@ -206,13 +220,15 @@ fmi3Status fmi3EnterEventMode(fmi3Instance instance)
 
 fmi3Status fmi3Terminate(fmi3Instance instance)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->terminate(); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3Reset(fmi3Instance instance)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->reset(); } FMU3_CATCH(inst)
 }
 
@@ -223,8 +239,9 @@ fmi3Status fmi3Reset(fmi3Instance instance)
 fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       fmi3ValueReference vr = valueReferences[i];
@@ -232,6 +249,8 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
         values[i] = inst->time;
       } else if (vr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
+        if (vr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS)
+          return fmi3Error; /* event-indicator index out of range */
         double ei[NUMBER_OF_EVENT_INDICATORS];
         fmi3Status s = inst->wrapper->getEventIndicators(ei, NUMBER_OF_EVENT_INDICATORS);
         if (s > fmi3Warning) return (fmi3Status)s;
@@ -254,8 +273,9 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
 fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Int32 values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_INTEGER_VR_OFFSET);
@@ -271,8 +291,9 @@ fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
 fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Boolean values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_BOOLEAN_VR_OFFSET);
@@ -288,8 +309,9 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
 fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3String values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_STRING_VR_OFFSET);
@@ -305,8 +327,9 @@ fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueRe
 fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Float64 values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       fmi3ValueReference vr = valueReferences[i];
@@ -324,8 +347,9 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
 fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Int32 values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_INTEGER_VR_OFFSET);
@@ -340,8 +364,9 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
 fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Boolean values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_BOOLEAN_VR_OFFSET);
@@ -356,8 +381,9 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
 fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3String values[], size_t nValues)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
-  (void)nValues;
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
+  if (nValues < nValueReferences) return fmi3Error;
   try {
     for (size_t i = 0; i < nValueReferences; i++) {
       unsigned int lvr = (unsigned int)(valueReferences[i] - FMI3_STRING_VR_OFFSET);
@@ -413,7 +439,8 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
 fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Clock values[])
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (nValueReferences == 0) return fmi3OK;
   if (valueReferences == NULL || values == NULL) return fmi3Error;
   try {
@@ -448,37 +475,43 @@ fmi3Status fmi3GetVariableDependencies(fmi3Instance instance, fmi3ValueReference
 
 fmi3Status fmi3GetFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (FMUState == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->getFMUState(FMUState); } FMU3_CATCH(inst)
 }
 fmi3Status fmi3SetFMUState(fmi3Instance instance, fmi3FMUState FMUState)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (FMUState == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->setFMUState(FMUState); } FMU3_CATCH(inst)
 }
 fmi3Status fmi3FreeFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (FMUState == NULL || *FMUState == NULL) return fmi3OK; /* freeing NULL is a no-op */
   try { return (fmi3Status)inst->wrapper->freeFMUState(FMUState); } FMU3_CATCH(inst)
 }
 fmi3Status fmi3SerializedFMUStateSize(fmi3Instance instance, fmi3FMUState FMUState, size_t* size)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (FMUState == NULL || size == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->serializedFMUStateSize(FMUState, size); } FMU3_CATCH(inst)
 }
 fmi3Status fmi3SerializeFMUState(fmi3Instance instance, fmi3FMUState FMUState, fmi3Byte serializedState[], size_t size)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (FMUState == NULL || serializedState == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->serializeFMUState(FMUState, serializedState, size); } FMU3_CATCH(inst)
 }
 fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte serializedState[], size_t size, fmi3FMUState* FMUState)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (serializedState == NULL || FMUState == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->deSerializeFMUState(serializedState, size, FMUState); } FMU3_CATCH(inst)
 }
@@ -487,7 +520,8 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (nUnknowns == 0) return fmi3OK;
   if (unknowns == NULL || knowns == NULL || seed == NULL || sensitivity == NULL) return fmi3Error;
   if (nSeed != nKnowns || nSensitivity != nUnknowns) return fmi3Error;
@@ -497,7 +531,9 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
     std::vector<unsigned int> u(nUnknowns), k(nKnowns);
     for (size_t i = 0; i < nUnknowns; i++) u[i] = (unsigned int)(unknowns[i] - FMI3_REAL_VR_OFFSET);
     for (size_t i = 0; i < nKnowns;   i++) k[i] = (unsigned int)(knowns[i]   - FMI3_REAL_VR_OFFSET);
-    return (fmi3Status)inst->wrapper->getDirectionalDerivative(&u[0], nUnknowns, &k[0], nKnowns, seed, sensitivity);
+    // &u[0]/&k[0] would be UB for an empty vector; pass data() (NULL when empty).
+    return (fmi3Status)inst->wrapper->getDirectionalDerivative(
+        u.data(), nUnknowns, nKnowns ? k.data() : nullptr, nKnowns, seed, sensitivity);
   } FMU3_CATCH(inst)
 }
 
@@ -513,7 +549,8 @@ fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; re
 fmi3Status fmi3GetIntervalDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 intervals[], fmi3IntervalQualifier qualifiers[])
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   if (nValueReferences == 0) return fmi3OK;
   if (valueReferences == NULL || intervals == NULL) return fmi3Error;
   try {
@@ -557,7 +594,8 @@ fmi3Status fmi3UpdateDiscreteStates(fmi3Instance instance, fmi3Boolean* discrete
     fmi3Boolean* valuesOfContinuousStatesChanged, fmi3Boolean* nextEventTimeDefined,
     fmi3Float64* nextEventTime)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   FMU3EventInfo eventInfo;
   memset(&eventInfo, 0, sizeof(eventInfo));
   try {
@@ -584,7 +622,8 @@ fmi3Status fmi3EnterContinuousTimeMode(fmi3Instance instance)
 fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetFMUStatePriorToCurrentPoint,
     fmi3Boolean* enterEventMode, fmi3Boolean* terminateSimulation)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   fmi3Boolean enterEventMode2 = fmi3False;
   fmi3Boolean terminate2 = fmi3False;
   try {
@@ -598,38 +637,44 @@ fmi3Status fmi3CompletedIntegratorStep(fmi3Instance instance, fmi3Boolean noSetF
 
 fmi3Status fmi3SetTime(fmi3Instance instance, fmi3Float64 time)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   inst->time = time;
   try { return (fmi3Status)inst->wrapper->setTime(time); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3SetContinuousStates(fmi3Instance instance, const fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->setContinuousStates(continuousStates, nContinuousStates); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3GetContinuousStateDerivatives(fmi3Instance instance, fmi3Float64 derivatives[], size_t nContinuousStates)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->getDerivatives(derivatives, nContinuousStates); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3GetEventIndicators(fmi3Instance instance, fmi3Float64 eventIndicators[], size_t nEventIndicators)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->getEventIndicators(eventIndicators, nEventIndicators); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3GetContinuousStates(fmi3Instance instance, fmi3Float64 continuousStates[], size_t nContinuousStates)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->getContinuousStates(continuousStates, nContinuousStates); } FMU3_CATCH(inst)
 }
 
 fmi3Status fmi3GetNominalsOfContinuousStates(fmi3Instance instance, fmi3Float64 nominals[], size_t nContinuousStates)
 {
-  FMU3CppInstance *inst = FMU3_W(instance);
+  FMU3CppInstance *inst = fmu3RequireInstance(instance);
+  if (inst == NULL) return fmi3Error;
   try { return (fmi3Status)inst->wrapper->getNominalsOfContinuousStates(nominals, nContinuousStates); } FMU3_CATCH(inst)
 }
 

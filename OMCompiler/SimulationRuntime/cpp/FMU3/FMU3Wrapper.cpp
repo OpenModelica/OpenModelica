@@ -636,11 +636,27 @@ static inline void omc_unpack(const fmi3Byte** p, void* dst, size_t n)
   memcpy(dst, *p, n);
   *p += n;
 }
+// helper: bounds-checked read; returns false if fewer than n bytes remain
+static inline bool omc_unpack_chk(const fmi3Byte** p, const fmi3Byte* end, void* dst, size_t n)
+{
+  if ((size_t)(end - *p) < n)
+    return false;
+  memcpy(dst, *p, n);
+  *p += n;
+  return true;
+}
 
 fmi3Status FMU3Wrapper::serializeFMUState(fmi3FMUState state, fmi3Byte serializedState[], size_t size)
 {
   FMU3State* s = (FMU3State*) state;
   if (s == NULL || serializedState == NULL)
+    return fmi3Error;
+
+  // Validate the buffer is large enough BEFORE writing anything, otherwise a
+  // too-small buffer would already be corrupted by the time the trailing size
+  // check below caught it.
+  size_t required = 0;
+  if (serializedFMUStateSize(state, &required) != fmi3OK || size < required)
     return fmi3Error;
 
   fmi3Byte* p = serializedState;
@@ -684,14 +700,32 @@ fmi3Status FMU3Wrapper::deSerializeFMUState(const fmi3Byte serializedState[], si
 
   FMU3State* s = new FMU3State();
   const fmi3Byte* p = serializedState;
+  const fmi3Byte* end = serializedState + size;
   uint32_t nReal = 0, nInt = 0, nBool = 0, nString = 0, nStates = 0;
 
-  omc_unpack(&p, &s->time, sizeof(double));
-  omc_unpack(&p, &nReal,   sizeof(uint32_t));
-  omc_unpack(&p, &nInt,    sizeof(uint32_t));
-  omc_unpack(&p, &nBool,   sizeof(uint32_t));
-  omc_unpack(&p, &nString, sizeof(uint32_t));
-  omc_unpack(&p, &nStates, sizeof(uint32_t));
+  // Header: time + five array lengths. Bail out (freeing s) on any short read.
+  if (!omc_unpack_chk(&p, end, &s->time, sizeof(double)) ||
+      !omc_unpack_chk(&p, end, &nReal,   sizeof(uint32_t)) ||
+      !omc_unpack_chk(&p, end, &nInt,    sizeof(uint32_t)) ||
+      !omc_unpack_chk(&p, end, &nBool,   sizeof(uint32_t)) ||
+      !omc_unpack_chk(&p, end, &nString, sizeof(uint32_t)) ||
+      !omc_unpack_chk(&p, end, &nStates, sizeof(uint32_t))) {
+    delete s;
+    return fmi3Error;
+  }
+
+  // Reject counts that cannot fit in the remaining buffer before resizing, so a
+  // corrupt blob cannot drive a huge allocation (each string costs at least its
+  // uint32_t length prefix).
+  size_t remaining = (size_t)(end - p);
+  if ((size_t)nReal   * sizeof(double)   > remaining ||
+      (size_t)nInt    * sizeof(int32_t)  > remaining ||
+      (size_t)nBool   * sizeof(char)     > remaining ||
+      (size_t)nStates * sizeof(double)   > remaining ||
+      (size_t)nString * sizeof(uint32_t) > remaining) {
+    delete s;
+    return fmi3Error;
+  }
 
   s->reals.resize(nReal);
   s->integers.resize(nInt);
@@ -699,19 +733,30 @@ fmi3Status FMU3Wrapper::deSerializeFMUState(const fmi3Byte serializedState[], si
   s->strings.resize(nString);
   s->states.resize(nStates);
 
-  if (nReal)   omc_unpack(&p, &s->reals[0], nReal * sizeof(double));
-  for (uint32_t i = 0; i < nInt; i++) {
+  bool ok = true;
+  if (nReal) ok = omc_unpack_chk(&p, end, &s->reals[0], nReal * sizeof(double));
+  for (uint32_t i = 0; ok && i < nInt; i++) {
     int32_t v = 0;
-    omc_unpack(&p, &v, sizeof(int32_t));
-    s->integers[i] = (int) v;
+    ok = omc_unpack_chk(&p, end, &v, sizeof(int32_t));
+    if (ok) s->integers[i] = (int) v;
   }
-  if (nBool)   omc_unpack(&p, &s->booleans[0], nBool * sizeof(char));
-  if (nStates) omc_unpack(&p, &s->states[0], nStates * sizeof(double));
-  for (uint32_t i = 0; i < nString; i++) {
+  if (ok && nBool)   ok = omc_unpack_chk(&p, end, &s->booleans[0], nBool * sizeof(char));
+  if (ok && nStates) ok = omc_unpack_chk(&p, end, &s->states[0], nStates * sizeof(double));
+  for (uint32_t i = 0; ok && i < nString; i++) {
     uint32_t len = 0;
-    omc_unpack(&p, &len, sizeof(uint32_t));
-    s->strings[i].assign((const char*) p, len);
-    p += len;
+    ok = omc_unpack_chk(&p, end, &len, sizeof(uint32_t));
+    if (ok) {
+      if ((size_t)(end - p) < len) {
+        ok = false;
+      } else {
+        s->strings[i].assign((const char*) p, len);
+        p += len;
+      }
+    }
+  }
+  if (!ok) {
+    delete s;
+    return fmi3Error;
   }
 
   *state = (fmi3FMUState) s;
