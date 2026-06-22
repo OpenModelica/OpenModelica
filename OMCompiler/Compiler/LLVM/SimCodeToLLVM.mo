@@ -457,6 +457,34 @@ algorithm
   EXT_LLVM.finnishGen();
 end emitTrivialDataIntIntReturnZero;
 
+protected function emitTrivialStub
+  "Generic helper: emit  <retTy> <fname>(<argTys...>) { return 0; }
+   (or return void if retTy = MODELICA_VOID) into the in-memory
+   module. Arguments are named a0, a1, ... -- the body never uses
+   them. Useful for displacing CodegenC entry points whose only
+   semantic content is 'we are not used in this run, return success'."
+  input String fname;
+  input Integer retTy;
+  input list<Integer> argTys;
+protected
+  Integer i = 0;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  for ty in argTys loop
+    EXT_LLVM.genFunctionArg(ty, "a" + intString(i));
+    i := i + 1;
+  end for;
+  EXT_LLVM.genFunctionType(retTy);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  if retTy == MODELICA_VOID then
+    EXT_LLVM.genReturnVoid();
+  else
+    EXT_LLVM.genReturnZero();
+  end if;
+  EXT_LLVM.finnishGen();
+end emitTrivialStub;
+
 protected function emitInlineSystemStub
   "<Model>_symbolicInlineSystem -- whole content of <Model>_17inl.c."
   input Absyn.Path modelName;
@@ -517,6 +545,31 @@ algorithm
   emitTrivialDataVoid(prefix + "_function_initSynchronous");
   emitTrivialDataIntVoid(prefix + "_function_updateSynchronous");
   emitTrivialDataIntIntReturnZero(prefix + "_function_equationsSynchronous");
+  /* _13opt.c -- optimization stubs. CodegenC throws a "not compiled with
+     -g=Optimica" message and returns 0; SCTL just returns 0 (the runtime
+     never calls these for ODE-only models, but they sit in the function
+     pointer table populated by setupDataStruc so the symbols must exist
+     at link time). */
+  emitTrivialStub(prefix + "_mayer",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitTrivialStub(prefix + "_lagrange",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitTrivialStub(prefix + "_getInputVarIndicesInOptimization",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_METATYPE});
+  emitTrivialStub(prefix + "_pickUpBoundsForInputsInOptimization",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
+                   MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
+                   MODELICA_METATYPE, MODELICA_METATYPE});
+  emitTrivialStub(prefix + "_setInputData",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_INTEGER});
+  emitTrivialStub(prefix + "_getTimeGrid",
+                  MODELICA_INTEGER,
+                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
 end emitDisplacingStubs;
 
 protected function emitEquation
