@@ -4,18 +4,27 @@ use std::rc::Rc;
 use dioxus::prelude::*;
 use omshell_core::{SegKind, Shell};
 
+#[cfg(feature = "native")]
+mod blitz_demo;
+
 fn main() {
-    #[cfg(feature = "desktop")]
+    // native: Blitz (dioxus-native) — a real GPU renderer, so the WebGPU test
+    // composites an actual wgpu scene (see blitz_demo).
+    #[cfg(feature = "native")]
+    dioxus_native::launch(app);
+
+    // desktop: a system webview. It attaches a default native window menu
+    // (Window/Edit/Help); OMShell draws its own bar, so suppress the native one.
+    #[cfg(all(feature = "desktop", not(feature = "native")))]
     {
-        // dioxus-desktop attaches a default native window menu (Window/Edit/Help).
-        // OMShell draws its own in-app menu bar, so suppress the native one to
-        // avoid showing two menu bars stacked on the desktop client.
         use dioxus::desktop::{Config, muda::Menu};
         dioxus::LaunchBuilder::desktop()
             .with_cfg(Config::new().with_menu(Option::<Menu>::None))
             .launch(app);
     }
-    #[cfg(not(feature = "desktop"))]
+
+    // web (default).
+    #[cfg(not(any(feature = "native", feature = "desktop")))]
     dioxus::launch(app);
 }
 
@@ -215,15 +224,7 @@ fn app() -> Element {
                         class: "modal wgpu-modal",
                         onclick: move |e| e.stop_propagation(),
                         h3 { "WebGPU test" }
-                        // The wgpu surface renders into this canvas on the web build
-                        // (start_webgpu grabs it by id). Native dioxus is a webview,
-                        // which can't host a wgpu surface, so it stays blank there.
-                        canvas {
-                            id: "omshell-wgpu-canvas",
-                            class: "wgpu-canvas",
-                            width: "640",
-                            height: "360",
-                        }
+                        WebgpuDemo {}
                         p { class: "wgpu-note", "{WGPU_NOTE}" }
                         button { onclick: move |_| webgpu.set(false), "Close" }
                     }
@@ -235,8 +236,41 @@ fn app() -> Element {
 
 #[cfg(target_arch = "wasm32")]
 const WGPU_NOTE: &str = "An animated raymarched gyroid rendered with wgpu on a WebGPU canvas — the same renderer the egui client uses.";
-#[cfg(not(target_arch = "wasm32"))]
-const WGPU_NOTE: &str = "The WebGPU demo runs in the browser build. Native dioxus is a webview, which can't host a wgpu surface yet (it needs the experimental native renderer).";
+#[cfg(all(not(target_arch = "wasm32"), feature = "native"))]
+const WGPU_NOTE: &str = "An animated raymarched gyroid rendered with wgpu, composited into the page by Blitz — the same renderer the egui and web clients use.";
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "native")))]
+const WGPU_NOTE: &str = "The WebGPU demo needs the native (Blitz) build; this webview build can't host a wgpu surface.";
+
+/// The demo's display element, per renderer: a Blitz custom widget (native), a
+/// `<canvas>` the wgpu surface targets (web), or nothing (webview — see the note).
+#[cfg(all(not(target_arch = "wasm32"), feature = "native"))]
+#[component]
+fn WebgpuDemo() -> Element {
+    // Build the custom widget once; Blitz drives its paint() each frame.
+    let attr = use_hook(|| dioxus_native::CustomWidgetAttr::new(blitz_demo::DemoWidget::new()));
+    rsx! {
+        div { class: "wgpu-canvas-wrap",
+            object { "data": attr }
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[component]
+fn WebgpuDemo() -> Element {
+    // start_webgpu (in app) grabs this canvas by id and renders onto it.
+    rsx! {
+        canvas { id: "omshell-wgpu-canvas", class: "wgpu-canvas", width: "640", height: "360" }
+    }
+}
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "native")))]
+#[component]
+fn WebgpuDemo() -> Element {
+    rsx! {
+        div {}
+    }
+}
 
 /// Set up a wgpu surface on the `#omshell-wgpu-canvas` element and render the
 /// shared demo until `running` is cleared (when the dialog closes). Web only —
@@ -377,6 +411,8 @@ html, body, #main { height: 100%; margin: 0; }
 .wgpu-modal { max-width: none; }
 .wgpu-canvas { display: block; width: 640px; max-width: 80vw; height: auto;
                aspect-ratio: 16 / 9; background: #000; border: 1px solid #444; }
+.wgpu-canvas-wrap object { display: block; width: 640px; height: 360px;
+                           background: #000; border: 1px solid #444; }
 .wgpu-note { margin-top: 8px; color: #888; max-width: 640px; }
 #log { flex: 1; overflow-y: auto; padding: 8px; }
 #log pre { margin: 0; white-space: pre-wrap; word-break: break-word; }

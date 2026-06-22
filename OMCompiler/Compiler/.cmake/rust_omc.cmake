@@ -484,16 +484,17 @@ function(omc_rust_setup_codegen)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
 
-    # The native dioxus desktop client (a webview via dioxus/desktop): drop the
-    # default `web` feature, select `desktop`. Same in-process compiler link as
-    # egui, so it also DEPENDS on rust_codegen.
+    # The native dioxus client uses Blitz (dioxus-native), not a webview, so the
+    # Help -> WebGPU test can composite a real wgpu scene. Drop the default `web`
+    # feature, select `native`. Same in-process compiler link as egui, so it also
+    # DEPENDS on rust_codegen.
     add_custom_target(rust_omshell_dioxus ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
       JOB_SERVER_AWARE TRUE
       COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
-              -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features desktop
+              -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
       DEPENDS rust_codegen
-      COMMENT "Rust: building OMShell-dioxus (desktop, ${RUST_OMC_PROFILE})"
+      COMMENT "Rust: building OMShell-dioxus (native/Blitz, ${RUST_OMC_PROFILE})"
       VERBATIM)
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
