@@ -76,6 +76,14 @@ function jitCompile
   external "C" jitCompile() annotation(Library = "omcruntime");
 end jitCompile;
 
+function jitFinalizeNoEntry
+  "Phase 5: materialize the current module and confirm fName resolves.
+   Returns 0 on success, non-zero otherwise. Does not invoke fName."
+  input String fName;
+  output Integer status;
+  external "C" status = jitFinalizeNoEntry(fName) annotation(Library = "omcruntime");
+end jitFinalizeNoEntry;
+
 /*End of calls steering function generation*/
 
 /* Calls related to functions */

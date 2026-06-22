@@ -201,6 +201,7 @@ algorithm
   if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
     if emitODEEntryShell(name, recipes, layout) then
       EXT_LLVM.dumpIR();
+      finalizeAndReport(name);
     end if;
   end if;
 
@@ -245,6 +246,29 @@ algorithm
   name := "%t_" + intString(ctx.tmpCounter);
   outCtx := EMIT_CTX(ctx.layout, ctx.tmpCounter + 1);
 end freshTmp;
+
+protected function finalizeAndReport
+  "Phase 5: materialize the current module into LLJIT and look up
+   <Model>_functionODE. Reports via Error.addInternalError so the
+   diagnostic surfaces with the rest of the genSim trace. Side
+   effect only -- the function pointer is not invoked yet."
+  input Absyn.Path name;
+protected
+  String odeSym;
+  Integer st;
+algorithm
+  odeSym := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_functionODE";
+  st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
+  if st <> 0 then
+    Error.addInternalError(
+      "SimCodeToLLVM Phase 5: jitFinalizeNoEntry('" + odeSym +
+      "') returned " + intString(st) + "\n", sourceInfo());
+  else
+    Error.addInternalError(
+      "SimCodeToLLVM Phase 5: jitFinalizeNoEntry('" + odeSym +
+      "') OK; module materialized\n", sourceInfo());
+  end if;
+end finalizeAndReport;
 
 protected function emitODEEntryShell
   "Emit the function definition

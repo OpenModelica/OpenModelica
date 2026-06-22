@@ -217,6 +217,32 @@ int jitCompile() {
   return 0;
 }
 
+/* Phase 5: materialize the current module into the JIT and confirm the
+ * named symbol resolves. Used by SimCodeToLLVM to validate that a
+ * model functionODE module is well-formed and that its external
+ * helpers (omc_jit_get_real_var et al.) resolve through the process
+ * symbol generator. Does not invoke the function. Returns 0 on
+ * success, non-zero otherwise. */
+int jitFinalizeNoEntry(const char *fName) {
+  verifyFunctionDumpIROnError();
+  if (!program->module) {
+    fprintf(stderr, "jitFinalizeNoEntry: no module to finalize\n");
+    return 1;
+  }
+  program->jit->addModule(std::move(program->module));
+  auto symbol{program->jit->findSymbol(fName)};
+  if (!symbol) {
+    fprintf(stderr, "jitFinalizeNoEntry: symbol '%s' not found after addModule\n", fName);
+    return 2;
+  }
+  auto targetAddress{symbol.getAddress()};
+  if (!targetAddress) {
+    fprintf(stderr, "jitFinalizeNoEntry: symbol '%s' has no address\n", fName);
+    return 3;
+  }
+  return 0;
+}
+
 modelica_boolean fIsJitCompiled(const char *fName) {
   auto symbol{program->jit->findSymbol(fName)};
   if (!symbol) {
