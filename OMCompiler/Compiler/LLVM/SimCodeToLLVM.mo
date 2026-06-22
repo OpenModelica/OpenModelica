@@ -1272,6 +1272,22 @@ algorithm
   EXT_LLVM.genCall("omc_jit_get_real_var", MODELICA_REAL, dst, true);
 end emitReadRealVar;
 
+protected function emitReadRealParam
+  "Same as emitReadRealVar but routes through omc_jit_get_real_param,
+   which reads data->simulationInfo->realParameter[] instead of the
+   realVars buffer. Used when a CREF resolves to a VK_PARAM slot."
+  input Integer slot;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCall("omc_jit_get_real_param", MODELICA_REAL, dst, true);
+end emitReadRealParam;
+
 protected function emitWriteRealVar
   "Emit  call void @omc_jit_set_real_var(ptr %data, i64 slot, double %src)
    into the active function body. No return value."
@@ -1656,7 +1672,14 @@ algorithm
     case SOME(vs)
       algorithm
         absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
-        (outCtx, dst) := emitReadRealVar(absSlot, ctx);
+        /* Parameters live in a separate buffer
+         * (data->simulationInfo->realParameter[]) and need the
+         * parameter accessor; everything else (states, derivatives,
+         * algebraic vars) reads through omc_jit_get_real_var. */
+        (outCtx, dst) := match vs.kind
+          case VK_PARAM() then emitReadRealParam(absSlot, ctx);
+          else                emitReadRealVar(absSlot, ctx);
+        end match;
       then (outCtx, dst, true);
     case NONE() then (ctx, "<unmapped-cref>", false);
   end match;

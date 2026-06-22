@@ -1254,6 +1254,20 @@ void omc_jit_set_real_var(DATA *data, int64_t slot, double value)
   data->localData[0]->realVars[slot] = value;
 }
 
+/* Read a real parameter. Counterpart of omc_jit_get_real_var,
+ * but reads from data->simulationInfo->realParameter[] -- the
+ * runtime keeps parameters in a separate array from realVars.
+ * Defensive against the Phase 6 smoke-test fabricator (which
+ * zero-fills the DATA struct and does not populate simulationInfo
+ * or its realParameter pointer). */
+double omc_jit_get_real_param(DATA *data, int64_t slot)
+{
+  if (!data || !data->simulationInfo || !data->simulationInfo->realParameter) {
+    return 0.0;
+  }
+  return data->simulationInfo->realParameter[slot];
+}
+
 /* Write a real parameter. The runtime keeps parameters in
  * data->simulationInfo->realParameter, indexed directly by the
  * SimVar slot (no second indirection through realParamIndex --
