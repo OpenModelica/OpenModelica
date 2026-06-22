@@ -370,66 +370,7 @@ public
 
       case Equation.ARRAY_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
-        // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
-        if isSome(diffArguments.adjoint_map) and
-          diffArguments.diffType == DifferentiationType.JACOBIAN and
-          Expression.isArray(eq.rhs) then
-
-          SOME(dm) := diffArguments.diff_map;
-
-          // this must be a variable cref on the LHS so this should work
-          lhs_base := Expression.toCref(eq.lhs);
-
-          // Vector length from equation type
-          if Type.isArray(eq.ty) then
-            dims := Type.arrayDims(eq.ty);
-            if not listEmpty(dims) then
-              n := Dimension.size(listHead(dims));
-            end if;
-          end if;
-
-          if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(lhs_base, dm) and n > 0 then
-            seed_base := UnorderedMap.getOrFail(lhs_base, dm);
-
-            // Save and prepare flags
-            grad_save := diffArguments.current_grad;
-            collect_save := diffArguments.collectAdjoints;
-
-            // Accumulate adjoints per element with scalar seeds seed_base[i] on rhs[i]
-            for iel in 1:n loop
-              // current_grad := $SEED...y[i]
-              grad_i := Expression.applySubscripts(
-                {Subscript.INDEX(Expression.INTEGER(iel))},
-                Expression.fromCref(seed_base),
-                true);
-
-              // rhs_i := rhs[i]
-              rhs_i := Expression.applySubscripts(
-                {Subscript.INDEX(Expression.INTEGER(iel))},
-                eq.rhs,
-                true);
-
-              diffArguments.current_grad := grad_i;
-              diffArguments.collectAdjoints := true;
-
-              // Differentiate rhs element to accumulate into adjoint_map
-              (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
-            end for;
-
-            // Restore state
-            diffArguments.current_grad := grad_save;
-            diffArguments.collectAdjoints := collect_save;
-
-            // Also differentiate the full RHS without collecting (avoid duplicates)
-            (rhs, diffArguments) := differentiateExpressionNoCollect(eq.rhs, diffArguments);
-          else
-            // Fallback: regular vector reverse-mode
-            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-          end if;
-        else
-          // Non-explicit RHS (e.g., A*x): let reverse-mode handle vectors/matrices
-          (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-        end if;
+        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
@@ -2838,12 +2779,9 @@ public
         Statement diff_stmt;
         Expression exp, lhs, rhs;
         Expression grad_save;
-        ComponentRef root_save;
-        ComponentRef lhs_seed_cref;
         list<Statement> branch_stmts_flat;
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
-        list<tuple<Expression, list<Statement>>> if_when_branches;
         Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
         list<Statement> body_stmts;
 
@@ -2877,8 +2815,7 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.IF() algorithm
-        if_when_branches := diff_stmt.branches;
-        for branch in if_when_branches loop
+        for branch in diff_stmt.branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
@@ -2887,8 +2824,7 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.WHEN() algorithm
-        if_when_branches := diff_stmt.branches;
-        for branch in if_when_branches loop
+        for branch in diff_stmt.branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
