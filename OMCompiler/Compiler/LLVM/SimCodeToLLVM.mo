@@ -913,8 +913,17 @@ algorithm
     local list<DAE.Statement> stmts;
           String synthName;
           SimCodeFunction.Function synthFn;
+    /* SES_ALGORITHM is the target of the synthetic-function pipeline
+     * (buildSyntheticAlgFunction + extractAlgorithmLocals +
+     * emitSyntheticFunctions + EQ_ALG_CALL). The wiring is in place
+     * but DAEToMid.StmtsToMid / MidToLLVM.genProgram throws on the
+     * statement bodies CodegenC emits for parameter-range asserts
+     * (a small repro is `model M parameter Real x(min=0)=1;
+     * Real y; equation der(y)=x; end M;` -- Phase 6 smoke test passes
+     * but Pass 2 fails silently when emitSyntheticFunctions runs).
+     * The MidCode statement coverage debug is the next step. */
     case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM probe: classifier off, only genReturnNullPtr fix active");
+      then EQ_UNSUPPORTED("SES_ALGORITHM pending MidCode debug on MinAssert repro");
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
@@ -1247,12 +1256,7 @@ end collectAssignLhs;
 protected function emitSyntheticFunctions
   "Run a list of synthetic SimCodeFunction.Functions through
    DAEToMid + MidToLLVM.genProgram so their bodies land in the
-   currently-active in-memory module. Called once per block that
-   produced synthetics (param-eq block, init-eq block, etc.).
-
-   No-op when the list is empty. Records are not built here -- the
-   synthetics are produced from algorithm bodies and do not
-   construct new record types."
+   currently-active in-memory module."
   input list<SimCodeFunction.Function> synths;
   input Absyn.Path modelName;
 protected
