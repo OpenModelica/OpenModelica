@@ -201,7 +201,7 @@ algorithm
   if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
     if emitODEEntryShell(name, recipes, layout) then
       EXT_LLVM.dumpIR();
-      finalizeAndReport(name);
+      finalizeAndReport(name, layout);
     end if;
   end if;
 
@@ -248,14 +248,17 @@ algorithm
 end freshTmp;
 
 protected function finalizeAndReport
-  "Phase 5: materialize the current module into LLJIT and look up
-   <Model>_functionODE. Reports via Error.addInternalError so the
-   diagnostic surfaces with the rest of the genSim trace. Side
-   effect only -- the function pointer is not invoked yet."
+  "Phase 5/6: materialize the current module into LLJIT, look up
+   <Model>_functionODE, and (Phase 6) invoke it against a fabricated
+   realVars buffer to confirm the JIT side-effect. Reports via
+   Error.addInternalError so the diagnostic surfaces with the rest of
+   the genSim trace."
   input Absyn.Path name;
+  input VarLayout layout;
 protected
   String odeSym;
   Integer st;
+  list<Real> rvIn, rvOut;
 algorithm
   odeSym := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
@@ -263,12 +266,22 @@ algorithm
     Error.addInternalError(
       "SimCodeToLLVM Phase 5: jitFinalizeNoEntry('" + odeSym +
       "') returned " + intString(st) + "\n", sourceInfo());
-  else
-    Error.addInternalError(
-      "SimCodeToLLVM Phase 5: jitFinalizeNoEntry('" + odeSym +
-      "') OK; module materialized\n", sourceInfo());
+    return;
   end if;
+  rvIn := List.fill(1.0, 2 * layout.nStates + layout.nAlgs + layout.nParams);
+  rvOut := EXT_LLVM.jitInvokeFunctionODE(odeSym, layout.nStates, layout.nAlgs, layout.nParams, rvIn);
+  Error.addInternalError(
+    "SimCodeToLLVM Phase 6: jitInvokeFunctionODE('" + odeSym +
+    "') with realVars=1.0 returned " + realVarsString(rvOut) + "\n",
+    sourceInfo());
 end finalizeAndReport;
+
+protected function realVarsString
+  input list<Real> rs;
+  output String s;
+algorithm
+  s := "[" + stringDelimitList(List.map(rs, realString), ", ") + "]";
+end realVarsString;
 
 protected function emitODEEntryShell
   "Emit the function definition
@@ -362,10 +375,14 @@ end emitEquation;
 
 protected function absoluteSlot
   "Translate a (kind, sub-index) into the absolute realVars[] slot
-   the C runtime uses. The canonical layout omc_init.c produces is
-     [ state0, state1, ..., der(state0), der(state1), ..., alg0, ... ]
-   The runtime helper omc_jit_get_real_var / omc_jit_set_real_var
-   indexes that flat array."
+   the C runtime uses. SimCodeVar.SimVar.index for stateVars,
+   derivativeVars, and algVars is already the absolute slot in the
+   localData[0]->realVars flat buffer (states 0..nStates-1, then
+   derivatives nStates..2*nStates-1, then algebraics). No further
+   offset is needed -- the (kind, subIndex) pair is kept so future
+   variants (e.g. parameter storage in simulationInfo->realParameter,
+   which lives in a different buffer) can be lowered through a
+   different access helper without touching the recipe layer."
   input VarKind kind;
   input Integer subIndex;
   input VarLayout layout;
@@ -373,9 +390,9 @@ protected function absoluteSlot
 algorithm
   slot := match kind
     case VK_STATE()      then subIndex;
-    case VK_DERIVATIVE() then layout.nStates + subIndex;
-    case VK_ALG()        then 2 * layout.nStates + subIndex;
-    case VK_PARAM()      then 2 * layout.nStates + layout.nAlgs + subIndex;
+    case VK_DERIVATIVE() then subIndex;
+    case VK_ALG()        then subIndex;
+    case VK_PARAM()      then subIndex;
   end match;
 end absoluteSlot;
 
@@ -609,7 +626,33 @@ algorithm
                       listLength(stateVars),
                       listLength(algVars),
                       listLength(paramVars));
+  if Flags.isSet(Flags.JIT_DUMP_IR) then
+    dumpLayout(layout);
+  end if;
 end buildVarLayout;
+
+protected function dumpLayout
+  input VarLayout layout;
+protected
+  DAE.ComponentRef cr;
+  VarSlot s;
+  String kindStr;
+algorithm
+  Error.addInternalError("SimCodeToLLVM layout dump (nStates=" + intString(layout.nStates) +
+    " nAlgs=" + intString(layout.nAlgs) + " nParams=" + intString(layout.nParams) + ")\n",
+    sourceInfo());
+  for entry in layout.entries loop
+    (cr, s) := entry;
+    kindStr := match s.kind
+      case VK_STATE()      then "STATE";
+      case VK_DERIVATIVE() then "DERIV";
+      case VK_ALG()        then "ALG";
+      case VK_PARAM()      then "PARAM";
+    end match;
+    Error.addInternalError("  " + ComponentReferenceBasics.printComponentRefStr(cr) +
+      " -> " + kindStr + "(simVarIndex=" + intString(s.index) + ")\n", sourceInfo());
+  end for;
+end dumpLayout;
 
 protected function addEntry
   input SimCodeVar.SimVar v;

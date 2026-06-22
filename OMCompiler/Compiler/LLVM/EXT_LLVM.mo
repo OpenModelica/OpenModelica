@@ -84,6 +84,21 @@ function jitFinalizeNoEntry
   external "C" status = jitFinalizeNoEntry(fName) annotation(Library = "omcruntime");
 end jitFinalizeNoEntry;
 
+function jitInvokeFunctionODE
+  "Phase 6: call a JIT-compiled <Model>_functionODE against a
+   fabricated DATA*. realVarsIn is the flat scalar realVars buffer
+   in the absolute-slot layout used by SimCodeToLLVM. Returns the
+   updated buffer, or an empty list on failure."
+  input String fName;
+  input Integer nStates;
+  input Integer nAlgs;
+  input Integer nParams;
+  input list<Real> realVarsIn;
+  output list<Real> realVarsOut;
+  external "C" realVarsOut = jitInvokeFunctionODE_mm(fName, nStates, nAlgs, nParams, realVarsIn)
+    annotation(Library = "omcruntime");
+end jitInvokeFunctionODE;
+
 /*End of calls steering function generation*/
 
 /* Calls related to functions */

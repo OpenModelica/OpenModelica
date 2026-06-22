@@ -243,6 +243,22 @@ int jitFinalizeNoEntry(const char *fName) {
   return 0;
 }
 
+/* Phase 6: look up the raw address of an already-finalized JIT symbol.
+ * Returns 0 on success and writes the address into *outAddr. Used by
+ * the model invocation harness in llvm_gen_wrappers.c so the lookup
+ * stays in the same TU that owns `program->jit`, while the call site
+ * (which needs to know about DATA/SIMULATION_DATA) stays in C. */
+int jitLookupAddress(const char *fName, void **outAddr) {
+  if (!fName || !outAddr) return 1;
+  if (!program || !program->jit) return 2;
+  auto symbol{program->jit->findSymbol(fName)};
+  if (!symbol) return 3;
+  auto targetAddress{symbol.getAddress()};
+  if (!targetAddress) return 4;
+  *outAddr = reinterpret_cast<void*>(targetAddress.get());
+  return 0;
+}
+
 modelica_boolean fIsJitCompiled(const char *fName) {
   auto symbol{program->jit->findSymbol(fName)};
   if (!symbol) {

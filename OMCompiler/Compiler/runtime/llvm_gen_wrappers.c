@@ -1259,6 +1259,91 @@ double omc_jit_get_time(DATA *data)
   return data->localData[0]->timeValue;
 }
 
+/* Phase 6: invoke a JIT-compiled <Model>_functionODE against a
+ * minimally-fabricated DATA*. The realVars buffer follows the same
+ * absolute-slot layout that SimCodeToLLVM uses:
+ *   [0 .. nStates-1]                                : states
+ *   [nStates .. 2*nStates-1]                        : derivatives
+ *   [2*nStates .. 2*nStates+nAlgs-1]                : algebraics
+ *   [2*nStates+nAlgs .. 2*nStates+nAlgs+nParams-1]  : parameters
+ *
+ * The caller fills the states/params slots, the JIT writes
+ * derivatives (and any algebraics it computes) back into the same
+ * buffer. Returns 0 on success, non-zero if the lookup fails.
+ *
+ * Linkage note: jitLookupAddress lives in llvm_gen.cpp (extern C). */
+extern int jitLookupAddress(const char *fName, void **outAddr);
+
+int omc_jit_invoke_functionODE(const char *fName,
+                               int nStates, int nAlgs, int nParams,
+                               double *realVars)
+{
+  void *addr = NULL;
+  int st = jitLookupAddress(fName, &addr);
+  if (st != 0) return st;
+
+  SIMULATION_DATA sd;
+  memset(&sd, 0, sizeof(sd));
+  sd.timeValue = 0.0;
+  sd.realVars = realVars;
+
+  SIMULATION_DATA *sdp = &sd;
+
+  DATA data;
+  memset(&data, 0, sizeof(data));
+  data.localData = &sdp;
+
+  typedef int64_t (*ode_fn_t)(void*, void*);
+  ode_fn_t fn = (ode_fn_t)addr;
+  (void)fn(&data, NULL);
+  return 0;
+}
+
+/* MMC bridge for EXT_LLVM.jitInvokeFunctionODE. Unboxes the
+ * list<Real> into a heap-allocated double[], invokes the JIT, then
+ * re-boxes the (potentially mutated) buffer back into a list<Real>.
+ * Returns mmc_mk_nil() on any failure -- caller distinguishes success
+ * by checking the returned list length against the expected total. */
+modelica_metatype jitInvokeFunctionODE_mm(const char *fName,
+                                         modelica_integer nStates,
+                                         modelica_integer nAlgs,
+                                         modelica_integer nParams,
+                                         modelica_metatype realVarsIn)
+{
+  modelica_metatype tmp;
+  modelica_metatype outLst;
+  size_t total = (size_t)(2 * nStates + nAlgs + nParams);
+  size_t i, count;
+  double *buf;
+  int st;
+
+  /* Length-check the input list against the declared layout. */
+  count = 0;
+  tmp = realVarsIn;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) { count++; tmp = MMC_CDR(tmp); }
+  if (count != total) return mmc_mk_nil();
+
+  buf = (double*)calloc(total > 0 ? total : 1, sizeof(double));
+  if (!buf) return mmc_mk_nil();
+
+  i = 0;
+  tmp = realVarsIn;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+    buf[i++] = mmc_unbox_real(MMC_CAR(tmp));
+    tmp = MMC_CDR(tmp);
+  }
+
+  st = omc_jit_invoke_functionODE(fName, (int)nStates, (int)nAlgs, (int)nParams, buf);
+  if (st != 0) { free(buf); return mmc_mk_nil(); }
+
+  outLst = mmc_mk_nil();
+  for (i = total; i > 0; i--) {
+    outLst = mmc_mk_cons(mmc_mk_rcon(buf[i - 1]), outLst);
+  }
+  free(buf);
+  return outLst;
+}
+
 #ifdef __cplusplus
 }
 #endif
