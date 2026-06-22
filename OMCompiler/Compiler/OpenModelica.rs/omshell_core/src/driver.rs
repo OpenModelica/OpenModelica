@@ -13,6 +13,15 @@ pub enum DriverMsg {
         error: String,
         keep_running: bool,
     },
+    /// A download is in progress (wasm only): `done`/`total` bytes for `file`.
+    /// `total` is 0 when the server sent no Content-Length (indeterminate).
+    /// Only the wasm driver constructs this; native still matches it in `poll`.
+    #[allow(dead_code)]
+    Progress {
+        file: String,
+        done: u64,
+        total: u64,
+    },
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -111,6 +120,13 @@ mod wasm {
             .unwrap_or(false)
     }
 
+    fn count(data: &JsValue, key: &str) -> u64 {
+        js_sys::Reflect::get(data, &JsValue::from_str(key))
+            .ok()
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0) as u64
+    }
+
     // Decode a worker reply (see omc_worker.js for the message shapes).
     fn decode(data: &JsValue) -> Option<DriverMsg> {
         match field(data, "kind").as_str() {
@@ -126,6 +142,11 @@ mod wasm {
                 result: field(data, "result"),
                 error: field(data, "error"),
                 keep_running: flag(data, "keep"),
+            }),
+            "progress" => Some(DriverMsg::Progress {
+                file: field(data, "file"),
+                done: count(data, "done"),
+                total: count(data, "total"),
             }),
             _ => None,
         }

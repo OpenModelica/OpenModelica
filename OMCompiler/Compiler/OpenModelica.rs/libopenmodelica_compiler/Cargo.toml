@@ -42,6 +42,8 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 charton = "0.5"
 # DOM access to insert the rendered SVG into the page's #log element.
 web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "Node"] }
+# Building the {urls, filename} pending-download list for the JS host (omc_take_pending_downloads).
+js-sys = "0.3.102"
 # charton → ahash seeds its hashmaps with getrandom, which needs the JS backend
 # explicitly selected on wasm (paired with the cfg in .cargo/config.toml).
 getrandom = { version = "0.3", features = ["wasm_js"] }

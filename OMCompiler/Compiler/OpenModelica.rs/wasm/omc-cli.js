@@ -14,32 +14,38 @@ const path = require('node:path');
 const readline = require('node:readline');
 const { execFileSync } = require('node:child_process');
 
-// The Curl package (Curl_wasm.rs) downloads via a *synchronous* XMLHttpRequest —
-// which browsers provide but Node does not. Shim a minimal one backed by the
-// `curl` binary so download-driven commands (installPackage, updatePackageIndex)
-// work from the Node CLI too. Without curl, downloads simply fail as before.
-if (typeof globalThis.XMLHttpRequest === 'undefined') {
-  globalThis.XMLHttpRequest = class {
-    open(_method, url, _async) { this._url = url; this._status = 0; this._text = ''; }
-    overrideMimeType() {}
-    setRequestHeader() {}
-    send() {
-      try {
-        const buf = execFileSync('curl', ['-sSL', '-m', '120', '--fail', this._url], { maxBuffer: 1 << 30 });
-        // charset=x-user-defined contract: the low byte of each char is the raw byte.
-        this._text = buf.toString('latin1');
-        this._status = 200;
-      } catch {
-        this._status = 0;
-        this._text = '';
+const omc = require(path.join(__dirname, 'pkg-nodejs', 'OpenModelicaCompiler.js'));
+
+// omc_eval is synchronous and cannot await a network fetch, so a download-driven
+// command (installPackage, updatePackageIndex) does not fetch its files — it
+// records them as pending and fails (see Curl_wasm.rs). Mirror the browser
+// Worker's retry loop here, but synchronously: run the command, fetch any pending
+// files with the `curl` binary (browsers stream with progress; Node just blocks),
+// stage them in the VFS, and re-run until nothing new is needed. `attempted`
+// stops an undownloadable file from looping forever. Without curl, downloads
+// simply fail as before.
+function evalWithDownloads(src) {
+  const attempted = new Set();
+  for (;;) {
+    const result = omc.omc_eval(src);
+    const pending = omc.omc_take_pending_downloads() || [];
+    const todo = pending.filter((p) => !attempted.has(p.filename));
+    if (todo.length === 0) return result;
+    omc.omc_eval('getErrorString()'); // discard the aborted run's diagnostics
+    for (const item of todo) {
+      attempted.add(item.filename);
+      for (const url of item.urls) {
+        try {
+          const buf = execFileSync('curl', ['-sSL', '-m', '120', '--fail', url], { maxBuffer: 1 << 30 });
+          omc.omc_vfs_put(item.filename, new Uint8Array(buf));
+          break;
+        } catch {
+          // try the next mirror
+        }
       }
     }
-    get status() { return this._status; }
-    get responseText() { return this._text; }
-  };
+  }
 }
-
-const omc = require(path.join(__dirname, 'pkg-nodejs', 'OpenModelicaCompiler.js'));
 
 // Seed the install dir (no OS environment inside wasm). The builtin Modelica
 // environment is embedded (openmodelica_vfs), so OPENMODELICAHOME only needs to
@@ -55,7 +61,7 @@ if (!omc.omc_init()) {
 
 const oneShot = process.argv.slice(2).join(' ').trim();
 if (oneShot) {
-  process.stdout.write(omc.omc_eval(oneShot));
+  process.stdout.write(evalWithDownloads(oneShot));
   process.stdout.write('\n');
   process.exit(0);
 }
@@ -65,7 +71,7 @@ rl.prompt();
 rl.on('line', (line) => {
   const cmd = line.trim();
   if (cmd === 'quit()' || cmd === 'exit') { rl.close(); return; }
-  if (cmd) process.stdout.write(omc.omc_eval(cmd) + '\n');
+  if (cmd) process.stdout.write(evalWithDownloads(cmd) + '\n');
   rl.prompt();
 });
 rl.on('close', () => process.exit(0));

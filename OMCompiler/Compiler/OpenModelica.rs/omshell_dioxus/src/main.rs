@@ -50,14 +50,19 @@ fn app() -> Element {
     }
     let _ = tick(); // subscribe so driver updates re-render
 
-    let (segments, input, busy, version) = {
+    let (segments, input, busy, version, download) = {
         let s = shell.borrow();
         let segs: Vec<(SegKind, String)> = s
             .scrollback
             .iter()
             .map(|seg| (seg.kind, seg.text.clone()))
             .collect();
-        (segs, s.input.clone(), s.busy, s.version.clone())
+        // (label, bytes done, bytes total) of an in-flight download, if any.
+        let download = s
+            .download
+            .as_ref()
+            .map(|d| (d.file.clone(), d.done, d.total));
+        (segs, s.input.clone(), s.busy, s.version.clone(), download)
     };
 
     let on_input = {
@@ -130,11 +135,28 @@ fn app() -> Element {
                     pre { class: seg_class(*kind), "{text}" }
                 }
                 // While a command (or start-up) is running, show a spinner below
-                // the last line so it is clear omc is working.
+                // the last line so it is clear omc is working. A download shows a
+                // progress bar (determinate when the size is known) instead.
                 if busy {
-                    div { class: "spinner",
-                        span { class: "dot" }
-                        span { "running…" }
+                    if let Some((file, done, total)) = download {
+                        div { class: "progress",
+                            if total > 0 {
+                                progress { value: "{done}", max: "{total}" }
+                                span { class: "progress-label",
+                                    "downloading {file} ({done / 1024}/{total / 1024} KB)"
+                                }
+                            } else {
+                                progress {}
+                                span { class: "progress-label",
+                                    "downloading {file} ({done / 1024} KB)"
+                                }
+                            }
+                        }
+                    } else {
+                        div { class: "spinner",
+                            span { class: "dot" }
+                            span { "running…" }
+                        }
                     }
                 }
             }
@@ -197,6 +219,9 @@ html, body, #main { height: 100%; margin: 0; }
                               background: transparent; color: #ddd; padding: 6px 12px;
                               cursor: pointer; font-family: monospace; font-size: inherit; }
 #menubar .menu-items button:hover { background: #094771; color: #fff; }
+.progress { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: #e0c060; }
+.progress progress { flex: 0 0 240px; height: 14px; }
+.progress-label { font-family: monospace; }
 .spinner { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: #e0c060; }
 .spinner .dot { width: 12px; height: 12px; border: 2px solid #555; border-top-color: #e0c060;
                 border-radius: 50%; animation: spin 0.8s linear infinite; }

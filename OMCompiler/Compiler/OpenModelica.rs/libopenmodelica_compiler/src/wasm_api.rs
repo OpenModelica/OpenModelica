@@ -98,6 +98,32 @@ pub fn omc_vfs_get(path: &str) -> Option<Vec<u8>> {
     openmodelica_vfs::read(path)
 }
 
+/// Drain the files the last command tried to download but did not find in the
+/// VFS, as an array of `{ urls: string[], filename: string }`. `omc_eval` is
+/// synchronous, so it cannot fetch over the network itself; instead the JS host
+/// fetches each pending file (the browser streams it for download progress),
+/// stages the bytes with [`omc_vfs_put`], and re-runs the command, which then
+/// finds them in the VFS. See `openmodelica_script_util::Curl` (Curl_wasm).
+#[wasm_bindgen]
+pub fn omc_take_pending_downloads() -> JsValue {
+    let arr = js_sys::Array::new();
+    for (urls, filename) in openmodelica_script_util::Curl::take_pending_downloads() {
+        let item = js_sys::Object::new();
+        let mirrors = js_sys::Array::new();
+        for u in &urls {
+            mirrors.push(&JsValue::from_str(u));
+        }
+        let _ = js_sys::Reflect::set(&item, &JsValue::from_str("urls"), &mirrors);
+        let _ = js_sys::Reflect::set(
+            &item,
+            &JsValue::from_str("filename"),
+            &JsValue::from_str(&filename),
+        );
+        arr.push(&item);
+    }
+    arr.into()
+}
+
 /// Unzip `data` into the VFS, mounting each entry under `mount` (e.g.
 /// `mount="/lib"`, entry `Modelica 4.1.0/package.mo` → `/lib/Modelica 4.1.0/
 /// package.mo`). One fetch + this call stages a whole Modelica library; point

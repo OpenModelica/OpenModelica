@@ -4,4 +4,4 @@ mod driver;
 mod shell;
 
 pub use backend::{Eval, Init, OmcBackend};
-pub use shell::{SegKind, Segment, Shell};
+pub use shell::{Download, SegKind, Segment, Shell};

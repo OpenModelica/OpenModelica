@@ -20,13 +20,8 @@ match_deref.workspace=true
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 
 # Native libcurl (downloads) has no wasm target; Curl.rs is replaced by the
-# Curl_wasm.rs implementation on wasm, so the dep is native-only.
+# Curl_wasm.rs implementation on wasm, so the dep is native-only. On wasm the host
+# performs the transfer (Curl_wasm only bookkeeps via the VFS), so no browser/JS
+# crates are needed here.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 curl.workspace = true
-
-# On wasm, Curl_wasm.rs downloads via the browser (synchronous XMLHttpRequest)
-# and stages the bytes in the VFS.
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "=0.2.125"
-js-sys = "0.3.102"
-web-sys = { version = "0.3.102", features = ["XmlHttpRequest"] }

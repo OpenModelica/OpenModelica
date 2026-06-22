@@ -18,6 +18,21 @@ pub struct Segment {
     pub text: String,
 }
 
+/// An in-flight download (wasm web build). `total == 0` means the size is unknown
+/// (no Content-Length), so the front-end shows an indeterminate bar.
+pub struct Download {
+    pub file: String,
+    pub done: u64,
+    pub total: u64,
+}
+
+impl Download {
+    /// Completed fraction in `0.0..=1.0`, or `None` when the size is unknown.
+    pub fn fraction(&self) -> Option<f32> {
+        (self.total > 0).then(|| (self.done as f32 / self.total as f32).clamp(0.0, 1.0))
+    }
+}
+
 pub struct Shell {
     driver: Driver,
     pub scrollback: Vec<Segment>,
@@ -26,6 +41,9 @@ pub struct Shell {
     hist_idx: Option<usize>,
     completion: Completion,
     pub busy: bool,
+    /// The current download while `busy`, if the running command is fetching
+    /// (e.g. installPackage). `None` between downloads / on native.
+    pub download: Option<Download>,
     pub version: String,
     pub quit: bool,
 }
@@ -46,6 +64,7 @@ impl Shell {
             hist_idx: None,
             completion: Completion::load(),
             busy: true,
+            download: None,
             version: String::new(),
             quit: false,
         }
@@ -66,10 +85,12 @@ impl Shell {
                         self.push(SegKind::Error, init.message);
                     }
                     self.busy = false;
+                    self.download = None;
                 }
                 DriverMsg::Ready(Err(e)) => {
                     self.push(SegKind::Error, format!("Failed to start OMC: {e}"));
                     self.busy = false;
+                    self.download = None;
                 }
                 DriverMsg::Done {
                     result,
@@ -83,9 +104,13 @@ impl Shell {
                         self.push(SegKind::Error, error);
                     }
                     self.busy = false;
+                    self.download = None;
                     if !keep_running {
                         self.quit = true;
                     }
+                }
+                DriverMsg::Progress { file, done, total } => {
+                    self.download = Some(Download { file, done, total });
                 }
             }
         }
@@ -108,6 +133,7 @@ impl Shell {
         }
         self.driver.submit(cmd);
         self.busy = true;
+        self.download = None;
     }
 
     /// Set the input to `cmd` and submit it (menu actions: loadFile, etc.).

@@ -120,12 +120,25 @@ impl App {
                     ui.add(egui::Label::new(rt).selectable(true));
                 }
                 // While a command (or start-up) is running, show a spinner below
-                // the last line so it is clear omc is working.
+                // the last line so it is clear omc is working. A download shows a
+                // progress bar (determinate when the size is known) instead.
                 if self.shell.busy {
-                    ui.horizontal(|ui| {
-                        ui.spinner();
-                        ui.label(RichText::new("running…").weak().monospace());
-                    });
+                    if let Some(dl) = &self.shell.download {
+                        let text = match dl.total {
+                            0 => format!("downloading {} ({} KB)", dl.file, dl.done / 1024),
+                            t => format!("downloading {} ({}/{} KB)", dl.file, dl.done / 1024, t / 1024),
+                        };
+                        let bar = match dl.fraction() {
+                            Some(f) => egui::ProgressBar::new(f).show_percentage(),
+                            None => egui::ProgressBar::new(0.0).animate(true),
+                        };
+                        ui.add(bar.text(RichText::new(text).monospace()));
+                    } else {
+                        ui.horizontal(|ui| {
+                            ui.spinner();
+                            ui.label(RichText::new("running…").weak().monospace());
+                        });
+                    }
                 }
             });
     }
