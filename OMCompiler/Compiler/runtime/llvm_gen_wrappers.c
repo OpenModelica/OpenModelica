@@ -34,6 +34,8 @@
  */
 
 #include "llvm_gen_wrappers.h"
+#include <math.h>
+#include <alloca.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1403,6 +1405,294 @@ int omc_jit_drive_forward_euler(const char *fName,
   if (fp) fclose(fp);
   free(realVars);
   return 0;
+}
+
+/* Classical fourth-order Runge-Kutta driver. Same JIT contract as the
+ * forward-Euler driver: lookup, fabricate DATA/SIMULATION_DATA, march
+ * t=t0..tEnd in steps of h. Each step evaluates functionODE four times
+ * at the four RK4 stages; intermediate state perturbations are written
+ * into realVars[0..nStates-1] for the JIT body to read. */
+int omc_jit_drive_rk4(const char *fName,
+                      int nStates, int nAlgs, int nParams,
+                      const double *startVals,
+                      double t0, double tEnd, double h,
+                      const char *csvPath)
+{
+  void *addr = NULL;
+  int st = jitLookupAddress(fName, &addr);
+  if (st != 0) return st;
+  if (nStates < 0 || nAlgs < 0 || nParams < 0) return 5;
+  if (!(h > 0.0)) return 6;
+  size_t total = (size_t)(2 * nStates + nAlgs + nParams);
+  double *realVars = (double*)calloc(total > 0 ? total : 1, sizeof(double));
+  double *y0 = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  double *k1 = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  double *k2 = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  double *k3 = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  double *k4 = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  if (!realVars || !y0 || !k1 || !k2 || !k3 || !k4) {
+    free(realVars); free(y0); free(k1); free(k2); free(k3); free(k4);
+    return 7;
+  }
+  for (int i = 0; i < nStates; ++i) realVars[i] = startVals ? startVals[i] : 0.0;
+
+  SIMULATION_DATA sd;
+  memset(&sd, 0, sizeof(sd));
+  sd.timeValue = t0;
+  sd.realVars = realVars;
+  SIMULATION_DATA *sdp = &sd;
+  DATA data;
+  memset(&data, 0, sizeof(data));
+  data.localData = &sdp;
+
+  FILE *fp = csvPath ? fopen(csvPath, "w") : NULL;
+  if (fp) {
+    fputs("time", fp);
+    for (int i = 0; i < nStates; ++i) fprintf(fp, ",x%d", i);
+    fputc('\n', fp);
+  }
+
+  typedef int64_t (*ode_fn_t)(void*, void*);
+  ode_fn_t fn = (ode_fn_t)addr;
+
+  double t = t0;
+  while (t <= tEnd + 0.5 * h) {
+    if (fp) {
+      fprintf(fp, "%.10g", t);
+      for (int i = 0; i < nStates; ++i) fprintf(fp, ",%.10g", realVars[i]);
+      fputc('\n', fp);
+    }
+    for (int i = 0; i < nStates; ++i) y0[i] = realVars[i];
+
+    sd.timeValue = t;
+    (void)fn(&data, NULL);
+    for (int i = 0; i < nStates; ++i) k1[i] = realVars[nStates + i];
+
+    for (int i = 0; i < nStates; ++i) realVars[i] = y0[i] + 0.5 * h * k1[i];
+    sd.timeValue = t + 0.5 * h;
+    (void)fn(&data, NULL);
+    for (int i = 0; i < nStates; ++i) k2[i] = realVars[nStates + i];
+
+    for (int i = 0; i < nStates; ++i) realVars[i] = y0[i] + 0.5 * h * k2[i];
+    (void)fn(&data, NULL);
+    for (int i = 0; i < nStates; ++i) k3[i] = realVars[nStates + i];
+
+    for (int i = 0; i < nStates; ++i) realVars[i] = y0[i] + h * k3[i];
+    sd.timeValue = t + h;
+    (void)fn(&data, NULL);
+    for (int i = 0; i < nStates; ++i) k4[i] = realVars[nStates + i];
+
+    for (int i = 0; i < nStates; ++i) {
+      realVars[i] = y0[i] + (h / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]);
+    }
+    t += h;
+  }
+
+  if (fp) fclose(fp);
+  free(realVars); free(y0); free(k1); free(k2); free(k3); free(k4);
+  return 0;
+}
+
+modelica_integer jitDriveRK4_mm(const char *fName,
+                                modelica_integer nStates,
+                                modelica_integer nAlgs,
+                                modelica_integer nParams,
+                                modelica_metatype startVals,
+                                modelica_real t0,
+                                modelica_real tEnd,
+                                modelica_real h,
+                                const char *csvPath)
+{
+  modelica_metatype tmp;
+  size_t i, count;
+  double *starts;
+  int st;
+  count = 0; tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) { count++; tmp = MMC_CDR(tmp); }
+  if ((modelica_integer)count != nStates) return 100;
+  starts = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  if (!starts) return 101;
+  i = 0; tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+    starts[i++] = mmc_unbox_real(MMC_CAR(tmp));
+    tmp = MMC_CDR(tmp);
+  }
+  st = omc_jit_drive_rk4(fName, (int)nStates, (int)nAlgs, (int)nParams,
+                         starts, t0, tEnd, h, csvPath);
+  free(starts);
+  return (modelica_integer)st;
+}
+
+/* Implicit Euler driver. Each step solves
+ *     F(y) = y - y_n - h * f(t_{n+1}, y) = 0
+ * via damped Newton with a finite-difference Jacobian
+ *     J = I - h * df/dy,  computed by central differences.
+ * The linear system J dy = -F is solved with naive Gauss-Jordan
+ * elimination with partial pivoting. Stops when ||dy||_inf < tol or
+ * after maxIter Newton iterations; either way, accepts the candidate
+ * and moves on so a stalled step does not abort the whole run.
+ * Suitable for small (<=~20 state) stiff demos; not a production solver. */
+int omc_jit_drive_implicit_euler(const char *fName,
+                                  int nStates, int nAlgs, int nParams,
+                                  const double *startVals,
+                                  double t0, double tEnd, double h,
+                                  const char *csvPath)
+{
+  void *addr = NULL;
+  int st = jitLookupAddress(fName, &addr);
+  if (st != 0) return st;
+  if (nStates < 0 || nAlgs < 0 || nParams < 0) return 5;
+  if (!(h > 0.0)) return 6;
+  size_t total = (size_t)(2 * nStates + nAlgs + nParams);
+  int n = nStates;
+  double *realVars = (double*)calloc(total > 0 ? total : 1, sizeof(double));
+  double *y_n   = (double*)calloc(n > 0 ? (size_t)n : 1, sizeof(double));
+  double *y     = (double*)calloc(n > 0 ? (size_t)n : 1, sizeof(double));
+  double *F     = (double*)calloc(n > 0 ? (size_t)n : 1, sizeof(double));
+  double *fEval = (double*)calloc(n > 0 ? (size_t)n : 1, sizeof(double));
+  double *dy    = (double*)calloc(n > 0 ? (size_t)n : 1, sizeof(double));
+  double *J     = (double*)calloc(n > 0 ? (size_t)(n * n) : 1, sizeof(double));
+  double *aug   = (double*)calloc(n > 0 ? (size_t)(n * (n + 1)) : 1, sizeof(double));
+  if (!realVars || !y_n || !y || !F || !fEval || !dy || !J || !aug) {
+    free(realVars); free(y_n); free(y); free(F); free(fEval); free(dy); free(J); free(aug);
+    return 7;
+  }
+  for (int i = 0; i < n; ++i) realVars[i] = startVals ? startVals[i] : 0.0;
+
+  SIMULATION_DATA sd; memset(&sd, 0, sizeof(sd));
+  sd.timeValue = t0; sd.realVars = realVars;
+  SIMULATION_DATA *sdp = &sd;
+  DATA data; memset(&data, 0, sizeof(data));
+  data.localData = &sdp;
+
+  FILE *fp = csvPath ? fopen(csvPath, "w") : NULL;
+  if (fp) {
+    fputs("time", fp);
+    for (int i = 0; i < n; ++i) fprintf(fp, ",x%d", i);
+    fputc('\n', fp);
+  }
+
+  typedef int64_t (*ode_fn_t)(void*, void*);
+  ode_fn_t fn = (ode_fn_t)addr;
+
+  const int maxIter = 25;
+  const double tol = 1e-10;
+  const double fdEps = 1e-7;
+
+  double t = t0;
+  while (t <= tEnd + 0.5 * h) {
+    if (fp) {
+      fprintf(fp, "%.10g", t);
+      for (int i = 0; i < n; ++i) fprintf(fp, ",%.10g", realVars[i]);
+      fputc('\n', fp);
+    }
+    for (int i = 0; i < n; ++i) { y_n[i] = realVars[i]; y[i] = realVars[i]; }
+
+    for (int it = 0; it < maxIter; ++it) {
+      for (int i = 0; i < n; ++i) realVars[i] = y[i];
+      sd.timeValue = t + h;
+      (void)fn(&data, NULL);
+      for (int i = 0; i < n; ++i) {
+        fEval[i] = realVars[n + i];
+        F[i] = y[i] - y_n[i] - h * fEval[i];
+      }
+      /* J = I - h * df/dy via central differences */
+      for (int j = 0; j < n; ++j) {
+        double save = y[j];
+        double eps = fdEps * (fabs(save) + 1.0);
+        y[j] = save + eps;
+        for (int i = 0; i < n; ++i) realVars[i] = y[i];
+        (void)fn(&data, NULL);
+        double fp_[64]; /* small upper bound; falls back to heap if larger */
+        double *fPlus = (n <= 64) ? fp_ : (double*)alloca(sizeof(double) * n);
+        for (int i = 0; i < n; ++i) fPlus[i] = realVars[n + i];
+        y[j] = save - eps;
+        for (int i = 0; i < n; ++i) realVars[i] = y[i];
+        (void)fn(&data, NULL);
+        for (int i = 0; i < n; ++i) {
+          double dfdy = (fPlus[i] - realVars[n + i]) / (2.0 * eps);
+          J[i * n + j] = ((i == j) ? 1.0 : 0.0) - h * dfdy;
+        }
+        y[j] = save;
+      }
+      /* Solve J dy = -F via Gauss-Jordan with partial pivoting */
+      for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) aug[i * (n + 1) + j] = J[i * n + j];
+        aug[i * (n + 1) + n] = -F[i];
+      }
+      int singular = 0;
+      for (int i = 0; i < n; ++i) {
+        int piv = i;
+        double maxAbs = fabs(aug[i * (n + 1) + i]);
+        for (int r = i + 1; r < n; ++r) {
+          double v = fabs(aug[r * (n + 1) + i]);
+          if (v > maxAbs) { maxAbs = v; piv = r; }
+        }
+        if (maxAbs < 1e-14) { singular = 1; break; }
+        if (piv != i) {
+          for (int c = 0; c <= n; ++c) {
+            double tmp_ = aug[i * (n + 1) + c];
+            aug[i * (n + 1) + c] = aug[piv * (n + 1) + c];
+            aug[piv * (n + 1) + c] = tmp_;
+          }
+        }
+        double diag = aug[i * (n + 1) + i];
+        for (int c = i; c <= n; ++c) aug[i * (n + 1) + c] /= diag;
+        for (int r = 0; r < n; ++r) {
+          if (r == i) continue;
+          double factor = aug[r * (n + 1) + i];
+          if (factor == 0.0) continue;
+          for (int c = i; c <= n; ++c) {
+            aug[r * (n + 1) + c] -= factor * aug[i * (n + 1) + c];
+          }
+        }
+      }
+      double maxDy = 0.0;
+      for (int i = 0; i < n; ++i) {
+        dy[i] = singular ? 0.0 : aug[i * (n + 1) + n];
+        if (fabs(dy[i]) > maxDy) maxDy = fabs(dy[i]);
+        y[i] += dy[i];
+      }
+      if (singular || maxDy < tol) break;
+    }
+
+    for (int i = 0; i < n; ++i) realVars[i] = y[i];
+    t += h;
+  }
+
+  if (fp) fclose(fp);
+  free(realVars); free(y_n); free(y); free(F); free(fEval); free(dy); free(J); free(aug);
+  return 0;
+}
+
+modelica_integer jitDriveImplicitEuler_mm(const char *fName,
+                                          modelica_integer nStates,
+                                          modelica_integer nAlgs,
+                                          modelica_integer nParams,
+                                          modelica_metatype startVals,
+                                          modelica_real t0,
+                                          modelica_real tEnd,
+                                          modelica_real h,
+                                          const char *csvPath)
+{
+  modelica_metatype tmp;
+  size_t i, count;
+  double *starts;
+  int st;
+  count = 0; tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) { count++; tmp = MMC_CDR(tmp); }
+  if ((modelica_integer)count != nStates) return 100;
+  starts = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  if (!starts) return 101;
+  i = 0; tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+    starts[i++] = mmc_unbox_real(MMC_CAR(tmp));
+    tmp = MMC_CDR(tmp);
+  }
+  st = omc_jit_drive_implicit_euler(fName, (int)nStates, (int)nAlgs, (int)nParams,
+                                    starts, t0, tEnd, h, csvPath);
+  free(starts);
+  return (modelica_integer)st;
 }
 
 /* MMC bridge for EXT_LLVM.jitDriveForwardEuler. */

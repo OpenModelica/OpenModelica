@@ -119,6 +119,44 @@ function jitDriveForwardEuler
     annotation(Library = "omcruntime");
 end jitDriveForwardEuler;
 
+function jitDriveRK4
+  "Classical fourth-order Runge-Kutta driver. Same contract as
+   jitDriveForwardEuler; takes h steps and writes states per step to
+   csvPath."
+  input String fName;
+  input Integer nStates;
+  input Integer nAlgs;
+  input Integer nParams;
+  input list<Real> startVals;
+  input Real t0;
+  input Real tEnd;
+  input Real h;
+  input String csvPath;
+  output Integer status;
+  external "C" status = jitDriveRK4_mm(fName, nStates, nAlgs, nParams,
+                                       startVals, t0, tEnd, h, csvPath)
+    annotation(Library = "omcruntime");
+end jitDriveRK4;
+
+function jitDriveImplicitEuler
+  "Implicit Euler driver. Each step solves F(y) = y - y_n - h*f(t_{n+1},y) = 0
+   via Newton with a finite-difference Jacobian and Gauss-Jordan linear
+   solve. Suitable for small stiff demos; not a production solver."
+  input String fName;
+  input Integer nStates;
+  input Integer nAlgs;
+  input Integer nParams;
+  input list<Real> startVals;
+  input Real t0;
+  input Real tEnd;
+  input Real h;
+  input String csvPath;
+  output Integer status;
+  external "C" status = jitDriveImplicitEuler_mm(fName, nStates, nAlgs, nParams,
+                                                  startVals, t0, tEnd, h, csvPath)
+    annotation(Library = "omcruntime");
+end jitDriveImplicitEuler;
+
 /*End of calls steering function generation*/
 
 /* Calls related to functions */

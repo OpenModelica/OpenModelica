@@ -287,6 +287,20 @@ algorithm
     " startVals=" + realVarsString(startVals) +
     " -> csv='" + csvPath + "' status=" + intString(drv) + "\n",
     sourceInfo());
+
+  csvPath := modelStr + "_jit_rk4.csv";
+  drv := EXT_LLVM.jitDriveRK4(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
+                              startVals, 0.0, 1.0, 0.01, csvPath);
+  Error.addInternalError(
+    "SimCodeToLLVM Phase 8: jitDriveRK4('" + odeSym + "') t=[0,1] h=0.01" +
+    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n", sourceInfo());
+
+  csvPath := modelStr + "_jit_imp_euler.csv";
+  drv := EXT_LLVM.jitDriveImplicitEuler(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
+                                        startVals, 0.0, 1.0, 0.01, csvPath);
+  Error.addInternalError(
+    "SimCodeToLLVM Phase 9: jitDriveImplicitEuler('" + odeSym + "') t=[0,1] h=0.01" +
+    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n", sourceInfo());
 end finalizeAndReport;
 
 protected function stateStartValues
