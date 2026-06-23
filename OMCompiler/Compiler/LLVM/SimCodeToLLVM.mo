@@ -583,6 +583,10 @@ algorithm
     try emitBoundParametersBlock(simCode, layout); else end try;
     try emitEventBlock(simCode, layout); else end try;
     try emitJacobianBlock(simCode); else end try;
+    try emitRecordsBlock(simCode); else end try;
+    try emitFunctionsBlock(simCode); else end try;
+    try emitNonlinearSystemsBlock(simCode); else end try;
+    try emitLinearSystemsBlock(simCode); else end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1776,6 +1780,95 @@ algorithm
   midProgram := DAEToMid.daeProgramToMid(moduleName, simFuncs, recordDecls);
   MidToLLVM.genProgram(midProgram);
 end emitUserFunctions;
+
+protected function emitRecordsBlock
+  "Displace <Model>_records.c when the SimCode has no record
+   declarations. The CodegenC template emits an
+   include-and-extern-C-only stub in that case (no exported
+   symbols), so dropping it from the clang loop is a pure win:
+   one fewer clang invocation per JIT-simulate, no IR change
+   required.
+
+   When recordDecls is non-empty SCTL must instead emit the
+   record_description globals as LLVM constants (roadmap item 4)
+   before _records.c can be displaced for those models. Today
+   we only handle the empty case to make progress on simple
+   models like HelloWorld, BouncingBall, ChuaCircuit."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
+algorithm
+  recordDecls := match simCode
+    case SimCode.SIMCODE(recordDecls = recordDecls) then recordDecls;
+  end match;
+  if listEmpty(recordDecls) then
+    recordDisplacedSegment("_records.c");
+  end if;
+end emitRecordsBlock;
+
+protected function emitNonlinearSystemsBlock
+  "Displace <Model>_02nls.c when the SimCode carries no nonlinear
+   systems. Empty in that case (include / extern-C only), same
+   logic as emitRecordsBlock. Models with real NLS keep the
+   segment on the clang path until SCTL learns to emit NLS
+   residuals + Jacobian columns directly."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCode.SimEqSystem> nls;
+algorithm
+  nls := match simCode
+    case SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(nonLinearSystems = nls))
+      then nls;
+  end match;
+  if listEmpty(nls) then
+    recordDisplacedSegment("_02nls.c");
+  end if;
+end emitNonlinearSystemsBlock;
+
+protected function emitLinearSystemsBlock
+  "Displace <Model>_03lsy.c when the SimCode carries no linear
+   systems. Mirrors emitNonlinearSystemsBlock; gated on
+   modelInfo.linearSystems being empty so models with real LSY
+   (Modelica.Mechanics.Rotational.Examples.First, ...) keep the
+   segment on clang until SCTL emits the LSY entry points."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCode.SimEqSystem> lsy;
+algorithm
+  lsy := match simCode
+    case SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(linearSystems = lsy))
+      then lsy;
+  end match;
+  if listEmpty(lsy) then
+    recordDisplacedSegment("_03lsy.c");
+  end if;
+end emitLinearSystemsBlock;
+
+protected function emitFunctionsBlock
+  "Displace <Model>_functions.c when the SimCode has no
+   user-defined Modelica functions. The CodegenC template emits
+   only the include / extern-C scaffolding in that case (no
+   exported symbols), so dropping it is a pure win -- same
+   logic as emitRecordsBlock for the records segment.
+
+   Models with user functions (Friction's
+   ExternalCombiTable1D_constructor, ChuaCircuit's Nf, ...) keep
+   _functions.c on the clang path until DAEToMid + MidToLLVM
+   can lower the full SimCodeFunction signature (arrays, complex
+   / ExternalObject types, external \"C\" bindings) -- that is
+   roadmap item 5."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCodeFunction.Function> simFuncs;
+algorithm
+  simFuncs := match simCode
+    case SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(functions = simFuncs))
+      then simFuncs;
+  end match;
+  if listEmpty(simFuncs) then
+    recordDisplacedSegment("_functions.c");
+  end if;
+end emitFunctionsBlock;
 
 protected function emitDisplacingStubs
   "Walk the runtimeEntryCatalog and emit IR for every entry whose body
