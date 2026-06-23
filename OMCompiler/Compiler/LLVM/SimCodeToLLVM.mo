@@ -1147,83 +1147,23 @@ algorithm
   synths := listReverse(synths);
 end collectAlgSynths;
 
-protected function isSimpleNonStiffODE
-  "True iff the model's parameter equations do not actually affect
-   the integration result. Pure-diagnostic parameter equations
-   (range asserts) do not influence the ODE math, so a model with
-   only assertion-shaped parameter equations still counts as a
-   candidate for the JACOBIAN_NOT_AVAILABLE fallback path.
-
-   HelloWorld qualifies (no paramEqs). MinAssert qualifies (one
-   EQ_PARAM_RANGE_ASSERT). BouncingBall qualifies (the events live
-   in zeroCrossings / when-equations, not parameterEquations).
-   ChuaCircuit does not (real parameter-value equations setting up
-   the model).
-
-   Note: the previous version of this gate also excluded models
-   with events. That was conservative -- the Jacobian stubs only
-   stamp JACOBIAN_NOT_AVAILABLE and return 0 regardless of whether
-   the model has events, so the gate now only checks paramEqs."
-  input SimCode.SimCode simCode;
-  output Boolean ok;
-protected
-  list<SimCode.SimEqSystem> paramEqs;
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, boolParamVars;
-  SimCodeVar.SimVars vars;
-  VarLayout layout;
-algorithm
-  paramEqs := match simCode
-    case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
-  end match;
-  if listEmpty(paramEqs) then
-    ok := true;
-    return;
-  end if;
-  /* Build a layout the way genSim does so classifyParamEq can resolve
-   * VK_PARAM crefs; only the result of the classification matters. */
-  vars := simCodeVars(simCode);
-  layout := buildVarLayout(vars);
-  ok := true;
-  for eq in paramEqs loop
-    if not isParamEqIntegrationNeutral(classifyParamEq(eq, layout, simCodeName(simCode))) then
-      ok := false;
-      return;
-    end if;
-  end for;
-end isSimpleNonStiffODE;
-
-protected function isParamEqIntegrationNeutral
-  "True iff this parameter-equation recipe has no effect on the
-   integration result -- only EQ_PARAM_RANGE_ASSERT, EQ_NOOP, or
-   EQ_ALG_CALL on a body that is itself pure-diagnostic. Used by
-   isSimpleNonStiffODE to allow the Jacobian-fallback path for
-   models whose parameter equations are pure-diagnostic asserts."
-  input EqRecipe r;
-  output Boolean b;
-algorithm
-  b := match r
-    case EQ_PARAM_RANGE_ASSERT() then true;
-    case EQ_NOOP()               then true;
-    else false;
-  end match;
-end isParamEqIntegrationNeutral;
-
 protected function emitJacobianBlock
-  "Emit the 22 _12jac.c entries when isSimpleNonStiffODE(simCode).
-   The 15 column-emit / DAG / const helpers are pure stubs (only
-   called when an analytic Jacobian is available, which we are not
-   providing). The 7 _initialAnalyticJacobianX entries call back
-   into the runtime to stamp jacobian->availability =
-   JACOBIAN_NOT_AVAILABLE so DASKR falls back to numerical
-   differencing rather than aborting on JACOBIAN_UNKNOWN."
+  "Emit the 22 _12jac.c entries. The 15 column-emit / DAG / const
+   helpers are pure stubs (only called when an analytic Jacobian is
+   available, which we are not providing). The 7
+   _initialAnalyticJacobianX entries call back into the runtime to
+   stamp jacobian->availability = JACOBIAN_NOT_AVAILABLE so DASKR
+   falls back to numerical differencing rather than aborting on
+   JACOBIAN_UNKNOWN. The stubs are semantically faithful for every
+   model: they describe the runtime-fallback path DASKR would take
+   anyway when no analytic Jacobian is exposed. Sparsity-pattern
+   hints emitted by codegen are not preserved, which costs perf on
+   large models but does not change results."
   input SimCode.SimCode simCode;
 protected
   String prefix;
   Absyn.Path name;
 algorithm
-  if not isSimpleNonStiffODE(simCode) then
-    return;
-  end if;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
   /* column / DAG / const helpers -- never called when no analytic
