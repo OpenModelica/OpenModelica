@@ -160,13 +160,23 @@ const char *omc_getLLVMToolsDir() {
  * dominant cost of a hot-cache call is the model's own runtime
  * loop, not the JIT plumbing.
  *
- * Cache key is modelName alone, NOT the bitcode bytes: clang
- * stamps timestamps and UUIDs into the .bc on every emit, so the
- * bytes change between runs even when the Modelica source is
- * unchanged. omc's interactive flow re-runs translateModel +
- * buildModel when the user actually edits the model, so any
- * stale cache entry from a previous translate() would be
- * superseded -- not an issue at the JIT layer.
+ * Cache key is modelName alone, NOT the bitcode bytes. The bytes
+ * change between back-to-back simulate() calls even when the
+ * source is unchanged, because CodegenC's template stamps a
+ * fresh modelGUID UUID into the generated C (see
+ * Compiler/Template/CodegenC.tpl, the
+ *   data->modelData->modelGUID = "{<%guid%>}";
+ * line) and the UUID flows into the linked bitcode as a string
+ * literal. A byte-fingerprint cache would never hit.
+ *
+ * The modelName-only key is safe because omc's interactive flow
+ * re-runs translateModel + buildModel when the user actually
+ * edits the model, so any stale cache entry from a prior
+ * simulate() of an edited model is superseded before it can be
+ * re-hit. If a future caller wants byte-level invalidation, the
+ * right hook is upstream: feed the SimCode SHA (or the source
+ * file mtime) into the key. The bitcode itself is not a useful
+ * fingerprint as long as CodegenC re-rolls the GUID per emit.
  *
  * Single-process, per-omc-session, no on-disk persistence
  * (omc's exit tears down the map). The map owns the LLJIT via
