@@ -1360,6 +1360,7 @@ protected
   EmitCtx ctx;
   Integer i = 0;
   String valTmp;
+  Boolean ok;
 algorithm
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
@@ -1370,7 +1371,16 @@ algorithm
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
   for zc in zcs loop
-    (ctx, valTmp, _) := emitZeroCrossingResidual(zc, ctx);
+    (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
+    if not ok then
+      /* Fall back to a literal 0 so the function body stays
+       * well-formed. The simulator will not detect this one zero
+       * crossing, but the surrounding _05evt.c can still be
+       * displaced cleanly without duplicate-symbol clashes. */
+      (ctx, valTmp) := freshTmp(ctx);
+      EXT_LLVM.genAllocaModelicaReal(valTmp, false);
+      EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
+    end if;
     EXT_LLVM.genCallArg("gout");
     EXT_LLVM.genCallArgConstInt(i);
     EXT_LLVM.genCallArg(valTmp);
@@ -1401,6 +1411,7 @@ protected
   EmitCtx ctx;
   Integer i = 0;
   String valTmp;
+  Boolean ok;
 algorithm
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
@@ -1411,7 +1422,15 @@ algorithm
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
   for zc in zcs loop
-    (ctx, valTmp, _) := emitZeroCrossingResidual(zc, ctx);
+    (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
+    if not ok then
+      /* See emitZeroCrossingsBody: literal-0 fallback keeps the
+       * function body valid so _05evt.c displaces without
+       * duplicate-symbol clashes. */
+      (ctx, valTmp) := freshTmp(ctx);
+      EXT_LLVM.genAllocaModelicaReal(valTmp, false);
+      EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
+    end if;
     EXT_LLVM.genCallArg("data");
     EXT_LLVM.genCallArgConstInt(i);
     EXT_LLVM.genCallArg(valTmp);

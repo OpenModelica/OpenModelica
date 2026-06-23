@@ -174,8 +174,21 @@ extern "C"
   llvm::Value *createLoadInst(const char *dest)
   {
     DBG("Create load instruction with dest:%s\n line %d of file \"%s\".\n",dest,__LINE__, __FILE__);
+    /* Same defence as createStoreInst / binopInit -- unordered_map
+     * default-inserts an empty unique_ptr when the name is missing,
+     * leaving destVar nullptr and the next member call segfaulting.
+     * Surface as an MMC failure so the surrounding try/else can
+     * skip the function. */
     Variable *destVar {program->currentFunc->symTab[dest].get()};
+    if (!destVar) {
+      fprintf(stderr,"createLoadInst: no Variable named '%s' in symboltable\n",dest);
+      MMC_THROW();
+    }
     llvm::AllocaInst* ai = destVar->getAllocaInst();
+    if (!ai) {
+      fprintf(stderr,"createLoadInst: '%s' has no AllocaInst\n",dest);
+      MMC_THROW();
+    }
     llvm::LoadInst *li = program->builder.CreateLoad(ai->getAllocatedType(), ai,
                                                     destVar->isVolatile(),
                                                     ai->getName());
