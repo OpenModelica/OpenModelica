@@ -86,9 +86,11 @@ private:
   // helpers
   void addSolverRow(const QString &name, const QString &method, const QJsonObject &params);
   void populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments);
+  static void applyFMIKindSolverFilter(QComboBox *pCombo, const QString &fmiKind, const QJsonArray &solvers);
   void populateSolverCombos();
   QJsonObject fetchDefaultSolverSettings(const QString &solverName);
   ModelWidget * mpModelWidget;
+  QJsonArray mSolvers;
   int mCurrentSolverRow = -1;
 
   // Solver configurations table: Name | Method

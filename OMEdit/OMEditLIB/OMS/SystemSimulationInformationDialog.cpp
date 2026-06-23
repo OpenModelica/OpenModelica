@@ -51,6 +51,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QStandardItemModel>
 
 /*!
  * \class SolverSettingsDialog
@@ -203,6 +204,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   QJsonObject settings;
   if (OMSProxy::instance()->getSolverSettings(mpModelWidget->getLibraryTreeItem()->getNameStructure(), settings)) {
     const QJsonArray solvers = settings["solvers"].toArray();
+    mSolvers = solvers;
 
     // Populate solvers table
     for (const QJsonValue &sv : solvers) {
@@ -250,6 +252,11 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
 
     QTableWidgetItem *pComponentItem = new QTableWidgetItem(displayName);
     pComponentItem->setData(Qt::UserRole, displayName);
+    // store fmiKind so populateSolverCombos can re-apply the filter after the solver list changes
+    const QString fmiKindForItem = pLibraryTreeItem->isComponentElement()
+      ? pLibraryTreeItem->getOMSModelElement()->getFMUInfo().getFMIKind()
+      : QString();
+    pComponentItem->setData(Qt::UserRole + 1, fmiKindForItem);
     pComponentItem->setToolTip(pLibraryTreeItem->getNameStructure());
     mpAssignmentsTable->setItem(row, 0, pComponentItem);
 
@@ -260,6 +267,10 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
       const QString solverName = sv.toObject()["name"].toString();
       pSolverCombo->addItem(solverName, solverName);
     }
+
+    // Disable solvers incompatible with this FMU's kind (table components have empty fmiKind).
+    if (!fmiKindForItem.isEmpty())
+      applyFMIKindSolverFilter(pSolverCombo, fmiKindForItem, solvers);
 
     const QString assigned = assignments.value(displayName).toString();
     int sidx = pSolverCombo->findData(assigned);
@@ -283,6 +294,57 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
 bool SystemSimulationInformationWidget::isVariableStepSizeSolver(const QString &method)
 {
   return method == "oms_mav" || method == "oms_mav2" || method == "cvode";
+}
+
+/*!
+ * \brief SystemSimulationInformationWidget::applyFMIKindSolverFilter
+ * Disables combo box items that are incompatible with the FMU's kind:
+ *   - "cs"    (co-simulation only)  → only oms_ma / oms_mav / oms_mav2 are valid
+ *   - "me"    (model-exchange only) → only cvode / euler are valid
+ *   - "me_cs" (both)                → all solvers are valid; nothing disabled
+ * \param pCombo   the solver combo box to filter
+ * \param fmiKind  the fmiKind string from FMUInfo ("cs", "me", or "me_cs")
+ */
+void SystemSimulationInformationWidget::applyFMIKindSolverFilter(QComboBox *pCombo, const QString &fmiKind, const QJsonArray &solvers)
+{
+  // methods valid for co-simulation masters
+  static const QSet<QString> csMethods = {"oms_ma", "oms_mav", "oms_mav2"};
+  // methods valid for model-exchange ODE integrators
+  static const QSet<QString> meMethods = {"cvode", "euler"};
+
+  // build name → method lookup from the solvers array
+  QHash<QString, QString> nameToMethod;
+  for (const QJsonValue &sv : solvers) {
+    const QJsonObject obj = sv.toObject();
+    nameToMethod[obj["name"].toString()] = obj["method"].toString();
+  }
+
+  QStandardItemModel *pModel = qobject_cast<QStandardItemModel*>(pCombo->model());
+  if (!pModel)
+    return;
+
+  for (int i = 0; i < pCombo->count(); ++i) {
+    const QString solverName = pCombo->itemData(i).toString();
+    if (solverName.isEmpty()) // "(none)" is always selectable
+      continue;
+
+    const QString method = nameToMethod.value(solverName);
+    bool enabled = true;
+    if (fmiKind == "cs") {
+      enabled = csMethods.contains(method);
+    } else if (fmiKind == "me") {
+      enabled = meMethods.contains(method);
+    }
+    // me_cs supports all methods — leave enabled
+    QStandardItem *pItem = pModel->item(i);
+    if (pItem) {
+      pItem->setEnabled(enabled);
+      pItem->setToolTip(!enabled
+        ? (fmiKind == "cs" ? tr("Not available for co-simulation FMUs")
+                           : tr("Not available for model-exchange FMUs"))
+        : QString());
+    }
+  }
 }
 
 /*!
@@ -386,6 +448,10 @@ void SystemSimulationInformationWidget::addSolverRow(const QString &name, const 
     pMethodCombo->setCurrentIndex(index);
   }
   mpSolversTable->setCellWidget(row, 1, pMethodCombo);
+  // Re-apply the FMI kind filter whenever the method changes (must connect after setCellWidget
+  // so the initial setCurrentIndex above does not trigger a premature populateSolverCombos call).
+  connect(pMethodCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &SystemSimulationInformationWidget::populateSolverCombos);
 }
 
 /*!
@@ -449,7 +515,20 @@ void SystemSimulationInformationWidget::populateSolverCombos()
       solverNames << item->text();
   }
 
-  // Rebuild assignment combos, preserving the current selection
+  // Rebuild mSolvers from the current table rows so the filter can look up methods
+  mSolvers = QJsonArray();
+  for (int r = 0; r < mpSolversTable->rowCount(); ++r) {
+    QTableWidgetItem *pNameItem = mpSolversTable->item(r, 0);
+    QComboBox *pMethodCombo = qobject_cast<QComboBox*>(mpSolversTable->cellWidget(r, 1));
+    if (pNameItem && pMethodCombo) {
+      QJsonObject s;
+      s["name"]   = pNameItem->text();
+      s["method"] = pMethodCombo->currentData().toString();
+      mSolvers.append(s);
+    }
+  }
+
+  // Rebuild assignment combos, preserving the current selection and re-applying the kind filter
   for (int r = 0; r < mpAssignmentsTable->rowCount(); ++r) {
     QComboBox *pCombo = qobject_cast<QComboBox*>(mpAssignmentsTable->cellWidget(r, 1));
     if (!pCombo)
@@ -462,6 +541,13 @@ void SystemSimulationInformationWidget::populateSolverCombos()
     int idx = pCombo->findData(current);
     if (idx > -1)
       pCombo->setCurrentIndex(idx);
+
+    QTableWidgetItem *pComponentItem = mpAssignmentsTable->item(r, 0);
+    if (pComponentItem) {
+      const QString fmiKind = pComponentItem->data(Qt::UserRole + 1).toString();
+      if (!fmiKind.isEmpty())
+        applyFMIKindSolverFilter(pCombo, fmiKind, mSolvers);
+    }
   }
 }
 
