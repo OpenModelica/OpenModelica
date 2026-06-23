@@ -555,24 +555,23 @@ if true then /* Suppress output */
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };
-  // "LLVM": use real LLVM modules only when both flags say so;
-  // otherwise pull in the stub package.
-  llvmEnabled := (OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS") == "")
-                 and (OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_LLVM_JIT") == "Yes");
-  llvmfiles := if llvmEnabled then
-    {
-      "../LLVM/MidToLLVMUtil.mo",
-      "../LLVM/EXT_LLVM.mo",
-      "../LLVM/MidToLLVM.mo",
-      "../LLVM/SimCodeToLLVM.mo"
-    }
+  // "LLVM": mirror the backendfiles  <>""  shape exactly -- the
+  // bootstrap omc Jenkins uses is stricter than the locally-built
+  // omc, and the previous  =="Yes"  spelling tripped its type
+  // checker even when the conditional is otherwise legal MetaModelica.
+  llvmfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_LLVM_JIT") <> "Yes" then
+  {
+    "../Stubs/EXT_LLVM.mo",
+    "../Stubs/MidToLLVM.mo",
+    "../Stubs/SimCodeToLLVM.mo"
+  }
   else
-    {
-      "../Stubs/EXT_LLVM.mo",
-      "../Stubs/MidToLLVM.mo",
-      "../Stubs/SimCodeToLLVM.mo"
-    }
-  ;
+  {
+    "../LLVM/MidToLLVMUtil.mo",
+    "../LLVM/EXT_LLVM.mo",
+    "../LLVM/MidToLLVM.mo",
+    "../LLVM/SimCodeToLLVM.mo"
+  };
   files := cat(1, alwaysfiles, backendfiles, llvmfiles);
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
