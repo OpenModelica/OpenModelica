@@ -573,13 +573,21 @@ extern "C" int createCallbackTable(const char *const modelName,
   /* Function-pointer fields. The `isFmu` flag and the four "has*" flags
    * mirror the conditionals CodegenC weaves into the .c initializer.
    * isFmu == true clears the simulation-driving entries; the FMI
-   * runtime supplies its own driver. */
+   * runtime supplies its own driver.
+   *
+   * The three solver-driver slots
+   * (performSimulation / performQSSSimulation / updateContinuousSystem)
+   * point at the non-prefixed omc_jit_* adapters defined in
+   * omc_jit_perform_simulation_adapter.c rather than at per-model
+   * <Model>_*. That way SCTL does not have to emit 600 lines of
+   * solver IR per model, and the CodegenC <Model>.c suppression
+   * (roadmap step 8) does not lose these symbols. */
   cbAddPtr(fields, omc_layout_callback_performSimulation,
-           mod, p + "_performSimulation",      isFmu);
+           mod, "omc_jit_performSimulation",      isFmu);
   cbAddPtr(fields, omc_layout_callback_performQSSSimulation,
-           mod, p + "_performQSSSimulation",   isFmu);
+           mod, "omc_jit_performQSSSimulation",   isFmu);
   cbAddPtr(fields, omc_layout_callback_updateContinuousSystem,
-           mod, p + "_updateContinuousSystem", isFmu);
+           mod, "omc_jit_updateContinuousSystem", isFmu);
   cbAddPtr(fields, omc_layout_callback_callExternalObjectDestructors,
            mod, p + "_callExternalObjectDestructors", false);
   cbAddPtr(fields, omc_layout_callback_initialNonLinearSystem,

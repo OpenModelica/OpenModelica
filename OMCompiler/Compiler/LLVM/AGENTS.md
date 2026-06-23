@@ -189,23 +189,19 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    `MMC_TRY_TOP` / `MMC_TRY_STACK` setjmp dance (expand to IR or
    punt under `-d=jitSimulate`), the Optimica branch.
 7. **`_performSimulation` / `_performQSSSimulation` /
-   `_updateContinuousSystem`.** TODO. **Do not** emit 600 lines of
-   solver IR per model. **Do not** edit
-   `SimulationRuntime/c/simulation/solver/perform_simulation.c.inc`
-   or the QSS sibling, and do not add a generic
-   `omc_performSimulation` in `libSimulationRuntimeC` -- the C runtime
-   is a library we link against, not a place we mutate from the LLVM
-   side. The right answer is one of:
-     a. Resolve `<Model>_performSimulation` through the JIT's
-        DynamicLibrarySearchGenerator against
-        `libSimulationRuntimeC` plus a tiny per-model wrapper kept
-        on the clang path until further notice.
-     b. Identify an existing runtime entry point (look in OMSI /
-        OMSimulator / solver_main) that already plays the generic
-        role and route the callback at it.
-   Either way: changes stay in `OMCompiler/Compiler/LLVM/` and
-   `OMCompiler/Compiler/runtime/llvm_gen*`. The C runtime stays
-   pristine.
+   `_updateContinuousSystem`.** DONE via adapter.
+   `OMCompiler/Compiler/runtime/omc_jit_perform_simulation_adapter.c`
+   pulls in `perform_simulation.c.inc` and
+   `perform_qss_simulation.c.inc` with the `prefixedName_*` macros
+   set to non-prefixed `omc_jit_*` symbols. The internal static
+   `omc_jit_updateContinuousSystem_inner` gets a thin external-linkage
+   wrapper `omc_jit_updateContinuousSystem` so the callback table
+   can address it. The C runtime under `SimulationRuntime/c/` is
+   untouched; the adapter lives in the LLVM tree.
+   `createCallbackTable` points the three solver-driver slots at
+   `omc_jit_*`; the JIT's `DynamicLibrarySearchGenerator` resolves
+   them against omcruntime in-process. SCTL emits zero solver IR
+   per model.
 8. **CodegenC suppression.** Final. With 1-7 done, gate
    `simulationFile` for `<Model>.c` on `Flags.isSet(Flags.JIT_SIMULATE)`
    and SCTL becomes the sole emitter. `compileModelToBitcode` can be
