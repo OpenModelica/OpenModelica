@@ -521,14 +521,21 @@ algorithm
    * itself stays on the legacy CodegenC + clang-via-Adrian path
    * until SimCodeToLLVM emits enough of the model to plug into the
    * existing DASSL runtime. */
-  if Flags.isSet(Flags.JIT_SIMULATE) and nUnsupported == 0 then
-    /* Pass 1: in-memory functionODE for the Phase 5/6 smoke test. The
-     * module is consumed (moved) by jitFinalizeNoEntry into the
+  if Flags.isSet(Flags.JIT_SIMULATE) then
+    /* Pass 1: in-memory functionODE for the Phase 5/6 smoke test.
+     * Gated on nUnsupported == 0 because emitODEEntryShell needs to
+     * lower every dynamic equation; one unsupported recipe means
+     * the functionODE body cannot be emitted (the C functionODE
+     * will be used instead). The Pass-2 stubs/blocks are unaffected
+     * by unsupported dynamic equations and still get to run.
+     * The module is consumed (moved) by jitFinalizeNoEntry into the
      * function-JIT, so it cannot be serialised after this. */
-    EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_ode");
-    if emitODEEntryShell(name, recipes, layout) then
-      if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
-      finalizeAndReport(name, layout, vars);
+    if nUnsupported == 0 then
+      EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_ode");
+      if emitODEEntryShell(name, recipes, layout) then
+        if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
+        finalizeAndReport(name, layout, vars);
+      end if;
     end if;
     /* Pass 2: a fresh module containing only the entry points that
      * displace .c files from compileModelToBitcode. _functionODE is
@@ -1158,12 +1165,26 @@ protected function emitJacobianBlock
    model: they describe the runtime-fallback path DASKR would take
    anyway when no analytic Jacobian is exposed. Sparsity-pattern
    hints emitted by codegen are not preserved, which costs perf on
-   large models but does not change results."
+   large models but does not change results.
+
+   Skipped when the model carries any linear or nonlinear systems:
+   those generate extra _functionJacLSJac<N>_column /
+   _initialAnalyticJacobianLSJac<N> entries that are not in the
+   fixed stub set above. Falling back to clang for the whole
+   _12jac.c is safer than emitting an incomplete stub set."
   input SimCode.SimCode simCode;
 protected
   String prefix;
   Absyn.Path name;
+  list<SimCode.SimEqSystem> linSys, nonlinSys;
 algorithm
+  (linSys, nonlinSys) := match simCode
+    case SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(linearSystems = linSys, nonLinearSystems = nonlinSys))
+      then (linSys, nonlinSys);
+  end match;
+  if not (listEmpty(linSys) and listEmpty(nonlinSys)) then
+    return;
+  end if;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
   /* column / DAG / const helpers -- never called when no analytic

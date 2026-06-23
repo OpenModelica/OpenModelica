@@ -5975,9 +5975,19 @@ algorithm
     fail();
   end if;
   skipFiles := listAppend(SimCodeToLLVM.displacedSegmentFiles(),
-                          /* segments with no exported symbols at all */
-                          {"_02nls.c", "_03lsy.c", "_11mix.c",
-                           "_records.c", "_functions.c"});
+                          /* _records.c and _functions.c are pure
+                           * include-and-comment files in every model
+                           * we have measured. The NLS / LSY / MIX
+                           * segments are empty for trivial models
+                           * but non-trivial for models that actually
+                           * carry such systems (Modelica.Mechanics
+                           * .Rotational.Examples.First exports
+                           * _initialLinearSystem from _03lsy.c),
+                           * so they cannot be unconditionally
+                           * skipped here -- they are only skipped
+                           * when SimCodeToLLVM puts them on the
+                           * dynamic skip list. */
+                          {"_records.c", "_functions.c"});
   scriptFile := prefix + "_jitcompile.sh";
   script := stringAppendList({
     "#!/bin/bash\n",
