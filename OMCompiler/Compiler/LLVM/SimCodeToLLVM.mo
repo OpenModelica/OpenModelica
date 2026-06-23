@@ -649,6 +649,7 @@ algorithm
     try emitLinearSystemsBlock(simCode); else reportBlockFailure("emitLinearSystemsBlock", name); end try;
     try emitMixedSystemsBlock(simCode); else reportBlockFailure("emitMixedSystemsBlock", name); end try;
     try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
+    try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1934,6 +1935,56 @@ algorithm
   end if;
   recordDisplacedSegment("_01exo.c");
 end emitExternalObjectDestructorsBlock;
+
+protected function emitModelEquationsBlock
+  "Lift  <Model>_functionODE,  <Model>_functionDAE  and
+   <Model>_ODE_DAG  into the active Pass-2 module as linkonce_odr
+   definitions. Bodies inline the dynamic-equation recipes the same
+   way emitODEEntryShell does for Pass 1's smoke test, but the
+   emission target is the _sctl module that ships to llvm-link, so
+   the IR is positioned to take over from CodegenC.
+
+   linkonce_odr keeps the merge sound while <Model>.c is still on the
+   clang path: CodegenC's strong copies arrive in the linked bitcode,
+   the linker keeps those and discards ours. When CodegenC gains a
+   JIT-aware template guard that drops the functionODE / functionDAE
+   bodies, SCTL's IR becomes the sole definition without any
+   further change here.
+
+   Skips  <Model>_functionODE_system0  (CodegenC declares it static,
+   so it has internal linkage and never collides) and the per-
+   equation  <Model>_eqFunction_N  helpers (their indices come from
+   the SimEqSystem.index numbering the EqRecipe pipeline does not
+   currently track; functionODE / functionDAE inline the equation
+   bodies anyway). Equation lowering re-uses the existing
+   emitEquationFunction primitive -- no new C++ machinery."
+  input list<EqRecipe> recipes;
+  input VarLayout layout;
+  input Absyn.Path modelName;
+protected
+  String prefix;
+  String fname;
+algorithm
+  prefix := modelSymbolPrefix(modelName);
+
+  fname := prefix + "_functionODE";
+  if emitEquationFunction(fname, recipes, layout, MODELICA_INTEGER) then
+    _ := EXT_LLVM.setLinkonceOdr(fname);
+  end if;
+
+  fname := prefix + "_functionDAE";
+  if emitEquationFunction(fname, recipes, layout, MODELICA_INTEGER) then
+    _ := EXT_LLVM.setLinkonceOdr(fname);
+  end if;
+
+  /* ODE_DAG: empty body. The C version calls buildEvalDAG_ODE with a
+   * constant eqMap to populate an evalSelection hint. The runtime
+   * tolerates no DAG hint -- HelloWorld-class non-evalSelection
+   * models do not consult it. */
+  fname := prefix + "_ODE_DAG";
+  emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
+  _ := EXT_LLVM.setLinkonceOdr(fname);
+end emitModelEquationsBlock;
 
 protected function emitNonlinearSystemsBlock
   "Displace <Model>_02nls.c when the SimCode carries no nonlinear
