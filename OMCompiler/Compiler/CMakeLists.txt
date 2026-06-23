@@ -336,6 +336,16 @@ if(WIN32)
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
   install(TARGETS omc
           COMPONENT omc)
+
+  # libopenblas.dll is linked dynamically (-lopenblas) by the *generated*
+  # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
+  # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
+  # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
+  # The autotools/OMDev build copies it explicitly (Makefile.omdev.mingw); do the
+  # same here so e.g. buildModelFMU() can bundle it into the exported FMU.
+  install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
+          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          COMPONENT omc)
 else(WIN32)
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)
