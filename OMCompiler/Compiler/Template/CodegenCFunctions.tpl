@@ -2087,7 +2087,7 @@ case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     <<
     <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
-    <%tmpVar%>._<%compname%> = <%unboxStr%>;
+    <%tmpVar%>._<%System.unquoteIdentifier(compname)%> = <%unboxStr%>;
     >>
     ;separator="\n")
   tmpVar
@@ -5511,11 +5511,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
       // let cast = typeCastContextInt(context, ty)
       '<%nosubname%>'
-    else if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))), boolNot(isStartCref(cr))) then
+    else if boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))) then
       // Without sim code scalarization array elements like arr[2] are not
       // standalone simvars and have to be addressed relative to the first
       // element of the array using a flattened index. $START crefs address the
-      // (array valued) start attribute and keep the regular handling.
+      // (array valued) start attribute and the flattened index selects the
+      // matching start element (see varArrayNameValues).
       match crefSubs(crefArrayGetFirstCref(cr))
       case {} then
         let &sub = buffer ""
@@ -6337,7 +6338,7 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Te
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path), &varDecls)
-  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
+  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%System.unquoteIdentifier(compn)%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
   let &preExp += ass
   name
 end daeExpRecord;
@@ -7982,10 +7983,25 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           let ty = crefShortType(name)
           if isStart then
-            // TODO: How to handle array case?
+            // The start attribute of a (non-scalarized) array variable can be
+            // either an array (start = {1,2,3}: one start.data element per array
+            // element, selected by the flattened index in &sub) or a single
+            // broadcast value (each start = 1: start.data has exactly one
+            // element). A scalar start variable has no subscript at all. Use the
+            // flattened index only when the start attribute actually holds one
+            // value per element, otherwise broadcast element [0] (issue #15686).
+            // Select the element via the address of the chosen lvalue so the
+            // whole expression stays an lvalue: $START crefs may appear in
+            // array-building contexts (real_array_create(&tmp, &<expr>, ...)),
+            // and a plain ?: ternary is an rvalue whose address cannot be taken.
             match ty
               case "real" then
-                '((modelica_real *)(<%varAttributes(var, &sub)%>.start.data))[0]'
+                let &nosub = buffer ""
+                let attr = varAttributes(var, &nosub)
+                if stringEq(&sub, "") then
+                  '((modelica_real *)(<%attr%>.start.data))[0]'
+                else
+                  '(*(real_array_nr_of_elements(<%attr%>.start) == 1 ? &((modelica_real *)(<%attr%>.start.data))[0] : &((modelica_real *)(<%attr%>.start.data))<%&sub%>))'
               else
                 '<%varAttributes(var, &sub)%>.start'
           else if isPre then

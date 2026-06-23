@@ -135,7 +135,7 @@ protected
     input Connection conn;
   algorithm
     if listLength(leftConnectors) <> listLength(rightConnectors) then
-      Error.assertion(false, getInstanceName() + " got unbalanced connection " + toString(conn) + ":" +
+      Error.terminate(getInstanceName() + " got unbalanced connection " + toString(conn) + ":" +
         List.toString(leftConnectors, Connector.toString, "\n  lhs: ", "{", ", ", "}", true) +
         List.toString(rightConnectors, Connector.toString, "\n  rhs: ", "{", ", ", "}", true), sourceInfo());
       fail();

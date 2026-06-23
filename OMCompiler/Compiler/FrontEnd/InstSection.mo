@@ -2781,7 +2781,7 @@ protected function instWhenEqBranch
   input Boolean inUnrollLoops;
   input ConnectionGraph.ConnectionGraph inGraph;
   input SourceInfo info;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Exp outCondition;
@@ -4248,7 +4248,7 @@ algorithm
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
                                  DAE.CALL_ATTR(
                                    equalityConstraintFunctionReturnType,
-                                   false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                                   false, false, false, false, inlineType1, DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), // use the inline type
                         source // set the origin of the element
                         )};
         graph := ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);
@@ -4291,7 +4291,7 @@ algorithm
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
                                  DAE.CALL_ATTR(
                                    equalityConstraintFunctionReturnType,
-                                   false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                                   false, false, false, false, inlineType1, DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), // use the inline type
                         source // set the origin of the element
                         )};
         graph := ConnectionGraph.addConnection(graph, ComponentReferenceBasics.crefStripLastSubs(c1_1), ComponentReferenceBasics.crefStripLastSubs(c2_1), breakDAEElements);

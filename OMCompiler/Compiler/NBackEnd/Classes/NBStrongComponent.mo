@@ -572,7 +572,7 @@ public
     input Pointer<Integer> uniqueIndex;
     input UnorderedSet<ComponentRef> slice_set;
     output list<StrongComponent> new_residuals;
-    output DAEType dae_type;
+    output DAEType dae_type = DAEType.RESIDUAL;
   protected
     Pointer<Equation> eqn;
     ComponentRef eqn_name;

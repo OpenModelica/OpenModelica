@@ -709,7 +709,7 @@ public
   algorithm
     (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend, reverse);
     if not listEmpty(new_subscripts) then
-      Error.assertion(false, getInstanceName() + " failed because the subscripts "
+      Error.terminate(getInstanceName() + " failed because the subscripts "
         + List.toString(subscripts, Subscript.toString) + " could not be fully merged onto "
         + ComponentRef.toString(old_cref) + ".\nResult: " + ComponentRef.toString(cref)
         + " with leftover: " + List.toString(new_subscripts, Subscript.toString) + ".", sourceInfo());
@@ -726,7 +726,7 @@ public
   algorithm
     (subscripts, cref) := match cref
       local
-        ComponentRef rest_cref;
+        ComponentRef rest_cref = EMPTY();
         list<Subscript> cref_subs;
 
       case CREF(subscripts = cref_subs)
@@ -1062,7 +1062,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+          Error.terminate(getInstanceName() + " failed", sourceInfo());
         then
           fail();
     end match;
@@ -1253,7 +1253,7 @@ public
       case (EMPTY(), _)       then -1;
       case (WILD(), _)        then -1;
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+        Error.terminate(getInstanceName() + " failed", sourceInfo());
       then fail();
     end match;
   end compare;

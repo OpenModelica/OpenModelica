@@ -153,7 +153,7 @@ public
       case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call type", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call type", sourceInfo());
         then
           fail();
     end match;
@@ -236,7 +236,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
+          Error.terminate(getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
         then fail();
     end match;
   end typeCall;
@@ -299,7 +299,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -455,7 +455,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -486,7 +486,7 @@ public
 
   function variability
     input NFCall call;
-    output Variability var;
+    output Variability var = Variability.CONTINUOUS;
   algorithm
     var := match call
       local
@@ -505,6 +505,8 @@ public
               case "cardinality" then Variability.PARAMETER;
               else algorithm var_set := false; then Variability.CONTINUOUS;
             end match;
+          else
+            var_set := false;
           end if;
 
           if not var_set then
@@ -523,7 +525,7 @@ public
       case TYPED_ARRAY_CONSTRUCTOR() then call.var;
       case TYPED_REDUCTION() then call.var;
       else algorithm
-        Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then fail();
     end match;
   end variability;
@@ -771,7 +773,7 @@ public
       case TYPED_REDUCTION() then call.fn;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped function", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped function", sourceInfo());
         then
           fail();
     end match;
@@ -865,7 +867,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
 
@@ -1231,7 +1233,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
     end match;
@@ -1313,7 +1315,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then
           fail();
     end match;
@@ -2488,7 +2490,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown function args", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown function args", sourceInfo());
         then
           fail();
     end match;
@@ -2658,7 +2660,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -2712,7 +2714,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid reduction call", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid reduction call", sourceInfo());
         then
           fail();
     end match;

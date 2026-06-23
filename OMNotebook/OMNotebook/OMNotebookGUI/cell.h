@@ -223,8 +223,6 @@ namespace IAEX
     Cell *last_;
     Cell *previous_;
     Cell *child_;
-
-    int references_;
   };
 }
 #endif

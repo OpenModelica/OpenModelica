@@ -135,7 +135,7 @@ protected
   list<tuple<String, Binding>> ty_attr;
   SCode.Comment cmt;
   SourceInfo info;
-  ExpressionIterator binding_iter;
+  ExpressionIterator binding_iter = ExpressionIterator.NONE_ITERATOR();
   list<ComponentRef> crefs;
   Expression exp;
   list<AttributeIterator> ty_attr_iters;
@@ -194,7 +194,7 @@ algorithm
         vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
       end for;
     else
-      Error.assertion(false, getInstanceName() + " failed on " +
+      Error.terminate(getInstanceName() + " failed on " +
         Variable.toString(var, printBindingType = true), var.info);
     end try;
   else
@@ -251,7 +251,7 @@ algorithm
       vars := List.keepPositions(vars, indices, zeroBased = true);
     end if;
   else
-    Error.assertion(false, getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
+    Error.terminate(getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
   end try;
 end scalarizeBackendVariable;
 

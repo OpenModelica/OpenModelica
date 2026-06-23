@@ -53,7 +53,7 @@ public
     output DAE.CallAttributes fattr;
   algorithm
     fattr := DAE.CALL_ATTR(NFType.toDAE(returnType), attr.tuple_, attr.builtin,
-      attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall);
+      attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall, DAE.NoReturn.RETURNS);
   end toDAE;
 
 annotation(__OpenModelica_Interface="nf_frontend");

@@ -508,23 +508,18 @@ protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
-  Boolean update = true;
+  Boolean reuse;
 algorithm
   cache := getGlobalRoot(Global.instNFNodeCacheIndex);
-  if not listEmpty(cache) then
-    // if absyn is the same, all fine, reuse
-    if referenceEq(absynProgram, Util.tuple21(listHead(cache))) then
-      (program, top) := Util.tuple22(listHead(cache));
-      InstNode.clearGeneratedInners(top);
-      update := false;
-    else
-      update := true;
-      cache := {};
-      setGlobalRoot(Global.instNFNodeCacheIndex, cache);
+  // if absyn is the same, all fine, reuse
+  reuse := if listEmpty(cache) then false else referenceEq(absynProgram, Util.tuple21(listHead(cache)));
+  if reuse then
+    (program, top) := Util.tuple22(listHead(cache));
+    InstNode.clearGeneratedInners(top);
+  else
+    if not listEmpty(cache) then
+      setGlobalRoot(Global.instNFNodeCacheIndex, {});
     end if;
-  end if;
-
-  if update then
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
     program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
@@ -540,8 +535,7 @@ algorithm
       execStat("NFApi.mkTop("+ name +")");
     end if;
 
-    cache := {(absynProgram, (program, top))};
-    setGlobalRoot(Global.instNFNodeCacheIndex, cache);
+    setGlobalRoot(Global.instNFNodeCacheIndex, {(absynProgram, (program, top))});
   end if;
 end mkTop;
 
@@ -1050,7 +1044,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class tree", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown class tree", sourceInfo());
       then
         fail();
   end match;
@@ -1201,7 +1195,7 @@ algorithm
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
 
-  json := JSON.addPair("name", dumpJSONNodePath(node, not isExtends), json);
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
@@ -1501,7 +1495,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component " +
+        Error.terminate(getInstanceName() + " got unknown component " +
           InstNode.name(node), sourceInfo());
       then
         fail();

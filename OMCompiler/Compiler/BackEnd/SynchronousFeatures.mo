@@ -1983,7 +1983,7 @@ protected function substGetPartition
 protected
   DAE.CallAttributes attrs;
 algorithm
-  attrs := DAE.CALL_ATTR(Expression.typeof(inExp), false, true, true, false, DAE.NO_INLINE(), DAE.NO_TAIL());
+  attrs := DAE.CALL_ATTR(Expression.typeof(inExp), false, true, true, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS);
   outExp := DAE.CALL(Absyn.IDENT("$getPart"), {inExp}, attrs);
 end substGetPartition;
 

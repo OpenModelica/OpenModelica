@@ -185,7 +185,7 @@ function evaluateExpTraverser
   input SourceInfo info;
   input Boolean changed = false;
   output Expression outExp;
-  output Boolean outChanged;
+  output Boolean outChanged = changed;
 protected
   Expression e;
   ComponentRef cref;

@@ -504,7 +504,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
       then
         ();
 
@@ -567,7 +567,7 @@ algorithm
 
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+              Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
             then
               fail();
         end match;
@@ -583,7 +583,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
       then
         fail();
 
@@ -909,7 +909,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-record binding " +
+        Error.terminate(getInstanceName() + " got non-record binding " +
           Expression.toString(binding_exp), sourceInfo());
       then
         fail();
@@ -1597,7 +1597,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding.", sourceInfo());
       then
         fail();
 

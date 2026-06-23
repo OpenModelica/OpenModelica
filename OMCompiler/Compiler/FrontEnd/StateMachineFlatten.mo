@@ -761,7 +761,7 @@ algorithm
 
   // a.active and (smOf.fsm_of_a.activeReset or smOf.fsm_of_a.activeResetStates[i])
   andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT), orExp);
-  //callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  //callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   // pre(activeExp)
   //preExp := DAE.CALL(Absyn.IDENT("pre"), {activeExp}, callAttributes);
   //andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT),  DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), preExp));
@@ -868,7 +868,7 @@ algorithm
   // a.active and (smOf.fsm_of_a.activeReset or smOf.fsm_of_a.activeResetStates[i])
   andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT), orExp);
 
-  callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   // previous(a.x)
   previousExp := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(inLHSCref, inLHSty)}, callAttributes);
 
@@ -941,7 +941,7 @@ algorithm
   end try;
   // reference the active indicator for this state
   activeRef := DAE.CREF(qCref("active", DAE.T_BOOL_DEFAULT, {}, inStateCref), DAE.T_BOOL_DEFAULT);
-  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   if isResetEquation then // x_previous
     expElse := DAE.CREF(ComponentReference.appendStringLastIdent("_previous", cref), ty);
   else                    // previous(x)
@@ -977,7 +977,7 @@ algorithm
   end try;
   // reference the active indicator for this state
   activeRef := DAE.CREF(qCref("active", DAE.T_BOOL_DEFAULT, {}, inStateCref), DAE.T_BOOL_DEFAULT);
-  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   expElse := DAE.RCONST(0);
   scalar1 := DAE.IFEXP(activeRef, scalar, expElse);
   // state.x = if state.active then .. else expElse

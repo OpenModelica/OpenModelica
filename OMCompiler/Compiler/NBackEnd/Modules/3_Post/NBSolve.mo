@@ -542,7 +542,7 @@ public
     input list<Slice<Pointer<Variable>>> var_slices;
     output Equation solved_eqn = eqn;
     input UnorderedMap<Path, Function> funcMap;
-    output Status status;
+    output Status status = Status.UNPROCESSED;
   protected
     list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
     Expression lhs = Util.getOption(Equation.getLHS(eqn));
@@ -837,7 +837,7 @@ protected
     input ComponentRef cref;
     input Equation eqn;
     output Equation eqnOut = eqn "don't change the equation";
-    output Status status;
+    output Status status = Status.UNSOLVABLE;
     output RelationInversion invertRelation = RelationInversion.FALSE;
   algorithm
     for stmt in body.when_stmts loop
@@ -1048,7 +1048,7 @@ protected
     input ComponentRef cref;
     input output Boolean crefFound;
     input output list<Expression> inverseInstructions;
-    output Status status;
+    output Status status = Status.EXPLICIT; // just set this per default, since the algorithm detects implicit equations
   protected
     list<Expression> argList = {}, invargList = {};
     Boolean crefFoundInRecursion;
