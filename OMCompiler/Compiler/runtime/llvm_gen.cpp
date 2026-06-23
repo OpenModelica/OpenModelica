@@ -812,7 +812,7 @@ int createLongJmp() {
 int allocaInt(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, NBITS_MODELICA_INTEGER))};
-  program->currentFunc->symTab[alloci->getName().str()] =
+  program->currentFunc->symTab[std::string(name)] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
@@ -820,7 +820,7 @@ int allocaInt(const char *name, const bool isVolatile) {
 int allocaBoolean(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, 1))};
-  program->currentFunc->symTab[alloci->getName().str()] =
+  program->currentFunc->symTab[std::string(name)] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
@@ -850,7 +850,7 @@ int allocaDouble(const char *name, const bool isVolatile) {
 int allocaInt8PtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE))};
-  program->currentFunc->symTab[alloci->getName().str()] =
+  program->currentFunc->symTab[std::string(name)] =
       std::make_unique<Variable>(alloci, false);
   return 0;
 }
@@ -859,7 +859,7 @@ int allocaInt8PtrTy(const char *name) {
 int allocaInt8PtrPtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE_PTR))};
-  program->currentFunc->symTab[alloci->getName().str()] =
+  program->currentFunc->symTab[std::string(name)] =
       std::make_unique<Variable>(alloci, false);
   return 0;
 }
