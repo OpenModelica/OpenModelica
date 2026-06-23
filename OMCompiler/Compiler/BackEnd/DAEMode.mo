@@ -363,8 +363,11 @@ algorithm
     // derivative vanishes at zero speed -- enters IDA's global Jacobian, which then
     // fails to factorize (IDA_LSETUP_FAIL, -6) at t = 0. ODE mode keeps exactly such
     // loops inner, which is why it succeeds where DAE mode fails.
+    // Restricted to the C runtime: the C++ runtime does not evaluate an inner
+    // nonlinear system inside the daeMode residual (the integration freezes), so for
+    // simCodeTarget=Cpp the equation must remain a global residual as before.
     case ({eq as BackendDAE.EQUATION()}, false, false, _)
-      guard(Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE))
+      guard(Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) and not stringEqual(Config.simCodeTarget(), "Cpp"))
       algorithm
         new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
         traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
