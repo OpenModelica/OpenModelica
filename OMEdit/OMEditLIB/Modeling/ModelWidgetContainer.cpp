@@ -4208,6 +4208,17 @@ void GraphicsView::manhattanizeItems()
  */
 void GraphicsView::deleteItems()
 {
+  // For SSP models the Python server owns the model state, so OMCUndoCommand (which restores
+  // canvas state from a ModelInfo snapshot) cannot undo a delete — the Python server still
+  // has the element removed and the canvas/server would be out of sync, causing a crash.
+  // Instead use createOMSimulatorUndoCommand which snapshots via exportSnapshot and restores
+  // via importSnapshot + reLoadOMSimulatorModel, keeping the Python server and canvas in sync.
+  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
+    emit deleteSignal();
+    mpModelWidget->createOMSimulatorUndoCommand(QStringLiteral("Delete items"));
+    mpModelWidget->updateModelText();
+    return;
+  }
   mpModelWidget->beginMacro("Delete items");
   ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
   emit deleteSignal();
