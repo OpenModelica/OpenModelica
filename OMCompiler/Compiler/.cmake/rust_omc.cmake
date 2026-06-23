@@ -642,6 +642,52 @@ function(omc_rust_omshell_web_page _label _binname _srcindex)
   add_dependencies(rust_omshell_${_label}_web rust_wasm)
 endfunction()
 
+# Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
+# rust_wasm cargo invocation already built), this is the C++ Qt OMShell compiled
+# with Qt for WebAssembly — a separate toolchain, so it is a nested cmake build
+# (OMShellGUI/wasm) driven here. The result is staged in web/OMShell-qt/ next to
+# the shared omc module + worker, which the page drives in-browser exactly like
+# the other two. Skipped (with a status message) when no Qt-wasm toolchain is
+# found, so builds without it are unaffected. Reads omc_rust_setup_wasm's locals
+# (_web_dir) and the file-scope RUST_OMC_DIR.
+function(omc_rust_omshell_qt_web_page)
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+      CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
+  set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
+  if(NOT EXISTS ${_tc})
+    message(STATUS "OMShell Qt web page skipped: no Qt-for-WebAssembly toolchain at "
+                   "${_tc} (set -DOMSHELL_QT_WASM_PREFIX=<prefix> to enable).")
+    return()
+  endif()
+
+  set(_qt_src ${CMAKE_SOURCE_DIR}/OMShell/OMShell/OMShellGUI/wasm)
+  set(_qt_bld ${CMAKE_CURRENT_BINARY_DIR}/omshell-qt-wasm)
+  set(_qt_pkgdir ${_web_dir}/OMShell-qt)
+
+  # Let the wasm Qt find its matching host tools (moc/rcc/uic): honour an explicit
+  # QT_HOST_PATH cache/env value, otherwise the toolchain falls back on its own.
+  set(_host_arg "")
+  if(QT_HOST_PATH)
+    set(_host_arg -DQT_HOST_PATH=${QT_HOST_PATH})
+  elseif(DEFINED ENV{QT_HOST_PATH})
+    set(_host_arg -DQT_HOST_PATH=$ENV{QT_HOST_PATH})
+  endif()
+
+  add_custom_target(rust_omshell_qt_web ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
+    COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
+            -DCMAKE_TOOLCHAIN_FILE=${_tc} ${_host_arg} -DCMAKE_BUILD_TYPE=Release
+    COMMAND ${CMAKE_COMMAND} --build ${_qt_bld} --parallel
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${_qt_bld}/OMShell-qt.html ${_qt_bld}/OMShell-qt.js
+            ${_qt_bld}/OMShell-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    COMMENT "Qt: building OMShell-qt web page -> ${_qt_pkgdir}"
+    VERBATIM)
+  add_dependencies(rust_omshell_qt_web rust_wasm)
+endfunction()
+
 function(omc_rust_setup_wasm)
   # RUST_OMC_WASM_MODE = <host>-<profile>: host selects the wasm-bindgen target
   # (nodejs / web), profile the cargo profile.
@@ -779,6 +825,7 @@ function(omc_rust_setup_wasm)
     if(_host STREQUAL "web")
       omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)
       omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
+      omc_rust_omshell_qt_web_page()
     else()
       message(STATUS "OMShell web pages skipped: RUST_OMC_WASM_MODE is a Node host "
                      "(set web-release/web-debug to build them).")

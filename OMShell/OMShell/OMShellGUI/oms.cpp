@@ -49,6 +49,9 @@
 // STD Headers
 #include <iostream>
 
+// QT Headers
+#include <QTimer>
+
 //OMS Headers
 #include "oms.h"
 
@@ -254,20 +257,12 @@ OMS::OMS( QWidget* parent )
   cursor_.insertText( tr("\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n"), textFormat_ );
 
   delegate_ = IAEX::OmcInteractiveEnvironment::getInstance();
-  // create command compleation instance
-  QString openmodelica( delegate_->OpenModelicaHome() );
-  if( openmodelica.isEmpty() )
-    QMessageBox::critical(nullptr, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
-
+  // create command completion instance from the bundled command file (see
+  // oms.qrc), so completion works regardless of the installation layout and on
+  // the web build where there is no installation directory on disk.
   try
   {
-    QString commandfile;
-    if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-      commandfile = openmodelica + "share/omshell/commands.xml";
-    else
-      commandfile = openmodelica + "/share/omshell/commands.xml";
-
-    commandcompletion_ = IAEX::CommandCompletion::instance( commandfile );
+    commandcompletion_ = IAEX::CommandCompletion::instance( ":/commands.xml" );
   }
   catch( std::exception &e )
   {
@@ -287,7 +282,32 @@ OMS::OMS( QWidget* parent )
 
   commands_ = new QStringList();
   currentCommand_ = -1;
+  busy_ = false;
   addCommandLine();
+
+#ifdef __EMSCRIPTEN__
+  // The browser omc starts with no library installed. The worker init skips the
+  // MSL install so this window appears first; queue it now (non-blocking, so it
+  // does not freeze the Qt thread during startup), with the GUI visible.
+  QTimer::singleShot(0, this, [this]() {
+    if( delegate_ )
+      delegate_->startBackgroundCommand( "installPackage(Modelica)" );
+  });
+
+  // Reflect activity in the status bar: download progress while a file is being
+  // fetched, otherwise "Evaluating..." while a command runs.
+  QTimer *statusTimer = new QTimer(this);
+  connect(statusTimer, &QTimer::timeout, this, [this]() {
+    QString p = delegate_ ? delegate_->progressText() : QString();
+    if( !p.isEmpty() )
+      statusBar()->showMessage( p );
+    else if( busy_ )
+      statusBar()->showMessage( tr("Evaluating...") );
+    else
+      statusBar()->clearMessage();
+  });
+  statusTimer->start( 150 );
+#endif
 }
 
 OMS::~OMS()
@@ -460,6 +480,10 @@ void OMS::addCommandLine()
 
 void OMS::returnPressed()
 {
+  // ignore new input while a command is still running
+  if( busy_ )
+    return;
+
   // find the last command sign
   cursor_.movePosition( QTextCursor::End, QTextCursor::MoveAnchor );
   QTextBlock block = moshEdit_->document()->findBlock( cursor_.position() );
@@ -507,6 +531,11 @@ void OMS::returnPressed()
   // send command to OMC
   if( delegate_ )
   {
+    // block further input until the command (which may keep the event loop
+    // running on the web build) completes
+    busy_ = true;
+    moshEdit_->setReadOnly( true );
+
     // 2006-02-02 AF, Added try-catch
     try
     {
@@ -514,6 +543,8 @@ void OMS::returnPressed()
     }
     catch( std::exception &e )
     {
+      busy_ = false;
+      moshEdit_->setReadOnly( false );
       exceptionInEval(e);
       return;
     }
@@ -532,6 +563,9 @@ void OMS::returnPressed()
     {
       cursor_.insertText(error);
     }
+
+    busy_ = false;
+    moshEdit_->setReadOnly( false );
   }
   else
   {

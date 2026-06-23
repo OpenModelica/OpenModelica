@@ -104,15 +104,20 @@ async function evalWithDownloads(src) {
   }
 }
 
-async function doInit() {
+async function doInit(installMsl) {
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
   }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only
-  // surfaces its diagnostics, it does not stop the shell from starting.
-  await evalWithDownloads("installPackage(Modelica)");
-  const message = cleanError(omc_eval("getErrorString()"));
+  // surfaces its diagnostics, it does not stop the shell from starting. A client
+  // that wants its window up first (OMShell-qt) passes installMsl=false and runs
+  // installPackage(Modelica) itself as an ordinary command after it is visible.
+  let message = "";
+  if (installMsl) {
+    await evalWithDownloads("installPackage(Modelica)");
+    message = cleanError(omc_eval("getErrorString()"));
+  }
   const version = unquote(trim(omc_eval("getVersion()")));
   return { kind: "ready", ok: true, version, message };
 }
@@ -128,7 +133,7 @@ self.onmessage = async (e) => {
   await ready;
   try {
     if (msg.cmd === "init") {
-      self.postMessage(await doInit());
+      self.postMessage(await doInit(msg.installMsl !== false));
     } else if (msg.cmd === "eval") {
       self.postMessage(await doEval(msg.src));
     }

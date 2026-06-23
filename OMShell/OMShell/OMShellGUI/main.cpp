@@ -51,12 +51,13 @@
 #define GC_THREADS
 #endif
 
-#ifndef OMC_RUST_ABI
+#if !defined(OMC_RUST_ABI) && !defined(__EMSCRIPTEN__)
 extern "C" {
 #include "meta/meta_modelica.h"
 }
 #endif
 
+#ifndef __EMSCRIPTEN__
 #define CONSUME_CHAR(value, res, len, i) \
     if (value[i] == '\\' && i + 1 < len) { \
         i++; \
@@ -93,6 +94,7 @@ QString unparse(QString value)
     }
     return res;
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -102,6 +104,8 @@ int main(int argc, char *argv[])
   QApplication app(argc, argv);
 
   IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance(threadData);
+
+#ifndef __EMSCRIPTEN__
   env->evalExpression("getInstallationDirectoryPath()");
   QString dir = unparse(env->getResult()) + "/share/omshell/nls";
   QString locale = QString("OMShell_") + QLocale::system().name();
@@ -124,6 +128,9 @@ int main(int argc, char *argv[])
     QMessageBox::critical( 0, "OpenModelica Error", QString("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(cdCmd).arg(cdRes));
     exit(1);
   }
+#else
+  (void)env;
+#endif
 
   OMS oms;
   oms.show();
