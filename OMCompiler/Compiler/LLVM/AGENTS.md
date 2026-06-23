@@ -43,11 +43,19 @@ away as `<Model>.c` lifts into IR (see roadmap).
 
 ---
 
-## 3. No C codegen
+## 3. No C codegen, do not edit the C runtime
 
 The compiler does not generate C. Templates may stop emitting things
-SCTL now owns; no new C templates. Pre-built runtime helpers in
-`libSimulationRuntimeC` are fine. No inline-C-string emission.
+SCTL now owns; no new C templates. No inline-C-string emission.
+
+The C runtime under `OMCompiler/SimulationRuntime/c/` is a library we
+link against, not a codegen target and not a place to grow new
+generic entry points "for SCTL". Changes stay in the LLVM tree
+(`OMCompiler/Compiler/LLVM/`, `OMCompiler/Compiler/runtime/llvm_gen*`,
+`OMCompiler/Compiler/Stubs/EXT_LLVM.mo`). Reach existing runtime
+functionality through the existing callbacks and through the JIT's
+`DynamicLibrarySearchGenerator` against the already-linked runtime
+library.
 
 ---
 
@@ -157,23 +165,33 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
 4. **`<Model>_setupDataStruc`.** TODO. Needs `createSetupDataStruc`
    driven by `llvm_gen_layout.h`'s MODEL_DATA / DATA offsets, plus
    MMC-literal emit primitives for the resource literal table.
-5. **`<Model>_dummyVAR_INFO` + `_OMC_LIT_RESOURCE_*`.** TODO. Global
-   alias for `dummyVAR_INFO`; MMC_DEFSTRINGLIT / MMC_DEFSTRUCTLIT
-   layout primitives for the resource literals.
+5. **Resource literals (`_OMC_LIT_RESOURCE_*`).** TODO. Internal
+   linkage in `<Model>.c`, only consumed by `setupDataStruc` to feed
+   `OpenModelica_updateUriMapping`. Land alongside step 4 via the
+   same MMC_DEFSTRINGLIT / MMC_DEFSTRUCTLIT layout primitives.
+   `<Model>_dummyVAR_INFO` is unused externally and can be skipped.
 6. **`main()` shim.** TODO. Stack-alloc DATA/MODEL_DATA/SIMULATION_INFO,
    wire pointers, call `setupDataStruc`, tail-call
    `_main_SimulationRuntime`. Decide on the `MMC_TRY_TOP`/`STACK`
    setjmp dance (expand to IR or punt under `-d=jitSimulate`).
 7. **`_performSimulation` / `_performQSSSimulation` /
    `_updateContinuousSystem`.** TODO. **Do not** emit 600 lines of
-   solver IR per model. Lift `perform_simulation.c.inc` and
-   `perform_qss_simulation.c.inc` into regular `.c` files in
-   `libSimulationRuntimeC` as non-prefixed
-   `omc_performSimulation` / `omc_performQSSSimulation` /
-   `omc_updateContinuousSystem` that call
-   `data->callback->updateContinuousSystem` rather than the
-   prefixed-inline version. Callback table then points at the generic
-   functions; SCTL emits nothing per model for these slots.
+   solver IR per model. **Do not** edit
+   `SimulationRuntime/c/simulation/solver/perform_simulation.c.inc`
+   or the QSS sibling, and do not add a generic
+   `omc_performSimulation` in `libSimulationRuntimeC` -- the C runtime
+   is a library we link against, not a place we mutate from the LLVM
+   side. The right answer is one of:
+     a. Resolve `<Model>_performSimulation` through the JIT's
+        DynamicLibrarySearchGenerator against
+        `libSimulationRuntimeC` plus a tiny per-model wrapper kept
+        on the clang path until further notice.
+     b. Identify an existing runtime entry point (look in OMSI /
+        OMSimulator / solver_main) that already plays the generic
+        role and route the callback at it.
+   Either way: changes stay in `OMCompiler/Compiler/LLVM/` and
+   `OMCompiler/Compiler/runtime/llvm_gen*`. The C runtime stays
+   pristine.
 8. **CodegenC suppression.** Final. With 1-7 done, gate
    `simulationFile` for `<Model>.c` on `Flags.isSet(Flags.JIT_SIMULATE)`
    and SCTL becomes the sole emitter. `compileModelToBitcode` can be

@@ -805,6 +805,93 @@ extern "C" int createCallbackTable(const char *const modelName,
   return 0;
 }
 
+/* ------------------------------------------------------------------------ *
+ * setupDataStruc shell emission.
+ *
+ * Emits the two critical pointer wire-ups every model's setupDataStruc
+ * performs, as a linkonce_odr  void <Model>_setupDataStruc(DATA*,
+ * threadData_t*)  function:
+ *
+ *   threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = data;
+ *   data->callback = &<Model>_callback;
+ *
+ * The remaining ~70 modelData scalar / string assignments CodegenC
+ * emits are intentionally omitted: they are accessed by various
+ * runtime functions during simulation, and the linkonce_odr CodegenC
+ * copy still wins at llvm-link today, so the model still gets its
+ * fully-initialized modelData via the C path. This shell is the IR
+ * scaffolding for the future commit that lifts the full body (steps
+ * 4-5 of the roadmap). Once CodegenC stops emitting the strong copy,
+ * this shell will need to grow the remaining stores.
+ *
+ * Returns 0 on success, non-zero on duplicate / missing module.
+ * ------------------------------------------------------------------------ */
+extern "C" int createSetupDataStrucShell(const char *const modelName) {
+  if (!program || !program->module) {
+    fprintf(stderr, "createSetupDataStrucShell: no active module\n");
+    return 1;
+  }
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Module &mod = *program->module;
+
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(ctx);
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(ctx);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(ctx);
+  llvm::PointerType *const ptrTy = llvm::PointerType::getUnqual(ctx);
+
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false);
+  const std::string symName =
+      std::string(modelName) + "_setupDataStruc";
+  if (mod.getFunction(symName)) {
+    fprintf(stderr,
+            "createSetupDataStrucShell: '%s' already defined\n",
+            symName.c_str());
+    return 2;
+  }
+  llvm::Function *const fn = llvm::Function::Create(
+      fnTy, llvm::Function::LinkOnceODRLinkage, symName, mod);
+  llvm::Function::arg_iterator argIt = fn->arg_begin();
+  llvm::Argument *const dataArg = &*argIt++;
+  dataArg->setName("data");
+  llvm::Argument *const tdArg = &*argIt;
+  tdArg->setName("threadData");
+
+  llvm::BasicBlock *const entryBB = llvm::BasicBlock::Create(ctx, "entry", fn);
+  llvm::IRBuilder<> b(entryBB);
+
+  /* threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = data
+   *
+   * Offset = offsetof(threadData_t, localRoots) + index * sizeof(void*).
+   * sizeof(void*) = 8 on every target the JIT supports today. */
+  const size_t lrSlotOffset =
+      omc_layout_TD_localRoots +
+      static_cast<size_t>(omc_value_LOCAL_ROOT_SIMULATION_DATA) * 8;
+  llvm::Value *const lrAddr = b.CreateGEP(
+      i8, tdArg, llvm::ConstantInt::get(i64, lrSlotOffset), "lrAddr");
+  b.CreateStore(dataArg, lrAddr);
+
+  /* data->callback = &<Model>_callback */
+  const std::string callbackGlobal = std::string(modelName) + "_callback";
+  llvm::GlobalVariable *const cbGV = mod.getNamedGlobal(callbackGlobal);
+  if (!cbGV) {
+    /* createCallbackTable should have emitted this earlier in the same
+     * Pass-2 walk; tolerating its absence would emit a setupDataStruc
+     * whose callback wire-up was silently NULL. */
+    fprintf(stderr,
+            "createSetupDataStrucShell: callback global '%s' missing\n",
+            callbackGlobal.c_str());
+    return 3;
+  }
+  llvm::Value *const cbAddr = b.CreateGEP(
+      i8, dataArg, llvm::ConstantInt::get(i64, omc_layout_DATA_callback),
+      "cbAddr");
+  b.CreateStore(cbGV, cbAddr);
+
+  b.CreateRetVoid();
+  return 0;
+}
+
 /* Process-global bitcode buffer stashed by SimCodeToLLVM. Consumed (cleared)
  * by omc_runModelViaJIT so each model run starts from a clean slate. The
  * buffer is the in-memory replacement for the transient <prefix>_sctl.bc

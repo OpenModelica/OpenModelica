@@ -27,6 +27,7 @@
  * specifically for this file. */
 #include "simulation_data.h"
 #include "openmodelica_func.h"
+#include "gc/omc_gc.h"
 #include "llvm_gen_layout.h"
 
 const size_t omc_layout_DATA_localData      = offsetof(DATA, localData);
@@ -45,6 +46,10 @@ const size_t omc_layout_SI_realParameter    = offsetof(SIMULATION_INFO, realPara
 const size_t omc_layout_SI_booleanParameter = offsetof(SIMULATION_INFO, booleanParameter);
 const size_t omc_layout_SI_relations        = offsetof(SIMULATION_INFO, relations);
 const size_t omc_layout_SI_extObjs          = offsetof(SIMULATION_INFO, extObjs);
+
+const size_t omc_layout_DATA_callback       = offsetof(DATA, callback);
+const size_t omc_layout_TD_localRoots       = offsetof(threadData_t, localRoots);
+const int    omc_value_LOCAL_ROOT_SIMULATION_DATA = LOCAL_ROOT_SIMULATION_DATA;
 
 /* Callback function-pointer struct (openmodelica_func.h). One offset per
  * field so llvm_gen.cpp can lay out the IR-side @<Model>_callback global

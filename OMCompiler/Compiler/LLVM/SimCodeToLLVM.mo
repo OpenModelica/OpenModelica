@@ -651,6 +651,7 @@ algorithm
     try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
     try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
+    try emitSetupDataStrucShellBlock(name); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -2026,6 +2027,23 @@ algorithm
     fail();
   end if;
 end emitCallbackTableBlock;
+
+protected function emitSetupDataStrucShellBlock
+  "Emit the linkonce_odr <Model>_setupDataStruc shell into the active
+   Pass-2 module. Wires just the two critical pointers (callback,
+   threadData->localRoots[SIMULATION_DATA]); the rest of the body
+   stays with CodegenC for now. Must run after emitCallbackTableBlock
+   so the @<Model>_callback global it references exists in the module
+   when the store is composed."
+  input Absyn.Path modelName;
+protected
+  Integer st;
+algorithm
+  st := EXT_LLVM.genSetupDataStrucShell(modelSymbolPrefix(modelName));
+  if st <> 0 then
+    fail();
+  end if;
+end emitSetupDataStrucShellBlock;
 
 protected function emitNonlinearSystemsBlock
   "Displace <Model>_02nls.c when the SimCode carries no nonlinear

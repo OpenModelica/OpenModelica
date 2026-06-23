@@ -232,6 +232,20 @@ function genCallbackTable
                Include = "int createCallbackTable(const char *modelName, int isFmu, int hasNlsSystems, int hasLsSystems, int hasMsSystems, int hasInitialLambda0, int homotopyMethodCode);");
 end genCallbackTable;
 
+function genSetupDataStrucShell
+  "Emit a linkonce_odr  <Model>_setupDataStruc(DATA*, threadData_t*)
+   wiring just  threadData->localRoots[SIMULATION_DATA] = data  and
+   data->callback = &<Model>_callback. The remaining modelData scalar
+   / string stores stay with CodegenC until the full setupDataStruc
+   lift lands; with linkonce_odr the CodegenC strong copy wins at
+   llvm-link today regardless. Returns 0 on success."
+  input String modelName;
+  output Integer status;
+  external "C" status = createSetupDataStrucShell(modelName)
+    annotation(Library = "omcruntime",
+               Include = "int createSetupDataStrucShell(const char *modelName);");
+end genSetupDataStrucShell;
+
 function setLinkonceOdr
   "Flip a function's linkage in the active module to linkonce_odr.
    Used after emitStub to mark stubs in <Model>.c that intentionally

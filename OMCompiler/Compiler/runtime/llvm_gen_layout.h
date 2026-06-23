@@ -42,6 +42,15 @@ extern const size_t omc_layout_SI_booleanParameter;
 extern const size_t omc_layout_SI_relations;
 extern const size_t omc_layout_SI_extObjs;
 
+/* DATA.callback (pointer to the OpenModelicaGeneratedFunctionCallbacks
+ * struct) + threadData_s.localRoots[] (void* array) + the int slot
+ * index reserved for SIMULATION_DATA. The setupDataStruc emitter
+ * wires data->callback and threadData->localRoots[SIMULATION_DATA]
+ * directly via these. */
+extern const size_t omc_layout_DATA_callback;
+extern const size_t omc_layout_TD_localRoots;
+extern const int    omc_value_LOCAL_ROOT_SIMULATION_DATA;
+
 /* Callback function-pointer struct (OpenModelicaGeneratedFunctionCallbacks)
  * total size and per-field byte offsets. Consumed by createCallbackTable
  * in llvm_gen.cpp. */

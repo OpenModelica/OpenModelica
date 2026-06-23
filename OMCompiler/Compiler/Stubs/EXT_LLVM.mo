@@ -134,6 +134,11 @@ function setLinkonceOdr
   output Integer status = 1;
 end setLinkonceOdr;
 
+function genSetupDataStrucShell
+  input String modelName;
+  output Integer status = 1;
+end genSetupDataStrucShell;
+
 function genCallbackTable
   input String modelName;
   input Integer isFmu;
