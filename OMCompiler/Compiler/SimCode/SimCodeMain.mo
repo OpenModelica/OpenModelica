@@ -88,6 +88,7 @@ import ErrorExt;
 import ExecStat;
 import FGraph;
 import Flags;
+import FlagsUtil;
 import FlatModel = NFFlatModel;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
@@ -1209,6 +1210,14 @@ algorithm
 
   // new backend - also activates new frontend by default
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // The C++ runtime keeps arrays un-expanded (StatArrayDim members) and cannot
+    // use the scalarized var layout; the C runtime does not yet support
+    // non-scalarized arrays. Force simCodeScalarize=false for the C++ target only,
+    // leaving the default (true) for the C target (issue #15496). Must happen
+    // before any scalarize-dependent decision in the pipeline.
+    if stringEqual(Config.simCodeTarget(), "Cpp") then
+      FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
+    end if;
     // ToDo: set permanently matching -> SBGraphs
     System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStatReset();
@@ -1313,6 +1322,13 @@ algorithm
   file_name_prefix := if fileNamePrefix == "<default>" then AbsynUtil.pathString(className) else fileNamePrefix;
 
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // The C++ runtime keeps arrays un-expanded (StatArrayDim members) and cannot
+    // use the scalarized var layout; the C runtime, on the other hand, does not
+    // yet support non-scalarized arrays. So force simCodeScalarize=false for the
+    // C++ target only, leaving the default (true) for the C target (issue #15496).
+    if stringEqual(Config.simCodeTarget(), "Cpp") then
+      FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
+    end if;
     func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
     (outLibs, outFileDir, resultValues, _) := translateModelCallBackendNB(flatModel, func_map, className, file_name_prefix, simSettings);
   else

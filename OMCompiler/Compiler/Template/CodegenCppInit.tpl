@@ -153,6 +153,15 @@ template scalarVariableXML(SimCode simCode, SimVar simVar, HashTableCrIListArray
  "Generates code for ScalarVariable file for FMU target."
 ::=
   match simVar
+    case SIMVAR(type_ = T_ARRAY(), arrayCref = SOME(__)) then
+      let variableCode = if generateFMUModelDescription then CodegenFMUCommon.ScalarVariableType(simVar) else
+                                                             ScalarVariableType(simCode, name, aliasvar, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_, complexStartExpressions, stateDerVectorName)
+      <<
+      <ArrayVariable <%scalarVariableAttributeXML(simVar, simCode, indexForUndefinedReferences, generateFMUModelDescription)%>>
+        <%variableCode%>
+        <%simVar.numArrayElement |> dim => '<Dimension start="<%dim%>"/>'; separator="\n"%>
+      </ArrayVariable>
+      >>
     case SIMVAR(type_ = T_ARRAY()) then
       /* call ScalarVariableType for array to update complexStartExpressions */
       let _ = if not generateFMUModelDescription then
@@ -202,7 +211,7 @@ end getAliasAttribute;
 template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasVariable simVarAlias, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_, Text& complexStartExpressions, Text stateDerVectorName)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
-  match type_
+  match Types.arrayElementType(type_)
     case T_INTEGER(__) then
       let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)
       let fixed_  = ' fixed="<%isFixed%>"'
