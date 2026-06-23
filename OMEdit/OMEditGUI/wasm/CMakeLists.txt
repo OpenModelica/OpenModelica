@@ -98,7 +98,9 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
 # WITHOUT_OSG: OMEdit's maintained "no OpenSceneGraph animation" build flag
 # (no osg on wasm). Guards the Animation includes/usages across MainWindow,
 # PlotWindowContainer, SimulationDialog, ModelWidgetContainer, LibraryTreeWidget.
-target_compile_definitions(OMEditLib PRIVATE OMC_RUST_ABI WITHOUT_OSG)
+# PUBLIC so the OMEdit-qt executable (main.cpp) inherits them too — main.cpp pulls
+# in MainWindow.h, whose omc include path is gated on OMC_RUST_ABI.
+target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI WITHOUT_OSG)
 # omc_rust_embedding.h (self-contained threadData_t/MMC-free ABI) + the benign
 # omc runtime metadata headers it pulls in.
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)

@@ -113,6 +113,14 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
+#elif defined(__EMSCRIPTEN__) // wasm: no execinfo/backtrace, no addr2line subprocess
+
+#include <signal.h>
+void signalHandler(int signalNumber)
+{
+  exit(signalNumber);
+}
+
 #else // Unix
 
 #include <signal.h>
