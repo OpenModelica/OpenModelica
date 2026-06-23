@@ -1993,9 +1993,13 @@ algorithm
 end absoluteSlot;
 
 protected function emitReadRealVar
-  "Emit  %dst = call double @omc_jit_get_real_var(ptr %data, i64 slot)
-   into the active function body, returning the name of the freshly
-   alloca'd double the call result is stored to."
+  "Inline the read of
+     data->localData[0]->realVars[data->simulationInfo->realVarsIndex[slot]]
+   into the active function body via createInlinedReadRealVar, then
+   return the alloca name holding the loaded double. Replaces the
+   former omc_jit_get_real_var runtime call so the LLVM optimizer can
+   fold redundant loads of the realVars / realVarsIndex base pointers
+   across multiple reads in the same function."
   input Integer slot;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -2003,9 +2007,7 @@ protected function emitReadRealVar
 algorithm
   (outCtx, dst) := freshTmp(ctx);
   EXT_LLVM.genAllocaModelicaReal(dst, false);
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCallArgConstInt(slot);
-  EXT_LLVM.genCall("omc_jit_get_real_var", MODELICA_REAL, dst, true);
+  EXT_LLVM.genReadRealVar("data", slot, dst);
 end emitReadRealVar;
 
 protected function emitReadRealParam

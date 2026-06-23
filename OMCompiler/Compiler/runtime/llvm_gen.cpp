@@ -98,6 +98,133 @@ int writeBitcodeToFile(const char *path) {
   return 0;
 }
 
+/* ------------------------------------------------------------------------ *
+ * Inlined DATA-struct accessors emitted directly into model functions.
+ *
+ * Layout offsets come from llvm_gen_layout.c (which uses offsetof() on
+ * the runtime DATA / SIMULATION_DATA / SIMULATION_INFO definitions),
+ * so this file does not need to mirror the struct shape in C++ -- the
+ * C runtime is the single source of truth.
+ *
+ * Every createInlined* primitive emits its GEP / load / store chain
+ * into the current builder insert point, registering the result alloca
+ * (if any) under the requested name in the per-function symtab. They
+ * compose: emitReadRealVar in SimCodeToLLVM.mo calls a sequence of
+ * these to inline the chain that the omc_jit_get_real_var runtime
+ * helper previously wrapped.
+ * ------------------------------------------------------------------------ */
+extern "C" {
+  extern const size_t omc_layout_DATA_localData;
+  extern const size_t omc_layout_DATA_simulationInfo;
+  extern const size_t omc_layout_SD_timeValue;
+  extern const size_t omc_layout_SD_realVars;
+  extern const size_t omc_layout_SD_integerVars;
+  extern const size_t omc_layout_SD_booleanVars;
+  extern const size_t omc_layout_SI_realVarsIndex;
+  extern const size_t omc_layout_SI_integerVarsIndex;
+  extern const size_t omc_layout_SI_booleanVarsIndex;
+  extern const size_t omc_layout_SI_realParamsIndex;
+  extern const size_t omc_layout_SI_realParameter;
+  extern const size_t omc_layout_SI_booleanParameter;
+  extern const size_t omc_layout_SI_relations;
+}
+
+/* Helper: load (i8-typed) pointer offset `bytes` past `basePtr`, then
+ * load a pointer value at that address. Used to chain through the
+ * DATA struct's nested pointer fields. Returns the LoadInst whose
+ * value is the loaded pointer. */
+static llvm::Value *emitGEPLoadPtr(llvm::Value *const basePtr,
+                                   const size_t byteOffset) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const gep = b.CreateGEP(
+      i8, basePtr, llvm::ConstantInt::get(i64, byteOffset), "");
+  llvm::Type *const ptrTy = llvm::PointerType::getUnqual(program->context);
+  return b.CreateLoad(ptrTy, gep, "");
+}
+
+/* Helper: dereference `basePtr` (treated as a pointer-to-pointer) once.
+ * Equivalent to *(void**)basePtr. */
+static llvm::Value *emitLoadPtr(llvm::Value *const basePtr) {
+  llvm::Type *const ptrTy = llvm::PointerType::getUnqual(program->context);
+  return program->builder.CreateLoad(ptrTy, basePtr, "");
+}
+
+/* Helper: load symtab entry (requires the entry to be an alloca already
+ * registered by allocaDouble / createFunctionBody arg-registration). */
+static llvm::Value *loadFromSymtab(const char *const name) {
+  Variable *const v = program->currentFunc->symTab[name].get();
+  if (!v) {
+    fprintf(stderr,
+            "loadFromSymtab: no Variable named '%s' in symboltable\n", name);
+    MMC_THROW();
+  }
+  llvm::AllocaInst *const ai = v->getAllocaInst();
+  if (!ai) {
+    fprintf(stderr, "loadFromSymtab: '%s' has no AllocaInst\n", name);
+    MMC_THROW();
+  }
+  return program->builder.CreateLoad(ai->getAllocatedType(), ai,
+                                     v->isVolatile(), ai->getName());
+}
+
+/* createInlinedReadRealVar: emit the GEP / load chain that returns
+ *
+ *   data->localData[0]->realVars[slot]
+ *
+ * directly into the active function body. Stores the resulting double
+ * into the alloca registered under `dstName` (caller is responsible
+ * for allocaDouble(dstName) before this call). `dataArgName` is the
+ * symtab name of the DATA* argument (typically "data").
+ *
+ * Note: SCTL passes the flat realVars[] slot via absoluteSlot(...,
+ * subIndex), so we index `realVars[slot]` directly. We do NOT go
+ * through data->simulationInfo->realVarsIndex[slot] -- that
+ * indirection is what CodegenC does to translate from a SimVar's
+ * array-relative index to the flat one, but SCTL already resolved
+ * the flat index at codegen time. Skipping the indirection also
+ * means the inlined chain stays valid in Pass 1's smoke test, where
+ * the fabricated DATA struct has data->simulationInfo == NULL.
+ *
+ * Replaces the omc_jit_get_real_var runtime helper -- the IR is
+ * now visible to LLVM's optimizer so common subexpressions across
+ * accesses (the realVars base pointer) can be hoisted. */
+extern "C" int createInlinedReadRealVar(const char *const dataArgName,
+                                        const int64_t slot,
+                                        const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+
+  /* localData = *(SIMULATION_DATA**)(data + offset_localData) */
+  llvm::Value *const localDataPP =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
+  /* localData[0] -- localData is SIMULATION_DATA**, so deref once. */
+  llvm::Value *const sd = emitLoadPtr(localDataPP);
+
+  /* realVars = sd->realVars (modelica_real *) */
+  llvm::Value *const realVars =
+      emitGEPLoadPtr(sd, omc_layout_SD_realVars);
+
+  /* val = realVars[slot] */
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const valAddr = b.CreateGEP(
+      dbl, realVars, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const val = b.CreateLoad(dbl, valAddr, "");
+
+  /* store into dst alloca */
+  Variable *const dstVar = program->currentFunc->symTab[dstName].get();
+  if (!dstVar) {
+    fprintf(stderr,
+            "createInlinedReadRealVar: dst '%s' not in symtab\n", dstName);
+    MMC_THROW();
+  }
+  llvm::AllocaInst *const dstAi = dstVar->getAllocaInst();
+  b.CreateStore(val, dstAi);
+  return 0;
+}
+
 /* Process-global bitcode buffer stashed by SimCodeToLLVM. Consumed (cleared)
  * by omc_runModelViaJIT so each model run starts from a clean slate. The
  * buffer is the in-memory replacement for the transient <prefix>_sctl.bc

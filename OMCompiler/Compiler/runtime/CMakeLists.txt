@@ -66,7 +66,13 @@ set(OMC_RUNTIIME_SOURCES
 if(OM_OMC_ENABLE_LLVM_JIT)
   # llvm_gen_wrappers.c defines run_jit_internal which llvm_gen.cpp
   # forward-declares and the JIT path calls at runtime.
-  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c)
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c)
+  # llvm_gen_layout.c uses offsetof() on the runtime DATA struct, so it
+  # needs the simulation_data.h header on its include path. The header
+  # itself lives in OMCompiler/SimulationRuntime/c/ and is part of the
+  # runtime build; we only need its layout, not the full runtime here.
+  set_source_files_properties(llvm_gen_layout.c PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
 else()
   list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
 endif()

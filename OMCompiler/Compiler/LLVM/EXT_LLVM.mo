@@ -122,6 +122,25 @@ function genCallArgConstInt
   external "C" createCallArgConstInt(I) annotation(Library = "omcruntime", Include = "int createCallArgConstInt(const int64_t src);");
 end genCallArgConstInt;
 
+function genReadRealVar
+  "Inline the GEP / load chain that reads
+     data->localData[0]->realVars[data->simulationInfo->realVarsIndex[slot]]
+   into the active function body, storing the loaded double into the
+   alloca already registered under dstName. dataArgName is the symtab
+   name of the DATA* function argument (typically \"data\"). The caller
+   is responsible for calling genAllocaModelicaReal(dstName) before
+   this. Replaces the omc_jit_get_real_var runtime helper -- the IR
+   is now visible to LLVM's optimizer so common subexpressions across
+   accesses (the realVars base pointer, the realVarsIndex base
+   pointer, ...) can be hoisted."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadRealVar(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadRealVar(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadRealVar;
+
 function genCallArgMmcJumpr
   "Fetches the mmc_jmpr from threadData & adds it to the arg vector."
   external "C" createCallArgMmcJmpr() annotation(Library="omcruntime");

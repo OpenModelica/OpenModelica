@@ -56,6 +56,43 @@ Exceptions:
 - Iterators with verbose nested template types when the surrounding code
   makes the element type obvious.
 
+### Const-correctness
+
+Apply `const` aggressively in both C and C++:
+
+- **Function arguments that are not modified.** Pointer / reference
+  parameters take `const` unless the function intentionally writes
+  through them. `const char *name` not `char *name`. Same for
+  `const std::string &s` over `std::string &s` when the function only
+  reads. C `offsetof()`-helper exports are `extern const size_t ...`,
+  never plain `extern size_t ...`.
+- **Local variables that are assigned once.** Local `llvm::Type *`,
+  `llvm::Value *`, `size_t`, etc. that are computed once and read
+  many times take `const`. Local raw pointers into the LLVM IR (e.g.
+  the result of `getelementptr`) similarly take `const`.
+- **Pointer-to-const through structural chains.** If the function
+  reads `data->localData[0]->realVars[idx]`, the chain pointers
+  should be `const SIMULATION_DATA *`, `const modelica_real *`, ...
+  Avoid casting away const just to call a non-const-correct callee;
+  fix the callee instead.
+- **Member functions in C++ helpers.** Mark const if they don't
+  mutate `*this`. The runtime-side `Variable::getAllocaInst()`,
+  `isVolatile()`, and similar accessors must be const.
+- **C++ references over pointers when nullability is not part of
+  the contract.** A `const llvm::Module &mod` better expresses
+  "must be valid, won't be modified" than `const llvm::Module *mod`.
+
+Two things `const` does NOT cover here:
+
+- LLVM API objects (`llvm::IRBuilder<>`, `llvm::Function*` returned
+  by `getFunction()`, ...) often must be non-const because the API
+  is not const-clean. That's a library limitation; do not paper over
+  it by casting. Pass them through as the LLVM API expects.
+- `std::unique_ptr<T>` moved into a container — the unique_ptr is
+  non-const at the call site so it can be `std::move`'d. Const goes
+  on the *pointee* type instead: `std::unique_ptr<const T>` where
+  the value is read-only after construction.
+
 ### Immutable records without fields
 
 Modelica-style: cache singleton instances of no-field records and route
