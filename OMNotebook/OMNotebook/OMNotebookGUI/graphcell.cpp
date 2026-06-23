@@ -1535,6 +1535,11 @@ namespace IAEX {
     if (a.size() < 18) {
       return;
     }
+    // Plotting before a result exists (or against a result the worker could not
+    // read) leaves no file staged; skip rather than let OMPlot raise an error.
+    if (!QFile::exists(a.at(0))) {
+      return;
+    }
     QStringList lst;
     lst << "";                   // the first element must be empty
     for (int i = 0; i < 17; ++i) {
@@ -1566,7 +1571,12 @@ namespace IAEX {
     }
     catch (PlotException &e)
     {
+#if defined(__EMSCRIPTEN__)
+      // A modal dialog freezes the single-threaded wasm event loop; just log.
+      qWarning("OMNotebook plot error: %s", e.what());
+#else
       QMessageBox::warning(nullptr, tr("Error"), e.what());
+#endif
     }
   }
 

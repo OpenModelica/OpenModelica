@@ -198,6 +198,11 @@ private:
   bool cellEditable();
   void evalCells();
   //void createSavingTimer();
+#ifdef __EMSCRIPTEN__
+  // Build a menubar menu mirroring a staged example-notebook tree in MEMFS.
+  void addExampleMenu(const QString &root);
+  void populateExampleMenu(QMenu *menu, const QString &path);
+#endif
 
   QVector<Cell*> cells; //Added by jhansi
 

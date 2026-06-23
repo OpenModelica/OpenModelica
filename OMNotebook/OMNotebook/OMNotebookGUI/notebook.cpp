@@ -1423,6 +1423,13 @@ void NotebookWindow::createAboutMenu()
   connect( aboutQtAction, SIGNAL( triggered() ),
            this, SLOT( aboutQT() ));
 
+#ifdef __EMSCRIPTEN__
+  // Web build: the example notebooks are staged into MEMFS at startup (see
+  // CellApplication). Expose each tree as a menu mirroring its directory layout.
+  addExampleMenu("/DrModelica");
+  addExampleMenu("/DrControl");
+#endif
+
   // 2005-10-07 AF, Porting, new code for creating menu
   auto aboutMenu = menuBar()->addMenu( tr("&Help") );
   aboutMenu->addAction( aboutAction );
@@ -1430,6 +1437,32 @@ void NotebookWindow::createAboutMenu()
   aboutMenu->addSeparator();
   aboutMenu->addAction( helpAction );
 }
+
+#ifdef __EMSCRIPTEN__
+void NotebookWindow::addExampleMenu(const QString &root)
+{
+  QDir dir(root);
+  if (!dir.exists())
+    return;
+  QMenu *menu = menuBar()->addMenu(dir.dirName());
+  populateExampleMenu(menu, root);
+}
+
+void NotebookWindow::populateExampleMenu(QMenu *menu, const QString &path)
+{
+  QDir dir(path);
+  const auto subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+  for (const QFileInfo &fi : subdirs)
+    populateExampleMenu(menu->addMenu(fi.fileName()), fi.absoluteFilePath());
+
+  const auto files = dir.entryInfoList(QStringList() << "*.onb" << "*.onbz", QDir::Files, QDir::Name);
+  for (const QFileInfo &fi : files) {
+    const QString p = fi.absoluteFilePath();
+    QAction *a = menu->addAction(fi.completeBaseName());
+    connect(a, &QAction::triggered, this, [this, p]() { emit openFile(p); });
+  }
+}
+#endif
 
 /*!
   * \author Anders Fernström
@@ -2307,6 +2340,31 @@ void NotebookWindow::openFile(const QString filename)
 {
   try
   {
+#ifdef __EMSCRIPTEN__
+    // Web build: File->Open uploads a file from the user's computer through the
+    // browser. The bytes arrive in a callback; stage them into MEMFS and open
+    // from there. Opening a known path (menu entry or link) falls through below.
+    if(filename.isEmpty())
+    {
+      QFileDialog::getOpenFileContent(
+        "Notebooks (*.onb *.onbz *.nb)",
+        [this](const QString &name, const QByteArray &content) {
+          if(name.isEmpty())
+            return;
+          QString path = "/uploads/" + QFileInfo(name).fileName();
+          QDir().mkpath("/uploads");
+          QFile f(path);
+          if(f.open(QIODevice::WriteOnly)) {
+            f.write(content);
+            f.close();
+          }
+          updateRecentFiles(path);
+          application()->commandCenter()->executeCommand(new OpenFileCommand(path));
+        });
+      return;
+    }
+    filename_ = filename;
+#else
     //Open a new document
     if(filename.isEmpty())
     {
@@ -2321,6 +2379,7 @@ void NotebookWindow::openFile(const QString filename)
     {
       filename_ = filename;
     }
+#endif
 
     if(!filename_.isEmpty())
     {
@@ -2542,6 +2601,32 @@ void NotebookWindow::helpText()
   */
 void NotebookWindow::saveas()
 {
+#ifdef __EMSCRIPTEN__
+  // Web build: there is no writable disk. Serialize to a MEMFS temp file, then
+  // hand the bytes to the browser as a download.
+  {
+    QString name = QFileInfo(subject_->getFilename()).fileName();
+    if(name.isEmpty())
+      name = "untitled.onb";
+    bool ok = false;
+    name = QInputDialog::getText(this, tr("Save As"), tr("File name:"),
+                                 QLineEdit::Normal, name, &ok);
+    if(!ok || name.isEmpty())
+      return;
+    if(!name.endsWith(".onb", Qt::CaseInsensitive) && !name.endsWith(".onbz", Qt::CaseInsensitive))
+      name += ".onb";
+    QString tmp = "/tmp/" + name;
+    QDir().mkpath("/tmp");
+    application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, tmp));
+    QFile f(tmp);
+    if(f.open(QIODevice::ReadOnly)) {
+      QByteArray bytes = f.readAll();
+      f.close();
+      QFileDialog::saveFileContent(bytes, name);
+    }
+    return;
+  }
+#endif
   // if a filename exists, use that filename as default
   QString filename;
   /*    don't work correctly.
@@ -2605,6 +2690,11 @@ void NotebookWindow::saveas()
   */
 void NotebookWindow::save()
 {
+#ifdef __EMSCRIPTEN__
+  // No persistent disk on the web; every save is a download via saveas().
+  saveas();
+  return;
+#endif
   // Added a check to see if the document has been saved before,
   // if the document havn't been saved before - call saveas() instead.
   if( !subject_->isSaved() )

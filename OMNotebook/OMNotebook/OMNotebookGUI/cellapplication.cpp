@@ -47,8 +47,15 @@
 #include "commandcompletion.h"
 #include "stylesheet.h"
 #include "inputcell.h"
+#include "textcell.h"
+#include "graphcell.h"
+#include "latexcell.h"
+#include "cellgroup.h"
+#include "cellcursor.h"
+#include "visitor.h"
 #include "notebookcommands.h"
 #include <QSplashScreen>
+#include <QTimer>
 
 #include <cstdlib>
 
@@ -63,6 +70,47 @@
 #include <QLocale>
 #include <QMainWindow>
 #include <QDir>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+
+// Fetch the bundled example notebooks (next to the page) and extract them into
+// MEMFS at "/" so DrModelica/DrControl/OMNotebookHelp.onb resolve like a normal
+// filesystem — the File menus, links and F1 then work unchanged. gzip is undone
+// by the browser's DecompressionStream; the tar is plain (all paths < 100 chars).
+EM_ASYNC_JS(int, omnotebook_stage_notebooks, (), {
+  try {
+    const resp = await fetch("notebooks.tar.gz");
+    if (!resp.ok) { console.error("notebooks.tar.gz: HTTP " + resp.status); return 0; }
+    const stream = resp.body.pipeThrough(new DecompressionStream("gzip"));
+    const buf = new Uint8Array(await new Response(stream).arrayBuffer());
+    const td = new TextDecoder();
+    const field = (o, n) => {
+      let end = o;
+      while (end < o + n && buf[end] !== 0) end++;
+      return td.decode(buf.subarray(o, end));
+    };
+    for (let off = 0; off + 512 <= buf.length; ) {
+      const name = field(off, 100);
+      if (name === "") break;                       // zero block ends the archive
+      const size = parseInt(field(off + 124, 12).trim(), 8) || 0;
+      const type = buf[off + 156];
+      off += 512;
+      const path = "/" + name;
+      if (type === 53) {                            // '5' directory
+        try { FS.mkdirTree(path); } catch (e) {}
+      } else if (type === 0 || type === 48) {       // '0'/NUL regular file
+        const slash = path.lastIndexOf("/");
+        if (slash > 0) { try { FS.mkdirTree(path.substring(0, slash)); } catch (e) {} }
+        FS.writeFile(path, buf.subarray(off, off + size));
+      }
+      off += Math.ceil(size / 512) * 512;
+    }
+    return 1;
+  } catch (e) { console.error("notebook staging failed: " + e); return 0; }
+});
+#endif
 
 namespace IAEX
 {
@@ -178,6 +226,12 @@ namespace IAEX
       // not-yet-realized wasm screen. The window comes up while they run.
       env->startBackgroundCommand("setCommandLineOptions(\"+d=shortOutput\")");
       env->startBackgroundCommand("installPackage(Modelica)");
+      // Stage the example notebooks into MEMFS before the default file opens.
+      omnotebook_stage_notebooks();
+      // Loaded notebooks write their embedded images here (CellDocument::addImage);
+      // unlike the native build there is no other code creating it, so make sure
+      // it exists or every image write silently fails and renders blank.
+      QDir().mkpath(OmcInteractiveEnvironment::TmpPath());
 #else
       // Avoid cluttering the whole disk with omc temp-files
       env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
@@ -353,6 +407,38 @@ namespace IAEX
    * all operations are done on the window.
    * 2006-05-03 AF, during open, stop highlighter
    */
+#ifdef __EMSCRIPTEN__
+  // Recompute every cell's height. On Qt for WebAssembly a freshly loaded
+  // notebook lays out its cells before their final width and fonts are known, so
+  // they come up far too tall; re-running contentChanged() once geometry has
+  // settled fixes them — the same recomputation an edit triggers by hand.
+  class RecomputeHeightVisitor : public Visitor
+  {
+  public:
+    void visitCellNodeBefore(Cell *) override {}
+    void visitCellNodeAfter(Cell *) override {}
+    void visitCellGroupNodeBefore(CellGroup *) override {}
+    void visitCellGroupNodeAfter(CellGroup *) override {}
+    // contentChanged() is a slot on every cell type (protected on TextCell), so
+    // invoke it by name through the meta-object rather than calling directly.
+    void visitTextCellNodeBefore(TextCell *) override {}
+    void visitTextCellNodeAfter(TextCell *n) override { recompute(n); }
+    void visitInputCellNodeBefore(InputCell *) override {}
+    void visitInputCellNodeAfter(InputCell *n) override { recompute(n); }
+    void visitGraphCellNodeBefore(GraphCell *) override {}
+    void visitGraphCellNodeAfter(GraphCell *n) override { recompute(n); }
+    void visitLatexCellNodeBefore(LatexCell *) override {}
+    void visitLatexCellNodeAfter(LatexCell *n) override { recompute(n); }
+    void visitCellCursorNodeBefore(CellCursor *) override {}
+    void visitCellCursorNodeAfter(CellCursor *) override {}
+  private:
+    static void recompute(QObject *cell)
+    {
+      QMetaObject::invokeMethod(cell, "contentChanged", Qt::DirectConnection);
+    }
+  };
+#endif
+
   void CellApplication::open(const QString filename, int readmode, int isDrModelica)
   {
       try {
@@ -407,6 +493,16 @@ namespace IAEX
           // Apply the "show‑/hide‑closed‑groupcells" visitor.
           UpdateGroupcellVisitor visitor;
           v->document()->runVisitor(visitor);
+
+#ifdef __EMSCRIPTEN__
+          // Cells load too tall until their geometry/fonts settle; recompute
+          // heights once back in the event loop, as editing a cell would.
+          Document *doc = v->document();
+          QTimer::singleShot(0, doc, [doc]() {
+              RecomputeHeightVisitor rv;
+              doc->runVisitor(rv);
+          });
+#endif
       } catch (std::exception &e) {
           throw e;
       }
