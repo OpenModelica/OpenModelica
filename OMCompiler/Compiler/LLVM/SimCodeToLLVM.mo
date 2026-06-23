@@ -1021,6 +1021,14 @@ algorithm
   end try;
   EXT_LLVM.genReturnVoid();
   EXT_LLVM.finnishGen();
+  /* linkonce_odr so the emission coexists with CodegenC's strong
+   * <Model>_eqFunction_N when <Model>.c is still being emitted
+   * (the canCoverModel preflight is conservative and many models
+   * keep going through the C path even after the cutover landed
+   * for HelloWorld). When CodegenC's copy is gone the SCTL one
+   * becomes the sole definition; when both are present llvm-link
+   * picks the strong CodegenC copy and discards ours. */
+  _ := EXT_LLVM.setLinkonceOdr(fname);
 end emitNamedEquationFunction;
 
 protected function simEqIndex

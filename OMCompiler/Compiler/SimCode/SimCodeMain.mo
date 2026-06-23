@@ -587,6 +587,7 @@ algorithm
   () := match effectiveTarget
     local
       String str, guid;
+      Boolean sctlCanCover;
       list<PartialRunTpl> codegenFuncs;
       Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res = {};
@@ -603,6 +604,12 @@ algorithm
     case "C"
       algorithm
         guid := System.getUUIDStr();
+        /* Compute the cutover gate locally inside this case (after
+         * any setGlobalRoot pollution risk -- we just call SCTL's
+         * canCoverModel directly and skip the Global slot dance
+         * that crashed earlier). target is the case discriminator;
+         * canCoverModel is a pure structural check, no IR emission. */
+        sctlCanCover := target == "llvm-jit" and SimCodeToLLVM.canCoverModel(simCode);
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
@@ -645,7 +652,7 @@ algorithm
           generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str);
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
-        if target <> "llvm-jit" then
+        if not sctlCanCover then
           codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=""), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
         end if;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions, a_genericCalls=simCode.generic_loop_calls), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;

@@ -218,22 +218,17 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    path that keeps `_07dly.c` on clang absorbs the difference;
    the dynamic equations all lower cleanly).
 
-   **BouncingBall regresses** at the JIT-link step: SCTL cannot
-   yet lower `_eqFunction_7` (the `h < 0` relation that drives
-   the bounce event -- `relationhysteresis` is one of the runtime
-   helpers `emitEquation` does not know about). The clang'd
-   `_06inz.c` then has an extern reference to that symbol that
-   nothing satisfies after `<Model>.c` is gone. The clean fix
-   is per-model: `SimCodeToLLVM.canCoverModel(simCode)` already
-   exists as a structural preflight (zero crossings absent, all
-   dynamic equations classify + lower cleanly); wire it into
-   `SimCodeMain.callTargetTemplates` via a `Global` slot and
-   only skip `<Model>.c` when the preflight passes. A first
-   pass at this wiring crashed in `getGlobalRoot` (uninitialised
-   slot interaction); the read needs a Type-explicit path that
-   is robust to the slot never having been written. Until that
-   lands the cutover is unconditional under `-d=jitSimulate`
-   and BB is the canonical failing case to fix against.
+   **Per-model gate.** `SimCodeMain.callTargetTemplates`'s C case
+   calls `SimCodeToLLVM.canCoverModel(simCode)` directly (no Global
+   slot dance) and only skips `<Model>.c` when the preflight
+   passes -- structural check: no zero crossings, no clocked
+   partitions, no state sets, all dynamic equations classify and
+   lower cleanly. Models that fail the gate keep getting
+   `<Model>.c` emitted; the SCTL-emitted IR coexists as
+   `linkonce_odr` so llvm-link picks the strong CodegenC copy.
+   BouncingBall takes this fallback today (the bounce event's
+   `relationhysteresis` lowering isn't covered by `emitEquation`).
+   Closing that gap is the next per-feature lift.
 
    `compileModelToBitcode` itself can be deleted once
    `_functions.c` / `_08bnd.c` / `_05evt.c` / `_12jac.c` lift
