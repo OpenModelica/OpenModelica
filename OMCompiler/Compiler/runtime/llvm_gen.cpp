@@ -167,6 +167,39 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
   }
   llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
 
+  /* Also pull in the Modelica.* runtime libraries that ship next to
+   * libSimulationRuntimeC. CodegenC-emitted user-function bodies
+   * call into ModelicaStandardTables / ModelicaIO /
+   * ModelicaExternalC for table lookup, file I/O and the small
+   * extension set Modelica.Math / Modelica.Utilities depends on.
+   * The legacy buildModel path links these in statically; the JIT
+   * needs to dlopen them so DynamicLibrarySearchGenerator can
+   * resolve their entry points. Loading is best-effort: a model
+   * that does not reference any of these symbols simply ignores
+   * the loaded library. */
+  if (runtimeLib && runtimeLib[0]) {
+    llvm::StringRef rt(runtimeLib);
+    size_t slash = rt.find_last_of('/');
+    std::string ffiDir =
+        (slash == std::string::npos ? std::string(".") : rt.substr(0, slash).str())
+        + "/ffi/";
+    static const char *kModelicaLibs[] = {
+        "libModelicaStandardTables.so",
+        "libModelicaIO.so",
+        "libModelicaMatIO.so",
+        "libModelicaExternalC.so",
+    };
+    for (const char *name : kModelicaLibs) {
+      std::string path = ffiDir + name;
+      std::string err;
+      if (llvm::sys::DynamicLibrary::LoadLibraryPermanently(path.c_str(), &err)) {
+        fprintf(stderr,
+                "[llvm-jit] note: optional Modelica library '%s' not loaded: %s\n",
+                path.c_str(), err.c_str());
+      }
+    }
+  }
+
   auto ctx = std::make_unique<llvm::LLVMContext>();
   llvm::SMDiagnostic diag;
   std::unique_ptr<llvm::Module> mod = llvm::parseIRFile(bitcodePath, diag, *ctx);
