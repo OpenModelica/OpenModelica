@@ -797,14 +797,15 @@ algorithm
   EXT_LLVM.genFunctionType(retTy);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
-  /* MODELICA_VOID picks ret void so the function is well-formed.
-   * Every other retTy keeps the historic genReturnZero (ret i64 0);
-   * callers that need a different return-value semantic (null
-   * pointer, -1, populated struct, ...) emit a dedicated body
-   * through their own helper (emitStubNullPtr, emitStubMinusOne,
-   * emitJacobianUnavailable, ...). */
+  /* Return shape must match the declared return type or LLVM
+   * verifyFunction fails (and dumps the IR before downstream
+   * materialization SIGSEGVs). MODELICA_VOID -> ret void;
+   * MODELICA_METATYPE / *_PTR -> ret null; all real / integer /
+   * boolean -> ret 0. */
   if retTy == MODELICA_VOID then
     EXT_LLVM.genReturnVoid();
+  elseif retTy == MODELICA_METATYPE then
+    EXT_LLVM.genReturnNullPtr();
   else
     EXT_LLVM.genReturnZero();
   end if;
