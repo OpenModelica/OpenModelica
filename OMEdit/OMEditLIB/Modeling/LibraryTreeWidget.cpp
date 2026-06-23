@@ -4230,35 +4230,29 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
   // load the model in OMSimulator
   QString modelName;
   bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), modelName);
-  if (success) {
-    // check if the file is already loaded.
-    for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
-      LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
-      if (pLibraryTreeItem && pLibraryTreeItem->getNameStructure().compare(modelName) == 0) {
-        QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-        pMessageBox->setIcon(QMessageBox::Information);
-        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
-        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                        .arg(fileInfo.fileName()).append("\n")
-                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
-        pMessageBox->setStandardButtons(QMessageBox::Ok);
-        pMessageBox->exec();
-        if (showProgress) {
-          MainWindow::instance()->getStatusBar()->clearMessage();
-        }
-        OMSProxy::instance()->omsDelete(modelName);
-        return;
-      }
+  if (!success) {
+    // loadModel fails when the model is already loaded in the server
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+    pMessageBox->setIcon(QMessageBox::Information);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
+    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                    .arg(modelName).append("\n")
+                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
+    pMessageBox->setStandardButtons(QMessageBox::Ok);
+    pMessageBox->exec();
+    if (showProgress) {
+      MainWindow::instance()->getStatusBar()->clearMessage();
     }
-    // create a LibraryTreeItem
-    LibraryTreeItem *pLibraryTreeItem = 0;
-    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, modelName, fileInfo.absoluteFilePath(), true, mpLibraryTreeModel->getRootLibraryTreeItem());
-    // add the item to recent files list
-    if (pLibraryTreeItem) {
-      MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
-    }
+    return;
+  }
+  // create a LibraryTreeItem
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, modelName, fileInfo.absoluteFilePath(), true, mpLibraryTreeModel->getRootLibraryTreeItem());
+  // add the item to recent files list
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
