@@ -85,6 +85,17 @@ constant Integer backendCevalInterface = 32;
 // invocations. Reset to {} at the start of every genSim call.
 constant Integer simCodeToLLVMDynamicSkips = 33;
 
+// SimCodeMain: the per-build modelGUID. SimCodeMain.callTargetTemplates
+// generates one System.getUUIDStr() to label this codegen unit;
+// SerializeInitXML stamps it into <prefix>_init.xml and CodegenC's
+// setupDataStruc bakes it into modelData->modelGUID. The simulation
+// runtime cross-checks the two at startup. Under -d=jitSimulate the
+// SCTL main shim has to use the SAME guid so the runtime accepts the
+// init.xml that CodegenC's satellites still emit. The slot is set
+// once per codegen and read both from callTargetTemplates and from
+// SimCodeToLLVM.emitMainShimBlock.
+constant Integer simCodeModelGuid = 34;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index

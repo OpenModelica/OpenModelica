@@ -85,3 +85,93 @@ void omc_jit_updateContinuousSystem(DATA *data, threadData_t *threadData)
 #include "simulation/solver/perform_qss_simulation.c.inc"
 
 #undef prefixedName_performQSSSimulation
+
+/* ===== main() runtime adapter ===== */
+
+#include "meta/meta_modelica_segv.h"
+#include "util/rtclock.h"
+#include "gc/omc_gc.h"
+
+/* The omc_assert function-pointer globals + the
+ * omc_assert_simulation pair are declared in
+ * simulation_omc_assert.h, already pulled in via the top includes.
+ * omc_alloc_interface is declared in gc/omc_gc.h. */
+
+static int omc_jit_rml_execution_failed(void)
+{
+  fflush(NULL);
+  fprintf(stderr, "[omc_jit_main_runtime] execution failed\n");
+  return 1;
+}
+
+/* Single-call entry the SCTL main shim invokes. Handles the whole
+ * CodegenC main() body that is impractical to lift line-by-line into
+ * IR (MMC_TRY_TOP / MMC_TRY_STACK setjmp dance, omc_assert global
+ * function-pointer reassignments, MMC_INIT + omc_alloc_interface.init,
+ * _main_initRuntimeAndSimulation + _main_SimulationRuntime call
+ * sequence). SCTL's main alloca's the three structs, wires
+ * modelData / simulationInfo, and tail-calls this. Returns the
+ * simulation runtime's exit status. */
+int omc_jit_main_runtime(int argc, char **argv,
+                         MODEL_DATA *modelData, SIMULATION_INFO *simInfo,
+                         void (*setupDataStruc)(DATA *, threadData_t *),
+                         const char *modelName,
+                         const char *modelFilePrefix,
+                         const char *modelGUID,
+                         const char *infoJsonFile)
+{
+  /* CodegenC's setupDataStruc sets these inline; the JIT path passes
+   * them as args so SCTL can emit the string constants as private
+   * IR globals. modelDataXml.fileName is the load-bearing one --
+   * solver_main reads the _info.json from this path. */
+  modelData->modelName = modelName;
+  modelData->modelFilePrefix = modelFilePrefix;
+  modelData->modelFileName = "<jit>";
+  modelData->resultFileName = NULL;
+  modelData->modelDir = "";
+  modelData->modelGUID = modelGUID;
+  modelData->initXMLData = NULL;
+  modelData->modelDataXml.infoXMLData = NULL;
+  modelData->modelDataXml.fileName = infoJsonFile;
+  modelData->resourcesDir = NULL;
+  modelData->runTestsuite = 0;
+  modelData->linearizationDumpLanguage = OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA;
+
+  omc_assert = omc_assert_simulation;
+  omc_assert_withEquationIndexes = omc_assert_simulation_withEquationIndexes;
+  omc_assert_warning_withEquationIndexes = omc_assert_warning_simulation_withEquationIndexes;
+  omc_assert_warning = omc_assert_warning_simulation;
+  omc_terminate = omc_terminate_simulation;
+  omc_throw = omc_throw_simulation;
+
+  measure_time_flag = 0;
+  compiledInDAEMode = 0;
+  compiledWithSymSolver = 0;
+
+  MMC_INIT(0);
+  omc_alloc_interface.init();
+
+  int res = 0;
+  DATA data;
+  data.modelData = modelData;
+  data.simulationInfo = simInfo;
+
+  {
+    MMC_TRY_TOP()
+    MMC_TRY_STACK()
+
+    setupDataStruc(&data, threadData);
+    res = _main_initRuntimeAndSimulation(argc, argv, &data, threadData);
+    if (res == 0) {
+      res = _main_SimulationRuntime(argc, argv, &data, threadData);
+    }
+
+    MMC_ELSE()
+    res = omc_jit_rml_execution_failed();
+    MMC_CATCH_STACK()
+    MMC_CATCH_TOP(res = omc_jit_rml_execution_failed());
+  }
+
+  fflush(NULL);
+  return res;
+}

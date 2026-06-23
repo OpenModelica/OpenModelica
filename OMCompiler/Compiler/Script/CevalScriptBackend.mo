@@ -1493,14 +1493,14 @@ algorithm
            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-           // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable.
-           if Flags.isSet(Flags.JIT_SIMULATE) then
-             // -d=jitSimulate: JIT-compile the model's bitcode with LLVM (ORC)
-             // and run it in-process instead of spawning a native executable.
-             resI := runModelViaLLVMJIT(exeDir, executable, logFile);
-           elseif Config.simCodeTarget() == "wasm-jit" then
+           // Default path: spawn the native executable. The two JIT
+           // targets (wasm-jit, llvm-jit) run the simulation in-process
+           // instead. Dispatch is uniform on Config.simCodeTarget() --
+           // -d=jitSimulate aliases to "llvm-jit" inside Config.
+           if Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           elseif Config.simCodeTarget() == "llvm-jit" then
+             resI := runModelViaLLVMJIT(exeDir, executable, logFile);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
            end if;
@@ -5999,6 +5999,11 @@ algorithm
     "shopt -s nullglob\n",
     "SRCS=()\n",
     "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
+    // Under -d=jitSimulate SimCodeMain skips the <prefix>.c emission
+    // (SimCodeToLLVM owns the driver in IR), so the literal entry in
+    // this for-loop expands to a non-existent path. nullglob does not
+    // strip literals -- check existence explicitly.
+    "  [ -e \"$f\" ] || continue\n",
     // SimCodeToLLVM owns these entry points in-memory (either via a stub
     // in the runtimeEntryCatalog or because the .c file is empty); skip
     // clang so llvm-link does not see duplicate symbols and so we don't
@@ -6030,8 +6035,15 @@ algorithm
     "wait\n",
     // SimCodeToLLVM's bitcode arrives in-memory via stashCurrentModuleAsBitcode;
     // omc_runModelViaJIT adds it to the LLJIT before this <prefix>.bc.
-    "\"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
-    "mv ", prefix, "_linked.bc ", prefix, ".bc\n"
+    // When SCTL owns every .c file the catalog covers (and -d=jitSimulate
+    // is also skipping <prefix>.c), BCS is empty -- nothing for llvm-link
+    // to merge, and runModelViaLLVMJIT detects the missing <prefix>.bc and
+    // passes an empty bitcode path so the JIT relies on g_sctlBitcodeBytes
+    // alone.
+    "if [ ${#BCS[@]} -gt 0 ]; then\n",
+    "  \"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
+    "  mv ", prefix, "_linked.bc ", prefix, ".bc\n",
+    "fi\n"
   });
   System.writeFile(scriptFile, script);
   rc := System.systemCall("/bin/bash " + scriptFile, prefix + "_jitcompile.log");
@@ -6045,13 +6057,19 @@ protected function runModelViaLLVMJIT
   "The -d=jitSimulate counterpart of spawning the model executable: JIT-compile
    the model's linked bitcode (<prefix>.bc) with LLVM ORC and run it in-process.
    Runs from exeDir so the model resolves its init xml / result file relative to
-   the working directory exactly as the native executable would."
+   the working directory exactly as the native executable would.
+
+   The <prefix>.bc only exists when at least one .c file survived the
+   catalog-driven skip list in compileModelToBitcode. When SCTL owns every
+   model symbol -- the end state we are converging on -- no .c file is
+   clang'd and no <prefix>.bc is written; pass an empty bitcode path so
+   omc_runModelViaJIT JITs the SCTL bitcode alone."
   input String exeDir;
   input String modelName;
   input String logFile;
   output Integer status;
 protected
-  String oldDir, runtimeLib;
+  String oldDir, runtimeLib, bcPath;
 algorithm
   oldDir := System.pwd();
   if not stringEmpty(exeDir) then
@@ -6059,7 +6077,8 @@ algorithm
   end if;
   runtimeLib := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple
                 + "/omc/libSimulationRuntimeC" + Autoconf.dllExt;
-  status := EXT_LLVM.runModelViaJIT(modelName + ".bc", runtimeLib, modelName, logFile);
+  bcPath := if System.regularFileExists(modelName + ".bc") then modelName + ".bc" else "";
+  status := EXT_LLVM.runModelViaJIT(bcPath, runtimeLib, modelName, logFile);
   System.cd(oldDir);
 end runModelViaLLVMJIT;
 
@@ -6155,10 +6174,11 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Flags.isSet(Flags.JIT_SIMULATE) then
-              // -d=jitSimulate: lower the generated C to a single linked LLVM
-              // bitcode module now (attributing the cost to timeCompile); the
-              // simulate step JIT-runs it in-process instead of an executable.
+            // Default: spawn clang via CevalScript.compileModel. The
+            // two JIT targets (wasm-jit, llvm-jit) compile in-process
+            // during this clock so the cost is attributed to
+            // timeCompile rather than leaking into timeSimulation.
+            if Config.simCodeTarget() == "llvm-jit" then
               compileModelToBitcode(filenameprefix);
             elseif Config.simCodeTarget() <> "wasm-jit" then
               CevalScript.compileModel(filenameprefix, libsAndLibDirs);

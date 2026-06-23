@@ -202,11 +202,42 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    `omc_jit_*`; the JIT's `DynamicLibrarySearchGenerator` resolves
    them against omcruntime in-process. SCTL emits zero solver IR
    per model.
-8. **CodegenC suppression.** Final. With 1-7 done, gate
-   `simulationFile` for `<Model>.c` on `Flags.isSet(Flags.JIT_SIMULATE)`
-   and SCTL becomes the sole emitter. `compileModelToBitcode` can be
-   deleted once `_functions.c` / `_08bnd.c` / `_05evt.c` / `_12jac.c`
-   lift through real-IR emission.
+8. **CodegenC suppression.** Final. JIT mode is now a first-class
+   `Config.simCodeTarget()` value `"llvm-jit"` (the `-d=jitSimulate`
+   flag aliases to it inside `Config.simCodeTarget`). Every
+   build / simulate / codegen dispatch consults the target. The
+   actual `<Model>.c` skip is **not** done yet -- the LLVM JIT path
+   has to take ownership of the metadata flow without touching the C
+   codegen modules. Two pieces are needed, both staying inside
+   `OMCompiler/Compiler/LLVM/` + `OMCompiler/Compiler/runtime/`:
+
+     a. **The model GUID.** `_main_SimulationRuntime` cross-checks
+        `modelData->modelGUID` against the GUID stamped into
+        `<prefix>_init.xml`. SerializeInitXML still emits the XML
+        under llvm-jit (the metadata is genuinely useful: solver
+        reads var info, equation info, start values). The LLVM JIT
+        adapter (`omc_jit_main_runtime`) should read the GUID out
+        of the init.xml at startup and set
+        `modelData->modelGUID` to that value -- the SCTL main shim
+        passes no GUID at all. Keeps the GUID coordination on the
+        LLVM side, no CodegenC pollution.
+
+     b. **modelData data tables.** `solver_main` populates
+        `realVarsData`, `integerVarsData`, ... from
+        `_info.json` / `_init.xml`. Either keep the XML/JSON read
+        as today (works fine, the only artifact on disk is the
+        metadata) or replace it with direct SCTL IR population.
+        Today's working state is the former, and that is the right
+        choice: the metadata flow stays untouched, the LLVM JIT
+        just consumes the same files the C path produces.
+
+   Until (a) lands, the SCTL-emitted `<Model>_callback`,
+   `_setupDataStruc`, `main`, equation functions, and leaf stubs
+   stay `linkonce_odr` and CodegenC's strong copies win at
+   llvm-link. The IR is durable preparation; flipping the gate in
+   `SimCodeMain.callTargetTemplates`'s `case "C"` and the linkage
+   in the C++ emitters becomes a single-commit cutover once the
+   GUID-read-from-XML lands in the adapter.
 
 ---
 

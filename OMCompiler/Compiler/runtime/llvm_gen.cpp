@@ -1033,35 +1033,31 @@ extern "C" int createSetupDataStrucShell(const char *const modelName) {
 /* ------------------------------------------------------------------------ *
  * main() shim emission.
  *
- * Emits a minimal linkonce_odr  int main(int argc, char **argv)  that
- * stack-allocates DATA / MODEL_DATA / SIMULATION_INFO (sizes from
- * llvm_gen_layout.h's omc_sizeof_* constants), wires
- *   data->modelData       = &modelData
- *   data->simulationInfo  = &simInfo
- * and calls in order:
- *   <Model>_setupDataStruc(&data, NULL)
- *   _main_SimulationRuntime(argc, argv, &data, NULL)
- * returning the latter's result.
+ * Emits  int main(int argc, char **argv)  whose body is:
+ *   alloca MODEL_DATA  (omc_sizeof_MODEL_DATA bytes)
+ *   alloca SIMULATION_INFO (omc_sizeof_SIMULATION_INFO bytes)
+ *   return omc_jit_main_runtime(argc, argv, &modelData, &simInfo,
+ *                               &<Model>_setupDataStruc);
  *
- * Intentionally skipped (CodegenC's strong main still owns these
- * today, linkonce_odr keeps us out of the way):
- *   omc_assert / omc_terminate function-pointer reassignments
- *   measure_time_flag, compiledInDAEMode, compiledWithSymSolver
- *     globals
- *   MMC_INIT, omc_alloc_interface.init()
- *   MMC_TRY_TOP / MMC_TRY_STACK setjmp dance
- *   Optimica branch
- *   fflush(NULL)
+ * The heavy lifting (omc_assert reassignments, MMC_INIT,
+ * omc_alloc_interface.init, MMC_TRY_TOP / MMC_TRY_STACK setjmp dance,
+ * _main_initRuntimeAndSimulation + _main_SimulationRuntime sequence)
+ * lives in omc_jit_main_runtime inside
+ * omc_jit_perform_simulation_adapter.c -- impractical to lift line-by-
+ * line into IR, trivial as a single extern call. The DATA struct is
+ * stack-allocated inside the adapter so the threadData_t setup
+ * (which the MMC_TRY_TOP macro does) happens in the same frame.
  *
- * The threadData_t argument is passed NULL because the C runtime's
- * _main_SimulationRuntime is responsible for setting up thread-local
- * state. This shell is the scaffolding for step 8 of the roadmap;
- * the omitted bits land in the full main() lift commit, alongside
- * the CodegenC suppression that makes <Model>.c disappear.
+ * Linkage starts as linkonce_odr so the shim coexists with the
+ * CodegenC strong main while the llvm-jit cutover is gated; flipping
+ * to external linkage is a one-line change once the gate in
+ * SimCodeMain flips and <Model>.c stops being emitted.
  *
  * Returns 0 on success.
  * ------------------------------------------------------------------------ */
-extern "C" int createMainShim(const char *const modelName) {
+extern "C" int createMainShim(const char *const modelName,
+                              const char *const modelGuidIn) {
+  const std::string modelGuid(modelGuidIn ? modelGuidIn : "");
   if (!program || !program->module) {
     fprintf(stderr, "createMainShim: no active module\n");
     return 1;
@@ -1094,13 +1090,9 @@ extern "C" int createMainShim(const char *const modelName) {
       llvm::BasicBlock::Create(ctx, "entry", mainFn);
   llvm::IRBuilder<> b(entryBB);
 
-  /* Stack-alloc the three structs. AllocaInst with `i8`-typed element
-   * type and a `count = sizeof(struct)` operand gives a byte buffer of
-   * the right size; the JIT and the consumers only see a `ptr`
-   * because of opaque pointers, so no further typing is needed. */
-  llvm::AllocaInst *const dataAlloca = b.CreateAlloca(
-      i8, llvm::ConstantInt::get(i64, omc_sizeof_DATA), "data");
-  dataAlloca->setAlignment(llvm::Align(8));
+  /* Stack-alloc the model-state structs the adapter needs. DATA itself
+   * lives inside omc_jit_main_runtime so the MMC_TRY_TOP setjmp dance
+   * and the DATA's threadData reference share the same stack frame. */
   llvm::AllocaInst *const modelDataAlloca = b.CreateAlloca(
       i8, llvm::ConstantInt::get(i64, omc_sizeof_MODEL_DATA), "modelData");
   modelDataAlloca->setAlignment(llvm::Align(8));
@@ -1108,39 +1100,47 @@ extern "C" int createMainShim(const char *const modelName) {
       i8, llvm::ConstantInt::get(i64, omc_sizeof_SIMULATION_INFO), "simInfo");
   simInfoAlloca->setAlignment(llvm::Align(8));
 
-  /* data->modelData = &modelData; data->simulationInfo = &simInfo. */
-  llvm::Value *const mdAddr = b.CreateGEP(
-      i8, dataAlloca,
-      llvm::ConstantInt::get(i64, omc_layout_DATA_modelData), "mdAddr");
-  b.CreateStore(modelDataAlloca, mdAddr);
-  llvm::Value *const siAddr = b.CreateGEP(
-      i8, dataAlloca,
-      llvm::ConstantInt::get(i64, omc_layout_DATA_simulationInfo), "siAddr");
-  b.CreateStore(simInfoAlloca, siAddr);
-
-  /* <Model>_setupDataStruc(&data, NULL). NULL threadData mirrors the
-   * setupDataStruc shell's tolerance of a null threadData -- the
-   * shell only writes through `data`, so the NULL is harmless. The
-   * future full-body lift will require a real threadData. */
+  /* Get-or-insert the per-model setupDataStruc and the generic
+   * omc_jit_main_runtime adapter. */
   llvm::FunctionType *const setupTy =
       llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false);
   const std::string setupName =
       std::string(modelName) + "_setupDataStruc";
-  llvm::FunctionCallee const setupCallee =
+  llvm::FunctionCallee setupCallee =
       mod.getOrInsertFunction(setupName, setupTy);
-  b.CreateCall(setupCallee,
-               {dataAlloca, llvm::ConstantPointerNull::get(ptrTy)});
 
-  /* _main_SimulationRuntime(argc, argv, &data, NULL). Returns int.
-   * The runtime helper handles threadData setup itself. */
-  llvm::FunctionType *const runTy = llvm::FunctionType::get(
-      i32, {i32, ptrTy, ptrTy, ptrTy}, false);
-  llvm::FunctionCallee const runCallee =
-      mod.getOrInsertFunction("_main_SimulationRuntime", runTy);
+  /* Emit private string constants for the four model-identifier
+   * strings the adapter needs. modelGUID is per-build (the
+   * SerializeInitXML guid that CodegenC's setupDataStruc would have
+   * emitted) -- caller passes it in via the createMainShim signature. */
+  auto emitStr = [&](const std::string &val, const std::string &name)
+      -> llvm::Constant * {
+    llvm::Constant *const init =
+        llvm::ConstantDataArray::getString(ctx, val, /*addNull=*/true);
+    llvm::GlobalVariable *const gv = new llvm::GlobalVariable(
+        mod, init->getType(), /*isConstant=*/true,
+        llvm::GlobalValue::PrivateLinkage, init, name);
+    gv->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+    return gv;
+  };
+  const std::string p(modelName);
+  llvm::Constant *const sName = emitStr(p, p + "_jit_modelName");
+  llvm::Constant *const sPrefix = emitStr(p, p + "_jit_modelPrefix");
+  llvm::Constant *const sGuid = emitStr(modelGuid, p + "_jit_modelGUID");
+  llvm::Constant *const sJson =
+      emitStr(p + "_info.json", p + "_jit_jsonFile");
+
+  llvm::FunctionType *const adapterTy = llvm::FunctionType::get(
+      i32, {i32, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy},
+      false);
+  llvm::FunctionCallee adapterCallee =
+      mod.getOrInsertFunction("omc_jit_main_runtime", adapterTy);
+
   llvm::CallInst *const res = b.CreateCall(
-      runCallee,
-      {argcArg, argvArg, dataAlloca,
-       llvm::ConstantPointerNull::get(ptrTy)},
+      adapterCallee,
+      {argcArg, argvArg, modelDataAlloca, simInfoAlloca,
+       llvm::cast<llvm::Constant>(setupCallee.getCallee()),
+       sName, sPrefix, sGuid, sJson},
       "res");
   b.CreateRet(res);
 
@@ -1234,6 +1234,25 @@ const char *omc_getLLVMToolsDir() {
 static std::unordered_map<std::string, std::unique_ptr<llvm::orc::LLJIT>>
     g_jitCache;
 
+/* Forward declarations of the perform_simulation adapter entry points
+ * defined in omc_jit_perform_simulation_adapter.c. The JIT looks them
+ * up by name via DynamicLibrarySearchGenerator(GetForCurrentProcess);
+ * without a hard reference here the static-archive linker drops the
+ * adapter .o because nothing in the omc binary calls them directly.
+ * The kForceLink table below pulls the .o into the final link. */
+extern "C" int omc_jit_performSimulation(struct DATA *, struct threadData_s *, void *);
+extern "C" int omc_jit_performQSSSimulation(struct DATA *, struct threadData_s *, void *);
+extern "C" void omc_jit_updateContinuousSystem(struct DATA *, struct threadData_s *);
+extern "C" int omc_jit_main_runtime(int, char **, void *, void *, void *,
+                                    const char *, const char *,
+                                    const char *, const char *);
+static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
+  reinterpret_cast<void *>(&omc_jit_performSimulation),
+  reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
+  reinterpret_cast<void *>(&omc_jit_updateContinuousSystem),
+  reinterpret_cast<void *>(&omc_jit_main_runtime),
+};
+
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
                        const char *modelName, const char *logFile) {
   llvm::InitializeNativeTarget();
@@ -1294,16 +1313,6 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     /* Cold path. Parse + build + add modules, then stash the
      * freshly-built LLJIT under modelName so the next simulate()
      * of the same model hits the cache. */
-    std::unique_ptr<llvm::LLVMContext> ctx =
-        std::make_unique<llvm::LLVMContext>();
-    llvm::SMDiagnostic diag;
-    std::unique_ptr<llvm::Module> mod =
-        llvm::parseIRFile(bitcodePath, diag, *ctx);
-    if (!mod) {
-      diag.print("[llvm-jit]", llvm::errs());
-      return 1;
-    }
-
     llvm::Expected<std::unique_ptr<llvm::orc::LLJIT>> jitOrErr =
         llvm::orc::LLJITBuilder().create();
     if (!jitOrErr) {
@@ -1323,11 +1332,27 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     }
     newJit->getMainJITDylib().addGenerator(std::move(*gen));
 
-    if (llvm::Error err = newJit->addIRModule(
-            llvm::orc::ThreadSafeModule(std::move(mod), std::move(ctx)))) {
-      llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
-                                  "[llvm-jit] addIRModule: ");
-      return 1;
+    /* Parse the CodegenC-side bitcode IF the caller produced one.
+     * When -d=jitSimulate suppresses every .c that clang would have
+     * compiled, the script writes no merged <prefix>.bc and the path
+     * is empty -- the SCTL bitcode (loaded below from
+     * g_sctlBitcodeBytes) becomes the sole source of model symbols. */
+    if (bitcodePath && bitcodePath[0]) {
+      std::unique_ptr<llvm::LLVMContext> ctx =
+          std::make_unique<llvm::LLVMContext>();
+      llvm::SMDiagnostic diag;
+      std::unique_ptr<llvm::Module> mod =
+          llvm::parseIRFile(bitcodePath, diag, *ctx);
+      if (!mod) {
+        diag.print("[llvm-jit]", llvm::errs());
+        return 1;
+      }
+      if (llvm::Error err = newJit->addIRModule(
+              llvm::orc::ThreadSafeModule(std::move(mod), std::move(ctx)))) {
+        llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
+                                    "[llvm-jit] addIRModule: ");
+        return 1;
+      }
     }
 
     /* Pull in SimCodeToLLVM's in-memory bitcode (stashed via

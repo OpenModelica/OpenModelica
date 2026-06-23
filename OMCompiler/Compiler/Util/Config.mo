@@ -400,10 +400,23 @@ algorithm
   FlagsUtil.setConfigString(Flags.TEARING_HEURISTIC, inString);
 end setTearingHeuristic;
 
-public function simCodeTarget "Default is set by +simCodeTarget=C"
+public function simCodeTarget "Default is set by +simCodeTarget=C.
+
+  The debug flag -d=jitSimulate is the user-facing alias for
+  +simCodeTarget=llvm-jit. Routing the override here keeps the JIT
+  decision in a single place: every downstream dispatch (SimCodeMain
+  codegen branch, CevalScriptBackend build / simulate dispatch) just
+  consults Config.simCodeTarget(), no scattered Flags.JIT_SIMULATE
+  checks."
   output String target;
 algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
+  /* -d=jitSimulate is the user-facing alias for +simCodeTarget=llvm-jit.
+   * The default (C, Cpp, wasm-jit, ...) wins unless the experimental
+   * debug flag overrides it. */
+  if Flags.isSet(Flags.JIT_SIMULATE) then
+    target := "llvm-jit";
+  end if;
 end simCodeTarget;
 
 public function setsimCodeTarget

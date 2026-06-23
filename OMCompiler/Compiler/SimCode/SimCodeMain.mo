@@ -319,9 +319,7 @@ algorithm
    * (current behaviour for any model whose constructs are not yet
    * covered) the templates run as before and Adrian's
    * compileModelToBitcode/runModelViaLLVMJIT keystone takes over for
-   * the simulate() call. jit_eval_func is a separate flag for
-   * function-level JIT-evaluation during interpretation and is not
-   * read here. */
+   * the simulate() call. */
   if Flags.isSet(Flags.JIT_SIMULATE) and SimCodeToLLVM.genSim(simCode) then
     timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
     ExecStat.execStat("SimCode JIT");
@@ -575,9 +573,18 @@ protected
 
 
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
+  String effectiveTarget;
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
-  () := match target
+  /* llvm-jit re-uses the C codegen path (every satellite .c file, the
+   * _model.h header, the _init.xml / _info.json metadata) but skips
+   * the <Model>.c driver emission -- SimCodeToLLVM owns the callback
+   * table + setupDataStruc + main shim as LLVM IR and the
+   * perform_simulation adapter in Compiler/runtime/ owns the solver
+   * driver. Route llvm-jit through the C case and gate the driver
+   * emission on the original target string below. */
+  effectiveTarget := if target == "llvm-jit" then "C" else target;
+  () := match effectiveTarget
     local
       String str, guid;
       list<PartialRunTpl> codegenFuncs;
