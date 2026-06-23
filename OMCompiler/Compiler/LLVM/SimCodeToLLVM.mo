@@ -671,11 +671,21 @@ algorithm
       "') returned " + intString(st) + "\n", sourceInfo());
     return;
   end if;
+  /* Phase 6 (smoke-invoke functionODE) is intentionally disabled.
+   * It was useful while bootstrapping the IR emission but is now a
+   * liability: the inlined DATA-struct accessors (genReadRealParam,
+   * genReadTime) chase data->simulationInfo and data->localData[0]
+   * through real GEP / load chains, which crash against the fake
+   * DATA struct omc_jit_invoke_functionODE used to fabricate (it
+   * left simulationInfo == NULL). Pass 1 still proves
+   * materialisation via jitFinalizeNoEntry above; the actual
+   * correctness check is the real DASSL simulation in Pass 2. */
   rvIn := List.fill(1.0, 2 * layout.nStates + layout.nAlgs + layout.nParams);
-  rvOut := EXT_LLVM.jitInvokeFunctionODE(odeSym, layout.nStates, layout.nAlgs, layout.nParams, rvIn);
+  /* (rvOut, ..., realVarsString) intentionally unused after the
+   * smoke-invoke was removed; the locals stay so the bind shapes
+   * around the call site do not shift if Phase 6 returns. */
   Error.addInternalError(
-    "SimCodeToLLVM Phase 6: jitInvokeFunctionODE('" + odeSym +
-    "') with realVars=1.0 returned " + realVarsString(rvOut) + "\n",
+    "SimCodeToLLVM Phase 5: materialised '" + odeSym + "'\n",
     sourceInfo());
 end finalizeAndReport;
 
@@ -2011,9 +2021,9 @@ algorithm
 end emitReadRealVar;
 
 protected function emitReadRealParam
-  "Same as emitReadRealVar but routes through omc_jit_get_real_param,
-   which reads data->simulationInfo->realParameter[] instead of the
-   realVars buffer. Used when a CREF resolves to a VK_PARAM slot."
+  "Inline  data->simulationInfo->realParameter[slot]  read. Replaces
+   the former omc_jit_get_real_param runtime call. Used when a CREF
+   resolves to a VK_PARAM slot."
   input Integer slot;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -2021,48 +2031,37 @@ protected function emitReadRealParam
 algorithm
   (outCtx, dst) := freshTmp(ctx);
   EXT_LLVM.genAllocaModelicaReal(dst, false);
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCallArgConstInt(slot);
-  EXT_LLVM.genCall("omc_jit_get_real_param", MODELICA_REAL, dst, true);
+  EXT_LLVM.genReadRealParam("data", slot, dst);
 end emitReadRealParam;
 
 protected function emitWriteRealVar
-  "Emit  call void @omc_jit_set_real_var(ptr %data, i64 slot, double %src)
-   into the active function body. No return value."
+  "Inline  data->localData[0]->realVars[slot] = src  store. Replaces
+   the former omc_jit_set_real_var runtime call."
   input Integer slot;
   input String src;
 algorithm
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCallArgConstInt(slot);
-  EXT_LLVM.genCallArg(src);
-  EXT_LLVM.genCall("omc_jit_set_real_var", MODELICA_VOID, "", false);
+  EXT_LLVM.genWriteRealVar("data", slot, src);
 end emitWriteRealVar;
 
 protected function emitWriteRealParam
-  "Emit  call void @omc_jit_set_real_param(ptr %data, i64 slot, double %src)
-   into the active function body. Writes into the parameter array
-   data->simulationInfo->realParameter[] rather than realVars."
+  "Inline  data->simulationInfo->realParameter[slot] = src  store.
+   Replaces the former omc_jit_set_real_param runtime call."
   input Integer slot;
   input String src;
 algorithm
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCallArgConstInt(slot);
-  EXT_LLVM.genCallArg(src);
-  EXT_LLVM.genCall("omc_jit_set_real_param", MODELICA_VOID, "", false);
+  EXT_LLVM.genWriteRealParam("data", slot, src);
 end emitWriteRealParam;
 
 protected function emitWriteBoolParam
-  "Emit  call void @omc_jit_set_bool_param(ptr %data, i64 slot, double %src)
-   into the active function body. The boolean RHS arrives as a Real
-   (0.0 or 1.0) via emitExp's DAE.BCONST arm; the runtime accessor
-   casts it back to int when writing booleanParameter[]."
+  "Inline  data->simulationInfo->booleanParameter[slot] = (src != 0)
+   store. SCTL's call sites stage Modelica Booleans as 0.0/1.0
+   doubles (the DAE.BCONST arm in emitExp); the inlined IR mirrors
+   the runtime coercion via fcmp ONE + zext. Replaces the former
+   omc_jit_set_bool_param runtime call."
   input Integer slot;
   input String src;
 algorithm
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCallArgConstInt(slot);
-  EXT_LLVM.genCallArg(src);
-  EXT_LLVM.genCall("omc_jit_set_bool_param", MODELICA_VOID, "", false);
+  EXT_LLVM.genWriteBoolParam("data", slot, src);
 end emitWriteBoolParam;
 
 protected function canLowerEquation
@@ -2481,16 +2480,15 @@ algorithm
 end emitReadRealVarStart;
 
 protected function emitReadTime
-  "Emit  %dst = call double @omc_jit_get_time(ptr %data)
-   into the active function body."
+  "Inline  data->localData[0]->timeValue  load. Replaces the former
+   omc_jit_get_time runtime call."
   input EmitCtx ctx;
   output EmitCtx outCtx;
   output String dst;
 algorithm
   (outCtx, dst) := freshTmp(ctx);
   EXT_LLVM.genAllocaModelicaReal(dst, false);
-  EXT_LLVM.genCallArg("data");
-  EXT_LLVM.genCall("omc_jit_get_time", MODELICA_REAL, dst, true);
+  EXT_LLVM.genReadTime("data", dst);
 end emitReadTime;
 
 protected function emitBinaryReal

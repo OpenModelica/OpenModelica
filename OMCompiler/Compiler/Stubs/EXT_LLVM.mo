@@ -62,17 +62,51 @@ function runModelViaJIT
 end runModelViaJIT;
 
 function genReadRealVar
-  "Stub. The real implementation lives in OMCompiler/Compiler/LLVM/
-   EXT_LLVM.mo and inlines the DATA->localData[0]->realVars[...]
-   chain via createInlinedReadRealVar in omcruntime. The stub is
-   never called because SimCodeToLLVM (the only caller) is itself
-   stubbed out when OPENMODELICA_LLVM_JIT is OFF."
   input String dataArgName;
   input Integer slot;
   input String dstName;
 algorithm
   assert(false, getInstanceName());
 end genReadRealVar;
+
+function genWriteRealVar
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genWriteRealVar;
+
+function genReadRealParam
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadRealParam;
+
+function genWriteRealParam
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genWriteRealParam;
+
+function genWriteBoolParam
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genWriteBoolParam;
+
+function genReadTime
+  input String dataArgName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadTime;
 
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;

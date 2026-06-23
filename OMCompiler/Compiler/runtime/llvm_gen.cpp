@@ -190,38 +190,167 @@ static llvm::Value *loadFromSymtab(const char *const name) {
  * Replaces the omc_jit_get_real_var runtime helper -- the IR is
  * now visible to LLVM's optimizer so common subexpressions across
  * accesses (the realVars base pointer) can be hoisted. */
+/* Local helper: emit the load-pointer chain that resolves
+ *
+ *   data->localData[0]->realVars
+ *
+ * leaving the realVars pointer as the returned llvm::Value. Used by
+ * both read and write accessors for realVars. */
+static llvm::Value *emitChainToRealVars(llvm::Value *const dataPtr) {
+  llvm::Value *const localDataPP =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
+  llvm::Value *const sd = emitLoadPtr(localDataPP);
+  return emitGEPLoadPtr(sd, omc_layout_SD_realVars);
+}
+
+/* Local helper: store a value into the alloca registered under
+ * `dstName` (the requested name, matching the symtab-key rule). */
+static void storeIntoSymtab(const char *const dstName,
+                            llvm::Value *const val) {
+  Variable *const dstVar = program->currentFunc->symTab[dstName].get();
+  if (!dstVar) {
+    fprintf(stderr,
+            "storeIntoSymtab: dst '%s' not in symtab\n", dstName);
+    MMC_THROW();
+  }
+  llvm::AllocaInst *const dstAi = dstVar->getAllocaInst();
+  program->builder.CreateStore(val, dstAi);
+}
+
 extern "C" int createInlinedReadRealVar(const char *const dataArgName,
                                         const int64_t slot,
                                         const char *const dstName) {
   llvm::IRBuilder<> &b = program->builder;
   llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
-
-  /* localData = *(SIMULATION_DATA**)(data + offset_localData) */
-  llvm::Value *const localDataPP =
-      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
-  /* localData[0] -- localData is SIMULATION_DATA**, so deref once. */
-  llvm::Value *const sd = emitLoadPtr(localDataPP);
-
-  /* realVars = sd->realVars (modelica_real *) */
-  llvm::Value *const realVars =
-      emitGEPLoadPtr(sd, omc_layout_SD_realVars);
-
-  /* val = realVars[slot] */
+  llvm::Value *const realVars = emitChainToRealVars(dataPtr);
   llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
   llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
   llvm::Value *const valAddr = b.CreateGEP(
       dbl, realVars, llvm::ConstantInt::get(i64, slot), "");
   llvm::Value *const val = b.CreateLoad(dbl, valAddr, "");
+  storeIntoSymtab(dstName, val);
+  return 0;
+}
 
-  /* store into dst alloca */
-  Variable *const dstVar = program->currentFunc->symTab[dstName].get();
-  if (!dstVar) {
-    fprintf(stderr,
-            "createInlinedReadRealVar: dst '%s' not in symtab\n", dstName);
-    MMC_THROW();
-  }
-  llvm::AllocaInst *const dstAi = dstVar->getAllocaInst();
-  b.CreateStore(val, dstAi);
+/* createInlinedWriteRealVar: emit
+ *
+ *   data->localData[0]->realVars[slot] = <srcName>;
+ *
+ * Replaces the omc_jit_set_real_var runtime helper. srcName is the
+ * symtab name of the double-alloca holding the value to write. */
+extern "C" int createInlinedWriteRealVar(const char *const dataArgName,
+                                         const int64_t slot,
+                                         const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const realVars = emitChainToRealVars(dataPtr);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const valAddr = b.CreateGEP(
+      dbl, realVars, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const src = loadFromSymtab(srcName);
+  b.CreateStore(src, valAddr);
+  return 0;
+}
+
+/* createInlinedReadRealParam: emit
+ *
+ *   data->simulationInfo->realParameter[slot]
+ *
+ * into the dst alloca. Mirrors the omc_jit_get_real_param helper. */
+extern "C" int createInlinedReadRealParam(const char *const dataArgName,
+                                          const int64_t slot,
+                                          const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const realParameter =
+      emitGEPLoadPtr(simInfo, omc_layout_SI_realParameter);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const valAddr = b.CreateGEP(
+      dbl, realParameter, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const val = b.CreateLoad(dbl, valAddr, "");
+  storeIntoSymtab(dstName, val);
+  return 0;
+}
+
+/* createInlinedWriteRealParam: emit
+ *
+ *   data->simulationInfo->realParameter[slot] = <srcName>;
+ *
+ * Mirrors the omc_jit_set_real_param helper. */
+extern "C" int createInlinedWriteRealParam(const char *const dataArgName,
+                                           const int64_t slot,
+                                           const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const realParameter =
+      emitGEPLoadPtr(simInfo, omc_layout_SI_realParameter);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const valAddr = b.CreateGEP(
+      dbl, realParameter, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const src = loadFromSymtab(srcName);
+  b.CreateStore(src, valAddr);
+  return 0;
+}
+
+/* createInlinedWriteBoolParam: emit
+ *
+ *   data->simulationInfo->booleanParameter[slot] = (src != 0.0);
+ *
+ * modelica_boolean is a 32-bit int (openmodelica_types.h:106). SCTL's
+ * call sites stage Modelica Booleans through a double alloca (the
+ * DAE.BCONST arm in emitExp materialises 0.0 / 1.0), so we mirror
+ * the runtime omc_jit_set_bool_param coercion: fcmp ONE against 0.0
+ * to get an i1, zero-extend to i32, store. */
+extern "C" int createInlinedWriteBoolParam(const char *const dataArgName,
+                                           const int64_t slot,
+                                           const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const boolParam =
+      emitGEPLoadPtr(simInfo, omc_layout_SI_booleanParameter);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const valAddr = b.CreateGEP(
+      i32, boolParam, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const srcDbl = loadFromSymtab(srcName);
+  llvm::Value *const zero = llvm::ConstantFP::get(dbl, 0.0);
+  llvm::Value *const cmp = b.CreateFCmpONE(srcDbl, zero, "");
+  llvm::Value *const cast = b.CreateZExt(cmp, i32, "");
+  b.CreateStore(cast, valAddr);
+  return 0;
+}
+
+/* createInlinedReadTime: emit
+ *
+ *   data->localData[0]->timeValue
+ *
+ * into the dst alloca. Mirrors omc_jit_get_time. timeValue is the
+ * first field of SIMULATION_DATA so this collapses to two
+ * pointer-chases plus a double load. */
+extern "C" int createInlinedReadTime(const char *const dataArgName,
+                                     const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const localDataPP =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
+  llvm::Value *const sd = emitLoadPtr(localDataPP);
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const tvAddr = b.CreateGEP(
+      i8, sd, llvm::ConstantInt::get(i64, omc_layout_SD_timeValue), "");
+  llvm::Value *const val = b.CreateLoad(dbl, tvAddr, "");
+  storeIntoSymtab(dstName, val);
   return 0;
 }
 

@@ -123,16 +123,8 @@ function genCallArgConstInt
 end genCallArgConstInt;
 
 function genReadRealVar
-  "Inline the GEP / load chain that reads
-     data->localData[0]->realVars[data->simulationInfo->realVarsIndex[slot]]
-   into the active function body, storing the loaded double into the
-   alloca already registered under dstName. dataArgName is the symtab
-   name of the DATA* function argument (typically \"data\"). The caller
-   is responsible for calling genAllocaModelicaReal(dstName) before
-   this. Replaces the omc_jit_get_real_var runtime helper -- the IR
-   is now visible to LLVM's optimizer so common subexpressions across
-   accesses (the realVars base pointer, the realVarsIndex base
-   pointer, ...) can be hoisted."
+  "Inline  data->localData[0]->realVars[slot]  read into dstName.
+   See createInlinedReadRealVar in omcruntime."
   input String dataArgName;
   input Integer slot;
   input String dstName;
@@ -140,6 +132,57 @@ function genReadRealVar
     annotation(Library = "omcruntime",
                Include = "int createInlinedReadRealVar(const char *dataArgName, const int64_t slot, const char *dstName);");
 end genReadRealVar;
+
+function genWriteRealVar
+  "Inline  data->localData[0]->realVars[slot] = <src>  store. src is
+   the symtab name of the double alloca holding the value."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedWriteRealVar(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedWriteRealVar(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genWriteRealVar;
+
+function genReadRealParam
+  "Inline  data->simulationInfo->realParameter[slot]  read."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadRealParam(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadRealParam(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadRealParam;
+
+function genWriteRealParam
+  "Inline  data->simulationInfo->realParameter[slot] = <src>  store."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedWriteRealParam(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedWriteRealParam(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genWriteRealParam;
+
+function genWriteBoolParam
+  "Inline  data->simulationInfo->booleanParameter[slot] = <src>  store.
+   modelica_boolean is a 32-bit int (openmodelica_types.h)."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedWriteBoolParam(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedWriteBoolParam(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genWriteBoolParam;
+
+function genReadTime
+  "Inline  data->localData[0]->timeValue  read into dstName."
+  input String dataArgName;
+  input String dstName;
+  external "C" createInlinedReadTime(dataArgName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadTime(const char *dataArgName, const char *dstName);");
+end genReadTime;
 
 function genCallArgMmcJumpr
   "Fetches the mmc_jmpr from threadData & adds it to the arg vector."
