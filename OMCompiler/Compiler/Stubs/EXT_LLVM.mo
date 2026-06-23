@@ -139,6 +139,11 @@ function genSetupDataStrucShell
   output Integer status = 1;
 end genSetupDataStrucShell;
 
+function genMainShim
+  input String modelName;
+  output Integer status = 1;
+end genMainShim;
+
 function genCallbackTable
   input String modelName;
   input Integer isFmu;

@@ -48,8 +48,17 @@ extern const size_t omc_layout_SI_extObjs;
  * wires data->callback and threadData->localRoots[SIMULATION_DATA]
  * directly via these. */
 extern const size_t omc_layout_DATA_callback;
+extern const size_t omc_layout_DATA_modelData;
 extern const size_t omc_layout_TD_localRoots;
 extern const int    omc_value_LOCAL_ROOT_SIMULATION_DATA;
+
+/* Struct sizes for stack allocation inside the main() shim. The shell
+ * alloca's DATA, MODEL_DATA, SIMULATION_INFO on the stack with these
+ * exact byte counts so the JIT module does not need to know the C
+ * struct shapes in any other form. */
+extern const size_t omc_sizeof_DATA;
+extern const size_t omc_sizeof_MODEL_DATA;
+extern const size_t omc_sizeof_SIMULATION_INFO;
 
 /* Callback function-pointer struct (OpenModelicaGeneratedFunctionCallbacks)
  * total size and per-field byte offsets. Consumed by createCallbackTable

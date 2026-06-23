@@ -162,18 +162,27 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
 3. **Equation functions** (`_functionODE`, `_functionDAE`,
    `_ODE_DAG`). DONE. `emitModelEquationsBlock` re-using
    `emitEquationFunction`; `_ODE_DAG` is a void stub (advisory hint).
-4. **`<Model>_setupDataStruc`.** TODO. Needs `createSetupDataStruc`
-   driven by `llvm_gen_layout.h`'s MODEL_DATA / DATA offsets, plus
-   MMC-literal emit primitives for the resource literal table.
+4. **`<Model>_setupDataStruc`.** PARTIAL. `createSetupDataStrucShell`
+   wires the two critical pointers (`data->callback`,
+   `threadData->localRoots[SIMULATION_DATA]`). Remaining: ~70
+   modelData scalar / string / XML-blob assignments + the
+   `OpenModelica_updateUriMapping` resource-literal call. Land them
+   when CodegenC suppression is in sight (step 8).
 5. **Resource literals (`_OMC_LIT_RESOURCE_*`).** TODO. Internal
    linkage in `<Model>.c`, only consumed by `setupDataStruc` to feed
    `OpenModelica_updateUriMapping`. Land alongside step 4 via the
    same MMC_DEFSTRINGLIT / MMC_DEFSTRUCTLIT layout primitives.
    `<Model>_dummyVAR_INFO` is unused externally and can be skipped.
-6. **`main()` shim.** TODO. Stack-alloc DATA/MODEL_DATA/SIMULATION_INFO,
-   wire pointers, call `setupDataStruc`, tail-call
-   `_main_SimulationRuntime`. Decide on the `MMC_TRY_TOP`/`STACK`
-   setjmp dance (expand to IR or punt under `-d=jitSimulate`).
+6. **`main()` shim.** PARTIAL. `createMainShim` allocas
+   DATA / MODEL_DATA / SIMULATION_INFO (sizes from `omc_sizeof_*`),
+   wires `data->modelData` + `data->simulationInfo`, calls
+   `<Model>_setupDataStruc(&data, NULL)`, returns
+   `_main_SimulationRuntime(argc, argv, &data, NULL)`. linkonce_odr
+   keeps the linker out of CodegenC's way. Remaining for the full
+   lift: `omc_assert` / `omc_terminate` function-pointer
+   reassignments, `MMC_INIT` + `omc_alloc_interface.init`, the
+   `MMC_TRY_TOP` / `MMC_TRY_STACK` setjmp dance (expand to IR or
+   punt under `-d=jitSimulate`), the Optimica branch.
 7. **`_performSimulation` / `_performQSSSimulation` /
    `_updateContinuousSystem`.** TODO. **Do not** emit 600 lines of
    solver IR per model. **Do not** edit

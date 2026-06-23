@@ -652,6 +652,7 @@ algorithm
     try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
     try emitSetupDataStrucShellBlock(name); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
+    try emitMainShimBlock(name); else reportBlockFailure("emitMainShimBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -2044,6 +2045,20 @@ algorithm
     fail();
   end if;
 end emitSetupDataStrucShellBlock;
+
+protected function emitMainShimBlock
+  "Emit a linkonce_odr  int main(int, char**)  into the active Pass-2
+   module. Must run after emitSetupDataStrucShellBlock so the shim's
+   call to <Model>_setupDataStruc resolves within the same module."
+  input Absyn.Path modelName;
+protected
+  Integer st;
+algorithm
+  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName));
+  if st <> 0 then
+    fail();
+  end if;
+end emitMainShimBlock;
 
 protected function emitNonlinearSystemsBlock
   "Displace <Model>_02nls.c when the SimCode carries no nonlinear

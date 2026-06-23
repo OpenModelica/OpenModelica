@@ -892,6 +892,123 @@ extern "C" int createSetupDataStrucShell(const char *const modelName) {
   return 0;
 }
 
+/* ------------------------------------------------------------------------ *
+ * main() shim emission.
+ *
+ * Emits a minimal linkonce_odr  int main(int argc, char **argv)  that
+ * stack-allocates DATA / MODEL_DATA / SIMULATION_INFO (sizes from
+ * llvm_gen_layout.h's omc_sizeof_* constants), wires
+ *   data->modelData       = &modelData
+ *   data->simulationInfo  = &simInfo
+ * and calls in order:
+ *   <Model>_setupDataStruc(&data, NULL)
+ *   _main_SimulationRuntime(argc, argv, &data, NULL)
+ * returning the latter's result.
+ *
+ * Intentionally skipped (CodegenC's strong main still owns these
+ * today, linkonce_odr keeps us out of the way):
+ *   omc_assert / omc_terminate function-pointer reassignments
+ *   measure_time_flag, compiledInDAEMode, compiledWithSymSolver
+ *     globals
+ *   MMC_INIT, omc_alloc_interface.init()
+ *   MMC_TRY_TOP / MMC_TRY_STACK setjmp dance
+ *   Optimica branch
+ *   fflush(NULL)
+ *
+ * The threadData_t argument is passed NULL because the C runtime's
+ * _main_SimulationRuntime is responsible for setting up thread-local
+ * state. This shell is the scaffolding for step 8 of the roadmap;
+ * the omitted bits land in the full main() lift commit, alongside
+ * the CodegenC suppression that makes <Model>.c disappear.
+ *
+ * Returns 0 on success.
+ * ------------------------------------------------------------------------ */
+extern "C" int createMainShim(const char *const modelName) {
+  if (!program || !program->module) {
+    fprintf(stderr, "createMainShim: no active module\n");
+    return 1;
+  }
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Module &mod = *program->module;
+
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(ctx);
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(ctx);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(ctx);
+  llvm::PointerType *const ptrTy = llvm::PointerType::getUnqual(ctx);
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(ctx);
+
+  if (mod.getFunction("main")) {
+    fprintf(stderr, "createMainShim: 'main' already defined\n");
+    return 2;
+  }
+
+  llvm::FunctionType *const mainTy =
+      llvm::FunctionType::get(i32, {i32, ptrTy}, false);
+  llvm::Function *const mainFn = llvm::Function::Create(
+      mainTy, llvm::Function::LinkOnceODRLinkage, "main", mod);
+  llvm::Function::arg_iterator argIt = mainFn->arg_begin();
+  llvm::Argument *const argcArg = &*argIt++;
+  argcArg->setName("argc");
+  llvm::Argument *const argvArg = &*argIt;
+  argvArg->setName("argv");
+
+  llvm::BasicBlock *const entryBB =
+      llvm::BasicBlock::Create(ctx, "entry", mainFn);
+  llvm::IRBuilder<> b(entryBB);
+
+  /* Stack-alloc the three structs. AllocaInst with `i8`-typed element
+   * type and a `count = sizeof(struct)` operand gives a byte buffer of
+   * the right size; the JIT and the consumers only see a `ptr`
+   * because of opaque pointers, so no further typing is needed. */
+  llvm::AllocaInst *const dataAlloca = b.CreateAlloca(
+      i8, llvm::ConstantInt::get(i64, omc_sizeof_DATA), "data");
+  dataAlloca->setAlignment(llvm::Align(8));
+  llvm::AllocaInst *const modelDataAlloca = b.CreateAlloca(
+      i8, llvm::ConstantInt::get(i64, omc_sizeof_MODEL_DATA), "modelData");
+  modelDataAlloca->setAlignment(llvm::Align(8));
+  llvm::AllocaInst *const simInfoAlloca = b.CreateAlloca(
+      i8, llvm::ConstantInt::get(i64, omc_sizeof_SIMULATION_INFO), "simInfo");
+  simInfoAlloca->setAlignment(llvm::Align(8));
+
+  /* data->modelData = &modelData; data->simulationInfo = &simInfo. */
+  llvm::Value *const mdAddr = b.CreateGEP(
+      i8, dataAlloca,
+      llvm::ConstantInt::get(i64, omc_layout_DATA_modelData), "mdAddr");
+  b.CreateStore(modelDataAlloca, mdAddr);
+  llvm::Value *const siAddr = b.CreateGEP(
+      i8, dataAlloca,
+      llvm::ConstantInt::get(i64, omc_layout_DATA_simulationInfo), "siAddr");
+  b.CreateStore(simInfoAlloca, siAddr);
+
+  /* <Model>_setupDataStruc(&data, NULL). NULL threadData mirrors the
+   * setupDataStruc shell's tolerance of a null threadData -- the
+   * shell only writes through `data`, so the NULL is harmless. The
+   * future full-body lift will require a real threadData. */
+  llvm::FunctionType *const setupTy =
+      llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false);
+  const std::string setupName =
+      std::string(modelName) + "_setupDataStruc";
+  llvm::FunctionCallee const setupCallee =
+      mod.getOrInsertFunction(setupName, setupTy);
+  b.CreateCall(setupCallee,
+               {dataAlloca, llvm::ConstantPointerNull::get(ptrTy)});
+
+  /* _main_SimulationRuntime(argc, argv, &data, NULL). Returns int.
+   * The runtime helper handles threadData setup itself. */
+  llvm::FunctionType *const runTy = llvm::FunctionType::get(
+      i32, {i32, ptrTy, ptrTy, ptrTy}, false);
+  llvm::FunctionCallee const runCallee =
+      mod.getOrInsertFunction("_main_SimulationRuntime", runTy);
+  llvm::CallInst *const res = b.CreateCall(
+      runCallee,
+      {argcArg, argvArg, dataAlloca,
+       llvm::ConstantPointerNull::get(ptrTy)},
+      "res");
+  b.CreateRet(res);
+
+  return 0;
+}
+
 /* Process-global bitcode buffer stashed by SimCodeToLLVM. Consumed (cleared)
  * by omc_runModelViaJIT so each model run starts from a clean slate. The
  * buffer is the in-memory replacement for the transient <prefix>_sctl.bc

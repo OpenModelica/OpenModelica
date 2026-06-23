@@ -246,6 +246,22 @@ function genSetupDataStrucShell
                Include = "int createSetupDataStrucShell(const char *modelName);");
 end genSetupDataStrucShell;
 
+function genMainShim
+  "Emit a minimal linkonce_odr  int main(int argc, char **argv)  that
+   allocas DATA / MODEL_DATA / SIMULATION_INFO on the stack, wires
+   data->modelData and data->simulationInfo, and chains
+   <Model>_setupDataStruc + _main_SimulationRuntime. Skips the
+   omc_assert reassignments / MMC_TRY-CATCH dance / Optimica branch
+   that the CodegenC strong main carries; linkonce_odr keeps us out
+   of the linker's way until that strong main goes away. Returns 0
+   on success."
+  input String modelName;
+  output Integer status;
+  external "C" status = createMainShim(modelName)
+    annotation(Library = "omcruntime",
+               Include = "int createMainShim(const char *modelName);");
+end genMainShim;
+
 function setLinkonceOdr
   "Flip a function's linkage in the active module to linkonce_odr.
    Used after emitStub to mark stubs in <Model>.c that intentionally
