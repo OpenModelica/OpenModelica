@@ -108,6 +108,10 @@ public:
     void             setFocusOutput(bool focus);
     void             setExpr(QString expr);
     void             delegateFinished(InputCellDelegate *delegate);
+#if defined(__EMSCRIPTEN__)
+    // Draw a plot from the 18 ABI-order PlotCallback strings the worker recorded.
+    void             renderPlotArgs(const QStringList &args);
+#endif
 
 public slots:
     void             plotVariablesSlot(QStringList lst);

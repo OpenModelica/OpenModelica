@@ -27,7 +27,9 @@ import init, {
   omc_eval,
   omc_set_env,
   omc_vfs_put,
+  omc_vfs_get,
   omc_take_pending_downloads,
+  omc_take_plot_commands,
 } from "./omc/OpenModelicaCompiler.js";
 
 // Instantiate the omc wasm module once. omc_set_env mirrors the old host page:
@@ -97,6 +99,7 @@ async function evalWithDownloads(src) {
     const todo = pending.filter((p) => !attempted.has(p.filename));
     if (todo.length === 0) return result;
     omc_eval("getErrorString()"); // discard the aborted run's diagnostics
+    omc_take_plot_commands(); // and any plots it recorded before aborting
     for (const item of todo) {
       attempted.add(item.filename);
       await fetchToVfs(item.urls, item.filename);
@@ -122,10 +125,30 @@ async function doInit(installMsl) {
   return { kind: "ready", ok: true, version, message };
 }
 
+// Plot commands the eval recorded, each with the bytes of its result file from
+// the VFS, plus the transferable buffers for postMessage. `args` is the 18
+// PlotCallback strings (result file at [0]). Clients that don't plot ignore it.
+function collectPlots() {
+  const cmds = omc_take_plot_commands() || [];
+  const plots = [];
+  const transfer = [];
+  for (const args of cmds) {
+    const file = args[0] || "";
+    const bytes = file ? omc_vfs_get(file) : undefined;
+    plots.push({ args, file, bytes });
+    if (bytes) transfer.push(bytes.buffer);
+  }
+  return { plots, transfer };
+}
+
 async function doEval(src) {
   const result = trim(await evalWithDownloads(src));
   const error = cleanError(omc_eval("getErrorString()"));
-  return { kind: "done", result, error, keep: src.trim() !== "quit()" };
+  const { plots, transfer } = collectPlots();
+  return {
+    msg: { kind: "done", result, error, plots, keep: src.trim() !== "quit()" },
+    transfer,
+  };
 }
 
 self.onmessage = async (e) => {
@@ -135,7 +158,9 @@ self.onmessage = async (e) => {
     if (msg.cmd === "init") {
       self.postMessage(await doInit(msg.installMsl !== false));
     } else if (msg.cmd === "eval") {
-      self.postMessage(await doEval(msg.src));
+      const { msg: reply, transfer } = await doEval(msg.src);
+      // Transfer the result-file buffers (zero-copy) rather than clone them.
+      self.postMessage(reply, transfer);
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the

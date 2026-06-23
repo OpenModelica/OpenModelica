@@ -124,6 +124,23 @@ pub fn omc_take_pending_downloads() -> JsValue {
     arr.into()
 }
 
+/// Drain the plot commands the last `omc_eval` recorded, as an array of string
+/// arrays (each the 18 `PlotCallback` args in ABI order, result file at index 0).
+/// A host with its own renderer (OMNotebook-qt) drains this, then reads each
+/// result file from the VFS with [`omc_vfs_get`] and draws it.
+#[wasm_bindgen]
+pub fn omc_take_plot_commands() -> JsValue {
+    let arr = js_sys::Array::new();
+    for cmd in crate::wasm_plot::take_plot_commands() {
+        let args = js_sys::Array::new();
+        for a in &cmd {
+            args.push(&JsValue::from_str(a));
+        }
+        arr.push(&args);
+    }
+    arr.into()
+}
+
 /// Unzip `data` into the VFS, mounting each entry under `mount` (e.g.
 /// `mount="/lib"`, entry `Modelica 4.1.0/package.mo` → `/lib/Modelica 4.1.0/
 /// package.mo`). One fetch + this call stages a whole Modelica library; point

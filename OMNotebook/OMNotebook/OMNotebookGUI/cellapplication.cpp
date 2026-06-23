@@ -126,6 +126,7 @@ namespace IAEX
   {
       app_ = new MyApp(argc, argv, this);
 
+#ifndef __EMSCRIPTEN__
       const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
       if (!installationDirectoryPath) {
           QMessageBox::critical(nullptr, tr("Error"),
@@ -151,6 +152,7 @@ namespace IAEX
 
       if (translator.load("OMNotebook_" + locale, translationDirectory))
           app_->installTranslator(&translator);
+#endif
 
       //  Main window (purely a placeholder – real windows are opened later)
       mainWindow = new QMainWindow();
@@ -169,8 +171,18 @@ namespace IAEX
        * Is important for threadData initialization
        */
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
+#ifdef __EMSCRIPTEN__
+      // The browser omc starts with no library; queue the MSL install (and the
+      // startup option) as fire-and-forget worker commands. They must not run a
+      // nested event loop here, before QApplication::exec(), as that crashes the
+      // not-yet-realized wasm screen. The window comes up while they run.
+      env->startBackgroundCommand("setCommandLineOptions(\"+d=shortOutput\")");
+      env->startBackgroundCommand("installPackage(Modelica)");
+#else
       // Avoid cluttering the whole disk with omc temp-files
       env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
+#endif
+#ifndef __EMSCRIPTEN__
       QString tmpDir = OmcInteractiveEnvironment::TmpPath();
 
       if (!QDir().exists(tmpDir))
@@ -185,15 +197,12 @@ namespace IAEX
                                     .arg(tmpDir).arg(cdRes));
           std::exit(1);
       }
+#endif
 
-      //  Load stylesheet.xml
-      QString openmodelica = QString::fromLatin1(installationDirectoryPath);
+      //  Load stylesheet.xml and commands.xml from the bundled resources, so they
+      //  work regardless of the installation layout and on the web build.
       try {
-          QString stylesheetfile = openmodelica;
-          if (!stylesheetfile.endsWith('/') && !stylesheetfile.endsWith('\\'))
-              stylesheetfile += '/';
-          stylesheetfile += "share/omnotebook/stylesheet.xml";
-          Stylesheet::instance(stylesheetfile);
+          Stylesheet::instance(":/stylesheet.xml");
       } catch (std::exception &e) {
           QMessageBox::warning(nullptr, tr("Error"), e.what());
           std::exit(-1);
@@ -201,11 +210,7 @@ namespace IAEX
 
       //  Load commands.xml (command completion)
       try {
-          QString commandfile = openmodelica;
-          if (!commandfile.endsWith('/') && !commandfile.endsWith('\\'))
-              commandfile += '/';
-          commandfile += "share/omnotebook/commands.xml";
-          CommandCompletion::instance(commandfile);
+          CommandCompletion::instance(":/commands.xml");
       } catch (std::exception &e) {
           QString msg = e.what();
           msg += "\nCould not create command completion class, exiting OMNotebook";

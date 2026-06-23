@@ -38,7 +38,9 @@
 
 #include <QtCore/QString>
 
-#ifdef OMC_RUST_ABI
+#if defined(__EMSCRIPTEN__)
+#include "omc_wasm_compat.h"
+#elif defined(OMC_RUST_ABI)
 #include "omc_rust_embedding.h"
 #else
 #include "meta/meta_modelica.h"
@@ -61,6 +63,19 @@ namespace IAEX
     virtual QString getError();
     virtual int getErrorLevel();
     virtual void evalExpression(const QString expr);
+#if defined(__EMSCRIPTEN__)
+    // Queue a command on the omc worker without blocking the caller (used for the
+    // startup MSL install; result/diagnostics are not returned).
+    void startBackgroundCommand(const QString expr);
+    // Current download progress as display text, or empty when nothing is
+    // downloading; used to drive the status bar.
+    QString progressText();
+    // Plot commands the last evalExpression produced (the worker records each
+    // plot() since the in-process callback can't fire here). Each entry is the 18
+    // PlotCallback strings (result file at index 0, already staged into FS).
+    // Returns and clears the list.
+    QList<QStringList> takePlotCommands();
+#endif
     static QString OMCVersion();
     static QString OpenModelicaHome();
     static QString TmpPath();
@@ -69,6 +84,7 @@ namespace IAEX
     static OmcInteractiveEnvironment* selfInstance;
     QString result_;
     QString error_;
+    QString omcVersion_;
     int severity;
   };
 }

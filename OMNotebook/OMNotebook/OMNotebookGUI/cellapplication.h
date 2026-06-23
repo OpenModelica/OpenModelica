@@ -53,7 +53,9 @@
 #include "documentview.h"
 #include "xmlnodename.h"
 
-#ifdef OMC_RUST_ABI
+#if defined(__EMSCRIPTEN__)
+#include "omc_wasm_compat.h"
+#elif defined(OMC_RUST_ABI)
 #include "omc_rust_embedding.h"
 extern "C" {
 #include "omc_config.h"

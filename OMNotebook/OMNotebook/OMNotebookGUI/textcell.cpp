@@ -175,6 +175,8 @@ namespace IAEX
     {
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -196,6 +198,7 @@ namespace IAEX
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     else
     {
       QTextBrowser::keyPressEvent( event );

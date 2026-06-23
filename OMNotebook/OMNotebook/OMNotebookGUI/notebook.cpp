@@ -439,40 +439,45 @@ void NotebookWindow::createEditMenu()
 
   toolBar->addSeparator();
 
+  // CUT/COPY/PASTE. On wasm the menu/toolbar entries and shortcuts are omitted
+  // (the programmatic QClipboard path doesn't work there; the cell widgets handle
+  // Ctrl+C/X/V directly). The QActions are still created so the enable/disable
+  // wiring stays valid.
   // CUT
   cutAction = new QAction( tr("Cu&t"), this);
-  cutAction->setShortcut( QKeySequence("Ctrl+X") );
   cutAction->setStatusTip( tr("Cut selected text") );
   connect( cutAction, SIGNAL( triggered() ),
            this, SLOT( cutEdit() ));
 
   cutAction->setEnabled(false);
   cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
-  toolBar->addAction(cutAction);
 
   // COPY
   copyAction = new QAction( tr("&Copy"), this);
-  copyAction->setShortcut( QKeySequence("Ctrl+C") );
   copyAction->setStatusTip( tr("Copy selected text") );
   connect( copyAction, SIGNAL( triggered() ),
            this, SLOT( copyEdit() ));
 
   copyAction->setEnabled(false);
   copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
-  toolBar->addAction(copyAction);
 
   // PASTE
   pasteAction = new QAction( tr("&Paste"), this);
-  pasteAction->setShortcut( QKeySequence("Ctrl+V") );
   pasteAction->setStatusTip( tr("Paste text from clipboard") );
   connect( pasteAction, SIGNAL( triggered() ),
            this, SLOT( pasteEdit() ));
 
-
   pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
-  toolBar->addAction(pasteAction);
 
+#ifndef __EMSCRIPTEN__
+  cutAction->setShortcut( QKeySequence("Ctrl+X") );
+  copyAction->setShortcut( QKeySequence("Ctrl+C") );
+  pasteAction->setShortcut( QKeySequence("Ctrl+V") );
+  toolBar->addAction(cutAction);
+  toolBar->addAction(copyAction);
+  toolBar->addAction(pasteAction);
   toolBar->addSeparator();
+#endif
 
 
   // FIND
@@ -516,10 +521,13 @@ void NotebookWindow::createEditMenu()
   auto editMenu = menuBar()->addMenu( tr("&Edit") );
   editMenu->addAction( undoAction );
   editMenu->addAction( redoAction );
+#ifndef __EMSCRIPTEN__
+  // Omitted on wasm; see the cut/copy/paste action setup above.
   editMenu->addSeparator();
   editMenu->addAction( cutAction );
   editMenu->addAction( copyAction );
   editMenu->addAction( pasteAction );
+#endif
   editMenu->addSeparator();
   editMenu->addAction( findAction );
   editMenu->addAction( replaceAction );

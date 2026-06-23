@@ -1,16 +1,12 @@
-//! Browser-wasm plotting. The compiler invokes `System::plotCallBack` when an
-//! evaluated `plot(...)`/`plotAll(...)`/`plotParametric(...)` script runs and a
-//! plot callback is registered (otherwise it tries to spawn the external
-//! `OMPlot` process, which does not exist on wasm). We register a callback that
-//! reads the simulation result out of the VFS, renders an SVG chart with the
-//! `charton` crate, and inserts it into the page's `#log` element — right where
-//! the command's text output appears.
-//!
-//! The callback is the C `PlotCallback` ABI (so it plugs into the same registry
-//! the native OMEdit Qt callback uses). It must not unwind across that boundary,
-//! so every fallible step returns a `Result` and failures are reported as a log
-//! line rather than a panic.
+//! Browser-wasm plotting. `System::plotCallBack` invokes our registered callback
+//! (the C `PlotCallback` ABI) when an evaluated `plot(...)` runs. The callback
+//! records the plot's arguments in a per-eval queue the JS host drains
+//! ([`take_plot_commands`]) — how OMNotebook-qt drives its own Qt/OMPlot renderer
+//! — and, when a DOM is present (in-page host, not the Worker), also renders an
+//! SVG into `#log` with `charton`. It must not unwind across the C boundary, so
+//! every fallible step returns a `Result`.
 
+use std::cell::RefCell;
 use std::ffi::{CStr, c_char, c_int, c_void};
 use std::sync::Arc;
 
@@ -25,6 +21,20 @@ use openmodelica_util::System;
 /// Install the wasm plot callback. Called once from `omc_init`.
 pub fn register() {
     System::omc_set_plot_callback(std::ptr::null_mut(), Some(plot_callback));
+}
+
+thread_local! {
+    /// Recorded plot commands; each is the 18 `PlotCallback` args in ABI order,
+    /// result file at index 0.
+    static PLOT_QUEUE: RefCell<Vec<Vec<String>>> = const { RefCell::new(Vec::new()) };
+}
+
+pub fn take_plot_commands() -> Vec<Vec<String>> {
+    PLOT_QUEUE.with(|q| std::mem::take(&mut *q.borrow_mut()))
+}
+
+fn has_dom() -> bool {
+    web_sys::window().and_then(|w| w.document()).is_some()
 }
 
 /// Decode a C string argument (null → empty).
@@ -44,7 +54,7 @@ unsafe extern "C" fn plot_callback(
     _external_window: c_int,
     filename: *const c_char,
     title: *const c_char,
-    _grid: *const c_char,
+    grid: *const c_char,
     plot_type: *const c_char,
     log_x: *const c_char,
     log_y: *const c_char,
@@ -54,13 +64,27 @@ unsafe extern "C" fn plot_callback(
     x2: *const c_char,
     y1: *const c_char,
     y2: *const c_char,
-    _curve_width: *const c_char,
-    _curve_style: *const c_char,
-    _legend_position: *const c_char,
-    _footer: *const c_char,
+    curve_width: *const c_char,
+    curve_style: *const c_char,
+    legend_position: *const c_char,
+    footer: *const c_char,
     auto_scale: *const c_char,
     variables: *const c_char,
 ) {
+    let raw = unsafe {
+        vec![
+            cs(filename), cs(title), cs(grid), cs(plot_type), cs(log_x), cs(log_y),
+            cs(x_label), cs(y_label), cs(x1), cs(x2), cs(y1), cs(y2),
+            cs(curve_width), cs(curve_style), cs(legend_position), cs(footer),
+            cs(auto_scale), cs(variables),
+        ]
+    };
+    PLOT_QUEUE.with(|q| q.borrow_mut().push(raw));
+
+    // In-page hosts also get an inline SVG; the Worker has no DOM, so skip it.
+    if !has_dom() {
+        return;
+    }
     let args = unsafe {
         PlotArgs {
             filename: cs(filename),

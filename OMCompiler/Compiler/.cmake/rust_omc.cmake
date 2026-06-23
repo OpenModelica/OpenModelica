@@ -688,6 +688,54 @@ function(omc_rust_omshell_qt_web_page)
   add_dependencies(rust_omshell_qt_web rust_wasm)
 endfunction()
 
+# Assemble the Qt OMNotebook web page. Same shape as omc_rust_omshell_qt_web_page
+# (nested Qt-for-WebAssembly cmake build, staged beside the shared omc module +
+# worker), differing only in source dir, build dir, artifact base and package
+# dir. Plotting is library-only for now (no data path from the worker VFS), so
+# the page is a notebook editor that round-trips input cells through omc. Gated
+# on the same OMSHELL_QT_WASM_PREFIX toolchain check and skipped with a status
+# message when absent. Reads omc_rust_setup_wasm's _web_dir and file-scope
+# RUST_OMC_DIR.
+function(omc_rust_omnotebook_qt_web_page)
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+      CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
+  set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
+  if(NOT EXISTS ${_tc})
+    message(STATUS "OMNotebook Qt web page skipped: no Qt-for-WebAssembly toolchain at "
+                   "${_tc} (set -DOMSHELL_QT_WASM_PREFIX=<prefix> to enable).")
+    return()
+  endif()
+
+  set(_qt_src ${CMAKE_SOURCE_DIR}/OMNotebook/OMNotebook/OMNotebookGUI/wasm)
+  set(_qt_bld ${CMAKE_CURRENT_BINARY_DIR}/omnotebook-qt-wasm)
+  set(_qt_pkgdir ${_web_dir}/OMNotebook-qt)
+
+  set(_host_arg "")
+  if(QT_HOST_PATH)
+    set(_host_arg -DQT_HOST_PATH=${QT_HOST_PATH})
+  elseif(DEFINED ENV{QT_HOST_PATH})
+    set(_host_arg -DQT_HOST_PATH=$ENV{QT_HOST_PATH})
+  endif()
+
+  add_custom_target(rust_omnotebook_qt_web ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
+    COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
+            -DCMAKE_TOOLCHAIN_FILE=${_tc} ${_host_arg} -DCMAKE_BUILD_TYPE=Release
+    COMMAND ${CMAKE_COMMAND} --build ${_qt_bld} --parallel
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${_qt_bld}/OMNotebook-qt.html ${_qt_bld}/OMNotebook-qt.js
+            ${_qt_bld}/OMNotebook-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    COMMENT "Qt: building OMNotebook-qt web page -> ${_qt_pkgdir}"
+    VERBATIM)
+  add_dependencies(rust_omnotebook_qt_web rust_wasm)
+  # Both Qt pages copy the shared omc_worker.js into ${_web_dir}; serialize them
+  # so the two copies never write that file concurrently. The dependency target
+  # exists whenever this one does (same toolchain gate, same build).
+  add_dependencies(rust_omnotebook_qt_web rust_omshell_qt_web)
+endfunction()
+
 function(omc_rust_setup_wasm)
   # RUST_OMC_WASM_MODE = <host>-<profile>: host selects the wasm-bindgen target
   # (nodejs / web), profile the cargo profile.
@@ -826,6 +874,7 @@ function(omc_rust_setup_wasm)
       omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)
       omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
       omc_rust_omshell_qt_web_page()
+      omc_rust_omnotebook_qt_web_page()
     else()
       message(STATUS "OMShell web pages skipped: RUST_OMC_WASM_MODE is a Node host "
                      "(set web-release/web-debug to build them).")

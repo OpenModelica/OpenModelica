@@ -151,6 +151,8 @@ namespace IAEX {
     {
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -172,6 +174,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       QTextCursor tc(textCursor());
@@ -969,6 +972,7 @@ void LatexCell::eval(bool silent)
           }
         }
 
+#ifndef __EMSCRIPTEN__
         QProcess *process = new QProcess(this);
         process->setWorkingDirectory(tempdir);
         process->setProcessChannelMode(QProcess::MergedChannels);
@@ -1055,6 +1059,13 @@ void LatexCell::eval(bool silent)
                 QMessageBox::warning(nullptr, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."));
             }
         }
+#else
+        // The web build has no QProcess; latex/dvipng cannot be invoked.
+        input_->clear();
+        input_->textCursor().insertText(tr("LaTeX rendering is not available in the web build."));
+        setClosed(false);
+        setState(Error_l);
+#endif
     }
     else
     {

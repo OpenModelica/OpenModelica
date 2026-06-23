@@ -364,6 +364,8 @@ namespace IAEX {
 
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -391,6 +393,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     // CTRL+E: autoindent cell
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
     {
@@ -603,6 +606,8 @@ namespace IAEX {
       event->accept();
       emit eval();
     }
+// wasm: base class handles Ctrl+C so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -612,6 +617,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 1 );
     }
+#endif
     else
     {
       inCommand = false;
@@ -1521,6 +1527,25 @@ namespace IAEX {
     }
   }
 
+#if defined(__EMSCRIPTEN__)
+  void GraphCell::renderPlotArgs(const QStringList &a)
+  {
+    // Build the list PlotCallbackFunction passes to plotVariablesSlot from the 18
+    // ABI-order args; the result file (a[0]) is already staged into the FS.
+    if (a.size() < 18) {
+      return;
+    }
+    QStringList lst;
+    lst << "";                   // the first element must be empty
+    for (int i = 0; i < 17; ++i) {
+      lst << a.at(i);            // filename .. autoScale
+    }
+    lst << "" << "" << "" << ""; // skip yaxis / ylabel-right / yrange-right pair
+    lst << a.at(17).split(" ", Qt::SkipEmptyParts);  // variables
+    plotVariablesSlot(lst);
+  }
+#endif
+
   void GraphCell::plotVariablesSlot(QStringList lst)
   {
     try
@@ -1584,9 +1609,11 @@ namespace IAEX {
       // Only the text, no html tags. /AF
       QString expr = input_->toPlainText();
       // Before evaluating any expression set the plot callback pointer and function.
+#ifndef __EMSCRIPTEN__
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
       env->threadData_->plotClassPointer = this;
       env->threadData_->plotCB = GraphCell::PlotCallbackFunction;
+#endif
       // Before evaluating any expression also hide the PlotWindow. If callback function is called it will show it.
       mpPlotWindow->hide();
 
@@ -1626,6 +1653,23 @@ namespace IAEX {
 //        et->start();
         getDelegate()->evalExpression(expr);
         delegateFinished(getDelegate());
+#if defined(__EMSCRIPTEN__)
+        // Draw any plot() the command produced (omc ran in the worker, so its
+        // callback can't reach us). Deferred to the main loop because the code
+        // above runs in evalExpression's nested QEventLoop; on Qt for WebAssembly
+        // a qwt canvas built there only composites after a later relayout.
+        const QList<QStringList> plots = OmcInteractiveEnvironment::getInstance()->takePlotCommands();
+        if (!plots.isEmpty()) {
+          QTimer::singleShot(0, this, [this, plots]() {
+            for (const QStringList &args : plots) {
+              renderPlotArgs(args);
+            }
+            // Recompute the cell height; the resize composites the qwt canvas
+            // (the relayout that editing the input cell triggered by hand).
+            contentChanged();
+          });
+        }
+#endif
       }
     }
     input_->blockSignals(false);

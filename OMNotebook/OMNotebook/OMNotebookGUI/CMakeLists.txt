@@ -150,6 +150,3 @@ if(MINGW)
   ")
 endif()
 
-install(FILES stylesheet.xml
-              commands.xml
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)
