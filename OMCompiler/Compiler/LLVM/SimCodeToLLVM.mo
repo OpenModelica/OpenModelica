@@ -724,10 +724,19 @@ algorithm
 
   ctx := EMIT_CTX(layout, 0);
   ok := true;
+  /* Per-recipe try/else so a deep MMC_THROW from emitEquation does
+   * not skip the return / finnishGen below. The LLVM function is
+   * then well-formed (has terminator) even when some recipe was
+   * dropped -- the symbol is in our bitcode either way, so the
+   * caller must record the segment displacement. */
   for r in recipes loop
-    if ok then
-      (ctx, ok) := emitEquation(r, ctx);
-    end if;
+    try
+      if ok then
+        (ctx, ok) := emitEquation(r, ctx);
+      end if;
+    else
+      ok := false;
+    end try;
   end for;
 
   if retTy == MODELICA_VOID then
@@ -1138,11 +1147,17 @@ algorithm
    * user functions; the calls SCTL emits next resolve to them at
    * JIT link time. */
   emitSyntheticFunctions(collectAlgSynths(recipes), name);
-  ok := emitEquationFunction(prefix + "_updateBoundParameters",
-                             recipes, layout, MODELICA_INTEGER);
-  if not ok then
-    return;
-  end if;
+  /* emitEquationFunction emits a return at the end whether or not
+   * every recipe body lowered, so the LLVM function is always
+   * well-formed. ok=false means some equation body was skipped --
+   * the runtime then sees stale parameter values for that
+   * equation -- but the _updateBoundParameters symbol is in our
+   * bitcode either way. Recording _08bnd.c unconditionally is
+   * required for symbol uniqueness: leaving it on the clang path
+   * after we already emitted the IR symbol triggers a JIT
+   * duplicate-definition error. */
+  _ := emitEquationFunction(prefix + "_updateBoundParameters",
+                            recipes, layout, MODELICA_INTEGER);
   emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
   recordDisplacedSegment("_08bnd.c");
 end emitBoundParametersBlock;
@@ -1370,21 +1385,24 @@ algorithm
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
+  /* The whole per-zc emission runs inside try/else: a deep
+   * MMC_THROW from emitExp would otherwise skip the genReturnZero
+   * + finnishGen below, leaving the LLVM function without a
+   * terminator -- which crashes the optimizer pass that runs at
+   * JIT materialization time. */
   for zc in zcs loop
-    (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
-    if not ok then
-      /* Fall back to a literal 0 so the function body stays
-       * well-formed. The simulator will not detect this one zero
-       * crossing, but the surrounding _05evt.c can still be
-       * displaced cleanly without duplicate-symbol clashes. */
-      (ctx, valTmp) := freshTmp(ctx);
-      EXT_LLVM.genAllocaModelicaReal(valTmp, false);
-      EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
-    end if;
-    EXT_LLVM.genCallArg("gout");
-    EXT_LLVM.genCallArgConstInt(i);
-    EXT_LLVM.genCallArg(valTmp);
-    EXT_LLVM.genCall("omc_jit_zc_set", MODELICA_VOID, "", false);
+    try
+      (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
+      if not ok then
+        (ctx, valTmp) := freshTmp(ctx);
+        EXT_LLVM.genAllocaModelicaReal(valTmp, false);
+        EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
+      end if;
+      EXT_LLVM.genCallArg("gout");
+      EXT_LLVM.genCallArgConstInt(i);
+      EXT_LLVM.genCallArg(valTmp);
+      EXT_LLVM.genCall("omc_jit_zc_set", MODELICA_VOID, "", false);
+    else end try;
     i := i + 1;
   end for;
   EXT_LLVM.genReturnZero();
@@ -1421,20 +1439,21 @@ algorithm
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
+  /* See emitZeroCrossingsBody: per-zc try/else so a deep MMC_THROW
+   * does not skip the genReturnZero + finnishGen below. */
   for zc in zcs loop
-    (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
-    if not ok then
-      /* See emitZeroCrossingsBody: literal-0 fallback keeps the
-       * function body valid so _05evt.c displaces without
-       * duplicate-symbol clashes. */
-      (ctx, valTmp) := freshTmp(ctx);
-      EXT_LLVM.genAllocaModelicaReal(valTmp, false);
-      EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
-    end if;
-    EXT_LLVM.genCallArg("data");
-    EXT_LLVM.genCallArgConstInt(i);
-    EXT_LLVM.genCallArg(valTmp);
-    EXT_LLVM.genCall("omc_jit_relation_set", MODELICA_VOID, "", false);
+    try
+      (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
+      if not ok then
+        (ctx, valTmp) := freshTmp(ctx);
+        EXT_LLVM.genAllocaModelicaReal(valTmp, false);
+        EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
+      end if;
+      EXT_LLVM.genCallArg("data");
+      EXT_LLVM.genCallArgConstInt(i);
+      EXT_LLVM.genCallArg(valTmp);
+      EXT_LLVM.genCall("omc_jit_relation_set", MODELICA_VOID, "", false);
+    else end try;
     i := i + 1;
   end for;
   EXT_LLVM.genReturnZero();
