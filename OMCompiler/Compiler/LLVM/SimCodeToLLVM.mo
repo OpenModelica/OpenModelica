@@ -93,6 +93,7 @@ import Global;
 import List;
 import SimCodeVar;
 import SimCodeFunction;
+import System;
 
 /* ====================================================================== *
  *  Variable layout                                                       *
@@ -531,7 +532,7 @@ algorithm
      * The module is consumed (moved) by jitFinalizeNoEntry into the
      * function-JIT, so it cannot be serialised after this. */
     if nUnsupported == 0 then
-      EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_ode");
+      EXT_LLVM.initGen(modelSymbolPrefix(name) + "_ode");
       if emitODEEntryShell(name, recipes, layout) then
         if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
         finalizeAndReport(name, layout, vars);
@@ -543,7 +544,7 @@ algorithm
      * until SCTL can prove out the full ODE call site. Every stub
      * emitted here lets the matching .c file be dropped from the
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
-    EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
+    EXT_LLVM.initGen(modelSymbolPrefix(name) + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
     /* Initial-equation block: dynamic-skip pattern. When all init
@@ -575,7 +576,7 @@ algorithm
     end if;
     /* Optional debug dump alongside, gated on jit_dump_ir. */
     if Flags.isSet(Flags.JIT_DUMP_IR) then
-      sctlBcPath := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl.bc";
+      sctlBcPath := modelSymbolPrefix(name) + "_sctl.bc";
       bcSt := EXT_LLVM.writeBitcodeToFile(sctlBcPath);
     end if;
   end if;
@@ -642,7 +643,7 @@ protected
   Integer st;
   list<Real> rvIn, rvOut;
 algorithm
-  odeSym := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_functionODE";
+  odeSym := modelSymbolPrefix(name) + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
   if st <> 0 then
     Error.addInternalError(
@@ -931,7 +932,7 @@ protected
   Absyn.Path name;
 algorithm
   name := simCodeName(simCode);
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  prefix := modelSymbolPrefix(name);
   initEqs := match simCode
     case SimCode.SIMCODE(initialEquations = initEqs) then initEqs;
   end match;
@@ -1124,7 +1125,7 @@ algorithm
       return;
     end if;
   end for;
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  prefix := modelSymbolPrefix(name);
   /* Emit any synthetic SimCodeFunction.Function the classifier built
    * (one per SES_ALGORITHM) before the call sites reference them.
    * The synthetics ride the same DAEToMid + MidToLLVM pipeline as
@@ -1186,7 +1187,7 @@ algorithm
     return;
   end if;
   name := simCodeName(simCode);
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  prefix := modelSymbolPrefix(name);
   /* column / DAG / const helpers -- never called when no analytic
    * Jacobian is exposed */
   emitStub(prefix + "_functionJacA_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
@@ -1241,7 +1242,7 @@ algorithm
     case SimCode.SIMCODE(zeroCrossings = zcs, relations = rels) then (zcs, rels);
   end match;
   name := simCodeName(simCode);
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  prefix := modelSymbolPrefix(name);
   if listEmpty(zcs) and listEmpty(rels) then
     /* No events -- pure-stub set, runtime never reads gout. */
     emitRuntimeVoidStub(prefix + "_function_initSample");
@@ -1533,7 +1534,7 @@ algorithm
     stmts,
     SCode.PUBLIC(),
     sourceInfo());
-  mangledName := "omc_" + AbsynUtil.pathStringUnquoteReplaceDot(synthPath, "_");
+  mangledName := "omc_" + modelSymbolPrefix(synthPath);
 end buildSyntheticAlgFunction;
 
 protected function extractAlgorithmLocals
@@ -1627,7 +1628,7 @@ algorithm
   if listEmpty(synths) then
     return;
   end if;
-  moduleName := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_synth";
+  moduleName := modelSymbolPrefix(modelName) + "_synth";
   midProgram := DAEToMid.daeProgramToMid(moduleName, synths, {});
   MidToLLVM.genProgram(midProgram);
 end emitSyntheticFunctions;
@@ -1658,7 +1659,7 @@ algorithm
   if listEmpty(simFuncs) and listEmpty(recordDecls) then
     return;
   end if;
-  moduleName := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_userfuncs";
+  moduleName := modelSymbolPrefix(modelName) + "_userfuncs";
   midProgram := DAEToMid.daeProgramToMid(moduleName, simFuncs, recordDecls);
   MidToLLVM.genProgram(midProgram);
 end emitUserFunctions;
@@ -1677,7 +1678,7 @@ protected function emitDisplacingStubs
 protected
   String prefix;
 algorithm
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
+  prefix := modelSymbolPrefix(modelName);
   for e in runtimeEntryCatalog() loop
     emitRuntimeEntry(prefix, e);
   end for;
@@ -2405,7 +2406,7 @@ protected function odeEntryName
   input Absyn.Path modelName;
   output String name;
 algorithm
-  name := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_functionODE";
+  name := modelSymbolPrefix(modelName) + "_functionODE";
 end odeEntryName;
 
 /* ====================================================================== *
@@ -2420,6 +2421,24 @@ algorithm
     case SimCode.SIMCODE(modelInfo=SimCode.MODELINFO(name=name)) then name;
   end match;
 end simCodeName;
+
+protected function modelSymbolPrefix
+  "C symbol prefix matching CodegenC's makeC89Identifier
+   (pathString(name)) for the model name. Dots become single
+   underscores; embedded underscores in identifiers are preserved
+   as-is. AbsynUtil.pathStringUnquoteReplaceDot, by contrast,
+   doubles embedded underscores, which produces wrong symbols for
+   models with '_' in their path (Modelica.Blocks.Examples
+   .PID_Controller, Modelica.Mechanics.Translational.Examples
+   .Friction, ...). The JIT linker only finds symbols when SCTL's
+   IR emission and CodegenC's clang'd C use identical names, so
+   every SCTL caller that builds a symbol from a model name
+   should route through this helper."
+  input Absyn.Path name;
+  output String prefix;
+algorithm
+  prefix := System.makeC89Identifier(AbsynUtil.pathString(name));
+end modelSymbolPrefix;
 
 protected function simCodeVars
   input SimCode.SimCode simCode;
