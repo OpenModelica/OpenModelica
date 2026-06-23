@@ -139,6 +139,12 @@ function genSetupDataStrucShell
   output Integer status = 1;
 end genSetupDataStrucShell;
 
+function genSetupDataStrucFull
+  input String modelName;
+  input list<Integer> counters;
+  output Integer status = 1;
+end genSetupDataStrucFull;
+
 function genMainShim
   input String modelName;
   output Integer status = 1;

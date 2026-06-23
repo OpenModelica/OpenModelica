@@ -56,6 +56,58 @@ const size_t omc_sizeof_DATA            = sizeof(DATA);
 const size_t omc_sizeof_MODEL_DATA      = sizeof(MODEL_DATA);
 const size_t omc_sizeof_SIMULATION_INFO = sizeof(SIMULATION_INFO);
 
+/* Canonical MODEL_DATA int-counter ordering. emitSetupDataStrucBlock
+ * on the Modelica side must extract counters from SimCode in this
+ * exact order; the C++ helper iterates the array and emits one store
+ * per offset. Adding / reordering an entry here is the single edit
+ * needed to keep the IR-side body in sync with CodegenC's
+ * setupDataStruc template. */
+const size_t omc_modeldata_int_offsets[] = {
+  offsetof(MODEL_DATA, nStatesArray),
+  offsetof(MODEL_DATA, nDiscreteRealArray),
+  offsetof(MODEL_DATA, nVariablesRealArray),
+  offsetof(MODEL_DATA, nVariablesIntegerArray),
+  offsetof(MODEL_DATA, nVariablesBooleanArray),
+  offsetof(MODEL_DATA, nVariablesStringArray),
+  offsetof(MODEL_DATA, nParametersRealArray),
+  offsetof(MODEL_DATA, nParametersIntegerArray),
+  offsetof(MODEL_DATA, nParametersBooleanArray),
+  offsetof(MODEL_DATA, nParametersStringArray),
+  offsetof(MODEL_DATA, nParametersReal),
+  offsetof(MODEL_DATA, nParametersInteger),
+  offsetof(MODEL_DATA, nParametersBoolean),
+  offsetof(MODEL_DATA, nParametersString),
+  offsetof(MODEL_DATA, nAliasRealArray),
+  offsetof(MODEL_DATA, nAliasIntegerArray),
+  offsetof(MODEL_DATA, nAliasBooleanArray),
+  offsetof(MODEL_DATA, nAliasStringArray),
+  offsetof(MODEL_DATA, nInputVars),
+  offsetof(MODEL_DATA, nOutputVars),
+  offsetof(MODEL_DATA, nZeroCrossings),
+  offsetof(MODEL_DATA, nSamples),
+  offsetof(MODEL_DATA, nRelations),
+  offsetof(MODEL_DATA, nMathEvents),
+  offsetof(MODEL_DATA, nExtObjs),
+  offsetof(MODEL_DATA, nMixedSystems),
+  offsetof(MODEL_DATA, nLinearSystems),
+  offsetof(MODEL_DATA, nNonLinearSystems),
+  offsetof(MODEL_DATA, nStateSets),
+  offsetof(MODEL_DATA, nJacobians),
+  offsetof(MODEL_DATA, nOptimizeConstraints),
+  offsetof(MODEL_DATA, nOptimizeFinalConstraints),
+  offsetof(MODEL_DATA, nDelayExpressions),
+  offsetof(MODEL_DATA, nBaseClocks),
+  offsetof(MODEL_DATA, nSpatialDistributions),
+  offsetof(MODEL_DATA, nSensitivityVars),
+  offsetof(MODEL_DATA, nSensitivityParamVars),
+  offsetof(MODEL_DATA, nSetcVars),
+  offsetof(MODEL_DATA, ndataReconVars),
+  offsetof(MODEL_DATA, nSetbVars),
+  offsetof(MODEL_DATA, nRelatedBoundaryConditions),
+};
+const size_t omc_modeldata_int_count =
+    sizeof(omc_modeldata_int_offsets) / sizeof(omc_modeldata_int_offsets[0]);
+
 /* Callback function-pointer struct (openmodelica_func.h). One offset per
  * field so llvm_gen.cpp can lay out the IR-side @<Model>_callback global
  * with byte-padded gaps that match the C struct exactly, without

@@ -60,6 +60,16 @@ extern const size_t omc_sizeof_DATA;
 extern const size_t omc_sizeof_MODEL_DATA;
 extern const size_t omc_sizeof_SIMULATION_INFO;
 
+/* MODEL_DATA int-counter offsets used by the full setupDataStruc
+ * body. The single ordered table omc_modeldata_int_offsets[] lets the
+ * Modelica side pass one flat list<Integer> rather than 30+ separate
+ * extern arguments; the C++ emitter zips it against the offsets and
+ * emits one store per field. omc_modeldata_int_count is sizeof(table)
+ * over sizeof(size_t). The field order is fixed and documented in
+ * llvm_gen_layout.c -- keep `emitSetupDataStrucBlock` in lock-step. */
+extern const size_t omc_modeldata_int_offsets[];
+extern const size_t omc_modeldata_int_count;
+
 /* Callback function-pointer struct (OpenModelicaGeneratedFunctionCallbacks)
  * total size and per-field byte offsets. Consumed by createCallbackTable
  * in llvm_gen.cpp. */

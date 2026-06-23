@@ -232,6 +232,22 @@ function genCallbackTable
                Include = "int createCallbackTable(const char *modelName, int isFmu, int hasNlsSystems, int hasLsSystems, int hasMsSystems, int hasInitialLambda0, int homotopyMethodCode);");
 end genCallbackTable;
 
+function genSetupDataStrucFull
+  "Emit the full <Model>_setupDataStruc body: the two pointer wires
+   from the shell variant plus the canonical sequence of MODEL_DATA
+   integer counter stores. `counters` carries the per-model n<X>
+   values in the order declared by omc_modeldata_int_offsets[] in
+   llvm_gen_layout.c -- emitSetupDataStrucBlock builds the list in
+   exactly that order. Returns 0 on success, non-zero on length
+   mismatch / duplicate / missing module."
+  input String modelName;
+  input list<Integer> counters;
+  output Integer status;
+  external "C" status = createSetupDataStrucFull(modelName, counters)
+    annotation(Library = "omcruntime",
+               Include = "int createSetupDataStrucFull(const char *modelName, void *counters);");
+end genSetupDataStrucFull;
+
 function genSetupDataStrucShell
   "Emit a linkonce_odr  <Model>_setupDataStruc(DATA*, threadData_t*)
    wiring just  threadData->localRoots[SIMULATION_DATA] = data  and

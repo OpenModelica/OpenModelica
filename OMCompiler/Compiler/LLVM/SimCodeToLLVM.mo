@@ -651,7 +651,7 @@ algorithm
     try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
     try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
-    try emitSetupDataStrucShellBlock(name); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
+    try emitSetupDataStrucShellBlock(name, simCode); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
     try emitMainShimBlock(name); else reportBlockFailure("emitMainShimBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
@@ -2030,21 +2030,122 @@ algorithm
 end emitCallbackTableBlock;
 
 protected function emitSetupDataStrucShellBlock
-  "Emit the linkonce_odr <Model>_setupDataStruc shell into the active
-   Pass-2 module. Wires just the two critical pointers (callback,
-   threadData->localRoots[SIMULATION_DATA]); the rest of the body
-   stays with CodegenC for now. Must run after emitCallbackTableBlock
-   so the @<Model>_callback global it references exists in the module
-   when the store is composed."
+  "Emit the linkonce_odr <Model>_setupDataStruc full body into the
+   active Pass-2 module. Wires the two critical pointers (callback,
+   threadData->localRoots[SIMULATION_DATA]) plus the canonical
+   sequence of MODEL_DATA integer counter stores (nStatesArray,
+   nVariablesRealArray, ..., nRelatedBoundaryConditions). The counter
+   list order is locked to omc_modeldata_int_offsets[] in
+   llvm_gen_layout.c -- any change there demands a matching change
+   here. Skipped (still on CodegenC's strong copy): modelName /
+   modelGUID strings, XML data, the OpenModelica_updateUriMapping
+   resource call, modelDataXml.* fields (populated by the runtime
+   from the on-disk _info.json), linearizationDumpLanguage.
+
+   Must run after emitCallbackTableBlock so the @<Model>_callback
+   global the body references exists in the module."
   input Absyn.Path modelName;
+  input SimCode.SimCode simCode;
 protected
   Integer st;
+  list<Integer> counters;
 algorithm
-  st := EXT_LLVM.genSetupDataStrucShell(modelSymbolPrefix(modelName));
+  counters := modelDataCounters(simCode);
+  st := EXT_LLVM.genSetupDataStrucFull(modelSymbolPrefix(modelName), counters);
   if st <> 0 then
     fail();
   end if;
 end emitSetupDataStrucShellBlock;
+
+protected function modelDataCounters
+  "Extract the 41 MODEL_DATA n<X> values from SimCode in the order
+   declared by omc_modeldata_int_offsets[] in llvm_gen_layout.c.
+   Every counter is destructured into a local Integer up front; the
+   list literal references only locals so the MetaModelica elaborator
+   does not have to type-resolve dot-projections inside a long list."
+  input SimCode.SimCode simCode;
+  output list<Integer> counters;
+protected
+  Integer cStates, cDiscReal, cVarsRArr, cVarsIArr, cVarsBArr, cVarsSArr;
+  Integer cParRArr, cParIArr, cParBArr, cParSArr;
+  Integer cAliasRArr, cAliasIArr, cAliasBArr, cAliasSArr;
+  Integer cInVars, cOutVars, cZc, cRel, cMathEv, cExtObj;
+  Integer cMix, cLin, cNln, cStSets, cOptC, cOptFC;
+  Integer cSensV, cSetc, cDataRec, cSetb, cBC;
+  Integer cJac, cDelay, cSpatial;
+algorithm
+  () := match simCode.modelInfo
+    case SimCode.MODELINFO(varInfo = SimCode.VARINFO(
+        numStateVars             = cStates,
+        numDiscreteReal          = cDiscReal,
+        numAlgVars               = cVarsRArr,
+        numIntAlgVars            = cVarsIArr,
+        numBoolAlgVars           = cVarsBArr,
+        numStringAlgVars         = cVarsSArr,
+        numParams                = cParRArr,
+        numIntParams             = cParIArr,
+        numBoolParams            = cParBArr,
+        numStringParamVars       = cParSArr,
+        numAlgAliasVars          = cAliasRArr,
+        numIntAliasVars          = cAliasIArr,
+        numBoolAliasVars         = cAliasBArr,
+        numStringAliasVars       = cAliasSArr,
+        numInVars                = cInVars,
+        numOutVars               = cOutVars,
+        numZeroCrossings         = cZc,
+        numRelations             = cRel,
+        numMathEventFunctions    = cMathEv,
+        numExternalObjects       = cExtObj,
+        numMixedSystems          = cMix,
+        numLinearSystems         = cLin,
+        numNonLinearSystems      = cNln,
+        numStateSets             = cStSets,
+        numOptimizeConstraints   = cOptC,
+        numOptimizeFinalConstraints = cOptFC,
+        numSensitivityParameters = cSensV,
+        numSetcVars              = cSetc,
+        numDataReconVars         = cDataRec,
+        numSetbVars              = cSetb,
+        numRelatedBoundaryConditions = cBC))
+      then ();
+  end match;
+  cVarsRArr := cVarsRArr + 2 * cStates;
+  cJac      := listLength(simCode.jacobianMatrices);
+  cDelay    := delayedExpCount(simCode);
+  cSpatial  := spatialDistributionCount(simCode);
+  /* Order matches omc_modeldata_int_offsets[] in llvm_gen_layout.c.
+   * The two duplicate parameter slots (nParametersReal* + nParameters*)
+   * use the same source values; CodegenC emits them identically too. */
+  counters := listAppend(listAppend({
+    cStates, cDiscReal, cVarsRArr, cVarsIArr, cVarsBArr, cVarsSArr,
+    cParRArr, cParIArr, cParBArr, cParSArr,
+    cParRArr, cParIArr, cParBArr, cParSArr},
+  {cAliasRArr, cAliasIArr, cAliasBArr, cAliasSArr,
+    cInVars, cOutVars, cZc, 0, cRel, cMathEv, cExtObj,
+    cMix, cLin, cNln, cStSets}),
+  {cJac, cOptC, cOptFC, cDelay, 0, cSpatial,
+    cSensV, cSensV, cSetc, cDataRec, cSetb, cBC});
+end modelDataCounters;
+
+protected function delayedExpCount
+  input SimCode.SimCode simCode;
+  output Integer n;
+protected
+  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> ds;
+algorithm
+  ds := match simCode.delayedExps case SimCode.DELAYED_EXPRESSIONS(delayedExps = ds) then ds; end match;
+  n := listLength(ds);
+end delayedExpCount;
+
+protected function spatialDistributionCount
+  input SimCode.SimCode simCode;
+  output Integer n;
+protected
+  list<SimCode.SpatialDistribution> sds;
+algorithm
+  sds := match simCode.spatialInfo case SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions = sds) then sds; end match;
+  n := listLength(sds);
+end spatialDistributionCount;
 
 protected function emitMainShimBlock
   "Emit a linkonce_odr  int main(int, char**)  into the active Pass-2

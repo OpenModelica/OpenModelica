@@ -162,12 +162,17 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
 3. **Equation functions** (`_functionODE`, `_functionDAE`,
    `_ODE_DAG`). DONE. `emitModelEquationsBlock` re-using
    `emitEquationFunction`; `_ODE_DAG` is a void stub (advisory hint).
-4. **`<Model>_setupDataStruc`.** PARTIAL. `createSetupDataStrucShell`
-   wires the two critical pointers (`data->callback`,
-   `threadData->localRoots[SIMULATION_DATA]`). Remaining: ~70
-   modelData scalar / string / XML-blob assignments + the
-   `OpenModelica_updateUriMapping` resource-literal call. Land them
-   when CodegenC suppression is in sight (step 8).
+4. **`<Model>_setupDataStruc`.** DONE for the load-bearing fields.
+   `createSetupDataStrucFull` wires the two critical pointers plus
+   all 41 modelData integer counters (driven by
+   `omc_modeldata_int_offsets[]` in `llvm_gen_layout.c` and the
+   matching `modelDataCounters` extractor on the Modelica side).
+   Skipped (still on CodegenC's strong copy and not load-bearing
+   for ODE simulation today): modelName / modelGUID strings, XML
+   blob pointers (NULL is right for runtime-from-file mode),
+   `OpenModelica_updateUriMapping` resource call,
+   `modelDataXml.*` (the runtime populates these via the on-disk
+   `_info.json` read), `linearizationDumpLanguage`.
 5. **Resource literals (`_OMC_LIT_RESOURCE_*`).** TODO. Internal
    linkage in `<Model>.c`, only consumed by `setupDataStruc` to feed
    `OpenModelica_updateUriMapping`. Land alongside step 4 via the

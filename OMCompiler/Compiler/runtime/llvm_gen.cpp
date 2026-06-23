@@ -806,6 +806,136 @@ extern "C" int createCallbackTable(const char *const modelName,
 }
 
 /* ------------------------------------------------------------------------ *
+ * setupDataStruc full body emission.
+ *
+ * Builds on the shell (callback + localRoots wires) by emitting the
+ * full sequence of  data->modelData->n<Counter> = <Value>  stores in
+ * the canonical order declared in llvm_gen_layout.c's
+ * omc_modeldata_int_offsets[]. The Modelica side passes the matching
+ * 41 counter values as a flat list<Integer>; the helper walks the
+ * MMC list and the offset table in lock-step, emitting one i64 store
+ * per (offset, value) pair.
+ *
+ * Skips: assertStreamPrint(threadData, ...), the modelName / modelGUID
+ * string assignments (diagnostic), the XML data pointers (NULL is
+ * correct for runtime-from-file mode), the OpenModelica_updateUriMapping
+ * call with the resource literal (resource lookups are inactive for
+ * the JIT simulate path today), modelDataXml.* (the runtime
+ * populates these via the on-disk _info.json read), and the
+ * linearizationDumpLanguage enum store (defaults are fine for ODE
+ * simulation).
+ *
+ * Returns 0 on success.
+ * ------------------------------------------------------------------------ */
+
+namespace {
+
+/* Walk a MetaModelica `list<Integer>` pulling out small fixnums as
+ * `long`. The MMC encoding tags fixnums in the low bits so
+ * MMC_UNTAGFIXNUM yields the underlying long. Returns the number of
+ * elements appended. */
+static size_t collectMmcIntList(void *lst, std::vector<long> &out) {
+  size_t n = 0;
+  while (lst && MMC_GETHDR(lst) == MMC_CONSHDR) {
+    out.push_back(MMC_UNTAGFIXNUM(MMC_CAR(lst)));
+    lst = MMC_CDR(lst);
+    ++n;
+  }
+  return n;
+}
+
+} // anonymous namespace
+
+extern "C" int createSetupDataStrucFull(const char *const modelName,
+                                        void *const counters) {
+  if (!program || !program->module) {
+    fprintf(stderr, "createSetupDataStrucFull: no active module\n");
+    return 1;
+  }
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Module &mod = *program->module;
+
+  std::vector<long> counterValues;
+  collectMmcIntList(counters, counterValues);
+  if (counterValues.size() != omc_modeldata_int_count) {
+    fprintf(stderr,
+            "createSetupDataStrucFull: counter list length %zu != "
+            "expected %zu (layout / Modelica side out of sync)\n",
+            counterValues.size(), omc_modeldata_int_count);
+    return 2;
+  }
+
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(ctx);
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(ctx);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(ctx);
+  llvm::PointerType *const ptrTy = llvm::PointerType::getUnqual(ctx);
+
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false);
+  const std::string symName =
+      std::string(modelName) + "_setupDataStruc";
+  if (mod.getFunction(symName)) {
+    fprintf(stderr,
+            "createSetupDataStrucFull: '%s' already defined\n",
+            symName.c_str());
+    return 3;
+  }
+  llvm::Function *const fn = llvm::Function::Create(
+      fnTy, llvm::Function::LinkOnceODRLinkage, symName, mod);
+  llvm::Function::arg_iterator argIt = fn->arg_begin();
+  llvm::Argument *const dataArg = &*argIt++;
+  dataArg->setName("data");
+  llvm::Argument *const tdArg = &*argIt;
+  tdArg->setName("threadData");
+
+  llvm::BasicBlock *const entryBB = llvm::BasicBlock::Create(ctx, "entry", fn);
+  llvm::IRBuilder<> b(entryBB);
+
+  /* The two critical pointer wires (same as the old shell). */
+  const size_t lrSlotOffset =
+      omc_layout_TD_localRoots +
+      static_cast<size_t>(omc_value_LOCAL_ROOT_SIMULATION_DATA) * 8;
+  llvm::Value *const lrAddr = b.CreateGEP(
+      i8, tdArg, llvm::ConstantInt::get(i64, lrSlotOffset), "lrAddr");
+  b.CreateStore(dataArg, lrAddr);
+
+  const std::string callbackGlobal = std::string(modelName) + "_callback";
+  llvm::GlobalVariable *const cbGV = mod.getNamedGlobal(callbackGlobal);
+  if (!cbGV) {
+    fprintf(stderr,
+            "createSetupDataStrucFull: callback global '%s' missing\n",
+            callbackGlobal.c_str());
+    return 4;
+  }
+  llvm::Value *const cbAddr = b.CreateGEP(
+      i8, dataArg, llvm::ConstantInt::get(i64, omc_layout_DATA_callback),
+      "cbAddr");
+  b.CreateStore(cbGV, cbAddr);
+
+  /* modelData = data->modelData (one load). All counter stores chain
+   * off this pointer rather than re-walking data->modelData each
+   * time -- LLVM would CSE the loads anyway, but the IR reads cleaner
+   * with the explicit hoist. */
+  llvm::Value *const mdSlot = b.CreateGEP(
+      i8, dataArg, llvm::ConstantInt::get(i64, omc_layout_DATA_modelData),
+      "mdSlot");
+  llvm::Value *const mdPtr = b.CreateLoad(ptrTy, mdSlot, "mdPtr");
+
+  /* Counter stores. modelData fields are `long` -- 8 bytes on x86-64.
+   * MMC fixnums fit into long without truncation for the count values
+   * any sensible Modelica model produces. */
+  for (size_t i = 0; i < omc_modeldata_int_count; ++i) {
+    llvm::Value *const fieldAddr = b.CreateGEP(
+        i8, mdPtr,
+        llvm::ConstantInt::get(i64, omc_modeldata_int_offsets[i]), "");
+    b.CreateStore(llvm::ConstantInt::get(i64, counterValues[i]), fieldAddr);
+  }
+
+  b.CreateRetVoid();
+  return 0;
+}
+
+/* ------------------------------------------------------------------------ *
  * setupDataStruc shell emission.
  *
  * Emits the two critical pointer wire-ups every model's setupDataStruc
