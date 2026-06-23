@@ -88,10 +88,24 @@ foreach(f ${WASM_EXCLUDE_FILES})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${f}")
 endforeach()
 
-# Generated typed interface (OmcSeq ABI). The matching omc_scripting_*/omc_seq_*/
-# omc_abi_* symbols + omc_abi_call worker round-trip are the bridge TODO.
+# Generated typed interface (OmcSeq ABI) — the OMCInterface that calls the
+# omc_scripting_*/omc_seq_*/omc_abi_* C ABI.
 list(APPEND OMEDITLIB_SOURCES ${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQt.cpp)
 set_source_files_properties(${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQt.cpp PROPERTIES GENERATED TRUE)
+
+# The omc bridge: gen_bridge.py turns the ABI header's per-function declarations
+# into C++ forwarders that marshal each call to the omc Web Worker as JSON (see
+# gen_bridge.py). This defines the omc_scripting_*/omc_seq_*/omc_abi_* symbols the
+# OMCInterface above calls.
+set(OMC_BRIDGE_CPP ${CMAKE_BINARY_DIR}/OpenModelicaScriptingAPIQtBridge.cpp)
+add_custom_command(OUTPUT ${OMC_BRIDGE_CPP}
+  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_bridge.py
+          ${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQtABI.h ${OMC_BRIDGE_CPP}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gen_bridge.py
+          ${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQtABI.h
+  COMMENT "Generating the omc OmcSeq->worker bridge")
+list(APPEND OMEDITLIB_SOURCES ${OMC_BRIDGE_CPP})
+set_source_files_properties(${OMC_BRIDGE_CPP} PROPERTIES SKIP_AUTOMOC ON)
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
@@ -133,6 +147,12 @@ target_link_options(OMEdit-qt PRIVATE
   -sASYNCIFY
   -sASYNCIFY_STACK_SIZE=131072
   -sALLOW_MEMORY_GROWTH=1
-  # The single import the OmcSeq bridge suspends on (HANDOFF "omc bridge").
-  -sASYNCIFY_IMPORTS=__omc_abi_call
-  -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToNewUTF8,FS)
+  # The bridge suspends on the worker round-trip (EM_ASYNC_JS omc_abi_call_js).
+  -sASYNCIFY_IMPORTS=omc_abi_call_js
+  # Dead-feature symbols from the excluded subsystems (Debugger/OMS/sim-output
+  # driver) that core code still references are left as deferred imports — those
+  # features are unavailable on web v1, so calling one aborts; everything else
+  # links. The omc ABI itself is fully resolved by the generated bridge.
+  # (Qt appends -sERROR_ON_UNDEFINED_SYMBOLS=1, so use the wasm-ld flag directly.)
+  -Wl,--allow-undefined
+  -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToNewUTF8,FS,lengthBytesUTF8,stringToUTF8)
