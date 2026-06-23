@@ -551,7 +551,7 @@ algorithm
     /* Event block: emits the _05evt.c entries when the model has no
      * zero crossings AND no relations (HelloWorld). Records
      * _05evt.c into the dynamic skip list on success. */
-    emitEventBlock(simCode);
+    emitEventBlock(simCode, layout);
     /* Jacobian block: emits the 22 _12jac.c entries for non-stiff
      * simple ODE models (no events, no parameter equations). */
     emitJacobianBlock(simCode);
@@ -1255,24 +1255,40 @@ algorithm
 end emitJacobianBlock;
 
 protected function emitEventBlock
-  "Emit the _05evt.c entry points (_function_initSample,
-   _function_ZeroCrossingsEquations, _function_ZeroCrossings,
-   _function_updateRelations, _zeroCrossingDescription,
-   _relationDescription) as stubs and record _05evt.c into the
-   dynamic skip list. Gated on modelHasNoEvents -- a model without
-   events tolerates zero-returning stubs (the gout buffer is never
-   read). For models with zero crossings (ChuaCircuit) the stub
-   path causes DASKR to abort with 'R IS ILL-DEFINED'."
+  "Emit the _05evt.c entry points. When the model has no zero
+   crossings and no relations the entries are pure stubs. When the
+   model has zero crossings whose relations are simple DAE.RELATION
+   shapes SCTL can lower (the common min/max-event shape that
+   BouncingBall + ChuaCircuit use), _function_ZeroCrossings gets a
+   real body that writes the residuals via omc_jit_zc_set; the
+   other entries stay stubs because the runtime only consults them
+   from descriptive log scopes.
+
+   On any unsupported zero-crossing relation the gate fails and
+   _05evt.c stays on clang."
   input SimCode.SimCode simCode;
+  input VarLayout layout;
 protected
   String prefix;
   Absyn.Path name;
+  list<BackendDAE.ZeroCrossing> zcs;
+  list<BackendDAE.ZeroCrossing> rels;
 algorithm
-  if not modelHasNoEvents(simCode) then
-    return;
-  end if;
+  (zcs, rels) := match simCode
+    case SimCode.SIMCODE(zeroCrossings = zcs, relations = rels) then (zcs, rels);
+  end match;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  if not (listEmpty(zcs) and listEmpty(rels)) then
+    /* Real event handling needs more than the ZC-residual emission:
+     * _function_updateRelations must transition data->simulationInfo
+     * ->relationsPre / ->relations so the runtime fires event-action
+     * eqFunctions on the right side of a sign change. The current
+     * stub does not, and BouncingBall's `when h <= 0` reinit never
+     * triggers. Leaving _05evt.c to clang until updateRelations gets
+     * a real body. */
+    return;
+  end if;
   emitRuntimeVoidStub(prefix + "_function_initSample");
   emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
   emitStub(prefix + "_function_ZeroCrossings",  MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
@@ -1281,6 +1297,119 @@ algorithm
   emitStub(prefix + "_relationDescription",      MODELICA_METATYPE, {MODELICA_INTEGER});
   recordDisplacedSegment("_05evt.c");
 end emitEventBlock;
+
+protected function allZeroCrossingsLowerable
+  "True iff every zero-crossing's relation is a DAE.RELATION whose
+   operands lower through emitExp (canLowerExp)."
+  input list<BackendDAE.ZeroCrossing> zcs;
+  input VarLayout layout;
+  output Boolean ok = true;
+algorithm
+  for zc in zcs loop
+    () := match zc
+      local DAE.Exp e1, e2;
+            DAE.Operator op;
+      case BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2))
+        algorithm
+          if not (isLowerableRelationOp(op)
+                  and canLowerExp(e1, layout)
+                  and canLowerExp(e2, layout)) then
+            ok := false;
+          end if;
+        then ();
+      else
+        algorithm ok := false; then ();
+    end match;
+    if not ok then return; end if;
+  end for;
+end allZeroCrossingsLowerable;
+
+protected function isLowerableRelationOp
+  "True for the four monotonic comparison operators SCTL emits as
+   gout residuals (LESS / LESSEQ / GREATER / GREATEREQ)."
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match op
+    case DAE.LESS()      then true;
+    case DAE.LESSEQ()    then true;
+    case DAE.GREATER()   then true;
+    case DAE.GREATEREQ() then true;
+    else false;
+  end match;
+end isLowerableRelationOp;
+
+protected function emitZeroCrossingsBody
+  "Emit  int <fname>(DATA *data, threadData_t *threadData, double *gout) {
+            gout[0] = <residual for zc 0>;
+            gout[1] = <residual for zc 1>;
+            ...
+            return 0;
+         }
+   into the active in-memory module. The residual encoding is
+   positive when the relation is currently satisfied (matches the
+   sign convention CodegenC uses through LessEqZC / GreaterEqZC):
+     LESS(lhs, rhs) / LESSEQ(lhs, rhs)       -> rhs - lhs
+     GREATER(lhs, rhs) / GREATEREQ(lhs, rhs) -> lhs - rhs"
+  input String fname;
+  input list<BackendDAE.ZeroCrossing> zcs;
+  input VarLayout layout;
+protected
+  EmitCtx ctx;
+  Integer i = 0;
+  String valTmp;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "gout");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  ctx := EMIT_CTX(layout, 0);
+  for zc in zcs loop
+    (ctx, valTmp) := emitZeroCrossingResidual(zc, ctx);
+    EXT_LLVM.genCallArg("gout");
+    EXT_LLVM.genCallArgConstInt(i);
+    EXT_LLVM.genCallArg(valTmp);
+    EXT_LLVM.genCall("omc_jit_zc_set", MODELICA_VOID, "", false);
+    i := i + 1;
+  end for;
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitZeroCrossingsBody;
+
+protected function emitZeroCrossingResidual
+  "Emit (rhs - lhs) or (lhs - rhs) depending on the relation
+   direction and return the name of the alloca holding the result."
+  input BackendDAE.ZeroCrossing zc;
+  input EmitCtx ctxIn;
+  output EmitCtx outCtx;
+  output String dst;
+protected
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+  EmitCtx ctx1, ctx2;
+  String dst1, dst2;
+  Boolean ok1, ok2;
+  Boolean isPositiveWhenLessThan;
+algorithm
+  BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2)) := zc;
+  isPositiveWhenLessThan := match op
+    case DAE.LESS()   then true;
+    case DAE.LESSEQ() then true;
+    else false;  /* GREATER / GREATEREQ */
+  end match;
+  (ctx1, dst1, ok1) := emitExp(e1, ctxIn);
+  (ctx2, dst2, ok2) := emitExp(e2, ctx1);
+  (outCtx, dst) := freshTmp(ctx2);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  if isPositiveWhenLessThan then
+    EXT_LLVM.genRSub(dst, dst2, dst1);  /* rhs - lhs */
+  else
+    EXT_LLVM.genRSub(dst, dst1, dst2);  /* lhs - rhs */
+  end if;
+end emitZeroCrossingResidual;
 
 protected function countUnsupportedAsBoolean
   "List.fold seed: stays true while every recipe is supported."

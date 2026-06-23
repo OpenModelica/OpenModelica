@@ -1290,6 +1290,16 @@ double omc_jit_get_time(DATA *data)
   return data->localData[0]->timeValue;
 }
 
+/* Write a single zero-crossing residual into the gout buffer. SCTL
+ * emits one call per zero crossing inside _function_ZeroCrossings.
+ * The convention matches CodegenC's gout encoding: positive when the
+ * relation is currently satisfied, negative when not -- the integrator
+ * detects sign changes to pinpoint event times. */
+void omc_jit_zc_set(double *gout, int64_t idx, double value)
+{
+  gout[idx] = value;
+}
+
 /* Range-check assert helpers. SCTL emits a direct call to one of
  * these when a SES_ALGORITHM body in parameterEquations matches a
  * simple `assert(<param> <op> <bound>, ...)` shape -- the same
