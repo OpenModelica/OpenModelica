@@ -154,10 +154,12 @@ private:
 
   void compileModel();
   void runPostCompilation();
-  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void runSimulationExecutable();
   void writeCompilationOutput(QString output, QColor color);
+#if QT_CONFIG(process)
+  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
@@ -167,6 +169,7 @@ private slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();
   void socketDisconnected();
+#if QT_CONFIG(process)
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
@@ -182,6 +185,7 @@ private slots:
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 public slots:
   void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);

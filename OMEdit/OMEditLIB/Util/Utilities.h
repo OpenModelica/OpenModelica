@@ -430,6 +430,10 @@ public:
   }
 };
 
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off), so this
+// subprocess wrapper is unavailable on the web build. omc/compile/simulate run
+// in the omc Web Worker instead.
+#if QT_CONFIG(process)
 class QDetachableProcess : public QProcess
 {
   Q_OBJECT
@@ -441,6 +445,7 @@ public:
   void start(const QString &command, OpenMode mode = ReadWrite);
 #endif
 };
+#endif
 
 class JsonDocument : public QObject
 {

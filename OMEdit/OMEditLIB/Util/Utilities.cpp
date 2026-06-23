@@ -489,6 +489,7 @@ ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentL
   setForeground(mColor);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief QDetachableProcess::QDetachableProcess
  * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
@@ -533,6 +534,7 @@ void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
   setProcessState(QProcess::NotRunning);
 }
 #endif
+#endif // QT_CONFIG(process)
 
 
 JsonDocument::JsonDocument(QObject *pParent)
