@@ -559,22 +559,16 @@ algorithm
      * ExternalObject types, and `external "C"` body bindings -- the
      * model's _functions.c stays on the clang path so the bodies
      * arrive correctly. */
-    /* Initial-equation block: dynamic-skip pattern. When all init
-     * eqs lower cleanly AND _05evt.c is also being displaced (so the
-     * still-clang'd files do not extern-call eqFunction_N), emit
-     * the three _06inz.c entries inlined. */
-    _ := emitInitialEquationsBlock(simCode, layout);
-    /* Bound-parameters block: emits the _08bnd.c entries when the
-     * model has no parameter equations (HelloWorld). Records
-     * _08bnd.c into the dynamic skip list on success. */
-    emitBoundParametersBlock(simCode, layout);
-    /* Event block: emits the _05evt.c entries when the model has no
-     * zero crossings AND no relations (HelloWorld). Records
-     * _05evt.c into the dynamic skip list on success. */
-    emitEventBlock(simCode, layout);
-    /* Jacobian block: emits the 22 _12jac.c entries for non-stiff
-     * simple ODE models (no events, no parameter equations). */
-    emitJacobianBlock(simCode);
+    /* Each per-block emission runs inside try/else so a single
+     * unhandled C++-side MMC_THROW (e.g. createStoreInst hitting a
+     * cref whose lowered name was never alloca'd in the current
+     * function) does not abort the whole genSim. A failed block
+     * just does not record its segment file into the dynamic skip
+     * list, leaving the corresponding _XX.c on the clang path. */
+    try _ := emitInitialEquationsBlock(simCode, layout); else end try;
+    try emitBoundParametersBlock(simCode, layout); else end try;
+    try emitEventBlock(simCode, layout); else end try;
+    try emitJacobianBlock(simCode); else end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1376,7 +1370,7 @@ algorithm
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
   for zc in zcs loop
-    (ctx, valTmp) := emitZeroCrossingResidual(zc, ctx);
+    (ctx, valTmp, _) := emitZeroCrossingResidual(zc, ctx);
     EXT_LLVM.genCallArg("gout");
     EXT_LLVM.genCallArgConstInt(i);
     EXT_LLVM.genCallArg(valTmp);
@@ -1417,7 +1411,7 @@ algorithm
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
   for zc in zcs loop
-    (ctx, valTmp) := emitZeroCrossingResidual(zc, ctx);
+    (ctx, valTmp, _) := emitZeroCrossingResidual(zc, ctx);
     EXT_LLVM.genCallArg("data");
     EXT_LLVM.genCallArgConstInt(i);
     EXT_LLVM.genCallArg(valTmp);
@@ -1430,11 +1424,15 @@ end emitUpdateRelationsBody;
 
 protected function emitZeroCrossingResidual
   "Emit (rhs - lhs) or (lhs - rhs) depending on the relation
-   direction and return the name of the alloca holding the result."
+   direction and return the name of the alloca holding the result.
+   ok is false when either operand failed to lower (emitExp
+   returned a placeholder dst); callers must propagate the failure
+   so the surrounding function is not committed half-built."
   input BackendDAE.ZeroCrossing zc;
   input EmitCtx ctxIn;
   output EmitCtx outCtx;
   output String dst;
+  output Boolean ok;
 protected
   DAE.Exp e1, e2;
   DAE.Operator op;
@@ -1451,6 +1449,12 @@ algorithm
   end match;
   (ctx1, dst1, ok1) := emitExp(e1, ctxIn);
   (ctx2, dst2, ok2) := emitExp(e2, ctx1);
+  ok := ok1 and ok2;
+  if not ok then
+    outCtx := ctx2;
+    dst := "<zc-residual-unlowerable>";
+    return;
+  end if;
   (outCtx, dst) := freshTmp(ctx2);
   EXT_LLVM.genAllocaModelicaReal(dst, false);
   if isPositiveWhenLessThan then

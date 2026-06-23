@@ -56,13 +56,30 @@ extern "C"
                  llvm::Value *&l, llvm::Value *&r, llvm::Value *&d)
   {
     DBG("Calling binop init\n");
+    /* unordered_map::operator[] default-inserts an empty unique_ptr
+     * if the name was never alloca'd, so .get() returns nullptr and
+     * the subsequent member call segfaults. Surface this as an
+     * MMC failure so the SCTL block-level try/else can skip this
+     * emission instead of taking the omc process down. */
     Variable *leftVariable = program->currentFunc->symTab[lhs].get();
     Variable *rightVariable = program->currentFunc->symTab[rhs].get();
     Variable *destVariable = program->currentFunc->symTab[dest].get();
+    if (!leftVariable || !rightVariable || !destVariable) {
+      fprintf(stderr,
+              "binopInit: missing symbol(s) lhs='%s' rhs='%s' dest='%s'\n",
+              lhs, rhs, dest);
+      MMC_THROW();
+    }
     DBG("Creating load instructions\n");
     llvm::AllocaInst *lAi = leftVariable->getAllocaInst();
     llvm::AllocaInst *rAi = rightVariable->getAllocaInst();
     d = destVariable->getAllocaInst();
+    if (!lAi || !rAi || !d) {
+      fprintf(stderr,
+              "binopInit: missing alloca(s) lhs='%s' rhs='%s' dest='%s'\n",
+              lhs, rhs, dest);
+      MMC_THROW();
+    }
     // LLVM 16+ opaque-pointer CreateLoad: the pointee type must be
     // passed explicitly. For an AllocaInst the allocated type is the
     // canonical source. Same pattern below in createLoadInst and the
@@ -170,12 +187,23 @@ extern "C"
   void createStoreInst(llvm::Value* val, const char *dest)
   {
     DBG("Create store instruction with dest:%s line %d of file \"%s\".\n",dest,__LINE__, __FILE__);
+    /* std::unordered_map::operator[] default-constructs the missing
+     * entry, leaving an empty unique_ptr; .get() returns nullptr and
+     * any later member call on the Variable* segfaults. Check the
+     * Variable* itself before reaching for AllocaInst. Raise a
+     * MetaModelica failure so the surrounding tryGen* helper can
+     * skip this function rather than crash the omc process. */
     Variable *variable {program->currentFunc->symTab[dest].get()};
+    if (!variable) {
+      fprintf(stderr,"createStoreInst: no Variable named '%s' in symboltable\n",dest);
+      printSymbolTable();
+      MMC_THROW();
+    }
     llvm::AllocaInst *ai {variable->getAllocaInst()};
     if (!ai) {
-      fprintf(stderr,"No variable named:%s in symboltable\n",dest);
+      fprintf(stderr,"createStoreInst: '%s' has no AllocaInst\n",dest);
       printSymbolTable();
-      return;
+      MMC_THROW();
     }
     llvm::StoreInst *si {program->builder.CreateStore(val,ai,variable->isVolatile())};
     si->setAlignment(ai->getAlign());
