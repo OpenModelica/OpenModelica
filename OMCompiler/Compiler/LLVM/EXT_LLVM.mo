@@ -184,6 +184,30 @@ function genReadTime
                Include = "int createInlinedReadTime(const char *dataArgName, const char *dstName);");
 end genReadTime;
 
+function genZcSet
+  "Inline  gout[idx] = <src>  for the zero-crossings buffer
+   argument. goutArgName is the symtab name of the gout function
+   argument (typically \"gout\")."
+  input String goutArgName;
+  input Integer idx;
+  input String srcName;
+  external "C" createInlinedZcSet(goutArgName, idx, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedZcSet(const char *goutArgName, const int64_t idx, const char *srcName);");
+end genZcSet;
+
+function genRelationSet
+  "Inline  data->simulationInfo->relations[idx] = (src > 0.0) ? 1 : 0
+   for updateRelations bodies. modelica_boolean is the C runtime's
+   32-bit int."
+  input String dataArgName;
+  input Integer idx;
+  input String srcName;
+  external "C" createInlinedRelationSet(dataArgName, idx, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
+end genRelationSet;
+
 function genCallArgMmcJumpr
   "Fetches the mmc_jmpr from threadData & adds it to the arg vector."
   external "C" createCallArgMmcJmpr() annotation(Library="omcruntime");

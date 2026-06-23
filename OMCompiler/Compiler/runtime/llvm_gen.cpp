@@ -330,6 +330,55 @@ extern "C" int createInlinedWriteBoolParam(const char *const dataArgName,
   return 0;
 }
 
+/* createInlinedZcSet: emit
+ *
+ *   gout[idx] = src;
+ *
+ * where gout is a double* function argument (the third arg of the
+ * model's _function_ZeroCrossings entry). Replaces omc_jit_zc_set. */
+extern "C" int createInlinedZcSet(const char *const goutArgName,
+                                  const int64_t idx,
+                                  const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const goutPtr = loadFromSymtab(goutArgName);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const slotAddr = b.CreateGEP(
+      dbl, goutPtr, llvm::ConstantInt::get(i64, idx), "");
+  llvm::Value *const src = loadFromSymtab(srcName);
+  b.CreateStore(src, slotAddr);
+  return 0;
+}
+
+/* createInlinedRelationSet: emit
+ *
+ *   data->simulationInfo->relations[idx] = (residual > 0.0) ? 1 : 0;
+ *
+ * src arrives as the double residual; we map > 0.0 to 1 and <= 0.0 to
+ * 0, matching omc_jit_relation_set's coercion. relations[] is an
+ * array of modelica_boolean (int / i32). */
+extern "C" int createInlinedRelationSet(const char *const dataArgName,
+                                        const int64_t idx,
+                                        const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const relations =
+      emitGEPLoadPtr(simInfo, omc_layout_SI_relations);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const slotAddr = b.CreateGEP(
+      i32, relations, llvm::ConstantInt::get(i64, idx), "");
+  llvm::Value *const srcDbl = loadFromSymtab(srcName);
+  llvm::Value *const zero = llvm::ConstantFP::get(dbl, 0.0);
+  llvm::Value *const cmp = b.CreateFCmpOGT(srcDbl, zero, "");
+  llvm::Value *const cast = b.CreateZExt(cmp, i32, "");
+  b.CreateStore(cast, slotAddr);
+  return 0;
+}
+
 /* createInlinedReadTime: emit
  *
  *   data->localData[0]->timeValue

@@ -1448,10 +1448,7 @@ algorithm
         EXT_LLVM.genAllocaModelicaReal(valTmp, false);
         EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
       end if;
-      EXT_LLVM.genCallArg("gout");
-      EXT_LLVM.genCallArgConstInt(i);
-      EXT_LLVM.genCallArg(valTmp);
-      EXT_LLVM.genCall("omc_jit_zc_set", MODELICA_VOID, "", false);
+      EXT_LLVM.genZcSet("gout", i, valTmp);
     else end try;
     i := i + 1;
   end for;
@@ -1499,10 +1496,7 @@ algorithm
         EXT_LLVM.genAllocaModelicaReal(valTmp, false);
         EXT_LLVM.genStoreLiteralReal(0.0, valTmp);
       end if;
-      EXT_LLVM.genCallArg("data");
-      EXT_LLVM.genCallArgConstInt(i);
-      EXT_LLVM.genCallArg(valTmp);
-      EXT_LLVM.genCall("omc_jit_relation_set", MODELICA_VOID, "", false);
+      EXT_LLVM.genRelationSet("data", i, valTmp);
     else end try;
     i := i + 1;
   end for;

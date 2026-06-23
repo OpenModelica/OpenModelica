@@ -108,5 +108,21 @@ algorithm
   assert(false, getInstanceName());
 end genReadTime;
 
+function genZcSet
+  input String goutArgName;
+  input Integer idx;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genZcSet;
+
+function genRelationSet
+  input String dataArgName;
+  input Integer idx;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genRelationSet;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;
