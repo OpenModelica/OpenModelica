@@ -2840,6 +2840,7 @@ public
     protected
       Equation eqn;
       list<Integer> location;
+      list<Subscript> subs;
     algorithm
       eqn := Pointer.access(eqn_ptr);
       (sliced_eqn, solve_status) := match eqn
@@ -2855,8 +2856,23 @@ public
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
             (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
+          else
+            solve_status := NBSolve.Status.EXPLICIT;
           end if;
         then (sliced_eqn, solve_status);
+
+        // slice the array
+        case ARRAY_EQUATION() algorithm
+          // get the frame location indices from single index and convert to subscripts
+          location := Slice.indexToLocation(scal_idx, sizes);
+          subs     := list(Subscript.fromExp(Expression.INTEGER(i)) for i in location);
+
+          eqn.lhs := Expression.applySubscripts(subs, eqn.lhs);
+          eqn.rhs := Expression.applySubscripts(subs, eqn.rhs);
+
+          // do not solve, needs solving beforehand
+          solve_status := NBSolve.Status.UNPROCESSED;
+        then (eqn, solve_status);
 
         // ToDo: arrays 'n stuff
 

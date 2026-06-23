@@ -185,6 +185,7 @@ public
         local
           Pointer<Equation> eqn_ptr;
           Equation eqn;
+          list<Integer> index_lst;
           Slice<VariablePointer> var_slice;
           Slice<EquationPointer> eqn_slice;
           ComponentRef var_cref, eqn_cref;
@@ -332,10 +333,45 @@ public
         case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
-          (eqn_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
-          comp.eqn := eqn_slice;
-          comp.status := solve_status;
-        then ({comp}, solve_status);
+          eqn_slice := comp.eqn;
+          var_slice := comp.var;
+          if listEmpty(eqn_slice.indices) then
+            // if the eqn is not sliced just solve for var slice
+            print("we are here 1\n");
+            (eqn_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            comp.eqn      := eqn_slice;
+            comp.status   := solve_status;
+            solved_comps  := {comp};
+          else
+            // solve as if it was a full variable
+            var_slice.indices := {};
+            index_lst         := eqn_slice.indices;
+            (eqn_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, ComponentRef.stripSubscriptsAll(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+
+            // prepare dummy map
+            exp_repl      := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            eqn_ptr       := Slice.getT(eqn_slice);
+            solved_comps  := {};
+            print("we are here 2\n");
+            // scalarize to make sure only the correct slices are evaluated
+            for idx in listReverse(index_lst) loop
+              print("creating slice " + intString(idx) + "\n");
+              (eqn, _)      := Equation.singleSlice(eqn_ptr, idx+1, Equation.sizes(eqn_ptr), comp.var_cref, exp_repl, funcMap);
+              print(Equation.toString(eqn) + "\n");
+              (var_cref, solve_status) := getVarSlice(comp.var_cref, NONE(), eqn);
+              if solve_status == Status.EXPLICIT then
+                  //solved_comps
+                  var_slice.indices := {Slice.getSingleIndex(var_cref)};
+                  eqn_slice         := Slice.SLICE(Pointer.create(eqn), {});
+                  solved_comps      := StrongComponent.SLICED_COMPONENT(var_cref, var_slice, eqn_slice, solve_status) :: solved_comps;
+              else
+                Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot properly slice\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
+                fail();
+              end if;
+            end for;
+          end if;
+
+        then (solved_comps, solve_status);
 
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
@@ -1574,5 +1610,24 @@ protected
     end if;
   end solveForVarSlice;
 
+<<<<<<< Updated upstream
   annotation(__OpenModelica_Interface="backend");
+=======
+  function solveEqnSlice
+    input output Slice<EquationPointer> eqn_slice;
+    input Slice<VariablePointer> var_slice;
+    input ComponentRef cref;
+    input UnorderedMap<Path, Function> funcMap;
+    input BPartition.Kind kind;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input VarData varData;
+    input EqData eqData;
+    output Status solve_status;
+  protected
+
+  end solveEqnSlice;
+
+  annotation(__OpenModelica_Interface="nbackend");
+>>>>>>> Stashed changes
 end NBSolve;
