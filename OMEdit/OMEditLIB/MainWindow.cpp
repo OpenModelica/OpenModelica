@@ -139,8 +139,10 @@ MainWindow::MainWindow(QWidget *parent)
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
+#if QT_CONFIG(process)
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+#endif
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   /*! @note The above three lines registers the types for simulaiton threads. Do not remove them. */
   setObjectName("MainWindow");
@@ -3039,6 +3041,7 @@ void MainWindow::openTerminal()
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
+#if QT_CONFIG(process)
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -3052,6 +3055,9 @@ void MainWindow::openTerminal()
                           .arg(terminalCommand, arguments, process.errorString());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
+#else
+  Q_UNUSED(arguments); // no local terminal on the web build
+#endif
 }
 
 /*!

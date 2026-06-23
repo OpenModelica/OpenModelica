@@ -52,7 +52,9 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__)
+// QtWebEngine stubs come in via DocumentationWidget.h on wasm.
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)

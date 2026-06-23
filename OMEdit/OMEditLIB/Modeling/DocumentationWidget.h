@@ -44,7 +44,9 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__)
+#include "Modeling/qtwebengine_compat.h" // QtWebEngine is unavailable on wasm
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
 #include <QWebEnginePage>
 #else // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)

@@ -103,13 +103,17 @@ target_compile_definitions(OMEditLib PRIVATE OMC_RUST_ABI WITHOUT_OSG)
 # omc runtime metadata headers it pulls in.
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
 target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
+  ${OM_ROOT}/OMEdit  # omedit_config.h (version defines)
   ${RUST_OMC}/libopenmodelica_compiler/include
   ${OM_ROOT}/OMCompiler/SimulationRuntime/c
   # OMSimulator C API header is declarations-only (compiles fine); the oms_*
   # implementation is stubbed at link (no OMSimulator on wasm v1).
   ${OM_ROOT}/OMSimulator/include
-  # antlr4 C++ runtime headers for FlatModelica/Parser.cpp.
+  # antlr4 C++ runtime + the generated Modelica lexer/parser headers
+  # (OMParser/modelicaLexer.h) for FlatModelica/Parser.cpp. The OMParser lib is
+  # not linked on wasm yet; the headers suffice for the static-lib compile.
   ${OM_ROOT}/OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
+  ${OM_ROOT}/OMParser
   # ryu om_format.h (number formatting), included as "om_format.h".
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu
   # open62541 (OPC-UA) header for OpcUaClient — declarations only; the lib is not

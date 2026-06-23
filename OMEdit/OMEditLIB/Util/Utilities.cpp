@@ -954,7 +954,9 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#if !QT_CONFIG(process)
+  Q_UNUSED(pProcess); /* no QProcess on wasm */
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)

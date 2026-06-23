@@ -135,11 +135,15 @@ public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
   void readSimulationStandardError();
+#if QT_CONFIG(process)
   void simulationProcessError(QProcess::ProcessError error);
+#endif
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
   void simulationDataPublished(const QByteArray &data);
   void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
+#if QT_CONFIG(process)
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
   void cancelSimulation();
   void pauseSimulation();
   void continueSimulation();
