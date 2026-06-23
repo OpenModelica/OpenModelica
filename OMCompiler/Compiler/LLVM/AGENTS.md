@@ -214,18 +214,26 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    HelloWorld now runs with no `<Model>.c` on disk and no
    `<prefix>.bc` either (every catalog-displaced satellite
    skips clang too); the JIT consumes the SCTL bitcode alone.
-   Models with features SCTL does not yet cover regress
-   (BouncingBall's zero crossings + extra equations leaves
-   per-equation symbols dangling because the cutover removes
-   the strong CodegenC definitions that previously satisfied
-   them). The fix is per-feature: lift the missing pieces in
-   SCTL (e.g. `emitInitialEquationsBlock` should emit each
-   `<Model>_eqFunction_N` as a callable symbol, not just inline
-   its body into `functionInitialEquations_0`). Treat each gap
-   as a Feature predicate that, when failing, falls back to
-   the non-cutover path by re-emitting `<Model>.c` for the
-   affected model -- not yet wired today; the regression is
-   visible as a "JIT session error: Symbols not found" message.
+   A `delay()`-using model also runs (the Feature warning
+   path that keeps `_07dly.c` on clang absorbs the difference;
+   the dynamic equations all lower cleanly).
+
+   **BouncingBall regresses** at the JIT-link step: SCTL cannot
+   yet lower `_eqFunction_7` (the `h < 0` relation that drives
+   the bounce event -- `relationhysteresis` is one of the runtime
+   helpers `emitEquation` does not know about). The clang'd
+   `_06inz.c` then has an extern reference to that symbol that
+   nothing satisfies after `<Model>.c` is gone. The clean fix
+   is per-model: `SimCodeToLLVM.canCoverModel(simCode)` already
+   exists as a structural preflight (zero crossings absent, all
+   dynamic equations classify + lower cleanly); wire it into
+   `SimCodeMain.callTargetTemplates` via a `Global` slot and
+   only skip `<Model>.c` when the preflight passes. A first
+   pass at this wiring crashed in `getGlobalRoot` (uninitialised
+   slot interaction); the read needs a Type-explicit path that
+   is robust to the slot never having been written. Until that
+   lands the cutover is unconditional under `-d=jitSimulate`
+   and BB is the canonical failing case to fix against.
 
    `compileModelToBitcode` itself can be deleted once
    `_functions.c` / `_08bnd.c` / `_05evt.c` / `_12jac.c` lift
