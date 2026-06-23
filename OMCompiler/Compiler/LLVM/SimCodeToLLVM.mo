@@ -432,19 +432,11 @@ protected function uniqueAppend
    Preserves order."
   input list<String> filesIn;
   input String seg;
-  output list<String> filesOut = filesIn;
-protected
-  Boolean seen = false;
+  output list<String> filesOut;
 algorithm
-  for f in filesIn loop
-    if f == seg then
-      seen := true;
-    end if;
-  end for;
-  if not seen then
-    filesOut := listAppend(filesIn, {seg});
-  end if;
+  filesOut := if List.contains(filesIn, seg, stringEqual) then filesIn else listAppend(filesIn, {seg});
 end uniqueAppend;
+
 
 protected function getDynamicSkips
   "Current value of the per-build dynamic skip list. The slot is
@@ -2803,11 +2795,11 @@ algorithm
       then (stateVars, derivativeVars, algVars, paramVars, boolParamVars);
   end match;
 
-  for v in stateVars      loop entries := addEntry(v, VKS_STATE,      entries); end for;
-  for v in derivativeVars loop entries := addEntry(v, VKS_DERIVATIVE, entries); end for;
-  for v in algVars        loop entries := addEntry(v, VKS_ALG,        entries); end for;
-  for v in paramVars      loop entries := addEntry(v, VKS_PARAM,      entries); end for;
-  for v in boolParamVars  loop entries := addEntry(v, VKS_BOOL_PARAM, entries); end for;
+  entries := List.fold(stateVars, function addEntry(kind = VKS_STATE), entries);
+  entries := List.fold(derivativeVars, function addEntry(kind = VKS_DERIVATIVE), entries);
+  entries := List.fold(algVars, function addEntry(kind = VKS_ALG), entries);
+  entries := List.fold(paramVars, function addEntry(kind = VKS_PARAM), entries);
+  entries := List.fold(boolParamVars, function addEntry(kind = VKS_BOOL_PARAM), entries);
 
   layout := VAR_LAYOUT(entries,
                       listLength(stateVars),
