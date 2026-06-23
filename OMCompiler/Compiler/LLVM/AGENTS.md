@@ -3,6 +3,45 @@
 Conventions for code in this folder and in the matching C++ runtime
 under `OMCompiler/Compiler/runtime/llvm_gen{.cpp,.hpp,_util.hpp,_wrappers.{c,h}}`.
 
+## Vision
+
+**SimCode → LLVM IR in memory → LLJIT in-process → simulation.**
+The compiler emits native code through the LLVM IR pipeline
+directly; no C source, no clang invocation, no `.c` / `.bc` files
+on disk in the default path. The current CodegenC + clang
+pipeline is **legacy** and is being replaced piece by piece by
+SCTL IR emission.
+
+This is non-negotiable:
+
+- The compiler does not generate C. New entry points, new
+  equations, new data tables — all of it is LLVM IR built by
+  SimCodeToLLVM via the EXT_LLVM primitives. If a proposal
+  involves "emit C and have clang compile it", that proposal
+  is out of scope. "Embed clang as a library to speed up the
+  C path" is also out of scope: clang has no role in the final
+  vision.
+- Pre-compiled C runtime libraries that already exist on the
+  system are fine to call into: libSimulationRuntimeC,
+  libModelicaStandardTables, libModelicaIO, libModelicaMatIO,
+  libModelicaExternalC, libm, libc. The JIT loads them with
+  `LoadLibraryPermanently` and the LLJIT's
+  `DynamicLibrarySearchGenerator` resolves symbol references in
+  the SCTL bitcode to those libraries at link time. The SCTL
+  module never re-emits any of their code; it just emits calls
+  to them.
+- Optional AoT side-effect: `+d=jit_dump_ir` writes the IR to
+  a `.ll` / `.bc` file for inspection or external linking. That
+  is for debug / tooling, not the path the JIT executes from.
+
+The CodegenC `<Model>.c` / `<Model>_NN.c` / `_functions.c` /
+`_records.c` output and the `<Model>_jitcompile.sh` clang
+fan-out + `llvm-link` step exist only as a transitional shim
+that fills in the entry points SCTL has not yet displaced.
+Every commit that adds an SCTL-emitted entry point removes one
+or more `.c` segments from the clang loop. The end state is
+zero `.c` segments and the transitional shim deleted.
+
 ## Scope
 
 This package owns the SimCode → LLVM IR / LLJIT path:
@@ -18,6 +57,41 @@ The C++ side lives in `Compiler/runtime/llvm_gen.cpp` and is the single
 LLVM-API consumer. Stubs in `Compiler/Stubs/{EXT_LLVM,SimCodeToLLVM,MidToLLVM}.mo`
 keep the dependency optional; signatures here must round-trip cleanly
 with the stub package.
+
+## Roadmap to the vision
+
+A SimCode → IR pipeline reaches the vision when SimCodeToLLVM
+emits, for every model:
+
+1. Per-equation function bodies for the **dynamic** equations
+   (today only init equations get per-eq lowering; dynamic eqs
+   still come from CodegenC).
+2. `setupDataStruc` as LLVM constants — the static `MODEL_DATA`,
+   the `STATIC_REAL_DATA` arrays, the var-info tables, etc., all
+   emitted as IR globals at codegen time.
+3. The callback function-pointer table as an LLVM constant
+   struct populated with the addresses of the SCTL-emitted entry
+   points.
+4. Record descriptors (the `struct record_description` data
+   that today lives in `_records.c`) as LLVM globals.
+5. User-defined Modelica function bodies through
+   `DAEToMid + MidToLLVM` directly into the SCTL module. The
+   `external "C"` functions resolve via the process symbol
+   generator instead of being re-emitted.
+6. An entry shim that replaces `main` so the JIT can call into
+   the model without the CodegenC driver. The simulation runtime
+   (DASSL et al.) is already linked into omc, so we only need to
+   hand it the same `DATA*` the driver would have.
+
+Once those exist, the `compileModelToBitcode` step disappears:
+no `<Model>.c`, no `<Model>_NN.c`, no `<Model>.makefile`, no
+clang fork/exec, no `<Model>.bc` on disk. The SCTL bitcode is
+the only LLVM module added to the LLJIT, and `lookup("main")`
+returns the SCTL-emitted entry point.
+
+Every commit should either advance one of those six items or
+solidify the IR-emit primitives that those items will rely on.
+"Make clang faster" is a dead end.
 
 ## Style rules
 
