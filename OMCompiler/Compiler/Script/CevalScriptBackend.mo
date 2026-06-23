@@ -5974,20 +5974,16 @@ algorithm
     Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: this omc was built without LLVM JIT support."});
     fail();
   end if;
-  skipFiles := listAppend(SimCodeToLLVM.displacedSegmentFiles(),
-                          /* _records.c and _functions.c are pure
-                           * include-and-comment files in every model
-                           * we have measured. The NLS / LSY / MIX
-                           * segments are empty for trivial models
-                           * but non-trivial for models that actually
-                           * carry such systems (Modelica.Mechanics
-                           * .Rotational.Examples.First exports
-                           * _initialLinearSystem from _03lsy.c),
-                           * so they cannot be unconditionally
-                           * skipped here -- they are only skipped
-                           * when SimCodeToLLVM puts them on the
-                           * dynamic skip list. */
-                          {"_records.c", "_functions.c"});
+  /* Nothing is unconditionally skipped. Every empty segment is a
+   * trivial clang invocation; every non-empty segment may export
+   * symbols the JIT needs (Modelica.Mechanics.Translational
+   * .Examples.Friction's _functions.c exports user-function
+   * bodies like omc_*ExternalCombiTable1D_constructor; First's
+   * _03lsy.c exports _initialLinearSystem). The dynamic skip list
+   * SCTL records into via recordDisplacedSegment remains the
+   * single source of truth: when SCTL emits the corresponding IR
+   * the clang step skips that .c file, otherwise clang owns it. */
+  skipFiles := SimCodeToLLVM.displacedSegmentFiles();
   scriptFile := prefix + "_jitcompile.sh";
   script := stringAppendList({
     "#!/bin/bash\n",

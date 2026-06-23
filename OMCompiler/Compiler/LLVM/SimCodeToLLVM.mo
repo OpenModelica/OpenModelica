@@ -546,7 +546,19 @@ algorithm
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
     EXT_LLVM.initGen(modelSymbolPrefix(name) + "_sctl");
     emitDisplacingStubs(name);
-    emitUserFunctions(simCode);
+    /* emitUserFunctions(simCode) is intentionally not called here.
+     * The DAEToMid + MidToLLVM pipeline emits wrong-signature stubs
+     * for `external` Modelica functions (e.g.
+     * Modelica.Blocks.Tables.Internal.getTable1DValue takes
+     * (threadData, complex, integer, real) but the lowered
+     * declaration was (threadData) only), and silently skips
+     * functions whose types DAEToMid cannot resolve (e.g.
+     * ExternalCombiTable1D_constructor). Either symptom breaks the
+     * simulation. Until DAEToMid is taught to faithfully lower the
+     * full SimCodeFunction signature -- arrays, complex /
+     * ExternalObject types, and `external "C"` body bindings -- the
+     * model's _functions.c stays on the clang path so the bodies
+     * arrive correctly. */
     /* Initial-equation block: dynamic-skip pattern. When all init
      * eqs lower cleanly AND _05evt.c is also being displaced (so the
      * still-clang'd files do not extern-call eqFunction_N), emit
