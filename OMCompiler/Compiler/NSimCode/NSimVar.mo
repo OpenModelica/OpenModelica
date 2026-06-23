@@ -78,6 +78,7 @@ protected
   import NSimCode.SimCodeIndices;
 
   // Util imports
+  import Config;
   import Error;
   import Pointer;
   import StringUtil;
@@ -1262,26 +1263,19 @@ public
       Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
-    function scalarSize
-      "Number of scalar elements a simvar occupies in the per-type storage vectors.
-       With simCodeScalarize=false arrays are kept un-expanded (one simvar per array),
-       but the C++ runtime sizes its var vectors and value references per scalar element,
-       so counts must sum the array sizes rather than just counting simvars (#15496)."
-      input SimVar v;
-      output Integer sz = 1;
-    algorithm
-      for e in v.numArrayElement loop
-        sz := sz * Expression.integerValueOrDefault(e, 1);
-      end for;
-    end scalarSize;
-
     function listScalarSize
+      "Var-vector size for a simvar list. The C++ target keeps arrays un-expanded
+       but sizes its var vectors and value references per scalar element, so the
+       array sizes are summed. Every other target (notably the C runtime, which
+       also supports simCodeScalarize=false) keeps one slot per simvar."
       input list<SimVar> vars;
-      output Integer sz = 0;
+      output Integer sz;
     algorithm
-      for v in vars loop
-        sz := sz + scalarSize(v);
-      end for;
+      if stringEqual(Config.simCodeTarget(), "Cpp") then
+        sz := sum(product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) for v in vars);
+      else
+        sz := listLength(vars);
+      end if;
     end listScalarSize;
 
     function create
