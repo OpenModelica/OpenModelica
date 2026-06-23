@@ -52,10 +52,10 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        stage('gcc') {
+        stage('gcc-jammy') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -69,13 +69,13 @@ pipeline {
           }
           steps {
             script { common.buildOMC('gcc', 'g++', '', true, false) }
-            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
+            stash name: 'omc-jammy-gcc', includes: 'build/**, **/config.status'
           }
         }
-        stage('clang') {
+        stage('clang-resolute') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -91,7 +91,7 @@ pipeline {
             }
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-            stash name: 'omc-clang', includes: 'build/**, **/config.status'
+            stash name: 'omc-resolute-clang', includes: 'build/**, **/config.status'
           }
         }
         stage('Win/UCRT64') {
@@ -124,7 +124,7 @@ pipeline {
         stage('cmake-jammy-gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -146,6 +146,35 @@ pipeline {
               sh "build/bin/omc --version"
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+          }
+        }
+        stage('cmake4-resolute-clang') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-cmake-4'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value }
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_C_COMPILER=clang"
+                                        + " -DCMAKE_CXX_COMPILER=clang++"
+                                        + " -DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
+            //stash name: 'omc-cmake-clang', includes: 'build_cmake/**, build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -206,7 +235,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -263,7 +292,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-gcc'
+              unstash 'omc-jammy-gcc'
               common.makeLibsAndCache()
               common.partest(1,3)
             }
@@ -294,7 +323,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-gcc'
+              unstash 'omc-jammy-gcc'
               common.makeLibsAndCache()
               common.partest(2,3)
             }
@@ -325,7 +354,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-gcc'
+              unstash 'omc-jammy-gcc'
               common.makeLibsAndCache()
               common.partest(3,3)
             }
@@ -336,7 +365,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-resolute'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -356,7 +385,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.makeLibsAndCache()
               common.partest(1,3)
             }
@@ -367,7 +396,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-resolute'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -387,7 +416,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.makeLibsAndCache()
               common.partest(2,3)
             }
@@ -398,7 +427,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-resolute'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -418,7 +447,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.makeLibsAndCache()
               common.partest(3,3)
             }
@@ -447,7 +476,7 @@ pipeline {
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                           "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
                 common.standardSetup()
-                unstash 'omc-clang'
+                unstash 'omc-resolute-clang'
                 common.makeLibsAndCache()
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
@@ -508,7 +537,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.makeLibsAndCache()
             }
             sh '''
@@ -537,7 +566,7 @@ pipeline {
         stage('10 build-gui-clang-qt5') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -545,7 +574,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-clang', 'qt5')
+              common.buildGUI('omc-resolute-clang', 'qt5')
             }
             stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
@@ -554,7 +583,7 @@ pipeline {
         stage('11 build-gui-clang-qt6') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -562,7 +591,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-clang', 'qt6')
+              common.buildGUI('omc-resolute-clang', 'qt6')
             }
             stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
@@ -571,7 +600,7 @@ pipeline {
         stage('12 testsuite-clang-parmod') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
@@ -584,7 +613,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.partest(1, 1, false, '-j1 -parmodexp')
             }
           }
@@ -593,7 +622,7 @@ pipeline {
         stage('13 testsuite-clang-metamodelica') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
             }
           }
@@ -603,7 +632,7 @@ pipeline {
           }
           steps {
             script { common.standardSetup() }
-            unstash 'omc-clang'
+            unstash 'omc-resolute-clang'
             sh 'make -C testsuite/metamodelica/MetaModelicaDev test-error'
           }
         }
@@ -611,7 +640,7 @@ pipeline {
         stage('14 testsuite-matlab-translator') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
             }
@@ -623,7 +652,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.generateTemplates()
             }
             sh 'make -C testsuite/special/MatlabTranslator/ test'
@@ -633,7 +662,7 @@ pipeline {
         stage('15 test-clang-icon-generator') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest \
@@ -653,7 +682,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-clang'
+              unstash 'omc-resolute-clang'
               common.makeLibsAndCache()
             }
             sh 'make -C testsuite/openmodelica/icon-generator test'
@@ -663,7 +692,7 @@ pipeline {
         stage('16 testsuite-unit-test-C') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -780,7 +809,7 @@ pipeline {
         stage('clang-qt5-omedit-testsuite') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -799,7 +828,7 @@ pipeline {
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -822,7 +851,7 @@ pipeline {
         stage('fmuchecker-results') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
             }
@@ -837,7 +866,7 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             sh 'rm -rf build/ testsuite/'
-            unstash 'omc-clang'
+            unstash 'omc-resolute-clang'
             unstash 'cross-fmu-extras'
             unstash 'cross-fmu-results-linux-wine'
             unstash 'cross-fmu-results-armhf'
@@ -849,7 +878,7 @@ pipeline {
         stage('upload-compliance') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
             }
@@ -867,7 +896,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
             }

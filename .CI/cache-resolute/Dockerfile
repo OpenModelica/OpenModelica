@@ -1,5 +1,5 @@
 # Cannot be parametrized in Jenkins...
-FROM ghcr.io/openmodelica/build-deps:ubuntu-22.04
+FROM ghcr.io/openmodelica/build-deps:ubuntu-26.04
 
 # We don't know the uid of the user who will build, so make the /cache directories world writable
 
