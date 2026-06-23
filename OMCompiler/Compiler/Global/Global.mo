@@ -96,6 +96,14 @@ constant Integer simCodeToLLVMDynamicSkips = 33;
 // SimCodeToLLVM.emitMainShimBlock.
 constant Integer simCodeModelGuid = 34;
 
+// SimCodeMain: Boolean "SCTL covers every dynamic equation in this
+// SimCode". Set by SimCodeToLLVM.canCoverModel before callTargetTemplates
+// runs under -d=jitSimulate. The C case reads it: when false, fall back
+// to emitting <Model>.c so the dangling <Model>_eqFunction_N refs from
+// the still-clang'd satellites resolve at JIT-link time. Default is
+// false (the safer fallback) for any path that does not flip it.
+constant Integer simCodeSctlCanCover = 35;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index

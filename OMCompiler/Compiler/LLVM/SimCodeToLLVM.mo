@@ -482,6 +482,44 @@ end runtimeEntryCatalog;
  *  Entry point                                                           *
  * ====================================================================== */
 
+public function canCoverModel
+  "Preflight: returns true iff the -d=jitSimulate cutover (skip the
+   <Model>.c emission) is safe for `simCode`. Conservative -- only
+   greenlights models in the HelloWorld shape until the per-feature
+   lifts (zero crossings, delays, clocked partitions, ...) catch up.
+   Used by SimCodeMain to decide whether to emit <Model>.c.
+
+   The check is structural (no SCTL state mutation, no IR emission):
+   the model must have no zero crossings (events would route through
+   relationhysteresis / saveZeroCrossings / ... that SCTL cannot
+   lower yet), no clocked partitions, no spatialDistribution, no
+   state sets, and no delay() expressions. Every dynamic equation
+   must classify as a supported recipe."
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+protected
+  VarLayout layout;
+  list<SimCode.SimEqSystem> dynamicEqs;
+  list<EqRecipe> recipes;
+algorithm
+  ok := listEmpty(simCode.zeroCrossings)
+    and listEmpty(simCode.clockedPartitions)
+    and listEmpty(simCode.stateSets);
+  if not ok then
+    return;
+  end if;
+  layout := buildVarLayout(simCodeVars(simCode));
+  dynamicEqs := flattenOdeEquations(simCode);
+  if listEmpty(dynamicEqs) then
+    return;
+  end if;
+  recipes := List.map1(dynamicEqs, classifySimEq, layout);
+  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
+  if ok then
+    ok := List.all(recipes, function canLowerEquation(layout = layout));
+  end if;
+end canCoverModel;
+
 public function displacedSegmentFiles
   "Distinct list of CodegenC segment .c files SCTL fully covers for
    the model whose genSim just ran. Every displacement -- whether
