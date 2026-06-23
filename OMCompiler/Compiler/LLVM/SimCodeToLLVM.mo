@@ -294,7 +294,7 @@ protected
 algorithm
   entries := {
     /* -- _17inl.c -------------------------------------------------- */
-    RUNTIME_ENTRY("_symbolicInlineSystem", MI, {MM, MM}, EB_STUB(), "_17inl.c"),
+    RUNTIME_ENTRY("_symbolicInlineSystem", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_17inl.c"),
 
     /* -- _10asr.c -------------------------------------------------- */
     RUNTIME_ENTRY("_checkForAsserts", MI, {MM, MM}, EB_STUB(), "_10asr.c"),
@@ -306,9 +306,10 @@ algorithm
     RUNTIME_ENTRY("_function_storeSpatialDistribution", MI, {MM, MM}, EB_STUB(), "_18spd.c"),
     RUNTIME_ENTRY("_function_initSpatialDistribution",  MI, {MM, MM}, EB_STUB(), "_18spd.c"),
 
-    /* -- _16dae.c -- runtime returns -1 ("no DAE residuals"); 0 is
-                     also safe for the ODE path that DASSL drives. */
-    RUNTIME_ENTRY("_initializeDAEmodeData", MI, {MM, MM}, EB_STUB(), "_16dae.c"),
+    /* -- _16dae.c -- CodegenC body is  return -1  (no DAE mode data); the
+                     runtime treats negative as "DAE mode unavailable" and
+                     stays on the ODE path. */
+    RUNTIME_ENTRY("_initializeDAEmodeData", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_16dae.c"),
 
     /* -- _04set.c -- (int nStateSets, STATE_SET_DATA*, DATA*) -> void.
                      int widens to i64 (no MODELICA_INT32); the unused
