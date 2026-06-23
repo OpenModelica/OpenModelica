@@ -484,6 +484,28 @@ extern "C" int createCallExternalObjectDestructors(const char *const modelName) 
   return 0;
 }
 
+/* Flip a named function's linkage to linkonce_odr. Used by SCTL to mark
+ * a stub that intentionally coexists with a CodegenC-emitted strong
+ * version of the same symbol -- when both arrive at llvm-link the
+ * strong (external) definition wins and ours is discarded, but our IR
+ * is positioned to take over once CodegenC stops emitting that symbol.
+ * Returns 0 on success, non-zero if the function is not present in the
+ * active module (caller likely passed a typo). */
+extern "C" int setFunctionLinkonceOdr(const char *const fname) {
+  if (!program || !program->module) {
+    fprintf(stderr, "setFunctionLinkonceOdr: no active module\n");
+    return 1;
+  }
+  llvm::Function *const fn = program->module->getFunction(fname);
+  if (!fn) {
+    fprintf(stderr, "setFunctionLinkonceOdr: function '%s' not in module\n",
+            fname);
+    return 2;
+  }
+  fn->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  return 0;
+}
+
 /* Process-global bitcode buffer stashed by SimCodeToLLVM. Consumed (cleared)
  * by omc_runModelViaJIT so each model run starts from a clean slate. The
  * buffer is the in-memory replacement for the transient <prefix>_sctl.bc

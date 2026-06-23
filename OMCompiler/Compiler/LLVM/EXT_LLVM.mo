@@ -208,6 +208,20 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
+function setLinkonceOdr
+  "Flip a function's linkage in the active module to linkonce_odr.
+   Used after emitStub to mark stubs in <Model>.c that intentionally
+   coexist with the CodegenC-emitted strong version of the same
+   symbol: llvm-link picks one definition, both are ODR-equivalent,
+   no duplicate-symbol error. Position the IR for the day CodegenC
+   stops emitting these stubs."
+  input String fname;
+  output Integer status;
+  external "C" status = setFunctionLinkonceOdr(fname)
+    annotation(Library = "omcruntime",
+               Include = "int setFunctionLinkonceOdr(const char *fname);");
+end setLinkonceOdr;
+
 function genCallExternalObjectDestructors
   "Emit the whole  <Model>_callExternalObjectDestructors  function into
    the active module as one IR function (signature + body). The body

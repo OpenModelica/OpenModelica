@@ -247,8 +247,54 @@ end EqRecipe;
  *                     through DAEToMid + MidToLLVM by emitUserFunctions.  *
  * ====================================================================== */
 
+/* Catalog-driven enumeration of Modelica features that disqualify a
+ * stub from being semantically equivalent to its CodegenC body.
+ * featureFor maps each catalog nameSuffix to one of these; safety
+ * reduces to checking that the model does not exhibit it. NONE is
+ * the sentinel for stubs whose body is identical regardless of model
+ * content (e.g. _checkForAsserts, _linear_model_frame).
+ *
+ * The enum is the single keyspace for both the user-facing wording
+ * (featureName) and the SimCode probe (featureIsAbsent); the catalog
+ * never spells out the same Modelica feature string twice. */
+public type Feature = enumeration(
+  NONE,
+  DELAY_EXPRS,
+  SPATIAL_DISTRIBUTION,
+  CLOCKED_PARTITIONS,
+  STATE_SETS,
+  INPUT_VARS,
+  OUTPUT_VARS,
+  DATA_RECON_INPUTS,
+  DATA_RECON_SET_B,
+  DATA_RECON_SET_C,
+  LOCAL_KNOWN_VARS);
+
+/* Human-readable name for each Feature, cached as a module-level
+ * constant so each diagnostic warning reuses the same String value
+ * instead of building it from a literal on every call. featureName()
+ * is now a plain enum-to-pointer dispatch. */
+protected constant String FEATURE_NAME_NONE                 = "an SCTL-unsupported feature";
+protected constant String FEATURE_NAME_DELAY_EXPRS          = "delay() expressions";
+protected constant String FEATURE_NAME_SPATIAL_DISTRIBUTION = "spatialDistribution() operator";
+protected constant String FEATURE_NAME_CLOCKED_PARTITIONS   = "synchronous (clocked) partitions";
+protected constant String FEATURE_NAME_STATE_SETS           = "dynamic state selection (state sets)";
+protected constant String FEATURE_NAME_INPUT_VARS           = "input variables (Modelica `input` declarations)";
+protected constant String FEATURE_NAME_OUTPUT_VARS          = "output variables (Modelica `output` declarations)";
+protected constant String FEATURE_NAME_DATA_RECON_INPUTS    = "data-reconciliation input variables";
+protected constant String FEATURE_NAME_DATA_RECON_SET_B     = "data-reconciliation set-B variables";
+protected constant String FEATURE_NAME_DATA_RECON_SET_C     = "data-reconciliation set-C variables";
+protected constant String FEATURE_NAME_LOCAL_KNOWN_VARS     = "local-known-variable equations";
+
 public uniontype EntryBody
   record EB_STUB end EB_STUB;
+  record EB_STUB_LINKONCE
+    "Same body as EB_STUB but the emitted function gets linkonce_odr
+     linkage. Used for stubs that share <Model>.c with content SCTL
+     does not yet emit -- both definitions exist after llvm-link,
+     the strong one (CodegenC) wins, ours is discarded. The IR is
+     in place for the day CodegenC stops emitting this symbol."
+  end EB_STUB_LINKONCE;
   record EB_NULL_PTR end EB_NULL_PTR;
   record EB_RETURN_MINUS_ONE
     "Emit a body that returns -1. Used for entries the runtime checks
@@ -274,6 +320,7 @@ public uniontype RuntimeEntry
     list<Integer> argTys    "ordered list of EXT_LLVM type codes";
     EntryBody body;
     String segmentFile      "name of the CodegenC .c file this entry lives in -- for the keep-in-sync invariant with compileModelToBitcode";
+    Boolean displaceFile = true "False when the segment .c file shares content SCTL does not yet emit, so emitting this stub must NOT trigger file-level displacement. <Model>.c is the canonical case today (holds the callback table, setupDataStruc, main, ... besides any leaf stubs).";
   end RUNTIME_ENTRY;
 end RuntimeEntry;
 
@@ -294,27 +341,27 @@ protected
 algorithm
   entries := {
     /* -- _17inl.c -------------------------------------------------- */
-    RUNTIME_ENTRY("_symbolicInlineSystem", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_17inl.c"),
+    RUNTIME_ENTRY("_symbolicInlineSystem", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_17inl.c", true),
 
     /* -- _10asr.c -------------------------------------------------- */
-    RUNTIME_ENTRY("_checkForAsserts", MI, {MM, MM}, EB_STUB(), "_10asr.c"),
+    RUNTIME_ENTRY("_checkForAsserts", MI, {MM, MM}, EB_STUB(), "_10asr.c", true),
 
     /* -- _07dly.c -------------------------------------------------- */
-    RUNTIME_ENTRY("_function_storeDelayed", MI, {MM, MM}, EB_STUB(), "_07dly.c"),
+    RUNTIME_ENTRY("_function_storeDelayed", MI, {MM, MM}, EB_STUB(), "_07dly.c", true),
 
     /* -- _18spd.c -------------------------------------------------- */
-    RUNTIME_ENTRY("_function_storeSpatialDistribution", MI, {MM, MM}, EB_STUB(), "_18spd.c"),
-    RUNTIME_ENTRY("_function_initSpatialDistribution",  MI, {MM, MM}, EB_STUB(), "_18spd.c"),
+    RUNTIME_ENTRY("_function_storeSpatialDistribution", MI, {MM, MM}, EB_STUB(), "_18spd.c", true),
+    RUNTIME_ENTRY("_function_initSpatialDistribution",  MI, {MM, MM}, EB_STUB(), "_18spd.c", true),
 
     /* -- _16dae.c -- CodegenC body is  return -1  (no DAE mode data); the
                      runtime treats negative as "DAE mode unavailable" and
                      stays on the ODE path. */
-    RUNTIME_ENTRY("_initializeDAEmodeData", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_16dae.c"),
+    RUNTIME_ENTRY("_initializeDAEmodeData", MI, {MM, MM}, EB_RETURN_MINUS_ONE(), "_16dae.c", true),
 
     /* -- _04set.c -- (int nStateSets, STATE_SET_DATA*, DATA*) -> void.
                      int widens to i64 (no MODELICA_INT32); the unused
                      arg sits in the same register on x86-64. */
-    RUNTIME_ENTRY("_initializeStateSets", MV, {MI, MM, MM}, EB_STUB(), "_04set.c"),
+    RUNTIME_ENTRY("_initializeStateSets", MV, {MI, MM, MM}, EB_STUB(), "_04set.c", true),
 
     /* -- _08bnd.c -- bound-parameter / bound-attribute updates. Empty
                       in CodegenC for HelloWorld but populates
@@ -324,30 +371,30 @@ algorithm
                       and simulation diverges. Leaving _08bnd.c to
                       clang until real parameter-equation lowering
                       lands. */
-    RUNTIME_ENTRY("_bnd_handled_by_clang", MV, {}, EB_TODO("parameter equations need real body for ChuaCircuit"), "_08bnd.c"),
+    RUNTIME_ENTRY("_bnd_handled_by_clang", MV, {}, EB_TODO("parameter equations need real body for ChuaCircuit"), "_08bnd.c", true),
 
     /* -- _09alg.c -- ODE-only models have no continuous-time alg.
                      CodegenC body increments a stat counter and calls
                      _function_savePreSynchronous; both safely dropped. */
-    RUNTIME_ENTRY("_functionAlgebraics", MI, {MM, MM}, EB_STUB(), "_09alg.c"),
+    RUNTIME_ENTRY("_functionAlgebraics", MI, {MM, MM}, EB_STUB(), "_09alg.c", true),
 
     /* -- _15syn.c -- synchronous-language support. Empty bodies for
                      non-synchronous models. */
-    RUNTIME_ENTRY("_function_savePreSynchronous",  MV, {MM, MM},          EB_STUB(), "_15syn.c"),
-    RUNTIME_ENTRY("_function_initSynchronous",     MV, {MM, MM},          EB_STUB(), "_15syn.c"),
-    RUNTIME_ENTRY("_function_updateSynchronous",   MV, {MM, MM, MI},      EB_STUB(), "_15syn.c"),
-    RUNTIME_ENTRY("_function_equationsSynchronous",MI, {MM, MM, MI, MI},  EB_STUB(), "_15syn.c"),
+    RUNTIME_ENTRY("_function_savePreSynchronous",  MV, {MM, MM},          EB_STUB(), "_15syn.c", true),
+    RUNTIME_ENTRY("_function_initSynchronous",     MV, {MM, MM},          EB_STUB(), "_15syn.c", true),
+    RUNTIME_ENTRY("_function_updateSynchronous",   MV, {MM, MM, MI},      EB_STUB(), "_15syn.c", true),
+    RUNTIME_ENTRY("_function_equationsSynchronous",MI, {MM, MM, MI, MI},  EB_STUB(), "_15syn.c", true),
 
     /* -- _13opt.c -- optimization (Optimica) callbacks. Stubs sit in
                      the function pointer table populated by
                      setupDataStruc but never get called for ODE-only
                      simulation. */
-    RUNTIME_ENTRY("_mayer",                              MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c"),
-    RUNTIME_ENTRY("_lagrange",                           MI, {MM, MM, MM, MM},                   EB_STUB(), "_13opt.c"),
-    RUNTIME_ENTRY("_getInputVarIndicesInOptimization",   MI, {MM, MM},                           EB_STUB(), "_13opt.c"),
-    RUNTIME_ENTRY("_pickUpBoundsForInputsInOptimization",MI, {MM, MM, MM, MM, MM, MM, MM, MM},   EB_STUB(), "_13opt.c"),
-    RUNTIME_ENTRY("_setInputData",                       MI, {MM, MI},                           EB_STUB(), "_13opt.c"),
-    RUNTIME_ENTRY("_getTimeGrid",                        MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c"),
+    RUNTIME_ENTRY("_mayer",                              MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c", true),
+    RUNTIME_ENTRY("_lagrange",                           MI, {MM, MM, MM, MM},                   EB_STUB(), "_13opt.c", true),
+    RUNTIME_ENTRY("_getInputVarIndicesInOptimization",   MI, {MM, MM},                           EB_STUB(), "_13opt.c", true),
+    RUNTIME_ENTRY("_pickUpBoundsForInputsInOptimization",MI, {MM, MM, MM, MM, MM, MM, MM, MM},   EB_STUB(), "_13opt.c", true),
+    RUNTIME_ENTRY("_setInputData",                       MI, {MM, MI},                           EB_STUB(), "_13opt.c", true),
+    RUNTIME_ENTRY("_getTimeGrid",                        MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c", true),
 
     /* -- _05evt.c -- event handling. Trivially-stub'd entries work for
                       models with no zero crossings (HelloWorld, UserFn).
@@ -357,12 +404,12 @@ algorithm
                       DASKR's bisection logic to misfire and abort with
                       "R IS ILL-DEFINED". Leaving _05evt.c to clang until
                       the bodies are lowered. */
-    RUNTIME_ENTRY("_evt_handled_by_clang", MV, {}, EB_TODO("zero-crossings need real body for hybrid models"), "_05evt.c"),
+    RUNTIME_ENTRY("_evt_handled_by_clang", MV, {}, EB_TODO("zero-crossings need real body for hybrid models"), "_05evt.c", true),
 
     /* -- _14lnz.c -- linearization frame strings. Returned only from
                      -d=linearization paths; null suffices for ODE. */
-    RUNTIME_ENTRY("_linear_model_frame",               MM, {}, EB_NULL_PTR(), "_14lnz.c"),
-    RUNTIME_ENTRY("_linear_model_datarecovery_frame", MM, {}, EB_NULL_PTR(), "_14lnz.c"),
+    RUNTIME_ENTRY("_linear_model_frame",               MM, {}, EB_NULL_PTR(), "_14lnz.c", true),
+    RUNTIME_ENTRY("_linear_model_datarecovery_frame", MM, {}, EB_NULL_PTR(), "_14lnz.c", true),
 
     /* -- _06inz.c -- initial-equation block. emitInitialEquationsBlock
                       runs alongside the catalog walk and emits the three
@@ -371,9 +418,9 @@ algorithm
                       displacedSegmentFiles continues to leave _06inz.c
                       on clang by default; the dynamic skip wiring needs
                       one more piece before they can flip. */
-    RUNTIME_ENTRY("_functionInitialEquations_0",      MV, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
-    RUNTIME_ENTRY("_functionInitialEquations",        MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
-    RUNTIME_ENTRY("_functionRemovedInitialEquations", MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
+    RUNTIME_ENTRY("_functionInitialEquations_0",      MV, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c", true),
+    RUNTIME_ENTRY("_functionInitialEquations",        MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c", true),
+    RUNTIME_ENTRY("_functionRemovedInitialEquations", MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c", true),
 
     /* -- _01exo.c -- external object destructors. CodegenC emits
                      `if (extObjs) { free(extObjs); extObjs = 0; }`;
@@ -383,7 +430,7 @@ algorithm
                      that behaviour. Models that use ExternalObject
                      will need an omc_jit_destroy_extobjs(DATA*)
                      accessor before this can keep its EB_STUB tag. */
-    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_TODO("emitExternalObjectDestructorsBlock handles it"), "_01exo.c"),
+    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_TODO("emitExternalObjectDestructorsBlock handles it"), "_01exo.c", true),
 
     /* -- _12jac.c -- analytic Jacobian. SCTL can emit stubs that
                       mark the JACOBIAN struct as NOT_AVAILABLE so
@@ -393,7 +440,36 @@ algorithm
                       need a populated sparsity pattern to converge.
                       Leaving _12jac.c on clang until real analytic
                       Jacobian lowering lands. */
-    RUNTIME_ENTRY("_jacobian_handled_by_clang", MV, {}, EB_TODO("real analytic Jacobian lowering needed"), "_12jac.c")
+    RUNTIME_ENTRY("_jacobian_handled_by_clang", MV, {}, EB_TODO("real analytic Jacobian lowering needed"), "_12jac.c", true),
+
+    /* -- <Model>.c -- leaf return-0 stubs co-resident with the driver,
+                       callback table, setupDataStruc, main, and the
+                       inlined perform_simulation.c.inc template. SCTL
+                       cannot displace <Model>.c yet (those other items
+                       still come from CodegenC), so each leaf goes in
+                       with EB_STUB_LINKONCE and displaceFile=false:
+                       both bitcodes define the symbol, llvm-link picks
+                       CodegenC's strong copy, SCTL's is discarded. The
+                       IR is positioned for the future commit that has
+                       CodegenC drop these per a JIT-aware template
+                       guard, at which point SCTL becomes the sole
+                       source. Per-entry safety guards still apply --
+                       a model with inputs would have a non-trivial
+                       _input_function body in CodegenC, and emitting a
+                       ret-0 linkonce_odr stub against it violates ODR.
+                       Each safety case maps to a SimCode list being
+                       empty (no input vars, no output vars, ...). */
+    RUNTIME_ENTRY("_input_function",                       MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_input_function_init",                  MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_input_function_updateStartValues",     MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_inputNames",                           MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_data_function",                        MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_dataReconciliationInputNames",         MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_dataReconciliationUnmeasuredVariables",MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_output_function",                      MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_setc_function",                        MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_setb_function",                        MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false),
+    RUNTIME_ENTRY("_functionLocalKnownVars",               MI, {MM, MM}, EB_STUB_LINKONCE(), "<Model>.c", false)
 
   /* Entries still owned entirely by <Model>.c and <Model>_12jac.c are
      not in the catalog yet; they need real codegen
@@ -2020,30 +2096,42 @@ protected
   String prefix;
   list<RuntimeEntry> catalog;
   list<String> blockedFiles = {};
-  list<String> seenFiles = {};
+  list<String> displaceCandidates = {};
 algorithm
   prefix := modelSymbolPrefix(modelName);
   catalog := runtimeEntryCatalog();
-  /* Pass 1: classify each file as safe-to-displace or blocked. EB_TODO
-   * entries always block their file -- the matching Block emitter (or
-   * clang) owns the symbol. */
+  /* Pass 1: classify each entry. An entry is blocked when its body is
+   * EB_TODO (file owned by a Block emitter or by clang) or when the
+   * safety predicate rejects it for this model. Blocking only taints
+   * the file for displacement when the entry carries displaceFile=true;
+   * <Model>.c entries (displaceFile=false) just skip emission without
+   * affecting anyone else's displacement decision. */
   for e in catalog loop
-    seenFiles := uniqueAppend(seenFiles, e.segmentFile);
     if isTodoBody(e.body) then
-      blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+      if e.displaceFile then
+        blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+      end if;
     elseif not entryIsSafeToStub(e, simCode) then
-      blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+      if e.displaceFile then
+        blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+      end if;
       emitUnsupportedWarning(e, modelName);
+    elseif e.displaceFile then
+      displaceCandidates := uniqueAppend(displaceCandidates, e.segmentFile);
     end if;
   end for;
-  /* Pass 2: emit stubs for entries in non-blocked files only; record
-   * the file once we know it survived the safety scan. */
+  /* Pass 2: emit stubs for entries that are not blocked at the file
+   * level (when displaceFile=true) or that pass the safety check alone
+   * (when displaceFile=false). EB_TODO is never emitted here -- the
+   * matching Block emitter or clang owns those symbols. */
   for e in catalog loop
-    if not List.contains(blockedFiles, e.segmentFile, stringEqual) then
-      emitRuntimeEntry(prefix, e);
+    if not isTodoBody(e.body) and entryIsSafeToStub(e, simCode) then
+      if (not e.displaceFile) or (not List.contains(blockedFiles, e.segmentFile, stringEqual)) then
+        emitRuntimeEntry(prefix, e);
+      end if;
     end if;
   end for;
-  for f in seenFiles loop
+  for f in displaceCandidates loop
     if not List.contains(blockedFiles, f, stringEqual) then
       recordDisplacedSegment(f);
     end if;
@@ -2052,60 +2140,110 @@ end emitDisplacingStubs;
 
 protected function entryIsSafeToStub
   "True when the stub body declared for `entry` is semantically
-   equivalent to CodegenC's body for the features `simCode` actually
-   uses. The default is `true` -- stubs whose body would be a plain
-   ret 0 / ret -1 / ret null regardless of model content (e.g.
-   _checkForAsserts, _linear_model_frame) are always safe."
+   equivalent to CodegenC's body for this model. Each entry has a
+   Feature tag derived from its nameSuffix; the entry is safe iff the
+   model does not exhibit that feature. FEATURE_NONE -- the catalog
+   default -- means the stub is always safe (e.g. _checkForAsserts,
+   _linear_model_frame return the same sentinel regardless of model
+   content)."
   input RuntimeEntry entry;
   input SimCode.SimCode simCode;
   output Boolean safe;
 algorithm
-  safe := match entry.nameSuffix
-    case "_function_storeDelayed"             then noDelayedExps(simCode);
-    case "_function_storeSpatialDistribution" then noSpatialDistribution(simCode);
-    case "_function_initSpatialDistribution"  then noSpatialDistribution(simCode);
-    case "_function_savePreSynchronous"       then noClockedPartitions(simCode);
-    case "_function_initSynchronous"          then noClockedPartitions(simCode);
-    case "_function_updateSynchronous"        then noClockedPartitions(simCode);
-    case "_function_equationsSynchronous"     then noClockedPartitions(simCode);
-    case "_initializeStateSets"               then noStateSets(simCode);
-    else true;
-  end match;
+  safe := featureIsAbsent(featureFor(entry.nameSuffix), simCode);
 end entryIsSafeToStub;
 
-protected function noDelayedExps
+protected function featureFor
+  "Map a catalog entry's nameSuffix to the Modelica feature that, when
+   present in the SimCode, makes the stub semantically incorrect.
+   Single dispatch table -- both featureName and featureIsAbsent key
+   off the resulting tag, so the per-feature wording and the per-
+   feature SimCode probe live in one place each."
+  input String nameSuffix;
+  output Feature feature;
+algorithm
+  feature := match nameSuffix
+    case "_function_storeDelayed"                 then Feature.DELAY_EXPRS;
+    case "_function_storeSpatialDistribution"     then Feature.SPATIAL_DISTRIBUTION;
+    case "_function_initSpatialDistribution"      then Feature.SPATIAL_DISTRIBUTION;
+    case "_function_savePreSynchronous"           then Feature.CLOCKED_PARTITIONS;
+    case "_function_initSynchronous"              then Feature.CLOCKED_PARTITIONS;
+    case "_function_updateSynchronous"            then Feature.CLOCKED_PARTITIONS;
+    case "_function_equationsSynchronous"         then Feature.CLOCKED_PARTITIONS;
+    case "_initializeStateSets"                   then Feature.STATE_SETS;
+    case "_input_function"                        then Feature.INPUT_VARS;
+    case "_input_function_init"                   then Feature.INPUT_VARS;
+    case "_input_function_updateStartValues"      then Feature.INPUT_VARS;
+    case "_inputNames"                            then Feature.INPUT_VARS;
+    case "_output_function"                       then Feature.OUTPUT_VARS;
+    case "_data_function"                         then Feature.DATA_RECON_INPUTS;
+    case "_dataReconciliationInputNames"          then Feature.DATA_RECON_INPUTS;
+    case "_dataReconciliationUnmeasuredVariables" then Feature.DATA_RECON_SET_B;
+    case "_setc_function"                         then Feature.DATA_RECON_SET_C;
+    case "_setb_function"                         then Feature.DATA_RECON_SET_B;
+    case "_functionLocalKnownVars"                then Feature.LOCAL_KNOWN_VARS;
+    else Feature.NONE;
+  end match;
+end featureFor;
+
+protected function featureIsAbsent
+  "True when `feature` is not exhibited by the model."
+  input Feature feature;
   input SimCode.SimCode simCode;
-  output Boolean ok;
+  output Boolean absent;
 protected
-  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> exps;
+  SimCodeVar.SimVars vars;
+  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> dxs;
+  list<SimCode.SpatialDistribution> sds;
 algorithm
-  exps := match simCode.delayedExps case SimCode.DELAYED_EXPRESSIONS(delayedExps = exps) then exps; end match;
-  ok := listEmpty(exps);
-end noDelayedExps;
+  vars := getSimVars(simCode);
+  absent := match feature
+    case Feature.NONE then true;
+    case Feature.DELAY_EXPRS algorithm
+      dxs := match simCode.delayedExps case SimCode.DELAYED_EXPRESSIONS(delayedExps = dxs) then dxs; end match;
+    then listEmpty(dxs);
+    case Feature.SPATIAL_DISTRIBUTION algorithm
+      sds := match simCode.spatialInfo case SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions = sds) then sds; end match;
+    then listEmpty(sds);
+    case Feature.CLOCKED_PARTITIONS  then listEmpty(simCode.clockedPartitions);
+    case Feature.STATE_SETS          then listEmpty(simCode.stateSets);
+    case Feature.LOCAL_KNOWN_VARS    then listEmpty(simCode.localKnownVars);
+    case Feature.INPUT_VARS          then listEmpty(vars.inputVars);
+    case Feature.OUTPUT_VARS         then listEmpty(vars.outputVars);
+    case Feature.DATA_RECON_INPUTS   then listEmpty(vars.dataReconinputVars);
+    case Feature.DATA_RECON_SET_C    then listEmpty(vars.dataReconSetcVars);
+    case Feature.DATA_RECON_SET_B    then listEmpty(vars.dataReconSetBVars);
+  end match;
+end featureIsAbsent;
 
-protected function noSpatialDistribution
-  input SimCode.SimCode simCode;
-  output Boolean ok;
-protected
-  list<SimCode.SpatialDistribution> dists;
+protected function featureName
+  "Human-readable Modelica feature name for the diagnostic warning."
+  input Feature feature;
+  output String name;
 algorithm
-  dists := match simCode.spatialInfo case SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions = dists) then dists; end match;
-  ok := listEmpty(dists);
-end noSpatialDistribution;
+  name := match feature
+    case Feature.DELAY_EXPRS           then FEATURE_NAME_DELAY_EXPRS;
+    case Feature.SPATIAL_DISTRIBUTION  then FEATURE_NAME_SPATIAL_DISTRIBUTION;
+    case Feature.CLOCKED_PARTITIONS    then FEATURE_NAME_CLOCKED_PARTITIONS;
+    case Feature.STATE_SETS            then FEATURE_NAME_STATE_SETS;
+    case Feature.INPUT_VARS            then FEATURE_NAME_INPUT_VARS;
+    case Feature.OUTPUT_VARS           then FEATURE_NAME_OUTPUT_VARS;
+    case Feature.DATA_RECON_INPUTS     then FEATURE_NAME_DATA_RECON_INPUTS;
+    case Feature.DATA_RECON_SET_B      then FEATURE_NAME_DATA_RECON_SET_B;
+    case Feature.DATA_RECON_SET_C      then FEATURE_NAME_DATA_RECON_SET_C;
+    case Feature.LOCAL_KNOWN_VARS      then FEATURE_NAME_LOCAL_KNOWN_VARS;
+    case Feature.NONE                  then FEATURE_NAME_NONE;
+  end match;
+end featureName;
 
-protected function noClockedPartitions
+protected function getSimVars
+  "Convenience: project simCode -> modelInfo -> vars in one place so
+   the featureIsAbsent dispatch reads as a flat field chain."
   input SimCode.SimCode simCode;
-  output Boolean ok;
+  output SimCodeVar.SimVars vars;
 algorithm
-  ok := listEmpty(simCode.clockedPartitions);
-end noClockedPartitions;
-
-protected function noStateSets
-  input SimCode.SimCode simCode;
-  output Boolean ok;
-algorithm
-  ok := listEmpty(simCode.stateSets);
-end noStateSets;
+  vars := match simCode.modelInfo case SimCode.MODELINFO(vars = vars) then vars; end match;
+end getSimVars;
 
 protected function emitUnsupportedWarning
   "One-line compiler warning per blocked entry. Tells the user which
@@ -2114,36 +2252,14 @@ protected function emitUnsupportedWarning
    surprise."
   input RuntimeEntry entry;
   input Absyn.Path modelName;
-protected
-  String featureName;
 algorithm
-  featureName := unsupportedFeatureName(entry.nameSuffix);
   Error.addCompilerWarning(
     "SimCodeToLLVM: model " + AbsynUtil.pathString(modelName) +
-    " uses " + featureName +
+    " uses " + featureName(featureFor(entry.nameSuffix)) +
     "; runtime entry " + entry.nameSuffix +
     " in " + entry.segmentFile +
     " stays on the C/clang path until SCTL learns to lower it.");
 end emitUnsupportedWarning;
-
-protected function unsupportedFeatureName
-  "Human-readable Modelica feature corresponding to a catalog entry's
-   nameSuffix. Drives the wording of emitUnsupportedWarning."
-  input String nameSuffix;
-  output String feature;
-algorithm
-  feature := match nameSuffix
-    case "_function_storeDelayed"             then "delay() expressions";
-    case "_function_storeSpatialDistribution" then "spatialDistribution() operator";
-    case "_function_initSpatialDistribution"  then "spatialDistribution() operator";
-    case "_function_savePreSynchronous"       then "synchronous (clocked) partitions";
-    case "_function_initSynchronous"          then "synchronous (clocked) partitions";
-    case "_function_updateSynchronous"        then "synchronous (clocked) partitions";
-    case "_function_equationsSynchronous"     then "synchronous (clocked) partitions";
-    case "_initializeStateSets"               then "dynamic state selection (state sets)";
-    else "an SCTL-unsupported feature";
-  end match;
-end unsupportedFeatureName;
 
 protected function emitRuntimeEntry
   "Emit one RuntimeEntry from the catalog into the active in-memory
@@ -2160,6 +2276,10 @@ algorithm
   () := match entry.body
     case EB_STUB() algorithm
       emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
+      then ();
+    case EB_STUB_LINKONCE() algorithm
+      emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
+      _ := EXT_LLVM.setLinkonceOdr(prefix + entry.nameSuffix);
       then ();
     case EB_NULL_PTR() algorithm
       emitStubNullPtr(prefix + entry.nameSuffix, entry.retTy, entry.argTys);

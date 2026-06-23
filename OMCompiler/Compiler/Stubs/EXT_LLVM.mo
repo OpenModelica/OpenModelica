@@ -129,5 +129,10 @@ function genCallExternalObjectDestructors
   output Integer status = 1;
 end genCallExternalObjectDestructors;
 
+function setLinkonceOdr
+  input String fname;
+  output Integer status = 1;
+end setLinkonceOdr;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;
