@@ -975,7 +975,7 @@ bool OMSProxy::loadModel(QString filename, QString& pModelName)
   if (!modelName.isEmpty())
     pModelName = modelName;
 
-  return true;
+  return reply["status"].toString() == "ok";
 }
 
 /*!
