@@ -650,6 +650,7 @@ algorithm
     try emitMixedSystemsBlock(simCode); else reportBlockFailure("emitMixedSystemsBlock", name); end try;
     try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
     try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
+    try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1985,6 +1986,46 @@ algorithm
   emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
   _ := EXT_LLVM.setLinkonceOdr(fname);
 end emitModelEquationsBlock;
+
+protected function emitCallbackTableBlock
+  "Emit the <Model>_callback constant struct global into the active
+   Pass-2 module via the C++ helper createCallbackTable. Linkage is
+   linkonce_odr -- CodegenC's strong copy wins at llvm-link while
+   <Model>.c remains on the clang path, and SCTL's IR takes over
+   the day CodegenC stops emitting the table.
+
+   isFmu is hardcoded false: the -d=jitSimulate path does not target
+   Model-Exchange FMUs (the FMU runtime supplies its own simulation
+   driver). homotopyMethodCode = 3 mirrors LOCAL_EQUIDISTANT_HOMOTOPY
+   (the default for models without `homotopy()`); HelloWorld and
+   friends never consult the field. The has<Sys>Systems flags drive
+   the conditional NULL slots for initialNonLinearSystem /
+   initialLinearSystem / initialMixedSystem; hasInitialLambda0 gates
+   functionInitialEquations_lambda0."
+  input SimCode.SimCode simCode;
+  input Absyn.Path modelName;
+protected
+  SimCode.VarInfo vinfo;
+  Integer hasNls, hasLs, hasMs, hasLambda0;
+  Integer st;
+algorithm
+  vinfo := match simCode.modelInfo case SimCode.MODELINFO(varInfo = vinfo) then vinfo; end match;
+  hasNls := if vinfo.numNonLinearSystems > 0 then 1 else 0;
+  hasLs  := if vinfo.numLinearSystems    > 0 then 1 else 0;
+  hasMs  := if vinfo.numMixedSystems     > 0 then 1 else 0;
+  hasLambda0 := if listEmpty(simCode.initialEquations_lambda0) then 0 else 1;
+  st := EXT_LLVM.genCallbackTable(
+    modelSymbolPrefix(modelName),
+    0      /* isFmu */,
+    hasNls,
+    hasLs,
+    hasMs,
+    hasLambda0,
+    3      /* homotopyMethodCode = LOCAL_EQUIDISTANT_HOMOTOPY */);
+  if st <> 0 then
+    fail();
+  end if;
+end emitCallbackTableBlock;
 
 protected function emitNonlinearSystemsBlock
   "Displace <Model>_02nls.c when the SimCode carries no nonlinear

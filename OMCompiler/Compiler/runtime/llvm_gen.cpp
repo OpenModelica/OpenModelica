@@ -36,6 +36,7 @@
 /* Author: John Tinnerholm */
 
 #include "llvm_gen.hpp"
+#include "llvm_gen_layout.h"
 #include "llvm_gen_modelica_constants.h"
 #include "llvm_gen_util.hpp"
 
@@ -113,22 +114,6 @@ int writeBitcodeToFile(const char *path) {
  * these to inline the chain that the omc_jit_get_real_var runtime
  * helper previously wrapped.
  * ------------------------------------------------------------------------ */
-extern "C" {
-  extern const size_t omc_layout_DATA_localData;
-  extern const size_t omc_layout_DATA_simulationInfo;
-  extern const size_t omc_layout_SD_timeValue;
-  extern const size_t omc_layout_SD_realVars;
-  extern const size_t omc_layout_SD_integerVars;
-  extern const size_t omc_layout_SD_booleanVars;
-  extern const size_t omc_layout_SI_realVarsIndex;
-  extern const size_t omc_layout_SI_integerVarsIndex;
-  extern const size_t omc_layout_SI_booleanVarsIndex;
-  extern const size_t omc_layout_SI_realParamsIndex;
-  extern const size_t omc_layout_SI_realParameter;
-  extern const size_t omc_layout_SI_booleanParameter;
-  extern const size_t omc_layout_SI_relations;
-  extern const size_t omc_layout_SI_extObjs;
-}
 
 /* Helper: load (i8-typed) pointer offset `bytes` past `basePtr`, then
  * load a pointer value at that address. Used to chain through the
@@ -503,6 +488,320 @@ extern "C" int setFunctionLinkonceOdr(const char *const fname) {
     return 2;
   }
   fn->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  return 0;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Callback function-pointer struct emission.
+ *
+ * Emits  @<Model>_callback = linkonce_odr global  matching the C struct
+ * `struct OpenModelicaGeneratedFunctionCallbacks` declared in
+ * openmodelica_func.h. The layout is taken straight from
+ * llvm_gen_layout.c's `omc_layout_callback_<field>` offsetof exports,
+ * so the IR initializer always tracks the runtime header without
+ * duplicating struct knowledge here.
+ *
+ * Encoding strategy: a packed anonymous struct whose elements alternate
+ *   [pad x i8] zeroinitializer
+ *   <typed field value at offset O>
+ * with the trailing pad sized so the total struct equals
+ * omc_layout_callback_total. linkonce_odr lets the global coexist with
+ * the CodegenC-emitted `<Model>_callback` until that template emission
+ * goes away.
+ * ------------------------------------------------------------------------ */
+
+namespace {
+
+struct CbField {
+  size_t offset;
+  llvm::Constant *value;
+};
+
+static llvm::Constant *cbFnPtr(llvm::Module &mod, const std::string &sym) {
+  /* All callback function pointers carry void(...) signatures at the
+   * IR level -- opaque pointers strip the parameter types from the
+   * function-pointer constants, and the real signatures live on the
+   * call sites in CodegenC bitcode. getOrInsertFunction with a stable
+   * shared FunctionType keeps the symbol unique without forcing us to
+   * reproduce 70 individual function-pointer signatures here. */
+  llvm::LLVMContext &ctx = mod.getContext();
+  llvm::FunctionType *const fnTy = llvm::FunctionType::get(
+      llvm::Type::getVoidTy(ctx), /*isVarArg=*/false);
+  llvm::FunctionCallee callee = mod.getOrInsertFunction(sym, fnTy);
+  return llvm::cast<llvm::Constant>(callee.getCallee());
+}
+
+static llvm::Constant *cbNullPtr(llvm::LLVMContext &ctx) {
+  return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(ctx));
+}
+
+static llvm::Constant *cbI32(llvm::LLVMContext &ctx, int v) {
+  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), v, /*signed=*/true);
+}
+
+static void cbAddPtr(std::vector<CbField> &out, size_t offset,
+                     llvm::Module &mod, const std::string &symOrEmpty,
+                     bool isNull) {
+  out.push_back({offset, isNull ? cbNullPtr(mod.getContext())
+                                : cbFnPtr(mod, symOrEmpty)});
+}
+
+static void cbAddI32(std::vector<CbField> &out, size_t offset,
+                     llvm::LLVMContext &ctx, int value) {
+  out.push_back({offset, cbI32(ctx, value)});
+}
+
+} // anonymous namespace
+
+extern "C" int createCallbackTable(const char *const modelName,
+                                   const int isFmu,
+                                   const int hasNlsSystems,
+                                   const int hasLsSystems,
+                                   const int hasMsSystems,
+                                   const int hasInitialLambda0,
+                                   const int homotopyMethodCode) {
+  if (!program || !program->module) {
+    fprintf(stderr, "createCallbackTable: no active module\n");
+    return 1;
+  }
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Module &mod = *program->module;
+  const std::string p(modelName);
+
+  std::vector<CbField> fields;
+
+  /* Function-pointer fields. The `isFmu` flag and the four "has*" flags
+   * mirror the conditionals CodegenC weaves into the .c initializer.
+   * isFmu == true clears the simulation-driving entries; the FMI
+   * runtime supplies its own driver. */
+  cbAddPtr(fields, omc_layout_callback_performSimulation,
+           mod, p + "_performSimulation",      isFmu);
+  cbAddPtr(fields, omc_layout_callback_performQSSSimulation,
+           mod, p + "_performQSSSimulation",   isFmu);
+  cbAddPtr(fields, omc_layout_callback_updateContinuousSystem,
+           mod, p + "_updateContinuousSystem", isFmu);
+  cbAddPtr(fields, omc_layout_callback_callExternalObjectDestructors,
+           mod, p + "_callExternalObjectDestructors", false);
+  cbAddPtr(fields, omc_layout_callback_initialNonLinearSystem,
+           mod, p + "_initialNonLinearSystem", !hasNlsSystems);
+  cbAddPtr(fields, omc_layout_callback_initialLinearSystem,
+           mod, p + "_initialLinearSystem",    !hasLsSystems);
+  cbAddPtr(fields, omc_layout_callback_initialMixedSystem,
+           mod, p + "_initialMixedSystem",     !hasMsSystems);
+  cbAddPtr(fields, omc_layout_callback_initializeStateSets,
+           mod, p + "_initializeStateSets",    false);
+  cbAddPtr(fields, omc_layout_callback_initializeDAEmodeData,
+           mod, p + "_initializeDAEmodeData",  false);
+  cbAddPtr(fields, omc_layout_callback_getDAG_ODE,
+           mod, p + "_ODE_DAG",                false);
+  cbAddPtr(fields, omc_layout_callback_functionODE,
+           mod, p + "_functionODE",            false);
+  cbAddPtr(fields, omc_layout_callback_functionAlgebraics,
+           mod, p + "_functionAlgebraics",     false);
+  cbAddPtr(fields, omc_layout_callback_functionDAE,
+           mod, p + "_functionDAE",            false);
+  cbAddPtr(fields, omc_layout_callback_functionLocalKnownVars,
+           mod, p + "_functionLocalKnownVars", false);
+  cbAddPtr(fields, omc_layout_callback_input_function,
+           mod, p + "_input_function",         false);
+  cbAddPtr(fields, omc_layout_callback_input_function_init,
+           mod, p + "_input_function_init",    false);
+  cbAddPtr(fields, omc_layout_callback_input_function_updateStartValues,
+           mod, p + "_input_function_updateStartValues", false);
+  cbAddPtr(fields, omc_layout_callback_data_function,
+           mod, p + "_data_function",          false);
+  cbAddPtr(fields, omc_layout_callback_output_function,
+           mod, p + "_output_function",        false);
+  cbAddPtr(fields, omc_layout_callback_setc_function,
+           mod, p + "_setc_function",          false);
+  cbAddPtr(fields, omc_layout_callback_setb_function,
+           mod, p + "_setb_function",          false);
+  cbAddPtr(fields, omc_layout_callback_function_storeDelayed,
+           mod, p + "_function_storeDelayed",  false);
+  cbAddPtr(fields, omc_layout_callback_function_storeSpatialDistribution,
+           mod, p + "_function_storeSpatialDistribution", false);
+  cbAddPtr(fields, omc_layout_callback_function_initSpatialDistribution,
+           mod, p + "_function_initSpatialDistribution",  false);
+  cbAddPtr(fields, omc_layout_callback_updateBoundVariableAttributes,
+           mod, p + "_updateBoundVariableAttributes", false);
+  cbAddPtr(fields, omc_layout_callback_functionInitialEquations,
+           mod, p + "_functionInitialEquations", false);
+
+  /* homotopyMethod is HOMOTOPY_METHOD enum -- a plain int. The caller
+   * passes the runtime's numeric value (0 = LOCAL_EQUIDISTANT, ...). */
+  cbAddI32(fields, omc_layout_callback_homotopyMethod, ctx, homotopyMethodCode);
+
+  cbAddPtr(fields, omc_layout_callback_functionInitialEquations_lambda0,
+           mod, p + "_functionInitialEquations_lambda0", !hasInitialLambda0);
+  cbAddPtr(fields, omc_layout_callback_functionRemovedInitialEquations,
+           mod, p + "_functionRemovedInitialEquations", false);
+  cbAddPtr(fields, omc_layout_callback_updateBoundParameters,
+           mod, p + "_updateBoundParameters",  false);
+  cbAddPtr(fields, omc_layout_callback_checkForAsserts,
+           mod, p + "_checkForAsserts",        false);
+  cbAddPtr(fields, omc_layout_callback_function_ZeroCrossingsEquations,
+           mod, p + "_function_ZeroCrossingsEquations", false);
+  cbAddPtr(fields, omc_layout_callback_function_ZeroCrossings,
+           mod, p + "_function_ZeroCrossings", false);
+  cbAddPtr(fields, omc_layout_callback_function_updateRelations,
+           mod, p + "_function_updateRelations", false);
+  cbAddPtr(fields, omc_layout_callback_zeroCrossingDescription,
+           mod, p + "_zeroCrossingDescription", false);
+  cbAddPtr(fields, omc_layout_callback_relationDescription,
+           mod, p + "_relationDescription",    false);
+  cbAddPtr(fields, omc_layout_callback_function_initSample,
+           mod, p + "_function_initSample",    false);
+
+  /* The seven INDEX_JAC_* fields are const ints; CodegenC reads them
+   * from <Model>_INDEX_JAC_* macros that expand to 0, 1, ... For
+   * HelloWorld there is no analytic Jacobian, so the runtime never
+   * indexes through them -- zero is the safe sentinel either way. */
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_A,   ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_ADJ, ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_B,   ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_C,   ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_D,   ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_F,   ctx, 0);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_H,   ctx, 0);
+
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianA,
+           mod, p + "_initialAnalyticJacobianA",   false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianADJ,
+           mod, p + "_initialAnalyticJacobianADJ", false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianB,
+           mod, p + "_initialAnalyticJacobianB",   false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianC,
+           mod, p + "_initialAnalyticJacobianC",   false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianD,
+           mod, p + "_initialAnalyticJacobianD",   false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianF,
+           mod, p + "_initialAnalyticJacobianF",   false);
+  cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianH,
+           mod, p + "_initialAnalyticJacobianH",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacA_column,
+           mod, p + "_functionJacA_column",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacADJ_column,
+           mod, p + "_functionJacADJ_column", false);
+  cbAddPtr(fields, omc_layout_callback_functionJacB_column,
+           mod, p + "_functionJacB_column",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacC_column,
+           mod, p + "_functionJacC_column",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacD_column,
+           mod, p + "_functionJacD_column",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacF_column,
+           mod, p + "_functionJacF_column",   false);
+  cbAddPtr(fields, omc_layout_callback_functionJacH_column,
+           mod, p + "_functionJacH_column",   false);
+  cbAddPtr(fields, omc_layout_callback_getDAG_JacA,
+           mod, p + "_JacA_DAG",              false);
+  cbAddPtr(fields, omc_layout_callback_linear_model_frame,
+           mod, p + "_linear_model_frame",    false);
+  cbAddPtr(fields, omc_layout_callback_linear_model_datarecovery_frame,
+           mod, p + "_linear_model_datarecovery_frame", false);
+  cbAddPtr(fields, omc_layout_callback_mayer,
+           mod, p + "_mayer",                 false);
+  cbAddPtr(fields, omc_layout_callback_lagrange,
+           mod, p + "_lagrange",              false);
+  cbAddPtr(fields, omc_layout_callback_getInputVarIndicesInOptimization,
+           mod, p + "_getInputVarIndicesInOptimization", false);
+  cbAddPtr(fields, omc_layout_callback_pickUpBoundsForInputsInOptimization,
+           mod, p + "_pickUpBoundsForInputsInOptimization", false);
+  cbAddPtr(fields, omc_layout_callback_setInputData,
+           mod, p + "_setInputData",          false);
+  cbAddPtr(fields, omc_layout_callback_getTimeGrid,
+           mod, p + "_getTimeGrid",           false);
+  cbAddPtr(fields, omc_layout_callback_symbolicInlineSystems,
+           mod, p + "_symbolicInlineSystem",  false);
+  cbAddPtr(fields, omc_layout_callback_function_initSynchronous,
+           mod, p + "_function_initSynchronous",    false);
+  cbAddPtr(fields, omc_layout_callback_function_updateSynchronous,
+           mod, p + "_function_updateSynchronous",  false);
+  cbAddPtr(fields, omc_layout_callback_function_equationsSynchronous,
+           mod, p + "_function_equationsSynchronous", false);
+  cbAddPtr(fields, omc_layout_callback_inputNames,
+           mod, p + "_inputNames",            false);
+  cbAddPtr(fields, omc_layout_callback_dataReconciliationInputNames,
+           mod, p + "_dataReconciliationInputNames", false);
+  cbAddPtr(fields, omc_layout_callback_dataReconciliationUnmeasuredVariables,
+           mod, p + "_dataReconciliationUnmeasuredVariables", false);
+
+  /* FMI fields. read_simulation_info / read_input_fmu only matter for
+   * Model-Exchange FMUs; the JIT-simulate path is always non-FMU
+   * today, so NULL is correct here. The FMIDER jacobian fields take
+   * the same treatment -- the runtime only consults them when
+   * modelStructure carries the corresponding partial derivatives. */
+  cbAddPtr(fields, omc_layout_callback_read_simulation_info, mod, "", true);
+  cbAddPtr(fields, omc_layout_callback_read_input_fmu,       mod, "", true);
+  cbAddPtr(fields, omc_layout_callback_initialPartialFMIDER, mod, "", true);
+  cbAddPtr(fields, omc_layout_callback_functionJacFMIDER_column, mod, "", true);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_FMIDER, ctx, -1);
+  cbAddPtr(fields, omc_layout_callback_initialPartialFMIDERINIT, mod, "", true);
+  cbAddPtr(fields, omc_layout_callback_functionJacFMIDERINIT_column, mod, "", true);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_FMIDERINIT, ctx, -1);
+
+  /* Compose the packed struct, padding the gaps between named offsets
+   * with i8 zeros so the total size equals
+   * omc_layout_callback_total. fields are added in declaration order,
+   * so a stable sort by offset is a safety net rather than a
+   * requirement. */
+  std::sort(fields.begin(), fields.end(),
+            [](const CbField &a, const CbField &b) { return a.offset < b.offset; });
+
+  llvm::Type *const i8Ty = llvm::Type::getInt8Ty(ctx);
+  std::vector<llvm::Type *> elemTys;
+  std::vector<llvm::Constant *> elemVals;
+  size_t cursor = 0;
+  auto sizeOfConst = [&](llvm::Constant *const c) -> size_t {
+    llvm::Type *const t = c->getType();
+    if (t->isPointerTy()) return 8;
+    if (t->isIntegerTy()) return (t->getIntegerBitWidth() + 7) / 8;
+    fprintf(stderr,
+            "createCallbackTable: unsupported field type, cannot size\n");
+    return 0;
+  };
+  for (const CbField &f : fields) {
+    if (f.offset < cursor) {
+      fprintf(stderr,
+              "createCallbackTable: field offset %zu < cursor %zu "
+              "(layout mismatch)\n",
+              f.offset, cursor);
+      return 2;
+    }
+    if (f.offset > cursor) {
+      const size_t pad = f.offset - cursor;
+      llvm::ArrayType *const padTy = llvm::ArrayType::get(i8Ty, pad);
+      elemTys.push_back(padTy);
+      elemVals.push_back(llvm::ConstantAggregateZero::get(padTy));
+      cursor = f.offset;
+    }
+    elemTys.push_back(f.value->getType());
+    elemVals.push_back(f.value);
+    cursor += sizeOfConst(f.value);
+  }
+  if (cursor < omc_layout_callback_total) {
+    const size_t pad = omc_layout_callback_total - cursor;
+    llvm::ArrayType *const padTy = llvm::ArrayType::get(i8Ty, pad);
+    elemTys.push_back(padTy);
+    elemVals.push_back(llvm::ConstantAggregateZero::get(padTy));
+  } else if (cursor > omc_layout_callback_total) {
+    fprintf(stderr,
+            "createCallbackTable: composed size %zu exceeds layout total %zu\n",
+            cursor, omc_layout_callback_total);
+    return 3;
+  }
+
+  llvm::StructType *const stTy =
+      llvm::StructType::get(ctx, elemTys, /*isPacked=*/true);
+  llvm::Constant *const init = llvm::ConstantStruct::get(stTy, elemVals);
+  const std::string globalName = p + "_callback";
+  if (mod.getNamedGlobal(globalName)) {
+    fprintf(stderr,
+            "createCallbackTable: '%s' already defined\n", globalName.c_str());
+    return 4;
+  }
+  new llvm::GlobalVariable(mod, stTy, /*isConstant=*/false,
+                           llvm::GlobalValue::LinkOnceODRLinkage, init,
+                           globalName);
   return 0;
 }
 

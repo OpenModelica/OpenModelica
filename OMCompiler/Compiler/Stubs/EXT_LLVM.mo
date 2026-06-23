@@ -134,5 +134,16 @@ function setLinkonceOdr
   output Integer status = 1;
 end setLinkonceOdr;
 
+function genCallbackTable
+  input String modelName;
+  input Integer isFmu;
+  input Integer hasNlsSystems;
+  input Integer hasLsSystems;
+  input Integer hasMsSystems;
+  input Integer hasInitialLambda0;
+  input Integer homotopyMethodCode;
+  output Integer status = 1;
+end genCallbackTable;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;

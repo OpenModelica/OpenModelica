@@ -208,6 +208,30 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
+function genCallbackTable
+  "Emit the <Model>_callback global into the active module as a packed,
+   byte-padded constant struct matching openmodelica_func.h's
+   OpenModelicaGeneratedFunctionCallbacks layout. Linkage is linkonce_odr
+   so the IR coexists with CodegenC's strong copy until <Model>.c gets
+   suppressed. The flags follow the conditionals woven into the C
+   template's initializer: isFmu zeroes the simulation-driving entries
+   (FMUs supply their own driver); hasNls / hasLs / hasMs gate the
+   matching initial<Sys>System pointers; hasInitialLambda0 gates the
+   functionInitialEquations_lambda0 slot; homotopyMethodCode is the
+   HOMOTOPY_METHOD enum value to bake in."
+  input String modelName;
+  input Integer isFmu;
+  input Integer hasNlsSystems;
+  input Integer hasLsSystems;
+  input Integer hasMsSystems;
+  input Integer hasInitialLambda0;
+  input Integer homotopyMethodCode;
+  output Integer status;
+  external "C" status = createCallbackTable(modelName, isFmu, hasNlsSystems, hasLsSystems, hasMsSystems, hasInitialLambda0, homotopyMethodCode)
+    annotation(Library = "omcruntime",
+               Include = "int createCallbackTable(const char *modelName, int isFmu, int hasNlsSystems, int hasLsSystems, int hasMsSystems, int hasInitialLambda0, int homotopyMethodCode);");
+end genCallbackTable;
+
 function setLinkonceOdr
   "Flip a function's linkage in the active module to linkonce_odr.
    Used after emitStub to mark stubs in <Model>.c that intentionally
