@@ -384,7 +384,7 @@ public
       case FLAT_BINDING() then binding.variability;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown binding", sourceInfo());
         then
           fail();
     end match;
@@ -556,7 +556,7 @@ public
           fail();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped binding", sourceInfo());
         then
           fail();
     end match;
@@ -586,7 +586,7 @@ public
       case CEVAL_BINDING() then NONE();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped binding", sourceInfo());
         then
           fail();
     end match;

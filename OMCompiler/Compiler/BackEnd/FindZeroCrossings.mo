@@ -1776,7 +1776,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         print(DAEDump.ppStatementStr(x));
         print("Warning, not allowed to set the componentRef to a expression in FindZeroCrossings.traverseStmtsExps for ZeroCrosssing\n");
-      then (DAE.STMT_ASSIGN_ARR(tp, e_2, e_1, source), extraArg);
+      then fail();
 
       case DAE.STMT_IF(exp=e, statementLst=stmts, else_=algElse, source=source) algorithm
         (algElse, extraArg) := traverseStmtsElseExps(algElse, extraArg, inKnvars);

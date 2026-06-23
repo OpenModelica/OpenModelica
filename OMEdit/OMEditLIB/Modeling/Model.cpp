@@ -1490,6 +1490,11 @@ namespace ModelInstance
     return mpPrefixes ? mpPrefixes.get()->isPartial() : false;
   }
 
+  bool Model::isParameter() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
   /*!
    * \brief Model::getDirection
    * Returns the direction of the model, either from the declaration or in the
@@ -2473,12 +2478,18 @@ namespace ModelInstance
 
   /*!
    * \brief Element::isParameterInPrefixes
-   * Checks if element is parameter in prefixes.
+   * Checks if element is parameter in prefixes, if not check if the element type is parameter. If neither of them is parameter then return false.
    * \return
    */
   bool Element::isParameterInPrefixes() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+    if (mpPrefixes && (mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0)) {
+      return true;
+    } else if (mpModel && mpModel->isParameter()) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /*!

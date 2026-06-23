@@ -631,7 +631,7 @@ protected
   SemanticVersion.Version semverToInstall, semver;
   JSON index, versionObj, versionsObj, usesObj;
   Boolean indexHasPkg;
-  PackageInstallInfo packageToInstall;
+  Option<PackageInstallInfo> packageToInstall = NONE();
 algorithm
   candidates := versionsThatProvideTheWanted(pkg, version, printError=true);
   candidatesSemver := list(SemanticVersion.parse(candidate) for candidate in candidates);
@@ -683,7 +683,7 @@ algorithm
       else
         zip := "";
       end if;
-      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject());
+      packageToInstall := SOME(PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject()));
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
@@ -704,25 +704,25 @@ algorithm
   end if;
 
   if not indexHasPkg then
-    packagesToInstall := packageToInstall :: packagesToInstall;
+    packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
     return;
   end if;
 
   versionsObj := JSON.get(JSON.get(JSON.get(index, "libs"), pkg), "versions");
   if success and not JSON.hasKey(versionsObj, versionToInstall) then
-    packagesToInstall := packageToInstall :: packagesToInstall;
+    packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
     return;
   end if;
   versionObj := JSON.get(versionsObj, versionToInstall);
 
   if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
     success := true;
-    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj);
+    packageToInstall := SOME(PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj));
   end if;
 
   usesObj := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
 
-  packagesToInstall := packageToInstall :: packagesToInstall;
+  packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
 
   for usesPackage in JSON.getKeys(usesObj) loop
     JSON.STRING(usedVersion) := JSON.get(usesObj, usesPackage);

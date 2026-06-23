@@ -1069,7 +1069,7 @@ import Util;
     output list<CacheLineMap> oCacheLinesFloat;
     output list<CacheLineMap> oCacheLinesInt;
     output list<CacheLineMap> oCacheLinesBool;
-    output list<CacheLineMap> oVarCacheLines; //one of the 3 types above
+    output list<CacheLineMap> oVarCacheLines = {}; //one of the 3 types above
   algorithm
     (oCacheLinesFloat,oCacheLinesInt,oCacheLinesBool) := iCacheLinesForTypes;
     if(intEq(iVarDataType, VARDATATYPE_FLOAT)) then
@@ -1098,7 +1098,7 @@ import Util;
     input list<CacheLineMap> iCacheLinesInt;
     input list<CacheLineMap> iCacheLinesBool;
     input list<CacheLineMap> iVarCacheLines;
-    output CacheLines oContractedCacheLines;
+    output CacheLines oContractedCacheLines = (iCacheLinesFloat, iCacheLinesInt, iCacheLinesBool);
   algorithm
     if(intEq(iVarDataType, VARDATATYPE_FLOAT)) then
       oContractedCacheLines := (iVarCacheLines, iCacheLinesInt, iCacheLinesBool);

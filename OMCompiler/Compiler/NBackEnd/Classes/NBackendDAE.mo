@@ -363,7 +363,7 @@ public
     output list<tuple<String, Real>> module_clocks = {};
   protected
     Module.wrapper func;
-    String name, debugStr;
+    String name, debugStr = "";
     Real clock_time;
     tuple<Integer, Integer> varSizes, eqnSizes;
   algorithm

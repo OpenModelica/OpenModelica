@@ -206,6 +206,7 @@ algorithm
       enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
       disabledModules := {};
     else
+      initsyst0 := initsyst;
       enabledModules := {};
       disabledModules := {"inlineHomotopy", "generateHomotopyComponents"};
     end if;
@@ -1435,17 +1436,17 @@ protected
   Integer nVars, nEqns, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, redundantEqns;
   list<BackendDAE.Var> initVarList;
-  array<Integer> ass1, ass2;
+  array<Integer> ass1 = listArray({}), ass2 = listArray({});
   BackendDAE.AdjacencyMatrix m "adjacency matrix of modified system";
   BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
-  BackendDAE.EqSystem syst;
+  BackendDAE.EqSystem syst = BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
   AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
-  array<Integer> mapIncRowEqn;
+  array<Integer> mapIncRowEqn = listArray({});
   Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
 
-  array<Boolean> eMarks, vMarks;
+  array<Boolean> eMarks = arrayCreate(0, false), vMarks = arrayCreate(0, false);
   list<Integer> singular_eqns_idx, singular_vars_idx;
   Integer overDetIndex, underDetIndex, scalarEqnSize;
   BackendDAE.Equation eq;

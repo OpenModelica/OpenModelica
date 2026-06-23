@@ -2087,7 +2087,7 @@ case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     <<
     <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
-    <%tmpVar%>._<%compname%> = <%unboxStr%>;
+    <%tmpVar%>._<%System.unquoteIdentifier(compname)%> = <%unboxStr%>;
     >>
     ;separator="\n")
   tmpVar
@@ -6338,7 +6338,7 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Te
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path), &varDecls)
-  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
+  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%System.unquoteIdentifier(compn)%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
   let &preExp += ass
   name
 end daeExpRecord;

@@ -730,7 +730,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
+        Error.terminate(getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -789,7 +789,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
+        Error.terminate(getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -1096,7 +1096,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid top node", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid top node", sourceInfo());
       then
         fail();
 
@@ -1137,7 +1137,7 @@ algorithm
 
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
               then
                 fail();
           end match;
@@ -1146,7 +1146,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown node", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown node", sourceInfo());
         then
           fail();
   end match;

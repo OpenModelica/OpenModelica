@@ -142,10 +142,9 @@ namespace IAEX
   {
     if( source->hasText() && !source->hasImage() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -266,8 +265,6 @@ namespace IAEX
    */
   TextCell::~TextCell()
   {
-    setMainWidget(0);
-    delete text_;
   }
 
   /*!
@@ -411,6 +408,21 @@ namespace IAEX
   QTextEdit* TextCell::textEdit()
   {
     return text_;
+  }
+
+  void TextCell::cutText()
+  {
+    text_->cut();
+  }
+
+  void TextCell::copyText()
+  {
+    text_->copy();
+  }
+
+  void TextCell::pasteText()
+  {
+    text_->paste();
   }
 
   /*!

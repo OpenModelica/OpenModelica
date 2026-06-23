@@ -221,10 +221,10 @@ public
     output T val;
   algorithm
     for b in Mutable.access(set.buckets) loop
-      for k in b loop
-        val := k;
+      if not listEmpty(b) then
+        val := listHead(b);
         return;
-      end for;
+      end if;
     end for;
 
     fail();

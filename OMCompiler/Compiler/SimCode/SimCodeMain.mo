@@ -1401,9 +1401,9 @@ algorithm
         ExecStat.execStat("Serialize dlow");
       end if;
 
-      isFMI2 := match kind
-        case TranslateModelKind.FMU(fmuType) then FMI.isFMIVersion20();
-        else false;
+      (isFMI2,fmuType) := match kind
+        case TranslateModelKind.FMU(fmuType) then (FMI.isFMIVersion20(),fmuType);
+        else (false,"");
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
       strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();

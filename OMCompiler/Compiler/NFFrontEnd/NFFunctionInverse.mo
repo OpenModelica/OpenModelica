@@ -155,7 +155,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid modifier", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid modifier", sourceInfo());
         then
           fail();
 

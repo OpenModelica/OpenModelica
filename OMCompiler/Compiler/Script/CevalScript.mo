@@ -3389,7 +3389,7 @@ function generateSeparateCode
   input FCore.Cache cache;
   input FCore.Graph env;
   output Values.Value res;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = cache;
 protected
   Values.Value v;
   Boolean b;

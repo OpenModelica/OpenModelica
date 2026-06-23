@@ -229,7 +229,7 @@ public
     else
       // Connectors should only have structural parameter subscripts, so it
       // should always be possible to expand them.
-      Error.assertion(false, getInstanceName() + " failed to expand connector `" +
+      Error.terminate(getInstanceName() + " failed to expand connector `" +
         ComponentRef.toString(cref) + "\n", ElementSource.getInfo(source));
     end if;
   end makeConnectors;

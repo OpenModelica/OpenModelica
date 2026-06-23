@@ -210,7 +210,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -308,7 +308,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got noninstantiated class " +
+        Error.terminate(getInstanceName() + " got noninstantiated class " +
           InstNode.name(clsNode), sourceInfo());
       then
         fail();
@@ -424,7 +424,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got record type without constructor", sourceInfo());
       then
         fail();
@@ -498,7 +498,7 @@ algorithm
     // Any other type of component shouldn't show up here.
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got noninstantiated component " + InstNode.name(component), sourceInfo());
+        Error.terminate(getInstanceName() + " got noninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 
@@ -578,7 +578,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-iterator " + InstNode.name(iterator), sourceInfo());
+        Error.terminate(getInstanceName() + " got non-iterator " + InstNode.name(iterator), sourceInfo());
       then
         fail();
 
@@ -990,7 +990,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -1122,7 +1122,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
       then
         fail();
 
@@ -1195,7 +1195,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated binding", sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated binding", sourceInfo());
       then
         fail();
 
@@ -1660,7 +1660,7 @@ function typeSubscriptedExp2
   input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
-  output Type ty;
+  output Type ty = Type.UNKNOWN();
   output Variability variability;
   output Purity purity;
 protected
@@ -2192,7 +2192,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown subscript", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown subscript", sourceInfo());
       then
         fail();
   end match;
@@ -2783,7 +2783,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
       then
         fail();
   end match;
@@ -2845,7 +2845,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
       then
         fail();
   end match;
@@ -3028,7 +3028,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 

@@ -5396,7 +5396,7 @@ algorithm
   local
     DAE.ComponentRef cr1;
     list<DAE.ComponentRef> cr_lst;
-    DAE.Exp res, e, e1, e2;
+    DAE.Exp res, e, e1 = DAE.ICONST(0), e2;
     BackendDAE.Var v;
     list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_rest;
     Integer j, j1;
@@ -5456,7 +5456,7 @@ pick the expression with lowest integer value, if two
 integer values are equal, take the first occurring one.
 "
   input list<tuple<DAE.Exp,Integer>> tplExpIndList;
-  output DAE.Exp outE;
+  output DAE.Exp outE = DAE.ICONST(0);
 protected
   DAE.Exp e;
   tuple<DAE.Exp,Integer> tpl;

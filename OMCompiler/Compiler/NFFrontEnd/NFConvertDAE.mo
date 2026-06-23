@@ -287,7 +287,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -323,7 +323,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -357,7 +357,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -390,7 +390,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -425,7 +425,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -462,7 +462,7 @@ algorithm
     case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
       then
         fail();
@@ -481,7 +481,7 @@ algorithm
     case "always" then DAE.StateSelect.ALWAYS();
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
       then
         fail();
   end match;
@@ -500,7 +500,7 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got invalid Uncertainty expression " + Expression.toString(exp), sourceInfo());
       then
         fail();
@@ -520,7 +520,7 @@ algorithm
     case "propagate" then DAE.Uncertainty.PROPAGATE();
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
       then
         fail();
   end match;
@@ -603,7 +603,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
       then
         fail();
   end match;
@@ -759,7 +759,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
       then
         fail();
   end match;
@@ -847,7 +847,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown statement " + Statement.toString(stmt), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown statement " + Statement.toString(stmt), sourceInfo());
       then
         fail();
   end match;
@@ -1107,7 +1107,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown function", sourceInfo());
       then
         fail();
 
@@ -1153,7 +1153,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid component.", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid component.", sourceInfo());
       then
         fail();
 

@@ -134,7 +134,7 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   mInitialUses = variableItemData[VariableItemData::INITIAL_USES].toStringList();
   mDefinedIn.clear();
   foreach(QVariant var, variableItemData[VariableItemData::DEFINED_IN].toList()) {
-     mDefinedIn << var.value<IntStringPair>();
+    mDefinedIn << var.value<IntStringPair>();
   }
   mInfoFileName = variableItemData[VariableItemData::INFOFILE].toString();
   mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
@@ -927,7 +927,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       } else {
         variantDefinedIn << QVariant::fromValue(IntStringPair(0, QString("")));
       }
-      variableData << variantDefinedIn;
+      variableData << QVariant::fromValue(variantDefinedIn);
       /* infoFileName */
       variableData << infoFileName;
       /* existsInResultFile */

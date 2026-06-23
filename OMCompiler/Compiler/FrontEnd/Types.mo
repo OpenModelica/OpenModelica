@@ -2080,6 +2080,27 @@ algorithm
   outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
 end extendsFunctionTypeArgs;
 
+public function setFunctionNoReturn
+  "Marks a function type as never returning normally, so that callers can treat
+   calls to it as terminating."
+  input output DAE.Type ty;
+algorithm
+  ty := match ty
+    local
+      list<DAE.FuncArg> fargs;
+      DAE.Type rettype;
+      Absyn.Path p;
+      DAE.InlineType inl;
+      Boolean ge, fp;
+      DAE.Purity pu;
+      DAE.FunctionBuiltin bi;
+      DAE.FunctionParallelism par;
+    case DAE.T_FUNCTION(fargs, rettype, DAE.FUNCTION_ATTRIBUTES(inl,ge,pu,fp,bi,par,_), p)
+      then DAE.T_FUNCTION(fargs, rettype, DAE.FUNCTION_ATTRIBUTES(inl,ge,pu,fp,bi,par,DAE.NoReturn.NORETURN), p);
+    else ty;
+  end match;
+end setFunctionNoReturn;
+
 protected function makeElementReturnType "
   Create a return type from a list of Element output variables.
   Depending on the length of the output variable list, different
@@ -3907,7 +3928,7 @@ algorithm
         (e_1,_) := matchType(e,t1,t2,printFailtrace);
         t := simplifyType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),t2);
 
   end matchcontinue;
 end typeConvert;
@@ -6991,7 +7012,7 @@ algorithm
   isT := isTuple(ty);
   isB := isBuiltin(attr.isBuiltin);
   isImpure := attr.purity == DAE.Purity.IMPURE;
-  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,attr.inline,DAE.NO_TAIL());
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,attr.inline,DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 end makeCallAttr;
 
 public function builtinName

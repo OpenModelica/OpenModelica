@@ -2326,7 +2326,8 @@ algorithm
         false,
         false,
         DAE.NO_INLINE(),
-        DAE.NO_TAIL()));
+        DAE.NO_TAIL(),
+        DAE.NoReturn.RETURNS));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
@@ -2461,6 +2462,7 @@ algorithm
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
       ComponentReference.crefStr(streamCref) + "\n");
+    fail();
   end try;
 end evaluateInStream;
 
