@@ -239,11 +239,21 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    much new SCTL machinery each requires:
 
      1. `eq_7`: `boolean = relationhysteresis(state, threshold, ...)`.
-        Needs a new `VK_BOOL_DISCRETE` VarKind, layout support for
-        `data->localData[0]->booleanVars[booleanVarsIndex[idx]]`,
-        a new `EqRecipe` variant for the relation pattern, and an
-        emit path that calls the `relationhysteresis` runtime
-        helper. Hours of focused work.
+        Adapter side **DONE**: `omc_jit_relationhysteresis` in
+        `omc_jit_perform_simulation_adapter.c` is the non-static
+        wrapper SCTL calls (the runtime's own `relationhysteresis`
+        is `static inline` in `model_help.h` and unreachable from
+        IR; the wrapper switches on a 0..3 op-code for
+        Less/LessEq/Greater/GreaterEq, threading the matching
+        function-pointer args through). MetaModelica side **TODO**:
+        new `VK_BOOL_DISCRETE` VarKind, `buildVarLayout` extension
+        for `data->localData[0]->booleanVars[booleanVarsIndex[idx]]`,
+        new `EqRecipe` variant `EQ_BOOL_DISCRETE_FROM_RELATION`,
+        `classifySimEq` pattern-match for `SES_SIMPLE_ASSIGN(cref =
+        bool-discrete, exp = DAE.RELATION(...))`, and an
+        `emitEquation` branch that GEPs the LHS state, calls
+        `omc_jit_relationhysteresis`, stores the i8 result into the
+        booleanVars slot.
 
      2. `eq_10` (SES_WHEN): edge detection on the discrete
         boolean, conditional reinit of a state variable, a

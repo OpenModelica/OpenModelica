@@ -81,6 +81,33 @@
 #include "simulation/solver/events.h"
 #include "simulation/arrayIndex.h"
 
+/* ===== relationhysteresis wrapper =====
+ *
+ * runtime relationhysteresis() is static inline in model_help.h, so the
+ * JIT-emitted IR cannot reach it directly. Wrap it with an exported
+ * symbol whose function-pointer args (op_w / op_w_zc) are picked from
+ * an op-code, so SCTL emits one extern call per relation regardless of
+ * the operator. Op codes:
+ *   0 = Less, 1 = LessEq, 2 = Greater, 3 = GreaterEq
+ * Other values are a programmer bug -- the wrapper falls through to
+ * zero (the relation reads as false) and the runtime continues with
+ * whatever state it had. */
+#include "simulation/solver/model_help.h"
+
+void omc_jit_relationhysteresis(DATA *data, modelica_boolean *res,
+                                double exp1, double exp2,
+                                double exp1_nominal, double exp2_nominal,
+                                int index, int op_code)
+{
+  switch (op_code) {
+    case 0: relationhysteresis(data, res, exp1, exp2, exp1_nominal, exp2_nominal, index, Less,      LessZC);      break;
+    case 1: relationhysteresis(data, res, exp1, exp2, exp1_nominal, exp2_nominal, index, LessEq,    LessEqZC);    break;
+    case 2: relationhysteresis(data, res, exp1, exp2, exp1_nominal, exp2_nominal, index, Greater,   GreaterZC);   break;
+    case 3: relationhysteresis(data, res, exp1, exp2, exp1_nominal, exp2_nominal, index, GreaterEq, GreaterEqZC); break;
+    default: *res = 0; break;
+  }
+}
+
 /* ===== perform_simulation block ===== */
 
 #define prefixedName_performSimulation       omc_jit_performSimulation

@@ -1243,11 +1243,14 @@ extern "C" void omc_jit_updateContinuousSystem(struct DATA *, struct threadData_
 extern "C" int omc_jit_main_runtime(int, char **, void *, void *, void *,
                                     const char *, const char *,
                                     const char *);
+extern "C" void omc_jit_relationhysteresis(struct DATA *, void *, double, double,
+                                           double, double, int, int);
 static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_performSimulation),
   reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
   reinterpret_cast<void *>(&omc_jit_updateContinuousSystem),
   reinterpret_cast<void *>(&omc_jit_main_runtime),
+  reinterpret_cast<void *>(&omc_jit_relationhysteresis),
 };
 
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
