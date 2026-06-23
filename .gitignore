@@ -33,3 +33,6 @@
 /testsuite/libraries-for-testing/.ccache/
 /testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/libFFITestLib.dll
 trace.txt
+
+# Web-port working handoff docs (kept locally, never committed)
+**/wasm/HANDOFF.md
