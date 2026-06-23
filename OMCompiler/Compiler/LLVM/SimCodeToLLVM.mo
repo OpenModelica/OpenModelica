@@ -640,6 +640,7 @@ algorithm
      * just does not record its segment file into the dynamic skip
      * list, leaving the corresponding _XX.c on the clang path. */
     try _ := emitInitialEquationsBlock(simCode, layout); else reportBlockFailure("emitInitialEquationsBlock", name); end try;
+    try _ := emitDynamicEquationsBlock(simCode, layout); else reportBlockFailure("emitDynamicEquationsBlock", name); end try;
     try emitBoundParametersBlock(simCode, layout); else reportBlockFailure("emitBoundParametersBlock", name); end try;
     try emitEventBlock(simCode, layout); else reportBlockFailure("emitEventBlock", name); end try;
     try emitJacobianBlock(simCode); else reportBlockFailure("emitJacobianBlock", name); end try;
