@@ -87,6 +87,7 @@ import BackendDAE;
 import ComponentReferenceBasics;
 import DAE;
 import DAEDump;
+import ExpressionBasics;
 import Error;
 import Flags;
 import Global;
@@ -729,14 +730,30 @@ algorithm
    * then well-formed (has terminator) even when some recipe was
    * dropped -- the symbol is in our bitcode either way, so the
    * caller must record the segment displacement. */
+  /* On throw inside emitEquation, MetaModelica's try/else does not
+   * roll back partial allocas the C++ side already created in the
+   * LLVM IR. The ctx (specifically tmpCounter) may also have
+   * stayed at its pre-call value, so the next iteration would
+   * freshTmp the SAME %t_N names and trip LLVM's per-function
+   * name-uniqueness machinery (it appends suffixes silently, but
+   * our symtab key then mismatches the requested name). Once any
+   * recipe throws we skip the rest -- the function is still
+   * well-formed because the trailing return/finnishGen runs, and
+   * recordDisplacedSegment in the caller keeps clang from
+   * re-emitting the symbol. */
   for r in recipes loop
-    try
-      if ok then
+    if ok then
+      try
         (ctx, ok) := emitEquation(r, ctx);
-      end if;
-    else
-      ok := false;
-    end try;
+      else
+        if Flags.isSet(Flags.FAILTRACE) then
+          print("SCTL emitEquationFunction: throw on recipe " +
+                recipeKindString(r) + " rhs=" + recipeRhsStr(r) +
+                ", skipping remaining recipes\n");
+        end if;
+        ok := false;
+      end try;
+    end if;
   end for;
 
   if retTy == MODELICA_VOID then
@@ -859,7 +876,16 @@ algorithm
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
   ctx := EMIT_CTX(layout, 0);
-  (_, ok) := emitEquation(recipe, ctx);
+  try
+    (_, ok) := emitEquation(recipe, ctx);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      print("SCTL emitNamedEquationFunction: throw on " + fname +
+            " recipe " + recipeKindString(recipe) +
+            " rhs=" + recipeRhsStr(recipe) + "\n");
+    end if;
+    ok := false;
+  end try;
   EXT_LLVM.genReturnVoid();
   EXT_LLVM.finnishGen();
 end emitNamedEquationFunction;
@@ -1533,6 +1559,21 @@ algorithm
     case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
   end match;
 end recipeKindString;
+
+protected function recipeRhsStr
+  input EqRecipe r;
+  output String s;
+algorithm
+  s := match r
+    local DAE.Exp e;
+    case EQ_DERIVATIVE_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
+    case EQ_STATE_ASSIGN(rhs=e)      then ExpressionBasics.printExpStr(e);
+    case EQ_ALG_ASSIGN(rhs=e)        then ExpressionBasics.printExpStr(e);
+    case EQ_PARAM_ASSIGN(rhs=e)      then ExpressionBasics.printExpStr(e);
+    case EQ_BOOL_PARAM_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
+    else "";
+  end match;
+end recipeRhsStr;
 
 protected function emitInitialEquationsWrapper
   "Emit  int <wrapper>(DATA *data, threadData_t *threadData) {
@@ -2355,6 +2396,13 @@ algorithm
     case SOME(vs)
       algorithm
         absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+        if Flags.isSet(Flags.FAILTRACE) then
+          print("SCTL emitCrefRead: '" +
+                ComponentReferenceBasics.printComponentRefStr(cref) +
+                "' -> kind=" + anyString(vs.kind) +
+                " idx=" + intString(vs.index) +
+                " absSlot=" + intString(absSlot) + "\n");
+        end if;
         /* Parameters live in a separate buffer
          * (data->simulationInfo->realParameter[]) and need the
          * parameter accessor; everything else (states, derivatives,
@@ -2364,7 +2412,13 @@ algorithm
           else                emitReadRealVar(absSlot, ctx);
         end match;
       then (outCtx, dst, true);
-    case NONE() then (ctx, "<unmapped-cref>", false);
+    case NONE()
+      algorithm
+        if Flags.isSet(Flags.FAILTRACE) then
+          print("SCTL emitCrefRead: cref not in layout: '" +
+                ComponentReferenceBasics.printComponentRefStr(cref) + "'\n");
+        end if;
+      then (ctx, "<unmapped-cref>", false);
   end match;
 end emitCrefRead;
 

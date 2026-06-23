@@ -828,7 +828,17 @@ int allocaBoolean(const char *name, const bool isVolatile) {
 /*Allocates a modelica real, a double in LLVM IR*/
 int allocaDouble(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{createAllocaInst(name, getLLVMType(MODELICA_REAL))};
-  program->currentFunc->symTab[alloci->getName().str()] =
+  /* Key the symtab by the REQUESTED name (the argument passed in)
+   * rather than alloci->getName(). LLVM appends a numeric suffix
+   * silently when the requested name collides with an existing
+   * value in the same function -- which happens whenever
+   * emitEquationFunction emits multiple bodies (recipes) into one
+   * function and freshTmp's counter reset back to a value it
+   * already used in this function. The Variable* still points to
+   * the AllocaInst* LLVM created, and subsequent createStoreInst /
+   * createLoadInst calls from SCTL look up by the requested name,
+   * so the right alloca is found. */
+  program->currentFunc->symTab[std::string(name)] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
