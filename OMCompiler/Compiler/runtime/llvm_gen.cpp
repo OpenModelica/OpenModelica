@@ -226,18 +226,17 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
 
   llvm::orc::LLJIT *jitPtr = nullptr;
   std::string key = (modelName && modelName[0]) ? modelName : "<anon>";
-  auto cacheIt = g_jitCache.find(key);
-  bool cacheHit = false;
+  std::unordered_map<std::string, std::unique_ptr<llvm::orc::LLJIT>>::iterator
+      cacheIt = g_jitCache.find(key);
   if (cacheIt != g_jitCache.end()) {
     jitPtr = cacheIt->second.get();
     g_sctlBitcodeBytes.clear();  /* Consumed; no module being added. */
-    cacheHit = true;
   } else {
-    /* Cold path (cache miss or fingerprint changed). Drop any
-     * stale entry, then parse + build + add modules. */
-    if (cacheIt != g_jitCache.end()) g_jitCache.erase(cacheIt);
-
-    auto ctx = std::make_unique<llvm::LLVMContext>();
+    /* Cold path. Parse + build + add modules, then stash the
+     * freshly-built LLJIT under modelName so the next simulate()
+     * of the same model hits the cache. */
+    std::unique_ptr<llvm::LLVMContext> ctx =
+        std::make_unique<llvm::LLVMContext>();
     llvm::SMDiagnostic diag;
     std::unique_ptr<llvm::Module> mod =
         llvm::parseIRFile(bitcodePath, diag, *ctx);
@@ -246,7 +245,8 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
       return 1;
     }
 
-    auto jitOrErr = llvm::orc::LLJITBuilder().create();
+    llvm::Expected<std::unique_ptr<llvm::orc::LLJIT>> jitOrErr =
+        llvm::orc::LLJITBuilder().create();
     if (!jitOrErr) {
       llvm::logAllUnhandledErrors(jitOrErr.takeError(), llvm::errs(),
                                   "[llvm-jit] LLJIT create: ");
@@ -254,8 +254,9 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     }
     std::unique_ptr<llvm::orc::LLJIT> newJit = std::move(*jitOrErr);
 
-    auto gen = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
-        newJit->getDataLayout().getGlobalPrefix());
+    llvm::Expected<std::unique_ptr<llvm::orc::DynamicLibrarySearchGenerator>>
+        gen = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+            newJit->getDataLayout().getGlobalPrefix());
     if (!gen) {
       llvm::logAllUnhandledErrors(gen.takeError(), llvm::errs(),
                                   "[llvm-jit] symbol generator: ");
@@ -263,7 +264,7 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     }
     newJit->getMainJITDylib().addGenerator(std::move(*gen));
 
-    if (auto err = newJit->addIRModule(
+    if (llvm::Error err = newJit->addIRModule(
             llvm::orc::ThreadSafeModule(std::move(mod), std::move(ctx)))) {
       llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
                                   "[llvm-jit] addIRModule: ");
@@ -273,11 +274,14 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     /* Pull in SimCodeToLLVM's in-memory bitcode (stashed via
      * stashCurrentModuleAsBitcode) without going through disk. */
     if (!g_sctlBitcodeBytes.empty()) {
-      auto sctlCtx = std::make_unique<llvm::LLVMContext>();
-      auto sctlBuf = llvm::MemoryBuffer::getMemBufferCopy(
-          llvm::StringRef(g_sctlBitcodeBytes.data(), g_sctlBitcodeBytes.size()),
-          "sctl-in-memory");
-      auto sctlModOrErr =
+      std::unique_ptr<llvm::LLVMContext> sctlCtx =
+          std::make_unique<llvm::LLVMContext>();
+      std::unique_ptr<llvm::MemoryBuffer> sctlBuf =
+          llvm::MemoryBuffer::getMemBufferCopy(
+              llvm::StringRef(g_sctlBitcodeBytes.data(),
+                              g_sctlBitcodeBytes.size()),
+              "sctl-in-memory");
+      llvm::Expected<std::unique_ptr<llvm::Module>> sctlModOrErr =
           llvm::parseBitcodeFile(sctlBuf->getMemBufferRef(), *sctlCtx);
       if (!sctlModOrErr) {
         llvm::logAllUnhandledErrors(sctlModOrErr.takeError(), llvm::errs(),
@@ -285,7 +289,7 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
         g_sctlBitcodeBytes.clear();
         return 1;
       }
-      if (auto err = newJit->addIRModule(llvm::orc::ThreadSafeModule(
+      if (llvm::Error err = newJit->addIRModule(llvm::orc::ThreadSafeModule(
               std::move(*sctlModOrErr), std::move(sctlCtx)))) {
         llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
                                     "[llvm-jit] addIRModule SCTL: ");
@@ -298,9 +302,8 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     jitPtr = newJit.get();
     g_jitCache[key] = std::move(newJit);
   }
-  (void)cacheHit;  /* reserved for future telemetry */
 
-  auto mainSym = jitPtr->lookup("main");
+  llvm::Expected<llvm::orc::ExecutorAddr> mainSym = jitPtr->lookup("main");
   if (!mainSym) {
     llvm::logAllUnhandledErrors(mainSym.takeError(), llvm::errs(),
                                 "[llvm-jit] lookup main: ");
