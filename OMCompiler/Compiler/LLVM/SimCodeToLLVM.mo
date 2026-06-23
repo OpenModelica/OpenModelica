@@ -1014,12 +1014,8 @@ algorithm
   if not ok then
     return;
   end if;
-  for r in recipes loop
-    if not canLowerEquation(r, layout) then
-      ok := false;
-      return;
-    end if;
-  end for;
+  ok := List.all(recipes, function canLowerEquation(layout = layout));
+  if not ok then return; end if;
   /* Emit each equation as its own  <Model>_eqFunction_<idx>
    * (DATA*, threadData_t*) -> void  function and a
    * <Model>_functionInitialEquations_0 dispatcher that calls them
@@ -1028,12 +1024,8 @@ algorithm
    * resolve at JIT link time -- the previous inline-only emission
    * left those symbols undefined and forced the modelHasNoEvents
    * gate. */
-  for eqRec in List.zip(initEqs, recipes) loop
-    if not emitNamedEquationFunction(prefix, eqRec, layout) then
-      ok := false;
-      return;
-    end if;
-  end for;
+  ok := List.all(List.zip(initEqs, recipes), function emitNamedEquationFunction(prefix = prefix, layout = layout));
+  if not ok then return; end if;
   emitInitialEquationsDispatcher(prefix, initEqs);
   /* Wrapper: CodegenC version calls _0 between discreteCall++/--.
    * Dropping the bookend is harmless for the ODE-only initialisation
@@ -1089,18 +1081,9 @@ algorithm
   if not ok then
     return;
   end if;
-  for r in recipes loop
-    if not canLowerEquation(r, layout) then
-      ok := false;
-      return;
-    end if;
-  end for;
-  for eqRec in List.zip(dynamicEqs, recipes) loop
-    if not emitNamedEquationFunction(prefix, eqRec, layout) then
-      ok := false;
-      return;
-    end if;
-  end for;
+  ok := List.all(recipes, function canLowerEquation(layout = layout));
+  if not ok then return; end if;
+  ok := List.all(List.zip(dynamicEqs, recipes), function emitNamedEquationFunction(prefix = prefix, layout = layout));
 end emitDynamicEquationsBlock;
 
 protected function modelHasNoEvents
@@ -1246,11 +1229,7 @@ algorithm
   if not ok then
     return;
   end if;
-  for r in recipes loop
-    if not canLowerEquation(r, layout) then
-      return;
-    end if;
-  end for;
+  if not List.all(recipes, function canLowerEquation(layout = layout)) then return; end if;
   prefix := modelSymbolPrefix(name);
   /* Emit any synthetic SimCodeFunction.Function the classifier built
    * (one per SES_ALGORITHM) before the call sites reference them.
