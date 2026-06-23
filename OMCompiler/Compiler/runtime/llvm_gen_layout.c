@@ -43,3 +43,4 @@ const size_t omc_layout_SI_realParamsIndex  = offsetof(SIMULATION_INFO, realPara
 const size_t omc_layout_SI_realParameter    = offsetof(SIMULATION_INFO, realParameter);
 const size_t omc_layout_SI_booleanParameter = offsetof(SIMULATION_INFO, booleanParameter);
 const size_t omc_layout_SI_relations        = offsetof(SIMULATION_INFO, relations);
+const size_t omc_layout_SI_extObjs          = offsetof(SIMULATION_INFO, extObjs);

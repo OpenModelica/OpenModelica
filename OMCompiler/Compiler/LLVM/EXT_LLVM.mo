@@ -208,6 +208,28 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
+function genCallExternalObjectDestructors
+  "Emit the whole  <Model>_callExternalObjectDestructors  function into
+   the active module as one IR function (signature + body). The body
+   matches CodegenC's no-extObj-vars shape:
+
+       if (data->simulationInfo->extObjs) {
+         free(data->simulationInfo->extObjs);
+         data->simulationInfo->extObjs = NULL;
+       }
+
+   Self-contained: does not interact with the partial-function IRBuilder
+   used by startFuncGen/genFunctionArg/..., so SCTL just calls it once
+   and the catalog mechanism displaces _01exo.c. Modelica-side caller
+   must restrict use to models with extObjInfo.vars == {} (HelloWorld
+   today). Returns 0 on success."
+  input String modelName;
+  output Integer status;
+  external "C" status = createCallExternalObjectDestructors(modelName)
+    annotation(Library = "omcruntime",
+               Include = "int createCallExternalObjectDestructors(const char *modelName);");
+end genCallExternalObjectDestructors;
+
 function genCallArgMmcJumpr
   "Fetches the mmc_jmpr from threadData & adds it to the arg vector."
   external "C" createCallArgMmcJmpr() annotation(Library="omcruntime");

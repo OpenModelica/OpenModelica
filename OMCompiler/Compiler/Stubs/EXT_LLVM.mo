@@ -124,5 +124,10 @@ algorithm
   assert(false, getInstanceName());
 end genRelationSet;
 
+function genCallExternalObjectDestructors
+  input String modelName;
+  output Integer status = 1;
+end genCallExternalObjectDestructors;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;

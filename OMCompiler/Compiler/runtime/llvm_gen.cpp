@@ -127,6 +127,7 @@ extern "C" {
   extern const size_t omc_layout_SI_realParameter;
   extern const size_t omc_layout_SI_booleanParameter;
   extern const size_t omc_layout_SI_relations;
+  extern const size_t omc_layout_SI_extObjs;
 }
 
 /* Helper: load (i8-typed) pointer offset `bytes` past `basePtr`, then
@@ -400,6 +401,86 @@ extern "C" int createInlinedReadTime(const char *const dataArgName,
       i8, sd, llvm::ConstantInt::get(i64, omc_layout_SD_timeValue), "");
   llvm::Value *const val = b.CreateLoad(dbl, tvAddr, "");
   storeIntoSymtab(dstName, val);
+  return 0;
+}
+
+/* Emit  void <modelName>_callExternalObjectDestructors(DATA*, threadData_t*)
+ * into the active module as a complete standalone function. Counterpart of
+ * CodegenC's functionCallExternalObjectDestructors template for the
+ * no-extObj-vars case:
+ *
+ *   void <M>_callExternalObjectDestructors(DATA *data, threadData_t *td) {
+ *     void *ext = data->simulationInfo->extObjs;
+ *     if (ext) {
+ *       free(ext);
+ *       data->simulationInfo->extObjs = NULL;
+ *     }
+ *   }
+ *
+ * Self-contained: builds its own basic blocks and IRBuilder. Does not touch
+ * program->currentFunc / program->builder beyond a local IRBuilder, so SCTL
+ * can call this between regular function emissions without conflict. The
+ * modelName-prefixed symbol matches CodegenC's <M>_callExternalObjectDestructors
+ * so callers binding through the function pointer table see the same name. */
+extern "C" int createCallExternalObjectDestructors(const char *const modelName) {
+  if (!program || !program->module) {
+    fprintf(stderr, "createCallExternalObjectDestructors: no active module\n");
+    return 1;
+  }
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Module &mod = *program->module;
+
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(ctx);
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(ctx);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(ctx);
+  llvm::PointerType *const ptrTy = llvm::PointerType::getUnqual(ctx);
+
+  llvm::FunctionType *const freeTy =
+      llvm::FunctionType::get(voidTy, {ptrTy}, false);
+  llvm::FunctionCallee const freeFn = mod.getOrInsertFunction("free", freeTy);
+
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false);
+  const std::string symName =
+      std::string(modelName) + "_callExternalObjectDestructors";
+  if (mod.getFunction(symName)) {
+    fprintf(stderr,
+            "createCallExternalObjectDestructors: '%s' already defined\n",
+            symName.c_str());
+    return 2;
+  }
+  llvm::Function *const fn = llvm::Function::Create(
+      fnTy, llvm::Function::ExternalLinkage, symName, mod);
+  llvm::Function::arg_iterator argIt = fn->arg_begin();
+  llvm::Argument *const dataArg = &*argIt++;
+  dataArg->setName("data");
+  (&*argIt)->setName("threadData");
+
+  llvm::BasicBlock *const entryBB = llvm::BasicBlock::Create(ctx, "entry", fn);
+  llvm::BasicBlock *const doFreeBB = llvm::BasicBlock::Create(ctx, "do_free", fn);
+  llvm::BasicBlock *const doneBB = llvm::BasicBlock::Create(ctx, "done", fn);
+
+  llvm::IRBuilder<> b(entryBB);
+  /* simInfo = data->simulationInfo */
+  llvm::Value *const siGep = b.CreateGEP(
+      i8, dataArg, llvm::ConstantInt::get(i64, omc_layout_DATA_simulationInfo), "");
+  llvm::Value *const simInfo = b.CreateLoad(ptrTy, siGep, "");
+  /* extObjsAddr = &simInfo->extObjs */
+  llvm::Value *const extObjsAddr = b.CreateGEP(
+      i8, simInfo, llvm::ConstantInt::get(i64, omc_layout_SI_extObjs), "");
+  llvm::Value *const extObjs = b.CreateLoad(ptrTy, extObjsAddr, "");
+  llvm::Value *const isNonNull = b.CreateICmpNE(
+      extObjs, llvm::ConstantPointerNull::get(ptrTy), "");
+  b.CreateCondBr(isNonNull, doFreeBB, doneBB);
+
+  b.SetInsertPoint(doFreeBB);
+  b.CreateCall(freeFn, {extObjs});
+  b.CreateStore(llvm::ConstantPointerNull::get(ptrTy), extObjsAddr);
+  b.CreateBr(doneBB);
+
+  b.SetInsertPoint(doneBB);
+  b.CreateRetVoid();
+
   return 0;
 }
 

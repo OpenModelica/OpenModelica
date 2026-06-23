@@ -382,7 +382,7 @@ algorithm
                      that behaviour. Models that use ExternalObject
                      will need an omc_jit_destroy_extobjs(DATA*)
                      accessor before this can keep its EB_STUB tag. */
-    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_STUB(), "_01exo.c"),
+    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_TODO("emitExternalObjectDestructorsBlock handles it"), "_01exo.c"),
 
     /* -- _12jac.c -- analytic Jacobian. SCTL can emit stubs that
                       mark the JACOBIAN struct as NOT_AVAILABLE so
@@ -580,6 +580,7 @@ algorithm
     try emitNonlinearSystemsBlock(simCode); else reportBlockFailure("emitNonlinearSystemsBlock", name); end try;
     try emitLinearSystemsBlock(simCode); else reportBlockFailure("emitLinearSystemsBlock", name); end try;
     try emitMixedSystemsBlock(simCode); else reportBlockFailure("emitMixedSystemsBlock", name); end try;
+    try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1833,6 +1834,38 @@ algorithm
     recordDisplacedSegment("_records.c");
   end if;
 end emitRecordsBlock;
+
+protected function emitExternalObjectDestructorsBlock
+  "Lift  <Model>_callExternalObjectDestructors  from CodegenC's
+   _01exo.c into the active LLVM module as native IR. Only handles
+   the no-extObj-vars case today, which matches HelloWorld /
+   BouncingBall / ChuaCircuit. Models that own external objects
+   keep the segment on the clang path until SCTL learns to emit
+   the per-class  omc_<class>_destructor  call chain.
+
+   On success records the segment displacement so compileModelToBitcode
+   drops _01exo.c from the clang loop. On a non-empty vars list throws
+   so the surrounding try/else leaves the segment in place."
+  input SimCode.SimCode simCode;
+  input Absyn.Path modelName;
+protected
+  SimCode.ExtObjInfo extObjInfo;
+  list<SimCodeVar.SimVar> vars;
+  String prefix;
+  Integer st;
+algorithm
+  extObjInfo := match simCode case SimCode.SIMCODE(extObjInfo = extObjInfo) then extObjInfo; end match;
+  vars := match extObjInfo case SimCode.EXTOBJINFO(vars = vars) then vars; end match;
+  if not listEmpty(vars) then
+    fail();
+  end if;
+  prefix := modelSymbolPrefix(modelName);
+  st := EXT_LLVM.genCallExternalObjectDestructors(prefix);
+  if st <> 0 then
+    fail();
+  end if;
+  recordDisplacedSegment("_01exo.c");
+end emitExternalObjectDestructorsBlock;
 
 protected function emitNonlinearSystemsBlock
   "Displace <Model>_02nls.c when the SimCode carries no nonlinear
