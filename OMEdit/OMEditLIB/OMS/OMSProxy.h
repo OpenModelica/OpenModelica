@@ -103,7 +103,7 @@ public:
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
   bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);
   bool addSubModel(QString cref, QString fmuPath);
-  //bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
+  bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int& count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
   bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);

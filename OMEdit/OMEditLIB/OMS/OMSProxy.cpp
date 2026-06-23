@@ -539,16 +539,33 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
  * \param count
  * \return
  */
-// bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int *count)
-// {
-//   QString command = "oms_replaceSubModel";
-//   QStringList args;
-//   args << "\"" + cref + "\"" << fmuPath << QString::number(dryCount);
-//   LOG_COMMAND(command, args);
-//   oms_status_enu_t status = oms_replaceSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData(), dryCount, count);
-//   logResponse(command, status, &commandTime);
-//   return statusToBool(status);
-// }
+bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int &count)
+{
+  QStringList parts = cref.split(".");
+  parts.removeFirst();
+  QJsonObject obj, args;
+  obj["method"] = "replaceComponent";
+  obj["model"]  = cref.split('.').first();
+  args["cref"] = QJsonArray::fromStringList(parts);
+  args["source"] = fmuPath;
+  QString suffix = QFileInfo(fmuPath).suffix();
+  QString baseName = QFileInfo(fmuPath).completeBaseName();
+  args["new_name"] = "resources/" + baseName + "." + suffix;
+  args["dryRun"] = dryCount;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  const QJsonArray warnings = reply["warnings"].toArray();
+  if (count)
+    count = warnings.size();
+  for (const QJsonValue &w : warnings) {
+    emitLogGUIMessage(MessageItem(MessageItem::Modelica, w.toString(), Helper::scriptingKind, Helper::warningLevel));
+  }
+  return true;
+}
 
 /*!
  * \brief OMSProxy::createElementGeometryUsingPosition

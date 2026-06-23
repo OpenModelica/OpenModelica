@@ -54,7 +54,7 @@ class SystemWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+  SystemWidget(QWidget *pParent = 0);
   QLineEdit* getNameTextBox() {return mpNameTextBox;}
   QComboBox* getTypeComboBox() {return mpTypeComboBox;}
 private:

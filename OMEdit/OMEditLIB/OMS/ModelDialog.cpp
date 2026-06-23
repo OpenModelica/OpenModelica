@@ -52,10 +52,9 @@
  */
 /*!
  * \brief SystemWidget::SystemWidget
- * \param pLibraryTreeItem
  * \param pParent
  */
-SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+SystemWidget::SystemWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   // name
@@ -94,7 +93,7 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
   // Root system groupbox
   mpRootSystemGroupBox = new QGroupBox(tr("Root System"));
   // system widget
-  mpSystemWidget = new SystemWidget(0, this);
+  mpSystemWidget = new SystemWidget(this);
   mpSystemWidget->getNameTextBox()->setText("Root");
   QHBoxLayout *pSystemGroupBoxLayout = new QHBoxLayout;
   pSystemGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -193,7 +192,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // system widget
-  mpSystemWidget = new SystemWidget(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this);
+  mpSystemWidget = new SystemWidget(this);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -524,15 +523,21 @@ void ReplaceSubModelDialog::replaceSubModel()
   bool failed = false;
   int warningCount;
 
-  // if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, &warningCount)) {
-  //   mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
-  //   mpGraphicsView->getModelWidget()->updateModelText();
-  //   accept();
-  // }  else {
-  //   failed = true;
-  // }
-
-  // TODO remove the dryRun combo box check and always make the first run dryRun = true and warn users in case warnings exist
+  if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, warningCount)) {
+    if (warningCount > 0) {
+      QString msg = dryRun
+        ? tr("The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.")
+        : tr("The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.");
+      QMessageBox::warning(this, QString("%1 - %2").arg(Helper::applicationName, tr("Warning")), msg);
+    }
+    if (!dryRun) {
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
+      mpGraphicsView->getModelWidget()->updateModelText();
+    }
+    accept();
+  } else {
+    failed = true;
+  }
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
