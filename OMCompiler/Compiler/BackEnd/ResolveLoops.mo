@@ -2049,10 +2049,12 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp exp,exp1,exp2;
       DAE.ComponentRef cref;
-    case (DAE.CREF(),(true,vars))
+    case (DAE.CREF(componentRef=cref),(true,vars))
       algorithm
-        //x
-      then (inExp,(true,vars));
+        //x, but reject array elements with non-constant indices since
+        //resolveLoops cannot map them to a single scalar variable
+        b := Expression.subscriptConstants(ComponentReferenceBasics.crefSubs(cref));
+      then (inExp,(b,vars));
 
     case (DAE.UNARY(exp=exp1),(true,vars))
       algorithm
