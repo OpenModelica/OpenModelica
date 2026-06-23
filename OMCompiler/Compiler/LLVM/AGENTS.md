@@ -163,6 +163,36 @@ Exceptions:
 - Iterators with verbose nested template types when the surrounding code
   makes the element type obvious.
 
+### No column-aligned whitespace
+
+Use one space between tokens. Do not pad assignments / `:=` /
+`then` / `;` so they line up vertically across consecutive
+lines. Column alignment makes diffs noisy when a single line
+changes width and forces re-indentation of unrelated neighbours,
+and it discourages adding a longer entry to the group.
+
+Not OK:
+
+```meta
+try emitFooBlock(simCode);    else reportBlockFailure("emitFooBlock", name);    end try;
+try emitBarBazBlock(simCode); else reportBlockFailure("emitBarBazBlock", name); end try;
+```
+
+OK:
+
+```meta
+try emitFooBlock(simCode); else reportBlockFailure("emitFooBlock", name); end try;
+try emitBarBazBlock(simCode); else reportBlockFailure("emitBarBazBlock", name); end try;
+```
+
+This applies in both MetaModelica and C++. The same rule covers
+table-style alignment in record literals, `case`-branches,
+function-arg lists, and the trailing-comment column. When you
+*do* want a tabular layout (e.g. an opcode table where the
+alignment carries semantic information), put it in a dedicated
+helper or generated file rather than inlining it into normal
+code.
+
 ### Const-correctness
 
 Apply `const` aggressively in both C and C++:

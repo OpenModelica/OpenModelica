@@ -580,14 +580,14 @@ algorithm
      * just does not record its segment file into the dynamic skip
      * list, leaving the corresponding _XX.c on the clang path. */
     try _ := emitInitialEquationsBlock(simCode, layout); else reportBlockFailure("emitInitialEquationsBlock", name); end try;
-    try emitBoundParametersBlock(simCode, layout);       else reportBlockFailure("emitBoundParametersBlock", name); end try;
-    try emitEventBlock(simCode, layout);                 else reportBlockFailure("emitEventBlock", name); end try;
-    try emitJacobianBlock(simCode);                      else reportBlockFailure("emitJacobianBlock", name); end try;
-    try emitRecordsBlock(simCode);                       else reportBlockFailure("emitRecordsBlock", name); end try;
-    try emitFunctionsBlock(simCode);                     else reportBlockFailure("emitFunctionsBlock", name); end try;
-    try emitNonlinearSystemsBlock(simCode);              else reportBlockFailure("emitNonlinearSystemsBlock", name); end try;
-    try emitLinearSystemsBlock(simCode);                 else reportBlockFailure("emitLinearSystemsBlock", name); end try;
-    try emitMixedSystemsBlock(simCode);                  else reportBlockFailure("emitMixedSystemsBlock", name); end try;
+    try emitBoundParametersBlock(simCode, layout); else reportBlockFailure("emitBoundParametersBlock", name); end try;
+    try emitEventBlock(simCode, layout); else reportBlockFailure("emitEventBlock", name); end try;
+    try emitJacobianBlock(simCode); else reportBlockFailure("emitJacobianBlock", name); end try;
+    try emitRecordsBlock(simCode); else reportBlockFailure("emitRecordsBlock", name); end try;
+    try emitFunctionsBlock(simCode); else reportBlockFailure("emitFunctionsBlock", name); end try;
+    try emitNonlinearSystemsBlock(simCode); else reportBlockFailure("emitNonlinearSystemsBlock", name); end try;
+    try emitLinearSystemsBlock(simCode); else reportBlockFailure("emitLinearSystemsBlock", name); end try;
+    try emitMixedSystemsBlock(simCode); else reportBlockFailure("emitMixedSystemsBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1046,6 +1046,62 @@ algorithm
    * glue to skip clang on the matching .c file. */
   recordDisplacedSegment("_06inz.c");
 end emitInitialEquationsBlock;
+
+protected function emitDynamicEquationsBlock
+  "Emit one <prefix>_eqFunction_<idx>(DATA *, threadData_t *) per
+   dynamic equation in simCode.odeEquations, using the same
+   emitNamedEquationFunction machinery emitInitialEquationsBlock
+   uses for initial equations.
+
+   This is roadmap item 1 (per-equation dynamic eqFunction_N).
+   The CodegenC <Model>.c driver still emits these symbols too,
+   so SCTL cannot yet add the matching <Model>.c displacement
+   without triggering JIT-link duplicates. The per-eq emission
+   here is foundational: once roadmap items 2 (setupDataStruc),
+   3 (callback table), and 6 (entry shim) land, displacing
+   <Model>.c becomes safe and these SCTL-emitted eqFunction_N
+   become the live ones.
+
+   Returns true only if every dynamic equation lowered cleanly
+   -- on false the caller leaves the per-eq emissions in the
+   module (the function is well-formed because each
+   emitNamedEquationFunction always terminates with
+   genReturnVoid + finnishGen) but the caller cannot yet rely
+   on the eqFunction_N set being complete."
+  input SimCode.SimCode simCode;
+  input VarLayout layout;
+  output Boolean ok;
+protected
+  list<SimCode.SimEqSystem> dynamicEqs;
+  list<EqRecipe> recipes;
+  String prefix;
+  Absyn.Path name;
+algorithm
+  name := simCodeName(simCode);
+  prefix := modelSymbolPrefix(name);
+  dynamicEqs := flattenOdeEquations(simCode);
+  if listEmpty(dynamicEqs) then
+    ok := true;
+    return;
+  end if;
+  recipes := List.map1(dynamicEqs, classifySimEq, layout);
+  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
+  if not ok then
+    return;
+  end if;
+  for r in recipes loop
+    if not canLowerEquation(r, layout) then
+      ok := false;
+      return;
+    end if;
+  end for;
+  for eqRec in List.zip(dynamicEqs, recipes) loop
+    if not emitNamedEquationFunction(prefix, eqRec, layout) then
+      ok := false;
+      return;
+    end if;
+  end for;
+end emitDynamicEquationsBlock;
 
 protected function modelHasNoEvents
   "True iff the model has no zero crossings and no relations -- the
