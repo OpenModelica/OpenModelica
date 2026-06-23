@@ -428,6 +428,14 @@ void startFuncGen(const char *name) {
     program->functions[name] = func;
   }
   program->currentFunc = func;
+  /* A previous emit may have left stale state behind. When createCall
+   * triggers MMC_THROW (e.g. createStoreInst on a missing dest)
+   * before reaching the callArgs.clear() at the end of createCall,
+   * the next emission would otherwise see the partially-built
+   * argument vector. Clearing here is defensive: any in-flight call
+   * for the previous function is irrelevant to the one we are about
+   * to start. */
+  program->currentFunc->callArgs.clear();
 }
 
 int createExit(const modelica_integer exitId) {
@@ -748,8 +756,12 @@ int createCall(const char *name, const uint8_t functionTy, const char *dest,
   if (assignment) {
     llvm::Value *s = program->builder.CreateCall(
         f, program->currentFunc->callArgs, "calltmp");
-    createStoreInst(s, dest);
+    /* Clear callArgs BEFORE createStoreInst so the next emission
+     * sees a clean slate if createStoreInst raises MMC_THROW on a
+     * missing dest. The CallInst was already built, so the
+     * arguments are baked in. */
     program->currentFunc->callArgs.clear();
+    createStoreInst(s, dest);
     return 0;
   }
   // Otherwise, simply make the call.
