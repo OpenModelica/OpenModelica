@@ -1270,7 +1270,15 @@ end emitEventBlock;
 
 protected function allZeroCrossingsLowerable
   "True iff every zero-crossing's relation is a DAE.RELATION whose
-   operands lower through emitExp (canLowerExp)."
+   operands fall in the narrow shape emitZeroCrossingResidual is
+   actually wired to lower: each side is either a real constant or
+   a cref that resolves in the layout. canLowerExp also accepts
+   BINARY / CALL nodes that emitExp threads through SSA, but the
+   downstream genRSub in emitZeroCrossingResidual needs both
+   operands to be alloca-backed variables -- a SSA temp returned
+   from a binop dst slot makes binopInit dereference a null
+   AllocaInst. Until emitZeroCrossingResidual learns to materialise
+   intermediate allocas itself the gate stays restrictive."
   input list<BackendDAE.ZeroCrossing> zcs;
   input VarLayout layout;
   output Boolean ok = true;
@@ -1282,8 +1290,8 @@ algorithm
       case BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2))
         algorithm
           if not (isLowerableRelationOp(op)
-                  and canLowerExp(e1, layout)
-                  and canLowerExp(e2, layout)) then
+                  and isZeroCrossingOperand(e1, layout)
+                  and isZeroCrossingOperand(e2, layout)) then
             ok := false;
           end if;
         then ();
@@ -1293,6 +1301,23 @@ algorithm
     if not ok then return; end if;
   end for;
 end allZeroCrossingsLowerable;
+
+protected function isZeroCrossingOperand
+  "True iff <e> is a real constant or a cref in the layout. Used
+   by allZeroCrossingsLowerable to reject zero-crossing relations
+   whose operands cannot be passed directly to genRSub."
+  input DAE.Exp e;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match e
+    local DAE.ComponentRef cref;
+    case DAE.RCONST() then true;
+    case DAE.ICONST() then true;
+    case DAE.CREF(componentRef = cref) then canLowerCref(cref, layout);
+    else false;
+  end match;
+end isZeroCrossingOperand;
 
 protected function isLowerableRelationOp
   "True for the four monotonic comparison operators SCTL emits as
