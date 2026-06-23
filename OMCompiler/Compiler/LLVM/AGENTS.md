@@ -42,6 +42,39 @@ Every commit that adds an SCTL-emitted entry point removes one
 or more `.c` segments from the clang loop. The end state is
 zero `.c` segments and the transitional shim deleted.
 
+### No-shim rule
+
+The data flow is **SimCode / MidCode → LLVM IR → simulation**.
+Nothing else.
+
+Specifically:
+
+- No C source as an intermediate.
+- No `<Model>_jitcompile.sh` orchestrator. No spawned clang
+  process. No `llvm-link` invocation. No `.bc` files written to
+  disk and read back. No bash glue that stitches multiple
+  bitcode artifacts together.
+- No "MidCode → C → clang → LLVM IR" or similar two-step
+  detours. MidCode lowers to LLVM IR via `MidToLLVM`, period.
+- No `Compiler/Stubs/*.mo` wrapper that hides a C-codegen
+  fallback. Stubs are only the no-op signatures the
+  non-LLVM-JIT build needs for linkage; they cannot quietly do
+  the same work via C.
+- No "embed clang as a library" rescue. The vision does not
+  include parsing C; it includes generating IR.
+
+The only edges that touch C are the **already-compiled C
+runtime libraries** SCTL emits calls to (libSimulationRuntimeC
+and the Modelica.* support libraries). The SCTL bitcode
+references their exported symbols and `DynamicLibrarySearchGenerator`
+resolves them at JIT-link time. The compiler does not produce
+C; the compiler produces LLVM IR that calls into pre-compiled C.
+
+If a proposed change adds a shim — even a "small" one,
+"temporary" one, or "just to unblock CI" one — it is the wrong
+direction. The work that unblocks is more SCTL emission, not
+more wiring around what SCTL emits.
+
 ## Scope
 
 This package owns the SimCode → LLVM IR / LLJIT path:
