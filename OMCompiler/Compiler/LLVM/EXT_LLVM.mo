@@ -264,19 +264,18 @@ end genSetupDataStrucShell;
 
 function genMainShim
   "Emit  int main(int argc, char **argv)  whose body alloca's
-   MODEL_DATA + SIMULATION_INFO on the stack, materialises the four
-   model-identifier strings (modelName, prefix, GUID, _info.json
-   path) as private IR globals, and tail-calls omc_jit_main_runtime
-   in the libomcruntime adapter. modelGuid is the SerializeInitXML
-   guid the CodegenC setupDataStruc would have written; passing it in
-   keeps the SCTL bitcode parallel to the C-driver bitcode for the
-   same build. Returns 0 on success."
+   MODEL_DATA + SIMULATION_INFO on the stack, materialises three
+   model-identifier strings (modelName, modelFilePrefix,
+   <prefix>_info.json path) as private IR globals, and tail-calls
+   omc_jit_main_runtime in the libomcruntime adapter. The GUID is
+   read out of <prefix>_init.xml by the adapter itself so SCTL and
+   SerializeInitXML do not have to share state. Returns 0 on
+   success."
   input String modelName;
-  input String modelGuid;
   output Integer status;
-  external "C" status = createMainShim(modelName, modelGuid)
+  external "C" status = createMainShim(modelName)
     annotation(Library = "omcruntime",
-               Include = "int createMainShim(const char *modelName, const char *modelGuid);");
+               Include = "int createMainShim(const char *modelName);");
 end genMainShim;
 
 function setLinkonceOdr

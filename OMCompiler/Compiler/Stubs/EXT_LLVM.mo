@@ -147,7 +147,6 @@ end genSetupDataStrucFull;
 
 function genMainShim
   input String modelName;
-  input String modelGuid;
   output Integer status = 1;
 end genMainShim;
 

@@ -202,42 +202,35 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    `omc_jit_*`; the JIT's `DynamicLibrarySearchGenerator` resolves
    them against omcruntime in-process. SCTL emits zero solver IR
    per model.
-8. **CodegenC suppression.** Final. JIT mode is now a first-class
-   `Config.simCodeTarget()` value `"llvm-jit"` (the `-d=jitSimulate`
-   flag aliases to it inside `Config.simCodeTarget`). Every
-   build / simulate / codegen dispatch consults the target. The
-   actual `<Model>.c` skip is **not** done yet -- the LLVM JIT path
-   has to take ownership of the metadata flow without touching the C
-   codegen modules. Two pieces are needed, both staying inside
-   `OMCompiler/Compiler/LLVM/` + `OMCompiler/Compiler/runtime/`:
+8. **CodegenC suppression.** DONE for the HelloWorld class.
+   `Config.simCodeTarget()` resolves `-d=jitSimulate` to `"llvm-jit"`
+   and `SimCodeMain.callTargetTemplates`'s C case gates the
+   `<Model>.c` emission on `target <> "llvm-jit"`. The
+   `omc_jit_main_runtime` adapter reads the GUID out of
+   `<prefix>_init.xml` at startup and writes it to
+   `modelData->modelGUID`, so the runtime's GUID cross-check
+   matches without any state shared back into CodegenC.
 
-     a. **The model GUID.** `_main_SimulationRuntime` cross-checks
-        `modelData->modelGUID` against the GUID stamped into
-        `<prefix>_init.xml`. SerializeInitXML still emits the XML
-        under llvm-jit (the metadata is genuinely useful: solver
-        reads var info, equation info, start values). The LLVM JIT
-        adapter (`omc_jit_main_runtime`) should read the GUID out
-        of the init.xml at startup and set
-        `modelData->modelGUID` to that value -- the SCTL main shim
-        passes no GUID at all. Keeps the GUID coordination on the
-        LLVM side, no CodegenC pollution.
+   HelloWorld now runs with no `<Model>.c` on disk and no
+   `<prefix>.bc` either (every catalog-displaced satellite
+   skips clang too); the JIT consumes the SCTL bitcode alone.
+   Models with features SCTL does not yet cover regress
+   (BouncingBall's zero crossings + extra equations leaves
+   per-equation symbols dangling because the cutover removes
+   the strong CodegenC definitions that previously satisfied
+   them). The fix is per-feature: lift the missing pieces in
+   SCTL (e.g. `emitInitialEquationsBlock` should emit each
+   `<Model>_eqFunction_N` as a callable symbol, not just inline
+   its body into `functionInitialEquations_0`). Treat each gap
+   as a Feature predicate that, when failing, falls back to
+   the non-cutover path by re-emitting `<Model>.c` for the
+   affected model -- not yet wired today; the regression is
+   visible as a "JIT session error: Symbols not found" message.
 
-     b. **modelData data tables.** `solver_main` populates
-        `realVarsData`, `integerVarsData`, ... from
-        `_info.json` / `_init.xml`. Either keep the XML/JSON read
-        as today (works fine, the only artifact on disk is the
-        metadata) or replace it with direct SCTL IR population.
-        Today's working state is the former, and that is the right
-        choice: the metadata flow stays untouched, the LLVM JIT
-        just consumes the same files the C path produces.
-
-   Until (a) lands, the SCTL-emitted `<Model>_callback`,
-   `_setupDataStruc`, `main`, equation functions, and leaf stubs
-   stay `linkonce_odr` and CodegenC's strong copies win at
-   llvm-link. The IR is durable preparation; flipping the gate in
-   `SimCodeMain.callTargetTemplates`'s `case "C"` and the linkage
-   in the C++ emitters becomes a single-commit cutover once the
-   GUID-read-from-XML lands in the adapter.
+   `compileModelToBitcode` itself can be deleted once
+   `_functions.c` / `_08bnd.c` / `_05evt.c` / `_12jac.c` lift
+   through real-IR emission so the satellite files stop being
+   written to disk.
 
 ---
 

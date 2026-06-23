@@ -104,6 +104,57 @@ static int omc_jit_rml_execution_failed(void)
   return 1;
 }
 
+/* Parse the guid= line out of <prefix>_init.xml so the adapter can set
+ * modelData->modelGUID to the value SerializeInitXML wrote (the
+ * simulation runtime cross-checks the two and aborts on mismatch).
+ *
+ * The native path solves this by having CodegenC's setupDataStruc bake
+ * the same UUID into both the .c source (via SerializeInitXML's
+ * shared `guid` argument) and the .xml metadata. The LLVM JIT path
+ * never sees that UUID -- the SCTL main shim runs after the XML is
+ * already on disk, and pushing the UUID through Global state from the
+ * C codegen case would couple the two paths. Reading the XML here
+ * keeps the coordination local to the LLVM tree.
+ *
+ * Returns a pointer into a static buffer (one-model-per-JIT-session
+ * is the assumption today; if the cache grows beyond that this needs
+ * to become per-model storage). Empty string on parse failure -- the
+ * runtime will then assert with a clear "GUID does not match"
+ * message rather than crash. */
+static const char *omc_jit_read_guid_from_xml(const char *const xmlPath)
+{
+  static char guidBuf[64];
+  guidBuf[0] = '\0';
+  FILE *const f = fopen(xmlPath, "r");
+  if (!f) {
+    fprintf(stderr,
+            "[omc_jit_main_runtime] cannot open '%s' to read GUID\n",
+            xmlPath);
+    return guidBuf;
+  }
+  char line[2048];
+  while (fgets(line, sizeof(line), f)) {
+    /* Look for a line of the form:  guid = "..."  with any spacing.
+     * The XML the OMC SerializeInitXML emits matches this shape;
+     * a full XML parser is overkill for one field. */
+    const char *const k = strstr(line, "guid");
+    if (!k) continue;
+    const char *eq = strchr(k, '=');
+    if (!eq) continue;
+    const char *const q1 = strchr(eq, '"');
+    if (!q1) continue;
+    const char *const q2 = strchr(q1 + 1, '"');
+    if (!q2) continue;
+    const size_t n = (size_t)(q2 - q1 - 1);
+    if (n >= sizeof(guidBuf)) break;
+    memcpy(guidBuf, q1 + 1, n);
+    guidBuf[n] = '\0';
+    break;
+  }
+  fclose(f);
+  return guidBuf;
+}
+
 /* Single-call entry the SCTL main shim invokes. Handles the whole
  * CodegenC main() body that is impractical to lift line-by-line into
  * IR (MMC_TRY_TOP / MMC_TRY_STACK setjmp dance, omc_assert global
@@ -117,19 +168,25 @@ int omc_jit_main_runtime(int argc, char **argv,
                          void (*setupDataStruc)(DATA *, threadData_t *),
                          const char *modelName,
                          const char *modelFilePrefix,
-                         const char *modelGUID,
                          const char *infoJsonFile)
 {
   /* CodegenC's setupDataStruc sets these inline; the JIT path passes
-   * them as args so SCTL can emit the string constants as private
-   * IR globals. modelDataXml.fileName is the load-bearing one --
-   * solver_main reads the _info.json from this path. */
+   * them as args so SCTL can emit the string constants as private IR
+   * globals. modelDataXml.fileName and modelGUID are load-bearing:
+   * solver_main reads the _info.json from the former and asserts the
+   * latter against the value in <prefix>_init.xml. We read the GUID
+   * out of the XML here so the runtime check always succeeds without
+   * the SCTL bitcode having to know what SerializeInitXML wrote. */
   modelData->modelName = modelName;
   modelData->modelFilePrefix = modelFilePrefix;
   modelData->modelFileName = "<jit>";
   modelData->resultFileName = NULL;
   modelData->modelDir = "";
-  modelData->modelGUID = modelGUID;
+  {
+    char xmlPath[1024];
+    snprintf(xmlPath, sizeof(xmlPath), "%s_init.xml", modelFilePrefix);
+    modelData->modelGUID = omc_jit_read_guid_from_xml(xmlPath);
+  }
   modelData->initXMLData = NULL;
   modelData->modelDataXml.infoXMLData = NULL;
   modelData->modelDataXml.fileName = infoJsonFile;

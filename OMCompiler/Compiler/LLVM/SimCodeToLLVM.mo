@@ -2150,18 +2150,14 @@ end spatialDistributionCount;
 protected function emitMainShimBlock
   "Emit  int main(int, char**)  into the active Pass-2 module. Must
    run after emitSetupDataStrucShellBlock so the shim's call to
-   <Model>_setupDataStruc resolves within the same module. The model
-   GUID baked into the IR today is a fresh System.getUUIDStr() --
-   the SCTL main is linkonce_odr and CodegenC's strong main wins at
-   llvm-link, so the value is unobservable. When the cutover happens
-   (CodegenC <Model>.c gone) the GUID coordination needs a different
-   plumbing (SCTL would also need to populate modelData data tables
-   directly, replacing the init.xml / info.json metadata read)."
+   <Model>_setupDataStruc resolves within the same module. The
+   adapter reads the model GUID out of <prefix>_init.xml at runtime
+   so SCTL never has to coordinate with SerializeInitXML."
   input Absyn.Path modelName;
 protected
   Integer st;
 algorithm
-  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName), System.getUUIDStr());
+  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName));
   if st <> 0 then
     fail();
   end if;

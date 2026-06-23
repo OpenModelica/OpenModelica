@@ -1055,9 +1055,7 @@ extern "C" int createSetupDataStrucShell(const char *const modelName) {
  *
  * Returns 0 on success.
  * ------------------------------------------------------------------------ */
-extern "C" int createMainShim(const char *const modelName,
-                              const char *const modelGuidIn) {
-  const std::string modelGuid(modelGuidIn ? modelGuidIn : "");
+extern "C" int createMainShim(const char *const modelName) {
   if (!program || !program->module) {
     fprintf(stderr, "createMainShim: no active module\n");
     return 1;
@@ -1109,10 +1107,10 @@ extern "C" int createMainShim(const char *const modelName,
   llvm::FunctionCallee setupCallee =
       mod.getOrInsertFunction(setupName, setupTy);
 
-  /* Emit private string constants for the four model-identifier
-   * strings the adapter needs. modelGUID is per-build (the
-   * SerializeInitXML guid that CodegenC's setupDataStruc would have
-   * emitted) -- caller passes it in via the createMainShim signature. */
+  /* Emit private string constants for the three model-identifier
+   * strings the adapter needs (the modelGUID is read out of
+   * <prefix>_init.xml by the adapter itself, so the shim does not
+   * pass it). */
   auto emitStr = [&](const std::string &val, const std::string &name)
       -> llvm::Constant * {
     llvm::Constant *const init =
@@ -1126,12 +1124,11 @@ extern "C" int createMainShim(const char *const modelName,
   const std::string p(modelName);
   llvm::Constant *const sName = emitStr(p, p + "_jit_modelName");
   llvm::Constant *const sPrefix = emitStr(p, p + "_jit_modelPrefix");
-  llvm::Constant *const sGuid = emitStr(modelGuid, p + "_jit_modelGUID");
   llvm::Constant *const sJson =
       emitStr(p + "_info.json", p + "_jit_jsonFile");
 
   llvm::FunctionType *const adapterTy = llvm::FunctionType::get(
-      i32, {i32, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy},
+      i32, {i32, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy},
       false);
   llvm::FunctionCallee adapterCallee =
       mod.getOrInsertFunction("omc_jit_main_runtime", adapterTy);
@@ -1140,7 +1137,7 @@ extern "C" int createMainShim(const char *const modelName,
       adapterCallee,
       {argcArg, argvArg, modelDataAlloca, simInfoAlloca,
        llvm::cast<llvm::Constant>(setupCallee.getCallee()),
-       sName, sPrefix, sGuid, sJson},
+       sName, sPrefix, sJson},
       "res");
   b.CreateRet(res);
 
@@ -1245,7 +1242,7 @@ extern "C" int omc_jit_performQSSSimulation(struct DATA *, struct threadData_s *
 extern "C" void omc_jit_updateContinuousSystem(struct DATA *, struct threadData_s *);
 extern "C" int omc_jit_main_runtime(int, char **, void *, void *, void *,
                                     const char *, const char *,
-                                    const char *, const char *);
+                                    const char *);
 static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_performSimulation),
   reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
