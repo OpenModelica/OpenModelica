@@ -218,17 +218,45 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    path that keeps `_07dly.c` on clang absorbs the difference;
    the dynamic equations all lower cleanly).
 
-   **Per-model gate.** `SimCodeMain.callTargetTemplates`'s C case
-   calls `SimCodeToLLVM.canCoverModel(simCode)` directly (no Global
-   slot dance) and only skips `<Model>.c` when the preflight
-   passes -- structural check: no zero crossings, no clocked
-   partitions, no state sets, all dynamic equations classify and
-   lower cleanly. Models that fail the gate keep getting
-   `<Model>.c` emitted; the SCTL-emitted IR coexists as
-   `linkonce_odr` so llvm-link picks the strong CodegenC copy.
-   BouncingBall takes this fallback today (the bounce event's
-   `relationhysteresis` lowering isn't covered by `emitEquation`).
-   Closing that gap is the next per-feature lift.
+   **No silent fallback.** `target == "llvm-jit"` always skips
+   `<Model>.c`. `canCoverModel(simCode)` returning false triggers a
+   loud compiler warning naming the missing constructs; the
+   eventual JIT-link "Symbols not found" error then points at the
+   specific `eqFunction_<idx>` (or other) symbol the user is
+   missing. No quiet C-path re-emission masquerading as a JIT
+   success.
+
+   **Per-recipe emission.** `emitDynamicEquationsBlock` and
+   `emitInitialEquationsBlock` emit each `eqFunction_<idx>` that
+   classifies cleanly; unsupported recipes leave the symbol
+   undefined on purpose, so the JIT-link error names exactly which
+   one. Earlier behaviour was to short-circuit the whole block on
+   the first `EQ_UNSUPPORTED`, which made every dynamic symbol
+   missing instead of just the one with the unsupported construct.
+
+   **BouncingBall.** Currently fails JIT with `Symbols not found:
+   [ BouncingBall_eqFunction_7 ]`. The blockers, in order of how
+   much new SCTL machinery each requires:
+
+     1. `eq_7`: `boolean = relationhysteresis(state, threshold, ...)`.
+        Needs a new `VK_BOOL_DISCRETE` VarKind, layout support for
+        `data->localData[0]->booleanVars[booleanVarsIndex[idx]]`,
+        a new `EqRecipe` variant for the relation pattern, and an
+        emit path that calls the `relationhysteresis` runtime
+        helper. Hours of focused work.
+
+     2. `eq_10` (SES_WHEN): edge detection on the discrete
+        boolean, conditional reinit of a state variable, a
+        `needToIterate` store on `simulationInfo`. Hours more.
+
+     3. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
+        lookups (read `realVarsData[idx].attribute.start.data[0]`),
+        writes to `simulationInfo->realVarsPre[idx]`, reads from
+        `realParameter` into state slots. A handful of EqRecipe
+        variants + their emit branches. Hours.
+
+   Each one is a self-contained lift; landing them one by one
+   moves BB toward the JIT path without touching unrelated code.
 
    `compileModelToBitcode` itself can be deleted once
    `_functions.c` / `_08bnd.c` / `_05evt.c` / `_12jac.c` lift

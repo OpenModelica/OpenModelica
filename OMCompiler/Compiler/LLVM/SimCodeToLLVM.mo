@@ -1189,13 +1189,21 @@ algorithm
     return;
   end if;
   recipes := List.map1(dynamicEqs, classifySimEq, layout);
-  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
-  if not ok then
-    return;
-  end if;
-  ok := List.all(recipes, function canLowerEquation(layout = layout));
-  if not ok then return; end if;
-  ok := List.all(List.zip(dynamicEqs, recipes), function emitNamedEquationFunction(prefix = prefix, layout = layout));
+  /* Emit every recipe that classifies cleanly. Unclassifiable ones are
+   * left undefined on purpose -- the JIT-link error then names the
+   * specific eqFunction_<idx> the user is missing, instead of the
+   * whole block silently dropping every emission because one
+   * equation triggered EQ_UNSUPPORTED. emitNamedEquationFunction
+   * already gates internally (it short-circuits its own body when
+   * canLowerEquation says no for that single recipe) and always
+   * leaves a well-formed function in the module, so a per-recipe
+   * loop is safe. */
+  ok := true;
+  for tup in List.zip(dynamicEqs, recipes) loop
+    if not emitNamedEquationFunction(prefix, tup, layout) then
+      ok := false;
+    end if;
+  end for;
 end emitDynamicEquationsBlock;
 
 protected function modelHasNoEvents
