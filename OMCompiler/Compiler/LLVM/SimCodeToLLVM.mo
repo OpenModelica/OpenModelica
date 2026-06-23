@@ -114,6 +114,19 @@ public uniontype VarKind
   record VK_BOOL_PARAM end VK_BOOL_PARAM;
 end VarKind;
 
+/* Cached singleton instances of every no-field VarKind variant.
+ * Reuse these throughout SCTL instead of allocating a fresh
+ * VK_STATE() / VK_PARAM() / ... per call site -- the records have
+ * no fields so referenceEqual against the singleton is equivalent
+ * to a tag check and avoids the heap allocation that constructing
+ * a new immutable record would otherwise incur on hot paths like
+ * buildVarLayout and emitCrefRead. */
+public constant VarKind VKS_STATE      = VK_STATE();
+public constant VarKind VKS_DERIVATIVE = VK_DERIVATIVE();
+public constant VarKind VKS_ALG        = VK_ALG();
+public constant VarKind VKS_PARAM      = VK_PARAM();
+public constant VarKind VKS_BOOL_PARAM = VK_BOOL_PARAM();
+
 public uniontype VarSlot
   record VAR_SLOT
     VarKind kind;
@@ -1878,7 +1891,7 @@ algorithm
       algorithm
         (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
         if exprOk then
-          emitWriteRealVar(absoluteSlot(VK_DERIVATIVE(), slot, ctx2.layout),
+          emitWriteRealVar(absoluteSlot(VKS_DERIVATIVE, slot, ctx2.layout),
                            rhsTmp);
         end if;
       then (ctx2, exprOk);
@@ -1886,7 +1899,7 @@ algorithm
       algorithm
         (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
         if exprOk then
-          emitWriteRealVar(absoluteSlot(VK_STATE(), slot, ctx2.layout),
+          emitWriteRealVar(absoluteSlot(VKS_STATE, slot, ctx2.layout),
                            rhsTmp);
         end if;
       then (ctx2, exprOk);
@@ -1894,7 +1907,7 @@ algorithm
       algorithm
         (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
         if exprOk then
-          emitWriteRealVar(absoluteSlot(VK_ALG(), slot, ctx2.layout),
+          emitWriteRealVar(absoluteSlot(VKS_ALG, slot, ctx2.layout),
                            rhsTmp);
         end if;
       then (ctx2, exprOk);
@@ -2597,11 +2610,11 @@ algorithm
       then (stateVars, derivativeVars, algVars, paramVars, boolParamVars);
   end match;
 
-  for v in stateVars      loop entries := addEntry(v, VK_STATE(),      entries); end for;
-  for v in derivativeVars loop entries := addEntry(v, VK_DERIVATIVE(), entries); end for;
-  for v in algVars        loop entries := addEntry(v, VK_ALG(),        entries); end for;
-  for v in paramVars      loop entries := addEntry(v, VK_PARAM(),      entries); end for;
-  for v in boolParamVars  loop entries := addEntry(v, VK_BOOL_PARAM(), entries); end for;
+  for v in stateVars      loop entries := addEntry(v, VKS_STATE,      entries); end for;
+  for v in derivativeVars loop entries := addEntry(v, VKS_DERIVATIVE, entries); end for;
+  for v in algVars        loop entries := addEntry(v, VKS_ALG,        entries); end for;
+  for v in paramVars      loop entries := addEntry(v, VKS_PARAM,      entries); end for;
+  for v in boolParamVars  loop entries := addEntry(v, VKS_BOOL_PARAM, entries); end for;
 
   layout := VAR_LAYOUT(entries,
                       listLength(stateVars),

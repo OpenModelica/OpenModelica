@@ -5997,7 +5997,7 @@ algorithm
     // a name prefix (e.g. HelloWorld*.c matches HelloWorldSim_*.c too),
     // producing duplicate-symbol failures at llvm-link.
     "shopt -s nullglob\n",
-    "BCS=()\n",
+    "SRCS=()\n",
     "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
     // SimCodeToLLVM owns these entry points in-memory (either via a stub
     // in the runtimeEntryCatalog or because the .c file is empty); skip
@@ -6007,9 +6007,27 @@ algorithm
     stringAppendList(list("    " + prefix + skip + ") continue ;;\n"
                            for skip in skipFiles)),
     "  esac\n",
-    "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
+    "  SRCS+=(\"$f\")\n",
+    "done\n",
+    "BCS=()\n",
+    // Fan out clang invocations in parallel: each .c -> .bc compile is
+    // independent and the per-process clang startup cost dominates the
+    // actual work for the trivial-but-numerous segments OpenModelica
+    // emits (HelloWorld spent ~700 ms on six sequential ~120 ms clang
+    // invocations). Bound concurrency to nproc to keep the build
+    // machine responsive.
+    "JOBS=$(nproc 2>/dev/null || echo 4)\n",
+    "PIDS=()\n",
+    "for f in \"${SRCS[@]}\"; do\n",
+    "  while [ ${#PIDS[@]} -ge $JOBS ]; do\n",
+    "    if ! wait -n; then exit 1; fi\n",
+    "    NEW_PIDS=(); for p in \"${PIDS[@]}\"; do kill -0 $p 2>/dev/null && NEW_PIDS+=($p); done; PIDS=(\"${NEW_PIDS[@]}\")\n",
+    "  done\n",
+    "  ( eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\" ) &\n",
+    "  PIDS+=($!)\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
     "done\n",
+    "wait\n",
     // SimCodeToLLVM's bitcode arrives in-memory via stashCurrentModuleAsBitcode;
     // omc_runModelViaJIT adds it to the LLJIT before this <prefix>.bc.
     "\"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
