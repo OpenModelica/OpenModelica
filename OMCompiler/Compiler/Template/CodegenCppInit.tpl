@@ -186,6 +186,7 @@ template scalarVariableAttributeXML(SimVar simVar, SimCode simCode, String index
 ::=
   match simVar
     case SIMVAR(source = SOURCE(info = info)) then
+      let valueReference = SimCodeUtil.getValueReference(simVar, simCode, true)
       let alias = getAliasAttribute(aliasvar)
       let causalityAtt = CodegenFMUCommon.getCausality(causality)
       let variability = getVariablity(varKind)
@@ -193,7 +194,7 @@ template scalarVariableAttributeXML(SimVar simVar, SimCode simCode, String index
       let hr = match hideResult case SOME(bval) then '<%bval%>'
       let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>" hideResult="<%hr%>" isDiscrete="<%isDiscrete%>" isValueChangeable="<%isValueChangeable%>"'
       <<
-      name="<%System.stringReplace(Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name)),"$", "_D_")%>" valueReference="<%index%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
+      name="<%System.stringReplace(Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name)),"$", "_D_")%>" valueReference="<%valueReference%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
       >>
 end scalarVariableAttributeXML;
 

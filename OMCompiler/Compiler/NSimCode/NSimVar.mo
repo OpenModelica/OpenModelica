@@ -1262,6 +1262,28 @@ public
       Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
+    function scalarSize
+      "Number of scalar elements a simvar occupies in the per-type storage vectors.
+       With simCodeScalarize=false arrays are kept un-expanded (one simvar per array),
+       but the C++ runtime sizes its var vectors and value references per scalar element,
+       so counts must sum the array sizes rather than just counting simvars (#15496)."
+      input SimVar v;
+      output Integer sz = 1;
+    algorithm
+      for e in v.numArrayElement loop
+        sz := sz * Expression.integerValueOrDefault(e, 1);
+      end for;
+    end scalarSize;
+
+    function listScalarSize
+      input list<SimVar> vars;
+      output Integer sz = 0;
+    algorithm
+      for v in vars loop
+        sz := sz + scalarSize(v);
+      end for;
+    end listScalarSize;
+
     function create
       input SimVars vars;
       input EventInfo eventInfo;
@@ -1273,23 +1295,23 @@ public
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
-        numStateVars                 = listLength(vars.stateVars),
-        numAlgVars                   = listLength(vars.algVars),
-        numDiscreteReal              = listLength(vars.discreteAlgVars),
-        numIntAlgVars                = listLength(vars.intAlgVars),
-        numBoolAlgVars               = listLength(vars.boolAlgVars),
-        numAlgAliasVars              = listLength(vars.aliasVars),
-        numIntAliasVars              = listLength(vars.intAliasVars),
-        numBoolAliasVars             = listLength(vars.boolAliasVars),
-        numParams                    = listLength(vars.paramVars),
-        numIntParams                 = listLength(vars.intParamVars),
-        numBoolParams                = listLength(vars.boolParamVars),
+        numStateVars                 = listScalarSize(vars.stateVars),
+        numAlgVars                   = listScalarSize(vars.algVars),
+        numDiscreteReal              = listScalarSize(vars.discreteAlgVars),
+        numIntAlgVars                = listScalarSize(vars.intAlgVars),
+        numBoolAlgVars               = listScalarSize(vars.boolAlgVars),
+        numAlgAliasVars              = listScalarSize(vars.aliasVars),
+        numIntAliasVars              = listScalarSize(vars.intAliasVars),
+        numBoolAliasVars             = listScalarSize(vars.boolAliasVars),
+        numParams                    = listScalarSize(vars.paramVars),
+        numIntParams                 = listScalarSize(vars.intParamVars),
+        numBoolParams                = listScalarSize(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
         numInVars                    = listLength(vars.inputVars),
         numExternalObjects           = listLength(vars.extObjVars),
-        numStringAlgVars             = listLength(vars.stringAlgVars),
-        numStringParamVars           = listLength(vars.stringParamVars),
-        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numStringAlgVars             = listScalarSize(vars.stringAlgVars),
+        numStringParamVars           = listScalarSize(vars.stringParamVars),
+        numStringAliasVars           = listScalarSize(vars.stringAliasVars),
         numEquations                 = simCodeIndices.equationIndex,
         numLinearSystems             = simCodeIndices.linearSystemIndex,
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,

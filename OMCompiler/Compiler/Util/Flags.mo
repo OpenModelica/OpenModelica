@@ -1400,7 +1400,9 @@ constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
 /* please remove me once this is supported */
 constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  "Scalarizes variables during simcode phase.");
+  "Scalarizes variables during simcode phase. Only consulted by the new backend.
+   Defaults to true; the C++ target (simCodeTarget=Cpp) forces it false so arrays
+   are kept un-expanded as StatArrayDim members (see SimCodeMain, issue #15496).");
 constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Executes the string argument as a script before any other operation.");
