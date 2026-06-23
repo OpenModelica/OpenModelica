@@ -305,27 +305,66 @@ end genRecordDeclDef;
 
 function genProgram
   "Given a MidCodeProgram.
-   Lower each function to LLVM-IR function"
+   Lower each function to LLVM-IR function. Per-function try/else
+   so a single failing function (e.g. one whose return type is
+   DAE.T_UNKNOWN and trips MMC_THROW in createFunctionType) does
+   not abort lowering of the surrounding functions; SCTL drives
+   this with model-wide user-function lists and one bad lowering
+   should not kill the rest."
   input MidCode.Program p;
+protected
+  list<MidCode.Function> okFuncs;
 algorithm
   try
-    /* Configure optimisations */
     EXT_LLVM.setOptSettings(not Flags.isSet(Flags.JIT_NO_OPT));
-    /*
-       First generate function and record declarations. This is needed  since functions may call each other before they are defined.
-       Once this is done we generate the concrete functions.
-    */
     List.map_0(p.records, genRecordDecl);
-    List.map_0(p.functions, genDeclaration);
-    List.map_0(p.functions, genFunction);
   else
     if Flags.isSet(Flags.FAILTRACE) then
-      print(MidCodeUtil.dumpProgram(p));
-      Debug.trace("MidToLLVM.genProgram failed:" + MidCodeUtil.dumpProgram(p));
+      Debug.trace("MidToLLVM.genProgram: record / opt-settings step failed\n");
     end if;
-      print(MidCodeUtil.dumpProgram(p));
   end try;
+  /* Two passes (declarations then bodies) keep mutual recursion
+   * working. The shared state on success is the function name in
+   * the LLVM module; if declaration failed (e.g. MMC_THROW from
+   * createFunctionType on an unknown return type) the body pass
+   * would assert on the missing Function*, so we collect the
+   * successfully-declared functions and only emit bodies for those. */
+  okFuncs := {};
+  for f in p.functions loop
+    if tryGenDeclaration(f) then
+      okFuncs := f :: okFuncs;
+    end if;
+  end for;
+  okFuncs := listReverse(okFuncs);
+  for f in okFuncs loop
+    tryGenFunction(f);
+  end for;
 end genProgram;
+
+function tryGenDeclaration
+  input MidCode.Function f;
+  output Boolean ok;
+algorithm
+  try
+    genDeclaration(f);
+    ok := true;
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("MidToLLVM.tryGenDeclaration: skipped function\n");
+    end if;
+    ok := false;
+  end try;
+end tryGenDeclaration;
+
+function tryGenFunction
+  input MidCode.Function f;
+algorithm
+  try genFunction(f); else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("MidToLLVM.tryGenFunction: skipped function\n");
+    end if;
+  end try;
+end tryGenFunction;
 
 protected
 

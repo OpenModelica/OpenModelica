@@ -556,8 +556,21 @@ int createFunctionProtArg(const uint8_t type, const char *name) {
 int createFunctionType(uint8_t type,
                        const char *structName /*To fetch the correct struct*/) {
   DBG("Calling createFunctionType type: %s structName: %s \n", getModelicaLLVMTypeString(type), structName);
+  llvm::Type *retTy = getLLVMType(type, structName);
+  /* MODELICA_UNKNOWN (0) reaches us when DAEToMid produced a function
+   * whose return type is DAE.T_UNKNOWN. llvm::FunctionType::get
+   * segfaults on a null return type, so raise an MMC failure that
+   * MidToLLVM.genProgram's try/else block catches and turns into a
+   * skipped-function rather than an omc crash. Mirrors the
+   * MMC_THROW path in createFunctionProtArg for unknown arg types. */
+  if (!retTy) {
+    fprintf(stderr,
+            "createFunctionType: unknown return type %u, raising MMC failure\n",
+            (unsigned)type);
+    MMC_THROW();
+  }
   program->currentFunc->setPrototypeFunctionType(
-      llvm::FunctionType::get(getLLVMType(type, structName),
+      llvm::FunctionType::get(retTy,
                               program->currentFunc->getPrototypeArgs(), false));
   return 0;
 }
