@@ -579,14 +579,15 @@ algorithm
      * function) does not abort the whole genSim. A failed block
      * just does not record its segment file into the dynamic skip
      * list, leaving the corresponding _XX.c on the clang path. */
-    try _ := emitInitialEquationsBlock(simCode, layout); else end try;
-    try emitBoundParametersBlock(simCode, layout); else end try;
-    try emitEventBlock(simCode, layout); else end try;
-    try emitJacobianBlock(simCode); else end try;
-    try emitRecordsBlock(simCode); else end try;
-    try emitFunctionsBlock(simCode); else end try;
-    try emitNonlinearSystemsBlock(simCode); else end try;
-    try emitLinearSystemsBlock(simCode); else end try;
+    try _ := emitInitialEquationsBlock(simCode, layout); else reportBlockFailure("emitInitialEquationsBlock", name); end try;
+    try emitBoundParametersBlock(simCode, layout);       else reportBlockFailure("emitBoundParametersBlock", name); end try;
+    try emitEventBlock(simCode, layout);                 else reportBlockFailure("emitEventBlock", name); end try;
+    try emitJacobianBlock(simCode);                      else reportBlockFailure("emitJacobianBlock", name); end try;
+    try emitRecordsBlock(simCode);                       else reportBlockFailure("emitRecordsBlock", name); end try;
+    try emitFunctionsBlock(simCode);                     else reportBlockFailure("emitFunctionsBlock", name); end try;
+    try emitNonlinearSystemsBlock(simCode);              else reportBlockFailure("emitNonlinearSystemsBlock", name); end try;
+    try emitLinearSystemsBlock(simCode);                 else reportBlockFailure("emitLinearSystemsBlock", name); end try;
+    try emitMixedSystemsBlock(simCode);                  else reportBlockFailure("emitMixedSystemsBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -1843,6 +1844,76 @@ algorithm
     recordDisplacedSegment("_03lsy.c");
   end if;
 end emitLinearSystemsBlock;
+
+protected function reportBlockFailure
+  "Diagnostic for a Pass-2 emitter that raised an MMC failure.
+   The block-level try/else above catches the failure so the
+   remaining blocks can still run, but we want the user to see
+   WHICH block failed and for which model so they can either
+   open a bug or arrange a fallback. The message routes through
+   Error.addInternalError so it lands in the SimulationResult
+   diagnostics, not just stderr."
+  input String blockName;
+  input Absyn.Path modelName;
+algorithm
+  Error.addInternalError(
+    "SimCodeToLLVM Pass 2: " + blockName + " raised MMC failure on '" +
+    AbsynUtil.pathString(modelName) +
+    "' -- this block's segment stays on the clang path; other " +
+    "blocks continue normally. Set +d=failtrace for the deeper trace.\n",
+    sourceInfo());
+end reportBlockFailure;
+
+protected function eqIsMixed
+  "True iff this equation system is a mixed continuous/discrete
+   SES_MIXED. Used by emitMixedSystemsBlock to decide whether
+   _11mix.c is structurally empty."
+  input SimCode.SimEqSystem eq;
+  output Boolean isMixed;
+algorithm
+  isMixed := match eq
+    case SimCode.SES_MIXED() then true;
+    else false;
+  end match;
+end eqIsMixed;
+
+protected function hasAnyMixedSystem
+  "True iff the SimCode has any SES_MIXED in the equation lists
+   that _11mix.c would otherwise expose. CodegenC's _11mix
+   template covers initial, initial_lambda0, parameter, model,
+   and jacobian mixed systems, so we look across all the
+   equation lists that feed those template branches."
+  input SimCode.SimCode simCode;
+  output Boolean any;
+protected
+  list<SimCode.SimEqSystem> allEqs, initEqs, initLambda0, paramEqs, jacEqs;
+algorithm
+  (allEqs, initEqs, initLambda0, paramEqs, jacEqs) := match simCode
+    case SimCode.SIMCODE(allEquations = allEqs,
+                         initialEquations = initEqs,
+                         initialEquations_lambda0 = initLambda0,
+                         parameterEquations = paramEqs,
+                         jacobianEquations = jacEqs)
+      then (allEqs, initEqs, initLambda0, paramEqs, jacEqs);
+  end match;
+  any := List.any(allEqs, eqIsMixed)
+      or List.any(initEqs, eqIsMixed)
+      or List.any(initLambda0, eqIsMixed)
+      or List.any(paramEqs, eqIsMixed)
+      or List.any(jacEqs, eqIsMixed);
+end hasAnyMixedSystem;
+
+protected function emitMixedSystemsBlock
+  "Displace <Model>_11mix.c when the SimCode has no SES_MIXED
+   equations anywhere. CodegenC's _11mix template emits a
+   comment-and-include-only stub in that case (no exported
+   symbols). Mirrors emitNonlinearSystemsBlock / emitLinearSystemsBlock."
+  input SimCode.SimCode simCode;
+algorithm
+  if not hasAnyMixedSystem(simCode) then
+    recordDisplacedSegment("_11mix.c");
+  end if;
+end emitMixedSystemsBlock;
 
 protected function emitFunctionsBlock
   "Displace <Model>_functions.c when the SimCode has no
