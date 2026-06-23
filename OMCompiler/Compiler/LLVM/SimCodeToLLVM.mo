@@ -1148,16 +1148,22 @@ algorithm
 end collectAlgSynths;
 
 protected function isSimpleNonStiffODE
-  "True iff the model has no events and no parameter equations that
-   actually affect the integration result. Pure-diagnostic parameter
-   equations (range asserts) do not influence the ODE math, so a
-   model with only assertion-shaped parameter equations still counts
-   as a candidate for the JACOBIAN_NOT_AVAILABLE fallback path.
+  "True iff the model's parameter equations do not actually affect
+   the integration result. Pure-diagnostic parameter equations
+   (range asserts) do not influence the ODE math, so a model with
+   only assertion-shaped parameter equations still counts as a
+   candidate for the JACOBIAN_NOT_AVAILABLE fallback path.
 
    HelloWorld qualifies (no paramEqs). MinAssert qualifies (one
-   EQ_PARAM_RANGE_ASSERT, no impact on integration). ChuaCircuit
-   does not (it has real parameter-value equations setting up the
-   model)."
+   EQ_PARAM_RANGE_ASSERT). BouncingBall qualifies (the events live
+   in zeroCrossings / when-equations, not parameterEquations).
+   ChuaCircuit does not (real parameter-value equations setting up
+   the model).
+
+   Note: the previous version of this gate also excluded models
+   with events. That was conservative -- the Jacobian stubs only
+   stamp JACOBIAN_NOT_AVAILABLE and return 0 regardless of whether
+   the model has events, so the gate now only checks paramEqs."
   input SimCode.SimCode simCode;
   output Boolean ok;
 protected
@@ -1166,10 +1172,6 @@ protected
   SimCodeVar.SimVars vars;
   VarLayout layout;
 algorithm
-  if not modelHasNoEvents(simCode) then
-    ok := false;
-    return;
-  end if;
   paramEqs := match simCode
     case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
   end match;
