@@ -41,5 +41,25 @@ algorithm
   assert(false, getInstanceName());
 end initGen;
 
+function getLLVMToolsDir
+  "Stub. The real EXT_LLVM lives in OMCompiler/Compiler/LLVM/EXT_LLVM.mo
+   and routes to the C++ omc_getLLVMToolsDir helper compiled into omcruntime.
+   When omc is built without LLVM JIT support the C side returns an empty
+   string; we mirror that here without linking against the C symbol."
+  output String dir = "";
+end getLLVMToolsDir;
+
+function runModelViaJIT
+  "Stub. CevalScriptBackend.runModelViaLLVMJIT guards every call with a
+   getLLVMToolsDir check, so this stub returning non-zero (failure) just
+   tells the caller to fall back to the legacy buildModel path when the
+   LLVM JIT was not compiled in."
+  input String bitcodePath;
+  input String runtimeLib;
+  input String modelName;
+  input String logFile;
+  output Integer status = 1;
+end runModelViaJIT;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;
