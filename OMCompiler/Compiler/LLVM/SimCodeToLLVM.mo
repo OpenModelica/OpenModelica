@@ -810,6 +810,92 @@ algorithm
   emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
 end emitRuntimeVoidStub;
 
+protected function emitNamedEquationFunction
+  "Emit  void <prefix>_eqFunction_<idx>(DATA *data, threadData_t *threadData)
+   carrying a single recipe's body. Used so cross-file extern refs
+   from still-clang'd files (_05evt.c, the driver) resolve at JIT
+   link time. Returns false if the recipe failed to emit cleanly."
+  input String prefix;
+  input tuple<SimCode.SimEqSystem, EqRecipe> eqAndRecipe;
+  input VarLayout layout;
+  output Boolean ok;
+protected
+  SimCode.SimEqSystem eq;
+  EqRecipe recipe;
+  Integer eqIndex;
+  String fname;
+  EmitCtx ctx;
+algorithm
+  (eq, recipe) := eqAndRecipe;
+  eqIndex := simEqIndex(eq);
+  fname := prefix + "_eqFunction_" + intString(eqIndex);
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_VOID);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  ctx := EMIT_CTX(layout, 0);
+  (_, ok) := emitEquation(recipe, ctx);
+  EXT_LLVM.genReturnVoid();
+  EXT_LLVM.finnishGen();
+end emitNamedEquationFunction;
+
+protected function simEqIndex
+  "Pull the source-level equation index off a SimEqSystem variant."
+  input SimCode.SimEqSystem eq;
+  output Integer index;
+algorithm
+  index := match eq
+    case SimCode.SES_SIMPLE_ASSIGN()     then eq.index;
+    case SimCode.SES_ALGORITHM()         then eq.index;
+    case SimCode.SES_RESIDUAL()          then eq.index;
+    case SimCode.SES_LINEAR()            then 0;
+    case SimCode.SES_NONLINEAR()         then 0;
+    case SimCode.SES_MIXED()             then eq.index;
+    case SimCode.SES_WHEN()              then eq.index;
+    case SimCode.SES_IFEQUATION()        then eq.index;
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then eq.index;
+    case SimCode.SES_ALIAS()             then eq.index;
+    else 0;
+  end match;
+end simEqIndex;
+
+protected function emitInitialEquationsDispatcher
+  "Emit  void <prefix>_functionInitialEquations_0(DATA *data,
+                                                 threadData_t *threadData)
+   that calls each <prefix>_eqFunction_<idx> in initEqs order. Skips
+   SES_ALIAS entries -- their body is shared with another equation
+   that already emits its own eqFunction symbol."
+  input String prefix;
+  input list<SimCode.SimEqSystem> initEqs;
+protected
+  String fname;
+  Integer eqIndex;
+algorithm
+  fname := prefix + "_functionInitialEquations_0";
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_VOID);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  for eq in initEqs loop
+    () := match eq
+      case SimCode.SES_ALIAS() then ();
+      else algorithm
+        eqIndex := simEqIndex(eq);
+        EXT_LLVM.genCallArg("data");
+        EXT_LLVM.genCallArg("threadData");
+        EXT_LLVM.genCall(prefix + "_eqFunction_" + intString(eqIndex),
+                         MODELICA_VOID, "", false);
+      then ();
+    end match;
+  end for;
+  EXT_LLVM.genReturnVoid();
+  EXT_LLVM.finnishGen();
+end emitInitialEquationsDispatcher;
+
 protected function emitInitialEquationsBlock
   "Emit the three runtime entry points produced by
    <Model>_06inz.c:
@@ -837,16 +923,6 @@ protected
   String prefix;
   Absyn.Path name;
 algorithm
-  /* Inlined init-eq bodies reference eqFunction_N symbols by index.
-   * Other CodegenC files (_05evt.c at least) call eqFunction_N via
-   * extern declarations; if those files are still being clang'd
-   * the symbols are unresolved at JIT link time. The cleanest
-   * dependency rule: only emit when _05evt.c is also displaced,
-   * which means the model has no zero crossings AND no relations. */
-  if not modelHasNoEvents(simCode) then
-    ok := false;
-    return;
-  end if;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
   initEqs := match simCode
@@ -866,13 +942,21 @@ algorithm
       return;
     end if;
   end for;
-  ok := emitEquationFunction(prefix + "_functionInitialEquations_0",
-                             recipes, layout, MODELICA_VOID);
-  if not ok then
-    /* canLowerEquation said yes but emit failed -- a bug in the
-     * mirror. Bail before emitting collide-able partial IR. */
-    return;
-  end if;
+  /* Emit each equation as its own  <Model>_eqFunction_<idx>
+   * (DATA*, threadData_t*) -> void  function and a
+   * <Model>_functionInitialEquations_0 dispatcher that calls them
+   * in order. The per-equation symbols make cross-file extern
+   * references from still-clang'd files (_05evt.c, the driver)
+   * resolve at JIT link time -- the previous inline-only emission
+   * left those symbols undefined and forced the modelHasNoEvents
+   * gate. */
+  for eqRec in List.zip(initEqs, recipes) loop
+    if not emitNamedEquationFunction(prefix, eqRec, layout) then
+      ok := false;
+      return;
+    end if;
+  end for;
+  emitInitialEquationsDispatcher(prefix, initEqs);
   /* Wrapper: CodegenC version calls _0 between discreteCall++/--.
    * Dropping the bookend is harmless for the ODE-only initialisation
    * path that DASSL drives. */
