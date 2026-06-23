@@ -1279,20 +1279,27 @@ algorithm
   end match;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
-  if not (listEmpty(zcs) and listEmpty(rels)) then
-    /* Real event handling needs more than the ZC-residual emission:
-     * _function_updateRelations must transition data->simulationInfo
-     * ->relationsPre / ->relations so the runtime fires event-action
-     * eqFunctions on the right side of a sign change. The current
-     * stub does not, and BouncingBall's `when h <= 0` reinit never
-     * triggers. Leaving _05evt.c to clang until updateRelations gets
-     * a real body. */
+  if listEmpty(zcs) and listEmpty(rels) then
+    /* No events -- pure-stub set, runtime never reads gout. */
+    emitRuntimeVoidStub(prefix + "_function_initSample");
+    emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
+    emitStub(prefix + "_function_ZeroCrossings",  MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+    emitStub(prefix + "_function_updateRelations", MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
+    emitStub(prefix + "_zeroCrossingDescription",  MODELICA_METATYPE, {MODELICA_INTEGER, MODELICA_METATYPE});
+    emitStub(prefix + "_relationDescription",      MODELICA_METATYPE, {MODELICA_INTEGER});
+    recordDisplacedSegment("_05evt.c");
+    return;
+  end if;
+  /* Model has events. Lower zero crossings + the relations update
+   * if every relation is in the simple DAE.RELATION shape SCTL
+   * understands. */
+  if not allZeroCrossingsLowerable(zcs, layout) then
     return;
   end if;
   emitRuntimeVoidStub(prefix + "_function_initSample");
   emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
-  emitStub(prefix + "_function_ZeroCrossings",  MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-  emitStub(prefix + "_function_updateRelations", MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
+  emitZeroCrossingsBody(prefix + "_function_ZeroCrossings", zcs, layout);
+  emitUpdateRelationsBody(prefix + "_function_updateRelations", zcs, layout);
   emitStub(prefix + "_zeroCrossingDescription",  MODELICA_METATYPE, {MODELICA_INTEGER, MODELICA_METATYPE});
   emitStub(prefix + "_relationDescription",      MODELICA_METATYPE, {MODELICA_INTEGER});
   recordDisplacedSegment("_05evt.c");
@@ -1378,6 +1385,47 @@ algorithm
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
 end emitZeroCrossingsBody;
+
+protected function emitUpdateRelationsBody
+  "Emit  int <fname>(DATA *data, threadData_t *threadData, int evalForZeroCross) {
+            <for each zc>
+              residual_i = <residual emission>;
+              omc_jit_relation_set(data, i, residual_i);
+            return 0;
+         }
+   into the active in-memory module. The runtime compares
+   data->simulationInfo->relations[] against ->relationsPre[] to
+   determine which event-action eqFunctions to fire; SCTL only
+   needs to populate the current side of the comparison. The
+   evalForZeroCross arg is ignored in the lowered body -- the
+   residual emission is correct in both branches CodegenC takes."
+  input String fname;
+  input list<BackendDAE.ZeroCrossing> zcs;
+  input VarLayout layout;
+protected
+  EmitCtx ctx;
+  Integer i = 0;
+  String valTmp;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "evalForZeroCross");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  ctx := EMIT_CTX(layout, 0);
+  for zc in zcs loop
+    (ctx, valTmp) := emitZeroCrossingResidual(zc, ctx);
+    EXT_LLVM.genCallArg("data");
+    EXT_LLVM.genCallArgConstInt(i);
+    EXT_LLVM.genCallArg(valTmp);
+    EXT_LLVM.genCall("omc_jit_relation_set", MODELICA_VOID, "", false);
+    i := i + 1;
+  end for;
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitUpdateRelationsBody;
 
 protected function emitZeroCrossingResidual
   "Emit (rhs - lhs) or (lhs - rhs) depending on the relation

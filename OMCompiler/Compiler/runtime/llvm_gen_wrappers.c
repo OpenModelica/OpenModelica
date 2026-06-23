@@ -1300,6 +1300,16 @@ void omc_jit_zc_set(double *gout, int64_t idx, double value)
   gout[idx] = value;
 }
 
+/* Update one entry of data->simulationInfo->relations[] from the
+ * residual value SCTL just computed. The runtime expects the entry
+ * to be the boolean result of the relation (1 when satisfied, 0
+ * when not), and uses pre-vs-current comparison to detect event
+ * boundaries; the sign of the residual carries the same info. */
+void omc_jit_relation_set(DATA *data, int64_t idx, double residual)
+{
+  data->simulationInfo->relations[idx] = (residual > 0.0) ? 1 : 0;
+}
+
 /* Range-check assert helpers. SCTL emits a direct call to one of
  * these when a SES_ALGORITHM body in parameterEquations matches a
  * simple `assert(<param> <op> <bound>, ...)` shape -- the same
