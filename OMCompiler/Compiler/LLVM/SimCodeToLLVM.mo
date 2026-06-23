@@ -407,25 +407,16 @@ end runtimeEntryCatalog;
  * ====================================================================== */
 
 public function displacedSegmentFiles
-  "Distinct list of CodegenC segment .c files SCTL fully covers.
-   Combines the static set declared in runtimeEntryCatalog (entries
-   whose body is not EB_TODO) with the dynamic set recorded during
-   genSim via recordDisplacedSegment (e.g. _06inz.c when initial
-   equations all lower cleanly for this specific model)."
-  output list<String> files = {};
-protected
-  Boolean seen;
-  list<String> dyn;
+  "Distinct list of CodegenC segment .c files SCTL fully covers for
+   the model whose genSim just ran. Every displacement -- whether
+   driven by the runtimeEntryCatalog (in emitDisplacingStubs after
+   the per-file safety scan) or by a Block emitter
+   (recordDisplacedSegment from emitInitialEquationsBlock etc.) --
+   goes through the dynamic skip list, so this function is just an
+   accessor on that list."
+  output list<String> files;
 algorithm
-  for e in runtimeEntryCatalog() loop
-    if not isTodoBody(e.body) then
-      files := uniqueAppend(files, e.segmentFile);
-    end if;
-  end for;
-  dyn := getDynamicSkips();
-  for f in dyn loop
-    files := uniqueAppend(files, f);
-  end for;
+  files := getDynamicSkips();
 end displacedSegmentFiles;
 
 protected function uniqueAppend
@@ -552,7 +543,7 @@ algorithm
      * emitted here lets the matching .c file be dropped from the
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
     EXT_LLVM.initGen(modelSymbolPrefix(name) + "_sctl");
-    emitDisplacingStubs(name);
+    emitDisplacingStubs(simCode, name);
     /* emitUserFunctions(simCode) is intentionally not called here.
      * The DAEToMid + MidToLLVM pipeline emits wrong-signature stubs
      * for `external` Modelica functions (e.g.
@@ -2003,24 +1994,156 @@ algorithm
 end emitFunctionsBlock;
 
 protected function emitDisplacingStubs
-  "Walk the runtimeEntryCatalog and emit IR for every entry whose body
-   is not EB_TODO. The catalog is the single source of truth; this
-   function just drives EXT_LLVM through it.
+  "Walk the runtimeEntryCatalog and emit IR for every entry that is
+   safe to stub for *this* model. A catalog entry is safe to stub when
+   its CodegenC body is semantically equivalent to the stub for the
+   features the model actually uses -- e.g. _function_storeDelayed is
+   safe iff the model has no delay() expressions, _function_*Synchronous
+   are safe iff the model has no clocked partitions, etc. See
+   entryIsSafeToStub for the per-entry rules.
 
-   Keep-in-sync invariant: the set of distinct segmentFile fields on
-   non-EB_TODO entries (returned by displacedSegmentFiles) must equal
-   the set of files compileModelToBitcode skips. CevalScriptBackend
-   currently mirrors the list manually; closing that loop is in
-   progress."
+   Per-file accounting: a segment .c file is displaced only when ALL
+   its catalog entries pass the safety check. If any entry is unsafe
+   (or EB_TODO), the whole file stays on the clang path so the linker
+   sees a single definition of every symbol in that file. The catalog
+   was previously the only source of displacements; today every
+   displacement goes through recordDisplacedSegment so the dynamic
+   skip list is the single source of truth for displacedSegmentFiles.
+
+   For each unsafe entry the function emits one compiler warning
+   identifying the feature that blocks the stub, so a user simulating
+   a delay()-using model gets a clear  'SimCodeToLLVM: ... requires
+   delay() ...'  diagnostic instead of silently-wrong stub IR."
+  input SimCode.SimCode simCode;
   input Absyn.Path modelName;
 protected
   String prefix;
+  list<RuntimeEntry> catalog;
+  list<String> blockedFiles = {};
+  list<String> seenFiles = {};
 algorithm
   prefix := modelSymbolPrefix(modelName);
-  for e in runtimeEntryCatalog() loop
-    emitRuntimeEntry(prefix, e);
+  catalog := runtimeEntryCatalog();
+  /* Pass 1: classify each file as safe-to-displace or blocked. EB_TODO
+   * entries always block their file -- the matching Block emitter (or
+   * clang) owns the symbol. */
+  for e in catalog loop
+    seenFiles := uniqueAppend(seenFiles, e.segmentFile);
+    if isTodoBody(e.body) then
+      blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+    elseif not entryIsSafeToStub(e, simCode) then
+      blockedFiles := uniqueAppend(blockedFiles, e.segmentFile);
+      emitUnsupportedWarning(e, modelName);
+    end if;
+  end for;
+  /* Pass 2: emit stubs for entries in non-blocked files only; record
+   * the file once we know it survived the safety scan. */
+  for e in catalog loop
+    if not List.contains(blockedFiles, e.segmentFile, stringEqual) then
+      emitRuntimeEntry(prefix, e);
+    end if;
+  end for;
+  for f in seenFiles loop
+    if not List.contains(blockedFiles, f, stringEqual) then
+      recordDisplacedSegment(f);
+    end if;
   end for;
 end emitDisplacingStubs;
+
+protected function entryIsSafeToStub
+  "True when the stub body declared for `entry` is semantically
+   equivalent to CodegenC's body for the features `simCode` actually
+   uses. The default is `true` -- stubs whose body would be a plain
+   ret 0 / ret -1 / ret null regardless of model content (e.g.
+   _checkForAsserts, _linear_model_frame) are always safe."
+  input RuntimeEntry entry;
+  input SimCode.SimCode simCode;
+  output Boolean safe;
+algorithm
+  safe := match entry.nameSuffix
+    case "_function_storeDelayed"             then noDelayedExps(simCode);
+    case "_function_storeSpatialDistribution" then noSpatialDistribution(simCode);
+    case "_function_initSpatialDistribution"  then noSpatialDistribution(simCode);
+    case "_function_savePreSynchronous"       then noClockedPartitions(simCode);
+    case "_function_initSynchronous"          then noClockedPartitions(simCode);
+    case "_function_updateSynchronous"        then noClockedPartitions(simCode);
+    case "_function_equationsSynchronous"     then noClockedPartitions(simCode);
+    case "_initializeStateSets"               then noStateSets(simCode);
+    else true;
+  end match;
+end entryIsSafeToStub;
+
+protected function noDelayedExps
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+protected
+  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> exps;
+algorithm
+  exps := match simCode.delayedExps case SimCode.DELAYED_EXPRESSIONS(delayedExps = exps) then exps; end match;
+  ok := listEmpty(exps);
+end noDelayedExps;
+
+protected function noSpatialDistribution
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+protected
+  list<SimCode.SpatialDistribution> dists;
+algorithm
+  dists := match simCode.spatialInfo case SimCode.SPATIAL_DISTRIBUTION_INFO(spatialDistributions = dists) then dists; end match;
+  ok := listEmpty(dists);
+end noSpatialDistribution;
+
+protected function noClockedPartitions
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+algorithm
+  ok := listEmpty(simCode.clockedPartitions);
+end noClockedPartitions;
+
+protected function noStateSets
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+algorithm
+  ok := listEmpty(simCode.stateSets);
+end noStateSets;
+
+protected function emitUnsupportedWarning
+  "One-line compiler warning per blocked entry. Tells the user which
+   model + feature + segment file is keeping the C path alive, so the
+   '.c is being clang'd even though SCTL is on' is never a silent
+   surprise."
+  input RuntimeEntry entry;
+  input Absyn.Path modelName;
+protected
+  String featureName;
+algorithm
+  featureName := unsupportedFeatureName(entry.nameSuffix);
+  Error.addCompilerWarning(
+    "SimCodeToLLVM: model " + AbsynUtil.pathString(modelName) +
+    " uses " + featureName +
+    "; runtime entry " + entry.nameSuffix +
+    " in " + entry.segmentFile +
+    " stays on the C/clang path until SCTL learns to lower it.");
+end emitUnsupportedWarning;
+
+protected function unsupportedFeatureName
+  "Human-readable Modelica feature corresponding to a catalog entry's
+   nameSuffix. Drives the wording of emitUnsupportedWarning."
+  input String nameSuffix;
+  output String feature;
+algorithm
+  feature := match nameSuffix
+    case "_function_storeDelayed"             then "delay() expressions";
+    case "_function_storeSpatialDistribution" then "spatialDistribution() operator";
+    case "_function_initSpatialDistribution"  then "spatialDistribution() operator";
+    case "_function_savePreSynchronous"       then "synchronous (clocked) partitions";
+    case "_function_initSynchronous"          then "synchronous (clocked) partitions";
+    case "_function_updateSynchronous"        then "synchronous (clocked) partitions";
+    case "_function_equationsSynchronous"     then "synchronous (clocked) partitions";
+    case "_initializeStateSets"               then "dynamic state selection (state sets)";
+    else "an SCTL-unsupported feature";
+  end match;
+end unsupportedFeatureName;
 
 protected function emitRuntimeEntry
   "Emit one RuntimeEntry from the catalog into the active in-memory
