@@ -938,7 +938,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%fmuTargetName%>.fmu: $(OFILES)
   <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
-  <%\t%>mv $(BINARIES) "binaries/$(PLATFORM)/"
+  # copy (do not move): $(BINARIES) includes shared dependency DLLs such as
+  # libopenblas.dll taken from <omhome>/bin; moving them out would break a
+  # second FMU export in the same session (the C target copies here too).
+  <%\t%>cp $(BINARIES) "binaries/$(PLATFORM)/"
   <%\t%>rm -rf sources
   <%\t%><%mkdir%> -p sources
   <%\t%>install -p OMCpp<%fileNamePrefix%>*.h OMCpp<%fileNamePrefix%>*.cpp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>_FMU.makefile sources/

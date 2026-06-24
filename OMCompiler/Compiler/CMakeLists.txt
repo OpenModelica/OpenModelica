@@ -345,7 +345,8 @@ if(WIN32)
   # same here so e.g. buildModelFMU() can bundle it into the exported FMU.
   install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
           DESTINATION ${CMAKE_INSTALL_BINDIR}
-          COMPONENT omc)
+          COMPONENT omc
+          OPTIONAL)
 else(WIN32)
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)
