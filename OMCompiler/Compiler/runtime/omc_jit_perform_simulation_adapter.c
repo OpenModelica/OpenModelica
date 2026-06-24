@@ -94,7 +94,6 @@
  * whatever state it had. */
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/nonlinearSystem.h"
-#include "simulation/solver/linearSystem.h"
 
 /* Single-unknown nonlinear tearing system. SCTL emits one call to this
  * per SES_NONLINEAR(nUnknowns=1); it mirrors CodegenC's eqFunction body:
@@ -269,6 +268,13 @@ int omc_jit_main_runtime(int argc, char **argv,
     modelData->modelGUID = omc_jit_read_guid_from_xml(xmlPath);
   }
   modelData->initXMLData = NULL;
+  /* The main-shim allocas MODEL_DATA without zeroing and setupDataStruc
+   * leaves modelDataXml alone, so its bookkeeping fields (nEquations,
+   * functionNames, equationInfo, modelInfoXml, ...) are stack garbage.
+   * modelInfoInit -- reached the moment a linear/nonlinear solver runs
+   * its solution check -- assumes those are zero and callocs from them,
+   * so clear the struct before wiring the load-bearing fileName. */
+  memset(&modelData->modelDataXml, 0, sizeof(modelData->modelDataXml));
   modelData->modelDataXml.infoXMLData = NULL;
   modelData->modelDataXml.fileName = infoJsonFile;
   modelData->resourcesDir = NULL;
