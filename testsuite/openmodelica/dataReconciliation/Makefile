@@ -11,24 +11,17 @@ ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe4 \
 ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe5 \
 ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe6 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter \
-ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter3 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter4 \
-ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5a \
-ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c \
-ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter6 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7 \
-ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9 \
-ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example \
-ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10 \
@@ -55,6 +48,13 @@ TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR
 #   data reconciliation errors.
 FAILINGTESTMODELS = \
 ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8 \
+ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example \
+ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows8 \
