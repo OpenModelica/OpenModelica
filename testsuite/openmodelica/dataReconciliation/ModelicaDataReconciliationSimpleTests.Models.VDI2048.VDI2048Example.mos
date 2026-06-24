@@ -1,0 +1,245 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example, simflags=simFlags);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example
+// ==========================================================================
+//
+//
+// OrderedVariables (11)
+// ========================================
+// 1: mD:VARIABLE(start = 2.092 uncertain=Uncertainty.refine)  type: Real
+// 2: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
+// 3: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
+// 4: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
+// 5: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
+// 6: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
+// 7: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
+// 8: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
+// 9: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
+// 10: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
+// 11: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (11, 11)
+// ========================================
+// 1/1 (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): mFDKEL = 46.241   [binding |0|0|0|0|]
+// 5/5 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
+// 6/6 (1): mSPL = 44.575   [binding |0|0|0|0|]
+// 7/7 (1): mSPLL = 44.319   [binding |0|0|0|0|]
+// 8/8 (1): mHK = 69.978   [binding |0|0|0|0|]
+// 9/9 (1): mA7 = 10.364   [binding |0|0|0|0|]
+// 10/10 (1): mA6 = 3.744   [binding |0|0|0|0|]
+// 11/11 (1): mD = 2.092   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 11 variables and equations
+// var 1 is solved in eqn 11
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 10
+// var 5 is solved in eqn 9
+// var 6 is solved in eqn 8
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 7
+// var 9 is solved in eqn 6
+// var 10 is solved in eqn 5
+// var 11 is solved in eqn 4
+//
+// Standard BLT of the original model:(11)
+// ============================================================
+//
+// 11: mFDKEL: (4/4): (1): mFDKEL = 46.241
+// 10: mFDKELL: (5/5): (1): mFDKELL = 45.668
+// 9: mSPL: (6/6): (1): mSPL = 44.575
+// 8: mSPLL: (7/7): (1): mSPLL = 44.319
+// 7: mV: (1/1): (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0
+// 6: mHK: (8/8): (1): mHK = 69.978
+// 5: mA7: (9/9): (1): mA7 = 10.364
+// 4: mA6: (10/10): (1): mA6 = 3.744
+// 3: mA5: (2/2): (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0
+// 2: mHDNK: (3/3): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
+// 1: mD: (11/11): (1): mD = 2.092
+//
+//
+// Variables of interest (11)
+// ========================================
+// 1: mD:VARIABLE(start = 2.092 uncertain=Uncertainty.refine)  type: Real
+// 2: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
+// 3: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
+// 4: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
+// 5: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
+// 6: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
+// 7: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
+// 8: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
+// 9: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
+// 10: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
+// 11: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (0)
+// ========================================
+//
+//
+// Binding equations:(8)
+// ============================================================
+//
+// 1: mD: (11/11): (1): mD = 2.092
+// 4: mA6: (10/10): (1): mA6 = 3.744
+// 5: mA7: (9/9): (1): mA7 = 10.364
+// 6: mHK: (8/8): (1): mHK = 69.978
+// 8: mSPLL: (7/7): (1): mSPLL = 44.319
+// 9: mSPL: (6/6): (1): mSPL = 44.575
+// 10: mFDKELL: (5/5): (1): mFDKELL = 45.668
+// 11: mFDKEL: (4/4): (1): mFDKEL = 46.241
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 2: mHDNK: (3/3): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
+// 3: mA5: (2/2): (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0
+// 7: mV: (1/1): (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>2: mHDNK: (3/3): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
+// Procedure success
+//
+// >>>3: mA5: (2/2): (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0
+// Procedure success
+//
+// >>>7: mV: (1/1): (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 1
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {3, 2, 1}
+// SET_S: {}
+//
+//
+// SET_C (3, 3)
+// ========================================
+// 1/1 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): mSPL + mSPLL + (-mA6) - mA5 - mA7 - mHK - mV = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): mFDKEL + mFDKELL + 0.4 * mV - mSPLL - mSPL = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11} (11)
+// ========================================
+// 1: mD:VARIABLE(start = 2.092 uncertain=Uncertainty.refine)  type: Real
+// 2: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
+// 3: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
+// 4: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
+// 5: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
+// 6: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
+// 7: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
+// 8: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
+// 9: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
+// 10: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
+// 11: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{3, 2, 1}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{1} (1)
+// ========================================
+// 1: mD:VARIABLE(start = 2.092 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_C has known variables:{7, 8, 9, 10, 11, 3, 4, 5, 6, 2} (10)
+// ========================================
+// 1: mV:VARIABLE(start = 0.525 uncertain=Uncertainty.refine)  type: Real
+// 2: mSPLL:VARIABLE(start = 44.319 uncertain=Uncertainty.refine)  type: Real
+// 3: mSPL:VARIABLE(start = 44.575 uncertain=Uncertainty.refine)  type: Real
+// 4: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
+// 5: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
+// 6: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
+// 7: mA6:VARIABLE(start = 3.744 uncertain=Uncertainty.refine)  type: Real
+// 8: mA7:VARIABLE(start = 10.364 uncertain=Uncertainty.refine)  type: Real
+// 9: mHK:VARIABLE(start = 69.978 uncertain=Uncertainty.refine)  type: Real
+// 10: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_S has known variables:{} (0)
+// ========================================
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:3 equations < 11 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// "
+// endResult

@@ -1,0 +1,331 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter, simflags=simFlags);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter
+// ==========================================================================
+//
+//
+// OrderedVariables (8)
+// ========================================
+// 1: a:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+// 3: y1:VARIABLE()  type: Real
+// 4: y:VARIABLE()  type: Real
+// 5: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+// 6: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 7: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 8: Y:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (8, 8)
+// ========================================
+// 1/1 (1): Y = 2.0   [binding |0|0|0|0|]
+// 2/2 (1): Q = Y   [dynamic |0|0|0|0|]
+// 3/3 (1): a = A   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = a * y   [dynamic |0|0|0|0|]
+// 5/5 (1): y = y1 + y2   [dynamic |0|0|0|0|]
+// 6/6 (1): Q = y   [dynamic |0|0|0|0|]
+// 7/7 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 8/8 (1): Q2 = y2   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 8 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 8
+// var 6 is solved in eqn 7
+// var 7 is solved in eqn 2
+// var 8 is solved in eqn 1
+//
+// Standard BLT of the original model:(8)
+// ============================================================
+//
+// 8: Y: (1/1): (1): Y = 2.0
+// 7: Q: (2/2): (1): Q = Y
+// 6: Q1: (7/7): (1): Q1 = y1
+// 5: Q2: (8/8): (1): Q2 = y2
+// 4: y: (6/6): (1): Q = y
+// 3: y1: (4/4): (1): y1 = a * y
+// 2: y2: (5/5): (1): y = y1 + y2
+// 1: a: (3/3): (1): a = A
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 3: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: Y:VARIABLE()  type: Real
+//
+//
+// Binding equations:(1)
+// ============================================================
+//
+// 8: Y: (1/1): (1): Y = 2.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 5: Q2: (8/8): (1): Q2 = y2
+// 6: Q1: (7/7): (1): Q1 = y1
+// 7: Q: (2/2): (1): Q = Y
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>5: Q2: (8/8): (1): Q2 = y2
+// 2: y2: (5/5): (1): y = y1 + y2
+// 3: y1: (4/4): (1): y1 = a * y
+// 1: a: (3/3): (1): a = A
+// 4: y: (6/6): (1): Q = y
+// Procedure success
+//
+// >>>6: Q1: (7/7): (1): Q1 = y1
+// 3: y1: (4/4): (1): y1 = a * y
+// 1: a: (3/3): (1): a = A
+// 4: y: (6/6): (1): Q = y
+// Procedure success
+//
+// >>>7: Q: (2/2): (1): Q = Y
+// Y is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (8)
+// ========================================
+// 1: a:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+// 3: y1:VARIABLE()  type: Real
+// 4: y:VARIABLE()  type: Real
+// 5: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+// 6: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 7: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 8: Y:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (8, 8)
+// ========================================
+// 1/1 (1): Q = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Y = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): a = A   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = a * y   [dynamic |0|0|0|0|]
+// 5/5 (1): y = y1 + y2   [dynamic |0|0|0|0|]
+// 6/6 (1): Q = y   [dynamic |0|0|0|0|]
+// 7/7 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 8/8 (1): Q2 = y2   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 8 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 8
+// var 6 is solved in eqn 7
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 2
+//
+// Standard BLT of the original model:(8)
+// ============================================================
+//
+// 8: Y: (2/2): (1): Y = 2.0
+// 7: Q: (1/1): (1): Q = 0.0
+// 6: Q1: (7/7): (1): Q1 = y1
+// 5: Q2: (8/8): (1): Q2 = y2
+// 4: y: (6/6): (1): Q = y
+// 3: y1: (4/4): (1): y1 = a * y
+// 2: y2: (5/5): (1): y = y1 + y2
+// 1: a: (3/3): (1): a = A
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 3: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: Y:VARIABLE()  type: Real
+//
+//
+// Binding equations:(2)
+// ============================================================
+//
+// 8: Y: (2/2): (1): Y = 2.0
+// 7: Q: (1/1): (1): Q = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(2)
+// ============================================================
+//
+// 5: Q2: (8/8): (1): Q2 = y2
+// 6: Q1: (7/7): (1): Q1 = y1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>5: Q2: (8/8): (1): Q2 = y2
+// 2: y2: (5/5): (1): y = y1 + y2
+// 3: y1: (4/4): (1): y1 = a * y
+// 1: a: (3/3): (1): a = A
+// 4: y: (6/6): (1): Q = y
+// Procedure success
+//
+// >>>6: Q1: (7/7): (1): Q1 = y1
+// 3: y1: (4/4): (1): y1 = a * y
+// 1: a: (3/3): (1): a = A
+// 4: y: (6/6): (1): Q = y
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {8, 7}
+// SET_S: {6, 3, 4, 5}
+//
+//
+// SET_C (2, 2)
+// ========================================
+// 1/1 (1): Q2 = y2   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (4, 4)
+// ========================================
+// 1/1 (1): Q = y   [dynamic |0|0|0|0|]
+// 2/2 (1): a = A   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = a * y   [dynamic |0|0|0|0|]
+// 4/4 (1): y = y1 + y2   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (4)
+// ========================================
+//
+// 1: a type: Real
+// 2: y type: Real
+// 3: y1 type: Real
+// 4: y2 type: Real
+//
+//
+// Parameters in SET_S (1)
+// ========================================
+// 1: A:PARAM()  = 0.5  type: Real
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{5, 6, 7} (3)
+// ========================================
+// 1: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 3: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{8, 7}
+// -SET_S:{6, 3, 4, 5}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has known variables:{6, 5} (2)
+// ========================================
+// 1: Q1:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_S has known variables:{7} (1)
+// ========================================
+// 1: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 3 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3, 2} (2)
+// ========================================
+// 1: y1:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{3, 2} (2)
+// ========================================
+// 1: y1:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square"
+// ==========================================================================
+// -Passed
+//  Set_S has 4 equations and 4 variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult

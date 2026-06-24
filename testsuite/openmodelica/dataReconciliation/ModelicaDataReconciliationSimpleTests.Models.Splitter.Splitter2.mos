@@ -1,0 +1,483 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter2_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2, simflags=simFlags);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter2_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2
+// ==========================================================================
+//
+//
+// OrderedVariables (25)
+// ========================================
+// 1: V_P3:VARIABLE()  type: Real
+// 2: V_P2:VARIABLE()  type: Real
+// 3: V_P1:VARIABLE()  type: Real
+// 4: P:VARIABLE()  type: Real
+// 5: T3_Q2:VARIABLE()  type: Real
+// 6: T3_Q1:VARIABLE()  type: Real
+// 7: T2_Q2:VARIABLE()  type: Real
+// 8: T2_Q1:VARIABLE()  type: Real
+// 9: T1_Q2:VARIABLE()  type: Real
+// 10: T1_Q1:VARIABLE()  type: Real
+// 11: V_Q3:VARIABLE()  type: Real
+// 12: V_Q2:VARIABLE()  type: Real
+// 13: V_Q1:VARIABLE()  type: Real
+// 14: T3_P2:VARIABLE()  type: Real
+// 15: T3_P1:VARIABLE()  type: Real
+// 16: T2_P2:VARIABLE()  type: Real
+// 17: T2_P1:VARIABLE()  type: Real
+// 18: T1_P2:VARIABLE()  type: Real
+// 19: T1_P1:VARIABLE()  type: Real
+// 20: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 21: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 22: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 23: P01:VARIABLE()  type: Real
+// 24: Q02:VARIABLE()  type: Real
+// 25: Q03:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P01 = 3.0   [binding |0|0|0|0|]
+// 2/2 (1): Q02 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): Q03 = 2.0   [binding |0|0|0|0|]
+// 4/4 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 5/5 (1): T2_Q2 = Q02   [dynamic |0|0|0|0|]
+// 6/6 (1): T3_Q2 = Q03   [dynamic |0|0|0|0|]
+// 7/7 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 8/8 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 9/9 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 10/10 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 11/11 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 12/12 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 13/13 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 14/14 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 15/15 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 16/16 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 17/17 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 18/18 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 19/19 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 20/20 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 21/21 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 22/22 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 23/23 (1): T1_Q1 = Q1   [dynamic |0|0|0|0|]
+// 24/24 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 25/25 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 22
+// var 2 is solved in eqn 20
+// var 3 is solved in eqn 17
+// var 4 is solved in eqn 18
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 16
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 14
+// var 9 is solved in eqn 11
+// var 10 is solved in eqn 23
+// var 11 is solved in eqn 15
+// var 12 is solved in eqn 13
+// var 13 is solved in eqn 10
+// var 14 is solved in eqn 9
+// var 15 is solved in eqn 21
+// var 16 is solved in eqn 8
+// var 17 is solved in eqn 19
+// var 18 is solved in eqn 7
+// var 19 is solved in eqn 4
+// var 20 is solved in eqn 25
+// var 21 is solved in eqn 24
+// var 22 is solved in eqn 12
+// var 23 is solved in eqn 1
+// var 24 is solved in eqn 2
+// var 25 is solved in eqn 3
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: Q03: (3/3): (1): Q03 = 2.0
+// 24: Q02: (2/2): (1): Q02 = 2.0
+// 23: P01: (1/1): (1): P01 = 3.0
+// 22: Q1: (12/12): (1): T1_Q2 = Q1
+// 21: Q2: (24/24): (1): T2_Q2 = Q2
+// 20: Q3: (25/25): (1): T3_Q2 = Q3
+// 19: T1_P1: (4/4): (1): T1_P1 = P01
+// 18: T1_P2: (7/7): (1): T1_P1 - T1_P2 = Q1 ^ 2.0
+// 17: T2_P1: (19/19): (1): T2_P1 = V_P2
+// 16: T2_P2: (8/8): (1): T2_P1 - T2_P2 = Q2 ^ 2.0
+// 15: T3_P1: (21/21): (1): T3_P1 = V_P3
+// 14: T3_P2: (9/9): (1): T3_P1 - T3_P2 = Q3 ^ 2.0
+// 13: V_Q1: (10/10): (1): V_Q1 = V_Q2 + V_Q3
+// 12: V_Q2: (13/13): (1): V_Q2 = T2_Q1
+// 11: V_Q3: (15/15): (1): V_Q3 = T3_Q1
+// 10: T1_Q1: (23/23): (1): T1_Q1 = Q1
+// 9: T1_Q2: (11/11): (1): V_Q1 = T1_Q2
+// 8: T2_Q1: (14/14): (1): T2_Q1 = Q2
+// 7: T2_Q2: (5/5): (1): T2_Q2 = Q02
+// 6: T3_Q1: (16/16): (1): T3_Q1 = Q3
+// 5: T3_Q2: (6/6): (1): T3_Q2 = Q03
+// 4: P: (18/18): (1): V_P1 = P
+// 3: V_P1: (17/17): (1): T1_P2 = V_P1
+// 2: V_P2: (20/20): (1): V_P2 = P
+// 1: V_P3: (22/22): (1): V_P3 = P
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (3)
+// ========================================
+// 1: P01:VARIABLE()  type: Real
+// 2: Q02:VARIABLE()  type: Real
+// 3: Q03:VARIABLE()  type: Real
+//
+//
+// Binding equations:(3)
+// ============================================================
+//
+// 25: Q03: (3/3): (1): Q03 = 2.0
+// 24: Q02: (2/2): (1): Q02 = 2.0
+// 23: P01: (1/1): (1): P01 = 3.0
+//
+//
+// Approximated equations (3)
+// ========================================
+// 1/1 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 3/3 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 20: Q3: (25/25): (1): T3_Q2 = Q3
+// 21: Q2: (24/24): (1): T2_Q2 = Q2
+// 22: Q1: (12/12): (1): T1_Q2 = Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>20: Q3: (25/25): (1): T3_Q2 = Q3
+// 5: T3_Q2: (6/6): (1): T3_Q2 = Q03
+// Q03 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>21: Q2: (24/24): (1): T2_Q2 = Q2
+// 7: T2_Q2: (5/5): (1): T2_Q2 = Q02
+// Q02 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>22: Q1: (12/12): (1): T1_Q2 = Q1
+// 9: T1_Q2: (11/11): (1): V_Q1 = T1_Q2
+// 13: V_Q1: (10/10): (1): V_Q1 = V_Q2 + V_Q3
+// 11: V_Q3: (15/15): (1): V_Q3 = T3_Q1
+// 6: T3_Q1: (16/16): (1): T3_Q1 = Q3
+// 12: V_Q2: (13/13): (1): V_Q2 = T2_Q1
+// 8: T2_Q1: (14/14): (1): T2_Q1 = Q2
+// Procedure success
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (25)
+// ========================================
+// 1: V_P3:VARIABLE()  type: Real
+// 2: V_P2:VARIABLE()  type: Real
+// 3: V_P1:VARIABLE()  type: Real
+// 4: P:VARIABLE()  type: Real
+// 5: T3_Q2:VARIABLE()  type: Real
+// 6: T3_Q1:VARIABLE()  type: Real
+// 7: T2_Q2:VARIABLE()  type: Real
+// 8: T2_Q1:VARIABLE()  type: Real
+// 9: T1_Q2:VARIABLE()  type: Real
+// 10: T1_Q1:VARIABLE()  type: Real
+// 11: V_Q3:VARIABLE()  type: Real
+// 12: V_Q2:VARIABLE()  type: Real
+// 13: V_Q1:VARIABLE()  type: Real
+// 14: T3_P2:VARIABLE()  type: Real
+// 15: T3_P1:VARIABLE()  type: Real
+// 16: T2_P2:VARIABLE()  type: Real
+// 17: T2_P1:VARIABLE()  type: Real
+// 18: T1_P2:VARIABLE()  type: Real
+// 19: T1_P1:VARIABLE()  type: Real
+// 20: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 21: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 22: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 23: P01:VARIABLE()  type: Real
+// 24: Q02:VARIABLE()  type: Real
+// 25: Q03:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): Q3 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Q2 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): P01 = 3.0   [binding |0|0|0|0|]
+// 4/4 (1): Q02 = 2.0   [binding |0|0|0|0|]
+// 5/5 (1): Q03 = 2.0   [binding |0|0|0|0|]
+// 6/6 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 7/7 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 8/8 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 9/9 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 10/10 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 11/11 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 12/12 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 13/13 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 14/14 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 15/15 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 16/16 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 17/17 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 18/18 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 19/19 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 20/20 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 21/21 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 22/22 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 23/23 (1): T1_Q1 = Q1   [dynamic |0|0|0|0|]
+// 24/24 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 25/25 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 22
+// var 2 is solved in eqn 20
+// var 3 is solved in eqn 17
+// var 4 is solved in eqn 18
+// var 5 is solved in eqn 25
+// var 6 is solved in eqn 16
+// var 7 is solved in eqn 24
+// var 8 is solved in eqn 14
+// var 9 is solved in eqn 11
+// var 10 is solved in eqn 23
+// var 11 is solved in eqn 15
+// var 12 is solved in eqn 13
+// var 13 is solved in eqn 10
+// var 14 is solved in eqn 9
+// var 15 is solved in eqn 21
+// var 16 is solved in eqn 8
+// var 17 is solved in eqn 19
+// var 18 is solved in eqn 7
+// var 19 is solved in eqn 6
+// var 20 is solved in eqn 1
+// var 21 is solved in eqn 2
+// var 22 is solved in eqn 12
+// var 23 is solved in eqn 3
+// var 24 is solved in eqn 4
+// var 25 is solved in eqn 5
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: Q03: (5/5): (1): Q03 = 2.0
+// 24: Q02: (4/4): (1): Q02 = 2.0
+// 23: P01: (3/3): (1): P01 = 3.0
+// 22: Q1: (12/12): (1): T1_Q2 = Q1
+// 21: Q2: (2/2): (1): Q2 = 0.0
+// 20: Q3: (1/1): (1): Q3 = 0.0
+// 19: T1_P1: (6/6): (1): T1_P1 = P01
+// 18: T1_P2: (7/7): (1): T1_P1 - T1_P2 = Q1 ^ 2.0
+// 17: T2_P1: (19/19): (1): T2_P1 = V_P2
+// 16: T2_P2: (8/8): (1): T2_P1 - T2_P2 = Q2 ^ 2.0
+// 15: T3_P1: (21/21): (1): T3_P1 = V_P3
+// 14: T3_P2: (9/9): (1): T3_P1 - T3_P2 = Q3 ^ 2.0
+// 13: V_Q1: (10/10): (1): V_Q1 = V_Q2 + V_Q3
+// 12: V_Q2: (13/13): (1): V_Q2 = T2_Q1
+// 11: V_Q3: (15/15): (1): V_Q3 = T3_Q1
+// 10: T1_Q1: (23/23): (1): T1_Q1 = Q1
+// 9: T1_Q2: (11/11): (1): V_Q1 = T1_Q2
+// 8: T2_Q1: (14/14): (1): T2_Q1 = Q2
+// 7: T2_Q2: (24/24): (1): T2_Q2 = Q2
+// 6: T3_Q1: (16/16): (1): T3_Q1 = Q3
+// 5: T3_Q2: (25/25): (1): T3_Q2 = Q3
+// 4: P: (18/18): (1): V_P1 = P
+// 3: V_P1: (17/17): (1): T1_P2 = V_P1
+// 2: V_P2: (20/20): (1): V_P2 = P
+// 1: V_P3: (22/22): (1): V_P3 = P
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (3)
+// ========================================
+// 1: P01:VARIABLE()  type: Real
+// 2: Q02:VARIABLE()  type: Real
+// 3: Q03:VARIABLE()  type: Real
+//
+//
+// Binding equations:(5)
+// ============================================================
+//
+// 25: Q03: (5/5): (1): Q03 = 2.0
+// 24: Q02: (4/4): (1): Q02 = 2.0
+// 23: P01: (3/3): (1): P01 = 3.0
+// 21: Q2: (2/2): (1): Q2 = 0.0
+// 20: Q3: (1/1): (1): Q3 = 0.0
+//
+//
+// Approximated equations (3)
+// ========================================
+// 1/1 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 3/3 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 22: Q1: (12/12): (1): T1_Q2 = Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>22: Q1: (12/12): (1): T1_Q2 = Q1
+// 9: T1_Q2: (11/11): (1): V_Q1 = T1_Q2
+// 13: V_Q1: (10/10): (1): V_Q1 = V_Q2 + V_Q3
+// 11: V_Q3: (15/15): (1): V_Q3 = T3_Q1
+// 6: T3_Q1: (16/16): (1): T3_Q1 = Q3
+// 12: V_Q2: (13/13): (1): V_Q2 = T2_Q1
+// 8: T2_Q1: (14/14): (1): T2_Q1 = Q2
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {12}
+// SET_S: {14, 13, 16, 15, 10, 11}
+//
+//
+// SET_C (1, 1)
+// ========================================
+// 1/1 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (6, 6)
+// ========================================
+// 1/1 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 2/2 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 3/3 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 4/4 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 5/5 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 6/6 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (6)
+// ========================================
+//
+// 1: T2_Q1 type: Real
+// 2: T3_Q1 type: Real
+// 3: V_Q2 type: Real
+// 4: V_Q3 type: Real
+// 5: V_Q1 type: Real
+// 6: T1_Q2 type: Real
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{20, 21, 22} (3)
+// ========================================
+// 1: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{12}
+// -SET_S:{14, 13, 16, 15, 10, 11}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has known variables:{22} (1)
+// ========================================
+// 1: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_S has known variables:{21, 20} (2)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 3 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{9} (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{9} (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square"
+// ==========================================================================
+// -Passed
+//  Set_S has 6 equations and 6 variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter2_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult

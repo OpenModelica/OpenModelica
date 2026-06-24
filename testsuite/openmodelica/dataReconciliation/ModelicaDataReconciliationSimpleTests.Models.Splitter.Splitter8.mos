@@ -1,0 +1,765 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8, simflags=simFlags);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8
+// ==========================================================================
+//
+//
+// OrderedVariables (25)
+// ========================================
+// 1: T3:VARIABLE()  type: Real
+// 2: T2:VARIABLE()  type: Real
+// 3: T1:VARIABLE()  type: Real
+// 4: T:VARIABLE()  type: Real
+// 5: h3:VARIABLE()  type: Real
+// 6: h2:VARIABLE()  type: Real
+// 7: h1:VARIABLE()  type: Real
+// 8: h:VARIABLE()  type: Real
+// 9: P3_r:VARIABLE()  type: Real
+// 10: P3_l:VARIABLE()  type: Real
+// 11: P2_r:VARIABLE()  type: Real
+// 12: P2_l:VARIABLE()  type: Real
+// 13: P1_r:VARIABLE()  type: Real
+// 14: P1_l:VARIABLE()  type: Real
+// 15: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 16: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 17: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 18: P:VARIABLE()  type: Real
+// 19: Q3:VARIABLE()  type: Real
+// 20: Q2:VARIABLE()  type: Real
+// 21: Q1:VARIABLE()  type: Real
+// 22: P1_bc:VARIABLE()  type: Real
+// 23: Q2_bc:VARIABLE()  type: Real
+// 24: Q3_bc:VARIABLE()  type: Real
+// 25: h1_bc:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P1_bc = 3e5   [binding |0|0|0|0|]
+// 2/2 (1): Q2_bc = 1.0   [binding |0|0|0|0|]
+// 3/3 (1): Q3_bc = 2.0   [binding |0|0|0|0|]
+// 4/4 (1): h1_bc = 1e5   [binding |0|0|0|0|]
+// 5/5 (1): P1_l = P1_bc   [dynamic |0|0|0|0|]
+// 6/6 (1): h1 = h1_bc   [dynamic |0|0|0|0|]
+// 7/7 (1): Q2 = Q2_bc   [dynamic |0|0|0|0|]
+// 8/8 (1): Q3 = Q3_bc   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = Q1 + (-Q2) - Q3   [dynamic |0|0|0|0|]
+// 10/10 (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2   [dynamic |0|0|0|0|]
+// 11/11 (1): P1_l - P1_r = k1 * Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): P2_l - P2_r = k2 * Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): P3_l - P3_r = k3 * Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 14/14 (1): P = P1_r   [dynamic |0|0|0|0|]
+// 15/15 (1): P = P2_l   [dynamic |0|0|0|0|]
+// 16/16 (1): P = P3_l   [dynamic |0|0|0|0|]
+// 17/17 (1): h2 = h   [dynamic |0|0|0|0|]
+// 18/18 (1): h3 = h   [dynamic |0|0|0|0|]
+// 19/19 (1): P1 = 0.5 * (P1_l + P1_r)   [dynamic |0|0|0|0|]
+// 20/20 (1): P2 = 0.5 * (P2_l + P2_r)   [dynamic |0|0|0|0|]
+// 21/21 (1): P3 = 0.5 * (P3_l + P3_r)   [dynamic |0|0|0|0|]
+// 22/22 (1): h = cp * T + b * P   [dynamic |0|0|0|0|]
+// 23/23 (1): h1 = cp * T1 + b * P1   [dynamic |0|0|0|0|]
+// 24/24 (1): h2 = cp * T2 + b * P2   [dynamic |0|0|0|0|]
+// 25/25 (1): h3 = cp * T3 + b * P3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 25
+// var 2 is solved in eqn 24
+// var 3 is solved in eqn 23
+// var 4 is solved in eqn 22
+// var 5 is solved in eqn 18
+// var 6 is solved in eqn 10
+// var 7 is solved in eqn 6
+// var 8 is solved in eqn 17
+// var 9 is solved in eqn 13
+// var 10 is solved in eqn 16
+// var 11 is solved in eqn 12
+// var 12 is solved in eqn 15
+// var 13 is solved in eqn 11
+// var 14 is solved in eqn 5
+// var 15 is solved in eqn 21
+// var 16 is solved in eqn 20
+// var 17 is solved in eqn 19
+// var 18 is solved in eqn 14
+// var 19 is solved in eqn 8
+// var 20 is solved in eqn 7
+// var 21 is solved in eqn 9
+// var 22 is solved in eqn 1
+// var 23 is solved in eqn 2
+// var 24 is solved in eqn 3
+// var 25 is solved in eqn 4
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: h1_bc: (4/4): (1): h1_bc = 1e5
+// 24: Q3_bc: (3/3): (1): Q3_bc = 2.0
+// 23: Q2_bc: (2/2): (1): Q2_bc = 1.0
+// 22: P1_bc: (1/1): (1): P1_bc = 3e5
+// 21: Q1: (9/9): (1): 0.0 = Q1 + (-Q2) - Q3
+// 20: Q2: (7/7): (1): Q2 = Q2_bc
+// 19: Q3: (8/8): (1): Q3 = Q3_bc
+// 18: P: (14/14): (1): P = P1_r
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 15: P3: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 14: P1_l: (5/5): (1): P1_l = P1_bc
+// 13: P1_r: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 12: P2_l: (15/15): (1): P = P2_l
+// 11: P2_r: (12/12): (1): P2_l - P2_r = k2 * Q2 ^ 2.0
+// 10: P3_l: (16/16): (1): P = P3_l
+// 9: P3_r: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 8: h: (17/17): (1): h2 = h
+// 7: h1: (6/6): (1): h1 = h1_bc
+// 6: h2: (10/10): (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2
+// 5: h3: (18/18): (1): h3 = h
+// 4: T: (22/22): (1): h = cp * T + b * P
+// 3: T1: (23/23): (1): h1 = cp * T1 + b * P1
+// 2: T2: (24/24): (1): h2 = cp * T2 + b * P2
+// 1: T3: (25/25): (1): h3 = cp * T3 + b * P3
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (4)
+// ========================================
+// 1: P1_bc:VARIABLE()  type: Real
+// 2: Q2_bc:VARIABLE()  type: Real
+// 3: Q3_bc:VARIABLE()  type: Real
+// 4: h1_bc:VARIABLE()  type: Real
+//
+//
+// Binding equations:(4)
+// ============================================================
+//
+// 25: h1_bc: (4/4): (1): h1_bc = 1e5
+// 24: Q3_bc: (3/3): (1): Q3_bc = 2.0
+// 23: Q2_bc: (2/2): (1): Q2_bc = 1.0
+// 22: P1_bc: (1/1): (1): P1_bc = 3e5
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 15: P3: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>15: P3: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 10: P3_l: (16/16): (1): P = P3_l
+// 18: P: (14/14): (1): P = P1_r
+// 13: P1_r: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 14: P1_l: (5/5): (1): P1_l = P1_bc
+// P1_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 12: P2_l: (15/15): (1): P = P2_l
+// 18: P: (14/14): (1): P = P1_r
+// 13: P1_r: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 14: P1_l: (5/5): (1): P1_l = P1_bc
+// P1_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 14: P1_l: (5/5): (1): P1_l = P1_bc
+// P1_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (25)
+// ========================================
+// 1: T3:VARIABLE()  type: Real
+// 2: T2:VARIABLE()  type: Real
+// 3: T1:VARIABLE()  type: Real
+// 4: T:VARIABLE()  type: Real
+// 5: h3:VARIABLE()  type: Real
+// 6: h2:VARIABLE()  type: Real
+// 7: h1:VARIABLE()  type: Real
+// 8: h:VARIABLE()  type: Real
+// 9: P3_r:VARIABLE()  type: Real
+// 10: P3_l:VARIABLE()  type: Real
+// 11: P2_r:VARIABLE()  type: Real
+// 12: P2_l:VARIABLE()  type: Real
+// 13: P1_r:VARIABLE()  type: Real
+// 14: P1_l:VARIABLE()  type: Real
+// 15: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 16: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 17: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 18: P:VARIABLE()  type: Real
+// 19: Q3:VARIABLE()  type: Real
+// 20: Q2:VARIABLE()  type: Real
+// 21: Q1:VARIABLE()  type: Real
+// 22: P1_bc:VARIABLE()  type: Real
+// 23: Q2_bc:VARIABLE()  type: Real
+// 24: Q3_bc:VARIABLE()  type: Real
+// 25: h1_bc:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P3 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): P1_bc = 3e5   [binding |0|0|0|0|]
+// 3/3 (1): Q2_bc = 1.0   [binding |0|0|0|0|]
+// 4/4 (1): Q3_bc = 2.0   [binding |0|0|0|0|]
+// 5/5 (1): h1_bc = 1e5   [binding |0|0|0|0|]
+// 6/6 (1): h1 = h1_bc   [dynamic |0|0|0|0|]
+// 7/7 (1): Q2 = Q2_bc   [dynamic |0|0|0|0|]
+// 8/8 (1): Q3 = Q3_bc   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = Q1 + (-Q2) - Q3   [dynamic |0|0|0|0|]
+// 10/10 (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2   [dynamic |0|0|0|0|]
+// 11/11 (1): P1_l - P1_r = k1 * Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): P2_l - P2_r = k2 * Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): P3_l - P3_r = k3 * Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 14/14 (1): P = P1_r   [dynamic |0|0|0|0|]
+// 15/15 (1): P = P2_l   [dynamic |0|0|0|0|]
+// 16/16 (1): P = P3_l   [dynamic |0|0|0|0|]
+// 17/17 (1): h2 = h   [dynamic |0|0|0|0|]
+// 18/18 (1): h3 = h   [dynamic |0|0|0|0|]
+// 19/19 (1): P1 = 0.5 * (P1_l + P1_r)   [dynamic |0|0|0|0|]
+// 20/20 (1): P2 = 0.5 * (P2_l + P2_r)   [dynamic |0|0|0|0|]
+// 21/21 (1): P3 = 0.5 * (P3_l + P3_r)   [dynamic |0|0|0|0|]
+// 22/22 (1): h = cp * T + b * P   [dynamic |0|0|0|0|]
+// 23/23 (1): h1 = cp * T1 + b * P1   [dynamic |0|0|0|0|]
+// 24/24 (1): h2 = cp * T2 + b * P2   [dynamic |0|0|0|0|]
+// 25/25 (1): h3 = cp * T3 + b * P3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 25
+// var 2 is solved in eqn 24
+// var 3 is solved in eqn 23
+// var 4 is solved in eqn 22
+// var 5 is solved in eqn 18
+// var 6 is solved in eqn 10
+// var 7 is solved in eqn 6
+// var 8 is solved in eqn 17
+// var 9 is solved in eqn 21
+// var 10 is solved in eqn 13
+// var 11 is solved in eqn 12
+// var 12 is solved in eqn 15
+// var 13 is solved in eqn 14
+// var 14 is solved in eqn 11
+// var 15 is solved in eqn 1
+// var 16 is solved in eqn 20
+// var 17 is solved in eqn 19
+// var 18 is solved in eqn 16
+// var 19 is solved in eqn 8
+// var 20 is solved in eqn 7
+// var 21 is solved in eqn 9
+// var 22 is solved in eqn 2
+// var 23 is solved in eqn 3
+// var 24 is solved in eqn 4
+// var 25 is solved in eqn 5
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: h1_bc: (5/5): (1): h1_bc = 1e5
+// 24: Q3_bc: (4/4): (1): Q3_bc = 2.0
+// 23: Q2_bc: (3/3): (1): Q2_bc = 1.0
+// 22: P1_bc: (2/2): (1): P1_bc = 3e5
+// 21: Q1: (9/9): (1): 0.0 = Q1 + (-Q2) - Q3
+// 20: Q2: (7/7): (1): Q2 = Q2_bc
+// 19: Q3: (8/8): (1): Q3 = Q3_bc
+// 18: P: (16/16): (1): P = P3_l
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 15: P3: (1/1): (1): P3 = 0.0
+// 14: P1_l: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 13: P1_r: (14/14): (1): P = P1_r
+// 12: P2_l: (15/15): (1): P = P2_l
+// 11: P2_r: (12/12): (1): P2_l - P2_r = k2 * Q2 ^ 2.0
+// 10: P3_l: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 9: P3_r: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 8: h: (17/17): (1): h2 = h
+// 7: h1: (6/6): (1): h1 = h1_bc
+// 6: h2: (10/10): (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2
+// 5: h3: (18/18): (1): h3 = h
+// 4: T: (22/22): (1): h = cp * T + b * P
+// 3: T1: (23/23): (1): h1 = cp * T1 + b * P1
+// 2: T2: (24/24): (1): h2 = cp * T2 + b * P2
+// 1: T3: (25/25): (1): h3 = cp * T3 + b * P3
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (4)
+// ========================================
+// 1: P1_bc:VARIABLE()  type: Real
+// 2: Q2_bc:VARIABLE()  type: Real
+// 3: Q3_bc:VARIABLE()  type: Real
+// 4: h1_bc:VARIABLE()  type: Real
+//
+//
+// Binding equations:(5)
+// ============================================================
+//
+// 25: h1_bc: (5/5): (1): h1_bc = 1e5
+// 24: Q3_bc: (4/4): (1): Q3_bc = 2.0
+// 23: Q2_bc: (3/3): (1): Q2_bc = 1.0
+// 22: P1_bc: (2/2): (1): P1_bc = 3e5
+// 15: P3: (1/1): (1): P3 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(2)
+// ============================================================
+//
+// 16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>16: P2: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 12: P2_l: (15/15): (1): P = P2_l
+// 18: P: (16/16): (1): P = P3_l
+// 10: P3_l: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 9: P3_r: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 19: Q3: (8/8): (1): Q3 = Q3_bc
+// Q3_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 14: P1_l: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 13: P1_r: (14/14): (1): P = P1_r
+// 18: P: (16/16): (1): P = P3_l
+// 10: P3_l: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 9: P3_r: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 19: Q3: (8/8): (1): Q3 = Q3_bc
+// Q3_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 2, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (25)
+// ========================================
+// 1: T3:VARIABLE()  type: Real
+// 2: T2:VARIABLE()  type: Real
+// 3: T1:VARIABLE()  type: Real
+// 4: T:VARIABLE()  type: Real
+// 5: h3:VARIABLE()  type: Real
+// 6: h2:VARIABLE()  type: Real
+// 7: h1:VARIABLE()  type: Real
+// 8: h:VARIABLE()  type: Real
+// 9: P3_r:VARIABLE()  type: Real
+// 10: P3_l:VARIABLE()  type: Real
+// 11: P2_r:VARIABLE()  type: Real
+// 12: P2_l:VARIABLE()  type: Real
+// 13: P1_r:VARIABLE()  type: Real
+// 14: P1_l:VARIABLE()  type: Real
+// 15: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 16: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 17: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 18: P:VARIABLE()  type: Real
+// 19: Q3:VARIABLE()  type: Real
+// 20: Q2:VARIABLE()  type: Real
+// 21: Q1:VARIABLE()  type: Real
+// 22: P1_bc:VARIABLE()  type: Real
+// 23: Q2_bc:VARIABLE()  type: Real
+// 24: Q3_bc:VARIABLE()  type: Real
+// 25: h1_bc:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P2 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): P3 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): P1_bc = 3e5   [binding |0|0|0|0|]
+// 4/4 (1): Q2_bc = 1.0   [binding |0|0|0|0|]
+// 5/5 (1): Q3_bc = 2.0   [binding |0|0|0|0|]
+// 6/6 (1): h1_bc = 1e5   [binding |0|0|0|0|]
+// 7/7 (1): h1 = h1_bc   [dynamic |0|0|0|0|]
+// 8/8 (1): Q2 = Q2_bc   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = Q1 + (-Q2) - Q3   [dynamic |0|0|0|0|]
+// 10/10 (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2   [dynamic |0|0|0|0|]
+// 11/11 (1): P1_l - P1_r = k1 * Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): P2_l - P2_r = k2 * Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): P3_l - P3_r = k3 * Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 14/14 (1): P = P1_r   [dynamic |0|0|0|0|]
+// 15/15 (1): P = P2_l   [dynamic |0|0|0|0|]
+// 16/16 (1): P = P3_l   [dynamic |0|0|0|0|]
+// 17/17 (1): h2 = h   [dynamic |0|0|0|0|]
+// 18/18 (1): h3 = h   [dynamic |0|0|0|0|]
+// 19/19 (1): P1 = 0.5 * (P1_l + P1_r)   [dynamic |0|0|0|0|]
+// 20/20 (1): P2 = 0.5 * (P2_l + P2_r)   [dynamic |0|0|0|0|]
+// 21/21 (1): P3 = 0.5 * (P3_l + P3_r)   [dynamic |0|0|0|0|]
+// 22/22 (1): h = cp * T + b * P   [dynamic |0|0|0|0|]
+// 23/23 (1): h1 = cp * T1 + b * P1   [dynamic |0|0|0|0|]
+// 24/24 (1): h2 = cp * T2 + b * P2   [dynamic |0|0|0|0|]
+// 25/25 (1): h3 = cp * T3 + b * P3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 25
+// var 2 is solved in eqn 24
+// var 3 is solved in eqn 23
+// var 4 is solved in eqn 22
+// var 5 is solved in eqn 18
+// var 6 is solved in eqn 10
+// var 7 is solved in eqn 7
+// var 8 is solved in eqn 17
+// var 9 is solved in eqn 21
+// var 10 is solved in eqn 16
+// var 11 is solved in eqn 12
+// var 12 is solved in eqn 20
+// var 13 is solved in eqn 14
+// var 14 is solved in eqn 11
+// var 15 is solved in eqn 2
+// var 16 is solved in eqn 1
+// var 17 is solved in eqn 19
+// var 18 is solved in eqn 15
+// var 19 is solved in eqn 13
+// var 20 is solved in eqn 8
+// var 21 is solved in eqn 9
+// var 22 is solved in eqn 3
+// var 23 is solved in eqn 4
+// var 24 is solved in eqn 5
+// var 25 is solved in eqn 6
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: h1_bc: (6/6): (1): h1_bc = 1e5
+// 24: Q3_bc: (5/5): (1): Q3_bc = 2.0
+// 23: Q2_bc: (4/4): (1): Q2_bc = 1.0
+// 22: P1_bc: (3/3): (1): P1_bc = 3e5
+// 21: Q1: (9/9): (1): 0.0 = Q1 + (-Q2) - Q3
+// 20: Q2: (8/8): (1): Q2 = Q2_bc
+// 19: Q3: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 18: P: (15/15): (1): P = P2_l
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 16: P2: (1/1): (1): P2 = 0.0
+// 15: P3: (2/2): (1): P3 = 0.0
+// 14: P1_l: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 13: P1_r: (14/14): (1): P = P1_r
+// 12: P2_l: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 11: P2_r: (12/12): (1): P2_l - P2_r = k2 * Q2 ^ 2.0
+// 10: P3_l: (16/16): (1): P = P3_l
+// 9: P3_r: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 8: h: (17/17): (1): h2 = h
+// 7: h1: (7/7): (1): h1 = h1_bc
+// 6: h2: (10/10): (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2
+// 5: h3: (18/18): (1): h3 = h
+// 4: T: (22/22): (1): h = cp * T + b * P
+// 3: T1: (23/23): (1): h1 = cp * T1 + b * P1
+// 2: T2: (24/24): (1): h2 = cp * T2 + b * P2
+// 1: T3: (25/25): (1): h3 = cp * T3 + b * P3
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (4)
+// ========================================
+// 1: P1_bc:VARIABLE()  type: Real
+// 2: Q2_bc:VARIABLE()  type: Real
+// 3: Q3_bc:VARIABLE()  type: Real
+// 4: h1_bc:VARIABLE()  type: Real
+//
+//
+// Binding equations:(6)
+// ============================================================
+//
+// 25: h1_bc: (6/6): (1): h1_bc = 1e5
+// 24: Q3_bc: (5/5): (1): Q3_bc = 2.0
+// 23: Q2_bc: (4/4): (1): Q2_bc = 1.0
+// 22: P1_bc: (3/3): (1): P1_bc = 3e5
+// 15: P3: (2/2): (1): P3 = 0.0
+// 16: P2: (1/1): (1): P2 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>17: P1: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 14: P1_l: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 13: P1_r: (14/14): (1): P = P1_r
+// 18: P: (15/15): (1): P = P2_l
+// 12: P2_l: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 11: P2_r: (12/12): (1): P2_l - P2_r = k2 * Q2 ^ 2.0
+// 20: Q2: (8/8): (1): Q2 = Q2_bc
+// Q2_bc is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 3, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (25)
+// ========================================
+// 1: T3:VARIABLE()  type: Real
+// 2: T2:VARIABLE()  type: Real
+// 3: T1:VARIABLE()  type: Real
+// 4: T:VARIABLE()  type: Real
+// 5: h3:VARIABLE()  type: Real
+// 6: h2:VARIABLE()  type: Real
+// 7: h1:VARIABLE()  type: Real
+// 8: h:VARIABLE()  type: Real
+// 9: P3_r:VARIABLE()  type: Real
+// 10: P3_l:VARIABLE()  type: Real
+// 11: P2_r:VARIABLE()  type: Real
+// 12: P2_l:VARIABLE()  type: Real
+// 13: P1_r:VARIABLE()  type: Real
+// 14: P1_l:VARIABLE()  type: Real
+// 15: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 16: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 17: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 18: P:VARIABLE()  type: Real
+// 19: Q3:VARIABLE()  type: Real
+// 20: Q2:VARIABLE()  type: Real
+// 21: Q1:VARIABLE()  type: Real
+// 22: P1_bc:VARIABLE()  type: Real
+// 23: Q2_bc:VARIABLE()  type: Real
+// 24: Q3_bc:VARIABLE()  type: Real
+// 25: h1_bc:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P1 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): P2 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): P3 = 0.0   [binding |0|0|0|0|]
+// 4/4 (1): P1_bc = 3e5   [binding |0|0|0|0|]
+// 5/5 (1): Q2_bc = 1.0   [binding |0|0|0|0|]
+// 6/6 (1): Q3_bc = 2.0   [binding |0|0|0|0|]
+// 7/7 (1): h1_bc = 1e5   [binding |0|0|0|0|]
+// 8/8 (1): h1 = h1_bc   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = Q1 + (-Q2) - Q3   [dynamic |0|0|0|0|]
+// 10/10 (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2   [dynamic |0|0|0|0|]
+// 11/11 (1): P1_l - P1_r = k1 * Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): P2_l - P2_r = k2 * Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): P3_l - P3_r = k3 * Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 14/14 (1): P = P1_r   [dynamic |0|0|0|0|]
+// 15/15 (1): P = P2_l   [dynamic |0|0|0|0|]
+// 16/16 (1): P = P3_l   [dynamic |0|0|0|0|]
+// 17/17 (1): h2 = h   [dynamic |0|0|0|0|]
+// 18/18 (1): h3 = h   [dynamic |0|0|0|0|]
+// 19/19 (1): P1 = 0.5 * (P1_l + P1_r)   [dynamic |0|0|0|0|]
+// 20/20 (1): P2 = 0.5 * (P2_l + P2_r)   [dynamic |0|0|0|0|]
+// 21/21 (1): P3 = 0.5 * (P3_l + P3_r)   [dynamic |0|0|0|0|]
+// 22/22 (1): h = cp * T + b * P   [dynamic |0|0|0|0|]
+// 23/23 (1): h1 = cp * T1 + b * P1   [dynamic |0|0|0|0|]
+// 24/24 (1): h2 = cp * T2 + b * P2   [dynamic |0|0|0|0|]
+// 25/25 (1): h3 = cp * T3 + b * P3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 25
+// var 2 is solved in eqn 24
+// var 3 is solved in eqn 23
+// var 4 is solved in eqn 22
+// var 5 is solved in eqn 18
+// var 6 is solved in eqn 10
+// var 7 is solved in eqn 8
+// var 8 is solved in eqn 17
+// var 9 is solved in eqn 21
+// var 10 is solved in eqn 16
+// var 11 is solved in eqn 20
+// var 12 is solved in eqn 12
+// var 13 is solved in eqn 14
+// var 14 is solved in eqn 19
+// var 15 is solved in eqn 3
+// var 16 is solved in eqn 2
+// var 17 is solved in eqn 1
+// var 18 is solved in eqn 15
+// var 19 is solved in eqn 13
+// var 20 is solved in eqn 9
+// var 21 is solved in eqn 11
+// var 22 is solved in eqn 4
+// var 23 is solved in eqn 5
+// var 24 is solved in eqn 6
+// var 25 is solved in eqn 7
+//
+// Standard BLT of the original model:(25)
+// ============================================================
+//
+// 25: h1_bc: (7/7): (1): h1_bc = 1e5
+// 24: Q3_bc: (6/6): (1): Q3_bc = 2.0
+// 23: Q2_bc: (5/5): (1): Q2_bc = 1.0
+// 22: P1_bc: (4/4): (1): P1_bc = 3e5
+// 21: Q1: (11/11): (1): P1_l - P1_r = k1 * Q1 ^ 2.0
+// 20: Q2: (9/9): (1): 0.0 = Q1 + (-Q2) - Q3
+// 19: Q3: (13/13): (1): P3_l - P3_r = k3 * Q3 ^ 2.0
+// 18: P: (15/15): (1): P = P2_l
+// 17: P1: (1/1): (1): P1 = 0.0
+// 16: P2: (2/2): (1): P2 = 0.0
+// 15: P3: (3/3): (1): P3 = 0.0
+// 14: P1_l: (19/19): (1): P1 = 0.5 * (P1_l + P1_r)
+// 13: P1_r: (14/14): (1): P = P1_r
+// 12: P2_l: (12/12): (1): P2_l - P2_r = k2 * Q2 ^ 2.0
+// 11: P2_r: (20/20): (1): P2 = 0.5 * (P2_l + P2_r)
+// 10: P3_l: (16/16): (1): P = P3_l
+// 9: P3_r: (21/21): (1): P3 = 0.5 * (P3_l + P3_r)
+// 8: h: (17/17): (1): h2 = h
+// 7: h1: (8/8): (1): h1 = h1_bc
+// 6: h2: (10/10): (1): 0.0 = h1 * Q1 + W - h3 * Q3 - h2 * Q2
+// 5: h3: (18/18): (1): h3 = h
+// 4: T: (22/22): (1): h = cp * T + b * P
+// 3: T1: (23/23): (1): h1 = cp * T1 + b * P1
+// 2: T2: (24/24): (1): h2 = cp * T2 + b * P2
+// 1: T3: (25/25): (1): h3 = cp * T3 + b * P3
+//
+//
+// Variables of interest (3)
+// ========================================
+// 1: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (4)
+// ========================================
+// 1: P1_bc:VARIABLE()  type: Real
+// 2: Q2_bc:VARIABLE()  type: Real
+// 3: Q3_bc:VARIABLE()  type: Real
+// 4: h1_bc:VARIABLE()  type: Real
+//
+//
+// Binding equations:(7)
+// ============================================================
+//
+// 25: h1_bc: (7/7): (1): h1_bc = 1e5
+// 24: Q3_bc: (6/6): (1): Q3_bc = 2.0
+// 23: Q2_bc: (5/5): (1): Q2_bc = 1.0
+// 22: P1_bc: (4/4): (1): P1_bc = 3e5
+// 15: P3: (3/3): (1): P3 = 0.0
+// 16: P2: (2/2): (1): P2 = 0.0
+// 17: P1: (1/1): (1): P1 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(0)
+// ============================================================
+//
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// Extraction procedure is successfully completed in iteration count: 4
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {}
+// SET_S: {}
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{15, 16, 17} (3)
+// ========================================
+// 1: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{17, 16, 15} (3)
+// ========================================
+// 1: P1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: P2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: P3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_C has known variables:{} (0)
+// ========================================
+//
+//
+// -SET_S has known variables:{} (0)
+// ========================================
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Failed
+// -Set-C has 0 equations and 3 variables to be reconciled
+//
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv'",
+//     messages = "Failed to build model: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8"
+// end SimulationResult;
+// "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// Error: Internal error : Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed
+// Error: pre-optimization module dataReconciliation (simulation) failed.
+// "
+// endResult

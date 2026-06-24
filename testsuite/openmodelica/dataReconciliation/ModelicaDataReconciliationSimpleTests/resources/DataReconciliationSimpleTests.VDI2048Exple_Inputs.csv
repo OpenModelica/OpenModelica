@@ -1,0 +1,16 @@
+// test comments1
+// test comments2
+// test comments3
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+// test comments4
+mFDKEL,46.241,2.5,,,
+mFDKELL,45.668,2.5,,,
+mSPL,44.575,0.535,,,
+mSPLL,44.319,0.532,,,
+mV,0.525,0.105,,,
+// test comments5
+mHK,69.978,0.854,,,
+mA7,10.364,0.168,,,
+mA6,3.744,0.058,,,
+mA5,4.391,0.058,,,
+mHDNK,18.498,0.205,,,

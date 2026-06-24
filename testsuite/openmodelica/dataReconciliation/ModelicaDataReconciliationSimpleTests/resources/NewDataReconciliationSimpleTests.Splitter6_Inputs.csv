@@ -1,0 +1,11 @@
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+Q1, 2.50, 0.196
+Q2, 1.15, 0.196
+Q3, 1.25, 0.196
+P1, 6.1, 0.392
+P2, 2.55, 0.392
+P3, 2.45, 0.392
+T, 114, 1.96
+T1, 19, 1.96
+T2, 113, 1.91
+T3, 115, 1.91

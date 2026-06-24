@@ -1,5 +1,7 @@
 TEST = ../../rtest -v
 BASELINE = ../../rtest -b
+MODELICA_DATA_RECONCILIATION_TESTFILES = \
+$(sort $(wildcard ModelicaDataReconciliationSimpleTests.Models.*.mos))
 
 TESTFILES = \
 DistillationTower.mos\
@@ -42,6 +44,7 @@ TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
 TSP_FourFlows3.mos\
 TSP_FourFlows8.mos\
+$(MODELICA_DATA_RECONCILIATION_TESTFILES)
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -69,12 +72,22 @@ DEPENDENCIES = \
 *.csv  \
 *.txt   \
 *.html   \
+*.py \
 Makefile
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test clean getdeps failingtest
+.PHONY : test clean getdeps failingtest generateModelicaDataReconciliationMos testModelicaDataReconciliation baselineModelicaDataReconciliation
+
+generateModelicaDataReconciliationMos:
+	@./generateModelicaDataReconciliationMos.py
+
+testModelicaDataReconciliation: generateModelicaDataReconciliationMos
+	@$(TEST) ModelicaDataReconciliationSimpleTests.Models.*.mos
+
+baselineModelicaDataReconciliation: generateModelicaDataReconciliationMos
+	@$(BASELINE) ModelicaDataReconciliationSimpleTests.Models.*.mos
 
 test:
 	@echo
