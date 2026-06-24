@@ -957,14 +957,16 @@ mod tests {
 
     #[test]
     fn host_builtin_sin() {
-        // main(x) = sin(x), importing the host builtin "sin" (index 2 in env).
+        // main(x) = sin(x), importing `sin` from the runtime (`rt` namespace):
+        // the transcendental builtins moved in-wasm (libm) and are imported from
+        // `rt`, not the host `env`, since e873485c2c.
         let mut m = we::Module::new();
         let mut types = we::TypeSection::new();
         types.ty().function([we::ValType::F64], [we::ValType::F64]); // type 0: sin
         types.ty().function([we::ValType::F64], [we::ValType::F64]); // type 1: main
         m.section(&types);
         let mut imports = we::ImportSection::new();
-        imports.import("env", "sin", we::EntityType::Function(0));
+        imports.import("rt", "sin", we::EntityType::Function(0));
         m.section(&imports);
         let mut funcs = we::FunctionSection::new();
         funcs.function(1);
