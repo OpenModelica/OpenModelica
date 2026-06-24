@@ -50,6 +50,11 @@
 #include <locale.h>
 #include <QMessageBox>
 #include <QTextCodec>
+#include <QTimer>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QStyleHints>
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
@@ -111,6 +116,11 @@ void dumpQtPaths()
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+#if defined(__EMSCRIPTEN__)
+  // Build stamp so a browser console immediately shows which OMEdit-qt.wasm loaded
+  // (cache/stale-artifact diagnosis). Bump when shipping a fix to verify the load.
+  EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1) + " (worker-vfs-engine)"); }, __DATE__, __TIME__);
+#endif
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
     QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
@@ -175,13 +185,16 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       break;
     }
   }
-  // Splash Screen
+  // Splash Screen. Omitted on wasm: SplashScreen is compiled out (its repaint pumps
+  // the Qt-for-WebAssembly event dispatcher during early startup, which traps).
+#if !defined(__EMSCRIPTEN__)
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
   pSplashScreen->setPixmap(pixmap);
   if (!testsuiteRunning) {
     pSplashScreen->show();
   }
+#endif
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
@@ -238,6 +251,20 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   pMainwindow->setNewApiProfiling(newApiProfiling);
   pMainwindow->setNewApiNoJson(newApiNoJson);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
+
+  // The rest of startup makes blocking omc calls (setUpMainWindow loads libraries,
+  // queries the version, builds the library tree). On wasm omc lives in a Web
+  // Worker reached over Asyncify, and those blocking calls are only safe once Qt's
+  // event loop is running: a raw suspend during construction corrupts Qt's wasm
+  // event pump (QWasmSuspendResumeControl). So defer this whole block to the first
+  // event-loop tick on wasm; run it inline everywhere else.
+  auto initMainWindow = [=, this]() {
+#if defined(__EMSCRIPTEN__)
+  // Route main-thread QFile/QDir reads of worker-owned paths through the omc
+  // worker VFS (library index, installed libraries, model files the editor opens).
+  extern void omcInstallWorkerVfsFileEngine();
+  omcInstallWorkerVfsFileEngine();
+#endif
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
@@ -267,6 +294,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
   }
 
+#if !defined(__EMSCRIPTEN__)
   if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
     int port = 3000;
     bool enableAdminTools = false;
@@ -278,12 +306,15 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
   }
+#endif
 
   if (!testsuiteRunning) {
     // finally show the main window
     pMainwindow->show();
     // hide the splash screen
+#if !defined(__EMSCRIPTEN__)
     SplashScreen::instance()->finish(pMainwindow);
+#endif
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
     //! Fixes issue #7456
     if (OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked()) {
@@ -306,6 +337,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       }
     }
   }
+  }; // initMainWindow
+#if defined(__EMSCRIPTEN__)
+  QTimer::singleShot(0, this, initMainWindow);
+#else
+  initMainWindow();
+#endif
 }
 
 /*!

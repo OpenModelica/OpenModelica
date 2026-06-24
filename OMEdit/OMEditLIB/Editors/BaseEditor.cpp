@@ -1252,6 +1252,10 @@ void PlainTextEdit::ensureCursorVisible()
  */
 void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(lineNumber);
+#else
   BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
@@ -1266,6 +1270,7 @@ void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
   }
+#endif
 }
 
 /*!

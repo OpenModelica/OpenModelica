@@ -73,6 +73,9 @@
 
 class OMCProxy;
 
+#if !defined(__EMSCRIPTEN__)
+// Omitted on wasm: showMessage()/repaint() pumps the Qt-for-WebAssembly event
+// dispatcher during early startup, which traps. Uses are guarded at the call sites.
 class SplashScreen : public QSplashScreen
 {
   Q_OBJECT
@@ -90,6 +93,7 @@ public slots:
     repaint();
   }
 };
+#endif
 
 class StatusBar : public QStatusBar
 {

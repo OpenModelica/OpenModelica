@@ -167,6 +167,15 @@ pub fn omc_vfs_load_zip(mount: &str, data: &[u8]) -> Result<usize, String> {
     Ok(count)
 }
 
+/// Dispatch one typed OMEdit scripting call: the bridge posts
+/// `{"fn": …, "args": […]}` and gets back `{"result": …}` or `{"error": …}`.
+/// Present only with the `scripting_api` feature (the OMEdit C-ABI crate).
+#[cfg(feature = "scripting_api")]
+#[wasm_bindgen]
+pub fn omc_abi(request: &str) -> String {
+    openmodelica_scripting_qt::scripting_api_qt::omc_abi_dispatch(request)
+}
+
 /// Evaluate one interactive command and return its reply — the same string the
 /// `--interactive=zmq` server returns for a request. Evaluation errors and
 /// panics are returned as `"Error: …"` text rather than thrown, so a REPL can

@@ -31,6 +31,13 @@ import init, {
   omc_take_pending_downloads,
   omc_take_plot_commands,
 } from "./omc/OpenModelicaCompiler.js";
+// omc_abi exists only when the omc module is built with `scripting_api` (the
+// OMEdit web client). A named import of a missing export would break the worker
+// for OMShell/OMNotebook, so reach it through the namespace and feature-detect it.
+import * as OmcModule from "./omc/OpenModelicaCompiler.js";
+
+// Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
+console.log("omc_worker.js loaded (vfsGet handler present)");
 
 // Instantiate the omc wasm module once. omc_set_env mirrors the old host page:
 // builtins resolve by basename, so OPENMODELICAHOME only needs to be non-empty.
@@ -107,6 +114,24 @@ async function evalWithDownloads(src) {
   }
 }
 
+// One typed OMEdit ABI call (JSON request -> JSON reply), draining downloads the
+// call triggers (installPackage, loadModel deps) and retrying, like evalWithDownloads.
+async function abiWithDownloads(request) {
+  const attempted = new Set();
+  for (;;) {
+    const response = OmcModule.omc_abi(request);
+    const pending = omc_take_pending_downloads() || [];
+    const todo = pending.filter((p) => !attempted.has(p.filename));
+    if (todo.length === 0) return response;
+    omc_eval("getErrorString()"); // discard the aborted call's diagnostics
+    omc_take_plot_commands(); // and any plots it recorded before aborting
+    for (const item of todo) {
+      attempted.add(item.filename);
+      await fetchToVfs(item.urls, item.filename);
+    }
+  }
+}
+
 async function doInit(installMsl) {
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
@@ -161,12 +186,30 @@ self.onmessage = async (e) => {
       const { msg: reply, transfer } = await doEval(msg.src);
       // Transfer the result-file buffers (zero-copy) rather than clone them.
       self.postMessage(reply, transfer);
+    } else if (msg.cmd === "abi") {
+      // Typed OMEdit call. `id` correlates the reply with the page-side promise
+      // (Module.omcAbiCall). `response` is the JSON string omc_abi_dispatch made.
+      const response =
+        typeof OmcModule.omc_abi === "function"
+          ? await abiWithDownloads(msg.request)
+          : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
+      self.postMessage({ kind: "abiResult", id: msg.id, response });
+    } else if (msg.cmd === "vfsGet") {
+      // OMEdit reads some files (library index, install manifests) on the main
+      // thread; omc wrote them into this worker's VFS, so copy the bytes back so
+      // the page can stage them into its own MEMFS.
+      let bytes;
+      try { bytes = omc_vfs_get(msg.path); } catch (e) { bytes = undefined; }
+      const transfer = bytes ? [bytes.buffer] : [];
+      self.postMessage({ kind: "vfsResult", id: msg.id, bytes: bytes || null }, transfer);
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the
     // channel the GUI is waiting on so it clears `busy`.
     if (msg.cmd === "init") {
       self.postMessage({ kind: "ready", ok: false, error: String(err) });
+    } else if (msg.cmd === "abi") {
+      self.postMessage({ kind: "abiResult", id: msg.id, response: JSON.stringify({ error: String(err) }) });
     } else {
       self.postMessage({ kind: "done", result: "", error: String(err), keep: true });
     }

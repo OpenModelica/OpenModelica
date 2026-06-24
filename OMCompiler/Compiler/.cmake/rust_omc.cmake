@@ -727,6 +727,13 @@ function(omc_rust_omnotebook_qt_web_page)
             ${_qt_bld}/OMNotebook-qt.html ${_qt_bld}/OMNotebook-qt.js
             ${_qt_bld}/OMNotebook-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    # Example notebooks: gzip-tar the DrModelica/DrControl trees next to the page;
+    # the page fetches and extracts them into MEMFS at startup so File menus and
+    # inter-notebook links resolve. All paths are < 100 chars, so the headers are
+    # plain enough for the small JS tar extractor.
+    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR}/OMNotebook
+            ${CMAKE_COMMAND} -E tar czf ${_qt_pkgdir}/notebooks.tar.gz
+            DrModelica DrControl OMNotebookHelp.onb
     COMMENT "Qt: building OMNotebook-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   add_dependencies(rust_omnotebook_qt_web rust_wasm)
@@ -734,6 +741,56 @@ function(omc_rust_omnotebook_qt_web_page)
   # so the two copies never write that file concurrently. The dependency target
   # exists whenever this one does (same toolchain gate, same build).
   add_dependencies(rust_omnotebook_qt_web rust_omshell_qt_web)
+endfunction()
+
+# Qt OMEdit web page: same shape as the OMShell/OMNotebook pages, pointed at the
+# build-tree OpenModelicaScriptingAPIQt sources (OMC_SCRIPTING_API_QT_DIR).
+function(omc_rust_omedit_qt_web_page)
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+      CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
+  set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
+  if(NOT EXISTS ${_tc})
+    message(STATUS "OMEdit Qt web page skipped: no Qt-for-WebAssembly toolchain at "
+                   "${_tc} (set -DOMSHELL_QT_WASM_PREFIX=<prefix> to enable).")
+    return()
+  endif()
+
+  set(_qt_src ${CMAKE_SOURCE_DIR}/OMEdit/OMEditGUI/wasm)
+  set(_qt_bld ${CMAKE_CURRENT_BINARY_DIR}/omedit-qt-wasm)
+  set(_qt_pkgdir ${_web_dir}/OMEdit-qt)
+
+  # QT_HOST_PATH for the cross Qt toolchain; fall back to the wasm prefix's
+  # sibling gcc_64 so a first-time configure needs no cache/env value.
+  set(_host_arg "")
+  if(QT_HOST_PATH)
+    set(_host_arg -DQT_HOST_PATH=${QT_HOST_PATH})
+  elseif(DEFINED ENV{QT_HOST_PATH})
+    set(_host_arg -DQT_HOST_PATH=$ENV{QT_HOST_PATH})
+  else()
+    get_filename_component(_qt_base ${OMSHELL_QT_WASM_PREFIX} DIRECTORY)
+    if(EXISTS ${_qt_base}/gcc_64/lib/cmake/Qt6)
+      set(_host_arg -DQT_HOST_PATH=${_qt_base}/gcc_64)
+    endif()
+  endif()
+
+  add_custom_target(rust_omedit_qt_web ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
+    COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
+            -DCMAKE_TOOLCHAIN_FILE=${_tc} ${_host_arg} -DCMAKE_BUILD_TYPE=Release
+            -DSCRIPTING_API_QT_DIR=${OMC_SCRIPTING_API_QT_DIR}
+    COMMAND ${CMAKE_COMMAND} --build ${_qt_bld} --parallel
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
+            ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
+    VERBATIM)
+  add_dependencies(rust_omedit_qt_web rust_wasm)
+  # Serialise the shared omc_worker.js copy with the other Qt pages.
+  if(TARGET rust_omshell_qt_web)
+    add_dependencies(rust_omedit_qt_web rust_omshell_qt_web)
+  endif()
 endfunction()
 
 function(omc_rust_setup_wasm)
@@ -782,14 +839,21 @@ function(omc_rust_setup_wasm)
   if(OM_ENABLE_GUI_CLIENTS AND _host STREQUAL "web")
     set(_build_omshell_web TRUE)
   endif()
+  # scripting_api gives the worker omc_abi (the OMEdit typed ABI dispatcher).
+  # RUST_OMC_SCRIPTING_API defaults to OM_ENABLE_GUI_CLIENTS, which also selects
+  # the OMEdit page, so the two stay in sync.
+  set(_wasm_scripting_feature "")
+  if(RUST_OMC_SCRIPTING_API)
+    set(_wasm_scripting_feature ",libopenmodelica_compiler/scripting_api")
+  endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
                      -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,omshell_dioxus/web)
+                     --features libopenmodelica_compiler/engine-wasmer,omshell_dioxus/web${_wasm_scripting_feature})
   else()
     set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
-                     --no-default-features --features engine-wasmer)
+                     --no-default-features --features engine-wasmer${_wasm_scripting_feature})
   endif()
 
   if(_profile STREQUAL "release")
@@ -875,6 +939,7 @@ function(omc_rust_setup_wasm)
       omc_rust_omshell_web_page(dioxus OMShell-dioxus ${RUST_OMC_DIR}/omshell_dioxus/web/index.html)
       omc_rust_omshell_qt_web_page()
       omc_rust_omnotebook_qt_web_page()
+      omc_rust_omedit_qt_web_page()
     else()
       message(STATUS "OMShell web pages skipped: RUST_OMC_WASM_MODE is a Node host "
                      "(set web-release/web-debug to build them).")

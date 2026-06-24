@@ -109,22 +109,16 @@ static OmcSeq *seqFromJson(const QJsonValue &val) {
   return s;
 }
 
-// The synchronous worker round-trip. Posts the JSON request and blocks (via
-// Asyncify) until the worker replies; returns a malloc'd JSON string the caller
-// frees. The page wires self.omcAbiCall(reqJson) -> Promise<respJson> (omedit
-// shell, omc_worker.js bridge). On any failure returns an {"error":...} reply.
-EM_ASYNC_JS(char *, omc_abi_call_js, (const char *req), {
-  let resp;
-  try {
-    resp = await Module.omcAbiCall(UTF8ToString(req));
-  } catch (e) {
-    resp = JSON.stringify({ error: "omc bridge call failed: " + e });
-  }
-  const len = lengthBytesUTF8(resp) + 1;
-  const ptr = _malloc(len);
-  stringToUTF8(resp, ptr, len);
-  return ptr;
-});
+// The omc worker round-trip, shared with OMCProxy.cpp's string path: post the
+// request without suspending (omedit_post_abi), wait for the reply without
+// suspending mid-event (omcWorkerWaitReply spins a nested QEventLoop once Qt's
+// main loop runs, a raw Asyncify poll before it), then take the reply string.
+// See OMEditLIB/OMC/OMCProxy.cpp for why raw Asyncify mid-event is unsafe here.
+extern "C" {
+  int   omedit_post_abi(const char *req);
+  char *omedit_take_abi_result(int id);
+}
+void omcWorkerWaitReply(int id);
 
 // Build {fn,args}, call the worker, decode the reply envelope
 // {result?, error?}. Records any error on the omc_abi exception channel.
@@ -133,7 +127,9 @@ static QJsonValue omc_bridge_call(const char *fn, const QJsonArray &args) {
   req["fn"] = QString::fromUtf8(fn);
   req["args"] = args;
   QByteArray reqBytes = QJsonDocument(req).toJson(QJsonDocument::Compact);
-  char *respC = omc_abi_call_js(reqBytes.constData());
+  int id = omedit_post_abi(reqBytes.constData());
+  omcWorkerWaitReply(id);
+  char *respC = omedit_take_abi_result(id);
   QByteArray respBytes(respC);
   free(respC);
   QJsonObject resp = QJsonDocument::fromJson(respBytes).object();

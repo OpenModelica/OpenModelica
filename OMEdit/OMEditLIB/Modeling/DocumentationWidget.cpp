@@ -1537,7 +1537,9 @@ void DocumentationViewer::setFocusInternal()
  */
 void DocumentationViewer::createActions()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__)
+  // QWebEnginePage shim has no page actions (action() returns nullptr).
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebEnginePage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -1649,7 +1651,9 @@ void DocumentationViewer::showContextMenu(QPoint point)
 {
   QMenu menu(this);
   // add QWebPage default actions
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__)
+  // QWebEnginePage shim has no page actions.
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   menu.addAction(page()->action(QWebEnginePage::SelectAll));
   menu.addAction(page()->action(QWebEnginePage::Copy));
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)

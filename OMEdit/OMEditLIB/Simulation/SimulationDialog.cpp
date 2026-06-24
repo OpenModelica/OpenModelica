@@ -76,11 +76,13 @@ SimulationDialog::SimulationDialog(QWidget *pParent)
 
 SimulationDialog::~SimulationDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   // kill the clients
   foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
     delete pOpcUaClient;
   }
   mOpcUaClientsMap.clear();
+#endif
 }
 
 /*!
@@ -1402,6 +1404,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
         simulationOptions.setInteractiveSimulationPortNumber(portNumber);
         simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(portNumber)));
         // if the user enters a used port
+#if !defined(__EMSCRIPTEN__)
         if (mOpcUaClientsMap.contains(portNumber)) {
           OpcUaClient *pOpcUaClient = getOpcUaClient(portNumber);
           if (pOpcUaClient && pOpcUaClient->getSimulationOptions().getClassName().compare(simulationOptions.getClassName()) != 0) {
@@ -1413,6 +1416,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
             return simulationOptions; // return from here without setting valid for SimulationOptions
           }
         }
+#endif
       }
     }
   }
@@ -1440,6 +1444,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
+#if !defined(__EMSCRIPTEN__)
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
     pSimulationOutputWidget->start();
@@ -1449,6 +1454,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
       // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
+#endif
   }
 }
 
@@ -1813,6 +1819,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = fileName.append(".exe");
 #endif
     // start the debugger
+#if !defined(__EMSCRIPTEN__)
     if (GDBAdapter::instance()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), QMessageBox::Ok);
@@ -1821,6 +1828,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
       GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
+#endif
   }
 }
 
@@ -1837,6 +1845,7 @@ void SimulationDialog::showVariableFilterHelp()
 
 void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simulationOptions)
 {
+#if !defined(__EMSCRIPTEN__)
   if (simulationOptions.isInteractiveSimulation()) {
     OpcUaClient *pOpcUaClient = getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber());
     if (pOpcUaClient && pOpcUaClient->getSampleThread()) {
@@ -1846,6 +1855,9 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
       pOpcUaClient->getOpcUaWorker()->pauseInteractiveSimulation();
     }
   }
+#else
+  Q_UNUSED(simulationOptions);
+#endif
 }
 
 /*!
@@ -1857,6 +1869,7 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
  */
 void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow)
 {
+#if !defined(__EMSCRIPTEN__)
   if (isInteractiveSimulation) {
     className.remove(QRegularExpression("_res.int"));
     SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
@@ -1879,6 +1892,11 @@ void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation,
       }
     }
   }
+#else
+  Q_UNUSED(isInteractiveSimulation);
+  Q_UNUSED(className);
+  Q_UNUSED(closeInteractivePlotWindow);
+#endif
 }
 
 /*!
@@ -1890,6 +1908,11 @@ void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation,
  */
 bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QString *pErrorString)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(simulationOptions);
+  Q_UNUSED(pErrorString);
+  return false;
+#else
   OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
   if (!pOpcUaClient->connectToServer(pErrorString)) {
     return false;
@@ -1936,6 +1959,7 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
   }
   MainWindow::instance()->switchToPlottingPerspectiveSlot();
   return true;
+#endif
 }
 
 OpcUaClient* SimulationDialog::getOpcUaClient(int port)

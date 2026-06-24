@@ -1,17 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Standalone Qt-for-WebAssembly build of OMEdit. See HANDOFF.md for the full plan.
-#
-# *** WORK IN PROGRESS — does not link yet. ***
-# This scaffold configures the proven pieces (qwt + OMPlotLib, copied from the
-# OMNotebook wasm build) and an OMEditLib static target globbed from the native
-# sources MINUS the Emscripten-hostile subsystems (Animation/OSG, Debugger/GDB,
-# Git, MCP/HttpServer, OMS, FMI, CrashReport). Its purpose is to start surfacing
-# compile errors for the guard grind (HANDOFF stages 3-4). The omc OmcSeq->worker
-# bridge (HANDOFF "omc bridge") and the per-file __EMSCRIPTEN__ guards are still
-# TODO, so the link stage will not succeed until those land.
-#
-# Configure (own scratch dir, NOT a build-* under the repo):
+# Qt-for-WebAssembly build of OMEdit. See HANDOFF.md.
+# Standalone configure (own scratch dir, NOT a build-* under the repo):
 #   source /opt/emsdk/emsdk_env.sh
 #   TC=/opt/Qt/6.10.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
 #   cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TC \
@@ -24,8 +14,17 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Qt6 REQUIRED COMPONENTS
-  Widgets PrintSupport Svg Xml Core5Compat Concurrent OpenGL OpenGLWidgets Network)
+  Widgets PrintSupport Svg Xml Core5Compat Concurrent OpenGL OpenGLWidgets Network
+  CorePrivate)
 qt_standard_project_setup()
+
+# Qt forces -sERROR_ON_UNDEFINED_SYMBOLS=1 via Qt6::Platform; emcc takes the last
+# -s flag and interface options come after target_link_options, so appending =0
+# here is the only place it wins (lets the dead-feature symbols be deferred imports).
+if(TARGET Qt6::Platform)
+  set_property(TARGET Qt6::Platform APPEND PROPERTY
+    INTERFACE_LINK_OPTIONS -sERROR_ON_UNDEFINED_SYMBOLS=0)
+endif()
 
 get_filename_component(OM_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(LIB    ${CMAKE_CURRENT_SOURCE_DIR}/../../OMEditLIB)
@@ -33,9 +32,10 @@ set(GUI    ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(OMPLOT ${OM_ROOT}/OMPlot/OMPlot/OMPlotGUI)
 set(QWT    ${OM_ROOT}/OMPlot/qwt)
 set(SIMRT  ${OM_ROOT}/OMCompiler/SimulationRuntime/c)
-# Generated typed OMCInterface (OmcSeq ABI variant). Produced by mmtorust's
-# scripting_api_qt pass; this path is the native-ABI build output for now.
-set(SCRIPTING_API_QT ${OM_ROOT}/build-cmake-rust/OMCompiler/Compiler/scripting-api-qt)
+# Generated typed OMCInterface; overridden by the integrated build.
+set(SCRIPTING_API_QT_DIR "${OM_ROOT}/build-cmake-rust/OMCompiler/Compiler/scripting-api-qt"
+    CACHE PATH "Directory of the generated OpenModelicaScriptingAPIQt{.cpp,.h,ABI.h}.")
+set(SCRIPTING_API_QT ${SCRIPTING_API_QT_DIR})
 
 # ---- qwt (static) ----
 set(USE_QT6 ON CACHE BOOL "" FORCE)
@@ -43,7 +43,7 @@ set(QWT_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(OMQWT_LIBRARY_TYPE STATIC)
 add_subdirectory(${QWT} ${CMAKE_BINARY_DIR}/qwt)
 
-# ---- OMPlotLib (library only) — proven from the OMNotebook wasm build ----
+# ---- OMPlotLib (library only) ----
 add_library(OMPlotLib STATIC
   ${OMPLOT}/Plot.cpp ${OMPLOT}/PlotZoomer.cpp ${OMPLOT}/Legend.cpp
   ${OMPLOT}/PlotPanner.cpp ${OMPLOT}/PlotPicker.cpp ${OMPLOT}/PlotGrid.cpp
@@ -64,39 +64,35 @@ target_link_libraries(OMPlotLib PUBLIC
   Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt)
 
 # ---- OMEditLib (static) ----
-# Scaffold: glob the native sources, then drop the subsystems stubbed on wasm.
-# Replace with an explicit, guarded source list as the grind progresses.
+# Glob the native sources minus the subsystems stubbed on wasm. /generatedfiles/
+# is stale checked-in moc/ui/rcc output that AUTOMOC/AUTOUIC/AUTORCC regenerate.
 file(GLOB_RECURSE OMEDITLIB_SOURCES ${LIB}/*.cpp)
 file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
-# /generatedfiles/ holds stale pre-generated moc/ui/rcc output checked into the
-# tree; AUTOMOC/AUTOUIC/AUTORCC regenerate them, so never compile the stale ones.
+# OMS is compiled (MainWindow constructs OMSProxy at startup; its oms_* externs
+# defer). Debugger is excluded: it is GDB-over-QProcess, and MainWindow's debugger
+# construction/usage is guarded out under __EMSCRIPTEN__.
 set(WASM_EXCLUDE_DIRS
   "/generatedfiles/"
-  "/Animation/" "/Debugger/" "/OMS/" "/FMI/" "/Git/" "/MCP/" "/CrashReport/"
+  "/Animation/" "/Debugger/" "/FMI/" "/Git/" "/MCP/" "/CrashReport/"
   "/TransformationalDebugger/" "/Traceability/")
 foreach(pat ${WASM_EXCLUDE_DIRS})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${pat}")
   list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "${pat}")
 endforeach()
-# Pure native-only driver .cpp (subprocess / OPC-UA). Their headers still compile
-# (QProcess paths guarded under QT_CONFIG(process)); the driver bodies get rewired
-# to the omc worker later, so don't compile them now.
+# Native-only .cpp (subprocess / OPC-UA); their headers still compile and their
+# symbols defer (the features are unavailable on web v1).
 set(WASM_EXCLUDE_FILES
   "Simulation/SimulationOutputWidget.cpp"
-  "Simulation/OpcUaClient.cpp")
+  "Simulation/OpcUaClient.cpp"
+  "OMS/OMSSimulationOutputWidget.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${f}")
 endforeach()
 
-# Generated typed interface (OmcSeq ABI) — the OMCInterface that calls the
-# omc_scripting_*/omc_seq_*/omc_abi_* C ABI.
+# Generated OMCInterface + its worker bridge (gen_bridge.py turns the ABI header
+# into JSON forwarders that define the omc_scripting_*/omc_seq_*/omc_abi_* symbols).
 list(APPEND OMEDITLIB_SOURCES ${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQt.cpp)
 set_source_files_properties(${SCRIPTING_API_QT}/OpenModelicaScriptingAPIQt.cpp PROPERTIES GENERATED TRUE)
-
-# The omc bridge: gen_bridge.py turns the ABI header's per-function declarations
-# into C++ forwarders that marshal each call to the omc Web Worker as JSON (see
-# gen_bridge.py). This defines the omc_scripting_*/omc_seq_*/omc_abi_* symbols the
-# OMCInterface above calls.
 set(OMC_BRIDGE_CPP ${CMAKE_BINARY_DIR}/OpenModelicaScriptingAPIQtBridge.cpp)
 add_custom_command(OUTPUT ${OMC_BRIDGE_CPP}
   COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_bridge.py
@@ -107,38 +103,49 @@ add_custom_command(OUTPUT ${OMC_BRIDGE_CPP}
 list(APPEND OMEDITLIB_SOURCES ${OMC_BRIDGE_CPP})
 set_source_files_properties(${OMC_BRIDGE_CPP} PROPERTIES SKIP_AUTOMOC ON)
 
+# ryu number formatting (ryu_hr_tdzp) + wasm startup stubs (wasm_stubs.cpp).
+list(APPEND OMEDITLIB_SOURCES
+  ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/om_format.c
+  ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/d2s.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/wasm_stubs.cpp
+  # OMS C API (OMSimulator has no wasm build) + the excluded sim/OMS-sim output
+  # widgets' moc-referenced methods: no-op definitions so the app links/loads.
+  ${CMAKE_CURRENT_SOURCE_DIR}/oms_stubs.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sim_widget_stubs.cpp
+  # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
+  ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp PROPERTIES SKIP_AUTOMOC ON)
+# TimeManager drives the result-replay time slider in VariablesWidget. It is the
+# one Animation/ source that has no OpenSceneGraph/GL dependency (just rtclock +
+# QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)
+# rather than guarding its ~40 use sites out.
+list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
+set_source_files_properties(
+  ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/om_format.c
+  ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/d2s.c
+  # ryu parent dir (d2s.c includes "ryu/ryu.h"), scoped so it doesn't rebuild the lib.
+  PROPERTIES SKIP_AUTOMOC ON INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/ryu)
+
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
-# WITHOUT_OSG: OMEdit's maintained "no OpenSceneGraph animation" build flag
-# (no osg on wasm). Guards the Animation includes/usages across MainWindow,
-# PlotWindowContainer, SimulationDialog, ModelWidgetContainer, LibraryTreeWidget.
-# PUBLIC so the OMEdit-qt executable (main.cpp) inherits them too — main.cpp pulls
-# in MainWindow.h, whose omc include path is gated on OMC_RUST_ABI.
+# WITHOUT_OSG: no OpenSceneGraph animation. OMC_RUST_ABI: the MMC-free embedding
+# ABI (omc_rust_embedding.h). PUBLIC so main.cpp inherits both.
 target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI WITHOUT_OSG)
-# omc_rust_embedding.h (self-contained threadData_t/MMC-free ABI) + the benign
-# omc runtime metadata headers it pulls in.
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
+# Headers for subsystems whose libs aren't linked on wasm (OMSimulator, antlr/
+# OMParser, open62541) compile fine for the static lib; the symbols are deferred.
 target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
-  ${OM_ROOT}/OMEdit  # omedit_config.h (version defines)
+  ${OM_ROOT}/OMEdit
   ${RUST_OMC}/libopenmodelica_compiler/include
   ${OM_ROOT}/OMCompiler/SimulationRuntime/c
-  # OMSimulator C API header is declarations-only (compiles fine); the oms_*
-  # implementation is stubbed at link (no OMSimulator on wasm v1).
   ${OM_ROOT}/OMSimulator/include
-  # antlr4 C++ runtime + the generated Modelica lexer/parser headers
-  # (OMParser/modelicaLexer.h) for FlatModelica/Parser.cpp. The OMParser lib is
-  # not linked on wasm yet; the headers suffice for the static-lib compile.
   ${OM_ROOT}/OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
   ${OM_ROOT}/OMParser
-  # ryu om_format.h (number formatting), included as "om_format.h".
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu
-  # open62541 (OPC-UA) header for OpcUaClient — declarations only; the lib is not
-  # linked on wasm (interactive simulation is unavailable), but as a STATIC lib
-  # OMEditLib only needs the header to compile, not the symbols.
   ${OM_ROOT}/OMCompiler/3rdParty/open62541)
 target_link_libraries(OMEditLib PUBLIC
   OMPlotLib Qt6::Widgets Qt6::Xml Qt6::PrintSupport Qt6::Svg Qt6::Concurrent
-  Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Core5Compat Qt6::Network)
+  Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Core5Compat Qt6::Network Qt6::CorePrivate)
 
 # ---- OMEdit executable ----
 qt_add_executable(OMEdit-qt ${GUI}/main.cpp)
@@ -147,12 +154,18 @@ target_link_options(OMEdit-qt PRIVATE
   -sASYNCIFY
   -sASYNCIFY_STACK_SIZE=131072
   -sALLOW_MEMORY_GROWTH=1
-  # The bridge suspends on the worker round-trip (EM_ASYNC_JS omc_abi_call_js).
-  -sASYNCIFY_IMPORTS=omc_abi_call_js
-  # Dead-feature symbols from the excluded subsystems (Debugger/OMS/sim-output
-  # driver) that core code still references are left as deferred imports — those
-  # features are unavailable on web v1, so calling one aborts; everything else
-  # links. The omc ABI itself is fully resolved by the generated bridge.
-  # (Qt appends -sERROR_ON_UNDEFINED_SYMBOLS=1, so use the wasm-ld flag directly.)
+  # Only the pre-main-loop reply wait suspends via raw Asyncify. All other waits
+  # (worker init included) run post-main-loop through a nested QEventLoop, i.e.
+  # Qt's own Asyncify import, so they need not be listed here.
+  -sASYNCIFY_IMPORTS=omedit_await_call
+  # Dead-feature symbols stay deferred imports that abort if reached
+  # (ERROR_ON_UNDEFINED_SYMBOLS=0, set via Qt6::Platform above); everything else links.
   -Wl,--allow-undefined
   -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToNewUTF8,FS,lengthBytesUTF8,stringToUTF8)
+
+# -g2 keeps wasm function names in browser traces. Don't add -sASSERTIONS: its
+# checkInt32 aborts on Qt's NaN-into-int write in QLocalTime (release tolerates it).
+option(OMEDIT_WASM_DEBUG "Build OMEdit-qt with debug function names" ON)
+if(OMEDIT_WASM_DEBUG)
+  target_link_options(OMEdit-qt PRIVATE -g2)
+endif()

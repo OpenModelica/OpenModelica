@@ -260,6 +260,12 @@ int main(int argc, char *argv[])
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG
 
+#if defined(__EMSCRIPTEN__)
+  // From here on omc bridge calls must wait via a nested QEventLoop, not a raw
+  // Asyncify suspend (which corrupts Qt's wasm event pump mid-event). See OMCProxy.
+  extern bool g_omcMainLoopRunning;
+  g_omcMainLoopRunning = true;
+#endif
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

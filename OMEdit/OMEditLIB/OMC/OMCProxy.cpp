@@ -71,6 +71,189 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include <QMessageBox>
 #include <QStringBuilder>
 
+#if defined(__EMSCRIPTEN__)
+#include <cstdlib>
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+#include <QEventLoop>
+#include <QTimer>
+
+// On wasm omc runs in the shared omc_worker.js Web Worker. OMEdit reaches it via
+// the typed ABI bridge (the generated forwarders) and the string path
+// (sendCommand). A command is posted to the worker WITHOUT suspending; its reply
+// is stashed under a call id and the C++ side waits for it. How it waits matters:
+// a raw Asyncify suspend that fires while Qt is processing a native event
+// (QWasmSuspendResumeControl::sendPendingEvents) corrupts Qt's wasm event pump
+// (pendingEvents is drained during the await → undefined on rewind). So before
+// Qt's main loop is running we use a raw Asyncify poll (fast, no event pump yet);
+// once it is running we spin a nested QEventLoop polling for the reply — exactly
+// OMNotebook's bridge pattern, which Qt's wasm Asyncify handles correctly.
+bool g_omcMainLoopRunning = false;
+
+EM_JS(void, omedit_worker_setup, (const char *ver), {
+  if (Module.__omcWorker) return;
+  // Cache-bust the worker URL with the build id: browsers cache Worker scripts
+  // very aggressively (a page hard-reload often does not refetch them), so a stale
+  // omc_worker.js would silently run old code. The query doesn't affect the
+  // worker's own relative imports (./omc/...), which resolve without it.
+  const url = new URL("../omc_worker.js", document.baseURI);
+  url.search = "v=" + UTF8ToString(ver);
+  const w = new Worker(url, { type: "module" });
+  Module.__omcWorker = w;
+  Module.__omcPending = null;
+  Module.__omcMsgId = 0;
+  Module.__omcCallId = 0;
+  Module.__omcReplies = {};
+  Module.__omcCallPromises = {};
+  Module.__omcQueue = Promise.resolve();
+  Module.__omcSend = (msg) => {
+    const run = () => new Promise((resolve) => {
+      Module.__omcPending = resolve;
+      w.postMessage(msg);
+    });
+    const p = Module.__omcQueue.then(run);
+    Module.__omcQueue = p.catch(() => {});
+    return p;
+  };
+  // Post a worker message, returning a fresh call id; when the reply arrives it is
+  // stashed in __omcReplies[id] for the C++ side to poll/take. id-keyed so a
+  // reentrant call made while another's nested loop is spinning stays unambiguous.
+  Module.__omcPostCall = (msg) => {
+    const id = ++Module.__omcCallId;
+    Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
+      Module.__omcReplies[id] = reply || {};
+    }).catch((e) => {
+      Module.__omcReplies[id] = { __bridgeError: String(e) };
+    });
+    return id;
+  };
+  w.onmessage = (e) => {
+    const m = e.data;
+    if (m && m.kind === "progress") return; // download progress (UI hook TODO)
+    const resolve = Module.__omcPending;     // serialised queue → one in flight
+    Module.__omcPending = null;
+    if (resolve) resolve(m);
+  };
+});
+
+// Non-suspending posts; the reply is collected via __omcReplies[id]. omedit_post_abi
+// is called by the generated bridge (OpenModelicaScriptingAPIQtBridge.cpp). Worker
+// init goes through the same post/wait path so it too can run from inside Qt's
+// event loop (a raw Asyncify suspend there corrupts the event pump).
+EM_JS(int, omedit_post_init, (), {
+  return Module.__omcPostCall({ cmd: "init", installMsl: false });
+});
+EM_JS(char *, omedit_take_init_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && r.ok) return stringToNewUTF8("");
+  return stringToNewUTF8((r && (r.error || r.__bridgeError)) || "omc worker init failed");
+});
+EM_JS(int, omedit_post_eval, (const char *src), {
+  return Module.__omcPostCall({ cmd: "eval", src: UTF8ToString(src) });
+});
+EM_JS(int, omedit_post_abi, (const char *req), {
+  return Module.__omcPostCall({ cmd: "abi", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+EM_JS(int, omedit_call_ready, (int id), {
+  return Object.prototype.hasOwnProperty.call(Module.__omcReplies, id) ? 1 : 0;
+});
+EM_JS(char *, omedit_take_eval_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return stringToNewUTF8((r && r.result) || "");
+});
+EM_JS(char *, omedit_take_abi_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && typeof r.response === "string") return stringToNewUTF8(r.response);
+  if (r && r.__bridgeError) return stringToNewUTF8(JSON.stringify({ error: "omc bridge call failed: " + r.__bridgeError }));
+  return stringToNewUTF8('{"error":"no response from omc worker"}');
+});
+
+// Pre-main-loop wait: raw Asyncify suspend on the call's own promise (no Qt event
+// pump is active yet, so suspending is safe and a single rewind is enough).
+EM_ASYNC_JS(void, omedit_await_call, (int id), {
+  const p = Module.__omcCallPromises[id];
+  if (p) { try { await p; } catch (e) {} }
+});
+
+// Block until the worker reply for `id` is staged. See the block comment above.
+void omcWorkerWaitReply(int id) {
+  if (omedit_call_ready(id)) return;
+  if (!g_omcMainLoopRunning) {
+    omedit_await_call(id);
+    return;
+  }
+  QEventLoop loop;
+  QTimer poll;
+  QObject::connect(&poll, &QTimer::timeout, &loop, [&loop, id]() {
+    if (omedit_call_ready(id)) loop.quit();
+  });
+  // Must be nonzero: a 0 ms timer keeps the event loop "busy" so it never yields
+  // to the browser, and the worker's postMessage reply (not a Qt event) would
+  // never be delivered — deadlock. A small interval yields between polls.
+  poll.start(1);
+  loop.exec();
+}
+
+// Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
+// installMsl=false: OMEdit loads libraries itself as ordinary commands. Returns
+// "" on success or an error string (caller frees with free()).
+static char *omedit_worker_init() {
+  omedit_worker_setup(__DATE__ "T" __TIME__); // spawn worker, cache-busted by build id
+  int id = omedit_post_init();
+  omcWorkerWaitReply(id);
+  return omedit_take_init_result(id);
+}
+
+// String command path (replaces omc_Main_handleCommand). Returns the reply
+// string (caller frees with free()).
+static char *omedit_worker_eval(const char *src) {
+  int id = omedit_post_eval(src);
+  omcWorkerWaitReply(id);
+  return omedit_take_eval_result(id);
+}
+
+// Read a file from the worker VFS into a malloc'd buffer (caller frees), or null
+// if the worker is not up / has no such file. Backs the QAbstractFileEngine that
+// makes main-thread QFile/QDir reads of worker-owned paths transparent
+// (wasm/worker_vfs_engine.cpp).
+EM_JS(int, omedit_worker_ready, (), {
+  return (Module.__omcWorker && Module.__omcSend) ? 1 : 0;
+});
+EM_JS(int, omedit_post_vfs_get, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsGet", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_bytes, (int id, int *outLen), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) { HEAP32[outLen >> 2] = -1; return 0; }
+  const len = bytes.length;
+  const ptr = _malloc(len || 1);
+  HEAPU8.set(bytes, ptr);
+  HEAP32[outLen >> 2] = len;
+  return ptr;
+});
+
+QByteArray omcWorkerReadFile(const char *path) {
+  if (!omedit_worker_ready()) return QByteArray();
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  int len = -1;
+  char *p = omedit_take_vfs_bytes(id, &len);
+  if (!p || len < 0) { if (p) free(p); return QByteArray(); }
+  QByteArray data(p, len);
+  free(p);
+  return data;
+}
+#endif // __EMSCRIPTEN__
+
 /*!
  * \class OMCProxy
  * \brief Interface to send commands to OpenModelica Compiler.
@@ -257,6 +440,22 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
+#if defined(__EMSCRIPTEN__)
+  // omc runs in the Web Worker: spawn + initialise it instead of an in-process
+  // MMC runtime. The plot/loadModel callbacks are delivered as worker messages
+  // (TODO) rather than threadData function pointers. threadData is null here.
+  (void) settingsLocale;
+  {
+    char *initErr = omedit_worker_init();
+    QString initError = QString::fromUtf8(initErr);
+    free(initErr);
+    if (!initError.isEmpty()) {
+      fprintf(stderr, "OMEdit: omc worker init failed: %s\n", initError.toUtf8().constData());
+      return false;
+    }
+  }
+  mpOMCInterface = new OMCInterface(threadData);
+#else
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toUtf8().constData()), args);
@@ -270,6 +469,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
+#endif
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
@@ -344,6 +544,19 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   MMC_TRY_STACK()
 
+#if defined(__EMSCRIPTEN__)
+  // String command path routed to the omc Web Worker (no in-process MMC).
+  (void) reply_str;
+  (void) threadData;
+  {
+    char *r = omedit_worker_eval(expression.toUtf8().constData());
+    mResult = QString::fromUtf8(r);
+    free(r);
+    if (expression == "quit()") {
+      return;
+    }
+  }
+#else
   if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;
@@ -351,6 +564,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
+#endif
   double elapsed = (double)commandTime.elapsed() / 1000.0;
   logResponse(expression, mResult.trimmed(), elapsed, saveToHistory);
 
@@ -791,7 +1005,9 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
           LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
           LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(lib);
           if (!pLibraryTreeItem) {
+#if !defined(__EMSCRIPTEN__)
             SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, lib), Qt::AlignRight, Qt::white);
+#endif
             pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
           }
         } else {
@@ -3433,8 +3649,10 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * OpenModelicaCompiler. _get returns the boxed (list-form) JSON value for a handle and
  * _release frees the registry slot.
  */
+#if !defined(__EMSCRIPTEN__)
 extern "C" void* ModelInstanceReference_get(int handle);
 extern "C" int ModelInstanceReference_release(int handle);
+#endif
 
 /*!
  * \brief OMCProxy::jsonValueFromMM
@@ -3458,7 +3676,9 @@ static QString stringFromMM(void *mmString)
 }
 #endif
 
-#ifdef OMC_RUST_ABI
+// Not on wasm: the boxed value lives in the worker, so getModelInstance() uses
+// the JSON-string path instead and this walker is never referenced.
+#if defined(OMC_RUST_ABI) && !defined(__EMSCRIPTEN__)
 // Rust omc port: the boxed value is the port's own JSON tree, walked through the
 // typed omc_json_* C ABI (openmodelica_backend_main::ModelInstanceReference)
 // rather than MMC record/cons-cell macros. Node kinds match the MMC version's
@@ -3507,7 +3727,7 @@ QJsonValue OMCProxy::jsonValueFromMM(void *value)
       return QJsonValue(QJsonValue::Null);
   }
 }
-#else
+#elif !defined(OMC_RUST_ABI)
 QJsonValue OMCProxy::jsonValueFromMM(void *value)
 {
   // A boxed uniontype record stores its record_description in slot 0 and its fields in slots 1..n.
@@ -3547,7 +3767,7 @@ QJsonValue OMCProxy::jsonValueFromMM(void *value)
   // JSON.NULL, and defensively JSON.OBJECT/JSON.ARRAY which should never reach here after normalisation.
   return QJsonValue(QJsonValue::Null);
 }
-#endif
+#endif // jsonValueFromMM (not on wasm)
 
 /*!
  * \brief OMCProxy::getModelInstance
@@ -3562,6 +3782,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   // skipping JSON.toString (omc) and QJsonDocument::fromJson (OMEdit). Gated behind --NAPINoJson=true.
   // mpOMCInterface is the in-process linked compiler library, so the boxed value's address is valid here.
   // Falls back to the JSON-string path on failure (handle <= 0).
+  // Not on wasm: omc runs in a Web Worker, so the boxed value's address is not
+  // valid on the main thread — always use the JSON-string path below (the string
+  // crosses the bridge fine and QJsonDocument parses it here).
+#if !defined(__EMSCRIPTEN__)
   if (MainWindow::instance()->isNewApiNoJson()) {
     QElapsedTimer refTimer;
     if (MainWindow::instance()->isNewApiProfiling()) {
@@ -3593,6 +3817,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     // handle <= 0: fall through to the JSON-string path below.
   }
+#endif // reference-walker path (not on wasm)
 
   QElapsedTimer timer;
   if (MainWindow::instance()->isNewApiProfiling()) {

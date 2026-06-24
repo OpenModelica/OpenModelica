@@ -65,12 +65,14 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
+#if !defined(__EMSCRIPTEN__)
   /* set the document marker */
   if (isModelicaModelInPackageOneFile()) {
     mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document(), mpModelWidget->getLibraryTreeItem()->mClassInformation.lineNumberStart);
   } else {
     mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   }
+#endif
 }
 
 /*!
@@ -672,6 +674,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
         contentsChanged();
         setTextChanged(true);
       }
+#if !defined(__EMSCRIPTEN__)
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {
         mpDocumentMarker->updateBreakpointsLineNumber();
@@ -687,6 +690,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
           mpDocumentMarker->updateBreakpointsBlock(posBlock);
         }
       }
+#endif
     }
   }
 }

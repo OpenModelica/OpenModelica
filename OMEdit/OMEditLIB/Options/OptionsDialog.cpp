@@ -2916,7 +2916,9 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("displayUnknownFrames", displayUnknownFrames);
   }
+#if !defined(__EMSCRIPTEN__)
   MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+#endif
 
   bool clearOutputOnNewRun = mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked();
   if (clearOutputOnNewRun == OptionsDefaults::Debugger::clearOutputOnNewRun) {

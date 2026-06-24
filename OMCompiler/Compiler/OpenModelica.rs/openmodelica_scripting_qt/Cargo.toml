@@ -15,3 +15,9 @@ name = "openmodelica_scripting_qt"
 openmodelica_backend_main.workspace = true
 arcstr.workspace = true
 metamodelica.workspace = true
+
+# wasm worker-side ABI dispatch (omc_abi_dispatch) marshals the OMEdit calls as
+# JSON; only the wasm build's bridge needs it (native OMEdit links the C ABI
+# directly), so it is wasm-only.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+serde_json.workspace = true

@@ -310,6 +310,7 @@ fn gen_rust_abi(funcs: &[Func]) -> String {
     for f in funcs {
         gen_rust_wrapper(&mut s, f);
     }
+    gen_wasm_dispatch(&mut s, funcs);
     s
 }
 
@@ -377,6 +378,208 @@ fn default_ret(ty: &Ty) -> String {
         _ => unreachable!(),
     }
 }
+
+// ── wasm worker-side ABI dispatch generation ───────────────────────────────
+// Emits `omc_abi_dispatch`, which decodes the JSON request `{fn, args}` the
+// main-side bridge posts, calls the matching `OpenModelicaScriptingAPI` function,
+// and returns `{result}` / `{error}`. JSON shapes mirror the C++ OmcSeq↔JSON
+// mapping (String→string, Integer/Real→number, Boolean→bool, list<…>→array).
+
+fn gen_wasm_dispatch(s: &mut String, funcs: &[Func]) {
+    s.push_str(WASM_DISPATCH_PREAMBLE);
+    for f in funcs {
+        gen_dispatch_arm(s, f);
+    }
+    s.push_str(WASM_DISPATCH_SUFFIX);
+}
+
+fn gen_dispatch_arm(s: &mut String, f: &Func) {
+    let name = &f.name;
+    let call_ident = crate::codegen::escape_ident(name);
+    writeln!(s, "        \"{name}\" => {{").unwrap();
+    writeln!(s, "            let __r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{").unwrap();
+    let mut call_args: Vec<String> = Vec::new();
+    for (i, (_n, ty)) in f.inputs.iter().enumerate() {
+        writeln!(s, "                let __a{i} = {};", json_arg(ty, i)).unwrap();
+        call_args.push(format!("__a{i}"));
+    }
+    writeln!(
+        s,
+        "                openmodelica_backend_main::OpenModelicaScriptingAPI::{call_ident}({})",
+        call_args.join(", ")
+    )
+    .unwrap();
+    writeln!(s, "            }}));").unwrap();
+    writeln!(s, "            match __r {{").unwrap();
+    match &f.output {
+        Ty::Unit => {
+            writeln!(s, "                Ok(_) => __ok(serde_json::Value::Null),").unwrap();
+        }
+        Ty::Tuple(tys) => {
+            let binds: Vec<String> = (0..tys.len()).map(|i| format!("__t{i}")).collect();
+            let items: Vec<String> = tys
+                .iter()
+                .enumerate()
+                .map(|(i, t)| json_outr(t, &format!("&{}", binds[i]), 0))
+                .collect();
+            writeln!(
+                s,
+                "                Ok(Ok(({}))) => __ok(serde_json::Value::Array(vec![{}])),",
+                binds.join(", "),
+                items.join(", ")
+            )
+            .unwrap();
+            writeln!(s, "                Ok(Err(_)) => __ok({}),", json_default(&f.output)).unwrap();
+        }
+        ty => {
+            writeln!(s, "                Ok(Ok(__v)) => __ok({}),", json_out_owned(ty, "__v")).unwrap();
+            writeln!(s, "                Ok(Err(_)) => __ok({}),", json_default(ty)).unwrap();
+        }
+    }
+    writeln!(s, "                Err(__e) => __err(format!(\"{name}: {{}}\", panic_msg(__e))),").unwrap();
+    writeln!(s, "            }}").unwrap();
+    writeln!(s, "        }}").unwrap();
+}
+
+/// JSON argument `idx` → the Rust value of type `ty` the scripting function expects.
+fn json_arg(ty: &Ty, idx: usize) -> String {
+    match ty {
+        Ty::Str => format!("__jstr(a, {idx})"),
+        Ty::I32 => format!("__ji32(a, {idx})"),
+        Ty::F64 => format!("__jf64(a, {idx})"),
+        Ty::Bool => format!("__jbool(a, {idx})"),
+        Ty::List(inner) => format!(
+            "std::sync::Arc::new(a.get({idx}).and_then(|__v| __v.as_array()).map(|__arr0| __arr0.iter().map(|__o0| {}).collect::<metamodelica::List<{}>>()).unwrap_or(metamodelica::List::Nil))",
+            json_elem(inner, "__o0", 1),
+            rust_ty(inner)
+        ),
+        _ => unreachable!(),
+    }
+}
+
+/// Read a `&serde_json::Value` (`o`) as the Rust value of type `ty`.
+fn json_elem(ty: &Ty, o: &str, depth: usize) -> String {
+    match ty {
+        Ty::Str => format!("{o}.as_str().map(arcstr::ArcStr::from).unwrap_or_default()"),
+        Ty::I32 => format!("{o}.as_f64().unwrap_or(0.0) as i32"),
+        Ty::F64 => format!("metamodelica::OrderedFloat({o}.as_f64().unwrap_or(0.0))"),
+        Ty::Bool => format!("{o}.as_bool().unwrap_or(false)"),
+        Ty::List(inner) => {
+            let arr = format!("__arr{depth}");
+            let o2 = format!("__o{depth}");
+            format!(
+                "std::sync::Arc::new({o}.as_array().map(|{arr}| {arr}.iter().map(|{o2}| {}).collect::<metamodelica::List<{}>>()).unwrap_or(metamodelica::List::Nil))",
+                json_elem(inner, &o2, depth + 1),
+                rust_ty(inner)
+            )
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// Marshal an owned Rust result `v` of type `ty` to a `serde_json::Value`.
+fn json_out_owned(ty: &Ty, v: &str) -> String {
+    match ty {
+        Ty::List(inner) => format!(
+            "serde_json::Value::Array({v}.as_ref().into_iter().map(|__e0| {}).collect())",
+            json_outr(inner, "__e0", 1)
+        ),
+        ty => json_outr(ty, &format!("&{v}"), 0),
+    }
+}
+
+/// Marshal a *reference* `e` (`&T`) of type `ty` to a `serde_json::Value`.
+fn json_outr(ty: &Ty, e: &str, depth: usize) -> String {
+    match ty {
+        Ty::Str => format!("serde_json::Value::String(({e}).to_string())"),
+        Ty::I32 => format!("serde_json::Value::from((*{e}) as i64)"),
+        Ty::F64 => format!("__jnum(({e}).0)"),
+        Ty::Bool => format!("serde_json::Value::Bool(*{e})"),
+        Ty::List(inner) => {
+            let el = format!("__e{depth}");
+            format!(
+                "serde_json::Value::Array((&**{e}).into_iter().map(|{el}| {}).collect())",
+                json_outr(inner, &el, depth + 1)
+            )
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// The JSON value returned on a MetaModelica failure (mirrors the C-ABI default).
+fn json_default(ty: &Ty) -> String {
+    match ty {
+        Ty::Str => "serde_json::Value::String(String::new())".to_string(),
+        Ty::I32 => "serde_json::Value::from(0i64)".to_string(),
+        Ty::F64 => "__jnum(0.0)".to_string(),
+        Ty::Bool => "serde_json::Value::Bool(false)".to_string(),
+        Ty::List(_) | Ty::Tuple(_) => "serde_json::Value::Array(Vec::new())".to_string(),
+        _ => unreachable!(),
+    }
+}
+
+const WASM_DISPATCH_PREAMBLE: &str = r#"
+// ── wasm worker-side ABI dispatch (OMEdit web bridge) ───────────────────────
+// GENERATED. Routes a JSON request {fn, args} posted by OMEdit's main-thread
+// bridge (OpenModelicaScriptingAPIQtBridge.cpp) to the scripting function and
+// returns {result} or {error}. See the generator (gen_wasm_dispatch).
+#[cfg(target_arch = "wasm32")]
+fn __jstr(a: &[serde_json::Value], i: usize) -> arcstr::ArcStr {
+    a.get(i).and_then(|v| v.as_str()).map(arcstr::ArcStr::from).unwrap_or_default()
+}
+#[cfg(target_arch = "wasm32")]
+fn __ji32(a: &[serde_json::Value], i: usize) -> i32 {
+    a.get(i).and_then(|v| v.as_f64()).unwrap_or(0.0) as i32
+}
+#[cfg(target_arch = "wasm32")]
+fn __jf64(a: &[serde_json::Value], i: usize) -> metamodelica::Real {
+    metamodelica::OrderedFloat(a.get(i).and_then(|v| v.as_f64()).unwrap_or(0.0))
+}
+#[cfg(target_arch = "wasm32")]
+fn __jbool(a: &[serde_json::Value], i: usize) -> bool {
+    a.get(i).and_then(|v| v.as_bool()).unwrap_or(false)
+}
+/// JSON cannot represent NaN/Inf; such a value becomes null (the C++ side maps it back to 0).
+#[cfg(target_arch = "wasm32")]
+fn __jnum(x: f64) -> serde_json::Value {
+    serde_json::Number::from_f64(x).map(serde_json::Value::Number).unwrap_or(serde_json::Value::Null)
+}
+#[cfg(target_arch = "wasm32")]
+fn __ok(v: serde_json::Value) -> serde_json::Value {
+    let mut o = serde_json::Map::new();
+    o.insert("result".to_string(), v);
+    serde_json::Value::Object(o)
+}
+#[cfg(target_arch = "wasm32")]
+fn __err(msg: String) -> serde_json::Value {
+    let mut o = serde_json::Map::new();
+    o.insert("error".to_string(), serde_json::Value::String(msg));
+    serde_json::Value::Object(o)
+}
+
+/// Dispatch one OMEdit ABI call. `req` is `{"fn": <name>, "args": [...]}`.
+#[cfg(target_arch = "wasm32")]
+pub fn omc_abi_dispatch(req: &str) -> String {
+    let parsed: serde_json::Value = match serde_json::from_str(req) {
+        Ok(v) => v,
+        Err(__e) => return __err(format!("omc_abi_dispatch: bad request json: {__e}")).to_string(),
+    };
+    let fnname = parsed.get("fn").and_then(|v| v.as_str()).unwrap_or("");
+    let __empty: Vec<serde_json::Value> = Vec::new();
+    let a: &[serde_json::Value] = parsed
+        .get("args")
+        .and_then(|v| v.as_array())
+        .map(|v| v.as_slice())
+        .unwrap_or(&__empty);
+
+    let resp: serde_json::Value = match fnname {
+"#;
+
+const WASM_DISPATCH_SUFFIX: &str = r#"        __other => __err(format!("omc_abi_dispatch: unknown function `{__other}`")),
+    };
+    resp.to_string()
+}
+"#;
 
 /// Convert a C argument expression `c` to the Rust value of type `ty`.
 fn abi_in(ty: &Ty, c: &str, depth: usize) -> String {

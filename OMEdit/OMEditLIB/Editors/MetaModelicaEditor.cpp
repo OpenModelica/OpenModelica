@@ -47,8 +47,10 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
+#if !defined(__EMSCRIPTEN__)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+#endif
   QStringList keywords = MetaModelicaHighlighter::getKeywords();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   QStringList types = MetaModelicaHighlighter::getTypes();

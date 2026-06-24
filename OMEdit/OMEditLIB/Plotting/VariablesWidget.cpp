@@ -1231,9 +1231,11 @@ void VariablesTreeModel::openTransformationsBrowser()
           checkForProfilingFiles = false;
         }
       }
+#if !defined(__EMSCRIPTEN__)
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
       pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
+#endif
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
@@ -2324,6 +2326,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
             pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
+#if !defined(__EMSCRIPTEN__)
             OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
             if (pOpcUaClient) {
               Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
@@ -2334,15 +2337,18 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pCurveData->setAxisVectors(memory);
               pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
             }
+#endif
           }
         }
       } else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
         // remove the variable from the data fetch list
+#if !defined(__EMSCRIPTEN__)
         OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
         if (pOpcUaClient) {
           Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
           pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
         }
+#endif
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
           if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
@@ -2577,10 +2583,16 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
       pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
     }
     int port = pVariablesTreeRootItem->getSimulationOptions().getInteractiveSimulationPortNumber();
+#if !defined(__EMSCRIPTEN__)
     OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
     if (pOpcUaClient) {
       pOpcUaClient->writeValue(variableValue, variableName);
     }
+#else
+    Q_UNUSED(port);
+    Q_UNUSED(variableValue);
+    Q_UNUSED(variableName);
+#endif
 
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);

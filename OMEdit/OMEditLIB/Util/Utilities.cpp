@@ -58,6 +58,7 @@ extern "C" {
 extern const char* System_openModelicaPlatform();
 }
 
+#if !defined(__EMSCRIPTEN__)
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -67,6 +68,7 @@ SplashScreen *SplashScreen::instance()
   }
   return mpInstance;
 }
+#endif
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
