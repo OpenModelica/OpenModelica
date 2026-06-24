@@ -4,7 +4,7 @@ package TSP_DataReconciliationSimpleTests
   annotation (
     uses(
       ThermoSysPro(
-        version="4.0"),
+        version="4.0.0"),
       ModelicaDataReconciliationSimpleTests(
         version="4.0"),
       Modelica(

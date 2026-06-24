@@ -28,47 +28,47 @@ ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8 \
 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9 \
 ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example \
-ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected
-
-# These are generated from annotations too, but are not passing tests yet:
-# - PipeCorrelation reports a solveSystemFstar failure and unstable warning text.
-# - TSP models fail to build because ThermoSysPro falls back to a
-#   Modelica.SIunits-based version with Modelica 4.
-FAILINGTESTMODELS = \
-ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation \
+ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7 \
 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe \
 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe1 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe2 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe4 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe5 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9 \
 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe10 \
 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11 \
-TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter1 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter2 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter3 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter4 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5 \
-TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter6 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7 \
-TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8 \
-TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1 \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2 \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3 \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR
+
+# These are generated from annotations too, but are not passing tests yet:
+# - PipeCorrelation reports a solveSystemFstar failure and unstable warning text.
+# - Remaining TSP models either fail to build, fail at execution, or report
+#   data reconciliation errors.
+FAILINGTESTMODELS = \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6 \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows8 \
 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9 \
-TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe2 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe4 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe5 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter6 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8 \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR \
