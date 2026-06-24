@@ -136,6 +136,7 @@ openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/sim_runtime_stub.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/sim_runtime_wasmer.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/sim_runtime_wasmtime.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/wasi_shim.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_stub.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_wasmer.rs

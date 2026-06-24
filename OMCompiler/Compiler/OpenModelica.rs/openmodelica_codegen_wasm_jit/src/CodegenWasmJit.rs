@@ -72,6 +72,16 @@ mod sim_runtime;
 #[path = "CodegenWasmJit/sim_runtime_stub.rs"]
 mod sim_runtime;
 
+// The `wasi_snapshot_preview1` shim over `openmodelica_vfs`, for running the
+// standalone wasip1 simulation command module. Not yet wired into the run path
+// (its consumer — the merged standalone module — is a later step), so it is
+// dead until then. The engine-independent `WasiCtx` is registered for both the
+// wasmtime (native default) and wasmer (worker / native-wasmer) engines.
+#[cfg(feature = "jit")]
+#[path = "CodegenWasmJit/wasi_shim.rs"]
+#[allow(dead_code)]
+mod wasi_shim;
+
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
 fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
