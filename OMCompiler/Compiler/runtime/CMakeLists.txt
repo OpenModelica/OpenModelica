@@ -58,7 +58,9 @@ set(OMC_RUNTIME_SOURCES
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp
-    ffi_omc.cpp)
+    ffi_omc.cpp
+    OMGraphics.cpp
+    OMGraphics_omc.cpp)
 
 if(OM_OMC_ENABLE_COLPACK)
   list(APPEND OMC_RUNTIME_SOURCES ColPackBicoloring_omc.cpp)
