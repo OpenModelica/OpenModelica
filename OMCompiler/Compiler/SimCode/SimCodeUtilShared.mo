@@ -60,12 +60,15 @@ import Util;
 
 protected
 
+import BaseHashSet;
 import BaseHashTable;
 import ComponentReference;
 import ComponentReferenceBasics;
 import DAEUtil;
 import Error;
+import HashSetString;
 import List;
+import Unit = NFUnit;
 
 public
 
@@ -368,6 +371,64 @@ algorithm
     else false;
   end match;
 end isArrayVar;
+
+public function getFmiUnitDefinitionsFromSimVars
+  "Collects the FMI <UnitDefinitions> directly from a SimVars record (the FMI
+   order: real states, derivatives, algebraic, discrete and parameters). Used by
+   the new backend FMU export, which has the SimVars record rather than the
+   per-type array the old backend builds. Units are only emitted for real
+   variables. Without these definitions a variable that carries a unit attribute
+   references an undefined unit and the modelDescription.xml fails validation."
+  input SimCodeVar.SimVars vars;
+  output list<SimCode.UnitDefinition> unitDefinitions = {};
+protected
+  HashSetString.HashSet unitNameKeys = HashSetString.emptyHashSet();
+algorithm
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.stateVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.derivativeVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.algVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.discreteAlgVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.paramVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.aliasVars, unitDefinitions, unitNameKeys);
+  unitDefinitions := listReverse(unitDefinitions);
+end getFmiUnitDefinitionsFromSimVars;
+
+public function getFmiUnitDefinitionsHelper
+  "helper function which creates the list<UnitDefintions> to be exported in modelDescription.xml"
+  input list<SimCodeVar.SimVar> inVars;
+  input output list<SimCode.UnitDefinition> unitDefinitions;
+  input output HashSetString.HashSet unitNameKeys;
+protected
+  Unit.Unit unit;
+algorithm
+  for var in inVars loop
+    if isSome(var.exportVar) then
+      // check if the var has unit and also check if the unit is already added to hashset
+      if not stringEq(var.unit, "") and not BaseHashSet.has(var.unit, unitNameKeys) then
+        unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
+        try
+          unit := Unit.parseUnitString(var.unit); // get the SI- units information
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+        else
+          // catch the units which are not calculated
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
+        end try;
+      end if;
+    end if;
+  end for;
+end getFmiUnitDefinitionsHelper;
+
+public function transformUnitToBaseUnit
+  "translate Unit.UNIT to SimCode.BASEUNIT"
+  input Unit.Unit unit;
+  output SimCode.BaseUnit baseUnit;
+protected
+  Integer mol, cd, m, s, A, K, kg;
+  Real factor;
+algorithm
+  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
+end transformUnitToBaseUnit;
 
 annotation(__OpenModelica_Interface="simcode_util");
 end SimCodeUtilShared;

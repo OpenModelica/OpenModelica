@@ -9776,47 +9776,10 @@ algorithm
   //special order for fmi: real => intger => boolean => string => external
   unitNameKeys := HashSetString.emptyHashSet();
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
-    (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
+    (unitDefinitions, unitNameKeys) := SimCodeUtilShared.getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
   end for;
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
-
-protected function getFmiUnitDefinitionsHelper
-  "helper function which creates the list<UnitDefintions> to be exported in modelDescription.xml"
-  input list<SimCodeVar.SimVar> inVars;
-  input output list<SimCode.UnitDefinition> unitDefinitions;
-  input output HashSetString.HashSet unitNameKeys;
-protected
-  Unit.Unit unit;
-algorithm
-  for var in inVars loop
-    if isSome(var.exportVar) then
-      // check if the var has unit and also check if the unit is already added to hashset
-      if not stringEq(var.unit, "") and not BaseHashSet.has(var.unit, unitNameKeys) then
-        unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
-        try
-          unit := Unit.parseUnitString(var.unit); // get the SI- units information
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
-        else
-          // catch the units which are not calculated
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
-        end try;
-      end if;
-    end if;
-  end for;
-end getFmiUnitDefinitionsHelper;
-
-public function transformUnitToBaseUnit
-  "translate Unit.UNIT to SimCode.BASEUNIT"
-  input Unit.Unit unit;
-  output SimCode.BaseUnit baseUnit;
-protected
-  Integer mol, cd, m, s, A, K, kg;
-  Real factor;
-algorithm
-  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
-  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
-end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
  Create a hash table that maps all variable names (crefs) to the simVar objects."

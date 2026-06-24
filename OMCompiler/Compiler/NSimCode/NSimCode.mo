@@ -89,6 +89,7 @@ protected
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
+  import SimCodeVar;
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
   import SimPartition = NSimPartition;
@@ -810,8 +811,10 @@ public
       output OldSimCode.ModelInfo oldModelInfo;
     protected
       OldSimCode.VarInfo varInfo;
+      SimCodeVar.SimVars oldVars;
     algorithm
       varInfo := VarInfo.convert(modelInfo.varInfo);
+      oldVars := SimVar.SimVars.convert(modelInfo.vars);
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
         description                     = modelInfo.description,
@@ -822,7 +825,7 @@ public
         directory                       = modelInfo.directory,
         fileName                        = modelInfo.fileName,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
-        vars                            = SimVar.SimVars.convert(modelInfo.vars),
+        vars                            = oldVars,
         functions                       = modelInfo.functions,
         labels                          = modelInfo.labels,
         resourcePaths                   = modelInfo.resourcePaths,
@@ -834,7 +837,7 @@ public
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
-        unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
+        unitDefinitions                 = SimCodeUtilShared.getFmiUnitDefinitionsFromSimVars(oldVars)
       );
     end convert;
   end ModelInfo;
