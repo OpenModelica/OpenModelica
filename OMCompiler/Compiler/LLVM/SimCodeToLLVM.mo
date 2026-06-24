@@ -221,25 +221,28 @@ public uniontype EqRecipe
   end EQ_WHEN;
 
   record EQ_SOLVE_NONLINEAR
-    "A single-unknown nonlinear tearing system, lowered to one call to the
-     omc_jit_solve_nonlinear_system1 adapter (runtime solve + throw +
-     iteration-variable exchange). The residual / setup / Jacobian stay on
-     clang in _02nls.c / _12jac.c. sysIndex is the indexNonLinearSystem;
-     varSlot is the iteration variable's flat realVars slot."
+    "A nonlinear tearing system with any iteration-variable count >= 1.
+     Lowered to one call to the omc_jit_solve_nonlinear_system_n adapter:
+     each iteration variable seeded from realVars[varSlots[i]] into
+     nlsxOld, runtime solve_nonlinear_system runs, throws on failure,
+     writes nlsx[i] back to realVars[varSlots[i]]. The residual / setup /
+     Jacobian stay on clang in _02nls.c / _12jac.c. sysIndex is the
+     indexNonLinearSystem; varSlots are the flat realVars slots in the
+     same order as NONLINEARSYSTEM.crefs (the iteration variables, not
+     the larger nUnknowns set that also counts torn-away vars)."
     Integer sysIndex;
-    Integer varSlot;
+    list<Integer> varSlots;
   end EQ_SOLVE_NONLINEAR;
 
   record EQ_SOLVE_LINEAR
-    "A single-unknown linear tearing system, lowered to one call to the
-     omc_jit_solve_linear_system1 adapter. Mirrors EQ_SOLVE_NONLINEAR: the
-     adapter wraps the runtime solve_linear_system and the still-clang'd
-     _03lsy.c populates setA / setb on linearSystemData[i] at startup via
-     the callback table's initialLinearSystem slot. sysIndex is the
-     indexLinearSystem; varSlot is the iteration variable's flat realVars
-     slot."
+    "A linear tearing system with any iteration-variable count >= 1.
+     Lowered to one call to the omc_jit_solve_linear_system_n adapter
+     (runtime solve_linear_system + throwStreamPrint, with a length-N
+     stack aux_x buffer for the iteration-variable exchange). sysIndex
+     is the indexLinearSystem; varSlots are the flat realVars slots in
+     the same order as LINEARSYSTEM.vars."
     Integer sysIndex;
-    Integer varSlot;
+    list<Integer> varSlots;
   end EQ_SOLVE_LINEAR;
 
   record EQ_ALGORITHM
@@ -693,6 +696,18 @@ algorithm
 
   nSupported   := List.fold(recipes, countSupported, 0);
   nUnsupported := List.fold(recipes, countUnsupported, 0);
+
+  if Flags.isSet(Flags.FAILTRACE) and nUnsupported > 0 then
+    print("SCTL genSim: unsupported ODE recipes for '" + AbsynUtil.pathString(name) + "':\n");
+    for r in recipes loop
+      _ := match r
+        case EQ_UNSUPPORTED() algorithm
+          print("  - " + r.reason + "\n");
+        then ();
+        else ();
+      end match;
+    end for;
+  end if;
 
   /* Phase 4.2: emit the omc_<prefix>_functionODE shell into a fresh
    * LLVM module. Body is just `return 0;` for now; per-equation IR
@@ -1858,9 +1873,9 @@ algorithm
                                intString(listLength(r.whenStmts)) + " stmt)";
     case EQ_ALGORITHM() then "ALGORITHM(" + intString(listLength(r.statements)) + " stmt)";
     case EQ_SOLVE_NONLINEAR() then "SOLVE_NLS(sys=" + intString(r.sysIndex) +
-                               ", var=" + intString(r.varSlot) + ")";
+                               ", n=" + intString(listLength(r.varSlots)) + ")";
     case EQ_SOLVE_LINEAR() then "SOLVE_LS(sys=" + intString(r.sysIndex) +
-                               ", var=" + intString(r.varSlot) + ")";
+                               ", n=" + intString(listLength(r.varSlots)) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -2919,11 +2934,15 @@ algorithm
       then (ctx2, exprOk);
     case EQ_SOLVE_NONLINEAR()
       algorithm
-        EXT_LLVM.genSolveNonlinear("data", "threadData", r.sysIndex, r.varSlot);
+        EXT_LLVM.genSolveNonlinearN("data", "threadData", r.sysIndex,
+                                    r.varSlots,
+                                    solveSlotArrName(ctx.layout, r.sysIndex, true));
       then (ctx, true);
     case EQ_SOLVE_LINEAR()
       algorithm
-        EXT_LLVM.genSolveLinear("data", "threadData", r.sysIndex, r.varSlot);
+        EXT_LLVM.genSolveLinearN("data", "threadData", r.sysIndex,
+                                 r.varSlots,
+                                 solveSlotArrName(ctx.layout, r.sysIndex, false));
       then (ctx, true);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
@@ -2933,6 +2952,21 @@ algorithm
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
 end emitEquation;
+
+protected function solveSlotArrName
+  "Per-system stable LLVM global name for the constant [N x i64] slot
+   array passed to the multi-unknown solver adapter. Each linear /
+   nonlinear system gets one private global; later calls with the same
+   name reuse the existing definition via getNamedGlobal."
+  input VarLayout layout;
+  input Integer sysIndex;
+  input Boolean isNonlinear;
+  output String name;
+algorithm
+  name := if isNonlinear
+    then "sctl_nlsys_" + intString(sysIndex) + "_slots"
+    else "sctl_lsys_"  + intString(sysIndex) + "_slots";
+end solveSlotArrName;
 
 protected function emitWhenEquation
   "Lower a when-equation by predication. First materialise the edge
@@ -4738,69 +4772,114 @@ protected function classifyBoolDiscrete
 end classifyBoolDiscrete;
 
 protected function classifyNonlinear
-  "Classify a SES_NONLINEAR. Only a single-unknown tearing system whose
-   one iteration variable resolves to a real layout slot is lowered (to
-   EQ_SOLVE_NONLINEAR -> the omc_jit_solve_nonlinear_system1 adapter).
-   Multi-unknown systems and non-real iteration vars stay UNSUPPORTED, so
-   the model fails loudly rather than mis-solving."
+  "Classify a SES_NONLINEAR with any iteration-variable count >= 1 whose
+   crefs all resolve to real (state / derivative / alg) layout slots, to
+   EQ_SOLVE_NONLINEAR -> the omc_jit_solve_nonlinear_system_n adapter.
+   Crefs that do not resolve (or resolve to a non-real kind) keep the
+   system UNSUPPORTED so the model fails loudly rather than mis-solving.
+   Gates on the `crefs` list (iteration variables), not `nUnknowns`
+   which also counts torn-away vars the residual back-substitutes."
   input SimCode.NonlinearSystem nlsys;
   input VarLayout layout;
   output EqRecipe recipe;
+protected
+  Integer nidx;
+  list<DAE.ComponentRef> crs;
 algorithm
-  recipe := match nlsys
-    local Integer nidx;
-          DAE.ComponentRef cr;
-          VarSlot vs;
-    /* Gate on a single *iteration* variable (crefs), not nUnknowns:
-     * nUnknowns also counts torn-away vars the residual back-substitutes
-     * internally, but the eqFunction (and the nlsx/nlsxOld exchange the
-     * adapter does) only thread the iteration var. size == listLength(crefs). */
-    case SimCode.NONLINEARSYSTEM(indexNonLinearSystem = nidx, crefs = {cr})
-      then match lookupSlot(cr, layout)
-        case SOME(vs as VAR_SLOT(kind = VK_STATE()))
-          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
-        case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
-          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
-        case SOME(vs as VAR_SLOT(kind = VK_ALG()))
-          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
-        else EQ_UNSUPPORTED("nonlinear iteration variable not a real layout slot");
-      end match;
-    else EQ_UNSUPPORTED("multi-unknown nonlinear system not lowered yet");
+  (nidx, crs) := match nlsys
+    case SimCode.NONLINEARSYSTEM(indexNonLinearSystem = nidx, crefs = crs)
+      then (nidx, crs);
   end match;
+  if listEmpty(crs) then
+    recipe := EQ_UNSUPPORTED("nonlinear system with empty iteration-variable list");
+    return;
+  end if;
+  recipe := buildSolveRecipe(nidx, crs, layout, true);
 end classifyNonlinear;
 
 protected function classifyLinear
-  "Classify a SES_LINEAR. Only a single-unknown tearing system whose one
-   iteration variable resolves to a real layout slot is lowered (to
-   EQ_SOLVE_LINEAR -> the omc_jit_solve_linear_system1 adapter). The
-   matrix-setup callbacks setA / setb plus the iteration variable attribute
-   buffers (min / max / nominal) on linearSystemData[i] are populated by the
-   still-clang'd _03lsy.c at startup via data->callback->initialLinearSystem.
-   Multi-unknown linear systems stay UNSUPPORTED, mirroring classifyNonlinear.
-   `LINEARSYSTEM.vars` (not `crefs` -- the linear record carries SimVars
-   directly) is the iteration-variable list; size 1 picks the scalar case."
+  "Classify a SES_LINEAR with any iteration-variable count >= 1 whose
+   `vars` all resolve to real (state / derivative / alg) layout slots,
+   to EQ_SOLVE_LINEAR -> the omc_jit_solve_linear_system_n adapter.
+   Mirrors classifyNonlinear; LINEARSYSTEM.vars carries SimVars (not
+   ComponentRefs), so the cref list is the projection of `vars` onto
+   their SIMVAR.name field."
   input SimCode.LinearSystem lsys;
   input VarLayout layout;
   output EqRecipe recipe;
+protected
+  Integer lidx;
+  list<SimCodeVar.SimVar> simVars;
+  list<DAE.ComponentRef> crs;
 algorithm
-  recipe := match lsys
-    local Integer lidx;
-          DAE.ComponentRef cr;
-          VarSlot vs;
-    case SimCode.LINEARSYSTEM(indexLinearSystem = lidx,
-                              vars = {SimCodeVar.SIMVAR(name = cr)})
-      then match lookupSlot(cr, layout)
-        case SOME(vs as VAR_SLOT(kind = VK_STATE()))
-          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
-        case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
-          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
-        case SOME(vs as VAR_SLOT(kind = VK_ALG()))
-          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
-        else EQ_UNSUPPORTED("linear iteration variable not a real layout slot");
-      end match;
-    else EQ_UNSUPPORTED("multi-unknown linear system not lowered yet");
+  (lidx, simVars) := match lsys
+    case SimCode.LINEARSYSTEM(indexLinearSystem = lidx, vars = simVars)
+      then (lidx, simVars);
   end match;
+  if listEmpty(simVars) then
+    recipe := EQ_UNSUPPORTED("linear system with empty iteration-variable list");
+    return;
+  end if;
+  crs := List.map(simVars, simVarName);
+  recipe := buildSolveRecipe(lidx, crs, layout, false);
 end classifyLinear;
+
+protected function simVarName
+  "Project a SimCodeVar.SimVar onto its DAE.ComponentRef `name` field."
+  input SimCodeVar.SimVar sv;
+  output DAE.ComponentRef cr;
+algorithm
+  cr := match sv case SimCodeVar.SIMVAR(name = cr) then cr; end match;
+end simVarName;
+
+protected function buildSolveRecipe
+  "Resolve every cref in `crs` to a flat realVars slot via the layout and
+   build the matching EQ_SOLVE_NONLINEAR / EQ_SOLVE_LINEAR. Any cref that
+   does not resolve to a real layout slot stays the whole system UNSUPPORTED.
+   `isNonlinear` picks which recipe variant to emit."
+  input Integer sysIndex;
+  input list<DAE.ComponentRef> crs;
+  input VarLayout layout;
+  input Boolean isNonlinear;
+  output EqRecipe recipe;
+protected
+  list<Integer> slots = {};
+  Option<VarSlot> os;
+  VarSlot vs;
+  Integer absSlot;
+algorithm
+  for cr in crs loop
+    os := lookupSlot(cr, layout);
+    () := match os
+      case SOME(vs as VAR_SLOT(kind = VK_STATE()))
+        algorithm
+          absSlot := absoluteSlot(vs.kind, vs.index, layout);
+          slots := absSlot :: slots;
+        then ();
+      case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
+        algorithm
+          absSlot := absoluteSlot(vs.kind, vs.index, layout);
+          slots := absSlot :: slots;
+        then ();
+      case SOME(vs as VAR_SLOT(kind = VK_ALG()))
+        algorithm
+          absSlot := absoluteSlot(vs.kind, vs.index, layout);
+          slots := absSlot :: slots;
+        then ();
+      else
+        algorithm
+          recipe := EQ_UNSUPPORTED(
+            (if isNonlinear then "nonlinear" else "linear") +
+            " iteration variable does not resolve to a real layout slot: " +
+            ComponentReferenceBasics.printComponentRefStr(cr));
+        then fail();
+    end match;
+  end for;
+  slots := listReverse(slots);
+  recipe := if isNonlinear
+    then EQ_SOLVE_NONLINEAR(sysIndex, slots)
+    else EQ_SOLVE_LINEAR(sysIndex, slots);
+end buildSolveRecipe;
 
 protected function opCodeForRelationOp
   "Map a relational DAE.Operator to the small opcode

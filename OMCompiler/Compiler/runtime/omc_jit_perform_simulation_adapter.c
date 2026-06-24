@@ -96,57 +96,77 @@
 #include "simulation/solver/nonlinearSystem.h"
 #include "simulation/solver/linearSystem.h"
 
-/* Single-unknown linear tearing system. SCTL emits one call to this per
- * SES_LINEAR(crefs={one}); mirrors CodegenC's equationLinear body for the
- * scalar case: seed aux_x[0] with the iteration variable's old realVars
- * value, run the runtime solve_linear_system (which internally invokes
- * the setA / setb callbacks the still-clang'd _03lsy.c populates via
- * data->callback->initialLinearSystem at startup), throw on
- * non-convergence, write the solution back into the iteration var's
- * realVars slot. The C runtime's solve_linear_system takes the solution
- * buffer by pointer rather than via the system-data exchange arrays the
- * nonlinear solver uses, so this adapter is structurally simpler than
- * omc_jit_solve_nonlinear_system1 -- there is no nlsxOld / nlsx round
- * trip, just one stack double. varSlot is the flat realVars index of
- * the iteration var. */
-int omc_jit_solve_linear_system1(DATA *data, threadData_t *threadData,
-                                 int sysIndex, int varSlot)
+/* Linear tearing system, any unknown count >= 1. SCTL emits one call to
+ * this per SES_LINEAR; mirrors CodegenC's equationLinear body (a length-N
+ * stack array aux_x seeded from each iteration variable's old realVars
+ * value, one solve_linear_system call, throw on failure, write-back).
+ * The matrix-setup callbacks (setA / setb / analytic Jacobian columns)
+ * are populated by the still-clang'd _03lsy.c at startup via
+ * data->callback->initialLinearSystem, so this adapter does no LS
+ * bookkeeping -- it only threads the iteration variables through the
+ * aux_x exchange buffer.
+ *
+ * varSlots points at a length-n const int64 array of flat realVars[]
+ * indices (one per iteration variable, in the same order
+ * CodegenC's `aux_x[i]` literal initializer uses). SCTL emits the
+ * array as a private constant LLVM global per system; the runtime
+ * never frees it.
+ *
+ * n is bounded by AUX_X_STACK_MAX so the local array stays on the
+ * stack; the runtime throws if a model ever exceeds it. The bound is
+ * generous (MultiBody loops in MSL top out well below) but visible. */
+#define OMC_JIT_AUX_X_STACK_MAX 128
+
+int omc_jit_solve_linear_system_n(DATA *data, threadData_t *threadData,
+                                  int sysIndex, int n,
+                                  const int64_t *varSlots)
 {
-  double aux_x[1];
-  int retValue;
-  aux_x[0] = data->localData[0]->realVars[varSlot];
+  if (n > OMC_JIT_AUX_X_STACK_MAX) {
+    throwStreamPrint(threadData,
+      "omc_jit_solve_linear_system_n: size %d exceeds compiled-in cap %d",
+      n, OMC_JIT_AUX_X_STACK_MAX);
+  }
+  double aux_x[OMC_JIT_AUX_X_STACK_MAX];
+  int i, retValue;
+  for (i = 0; i < n; ++i) {
+    aux_x[i] = data->localData[0]->realVars[varSlots[i]];
+  }
   retValue = solve_linear_system(data, threadData, sysIndex, &aux_x[0]);
   if (retValue > 0) {
     throwStreamPrint(threadData,
       "Solving linear system %d failed. For more information use -lv LOG_LS.",
       sysIndex);
   }
-  data->localData[0]->realVars[varSlot] = aux_x[0];
+  for (i = 0; i < n; ++i) {
+    data->localData[0]->realVars[varSlots[i]] = aux_x[i];
+  }
   return retValue;
 }
 
-/* Single-unknown nonlinear tearing system. SCTL emits one call to this
- * per SES_NONLINEAR(nUnknowns=1); it mirrors CodegenC's eqFunction body:
- * seed the iteration variable's old value, run the runtime solver, throw
- * on non-convergence, write the solution back. The work is the runtime's
- * solve_nonlinear_system + throwStreamPrint -- this only threads the one
- * realVars slot through the solver's nlsxOld / nlsx exchange arrays, so
- * SCTL never reimplements the solver or open-codes the NONLINEAR_SYSTEM_DATA
- * bookkeeping. varSlot is the flat realVars index of the iteration var. */
-int omc_jit_solve_nonlinear_system1(DATA *data, threadData_t *threadData,
-                                    int sysIndex, int varSlot)
+/* Nonlinear tearing system, any iteration-variable count >= 1. Mirrors
+ * the linear adapter pattern; the iteration-variable exchange goes
+ * through the runtime's nlsxOld / nlsx arrays (each pre-sized to the
+ * system's `nUnknowns` by initializeNonlinearSystems), not a local
+ * stack buffer. */
+int omc_jit_solve_nonlinear_system_n(DATA *data, threadData_t *threadData,
+                                     int sysIndex, int n,
+                                     const int64_t *varSlots)
 {
   NONLINEAR_SYSTEM_DATA *const nls =
       &(data->simulationInfo->nonlinearSystemData[sysIndex]);
-  int retValue;
-  nls->nlsxOld[0] = data->localData[0]->realVars[varSlot];
+  int i, retValue;
+  for (i = 0; i < n; ++i) {
+    nls->nlsxOld[i] = data->localData[0]->realVars[varSlots[i]];
+  }
   retValue = solve_nonlinear_system(data, threadData, sysIndex);
   if (retValue > 0) {
     throwStreamPrint(threadData,
       "Solving non-linear system %d failed. For more information use -lv LOG_NLS.",
       sysIndex);
   }
-  data->localData[0]->realVars[varSlot] = nls->nlsx[0];
+  for (i = 0; i < n; ++i) {
+    data->localData[0]->realVars[varSlots[i]] = nls->nlsx[i];
+  }
   return retValue;
 }
 

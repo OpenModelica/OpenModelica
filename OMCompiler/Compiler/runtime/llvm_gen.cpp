@@ -680,57 +680,114 @@ extern "C" int createInlinedDelay(const char *const dataArgName,
   return 0;
 }
 
-/* createInlinedSolveNonlinear: emit a call to the omc_jit_solve_nonlinear_
- * system1 adapter (seed-solve-throw-writeback for a single-unknown
- * nonlinear tearing system). The adapter wraps the runtime
- * solve_nonlinear_system + throwStreamPrint; SCTL just supplies the system
- * index and the iteration variable's flat realVars slot. Return value
- * (retValue) is discarded -- the adapter throws on failure. */
-extern "C" int createInlinedSolveNonlinear(const char *const dataArgName,
-                                           const char *const threadDataArgName,
-                                           const int64_t sysIndex,
-                                           const int64_t varSlot) {
+/* Common helper for emitSolve{Linear,Nonlinear}N: emit a private constant
+ * `[N x i64]` global named `arrName` holding the flat realVars[] slots
+ * (walked out of a MetaModelica `list<Integer>` value). Returns the
+ * global as an llvm::Constant* the caller passes through CreateCall.
+ *
+ * Reuses collectMmcIntList (declared in the createSetupDataStrucFull
+ * anonymous namespace above) to walk the cons-list. */
+static llvm::Constant *emitVarSlotsArrayGlobal(const char *const arrName,
+                                               void *const slotsList) {
+  llvm::Module &mod = *program->module;
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(ctx);
+
+  if (llvm::GlobalVariable *const existing = mod.getNamedGlobal(arrName)) {
+    return existing;
+  }
+  /* Inline the MetaModelica `list<Integer>` walk -- duplicates
+   * collectMmcIntList below, but copying four lines avoids reordering
+   * the helper out of its anonymous namespace. */
+  std::vector<long> slots;
+  {
+    void *lst = slotsList;
+    while (lst && MMC_GETHDR(lst) == MMC_CONSHDR) {
+      slots.push_back(MMC_UNTAGFIXNUM(MMC_CAR(lst)));
+      lst = MMC_CDR(lst);
+    }
+  }
+  std::vector<llvm::Constant *> initElts;
+  initElts.reserve(slots.size());
+  for (long v : slots) {
+    initElts.push_back(llvm::ConstantInt::get(i64, v));
+  }
+  llvm::ArrayType *const arrTy = llvm::ArrayType::get(i64, slots.size());
+  llvm::Constant *const init = llvm::ConstantArray::get(arrTy, initElts);
+  llvm::GlobalVariable *const gv = new llvm::GlobalVariable(
+      mod, arrTy, /*isConstant=*/true,
+      llvm::GlobalValue::PrivateLinkage, init, arrName);
+  gv->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+  return gv;
+}
+
+/* createInlinedSolveNonlinearN: emit a call to the omc_jit_solve_nonlinear_
+ * system_n adapter. varSlotsList is a MetaModelica list<Integer> of the
+ * iteration variables' flat realVars slots (length == nUnknowns); SCTL
+ * materialises it as a private constant [N x i64] global named arrName
+ * and passes its pointer plus the length to the adapter. The adapter
+ * wraps solve_nonlinear_system + throwStreamPrint; this helper does no
+ * model-state bookkeeping itself. */
+extern "C" int createInlinedSolveNonlinearN(const char *const dataArgName,
+                                            const char *const threadDataArgName,
+                                            const int64_t sysIndex,
+                                            void *const varSlotsList,
+                                            const char *const arrName) {
   llvm::IRBuilder<> &b = program->builder;
   llvm::Module &mod = *program->module;
   llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
   llvm::PointerType *const ptrTy =
       llvm::PointerType::getUnqual(program->context);
+  llvm::Constant *const slotsGV =
+      emitVarSlotsArrayGlobal(arrName, varSlotsList);
+  llvm::ArrayType *const slotsTy =
+      llvm::cast<llvm::ArrayType>(slotsGV->getType()->isPointerTy() ?
+        llvm::cast<llvm::GlobalVariable>(slotsGV)->getValueType() :
+        slotsGV->getType());
+  const int64_t n = (int64_t)slotsTy->getNumElements();
   llvm::FunctionType *const fnTy =
-      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32}, false);
+      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32, ptrTy}, false);
   llvm::FunctionCallee const fn =
-      mod.getOrInsertFunction("omc_jit_solve_nonlinear_system1", fnTy);
+      mod.getOrInsertFunction("omc_jit_solve_nonlinear_system_n", fnTy);
   b.CreateCall(fn, {loadFromSymtab(dataArgName),
                     loadFromSymtab(threadDataArgName),
                     llvm::ConstantInt::get(i32, sysIndex),
-                    llvm::ConstantInt::get(i32, varSlot)});
+                    llvm::ConstantInt::get(i32, n),
+                    slotsGV});
   return 0;
 }
 
-/* createInlinedSolveLinear: emit a call to the omc_jit_solve_linear_system1
- * adapter (seed-solve-throw-writeback for a single-unknown linear tearing
- * system). The adapter wraps the runtime solve_linear_system; SCTL just
- * supplies the system index and the iteration variable's flat realVars
- * slot. Return value (retValue) is discarded -- the adapter throws on
- * failure. Mirrors createInlinedSolveNonlinear exactly; the adapter file
- * holds both symbols so the existing force-link entries already pull this
- * one in transitively. */
-extern "C" int createInlinedSolveLinear(const char *const dataArgName,
-                                        const char *const threadDataArgName,
-                                        const int64_t sysIndex,
-                                        const int64_t varSlot) {
+/* createInlinedSolveLinearN: emit a call to the omc_jit_solve_linear_
+ * system_n adapter. Mirrors createInlinedSolveNonlinearN; the runtime
+ * solve_linear_system takes the seed/solution buffer by pointer rather
+ * than via the system-data exchange arrays, so the adapter handles its
+ * own length-N stack array. */
+extern "C" int createInlinedSolveLinearN(const char *const dataArgName,
+                                         const char *const threadDataArgName,
+                                         const int64_t sysIndex,
+                                         void *const varSlotsList,
+                                         const char *const arrName) {
   llvm::IRBuilder<> &b = program->builder;
   llvm::Module &mod = *program->module;
   llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
   llvm::PointerType *const ptrTy =
       llvm::PointerType::getUnqual(program->context);
+  llvm::Constant *const slotsGV =
+      emitVarSlotsArrayGlobal(arrName, varSlotsList);
+  llvm::ArrayType *const slotsTy =
+      llvm::cast<llvm::ArrayType>(slotsGV->getType()->isPointerTy() ?
+        llvm::cast<llvm::GlobalVariable>(slotsGV)->getValueType() :
+        slotsGV->getType());
+  const int64_t n = (int64_t)slotsTy->getNumElements();
   llvm::FunctionType *const fnTy =
-      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32}, false);
+      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32, ptrTy}, false);
   llvm::FunctionCallee const fn =
-      mod.getOrInsertFunction("omc_jit_solve_linear_system1", fnTy);
+      mod.getOrInsertFunction("omc_jit_solve_linear_system_n", fnTy);
   b.CreateCall(fn, {loadFromSymtab(dataArgName),
                     loadFromSymtab(threadDataArgName),
                     llvm::ConstantInt::get(i32, sysIndex),
-                    llvm::ConstantInt::get(i32, varSlot)});
+                    llvm::ConstantInt::get(i32, n),
+                    slotsGV});
   return 0;
 }
 

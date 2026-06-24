@@ -314,35 +314,39 @@ function genDelay
                Include = "int createInlinedDelay(const char *dataArgName, const char *threadDataArgName, const int64_t exprNumber, const char *valName, const char *dtName, const char *dmaxName, const char *dstName);");
 end genDelay;
 
-function genSolveNonlinear
-  "Emit a call to the omc_jit_solve_nonlinear_system1 adapter for a
-   single-unknown nonlinear tearing system: seed the iteration variable
-   (flat realVars slot varSlot), run the runtime solver for system
-   sysIndex, throw on failure, write the solution back. See
-   createInlinedSolveNonlinear / omc_jit_solve_nonlinear_system1."
+function genSolveNonlinearN
+  "Emit a call to the omc_jit_solve_nonlinear_system_n adapter for a
+   tearing system with any unknown count >= 1: seed each iteration
+   variable from realVars[varSlots[i]] into nlsxOld, run the runtime
+   solver for system sysIndex, throw on failure, write nlsx[i] back
+   to realVars[varSlots[i]]. arrName is the unique LLVM global name
+   under which the [N x i64] slot array is emitted as a private constant
+   (one per system; SCTL builds the name from the model symbol prefix
+   + the nonlinear system index)."
   input String dataArgName;
   input String threadDataArgName;
   input Integer sysIndex;
-  input Integer varSlot;
-  external "C" createInlinedSolveNonlinear(dataArgName, threadDataArgName, sysIndex, varSlot)
+  input list<Integer> varSlots;
+  input String arrName;
+  external "C" createInlinedSolveNonlinearN(dataArgName, threadDataArgName, sysIndex, varSlots, arrName)
     annotation(Library = "omcruntime",
-               Include = "int createInlinedSolveNonlinear(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, const int64_t varSlot);");
-end genSolveNonlinear;
+               Include = "int createInlinedSolveNonlinearN(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, void *varSlots, const char *arrName);");
+end genSolveNonlinearN;
 
-function genSolveLinear
-  "Emit a call to the omc_jit_solve_linear_system1 adapter for a
-   single-unknown linear tearing system: seed the iteration variable
-   (flat realVars slot varSlot), run the runtime solve_linear_system
-   for system sysIndex, throw on failure, write the solution back. See
-   createInlinedSolveLinear / omc_jit_solve_linear_system1."
+function genSolveLinearN
+  "Emit a call to the omc_jit_solve_linear_system_n adapter for a
+   linear tearing system with any unknown count >= 1. Mirrors
+   genSolveNonlinearN. arrName is the unique LLVM global name for the
+   [N x i64] slot array (one per linear system)."
   input String dataArgName;
   input String threadDataArgName;
   input Integer sysIndex;
-  input Integer varSlot;
-  external "C" createInlinedSolveLinear(dataArgName, threadDataArgName, sysIndex, varSlot)
+  input list<Integer> varSlots;
+  input String arrName;
+  external "C" createInlinedSolveLinearN(dataArgName, threadDataArgName, sysIndex, varSlots, arrName)
     annotation(Library = "omcruntime",
-               Include = "int createInlinedSolveLinear(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, const int64_t varSlot);");
-end genSolveLinear;
+               Include = "int createInlinedSolveLinearN(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, void *varSlots, const char *arrName);");
+end genSolveLinearN;
 
 function genReadIntVar
   "Inline  dst(modelica_integer) = data->localData[0]->integerVars[slot]."
