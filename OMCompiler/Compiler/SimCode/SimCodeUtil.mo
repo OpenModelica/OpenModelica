@@ -12446,13 +12446,22 @@ protected function getEnumerationTypesHelper
 algorithm
   for var in inVars loop
     () := match var
+      local
+        SimCodeVar.SimVar v;
+        DAE.Type elemTy;
       case SimCodeVar.SIMVAR()
         algorithm
           // Add the variable to the list if it's an enumeration variable which
-          // doesn't already exist in the list.
-          if Types.isEnumeration(var.type_) and not
-             List.exist1(outVars, enumerationTypeExists, var.type_) then
-            outVars := var :: outVars;
+          // doesn't already exist in the list. Unwrap array types so that array
+          // enumeration variables (type T_ARRAY(ty = T_ENUMERATION)) also get an
+          // EnumerationType definition; store the scalar enumeration type so the
+          // dedup check and the TypeDefinition3 template see a T_ENUMERATION.
+          elemTy := Types.arrayElementType(var.type_);
+          if Types.isEnumeration(elemTy) and not
+             List.exist1(outVars, enumerationTypeExists, elemTy) then
+            v := var;
+            v.type_ := elemTy;
+            outVars := v :: outVars;
           end if;
         then
           ();
