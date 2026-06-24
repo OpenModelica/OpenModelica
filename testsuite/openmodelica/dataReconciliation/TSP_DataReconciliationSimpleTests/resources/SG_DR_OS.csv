@@ -1,0 +1,15 @@
+Variable name,Measured Value,Half Width Confidence Interval
+GV.Source_ARE.C.P,70e5,1e5
+GV.Puit_VVP.C.P,68e5,1e5
+GV.Source_ARE.Q,550,5
+GV.Puit_purge.Q,5,0.5
+GV.singularPressureLoss_ARE.T,500,1
+GV.singularPressureLoss_ARE.K,650,1e5
+GV.singularPressureLoss_VVP.K,11,3.6
+GV.staticDrum.x,1,1e-6
+GV.staticDrum.Cth.W,1e9,1e12
+
+
+
+
+

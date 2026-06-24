@@ -19,6 +19,7 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2, simflags=simFlags);
 getErrorString();
 
+
 // Result:
 // true
 // ""

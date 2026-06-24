@@ -1,0 +1,46 @@
+// name:     TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Skipped loading package ThermoSysPro (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "reconcileState", "s", "sx", "variableFilter"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_STDOUT,LOG_ASSERT,LOG_STATS -reconcileState=() -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_STDOUT,LOG_ASSERT,LOG_STATS -reconcileState=() -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*'",
+//     messages = "Failed to build model: TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR"
+// end SimulationResult;
+// "Warning: ThermoSysPro requested package Modelica of version 3.2.3. Modelica 4.0.0 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary(ThermoSysPro, Modelica, \"4.0.0\") to run the conversion script or proceed with potential issues as a result.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to usage.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:88:5-89:45:writable] Error: Class Modelica.SIunits.AbsolutePressure not found in scope FluidOutlet.
+// "
+// endResult

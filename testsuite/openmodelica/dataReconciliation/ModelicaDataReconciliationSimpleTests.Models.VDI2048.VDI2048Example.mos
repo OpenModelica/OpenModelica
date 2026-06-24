@@ -19,6 +19,7 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example, simflags=simFlags);
 getErrorString();
 
+
 // Result:
 // true
 // ""
