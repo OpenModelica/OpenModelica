@@ -1,0 +1,57 @@
+// name: fmi3_units.mos
+// keywords: FMI 3.0 export units
+// status: correct
+// teardown_command: rm -rf fmi3_units.fmu fmi3_units.xml fmi3_units_tmp.xml fmi3_units.fmutmp/ fmi3_units.log fmi3_units_info.json index.html
+//
+// A variable that carries a unit attribute must reference a <Unit> declared in
+// <UnitDefinitions>, otherwise the modelDescription.xml fails validation. The
+// new backend now exports the unit definitions (with the SI <BaseUnit>
+// exponents derived from the unit string) so the units used by the variables
+// are declared. Validated against the FMI 3.0 schema with fmpy.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+model fmi3_units
+  Real v(unit = \"m/s\", start = 0, fixed = true);
+  Real d(unit = \"m\", start = 0, fixed = true);
+equation
+  der(d) = v;
+  der(v) = 1;
+end fmi3_units;
+"); getErrorString();
+
+buildModelFMU(fmi3_units, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_units.fmu modelDescription.xml > fmi3_units_tmp.xml"); getErrorString();
+system("sed -n \"/<UnitDefinitions>/,/<\\/UnitDefinitions>/p\" fmi3_units_tmp.xml > fmi3_units.xml"); getErrorString();
+readFile("fmi3_units.xml"); getErrorString();
+
+// validate against the FMI 3.0 schema with an independent importer (fmpy)
+system("python3 -c \"import fmpy; fmpy.read_model_description('fmi3_units.fmu', validate=True); print('FMPY_VALID')\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_units.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <UnitDefinitions>
+//     <Unit name=\"m\">
+//       <BaseUnit m=\"1\" />
+//     </Unit>
+//     <Unit name=\"m/s\">
+//       <BaseUnit m=\"1\" s=\"-1\" />
+//     </Unit>
+//   </UnitDefinitions>
+// "
+// ""
+// FMPY_VALID
+// 0
+// ""
+// endResult

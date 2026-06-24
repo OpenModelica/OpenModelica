@@ -17,7 +17,8 @@ fmi3_msl_engine1a.mos \
 fmi3_terminals_alias_nb.mos \
 fmi3_terminals_alias.mos \
 fmi3_terminals.mos \
-fmi3_types.mos
+fmi3_types.mos \
+fmi3_units.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

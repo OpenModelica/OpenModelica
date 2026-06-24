@@ -9736,6 +9736,27 @@ algorithm
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
 
+public function getFmiUnitDefinitionsFromSimVars
+  "Collects the FMI <UnitDefinitions> directly from a SimVars record (the FMI
+   order: real states, derivatives, algebraic, discrete and parameters). Used by
+   the new backend FMU export, which has the SimVars record rather than the
+   per-type array the old backend builds. Units are only emitted for real
+   variables. Without these definitions a variable that carries a unit attribute
+   references an undefined unit and the modelDescription.xml fails validation."
+  input SimCodeVar.SimVars vars;
+  output list<SimCode.UnitDefinition> unitDefinitions = {};
+protected
+  HashSetString.HashSet unitNameKeys = HashSetString.emptyHashSet();
+algorithm
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.stateVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.derivativeVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.algVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.discreteAlgVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.paramVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.aliasVars, unitDefinitions, unitNameKeys);
+  unitDefinitions := listReverse(unitDefinitions);
+end getFmiUnitDefinitionsFromSimVars;
+
 protected function getFmiUnitDefinitionsHelper
   "helper function which creates the list<UnitDefintions> to be exported in modelDescription.xml"
   input list<SimCodeVar.SimVar> inVars;
