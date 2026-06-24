@@ -170,6 +170,17 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    members of `allEquations` are skipped per-recipe (the function
    stays well-formed); a model whose `allEquations` all lower gets a
    byte-faithful functionDAE.
+
+   `emitDynamicEquationsBlock` additionally emits a standalone
+   `<prefix>_eqFunction_<idx>` (linkonce_odr) for every `allEquations`
+   member whose recipe passes `canLowerEquation`. The still-clang'd
+   segment files (`_05evt.c`, `_06inz.c`, `_09alg.c`, ...) take `extern`
+   references to the algebraic / discrete eqFunction symbols CodegenC
+   used to define only in the skipped `<Model>.c`; SCTL now supplies
+   them. Unsupported equations are left undefined on purpose (loud
+   JIT-link error names the missing one); `EXT_LLVM.functionDefined`
+   dedups an index that appears in more than one block (e.g. both
+   `initialEquations` and `allEquations`).
 4. **`<Model>_setupDataStruc`.** DONE for the load-bearing fields.
    `createSetupDataStrucFull` wires the two critical pointers plus
    all 41 modelData integer counters (driven by
@@ -243,44 +254,48 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    missing instead of just the one with the unsupported construct.
 
    **BouncingBall.** Currently fails JIT with `Symbols not found:
-   [ BouncingBall_eqFunction_23 ]` (a `$whenCondition = h<=0 and
-   v<=0` conjunction the still-clang'd `_09alg.c` / `_06inz.c`
-   reference but SCTL does not yet define). The blockers, in order of
-   how much new SCTL machinery each requires:
+   [ BouncingBall_eqFunction_21 ]` (`der(v) = if flying then -g else 0`
+   -- the if-expression blocker below). The blockers, in order of how
+   much new SCTL machinery each requires:
 
-     1. `boolDiscrete = state <relop> threshold` (e.g. BB's
-        `impact = h <= 0.0`). **DONE.** Adapter
+     1. Discrete-Boolean equations: `boolDiscrete = <Boolean exp>` over
+        zero-crossing relations, discrete-Boolean cref reads, and / or /
+        not, and literals (e.g. `impact = h <= 0.0`,
+        `$whenCondition = impact and v <= 0.0`,
+        `$whenCondition3 = h<=0 and v<=0`). **DONE.** Adapter
         `omc_jit_relationhysteresis` in
         `omc_jit_perform_simulation_adapter.c` is the non-static
         wrapper SCTL calls (the runtime's own `relationhysteresis`
         is `static inline` in `model_help.h` and unreachable from
         IR; the wrapper switches on a 0..3 op-code for
         Less/LessEq/Greater/GreaterEq, threading the matching
-        function-pointer args through). MetaModelica side: `VK_BOOL_DISCRETE`
-        VarKind over the `boolAlgVars` bucket, `EQ_BOOL_DISCRETE_FROM_RELATION`
-        recipe, `classifyBoolDiscrete` for `SES_SIMPLE_ASSIGN(cref =
-        bool-discrete, exp = DAE.RELATION(...))` with a real
-        zero-crossing index, and an `emitEquation` branch
-        (`createInlinedBoolDiscreteFromRelation`) that lowers both
-        operands, calls `omc_jit_relationhysteresis`, and stores the
-        i32 result into `booleanVars[slot]`. Operand nominals follow
-        `getExpNominal` (constants by magnitude, default 1.0
-        otherwise). Verified end-to-end on a `Boolean over = x <= 0.5`
-        model: JIT `over` flips false->true at the crossing,
-        byte-identical to the C path (BB still needs blockers 2/3 so
-        its own link error is unchanged; the relation lift is exercised
-        by the standalone model and by BB's `impact` inside functionDAE).
+        function-pointer args through). MetaModelica side:
+        `VK_BOOL_DISCRETE` VarKind over the `boolAlgVars` bucket,
+        `EQ_BOOL_DISCRETE_ASSIGN(slot, rhs)` recipe, and `emitBoolExp`
+        -- an i32-domain mirror of `emitExp` whose nodes compose by
+        symtab name via the bool primitives in `llvm_gen.cpp`
+        (`createInlinedReadBoolVar` / `...RelationHysteresisBool` /
+        `...BoolBinop` / `...BoolNot` / `...BoolConst` /
+        `...StoreBoolVar`). Relation operand nominals follow
+        `getExpNominal` (constants by magnitude, default 1.0).
+        Verified end-to-end byte-identical to C on `Boolean over =
+        x <= 0.5` (single relation) and `b = c and x >= 0.1`
+        (conjunction over a cref + relation).
 
-     2. When-condition Booleans (`$whenCondition = impact and v <= 0.0`)
-        and `SES_WHEN` bodies (`eq_10`-style): a Boolean conjunction
-        over a relation result plus a discrete read (not a bare
-        relation, so `classifyBoolDiscrete` rejects it today), then
-        edge detection on the discrete Boolean, conditional reinit of
-        a state variable, and a `needToIterate` store on
-        `simulationInfo`. This is what BB's still-undefined
-        `eqFunction_23` etc. need. Hours more.
+     2. If-expressions in a Real RHS reading a discrete Boolean
+        condition (`der(v) = if flying then -g else 0`): `emitExp` has
+        no `DAE.IFEXP` case, so eq_21 is unsupported and left undefined
+        -- BB's current link error. Needs an `emitExp` branch that
+        lowers the (discrete-Boolean) condition via `emitBoolExp`,
+        emits a select / branch over the two Real arms.
 
-     3. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
+     3. `SES_WHEN` bodies (`eq_18`/`_19`/`_20`): edge detection on a
+        discrete Boolean (`b and not pre(b)`), conditional reinit of a
+        state variable, integer-var assignment (`n_bounce`), and a
+        `needToIterate` store on `simulationInfo`. Needs `pre()` reads,
+        integer var layout, and a `reinit` emit path. Hours more.
+
+     4. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
         lookups (read `realVarsData[idx].attribute.start.data[0]`),
         writes to `simulationInfo->realVarsPre[idx]`, reads from
         `realParameter` into state slots. A handful of EqRecipe

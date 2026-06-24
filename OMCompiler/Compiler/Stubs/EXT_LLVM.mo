@@ -124,9 +124,37 @@ algorithm
   assert(false, getInstanceName());
 end genRelationSet;
 
-function genBoolDiscreteFromRelation
+function functionDefined
+  input String fname;
+  output Boolean defined = false;
+end functionDefined;
+
+function genReadBoolVar
   input String dataArgName;
-  input Integer boolSlot;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadBoolVar;
+
+function genStoreBoolVar
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genStoreBoolVar;
+
+function genBoolConst
+  input Integer value;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genBoolConst;
+
+function genRelationHysteresisBool
+  input String dataArgName;
+  input String dstName;
   input String exp1Name;
   input String exp2Name;
   input Real nom1;
@@ -135,7 +163,23 @@ function genBoolDiscreteFromRelation
   input Integer opCode;
 algorithm
   assert(false, getInstanceName());
-end genBoolDiscreteFromRelation;
+end genRelationHysteresisBool;
+
+function genBoolBinop
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer isOr;
+algorithm
+  assert(false, getInstanceName());
+end genBoolBinop;
+
+function genBoolNot
+  input String aName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genBoolNot;
 
 function genCallExternalObjectDestructors
   input String modelName;

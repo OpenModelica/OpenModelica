@@ -192,22 +192,16 @@ public uniontype EqRecipe
     DAE.Exp rhs;
   end EQ_BOOL_PARAM_ASSIGN;
 
-  record EQ_BOOL_DISCRETE_FROM_RELATION
-    "booleanVars[slot] := (exp1 <op> exp2), a discrete Boolean assigned
-     from a relation that carries a zero-crossing index (e.g.
-     `impact = h <= 0.0`). Lowered to a call to omc_jit_relationhysteresis
-     whose i32 result is stored into the booleanVars buffer. opCode
-     selects the comparison: 0=Less, 1=LessEq, 2=Greater, 3=GreaterEq.
-     nom1 / nom2 are the operands' nominal scale factors (matching
-     CodegenC's daeExpNominalTmp)."
+  record EQ_BOOL_DISCRETE_ASSIGN
+    "booleanVars[slot] := <Boolean expression>, a discrete Boolean
+     assignment (e.g. `impact = h <= 0.0`, `b = c and x >= 0.1`). The RHS
+     is lowered by emitBoolExp into a modelica_boolean (i32) value and
+     stored into the booleanVars buffer. Supported RHS nodes: zero-crossing
+     relations (via omc_jit_relationhysteresis), discrete-Boolean cref
+     reads, and / or / not, and Boolean literals."
     Integer slotIndex "absolute booleanVars[] slot";
-    DAE.Exp exp1;
-    DAE.Exp exp2;
-    Real nom1;
-    Real nom2;
-    Integer zcIndex "the relation's zero-crossing index";
-    Integer opCode;
-  end EQ_BOOL_DISCRETE_FROM_RELATION;
+    DAE.Exp rhs;
+  end EQ_BOOL_DISCRETE_ASSIGN;
 
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
@@ -1025,6 +1019,14 @@ algorithm
   (eq, recipe) := eqAndRecipe;
   eqIndex := simEqIndex(eq);
   fname := prefix + "_eqFunction_" + intString(eqIndex);
+  /* An equation index can appear in more than one block (e.g. both
+   * initialEquations and allEquations). The first emitter wins; a second
+   * definition in the same module would be silently renamed by LLVM and
+   * waste space, so skip if the symbol already has a body. */
+  if EXT_LLVM.functionDefined(fname) then
+    ok := true;
+    return;
+  end if;
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
@@ -1176,58 +1178,66 @@ end emitInitialEquationsBlock;
 
 protected function emitDynamicEquationsBlock
   "Emit one <prefix>_eqFunction_<idx>(DATA *, threadData_t *) per
-   dynamic equation in simCode.odeEquations, using the same
-   emitNamedEquationFunction machinery emitInitialEquationsBlock
-   uses for initial equations.
+   equation in simCode.allEquations that lowers cleanly, using the
+   emitNamedEquationFunction machinery. allEquations (not just the ODE
+   partition) is the right source: the still-clang'd segment files
+   (_05evt.c, _06inz.c, _09alg.c, ...) take `extern` references to the
+   algebraic / discrete eqFunction_<idx> symbols that CodegenC otherwise
+   defines only in the now-skipped <Model>.c, so SCTL must supply them.
 
-   This is roadmap item 1 (per-equation dynamic eqFunction_N).
-   The CodegenC <Model>.c driver still emits these symbols too,
-   so SCTL cannot yet add the matching <Model>.c displacement
-   without triggering JIT-link duplicates. The per-eq emission
-   here is foundational: once roadmap items 2 (setupDataStruc),
-   3 (callback table), and 6 (entry shim) land, displacing
-   <Model>.c becomes safe and these SCTL-emitted eqFunction_N
-   become the live ones.
+   Each emission is linkonce_odr: where a clang'd file still carries the
+   strong CodegenC definition the linker keeps that; where <Model>.c was
+   the sole definer (the common case under the cutover) SCTL's becomes
+   the live one.
 
-   Returns true only if every dynamic equation lowered cleanly
-   -- on false the caller leaves the per-eq emissions in the
-   module (the function is well-formed because each
-   emitNamedEquationFunction always terminates with
-   genReturnVoid + finnishGen) but the caller cannot yet rely
-   on the eqFunction_N set being complete."
+   Only equations whose recipe passes canLowerEquation are emitted.
+   Unsupported ones are deliberately left undefined so the JIT-link error
+   names exactly which eqFunction_<idx> still needs lowering, instead of a
+   silently-wrong empty stub (AGENTS.md section 4). SES_ALIAS (EQ_NOOP)
+   shares another equation's body and gets no standalone symbol, matching
+   emitInitialEquationsDispatcher.
+
+   Returns true iff every (non-alias) equation lowered cleanly."
   input SimCode.SimCode simCode;
   input VarLayout layout;
   output Boolean ok;
 protected
-  list<SimCode.SimEqSystem> dynamicEqs;
+  list<SimCode.SimEqSystem> allEqs;
   list<EqRecipe> recipes;
   String prefix;
   Absyn.Path name;
+  EqRecipe recipe;
 algorithm
   name := simCodeName(simCode);
   prefix := modelSymbolPrefix(name);
-  dynamicEqs := flattenOdeEquations(simCode);
-  if listEmpty(dynamicEqs) then
+  allEqs := allSimCodeEquations(simCode);
+  if listEmpty(allEqs) then
     ok := true;
     return;
   end if;
-  recipes := List.map1(dynamicEqs, classifySimEq, layout);
-  /* Emit every recipe that classifies cleanly. Unclassifiable ones are
-   * left undefined on purpose -- the JIT-link error then names the
-   * specific eqFunction_<idx> the user is missing, instead of the
-   * whole block silently dropping every emission because one
-   * equation triggered EQ_UNSUPPORTED. emitNamedEquationFunction
-   * already gates internally (it short-circuits its own body when
-   * canLowerEquation says no for that single recipe) and always
-   * leaves a well-formed function in the module, so a per-recipe
-   * loop is safe. */
+  recipes := List.map1(allEqs, classifySimEq, layout);
   ok := true;
-  for tup in List.zip(dynamicEqs, recipes) loop
-    if not emitNamedEquationFunction(prefix, tup, layout) then
+  for tup in List.zip(allEqs, recipes) loop
+    (_, recipe) := tup;
+    if isNoopRecipe(recipe) then
+      /* alias / no-op: no standalone symbol to emit */
+    elseif canLowerEquation(recipe, layout) then
+      if not emitNamedEquationFunction(prefix, tup, layout) then
+        ok := false;
+      end if;
+    else
+      /* leave the symbol undefined -- loud JIT-link error if referenced */
       ok := false;
     end if;
   end for;
 end emitDynamicEquationsBlock;
+
+protected function isNoopRecipe
+  input EqRecipe r;
+  output Boolean b;
+algorithm
+  b := match r case EQ_NOOP() then true; else false; end match;
+end isNoopRecipe;
 
 protected function modelHasNoEvents
   "True iff the model has no zero crossings and no relations -- the
@@ -1752,10 +1762,7 @@ algorithm
     case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
-    case EQ_BOOL_DISCRETE_FROM_RELATION() then "BDISC_REL(slot=" +
-                                       intString(r.slotIndex) + ", zc=" +
-                                       intString(r.zcIndex) + ", op=" +
-                                       intString(r.opCode) + ")";
+    case EQ_BOOL_DISCRETE_ASSIGN() then "BDISC(" + intString(r.slotIndex) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -1776,9 +1783,7 @@ algorithm
     case EQ_ALG_ASSIGN(rhs=e)        then ExpressionBasics.printExpStr(e);
     case EQ_PARAM_ASSIGN(rhs=e)      then ExpressionBasics.printExpStr(e);
     case EQ_BOOL_PARAM_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
-    case EQ_BOOL_DISCRETE_FROM_RELATION()
-      then ExpressionBasics.printExpStr(r.exp1) + " <op" +
-           intString(r.opCode) + "> " + ExpressionBasics.printExpStr(r.exp2);
+    case EQ_BOOL_DISCRETE_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
     else "";
   end match;
 end recipeRhsStr;
@@ -2683,7 +2688,7 @@ algorithm
     local Integer slot;
           DAE.Exp rhs;
           EmitCtx ctx2;
-          String rhsTmp, rhs2Tmp;
+          String rhsTmp;
           Boolean exprOk;
     case EQ_DERIVATIVE_ASSIGN(slotIndex=slot, rhs=rhs)
       algorithm
@@ -2723,16 +2728,12 @@ algorithm
           emitWriteBoolParam(slot, rhsTmp);
         end if;
       then (ctx2, exprOk);
-    case EQ_BOOL_DISCRETE_FROM_RELATION()
+    case EQ_BOOL_DISCRETE_ASSIGN(slotIndex=slot, rhs=rhs)
       algorithm
-        (ctx2, rhsTmp, exprOk) := emitExp(r.exp1, ctx);
+        (ctx2, rhsTmp, exprOk) := emitBoolExp(rhs, ctx);
         if exprOk then
-          (ctx2, rhs2Tmp, exprOk) := emitExp(r.exp2, ctx2);
-          if exprOk then
-            EXT_LLVM.genBoolDiscreteFromRelation("data",
-              absoluteSlot(VKS_BOOL_DISCRETE, r.slotIndex, ctx2.layout),
-              rhsTmp, rhs2Tmp, r.nom1, r.nom2, r.zcIndex, r.opCode);
-          end if;
+          EXT_LLVM.genStoreBoolVar("data",
+            absoluteSlot(VKS_BOOL_DISCRETE, slot, ctx2.layout), rhsTmp);
         end if;
       then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
@@ -2880,8 +2881,7 @@ algorithm
     case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
-    case EQ_BOOL_DISCRETE_FROM_RELATION()
-      then canLowerExp(r.exp1, layout) and canLowerExp(r.exp2, layout);
+    case EQ_BOOL_DISCRETE_ASSIGN() then canLowerBoolExp(r.rhs, layout);
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
@@ -2949,6 +2949,8 @@ algorithm
   end if;
   os := lookupSlot(cref, layout);
   ok := match os
+    /* Discrete Booleans are not real-readable (see emitCrefRead). */
+    case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then false;
     case SOME(_) then true;
     case NONE()  then false;
   end match;
@@ -2968,6 +2970,36 @@ algorithm
     else false;
   end match;
 end canLowerOp;
+
+protected function canLowerBoolExp
+  "Pre-validation mirror of emitBoolExp: true iff every node of the
+   discrete-Boolean expression falls into a case emitBoolExp handles."
+  input DAE.Exp e;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match e
+    local DAE.Exp e1, e2, sub;
+          DAE.Operator op;
+          DAE.ComponentRef cref;
+          Integer idx;
+    case DAE.BCONST() then true;
+    case DAE.CREF(componentRef=cref)
+      then match lookupSlot(cref, layout)
+        case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then true;
+        else false;
+      end match;
+    case DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx)
+      then isSome(opCodeForRelationOp(op)) and idx >= 0
+           and canLowerExp(e1, layout) and canLowerExp(e2, layout);
+    case DAE.LBINARY(exp1=e1, operator=op, exp2=e2)
+      then isSome(boolBinopCode(op))
+           and canLowerBoolExp(e1, layout) and canLowerBoolExp(e2, layout);
+    case DAE.LUNARY(operator=DAE.NOT(), exp=sub)
+      then canLowerBoolExp(sub, layout);
+    else false;
+  end match;
+end canLowerBoolExp;
 
 protected function emitExp
   "Minimal DAE.Exp -> LLVM lowering. Recognises:
@@ -3078,6 +3110,179 @@ algorithm
       then (ctx, "<unsupported-exp>", false);
   end match;
 end emitExp;
+
+protected function emitBoolExp
+  "Lower a discrete-Boolean-valued DAE.Exp into a modelica_boolean (i32)
+   alloca, returning its symtab name + Boolean ok. Mirrors emitExp but
+   for the Boolean domain; each node produces an i32 value the bool
+   primitives in llvm_gen.cpp combine by name:
+     RELATION(e1,relop,e2) w/ zc index -> omc_jit_relationhysteresis
+     CREF (VK_BOOL_DISCRETE)           -> booleanVars[slot] load
+     LBINARY(and/or)                   -> genBoolBinop
+     LUNARY(not)                       -> genBoolNot
+     BCONST                            -> genBoolConst
+   The relation operands themselves are Real, so they go through emitExp."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+algorithm
+  (outCtx, dst, ok) := match e
+    local
+      Boolean bval;
+      DAE.ComponentRef cref;
+      DAE.Exp sub;
+      EmitCtx ctx1, ctx2;
+      String tmp, a;
+      Boolean ok1;
+    case DAE.BCONST(bool=bval)
+      algorithm
+        (ctx1, tmp) := freshTmp(ctx);
+        EXT_LLVM.genBoolConst(if bval then 1 else 0, tmp);
+      then (ctx1, tmp, true);
+    case DAE.CREF(componentRef=cref)
+      algorithm
+        (ctx1, tmp, ok1) := emitBoolCrefRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.RELATION()
+      algorithm
+        (ctx1, tmp, ok1) := emitBoolRelation(e, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.LBINARY()
+      algorithm
+        (ctx1, tmp, ok1) := emitBoolBinary(e, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.LUNARY(operator=DAE.NOT(), exp=sub)
+      algorithm
+        (ctx1, a, ok1) := emitBoolExp(sub, ctx);
+        if ok1 then
+          (ctx2, tmp) := freshTmp(ctx1);
+          EXT_LLVM.genBoolNot(a, tmp);
+        else
+          ctx2 := ctx1;
+          tmp := "<lunary-operand-failed>";
+        end if;
+      then (ctx2, tmp, ok1);
+    else (ctx, "<unsupported-bool-exp>", false);
+  end match;
+end emitBoolExp;
+
+protected function emitBoolCrefRead
+  "Lower a discrete-Boolean cref read: booleanVars[slot] into a fresh i32
+   alloca. Non-VK_BOOL_DISCRETE crefs are not Boolean-readable here."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+  Integer absSlot;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, dst, ok) := match os
+    case SOME(vs as VAR_SLOT(kind=VK_BOOL_DISCRETE()))
+      algorithm
+        (outCtx, dst) := freshTmp(ctx);
+        absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+        EXT_LLVM.genReadBoolVar("data", absSlot, dst);
+      then (outCtx, dst, true);
+    else (ctx, "<non-discrete-bool-cref>", false);
+  end match;
+end emitBoolCrefRead;
+
+protected function emitBoolRelation
+  "Lower a zero-crossing relation (exp1 <relop> exp2) into an i32 alloca
+   via omc_jit_relationhysteresis. The operands are Real, so they go
+   through emitExp; the nominals follow relationOperandNominal."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+  Integer idx, opc;
+  Option<Integer> oc;
+  EmitCtx ctx1, ctx2;
+  String a, bnm;
+  Boolean ok1, ok2;
+algorithm
+  DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx) := e;
+  oc := opCodeForRelationOp(op);
+  if not isSome(oc) or idx < 0 then
+    outCtx := ctx;
+    dst := "<unsupported-relation>";
+    ok := false;
+    return;
+  end if;
+  SOME(opc) := oc;
+  (ctx1, a, ok1) := emitExp(e1, ctx);
+  (ctx2, bnm, ok2) := emitExp(e2, ctx1);
+  ok := ok1 and ok2;
+  if ok then
+    (outCtx, dst) := freshTmp(ctx2);
+    EXT_LLVM.genRelationHysteresisBool("data", dst, a, bnm,
+      relationOperandNominal(e1), relationOperandNominal(e2), idx, opc);
+  else
+    outCtx := ctx2;
+    dst := "<rel-operand-failed>";
+  end if;
+end emitBoolRelation;
+
+protected function emitBoolBinary
+  "Lower a logical AND/OR (exp1 <op> exp2) over two Boolean subexpressions
+   into an i32 alloca via genBoolBinop."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+  Integer opc;
+  Option<Integer> oc;
+  EmitCtx ctx1, ctx2;
+  String a, bnm;
+  Boolean ok1, ok2;
+algorithm
+  DAE.LBINARY(exp1=e1, operator=op, exp2=e2) := e;
+  oc := boolBinopCode(op);
+  if not isSome(oc) then
+    outCtx := ctx;
+    dst := "<unsupported-lbinary>";
+    ok := false;
+    return;
+  end if;
+  SOME(opc) := oc;
+  (ctx1, a, ok1) := emitBoolExp(e1, ctx);
+  (ctx2, bnm, ok2) := emitBoolExp(e2, ctx1);
+  ok := ok1 and ok2;
+  if ok then
+    (outCtx, dst) := freshTmp(ctx2);
+    EXT_LLVM.genBoolBinop(a, bnm, dst, opc);
+  else
+    outCtx := ctx2;
+    dst := "<lbinary-operand-failed>";
+  end if;
+end emitBoolBinary;
+
+protected function boolBinopCode
+  "Map a logical DAE.Operator to genBoolBinop's isOr flag: 0 for AND,
+   1 for OR. NONE() for any other operator."
+  input DAE.Operator op;
+  output Option<Integer> code;
+algorithm
+  code := match op
+    case DAE.AND() then SOME(0);
+    case DAE.OR()  then SOME(1);
+    else NONE();
+  end match;
+end boolBinopCode;
 
 protected function isLibmUnaryReal
   "Recognise libm-style single-argument Real -> Real functions whose
@@ -3211,6 +3416,11 @@ algorithm
   end if;
   os := lookupSlot(cref, ctx.layout);
   (outCtx, dst, ok) := match os
+    /* Discrete Booleans live in booleanVars (i32), not realVars; a real
+     * read of one would load the wrong buffer. emitBoolExp handles them
+     * in Boolean context, so reject here rather than emit a wrong load. */
+    case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE()))
+      then (ctx, "<bool-discrete-in-real-ctx>", false);
     case SOME(vs)
       algorithm
         absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
@@ -3583,36 +3793,15 @@ end classifySimEq;
 
 protected function classifyBoolDiscrete
   "Classify a discrete-Boolean assignment whose LHS resolved to a
-   VK_BOOL_DISCRETE slot. Only the relation shape
-     boolVar = exp1 <relop> exp2
-   carrying a real zero-crossing index is lowerable today; it maps to
-   EQ_BOOL_DISCRETE_FROM_RELATION (a call to omc_jit_relationhysteresis).
-   Boolean-algebra RHS (`a and b`, `not p`, pure Boolean crefs, ...) and
-   relations without a zero-crossing index (index = -1) stay
-   EQ_UNSUPPORTED so the still-clang'd segment file keeps its definition."
+   VK_BOOL_DISCRETE slot as EQ_BOOL_DISCRETE_ASSIGN. Whether the RHS is
+   actually lowerable (zero-crossing relations, discrete-Boolean cref
+   reads, and / or / not, Boolean literals) is decided by canLowerBoolExp
+   in canLowerEquation -- the same classify/validate split the
+   EQ_*_ASSIGN recipes use -- so an unhandled RHS leaves the still-clang'd
+   segment file with its definition rather than a wrong stub."
   input Integer slotIndex;
   input DAE.Exp rhs;
-  output EqRecipe recipe;
-algorithm
-  recipe := match rhs
-    local DAE.Exp e1, e2;
-          DAE.Operator op;
-          Integer idx, opc;
-    /* Operand lowerability is checked later in canLowerEquation against
-     * the real layout (same split the EQ_*_ASSIGN recipes use): classify
-     * only screens the relation shape, operator, and zero-crossing index. */
-    case DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx)
-      then match opCodeForRelationOp(op)
-        case SOME(_) guard idx < 0
-          then EQ_UNSUPPORTED("relation has no zero-crossing index (index=-1)");
-        case SOME(opc)
-          then EQ_BOOL_DISCRETE_FROM_RELATION(slotIndex, e1, e2,
-                 relationOperandNominal(e1), relationOperandNominal(e2),
-                 idx, opc);
-        else EQ_UNSUPPORTED("relation operator not one of < / <= / > / >=");
-      end match;
-    else EQ_UNSUPPORTED("discrete Boolean RHS is not a zero-crossing relation");
-  end match;
+  output EqRecipe recipe = EQ_BOOL_DISCRETE_ASSIGN(slotIndex, rhs);
 end classifyBoolDiscrete;
 
 protected function opCodeForRelationOp

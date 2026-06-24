@@ -379,45 +379,94 @@ extern "C" int createInlinedRelationSet(const char *const dataArgName,
   return 0;
 }
 
-/* createInlinedBoolDiscreteFromRelation: emit the body of a discrete
- * boolean equation of the shape
+/* ------------------------------------------------------------------------
+ * Discrete-Boolean expression primitives.
  *
- *   booleanVars[boolSlot] = relationhysteresis(exp1 <op> exp2)
- *
- * i.e. the IR equivalent of CodegenC's
- *
- *   modelica_boolean tmp;
- *   relationhysteresis(data, &tmp, exp1, exp2, nom1, nom2, zcIndex, Op, OpZC);
- *   data->localData[0]->booleanVars[booleanVarsIndex[boolSlot]] = tmp;
- *
- * The runtime's own relationhysteresis is `static inline` in
- * model_help.h and thus unreachable from emitted IR, so this calls the
- * external-linkage wrapper omc_jit_relationhysteresis (defined in
- * omc_jit_perform_simulation_adapter.c) which switches on opCode
- * (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq) and forwards to the static
- * inline with the matching op_w / op_w_zc function pointers.
- *
- * exp1Name / exp2Name are the symtab names of double allocas holding the
- * already-lowered relation operands; nom1 / nom2 are the literal nominal
- * scale factors for those operands. The DynamicLibrarySearchGenerator
- * resolves omc_jit_relationhysteresis against omcruntime in-process. */
-extern "C" int createInlinedBoolDiscreteFromRelation(
-    const char *const dataArgName, const int64_t boolSlot,
+ * A discrete-Boolean equation (`impact = h <= 0.0`, `b = c and x >= 0.1`)
+ * lowers as a tree of these. Each intermediate value is a modelica_boolean
+ * (i32, openmodelica_types.h:106) held in a named i32 alloca registered in
+ * the per-function symtab -- the same name-keyed scheme allocaDouble uses
+ * for Reals, so emitBoolExp can compose them by symtab name. The leaf
+ * relation calls the omc_jit_relationhysteresis adapter (the runtime's own
+ * relationhysteresis is `static inline` in model_help.h and unreachable
+ * from emitted IR); the wrapper switches on opCode (0=Less, 1=LessEq,
+ * 2=Greater, 3=GreaterEq) and forwards to the static inline with the
+ * matching op_w / op_w_zc function pointers.
+ * ------------------------------------------------------------------------ */
+
+/* Create an i32 (modelica_boolean) alloca registered under `name`, mirroring
+ * allocaBoolean but at modelica_boolean width rather than i1 so the value
+ * matches booleanVars[] and the relationhysteresis result without truncation.
+ * Returns the alloca. */
+static llvm::AllocaInst *makeBoolI32Alloca(const char *const name) {
+  llvm::AllocaInst *const ai =
+      createAllocaInst(name, llvm::Type::getInt32Ty(program->context));
+  program->currentFunc->symTab[std::string(name)] =
+      std::make_unique<Variable>(ai, false);
+  return ai;
+}
+
+/* createInlinedReadBoolVar: dstName(i32) = data->localData[0]->booleanVars[slot].
+ * The discrete-Boolean counterpart of createInlinedReadRealVar. */
+extern "C" int createInlinedReadBoolVar(const char *const dataArgName,
+                                        const int64_t slot,
+                                        const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const boolVars = emitChainToBoolVars(dataPtr);
+  llvm::Value *const valAddr = b.CreateGEP(
+      i32, boolVars, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const val = b.CreateLoad(i32, valAddr, "");
+  b.CreateStore(val, makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedStoreBoolVar: data->localData[0]->booleanVars[slot] = srcName.
+ * srcName is an i32 alloca (a value produced by the bool primitives). */
+extern "C" int createInlinedStoreBoolVar(const char *const dataArgName,
+                                         const int64_t slot,
+                                         const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const boolVars = emitChainToBoolVars(dataPtr);
+  llvm::Value *const valAddr = b.CreateGEP(
+      i32, boolVars, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(loadFromSymtab(srcName), valAddr);
+  return 0;
+}
+
+/* createInlinedBoolConst: dstName(i32) = value (0 or 1). */
+extern "C" int createInlinedBoolConst(const int64_t value,
+                                      const char *const dstName) {
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  program->builder.CreateStore(llvm::ConstantInt::get(i32, value ? 1 : 0),
+                               makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedRelationHysteresisBool: dstName(i32) =
+ *   relationhysteresis(exp1 <op> exp2)  via the omc_jit wrapper.
+ * exp1Name / exp2Name are double allocas holding the lowered operands;
+ * nom1 / nom2 their nominal scale factors. The leaf of a Boolean tree. */
+extern "C" int createInlinedRelationHysteresisBool(
+    const char *const dataArgName, const char *const dstName,
     const char *const exp1Name, const char *const exp2Name,
     const double nom1, const double nom2, const int64_t zcIndex,
     const int64_t opCode) {
   llvm::IRBuilder<> &b = program->builder;
   llvm::Module &mod = *program->module;
   llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
-  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
   llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
   llvm::Type *const voidTy = llvm::Type::getVoidTy(program->context);
   llvm::PointerType *const ptrTy =
       llvm::PointerType::getUnqual(program->context);
 
   llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
-  /* modelica_boolean (i32) result slot the wrapper writes through. */
-  llvm::AllocaInst *const resAlloca = b.CreateAlloca(i32, nullptr, "");
+  llvm::AllocaInst *const dstAlloca = makeBoolI32Alloca(dstName);
   llvm::Value *const e1 = loadFromSymtab(exp1Name);
   llvm::Value *const e2 = loadFromSymtab(exp2Name);
 
@@ -425,18 +474,56 @@ extern "C" int createInlinedBoolDiscreteFromRelation(
       voidTy, {ptrTy, ptrTy, dbl, dbl, dbl, dbl, i32, i32}, false);
   llvm::FunctionCallee const fn =
       mod.getOrInsertFunction("omc_jit_relationhysteresis", fnTy);
-  b.CreateCall(fn, {dataPtr, resAlloca, e1, e2,
+  /* The wrapper writes the i32 result through the pointer; the dst alloca
+   * doubles as that out-param slot, so no separate scratch is needed. */
+  b.CreateCall(fn, {dataPtr, dstAlloca, e1, e2,
                     llvm::ConstantFP::get(dbl, nom1),
                     llvm::ConstantFP::get(dbl, nom2),
                     llvm::ConstantInt::get(i32, zcIndex),
                     llvm::ConstantInt::get(i32, opCode)});
-
-  llvm::Value *const resVal = b.CreateLoad(i32, resAlloca, "");
-  llvm::Value *const boolVars = emitChainToBoolVars(dataPtr);
-  llvm::Value *const slotAddr = b.CreateGEP(
-      i32, boolVars, llvm::ConstantInt::get(i64, boolSlot), "");
-  b.CreateStore(resVal, slotAddr);
   return 0;
+}
+
+/* createInlinedBoolBinop: dstName(i32) = (a != 0) <and|or> (b != 0), as 0/1.
+ * Normalising both operands to i1 before combining matches C's && / ||
+ * truthiness regardless of how the operands were produced. isOr selects OR. */
+extern "C" int createInlinedBoolBinop(const char *const aName,
+                                      const char *const bName,
+                                      const char *const dstName,
+                                      const int64_t isOr) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const zero = llvm::ConstantInt::get(i32, 0);
+  llvm::Value *const ab = b.CreateICmpNE(loadFromSymtab(aName), zero, "");
+  llvm::Value *const bb = b.CreateICmpNE(loadFromSymtab(bName), zero, "");
+  llvm::Value *const r = isOr ? b.CreateOr(ab, bb, "") : b.CreateAnd(ab, bb, "");
+  b.CreateStore(b.CreateZExt(r, i32, ""), makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedBoolNot: dstName(i32) = (a == 0) ? 1 : 0. */
+extern "C" int createInlinedBoolNot(const char *const aName,
+                                    const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const isZero =
+      b.CreateICmpEQ(loadFromSymtab(aName), llvm::ConstantInt::get(i32, 0), "");
+  b.CreateStore(b.CreateZExt(isZero, i32, ""), makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* sctlFunctionDefined: 1 iff the active module already holds a *defined*
+ * (non-declaration) function named `name`. Used to dedup eqFunction_<idx>
+ * emission across blocks that can reference the same equation index (e.g.
+ * an equation appearing in both initialEquations and allEquations) so the
+ * second emitter does not create a renamed duplicate. A bare extern
+ * declaration (getOrInsertFunction from a call site) does not count. */
+extern "C" int sctlFunctionDefined(const char *const name) {
+  if (!program || !program->module) {
+    return 0;
+  }
+  llvm::Function *const f = program->module->getFunction(name);
+  return (f && !f->isDeclaration()) ? 1 : 0;
 }
 
 /* createInlinedReadTime: emit

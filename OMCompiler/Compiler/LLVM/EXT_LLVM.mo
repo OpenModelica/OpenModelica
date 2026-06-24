@@ -208,25 +208,97 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
-function genBoolDiscreteFromRelation
-  "Emit  booleanVars[boolSlot] = relationhysteresis(exp1 <op> exp2)  for
-   a discrete boolean equation. exp1Name / exp2Name are the symtab names
-   of the double allocas holding the lowered relation operands; nom1 /
-   nom2 are the operands' nominal scale factors; opCode selects the
-   comparison (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq). See
-   createInlinedBoolDiscreteFromRelation in omcruntime."
+function functionDefined
+  "True iff the active module already holds a defined (non-declaration)
+   function named fname. See sctlFunctionDefined in omcruntime."
+  input String fname;
+  output Boolean defined;
+protected
+  Integer r;
+algorithm
+  r := sctlFunctionDefinedI(fname);
+  defined := r <> 0;
+end functionDefined;
+
+function sctlFunctionDefinedI
+  input String fname;
+  output Integer r;
+  external "C" r = sctlFunctionDefined(fname)
+    annotation(Library = "omcruntime",
+               Include = "int sctlFunctionDefined(const char *name);");
+end sctlFunctionDefinedI;
+
+function genReadBoolVar
+  "Inline  dst(i32) = data->localData[0]->booleanVars[slot]  read of a
+   discrete Boolean. See createInlinedReadBoolVar in omcruntime."
   input String dataArgName;
-  input Integer boolSlot;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadBoolVar(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadBoolVar(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadBoolVar;
+
+function genStoreBoolVar
+  "Inline  data->localData[0]->booleanVars[slot] = src(i32)  store of a
+   discrete Boolean. See createInlinedStoreBoolVar in omcruntime."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedStoreBoolVar(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedStoreBoolVar(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genStoreBoolVar;
+
+function genBoolConst
+  "Materialise a Boolean literal into the i32 alloca dstName (0 or 1).
+   See createInlinedBoolConst in omcruntime."
+  input Integer value;
+  input String dstName;
+  external "C" createInlinedBoolConst(value, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedBoolConst(const int64_t value, const char *dstName);");
+end genBoolConst;
+
+function genRelationHysteresisBool
+  "Emit  dst(i32) = relationhysteresis(exp1 <op> exp2)  via the
+   omc_jit_relationhysteresis adapter. exp1Name / exp2Name are double
+   allocas holding the lowered operands; nom1 / nom2 their nominal scale
+   factors; opCode selects the comparison (0=Less, 1=LessEq, 2=Greater,
+   3=GreaterEq). See createInlinedRelationHysteresisBool in omcruntime."
+  input String dataArgName;
+  input String dstName;
   input String exp1Name;
   input String exp2Name;
   input Real nom1;
   input Real nom2;
   input Integer zcIndex;
   input Integer opCode;
-  external "C" createInlinedBoolDiscreteFromRelation(dataArgName, boolSlot, exp1Name, exp2Name, nom1, nom2, zcIndex, opCode)
+  external "C" createInlinedRelationHysteresisBool(dataArgName, dstName, exp1Name, exp2Name, nom1, nom2, zcIndex, opCode)
     annotation(Library = "omcruntime",
-               Include = "int createInlinedBoolDiscreteFromRelation(const char *dataArgName, const int64_t boolSlot, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
-end genBoolDiscreteFromRelation;
+               Include = "int createInlinedRelationHysteresisBool(const char *dataArgName, const char *dstName, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
+end genRelationHysteresisBool;
+
+function genBoolBinop
+  "Emit  dst(i32) = (a != 0) <and|or> (b != 0)  as 0/1. isOr selects OR.
+   See createInlinedBoolBinop in omcruntime."
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer isOr;
+  external "C" createInlinedBoolBinop(aName, bName, dstName, isOr)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedBoolBinop(const char *aName, const char *bName, const char *dstName, const int64_t isOr);");
+end genBoolBinop;
+
+function genBoolNot
+  "Emit  dst(i32) = (a == 0) ? 1 : 0. See createInlinedBoolNot."
+  input String aName;
+  input String dstName;
+  external "C" createInlinedBoolNot(aName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedBoolNot(const char *aName, const char *dstName);");
+end genBoolNot;
 
 function genCallbackTable
   "Emit the <Model>_callback global into the active module as a packed,
