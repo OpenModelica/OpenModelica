@@ -1833,8 +1833,11 @@ protected
     Adjacency.Matrix sparsity, fullLocal;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
-    list<Pointer<Variable>> res_vars, tmp_vars;
+    list<Pointer<Variable>> res_vars, tmp_vars, seed_vars_d, pDer_vars_d;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
+    Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
 
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -1842,19 +1845,28 @@ protected
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
-    seed_set := UnorderedSet.fromList(list(BVariable.getVarName(v) for v in VariablePointers.toList(seedCandidates)), ComponentRef.hash, ComponentRef.isEqual);
-    pder_set := UnorderedSet.fromList(list(BVariable.getVarName(v) for v in res_vars), ComponentRef.hash, ComponentRef.isEqual);
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
+    seed_vars_d := Pointer.access(seed_vars_ptr);
+    for v in VariablePointers.toList(seedCandidates) loop
+      UnorderedSet.add(BVariable.getVarName(v), seed_set);
+    end for;
+
+    for v in res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init);
+    end for;
+    pDer_vars_d := Pointer.access(pDer_vars_ptr);
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
-      auxiliaries   = VariablePointers.fromList({}),
+      auxiliaries   = VariablePointers.fromList(seed_vars_d),
       aliasVars     = VariablePointers.fromList({}),
-      diffVars      = VariablePointers.fromList({}),
+      diffVars      = partialCandidates,
       dependencies  = VariablePointers.fromList({}),
-      resultVars    = VariablePointers.fromList(res_vars),
+      resultVars    = VariablePointers.fromList(pDer_vars_d),
       tmpVars       = VariablePointers.fromList(tmp_vars),
-      seedVars      = seedCandidates
+      seedVars      = VariablePointers.fromList(seed_vars_d)
     );
 
     if isSome(strongComponents) then
