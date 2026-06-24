@@ -695,6 +695,119 @@ extern "C" int sctlFunctionDefined(const char *const name) {
   return (f && !f->isDeclaration()) ? 1 : 0;
 }
 
+/* ------------------------------------------------------------------------
+ * Integer discrete primitives (modelica_integer == iNBITS_MODELICA_INTEGER).
+ *
+ * The integer-domain mirror of the discrete-Boolean primitives: each value
+ * is a named modelica_integer alloca, used for discrete Integer vars
+ * (intAlgVars, e.g. `n_bounce`) and the small integer arithmetic a when
+ * body assigns (`n_bounce = 1 + pre(n_bounce)`).
+ * ------------------------------------------------------------------------ */
+
+static llvm::Type *modIntTy() {
+  return llvm::Type::getIntNTy(program->context, NBITS_MODELICA_INTEGER);
+}
+
+/* data->localData[0]->integerVars */
+static llvm::Value *emitChainToIntVars(llvm::Value *const dataPtr) {
+  llvm::Value *const localDataPP =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
+  llvm::Value *const sd = emitLoadPtr(localDataPP);
+  return emitGEPLoadPtr(sd, omc_layout_SD_integerVars);
+}
+
+static llvm::AllocaInst *makeIntAlloca(const char *const name) {
+  llvm::AllocaInst *const ai = createAllocaInst(name, modIntTy());
+  program->currentFunc->symTab[std::string(name)] =
+      std::make_unique<Variable>(ai, false);
+  return ai;
+}
+
+extern "C" int createInlinedReadIntVar(const char *const dataArgName,
+                                       const int64_t slot,
+                                       const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const intVars = emitChainToIntVars(loadFromSymtab(dataArgName));
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, intVars, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(b.CreateLoad(ity, valAddr, ""), makeIntAlloca(dstName));
+  return 0;
+}
+
+extern "C" int createInlinedReadIntVarPre(const char *const dataArgName,
+                                          const int64_t slot,
+                                          const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(loadFromSymtab(dataArgName), omc_layout_DATA_simulationInfo);
+  llvm::Value *const pre = emitGEPLoadPtr(simInfo, omc_layout_SI_integerVarsPre);
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, pre, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(b.CreateLoad(ity, valAddr, ""), makeIntAlloca(dstName));
+  return 0;
+}
+
+extern "C" int createInlinedStoreIntVar(const char *const dataArgName,
+                                        const int64_t slot,
+                                        const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const intVars = emitChainToIntVars(loadFromSymtab(dataArgName));
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, intVars, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(loadFromSymtab(srcName), valAddr);
+  return 0;
+}
+
+extern "C" int createInlinedIntConst(const int64_t value,
+                                     const char *const dstName) {
+  program->builder.CreateStore(llvm::ConstantInt::get(modIntTy(), value, true),
+                               makeIntAlloca(dstName));
+  return 0;
+}
+
+/* dstName = a <op> b. opCode: 0=+, 1=-, 2=*. */
+extern "C" int createInlinedIntBinop(const char *const aName,
+                                     const char *const bName,
+                                     const char *const dstName,
+                                     const int64_t opCode) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Value *const av = loadFromSymtab(aName);
+  llvm::Value *const bv = loadFromSymtab(bName);
+  llvm::Value *r = nullptr;
+  switch (opCode) {
+    case 0: r = b.CreateAdd(av, bv, ""); break;
+    case 1: r = b.CreateSub(av, bv, ""); break;
+    case 2: r = b.CreateMul(av, bv, ""); break;
+    default:
+      fprintf(stderr, "createInlinedIntBinop: bad opCode %lld\n",
+              (long long)opCode);
+      MMC_THROW();
+  }
+  b.CreateStore(r, makeIntAlloca(dstName));
+  return 0;
+}
+
+/* dstName = (cond != 0) ? then : else  (Integer select). */
+extern "C" int createInlinedSelectInt(const char *const condName,
+                                      const char *const thenName,
+                                      const char *const elseName,
+                                      const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const cond = b.CreateICmpNE(
+      loadFromSymtab(condName), llvm::ConstantInt::get(i32, 0), "");
+  llvm::Value *const sel = b.CreateSelect(
+      cond, loadFromSymtab(thenName), loadFromSymtab(elseName), "");
+  b.CreateStore(sel, makeIntAlloca(dstName));
+  return 0;
+}
+
 /* createInlinedReadTime: emit
  *
  *   data->localData[0]->timeValue

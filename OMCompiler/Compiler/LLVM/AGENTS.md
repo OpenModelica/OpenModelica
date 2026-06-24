@@ -265,18 +265,15 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    the first `EQ_UNSUPPORTED`, which made every dynamic symbol
    missing instead of just the one with the unsupported construct.
 
-   **BouncingBall.** A simplified BB *without* the integer `n_bounce`
-   counter (`BB2`: relation `impact`, `if flying` derivative, and a
-   `when` that assigns the discrete Real `v_new = if edge(impact) then
-   -e*pre(v) else 0`, the Boolean `flying = v_new > 0`, and
-   `reinit(v, v_new)`) now JIT-simulates byte-identical to C -- the ball
-   bounces, the height trace matches to ~13 digits. The full testsuite
-   BB still fails JIT *loudly* with `Symbols not found: [
-   BouncingBall_functionDAE ]` because of the integer when-assign
-   `n_bounce = 1 + pre(n_bounce)` (no integer-var layout yet), which
-   keeps `allEquations` from fully lowering so the functionDAE gate
-   leaves the symbol undefined. The blockers, in order of how much new
-   SCTL machinery each requires:
+   **BouncingBall.** The full testsuite BouncingBall (zero crossings,
+   `when` + `reinit`, the integer `n_bounce` counter) now JIT-simulates
+   byte-identical to the C path: the height trace matches to ~13 digits
+   across the bounces and `n_bounce` matches exactly ({1,1,4,34} at
+   t={0.5,1,2,3}). The blockers below all landed; they are kept as a
+   record of the order they were lifted. (The `canCoverModel` coverage
+   warning still fires because the model has zero crossings -- it is now
+   conservative for this case rather than predictive; the JIT no longer
+   fails.) The lifts, in the order they were taken:
 
      1. Discrete-Boolean equations: `boolDiscrete = <Boolean exp>` over
         zero-crossing relations, discrete-Boolean cref reads, and / or /
@@ -329,10 +326,15 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
         end-to-end on `BB2` (a bouncing ball, JIT == C to ~13 digits).
 
      4. Integer discrete vars + integer when-assign (`n_bounce =
-        1 + pre(n_bounce)`): an `integerVars` / `integerVarsPre` layout
-        bucket (VK_INT_DISCRETE), `emitExp` integer arithmetic, and an
-        integer predicated assign. This is the full testsuite BB's
-        current loud blocker.
+        1 + pre(n_bounce)`). **DONE.** `VK_INT_DISCRETE` over the
+        `intAlgVars` bucket; `emitIntExp` -- a modelica_integer-domain
+        mirror of `emitExp` (ICONST, discrete-Integer cref reads,
+        `pre()` of an Integer, + / - / *) over the int primitives in
+        `llvm_gen.cpp` (`createInlinedReadIntVar` / `...ReadIntVarPre` /
+        `...StoreIntVar` / `...IntConst` / `...IntBinop` /
+        `...SelectInt`); and an integer predicated when-assign
+        (`emitWhenIntAssign`). With this the full testsuite BouncingBall
+        JIT-simulates == C.
 
      5. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
         lookups (read `realVarsData[idx].attribute.start.data[0]`),
@@ -372,12 +374,11 @@ reproducer that actually triggers the issue, in the PR / commit
 message. Canonical models: HelloWorld (baseline ODE); a discrete
 Boolean observed from a relation (`over = x <= 0.5`), a Boolean
 conjunction (`b = c and x >= 0.1`), a Real if-expression over a
-discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and `BB2` (a
-bouncing ball: `when` + `reinit` + `pre` + discrete-Real, no integer
-counter) -- all lower fully and are checked JIT-vs-C; the full
-testsuite BouncingBall (integer `n_bounce`) and a `delay()`-using
-model are the loud-failure cases (functionDAE undefined until those
-constructs lower). Performance work
+discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and the full
+BouncingBall (zero crossings, `when` + `reinit` + `pre`, discrete-Real
+`v_new`, integer `n_bounce`) -- all lower fully and are checked
+JIT-vs-C. A `delay()`-using model is still a loud-failure case
+(functionDAE undefined until `delayImpl` lowers). Performance work
 uses 10-run samples on HelloWorld + CoupledClutches and the JIT-cache
 hot/cold split.
 

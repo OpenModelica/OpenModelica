@@ -187,6 +187,55 @@ algorithm
   assert(false, getInstanceName());
 end genSetDiscreteCall;
 
+function genReadIntVar
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadIntVar;
+
+function genReadIntVarPre
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadIntVarPre;
+
+function genStoreIntVar
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genStoreIntVar;
+
+function genIntConst
+  input Integer value;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genIntConst;
+
+function genIntBinop
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer opCode;
+algorithm
+  assert(false, getInstanceName());
+end genIntBinop;
+
+function genSelectInt
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genSelectInt;
+
 function functionDefined
   input String fname;
   output Boolean defined = false;

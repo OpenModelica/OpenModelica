@@ -298,6 +298,68 @@ function genSetDiscreteCall
                Include = "int createInlinedSetDiscreteCall(const char *dataArgName, const int64_t value);");
 end genSetDiscreteCall;
 
+function genReadIntVar
+  "Inline  dst(modelica_integer) = data->localData[0]->integerVars[slot]."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadIntVar(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadIntVar(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadIntVar;
+
+function genReadIntVarPre
+  "Inline  dst = data->simulationInfo->integerVarsPre[slot]  (pre() of an
+   Integer)."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadIntVarPre(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadIntVarPre(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadIntVarPre;
+
+function genStoreIntVar
+  "Inline  data->localData[0]->integerVars[slot] = src."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedStoreIntVar(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedStoreIntVar(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genStoreIntVar;
+
+function genIntConst
+  "Materialise an Integer literal into the modelica_integer alloca dstName."
+  input Integer value;
+  input String dstName;
+  external "C" createInlinedIntConst(value, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedIntConst(const int64_t value, const char *dstName);");
+end genIntConst;
+
+function genIntBinop
+  "Emit  dst = a <op> b  (Integer arithmetic). opCode 0=+ 1=- 2=*."
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer opCode;
+  external "C" createInlinedIntBinop(aName, bName, dstName, opCode)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedIntBinop(const char *aName, const char *bName, const char *dstName, const int64_t opCode);");
+end genIntBinop;
+
+function genSelectInt
+  "Emit  dst = (cond != 0) ? then : else  (Integer select)."
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+  external "C" createInlinedSelectInt(condName, thenName, elseName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSelectInt(const char *condName, const char *thenName, const char *elseName, const char *dstName);");
+end genSelectInt;
+
 function functionDefined
   "True iff the active module already holds a defined (non-declaration)
    function named fname. See sctlFunctionDefined in omcruntime."

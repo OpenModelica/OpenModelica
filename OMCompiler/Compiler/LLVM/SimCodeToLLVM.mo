@@ -117,6 +117,11 @@ public uniontype VarKind
      data->localData[0]->booleanVars[index] (the boolAlgVars bucket:
      when conditions, relation results like `impact`, ...)."
   end VK_BOOL_DISCRETE;
+  record VK_INT_DISCRETE
+    "A discrete Integer variable living in
+     data->localData[0]->integerVars[index] (the intAlgVars bucket,
+     e.g. a when-counter `n_bounce`)."
+  end VK_INT_DISCRETE;
 end VarKind;
 
 /* Cached singleton instances of every no-field VarKind variant.
@@ -132,6 +137,7 @@ public constant VarKind VKS_ALG        = VK_ALG();
 public constant VarKind VKS_PARAM      = VK_PARAM();
 public constant VarKind VKS_BOOL_PARAM = VK_BOOL_PARAM();
 public constant VarKind VKS_BOOL_DISCRETE = VK_BOOL_DISCRETE();
+public constant VarKind VKS_INT_DISCRETE = VK_INT_DISCRETE();
 
 public uniontype VarSlot
   record VAR_SLOT
@@ -2902,6 +2908,8 @@ algorithm
   (outCtx, ok) := match os
     case SOME(vs as VAR_SLOT(kind = VK_BOOL_DISCRETE()))
       algorithm (outCtx, ok) := emitWhenBoolAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
+    case SOME(vs as VAR_SLOT(kind = VK_INT_DISCRETE()))
+      algorithm (outCtx, ok) := emitWhenIntAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
     case SOME(vs as VAR_SLOT(kind = VK_STATE()))
       algorithm (outCtx, ok) := emitWhenRealAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
     case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
@@ -2987,6 +2995,29 @@ algorithm
   EXT_LLVM.genReadBoolVar("data", slot, dst);
 end emitReadBoolVarSlot;
 
+protected function emitWhenIntAssign
+  "integerVars[slot] = edge ? rhs : integerVars[slot]  (predicated Integer)."
+  input VarSlot vs;
+  input DAE.Exp rhs;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  String rhsTmp, curTmp, selTmp;
+  Integer slot;
+algorithm
+  slot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+  (outCtx, rhsTmp, ok) := emitIntExp(rhs, ctx);
+  if ok then
+    (outCtx, curTmp) := freshTmp(outCtx);
+    EXT_LLVM.genReadIntVar("data", slot, curTmp);
+    (outCtx, selTmp) := freshTmp(outCtx);
+    EXT_LLVM.genSelectInt(edgeTmp, rhsTmp, curTmp, selTmp);
+    EXT_LLVM.genStoreIntVar("data", slot, selTmp);
+  end if;
+end emitWhenIntAssign;
+
 protected function emitWhenReinit
   "reinit(state, value): realVars[state] = edge ? value : realVars[state]
    and simulationInfo->needToIterate = edge ? 1 : needToIterate."
@@ -3068,6 +3099,7 @@ algorithm
     case VK_PARAM()      then subIndex;
     case VK_BOOL_PARAM() then subIndex;
     case VK_BOOL_DISCRETE() then subIndex;
+    case VK_INT_DISCRETE() then subIndex;
   end match;
 end absoluteSlot;
 
@@ -3187,6 +3219,7 @@ algorithm
     case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = cref), right = rhs)
       then match lookupSlot(cref, layout)
         case SOME(VAR_SLOT(kind = VK_BOOL_DISCRETE())) then canLowerBoolExp(rhs, layout);
+        case SOME(VAR_SLOT(kind = VK_INT_DISCRETE())) then canLowerIntExp(rhs, layout);
         case SOME(VAR_SLOT(kind = VK_STATE())) then canLowerExp(rhs, layout);
         case SOME(VAR_SLOT(kind = VK_DERIVATIVE())) then canLowerExp(rhs, layout);
         case SOME(VAR_SLOT(kind = VK_ALG())) then canLowerExp(rhs, layout);
@@ -3281,8 +3314,9 @@ algorithm
   end if;
   os := lookupSlot(cref, layout);
   ok := match os
-    /* Discrete Booleans are not real-readable (see emitCrefRead). */
+    /* Discrete Booleans / Integers are not real-readable (see emitCrefRead). */
     case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then false;
+    case SOME(VAR_SLOT(kind=VK_INT_DISCRETE())) then false;
     case SOME(_) then true;
     case NONE()  then false;
   end match;
@@ -3701,6 +3735,168 @@ algorithm
   end if;
 end emitBoolBinary;
 
+protected function emitIntExp
+  "Lower an Integer-valued DAE.Exp into a modelica_integer alloca. The
+   integer-domain mirror of emitExp / emitBoolExp, covering the small
+   arithmetic a discrete Integer when-assign needs (`n_bounce =
+   1 + pre(n_bounce)`): ICONST, discrete-Integer cref reads, pre() of an
+   Integer, and + / - / * over them."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+algorithm
+  (outCtx, dst, ok) := match e
+    local Integer i;
+          DAE.ComponentRef cref;
+          EmitCtx ctx1;
+          String tmp;
+          Boolean ok1;
+    case DAE.ICONST(integer=i)
+      algorithm
+        (ctx1, tmp) := freshTmp(ctx);
+        EXT_LLVM.genIntConst(i, tmp);
+      then (ctx1, tmp, true);
+    case DAE.CREF(componentRef=cref)
+      algorithm
+        (ctx1, tmp, ok1) := emitIntCrefRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
+      algorithm
+        (ctx1, tmp, ok1) := emitIntPreRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.BINARY()
+      algorithm
+        (ctx1, tmp, ok1) := emitIntBinary(e, ctx);
+      then (ctx1, tmp, ok1);
+    else (ctx, "<unsupported-int-exp>", false);
+  end match;
+end emitIntExp;
+
+protected function emitIntCrefRead
+  "Read a discrete-Integer cref (integerVars[slot]) into a fresh alloca."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  VarSlot vs;
+algorithm
+  (outCtx, dst, ok) := match lookupSlot(cref, ctx.layout)
+    case SOME(vs as VAR_SLOT(kind=VK_INT_DISCRETE()))
+      algorithm
+        (outCtx, dst) := freshTmp(ctx);
+        EXT_LLVM.genReadIntVar("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
+      then (outCtx, dst, true);
+    else (ctx, "<non-discrete-int-cref>", false);
+  end match;
+end emitIntCrefRead;
+
+protected function emitIntPreRead
+  "Lower  pre(<discrete-Integer cref>)  via integerVarsPre[slot]."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  VarSlot vs;
+algorithm
+  (outCtx, dst, ok) := match lookupSlot(cref, ctx.layout)
+    case SOME(vs as VAR_SLOT(kind=VK_INT_DISCRETE()))
+      algorithm
+        (outCtx, dst) := freshTmp(ctx);
+        EXT_LLVM.genReadIntVarPre("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
+      then (outCtx, dst, true);
+    else (ctx, "<pre-of-non-discrete-int>", false);
+  end match;
+end emitIntPreRead;
+
+protected function emitIntBinary
+  "Lower an Integer + / - / * over two Integer subexpressions."
+  input DAE.Exp e;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+  Integer opc;
+  Option<Integer> oc;
+  EmitCtx ctx1, ctx2;
+  String a, bnm;
+  Boolean ok1, ok2;
+algorithm
+  DAE.BINARY(exp1=e1, operator=op, exp2=e2) := e;
+  oc := intBinopCode(op);
+  if not isSome(oc) then
+    outCtx := ctx;
+    dst := "<unsupported-int-binop>";
+    ok := false;
+    return;
+  end if;
+  SOME(opc) := oc;
+  (ctx1, a, ok1) := emitIntExp(e1, ctx);
+  (ctx2, bnm, ok2) := emitIntExp(e2, ctx1);
+  ok := ok1 and ok2;
+  if ok then
+    (outCtx, dst) := freshTmp(ctx2);
+    EXT_LLVM.genIntBinop(a, bnm, dst, opc);
+  else
+    outCtx := ctx2;
+    dst := "<int-operand-failed>";
+  end if;
+end emitIntBinary;
+
+protected function intBinopCode
+  "Map an integer DAE.Operator to genIntBinop's opCode: 0=+ 1=- 2=*.
+   NONE() for any other operator (DIV / POW are not lowered here)."
+  input DAE.Operator op;
+  output Option<Integer> code;
+algorithm
+  code := match op
+    case DAE.ADD() then SOME(0);
+    case DAE.SUB() then SOME(1);
+    case DAE.MUL() then SOME(2);
+    else NONE();
+  end match;
+end intBinopCode;
+
+protected function canLowerIntExp
+  "Pre-validation mirror of emitIntExp."
+  input DAE.Exp e;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match e
+    local DAE.Exp e1, e2;
+          DAE.Operator op;
+          DAE.ComponentRef cref;
+    case DAE.ICONST() then true;
+    case DAE.CREF(componentRef=cref) then isIntDiscreteCref(cref, layout);
+    case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
+      then isIntDiscreteCref(cref, layout);
+    case DAE.BINARY(exp1=e1, operator=op, exp2=e2)
+      then isSome(intBinopCode(op))
+           and canLowerIntExp(e1, layout) and canLowerIntExp(e2, layout);
+    else false;
+  end match;
+end canLowerIntExp;
+
+protected function isIntDiscreteCref
+  input DAE.ComponentRef cref;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match lookupSlot(cref, layout)
+    case SOME(VAR_SLOT(kind=VK_INT_DISCRETE())) then true;
+    else false;
+  end match;
+end isIntDiscreteCref;
+
 protected function boolBinopCode
   "Map a logical DAE.Operator to genBoolBinop's isOr flag: 0 for AND,
    1 for OR. NONE() for any other operator."
@@ -3846,11 +4042,14 @@ algorithm
   end if;
   os := lookupSlot(cref, ctx.layout);
   (outCtx, dst, ok) := match os
-    /* Discrete Booleans live in booleanVars (i32), not realVars; a real
-     * read of one would load the wrong buffer. emitBoolExp handles them
-     * in Boolean context, so reject here rather than emit a wrong load. */
+    /* Discrete Booleans / Integers live in their own buffers, not
+     * realVars; a real read of one would load the wrong buffer.
+     * emitBoolExp / emitIntExp handle them in their own context, so
+     * reject here rather than emit a wrong load. */
     case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE()))
       then (ctx, "<bool-discrete-in-real-ctx>", false);
+    case SOME(VAR_SLOT(kind=VK_INT_DISCRETE()))
+      then (ctx, "<int-discrete-in-real-ctx>", false);
     case SOME(vs)
       algorithm
         absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
@@ -4053,18 +4252,19 @@ protected function buildVarLayout
   input SimCodeVar.SimVars vars;
   output VarLayout layout;
 protected
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars;
+  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars;
   list<tuple<DAE.ComponentRef, VarSlot>> entries = {};
 algorithm
-  (stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars) := match vars
+  (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars) := match vars
     case SimCodeVar.SIMVARS(stateVars=stateVars,
                             derivativeVars=derivativeVars,
                             algVars=algVars,
                             discreteAlgVars=discreteAlgVars,
+                            intAlgVars=intAlgVars,
                             paramVars=paramVars,
                             boolParamVars=boolParamVars,
                             boolAlgVars=boolAlgVars)
-      then (stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars);
+      then (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars);
   end match;
 
   entries := List.fold(stateVars, function addEntry(kind = VKS_STATE), entries);
@@ -4074,6 +4274,7 @@ algorithm
    * realVars buffer right after the continuous algebraics, so they read
    * and write through the VK_ALG accessors. */
   entries := List.fold(discreteAlgVars, function addEntry(kind = VKS_ALG), entries);
+  entries := List.fold(intAlgVars, function addEntry(kind = VKS_INT_DISCRETE), entries);
   entries := List.fold(paramVars, function addEntry(kind = VKS_PARAM), entries);
   entries := List.fold(boolParamVars, function addEntry(kind = VKS_BOOL_PARAM), entries);
   entries := List.fold(boolAlgVars, function addEntry(kind = VKS_BOOL_DISCRETE), entries);
@@ -4106,6 +4307,7 @@ algorithm
       case VK_PARAM()      then "PARAM";
       case VK_BOOL_PARAM() then "BPARM";
       case VK_BOOL_DISCRETE() then "BDISC";
+      case VK_INT_DISCRETE() then "IDISC";
     end match;
     Error.addInternalError("  " + ComponentReferenceBasics.printComponentRefStr(cr) +
       " -> " + kindStr + "(simVarIndex=" + intString(s.index) + ")\n", sourceInfo());
