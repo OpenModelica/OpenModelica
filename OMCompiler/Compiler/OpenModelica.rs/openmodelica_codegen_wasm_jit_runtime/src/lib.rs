@@ -59,6 +59,13 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
     core::arch::wasm32::unreachable()
 }
 
+// The standalone-export entry point (`_start` + the in-wasm driver), only on the
+// wasm32-wasip1 target. It uses std (file I/O over WASI) + daskr + the shared
+// sim-meta / mat-writer crates, all wasi-gated, so the no_std JIT runtime
+// (wasm32-unknown-unknown) is unaffected.
+#[cfg(target_os = "wasi")]
+mod standalone;
+
 // ---------------------------------------------------------------------------
 // Raw little-endian memory access (all pointers are byte offsets into the one
 // shared linear memory).
