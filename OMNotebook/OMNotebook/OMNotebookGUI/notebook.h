@@ -45,6 +45,7 @@
 
 // STD Headers
 #include <map>
+#include <memory>
 
 // Qt headers
 #include <QtCore/QHash>
@@ -76,7 +77,7 @@ class NotebookWindow : public DocumentView
   Q_OBJECT
 
 public:
-  NotebookWindow(Document *subject, const QString filename=0, int isDrModelica=0,
+  NotebookWindow(std::unique_ptr<Document> subject, const QString filename=0, int isDrModelica=0,
                  QWidget *parent=0);
   virtual ~NotebookWindow();
 
@@ -271,7 +272,7 @@ private:
 
   //Change to Document.
   CellApplication *app_;
-  Document *subject_;
+  std::unique_ptr<Document> subject_;
 
   //list<Document *> opendocs_;
   QString filename_;

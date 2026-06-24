@@ -71,18 +71,8 @@ namespace IAEX
    * \brief The class constructor
    */
   PureTextVisitor::PureTextVisitor(QFile *file)
+    : ts_{file}
   {
-    ts_ = new QTextStream( file );
-  }
-
-  /*!
-   * \author Anders Fernström
-   *
-   * \brief The class deconstructor
-   */
-  PureTextVisitor::~PureTextVisitor()
-  {
-    delete ts_;
   }
 
   // CELL
@@ -129,10 +119,10 @@ namespace IAEX
 
     // 2006-03-03 AF, export chapter counter
     if( !node->ChapterCounter().isNull() )
-      (*ts_) << node->ChapterCounter() << QString(" ");
+      ts_ << node->ChapterCounter() << QString(" ");
 
-    (*ts_) << tmp.toPlainText();
-    (*ts_) << "\r\n\r\n\r\n";
+    ts_ << tmp.toPlainText();
+    ts_ << "\r\n\r\n\r\n";
   }
 
   void PureTextVisitor::visitTextCellNodeAfter(TextCell *)
@@ -143,16 +133,16 @@ namespace IAEX
   {
     // 2006-03-03 AF, export chapter counter
     if( !node->ChapterCounter().isNull() )
-      (*ts_) << node->ChapterCounter() << QString(" ");
+      ts_ << node->ChapterCounter() << QString(" ");
 
-    (*ts_) << node->text();
-    (*ts_) << QString( "\r\n\r\n" );
+    ts_ << node->text();
+    ts_ << QString( "\r\n\r\n" );
 
     // 2006-03-03 AF, export output if not an image
     if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
     {
-      (*ts_) << node->textOutput();
-      (*ts_) << QString( "\r\n\r\n\r\n" );
+      ts_ << node->textOutput();
+      ts_ << QString( "\r\n\r\n\r\n" );
     }
   }
 
@@ -165,16 +155,16 @@ namespace IAEX
   {
     // 2006-03-03 AF, export chapter counter
     if( !node->ChapterCounter().isNull() )
-      (*ts_) << node->ChapterCounter() << QString(" ");
+      ts_ << node->ChapterCounter() << QString(" ");
 
-    (*ts_) << node->text();
-    (*ts_) << QString( "\r\n\r\n" );
+    ts_ << node->text();
+    ts_ << QString( "\r\n\r\n" );
 
     // 2006-03-03 AF, export output if not an image
     if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
     {
-      (*ts_) << node->textOutput();
-      (*ts_) << QString( "\r\n\r\n\r\n" );
+      ts_ << node->textOutput();
+      ts_ << QString( "\r\n\r\n\r\n" );
     }
   }
 
@@ -187,16 +177,16 @@ namespace IAEX
   {
     // 2006-03-03 AF, export chapter counter
     if( !node->ChapterCounter().isNull() )
-      (*ts_) << node->ChapterCounter() << QString(" ");
+      ts_ << node->ChapterCounter() << QString(" ");
 
-    (*ts_) << node->text();
-    (*ts_) << QString( "\r\n\r\n" );
+    ts_ << node->text();
+    ts_ << QString( "\r\n\r\n" );
 
     // 2006-03-03 AF, export output if not an image
     if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
     {
-      (*ts_) << node->textOutput();
-      (*ts_) << QString( "\r\n\r\n\r\n" );
+      ts_ << node->textOutput();
+      ts_ << QString( "\r\n\r\n\r\n" );
     }
   }
 

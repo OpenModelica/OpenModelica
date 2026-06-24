@@ -77,10 +77,9 @@ namespace IAEX
     Q_OBJECT
 
   public:
-    typedef std::vector<Rule *> rules_t;
+    typedef std::vector<Rule> rules_t;
 
-    Cell(QWidget *parent=0);
-    Cell(Cell &c);
+    Cell(QWidget *parent = nullptr);
     virtual ~Cell();
 
     //Datastructure interface.
@@ -147,7 +146,7 @@ namespace IAEX
     const QColor backgroundColor() const;
     virtual CellStyle *style();
     QString cellTag();
-    virtual rules_t rules() const;
+    virtual const rules_t& rules() const;
     QWidget *mainWidget();
     TreeView *treeView();
     QLabel *label();
@@ -155,7 +154,7 @@ namespace IAEX
 
 
   public slots:
-    virtual void addRule(Rule *r);
+    virtual void addRule(Rule r);
     virtual void setText(QString text){}
     virtual void setText(QString text, QTextCharFormat format){}
     virtual void setTextHtml(QString html){}
@@ -176,7 +175,7 @@ namespace IAEX
   protected slots:
     void setLabel(QLabel *label);
     void setTreeWidget(TreeView *newTreeWidget);
-    void setMainWidget(QWidget *newWidget);
+    void setMainWidget(QWidget *mainWidget);
     void addChapterCounter(QWidget *counter);
 
   signals:
@@ -209,7 +208,7 @@ namespace IAEX
     QString celltag_;
     QGridLayout *mainlayout_;
     TreeView *treeView_;
-    QWidget *mainWidget_;
+    QWidget *mainWidget_ = nullptr;
     QLabel *label_;
 
     bool selected_;

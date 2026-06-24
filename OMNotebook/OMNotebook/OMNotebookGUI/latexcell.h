@@ -56,7 +56,7 @@ namespace IAEX
 
   public:
     LatexCell(Document *doc, QWidget *parent=0);
-    virtual ~LatexCell();
+    virtual ~LatexCell() {};
     QString text() override;
     QString textHtml() override;
     QTextDocument* document() override;
@@ -135,18 +135,11 @@ namespace IAEX
   public:
     MyTextEdit3* input_;
     MyTextEdit3* output_;
-    //QTextBrowser *output_;
+
   private:
     QTextBrowser *chaptercounter_;
-    //InputCellDelegate *delegate_;
     QGridLayout *layout_;
     Document *document_;
-
-  public:
-    //QPushButton* variableButton;
-    //QPushButton* hideButton;
-    //QPushButton* latexButton;
-    QTemporaryFile* imageFile;
   };
 
 

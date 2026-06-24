@@ -36,6 +36,8 @@
 #ifndef _PARSER_FACTORY_H
 #define _PARSER_FACTORY_H
 
+#include <memory>
+
 #include <QtCore/QString>
 
 #include "nbparser.h"
@@ -55,7 +57,7 @@ namespace IAEX
    {
    public:
       virtual ~ParserFactory() = default;
-      virtual NBParser *createParser(QString filename, Factory *f, Document *document, int readmode) = 0;
+      virtual std::unique_ptr<NBParser> createParser(QString filename, Factory *f, Document *document, int readmode) = 0;
    };
 
    class CellParserFactory : public ParserFactory
@@ -64,7 +66,7 @@ namespace IAEX
       CellParserFactory();
       virtual ~CellParserFactory();
 
-      NBParser *createParser(QString filename, Factory *f, Document *document, int readmode);
+      std::unique_ptr<NBParser> createParser(QString filename, Factory *f, Document *document, int readmode);
    };
 };
 

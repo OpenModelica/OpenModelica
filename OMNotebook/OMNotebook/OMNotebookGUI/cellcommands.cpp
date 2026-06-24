@@ -365,12 +365,8 @@ namespace IAEX
     newCell->setCellTag( cell->cellTag() );
 
     // rules
-    rules_t rules = cell->rules();
-    rules_t::iterator current = rules.begin();
-    while( current != rules.end() )
-    {
-      newCell->addRule( (*current) );
-      ++current;
+    for (const auto &rule: cell->rules()) {
+      newCell->addRule(rule);
     }
 
     // COPY - SPECIFIC FOR CELL TYPE

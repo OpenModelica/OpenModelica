@@ -219,10 +219,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -260,21 +259,6 @@ namespace IAEX {
 
     createLatexCell();
     createOutputCell();
-
-    imageFile=0;
-  }
-
-  /*!
-  *
-  * \brief The class destructor
-  */
-  LatexCell::~LatexCell()
-  {
-    delete input_;
-    delete output_;
-    if(imageFile) {
-      delete imageFile;
-    }
   }
 
   void LatexCell::addToHighlighter()

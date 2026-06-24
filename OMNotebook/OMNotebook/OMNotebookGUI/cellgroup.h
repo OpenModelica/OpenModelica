@@ -115,7 +115,6 @@ namespace IAEX{
   private:
     bool closed_;
 
-    QWidget *main_;
     QGridLayout *layout_;
     unsigned long newIndex_;
   };

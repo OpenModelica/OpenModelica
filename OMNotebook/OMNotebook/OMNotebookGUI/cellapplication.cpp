@@ -160,7 +160,7 @@ namespace IAEX
                        app_, &QApplication::quit);
 
       // Create a commandCenter
-      cmdCenter_ = new CellCommandCenter(this);
+      cmdCenter_ = std::make_unique<CellCommandCenter>(this);
 
       setlocale(LC_NUMERIC, "C");               // force C‑style doubles
 
@@ -288,16 +288,7 @@ namespace IAEX
       }
   }
 
-
-  //  Simple accessor / mutator helpers
-
-  CommandCenter *CellApplication::commandCenter()               { return cmdCenter_; }
-
-  void           CellApplication::setCommandCenter(CommandCenter *c)
-  {
-      cmdCenter_ = c;
-      cmdCenter_->setApplication(this);
-  }
+  CommandCenter& CellApplication::commandCenter() { return *cmdCenter_; }
 
   /*!
    * \author Anders Fernström and Ingemar Axelsson
@@ -327,8 +318,7 @@ namespace IAEX
    */
   std::vector<Cell*> CellApplication::pasteboard() { return pasteboard_; }
   int CellApplication::exec()                  { return app_->exec(); }
-  void CellApplication::add(Document *d)       { documents_.push_back(d); }
-  void CellApplication::add(DocumentView *d)   { views_.push_back(d); }
+  void CellApplication::add(DocumentView* d)   { views_.push_back(d); }
 
   /*!
    * \author Ingemar Axelsson and Anders Fernström
@@ -352,11 +342,10 @@ namespace IAEX
   {
       try {
           // 1. Create the document
-          Document *d = new CellDocument(this, filename, readmode);
-          add(d);
+          auto d = std::make_unique<CellDocument>(this, filename, readmode);
 
           // 2. Create the view (NotebookWindow)
-          DocumentView *v = new NotebookWindow(d, filename, isDrModelica);
+          NotebookWindow *v = new NotebookWindow(std::move(d), filename, isDrModelica);
           add(v);
 
       // 2006-01-31 AF, Open window minimized instead of normal
@@ -379,8 +368,9 @@ namespace IAEX
           v->activateWindow();      // Windows
 
           // Update the Window‑menu for all open notebooks
-          for (DocumentView *dv : documentViewList())
-              static_cast<NotebookWindow*>(dv)->updateWindowMenu();
+          for (auto &v: views_) {
+            v->updateWindowMenu();
+          }
 
           //  Position the window at the top‑left corner and resize it to the
           //  full screen size – using Qt‑6‑compatible API.
@@ -425,7 +415,7 @@ namespace IAEX
   *
   * \brief returns list of all current document views
   */
-  std::vector<DocumentView *> CellApplication::documentViewList()
+  std::vector<DocumentView*> CellApplication::documentViewList()
   {
       return views_;
   }
@@ -439,18 +429,13 @@ namespace IAEX
   */
   void CellApplication::removeDocumentView(DocumentView *view)
   {
-      // erase from document list
-      auto dit = std::remove_if(documents_.begin(), documents_.end(),
-                                [&](Document *d){ return d == view->document(); });
-      documents_.erase(dit, documents_.end());
-
       // erase from view list
       auto vit = std::remove_if(views_.begin(), views_.end(),
-                                [&](DocumentView *v){ return v == view; });
+                                [&](auto &v){ return v == view; });
       views_.erase(vit, views_.end());
 
       // refresh all window menus
-      for (DocumentView *dv : documentViewList())
+      for (auto &dv: views_)
         dv->updateWindowMenu();
   }
 
@@ -496,7 +481,7 @@ namespace IAEX
                         << (fileDir.absolutePath() + "/" + fileList.at(j)).toStdString()
                         << std::endl;
 
-              Document *d = new CellDocument(this,
+              CellDocument d(this,
                          fileDir.absolutePath() + "/" + fileList.at(j),
                          READMODE_CONVERTING_ONB);
 
@@ -507,13 +492,11 @@ namespace IAEX
                         << (dir.absolutePath() + "/" + dirList.at(i) + "/" + filename).toStdString()
                         << std::endl;
 
-              SaveDocumentCommand command(d,
-                     dir.absolutePath() + "/" + dirList.at(i) + "/" + filename);
-              commandCenter()->executeCommand(&command);
+              commandCenter().executeCommand(
+                std::make_unique<SaveDocumentCommand>(&d, dir.absolutePath() + "/" + dirList.at(i) + "/" + filename));
 
               std::cout << "DONE!\n\n";
 
-              delete d;
               fileDir.remove(fileList.at(j));
           }
       }

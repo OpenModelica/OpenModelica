@@ -43,6 +43,7 @@
 #ifndef CELLDOCUMENT_H
 #define CELLDOCUMENT_H
 
+#include <memory>
 
 //QT Headers
 #include <QtGlobal>
@@ -116,8 +117,8 @@ namespace IAEX
 
     // Image operations
     virtual void textcursorInsertImage( QString filepath, QSize size );
-    virtual QString addImage( QImage *image );
-    virtual QImage *getImage( QString name );
+    virtual QString addImage( QImage image );
+    virtual QImage getImage( QString name );
 
     // Link operations
     virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor);
@@ -135,7 +136,7 @@ namespace IAEX
     std::vector<Cell*> getSelection();
 
     //Command
-    void executeCommand(Command *cmd);
+    void executeCommand(std::unique_ptr<Command> cmd);
 
     //Traversals.
     void runVisitor(Visitor &v);
@@ -190,14 +191,14 @@ namespace IAEX
 
     Cell *workspace_;        //This should alwas be a cellgroup.
     Cell *lastClickedCell_;
-    QFrame *mainFrame_;
+    std::unique_ptr<QFrame> mainFrame_;
 
 
     QScrollArea *scroll_;
     QGridLayout *mainLayout_;
 
     CellCursor *current_;
-    Factory *factory_;
+    std::unique_ptr<Factory> factory_;
 
     std::vector<Cell*> selectedCells_;
 
@@ -205,7 +206,7 @@ namespace IAEX
     observers_t observers_;
     bool autoIndent;
   private:
-    QHash<QString, QImage*> images_;
+    QHash<QString, QImage> images_;
     int currentImageNo_;
   };
 

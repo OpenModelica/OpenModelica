@@ -46,6 +46,8 @@
 #include <QTextTable>
 #include <QPrinter>
 
+#include <memory>
+
 // IAEX headers
 #include "visitor.h"
 #include "document.h"
@@ -58,7 +60,7 @@ namespace IAEX
 
   public:
     PrinterVisitor( QTextDocument* doc, QPrinter* printer );
-    virtual ~PrinterVisitor();
+    virtual ~PrinterVisitor() {};
 
     virtual void visitCellNodeBefore(Cell *node);
     virtual void visitCellNodeAfter(Cell *node);
@@ -82,14 +84,14 @@ namespace IAEX
     virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
   private:
-    QTextEdit *printEditor_;
-    QTextTable *table_;
-    bool ignore_;
-    bool firstChild_;
-    CellGroup *closedCell_;
+    std::unique_ptr<QTextEdit> printEditor_;
+    QTextTable *table_ = nullptr;
+    bool ignore_ = false;
+    bool firstChild_ = true;
+    CellGroup *closedCell_ = nullptr;
     QPrinter* printer_;
 
-    int currentTableRow_;
+    int currentTableRow_ = 0;
   };
 }
 #endif

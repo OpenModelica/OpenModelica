@@ -425,7 +425,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           textcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
         {
@@ -491,7 +491,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           inputcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
         {
@@ -562,7 +562,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           graphcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
         else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
@@ -715,7 +715,7 @@ namespace IAEX
         else if( e.tagName() == XML_RULE )
         {
           latexcell->addRule(
-            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+            Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else
         {
@@ -754,7 +754,7 @@ namespace IAEX
   void XMLParser::addImage( Cell *parent, QDomElement &element )
   {
     // Create a new image
-    QImage *image = new QImage();
+    QImage image;
 
     // Get saved image name
     QString imagename = element.attribute( XML_NAME, "" );
@@ -768,10 +768,10 @@ namespace IAEX
     QBuffer imagebuffer( &imagedata );
     imagebuffer.open( QBuffer::ReadOnly );
     QDataStream imagestream( &imagebuffer );
-    imagestream >> *image;
+    imagestream >> image;
     imagebuffer.close();
 
-    if( !image->isNull() )
+    if( !image.isNull() )
     {
       QString newname = doc_->addImage( image );
       // replace old imagename with the new name

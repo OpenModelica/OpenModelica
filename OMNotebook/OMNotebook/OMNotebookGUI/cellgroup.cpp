@@ -85,13 +85,10 @@ namespace IAEX{
     closed_(false),
     newIndex_(0)
   {
-    main_ = new QWidget(this);
-
-    layout_ = new QGridLayout(main_);
+    setMainWidget(new QWidget(this));
+    layout_ = new QGridLayout(mainWidget());
     layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(0);
-
-    setMainWidget(main_);
 
     style_.setName( "cellgroup" );
   }

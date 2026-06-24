@@ -290,20 +290,17 @@ namespace IAEX
     {
       try
       {
-        QTextDocument* printDocument = new QTextDocument();
+        QTextDocument printDocument;
         QTextOption opt;
         opt.setAlignment(Qt::AlignLeft);
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        printDocument->setDefaultTextOption(opt);
-        printDocument->setTextWidth(700);
+        printDocument.setDefaultTextOption(opt);
+        printDocument.setTextWidth(700);
 
-        PrinterVisitor visitor( printDocument, printer_ );
+        PrinterVisitor visitor( &printDocument, printer_ );
         doc_->runVisitor( visitor );
 
-        printDocument->print( printer_ );
-
-        // 2006-03-16 AF
-        delete printDocument;
+        printDocument.print( printer_ );
       }
       catch(std::exception &e)
       {

@@ -64,7 +64,6 @@ namespace IAEX
 
   public:
     TextCell(QWidget *parent = 0);
-    TextCell(TextCell &t);
     virtual ~TextCell();
 
     QString text();
