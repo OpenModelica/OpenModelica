@@ -924,26 +924,30 @@ function(omc_rust_setup_wasm)
   endif()
   list(APPEND _wasm_cargo ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
 
-  # Always run the cargo build (no stamp), exactly like the native
-  # rust_libopenmodelica: cargo is incremental, so an unchanged tree is a fast
-  # no-op, but always invoking it means edits to *hand-written* crates (the
-  # OMShell GUIs, Curl_wasm.rs, …) are picked up. A stamp gated on the codegen
-  # output would NOT change for those — only .mo edits touch it — so a stamped
-  # build silently skipped hand-written source changes. DEPENDS the rust_codegen
-  # *target* so the transpile runs first (and once under make -jN). wasm-bindgen
-  # and the launcher copy re-run each build too; they are cheap next to cargo.
-  add_custom_target(rust_wasm ALL
+  # Always run cargo (incremental, so a no-op when nothing changed) to pick up
+  # hand-written crate edits. The expensive wasm-bindgen + wasm-opt only re-run
+  # when the cargo .wasm actually changed: the bundle command's output depends on
+  # ${_wasm_artifact}, which cargo leaves untouched on a no-op build.
+  add_custom_target(rust_wasm_cargo ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
     JOB_SERVER_AWARE TRUE
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
+    BYPRODUCTS ${_wasm_artifact}
+    DEPENDS rust_codegen
+    COMMENT "Rust: cargo build wasm/web (${RUST_OMC_WASM_MODE})"
+    VERBATIM)
+  add_dependencies(rust_wasm_cargo rust_src_sync)
+  add_custom_command(
+    OUTPUT ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${_web_dir}
     COMMAND ${WASM_BINDGEN_EXECUTABLE} ${_wasm_artifact}
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
-    DEPENDS rust_codegen
-    COMMENT "Rust: building wasm/web bundle (${RUST_OMC_WASM_MODE}) -> ${_web_dir}"
+    DEPENDS ${_wasm_artifact} rust_wasm_cargo
+    COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
+  add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)
 
   # make install: stage the whole assembled tree (omc module + launcher, plus any
   # OMShell pages added below) in one runnable location. The trailing slash
