@@ -78,64 +78,11 @@ GENERATED_TESTFILES = $(addsuffix .mos,$(TESTMODELS))
 GENERATED_FAILINGTESTFILES = $(addsuffix .mos,$(FAILINGTESTMODELS))
 
 TESTFILES = \
-DistillationTower.mos\
-VDI2048Exple.mos\
-Pipe1.mos\
-Pipe2.mos\
-Pipe3.mos\
-Pipe4.mos\
-Pipe5.mos\
-Pipe6.mos\
-Splitter.mos\
-Splitter1.mos\
-Splitter2.mos\
-Splitter3.mos\
-Splitter4.mos\
-Splitter5c.mos\
-Splitter5d.mos\
-Splitter5e.mos\
-Splitter5f.mos\
-Splitter5g.mos\
-Splitter5h.mos\
-stateEstimation.mos\
-stateEstimation2.mos\
-FourFlows.mos\
-TSP_Pipe.mos\
-TSP_Pipe1.mos\
-TSP_Pipe4.mos\
-TSP_Pipe7.mos\
-TSP_Pipe8.mos\
-TSP_Pipe9.mos\
-TSP_Pipe10.mos\
-TSP_Pipe11.mos\
-TSP_Splitter1.mos\
-TSP_Splitter2.mos\
-TSP_Splitter3.mos\
-TSP_Splitter4.mos\
-TSP_Splitter5.mos\
-TSP_Splitter7.mos\
-TSP_FourFlows.mos\
-TSP_FourFlows1.mos\
-TSP_FourFlows3.mos\
-TSP_FourFlows8.mos\
 $(GENERATED_TESTFILES)
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
-TSP_FourFlows2.mos\
-TSP_FourFlows4.mos\
-TSP_FourFlows5.mos\
-TSP_FourFlows6.mos\
-TSP_FourFlows7.mos\
-TSP_FourFlows9.mos\
-TSP_FourFlows11.mos\
-TSP_Pipe6.mos\
-TSP_Pipe5.mos\
-TSP_FourFlows10.mos\
-TSP_Pipe3.mos\
-TSP_Splitter6.mos\
-TSP_Pipe2.mos\
+FAILINGTESTFILES = \
 $(GENERATED_FAILINGTESTFILES)
 
 
