@@ -6745,6 +6745,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_sim_meta"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_simcode_types"
 version = "0.1.0"
 dependencies = [

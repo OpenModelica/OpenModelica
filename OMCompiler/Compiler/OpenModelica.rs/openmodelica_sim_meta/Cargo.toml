@@ -1,0 +1,11 @@
+# Per-model simulation metadata shared between the wasm-jit codegen (host, which
+# builds and encodes it) and the standalone `wasm32-wasip1` runtime's `_start`
+# (which decodes it to drive the run and write the `.mat`). `no_std` + `alloc`,
+# no I/O and no wasm intrinsics, so it builds for the host, wasm32-unknown and
+# wasm32-wasip1 alike — one definition of the format, no drift.
+[package]
+name = "openmodelica_sim_meta"
+version = "0.1.0"
+edition = "2024"
+
+[lib]

@@ -190,6 +190,8 @@ openmodelica_scripting_api_gen/src/main.rs
 openmodelica_scripting_qt/.gitignore
 openmodelica_scripting_qt/Cargo.toml
 openmodelica_scripting_qt/src/lib.rs
+openmodelica_sim_meta/Cargo.toml
+openmodelica_sim_meta/src/lib.rs
 openmodelica_simcode_types/Cargo.toml
 openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml
