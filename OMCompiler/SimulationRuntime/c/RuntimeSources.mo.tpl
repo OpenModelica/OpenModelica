@@ -14,6 +14,13 @@ encapsulated package RuntimeSources
   constant list<String> fmi2_sources={"fmi-export/fmu2_model_interface.c",
                                       "fmi-export/fmu_read_flags.c"};
 
+  // FMI 3.0 export reuses the FMI 2.0 ModelInstance (fmu2_model_interface.h) and
+  // the generated per-base-type get/set helpers, so the FMI 2.0 header is also
+  // required when building an FMI 3.0 FMU.
+  constant list<String> fmi3_headers={"fmi-export/fmu3_model_interface.h"};
+
+  constant list<String> fmi3_sources={"fmi-export/fmu3_model_interface.c"};
+
   constant list<String> defaultFileSuffixes={".c",
                                              "_functions.c",
                                              "_records.c",
