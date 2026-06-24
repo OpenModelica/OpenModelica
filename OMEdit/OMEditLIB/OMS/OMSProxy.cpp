@@ -252,7 +252,8 @@ void OMSProxy::startGuiServer()
   connect(mpGuiProcess, &QProcess::readyReadStandardOutput, this, &OMSProxy::readGuiServerStandardOutput);
   connect(mpGuiProcess, &QProcess::readyReadStandardError, this, &OMSProxy::readGuiServerStandardError);
   QString endpoint = mpGuiRequestSocket->endPoint();
-  QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorGuiServer.py").arg(Helper::OpenModelicaHome));
+  mGuiServerScript = QString("%1/share/OMSimulator/scripts/OMSimulatorGuiServer.py").arg(Helper::OpenModelicaHome);
+  QStringList args(mGuiServerScript);
   args << "--endpoint-rep" << endpoint;
   // start the executable
   QString process;
@@ -277,7 +278,7 @@ void OMSProxy::guiProcessStarted()
 {
   mServerReady = true;
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-    tr("OMSimulator Python GUI server started at %1.").arg(mpGuiRequestSocket->endPoint()),
+    tr("OMSimulator Python GUI server started.\nScript: %1\nEndpoint: %2").arg(mGuiServerScript, mpGuiRequestSocket->endPoint()),
     Helper::scriptingKind, Helper::notificationLevel));
 }
 
