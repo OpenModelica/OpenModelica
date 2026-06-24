@@ -117,9 +117,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   : QApplication(argc, argv)
 {
 #if defined(__EMSCRIPTEN__)
-  // Build stamp so a browser console immediately shows which OMEdit-qt.wasm loaded
-  // (cache/stale-artifact diagnosis). Bump when shipping a fix to verify the load.
-  EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1) + " (worker-vfs-engine)"); }, __DATE__, __TIME__);
+  // Build stamp in the console (stale-artifact diagnosis).
+  EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);
 #endif
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
@@ -260,8 +259,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // event-loop tick on wasm; run it inline everywhere else.
   auto initMainWindow = [=, this]() {
 #if defined(__EMSCRIPTEN__)
-  // Route main-thread QFile/QDir reads of worker-owned paths through the omc
-  // worker VFS (library index, installed libraries, model files the editor opens).
   extern void omcInstallWorkerVfsFileEngine();
   omcInstallWorkerVfsFileEngine();
 #endif

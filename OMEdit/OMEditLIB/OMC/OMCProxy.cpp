@@ -75,27 +75,21 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include <cstdlib>
 #include <emscripten.h>
 #include <emscripten/em_js.h>
+#include <emscripten/val.h>
 #include <QEventLoop>
 #include <QTimer>
+#include <QVarLengthArray>
+#include <QtCore/private/qwasmsuspendresumecontrol_p.h>
 
-// On wasm omc runs in the shared omc_worker.js Web Worker. OMEdit reaches it via
-// the typed ABI bridge (the generated forwarders) and the string path
-// (sendCommand). A command is posted to the worker WITHOUT suspending; its reply
-// is stashed under a call id and the C++ side waits for it. How it waits matters:
-// a raw Asyncify suspend that fires while Qt is processing a native event
-// (QWasmSuspendResumeControl::sendPendingEvents) corrupts Qt's wasm event pump
-// (pendingEvents is drained during the await → undefined on rewind). So before
-// Qt's main loop is running we use a raw Asyncify poll (fast, no event pump yet);
-// once it is running we spin a nested QEventLoop polling for the reply — exactly
-// OMNotebook's bridge pattern, which Qt's wasm Asyncify handles correctly.
+// omc runs in the shared omc_worker.js Web Worker. Calls are posted without
+// suspending; the reply is stashed by id and the C++ side waits for it. A raw
+// Asyncify suspend is only safe before Qt's loop runs (it corrupts Qt's wasm
+// event pump mid-event), so once running we suspend a nested QEventLoop instead.
 bool g_omcMainLoopRunning = false;
 
 EM_JS(void, omedit_worker_setup, (const char *ver), {
   if (Module.__omcWorker) return;
-  // Cache-bust the worker URL with the build id: browsers cache Worker scripts
-  // very aggressively (a page hard-reload often does not refetch them), so a stale
-  // omc_worker.js would silently run old code. The query doesn't affect the
-  // worker's own relative imports (./omc/...), which resolve without it.
+  // Cache-bust the worker URL with the build id (workers cache past a hard-reload).
   const url = new URL("../omc_worker.js", document.baseURI);
   url.search = "v=" + UTF8ToString(ver);
   const w = new Worker(url, { type: "module" });
@@ -118,28 +112,52 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
   // Post a worker message, returning a fresh call id; when the reply arrives it is
   // stashed in __omcReplies[id] for the C++ side to poll/take. id-keyed so a
   // reentrant call made while another's nested loop is spinning stays unambiguous.
+  // Resume the suspended nested loop the instant a reply lands (vs polling).
+  Module.__omcWake = () => {
+    const i = Module.__omcWakeIndex;
+    if (i === undefined) return;
+    const c = Module.qtSuspendResumeControl;
+    const h = c && c.eventHandlers && c.eventHandlers[i];
+    if (h) h();
+  };
   Module.__omcPostCall = (msg) => {
     const id = ++Module.__omcCallId;
     Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
       Module.__omcReplies[id] = reply || {};
+      Module.__omcWake();
     }).catch((e) => {
       Module.__omcReplies[id] = { __bridgeError: String(e) };
+      Module.__omcWake();
     });
     return id;
   };
+  Module.__omcSetStatus = (p) => {
+    let el = document.getElementById("omcStatus");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "omcStatus";
+      el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;"
+        + "font:12px sans-serif;padding:3px 8px;background:#2b2b2b;color:#e0e0e0;";
+      document.body.appendChild(el);
+    }
+    if (!p) { el.style.display = "none"; return; }
+    const amt = p.total > 0 ? Math.round(100 * p.done / p.total) + "%"
+                            : Math.round(p.done / 1024) + " KiB";
+    el.textContent = "Downloading " + p.file + "  " + amt;
+    el.style.display = "block";
+  };
   w.onmessage = (e) => {
     const m = e.data;
-    if (m && m.kind === "progress") return; // download progress (UI hook TODO)
+    if (m && m.kind === "progress") { Module.__omcSetStatus(m); return; }
+    Module.__omcSetStatus(null);
     const resolve = Module.__omcPending;     // serialised queue → one in flight
     Module.__omcPending = null;
     if (resolve) resolve(m);
   };
 });
 
-// Non-suspending posts; the reply is collected via __omcReplies[id]. omedit_post_abi
-// is called by the generated bridge (OpenModelicaScriptingAPIQtBridge.cpp). Worker
-// init goes through the same post/wait path so it too can run from inside Qt's
-// event loop (a raw Asyncify suspend there corrupts the event pump).
+// Non-suspending posts; replies collected via __omcReplies[id]. omedit_post_abi
+// is called by the generated bridge (OpenModelicaScriptingAPIQtBridge.cpp).
 EM_JS(int, omedit_post_init, (), {
   return Module.__omcPostCall({ cmd: "init", installMsl: false });
 });
@@ -174,30 +192,48 @@ EM_JS(char *, omedit_take_abi_result, (int id), {
   return stringToNewUTF8('{"error":"no response from omc worker"}');
 });
 
-// Pre-main-loop wait: raw Asyncify suspend on the call's own promise (no Qt event
-// pump is active yet, so suspending is safe and a single rewind is enough).
 EM_ASYNC_JS(void, omedit_await_call, (int id), {
   const p = Module.__omcCallPromises[id];
   if (p) { try { await p; } catch (e) {} }
 });
 
-// Block until the worker reply for `id` is staged. See the block comment above.
+EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
+
+static QVarLengthArray<QEventLoop *> g_omcWaitStack;
+static bool g_omcWakeInstalled = false;
+
+static void ensureWakeInstalled() {
+  if (g_omcWakeInstalled) return;
+  QWasmSuspendResumeControl *ctl = QWasmSuspendResumeControl::get();
+  if (!ctl) return;
+  uint32_t idx = ctl->registerEventHandler([](emscripten::val) {
+    if (!g_omcWaitStack.isEmpty()) g_omcWaitStack.last()->quit();
+  });
+  EM_ASM({ Module.__omcWakeIndex = $0; }, idx);
+  g_omcWakeInstalled = true;
+}
+
 void omcWorkerWaitReply(int id) {
   if (omedit_call_ready(id)) return;
   if (!g_omcMainLoopRunning) {
     omedit_await_call(id);
     return;
   }
+  ensureWakeInstalled();
   QEventLoop loop;
-  QTimer poll;
-  QObject::connect(&poll, &QTimer::timeout, &loop, [&loop, id]() {
-    if (omedit_call_ready(id)) loop.quit();
-  });
-  // Must be nonzero: a 0 ms timer keeps the event loop "busy" so it never yields
-  // to the browser, and the worker's postMessage reply (not a Qt event) would
-  // never be delivered — deadlock. A small interval yields between polls.
-  poll.start(1);
-  loop.exec();
+  if (!g_omcWakeInstalled) {
+    QTimer poll;
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&loop, id]() {
+      if (omedit_call_ready(id)) loop.quit();
+    });
+    poll.start(1);
+    loop.exec();
+    return;
+  }
+  g_omcWaitStack.append(&loop);
+  while (!omedit_call_ready(id)) loop.exec();
+  g_omcWaitStack.removeLast();
+  if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
 }
 
 // Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
@@ -218,10 +254,7 @@ static char *omedit_worker_eval(const char *src) {
   return omedit_take_eval_result(id);
 }
 
-// Read a file from the worker VFS into a malloc'd buffer (caller frees), or null
-// if the worker is not up / has no such file. Backs the QAbstractFileEngine that
-// makes main-thread QFile/QDir reads of worker-owned paths transparent
-// (wasm/worker_vfs_engine.cpp).
+// Worker-VFS file read, backing the QAbstractFileEngine (wasm/worker_vfs_engine.cpp).
 EM_JS(int, omedit_worker_ready, (), {
   return (Module.__omcWorker && Module.__omcSend) ? 1 : 0;
 });
@@ -505,6 +538,13 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   changeDirectory(tmpPath);
   // set the user home directory variable.
   Helper::userHomeDirectory = getHomeDirectoryPath();
+#if defined(__EMSCRIPTEN__)
+  // wasm-jit is the worker's simulation target; MSL isn't bundled, so fetch it
+  // before loadSystemLibraries runs.
+  setCommandLineOptions("--simCodeTarget=wasm-jit");
+  updatePackageIndex();
+  installPackage("Modelica", "", false);
+#endif
   return true;
 }
 
