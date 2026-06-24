@@ -12,13 +12,34 @@
 #   5. cargo builds the omc artifacts (openmodelica, libopenmodelica_compiler)
 #      with a selectable profile (RUST_OMC_PROFILE, default "debug").
 #
-# Files are generated in their canonical locations (Compiler/Template/*.mo,
-# the OpenModelica.rs crate src/ dirs); nothing is copied via scripts.
+# mmtorust writes the generated *.rs into the crate src/ dirs and cargo builds
+# there, so each build gets its OWN copy (RUST_OMC_DIR) mirrored from the source
+# (RUST_OMC_SRC_DIR) — a shared in-source tree let concurrent builds clobber each
+# other's generated sources. Hand-written and generated *.rs share src/ dirs, so
+# the whole hand-written set (.cmake/rust_src_files.txt) is copied.
 
 find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
-set(RUST_OMC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
-    CACHE PATH "Path to the Rust omc source tree (the mmtorust workspace).")
+set(RUST_OMC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
+    CACHE PATH "Canonical Rust omc source tree (mirrored into the per-build copy).")
+# Not cached: a normal set() shadows a stale cache from before this was per-build,
+# so reconfiguring an existing build dir picks up the new path.
+set(RUST_OMC_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-src)
+set(RUST_SRC_MANIFEST ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_files.txt)
+
+# Mirror now so the configure-time reads below (.gitignore, susanSources.txt) see
+# a populated copy; the rust_src_sync target re-mirrors before each build step.
+set(_rust_src_sync_cmd ${CMAKE_COMMAND}
+    -DSRC=${RUST_OMC_SRC_DIR} -DDST=${RUST_OMC_DIR} -DMANIFEST=${RUST_SRC_MANIFEST}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_sync.cmake)
+execute_process(COMMAND ${_rust_src_sync_cmd} RESULT_VARIABLE _rust_src_sync_rc)
+if(_rust_src_sync_rc)
+  message(FATAL_ERROR "Initial Rust source mirror failed (${RUST_OMC_SRC_DIR} -> ${RUST_OMC_DIR}).")
+endif()
+add_custom_target(rust_src_sync
+  COMMAND ${_rust_src_sync_cmd}
+  COMMENT "Rust: syncing hand-written sources -> per-build working copy"
+  VERBATIM)
 
 # Bootstrap placeholder src/lib.rs for the crates whose lib.rs is emitted by the
 # mmtorust transpile (and therefore .gitignore'd). On a clean checkout these
@@ -237,6 +258,7 @@ add_custom_target(rust_wasm_runtime
   ${_wasm_jit_runtime_opt}
   COMMENT "Rust: building + optimising the wasm-jit runtime -> ${RUST_OMC_WASM_RUNTIME_OUT}"
   VERBATIM)
+add_dependencies(rust_wasm_runtime rust_src_sync)
 
 # ---------------------------------------------------------------------------
 # Autoconf.mo is a generated compiler source (configure_file from
@@ -253,15 +275,15 @@ add_custom_target(rust_wasm_runtime
 set(RUST_AUTOCONF_MO ${CMAKE_CURRENT_BINARY_DIR}/generated-mo/Autoconf.mo
     CACHE INTERNAL "Build-tree Autoconf.mo (generated out of the source tree).")
 
-# Build-tree copy of susanSources.txt with the Util/Autoconf.mo entry redirected
-# to RUST_AUTOCONF_MO; every other entry stays as-is (resolved relative to
-# RUST_OMC_DIR, the susan invocation's working dir). file(READ)+string(REPLACE)
-# rather than line-by-line — file(STRINGS) splits lines on non-ASCII bytes (the
-# header's em-dash), which would corrupt a comment into a bogus source path.
-# copy_if_different keeps the mtime stable across reconfigures.
+# Build-tree copy of susanSources.txt: redirect the Autoconf.mo entry to
+# RUST_AUTOCONF_MO and resolve the other ../-relative entries to absolute source
+# paths (mmtorust now runs in the per-build copy, so ../ no longer reaches them).
+# file(READ)+string(REPLACE), not file(STRINGS): the latter splits lines on the
+# header's em-dash. copy_if_different keeps the mtime stable across reconfigures.
 set(RUST_SUSAN_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/rust_susanSources.txt)
-file(READ ${RUST_OMC_DIR}/susanSources.txt _susan_content)
+file(READ ${RUST_OMC_SRC_DIR}/susanSources.txt _susan_content)
 string(REPLACE "../Util/Autoconf.mo" "${RUST_AUTOCONF_MO}" _susan_content "${_susan_content}")
+string(REPLACE "../" "${CMAKE_CURRENT_SOURCE_DIR}/" _susan_content "${_susan_content}")
 file(WRITE ${RUST_SUSAN_SOURCES}.tmp "${_susan_content}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${RUST_SUSAN_SOURCES}.tmp ${RUST_SUSAN_SOURCES})
@@ -288,6 +310,7 @@ add_custom_command(
   COMMENT "Rust: building mmtorust + Susan template compiler (release)"
   VERBATIM)
 add_custom_target(rust_susan DEPENDS ${SUSAN_STAMP})
+add_dependencies(rust_susan rust_src_sync)
 
 # In Rust mode the template rules (omc_add_template_target) invoke ${OMC_EXE} on
 # each *.tpl; point it at susan and make each *.mo rule depend on rust_susan via
@@ -351,6 +374,7 @@ function(omc_rust_setup_codegen)
     COMMENT "Rust: generating OpenModelicaScriptingAPI.mo from ModelicaBuiltin.mo (no omc)"
     VERBATIM)
   add_custom_target(rust_scripting_api DEPENDS ${SCRIPTING_API_MO})
+  add_dependencies(rust_scripting_api rust_src_sync)
 
   # mmtorust emits OMEdit's C++ Qt scripting-API here (build tree); OMEditLIB reads it.
   set(OMC_SCRIPTING_API_QT_DIR ${CMAKE_CURRENT_BINARY_DIR}/scripting-api-qt
@@ -366,6 +390,7 @@ function(omc_rust_setup_codegen)
       COMMENT "Rust: reusing prebuilt generated sources (RUST_OMC_PREBUILT_GENERATED_SRC)"
       VERBATIM)
     add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
+    add_dependencies(rust_codegen rust_src_sync)
     return()
   endif()
   add_custom_command(
@@ -388,6 +413,7 @@ function(omc_rust_setup_codegen)
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
+  add_dependencies(rust_codegen rust_src_sync)
 
   # The native omc artifacts (and their install rules) are pointless for the
   # wasm/web target — it ships a single .wasm bundle, not the cdylib + launcher —
