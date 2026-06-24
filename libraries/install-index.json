@@ -26,7 +26,6 @@
             "3.2.3",
             "4.0.0"
           ],
-          "sha": "7a4bf7de77a3986e8eb1e88cbb515d646f78f834",
           "support": "fullSupport",
           "version": "4.1.0+maint.om",
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
@@ -51,7 +50,6 @@
             "3.2.1",
             "3.2.2"
           ],
-          "sha": "efd981a1176f124938d6d6759f7c09e0fbf55ddf",
           "support": "fullSupport",
           "uses": {
             "Complex": "3.2.3",
@@ -94,7 +92,6 @@
           "provides": [
             "4.0.0"
           ],
-          "sha": "7a4bf7de77a3986e8eb1e88cbb515d646f78f834",
           "support": "fullSupport",
           "uses": {
             "Complex": "4.1.0",
@@ -116,7 +113,6 @@
         },
         "4.1.0+maint.om": {
           "path": "ModelicaReference",
-          "sha": "7a4bf7de77a3986e8eb1e88cbb515d646f78f834",
           "support": "fullSupport",
           "version": "4.1.0+maint.om",
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
@@ -135,7 +131,6 @@
             "3.2.2",
             "3.2.3"
           ],
-          "sha": "96032134c36668898e1693e69bd9f81aa38de3dd",
           "support": "fullSupport",
           "version": "4.0.0+maint.om",
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/96032134c36668898e1693e69bd9f81aa38de3dd.zip"
@@ -151,7 +146,6 @@
             "3.2.3",
             "4.0.0"
           ],
-          "sha": "7a4bf7de77a3986e8eb1e88cbb515d646f78f834",
           "support": "fullSupport",
           "version": "4.1.0+maint.om",
           "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
@@ -172,7 +166,6 @@
         },
         "4.1.0+maint.om": {
           "path": "ObsoleteModelica4.mo",
-          "sha": "7a4bf7de77a3986e8eb1e88cbb515d646f78f834",
           "support": "fullSupport",
           "uses": {
             "Modelica": "4.1.0"
