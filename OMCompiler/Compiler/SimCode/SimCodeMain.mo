@@ -612,10 +612,10 @@ algorithm
         if target == "llvm-jit" and not SimCodeToLLVM.canCoverModel(simCode) then
           Error.addCompilerWarning(
             "SimCodeToLLVM: +simCodeTarget=llvm-jit selected but the model contains "
-            + "constructs SCTL does not yet lower (zero crossings, clocked partitions, "
-            + "state sets, or unsupported equation classes). The JIT will fail loudly "
-            + "with 'Symbols not found' at materialization; either reduce the model or "
-            + "switch to +simCodeTarget=C.");
+            + "constructs SCTL does not yet lower (clocked partitions, state sets, "
+            + "algorithms, nonlinear/linear systems, sample(), or other unsupported "
+            + "equation classes). The JIT will fail loudly with 'Symbols not found' at "
+            + "materialization; either reduce the model or switch to +simCodeTarget=C.");
         end if;
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);

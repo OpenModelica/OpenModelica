@@ -521,50 +521,50 @@ end runtimeEntryCatalog;
  * ====================================================================== */
 
 public function canCoverModel
-  "Preflight: returns true iff the -d=jitSimulate cutover (skip the
-   <Model>.c emission) is safe for `simCode`. Conservative -- only
-   greenlights models in the HelloWorld shape until the per-feature
-   lifts (zero crossings, delays, clocked partitions, ...) catch up.
-   Used by SimCodeMain to decide whether to emit <Model>.c.
+  "Preflight: returns true iff the JIT will materialise without a
+   'Symbols not found' error for `simCode`. Used by SimCodeMain purely to
+   decide whether to emit the up-front coverage warning -- the cutover
+   itself always skips <Model>.c. The predicate mirrors the gates the
+   emitters actually use, so a model that runs (BouncingBall, delay, ...)
+   no longer warns:
 
-   The check is structural (no SCTL state mutation, no IR emission):
-   the model must have no zero crossings (events would route through
-   relationhysteresis / saveZeroCrossings / ... that SCTL cannot
-   lower yet), no clocked partitions, no spatialDistribution, no
-   state sets, and no delay() expressions. Every ODE *and* allEquations
-   equation must classify as a supported recipe -- a model whose
-   allEquations carries an unlowerable equation that no kept clang'd
-   file computes (a `when` body, a `delay()`) cannot get a complete
-   functionDAE and would otherwise drop those updates silently."
+     - no clocked partitions and no state sets (unsupported features
+       whose symbols SCTL neither emits nor delegates to a kept .c file);
+     - every equation in the ODE partition (functionODE) and the full
+       allEquations set (functionDAE) classifies as a lowerable recipe.
+
+   functionODE and functionDAE live only in the now-skipped <Model>.c, so
+   an unlowerable member of either set leaves the symbol undefined -> loud
+   JIT-link error, which is exactly what the warning forecasts. The other
+   satellites are *graceful fallbacks*, not disqualifiers: a zero-crossing
+   residual SCTL cannot lower keeps _05evt.c on clang, an unlowerable
+   algebraic/initial equation keeps _09alg.c/_06inz.c on clang, and those
+   kept files reference the SCTL-emitted allEquations eqFunctions, so the
+   model still runs. Structural only: no SCTL state mutation, no IR."
   input SimCode.SimCode simCode;
   output Boolean ok;
 protected
   VarLayout layout;
-  list<SimCode.SimEqSystem> dynamicEqs, allEqs;
-  list<EqRecipe> recipes;
 algorithm
-  ok := listEmpty(simCode.zeroCrossings)
-    and listEmpty(simCode.clockedPartitions)
-    and listEmpty(simCode.stateSets);
+  ok := listEmpty(simCode.clockedPartitions) and listEmpty(simCode.stateSets);
   if not ok then
     return;
   end if;
   layout := buildVarLayout(simCodeVars(simCode));
-  dynamicEqs := flattenOdeEquations(simCode);
-  if listEmpty(dynamicEqs) then
-    return;
-  end if;
-  /* Both the ODE partition (functionODE) and the full allEquations set
-   * (functionDAE) must lower; emitModelEquationsBlock leaves the
-   * corresponding entry undefined otherwise, so anything short of full
-   * coverage fails loudly at JIT-link rather than dropping equations. */
-  allEqs := allSimCodeEquations(simCode);
-  recipes := List.map1(listAppend(dynamicEqs, allEqs), classifySimEq, layout);
-  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
-  if ok then
-    ok := List.all(recipes, function canLowerEquation(layout = layout));
-  end if;
+  ok := allRecipesLower(flattenOdeEquations(simCode), layout)
+    and allRecipesLower(allSimCodeEquations(simCode), layout);
 end canCoverModel;
+
+protected function allRecipesLower
+  "True iff every equation in `eqs` classifies as a recipe canLowerEquation
+   accepts. An empty list is vacuously coverable."
+  input list<SimCode.SimEqSystem> eqs;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := List.all(List.map1(eqs, classifySimEq, layout),
+                 function canLowerEquation(layout = layout));
+end allRecipesLower;
 
 public function displacedSegmentFiles
   "Distinct list of CodegenC segment .c files SCTL fully covers for

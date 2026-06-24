@@ -259,11 +259,17 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
 
    **No silent fallback.** `target == "llvm-jit"` always skips
    `<Model>.c`. `canCoverModel(simCode)` returning false triggers a
-   loud compiler warning naming the missing constructs; the
-   eventual JIT-link "Symbols not found" error then points at the
-   specific `eqFunction_<idx>` (or other) symbol the user is
-   missing. No quiet C-path re-emission masquerading as a JIT
-   success.
+   loud compiler warning; the eventual JIT-link "Symbols not found"
+   error then points at the specific `eqFunction_<idx>` (or other)
+   symbol the user is missing. No quiet C-path re-emission masquerading
+   as a JIT success. `canCoverModel` is *predictive*, not conservative:
+   it returns true iff functionODE (odeEquations) and functionDAE
+   (allEquations) both fully lower -- the two satellites with no clang
+   fallback. Zero crossings, algebraic, and initial equations are
+   graceful fallbacks (keep _05evt.c / _09alg.c / _06inz.c on clang) so
+   they do not block coverage; a model that actually runs no longer
+   warns. (It is used only for the warning -- the cutover is
+   unconditional.)
 
    **Per-recipe emission.** `emitDynamicEquationsBlock` and
    `emitInitialEquationsBlock` emit each `eqFunction_<idx>` that
@@ -278,10 +284,9 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    byte-identical to the C path: the height trace matches to ~13 digits
    across the bounces and `n_bounce` matches exactly ({1,1,4,34} at
    t={0.5,1,2,3}). The blockers below all landed; they are kept as a
-   record of the order they were lifted. (The `canCoverModel` coverage
-   warning still fires because the model has zero crossings -- it is now
-   conservative for this case rather than predictive; the JIT no longer
-   fails.) The lifts, in the order they were taken:
+   record of the order they were lifted. (BouncingBall no longer warns --
+   `canCoverModel` is predictive now.) The lifts, in the order they were
+   taken:
 
      1. Discrete-Boolean equations: `boolDiscrete = <Boolean exp>` over
         zero-crossing relations, discrete-Boolean cref reads, and / or /
