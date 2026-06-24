@@ -166,6 +166,8 @@ openmodelica_frontend_dump/src/unittests/path_string_tests.rs
 openmodelica_frontend_dump/src/unittests/unparse_str_tests.rs
 openmodelica_frontend_inst/Cargo.toml
 openmodelica_frontend_types/Cargo.toml
+openmodelica_mat_writer/Cargo.toml
+openmodelica_mat_writer/src/lib.rs
 openmodelica_nbackend/Cargo.toml
 openmodelica_nbackend/src/NBASSCExt.rs
 openmodelica_nf_frontend/Cargo.toml

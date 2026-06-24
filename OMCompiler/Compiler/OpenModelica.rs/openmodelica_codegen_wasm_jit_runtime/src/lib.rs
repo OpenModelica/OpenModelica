@@ -32,7 +32,11 @@
 //! heap elements before freeing. Records will follow the same pattern with an
 //! `rt_record_release` when they land.
 
-#![no_std]
+// `no_std` on the JIT runtime target (`wasm32-unknown-unknown`, no std). The
+// standalone-export target (`wasm32-wasip1`) has std — needed for the in-wasm
+// driver / `write_mat4` / `_start` to do file I/O over WASI — so std is left
+// enabled there, and the custom panic handler (std provides one) is dropped.
+#![cfg_attr(not(target_os = "wasi"), no_std)]
 
 extern crate alloc;
 
@@ -40,11 +44,16 @@ use alloc::format;
 use alloc::string::String;
 use core::alloc::{GlobalAlloc, Layout};
 
+// dlmalloc is the global allocator on both targets so every allocation in the
+// merged module — runtime `rt_alloc`, and on wasip1 the driver's `Vec`s — shares
+// one heap. (It builds for wasip1 too.)
 #[global_allocator]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 /// A wasm trap on panic (e.g. allocation failure or a bad substring range),
 /// which the host surfaces as `Values.META_FAIL` exactly like a runtime error.
+/// Only on the `no_std` JIT runtime target; std supplies the handler on wasip1.
+#[cfg(not(target_os = "wasi"))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     core::arch::wasm32::unreachable()

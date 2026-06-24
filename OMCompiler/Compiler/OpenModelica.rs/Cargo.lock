@@ -6490,6 +6490,7 @@ dependencies = [
  "openmodelica_ast",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
+ "openmodelica_mat_writer",
  "openmodelica_simcode_types",
  "openmodelica_util",
  "openmodelica_vfs",
@@ -6636,6 +6637,10 @@ dependencies = [
  "metamodelica",
  "openmodelica_ast",
 ]
+
+[[package]]
+name = "openmodelica_mat_writer"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_nbackend"
