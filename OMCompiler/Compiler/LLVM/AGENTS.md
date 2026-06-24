@@ -57,6 +57,29 @@ functionality through the existing callbacks and through the JIT's
 `DynamicLibrarySearchGenerator` against the already-linked runtime
 library.
 
+**Look for reuse of the existing runtime first, and NEVER do a weird
+bespoke thing.** Before emitting IR for some behaviour, find the runtime
+function that already does it and call that. Two ways to reach it, in
+order of preference:
+
+1. The runtime symbol is a plain `extern` function (e.g. `delayImpl`,
+   `solve_nonlinear_system`, `solve_linear_system`): emit the call
+   directly from `llvm_gen.cpp` (a `createInlined*` primitive +
+   `EXT_LLVM` binding). The `DynamicLibrarySearchGenerator` resolves it
+   against omcruntime in-process -- no wrapper needed.
+2. The runtime symbol is unreachable from IR (`static inline` in a
+   header, e.g. `relationhysteresis`): add a thin **non-static wrapper**
+   in `OMCompiler/Compiler/runtime/omc_jit_perform_simulation_adapter.c`
+   (e.g. `omc_jit_relationhysteresis`) and call the wrapper. The adapter
+   lives in the LLVM tree, not the runtime, and only forwards.
+
+Do not reimplement a runtime algorithm as bespoke IR (no hand-rolled
+solver loop, no open-coded ring buffer, no re-deriving a struct's
+internal bookkeeping). Bespoke struct *field* access through
+`llvm_gen_layout` offsets is fine for reading/writing the model's own
+state (realVars, the `nlsx`/`nlsxOld` exchange slots a solver reads); a
+bespoke *reimplementation of runtime logic* is not.
+
 ---
 
 ## 4. Real LLVM IR, never silently-wrong stubs
