@@ -705,6 +705,9 @@ algorithm
 
     case "wasm-jit" algorithm
       CodegenWasmJit.translateModel(simCode);
+      // OMEdit reads the variable list and metadata from _init.xml.
+      guid := System.getUUIDStr();
+      SerializeInitXML.simulationInitFile(simCode, guid);
     then ();
 
     case "None"

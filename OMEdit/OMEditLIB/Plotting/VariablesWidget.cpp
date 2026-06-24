@@ -743,6 +743,25 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     infoFileName = QString("%1_info.json").arg(text);
   }
   bool readingVariablesFromInitFile = false;
+#if defined(__EMSCRIPTEN__)
+  // omc's File runtime writes _init.xml under the bare prefix name into the worker
+  // VFS (there is no working directory on wasm-jit in the browser), so the absolute
+  // QFile path has no VFS key. Read the bytes from the worker directly by that name.
+  extern QByteArray omcWorkerReadFile(const char *path);
+  QByteArray initData = omcWorkerReadFile(initFileName.toUtf8().constData());
+  if (!initData.isEmpty()) {
+    QXmlStreamReader initXmlReader(initData);
+    readingVariablesFromInitFile = variablesList.isEmpty();
+    parseInitXml(initXmlReader, simulationOptions, &variablesList);
+    if (initXmlReader.hasError()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFileName, initXmlReader.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFileName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+#else
   QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
   if (initFile.exists()) {
     if (initFile.open(QIODevice::ReadOnly)) {
@@ -751,11 +770,20 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QXmlStreamReader initXmlReader(data);
       readingVariablesFromInitFile = variablesList.isEmpty();
       parseInitXml(initXmlReader, simulationOptions, &variablesList);
+      if (initXmlReader.hasError()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFile.fileName(), initXmlReader.errorString()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
     } else {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    // No init file and no variable list given: the Variable Browser will be empty.
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFile.fileName()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
+#endif
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
