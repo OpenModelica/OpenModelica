@@ -1845,7 +1845,7 @@ protected
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
     seed_vars_d := Pointer.access(seed_vars_ptr);
     for v in VariablePointers.toList(seedCandidates) loop
       UnorderedSet.add(BVariable.getVarName(v), seed_set);
@@ -1853,7 +1853,7 @@ protected
 
     for v in res_vars loop
       UnorderedSet.add(BVariable.getVarName(v), pder_set);
-      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init);
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
     end for;
     pDer_vars_d := Pointer.access(pDer_vars_ptr);
 
