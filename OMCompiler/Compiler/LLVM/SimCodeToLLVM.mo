@@ -220,6 +220,16 @@ public uniontype EqRecipe
     list<BackendDAE.WhenOperator> whenStmts;
   end EQ_WHEN;
 
+  record EQ_ALGORITHM
+    "An algorithm section whose statements are all simple scalar
+     assignments `cref := expr` to a layout-resolved variable. Lowered
+     statement-by-statement as unconditional writes, in order (the same
+     dispatch as a when-body ASSIGN, minus the edge predicate). Anything
+     else (if / for / while statements, assignment to a local temporary
+     not in the layout, ...) keeps the recipe out of the supported set."
+    list<DAE.Statement> statements;
+  end EQ_ALGORITHM;
+
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
      whose body is shared with another equation already emitted in this
@@ -2815,6 +2825,10 @@ algorithm
       algorithm
         (ctx2, exprOk) := emitWhenEquation(r.conditions, r.whenStmts, ctx);
       then (ctx2, exprOk);
+    case EQ_ALGORITHM()
+      algorithm
+        (ctx2, exprOk) := emitAlgorithmStmts(r.statements, ctx);
+      then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
     case EQ_PARAM_RANGE_ASSERT()
@@ -3063,6 +3077,111 @@ algorithm
   end if;
 end emitWhenReinit;
 
+protected function emitAlgorithmStmts
+  "Emit each statement of an algorithm section as an unconditional
+   assignment, in order. ok is the conjunction over the statements."
+  input list<DAE.Statement> stmts;
+  input EmitCtx ctx;
+  output EmitCtx outCtx = ctx;
+  output Boolean ok = true;
+protected
+  Boolean ok1;
+algorithm
+  for st in stmts loop
+    (outCtx, ok1) := emitStmt(st, outCtx);
+    ok := ok and ok1;
+  end for;
+end emitAlgorithmStmts;
+
+protected function emitStmt
+  "Emit one algorithm statement. Only scalar `cref := expr` assignments
+   to a layout-resolved variable are lowered (unconditional write,
+   dispatched by slot kind); anything else fails the recipe."
+  input DAE.Statement stmt;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+algorithm
+  (outCtx, ok) := match stmt
+    local DAE.ComponentRef cref;
+          DAE.Exp rhs;
+          EmitCtx c1;
+          Boolean ok1;
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cref), exp = rhs)
+      algorithm
+        (c1, ok1) := emitStmtAssign(cref, rhs, ctx);
+      then (c1, ok1);
+    else (ctx, false);
+  end match;
+end emitStmt;
+
+protected function emitStmtAssign
+  "Unconditional `lhs := rhs` write, dispatched by the LHS slot kind --
+   the same real / discrete-Boolean / discrete-Integer split as the
+   when-body assign but without the edge select."
+  input DAE.ComponentRef cref;
+  input DAE.Exp rhs;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+  String rhsTmp;
+  Integer slot;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, ok) := match os
+    case SOME(vs as VAR_SLOT(kind = VK_BOOL_DISCRETE()))
+      algorithm
+        (outCtx, rhsTmp, ok) := emitBoolExp(rhs, ctx);
+        if ok then
+          EXT_LLVM.genStoreBoolVar("data", absoluteSlot(vs.kind, vs.index, ctx.layout), rhsTmp);
+        end if;
+      then (outCtx, ok);
+    case SOME(vs as VAR_SLOT(kind = VK_INT_DISCRETE()))
+      algorithm
+        (outCtx, rhsTmp, ok) := emitIntExp(rhs, ctx);
+        if ok then
+          EXT_LLVM.genStoreIntVar("data", absoluteSlot(vs.kind, vs.index, ctx.layout), rhsTmp);
+        end if;
+      then (outCtx, ok);
+    case SOME(vs as VAR_SLOT())
+      algorithm
+        slot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+        (outCtx, rhsTmp, ok) := emitExp(rhs, ctx);
+        if ok then
+          if referenceEq(vs.kind, VKS_PARAM) then
+            emitWriteRealParam(slot, rhsTmp);
+          else
+            emitWriteRealVar(slot, rhsTmp);
+          end if;
+        end if;
+      then (outCtx, ok);
+    else (ctx, false);
+  end match;
+end emitStmtAssign;
+
+protected function canLowerStmt
+  "Pre-validation mirror of emitStmt."
+  input DAE.Statement stmt;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match stmt
+    local DAE.ComponentRef cref;
+          DAE.Exp rhs;
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cref), exp = rhs)
+      then match lookupSlot(cref, layout)
+        case SOME(VAR_SLOT(kind = VK_BOOL_DISCRETE())) then canLowerBoolExp(rhs, layout);
+        case SOME(VAR_SLOT(kind = VK_INT_DISCRETE())) then canLowerIntExp(rhs, layout);
+        case SOME(VAR_SLOT()) then canLowerExp(rhs, layout);
+        else false;
+      end match;
+    else false;
+  end match;
+end canLowerStmt;
+
 protected function emitParamRangeAssert
   "Emit  call void @omc_jit_assert_real_<ge|le>(ptr %data, i64 slot, double bound)
    into the active function body. The helper compares
@@ -3204,6 +3323,8 @@ algorithm
     case EQ_WHEN()
       then List.all(r.conditions, function isBoolDiscreteCref(layout = layout))
            and List.all(r.whenStmts, function canLowerWhenStmt(layout = layout));
+    case EQ_ALGORITHM()
+      then List.all(r.statements, function canLowerStmt(layout = layout));
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
@@ -4448,6 +4569,7 @@ algorithm
           VarSlot s;
           list<DAE.ComponentRef> cwhen;
           list<BackendDAE.WhenOperator> wstmts;
+          list<DAE.Statement> stmts;
     case SimCode.SES_SIMPLE_ASSIGN(cref=cref, exp=rhs)
       algorithm
         os := lookupSlot(cref, layout);
@@ -4482,8 +4604,8 @@ algorithm
       then EQ_WHEN(cwhen, wstmts);
     case SimCode.SES_IFEQUATION()
       then EQ_UNSUPPORTED("SES_IFEQUATION requires event handling, deferred");
-    case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM requires statement lowering, deferred");
+    case SimCode.SES_ALGORITHM(statements = stmts)
+      then EQ_ALGORITHM(stmts);
     case SimCode.SES_ARRAY_CALL_ASSIGN()
       then EQ_UNSUPPORTED("SES_ARRAY_CALL_ASSIGN requires array lowering, deferred");
     case SimCode.SES_FOR_LOOP()

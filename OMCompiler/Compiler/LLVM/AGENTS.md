@@ -389,11 +389,20 @@ Boolean observed from a relation (`over = x <= 0.5`), a Boolean
 conjunction (`b = c and x >= 0.1`), a Real if-expression over a
 discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and the full
 BouncingBall (zero crossings, `when` + `reinit` + `pre`, discrete-Real
-`v_new`, integer `n_bounce`), and a `delay()`-using model
+`v_new`, integer `n_bounce`), a `delay()`-using model
 (`y = delay(x, 0.5)`, continuous algebraic via the real
-functionAlgebraics) -- all lower fully and are checked JIT-vs-C.
-Performance work uses 10-run samples on HelloWorld + CoupledClutches and
-the JIT-cache hot/cold split.
+functionAlgebraics), and an algorithm section (`algorithm y := x*x;`)
+-- all lower fully and are checked JIT-vs-C. Performance work uses
+10-run samples on HelloWorld + CoupledClutches and the JIT-cache
+hot/cold split.
+
+Known still-unsupported (each fails *loudly* with 'Symbols not found',
+never silently): algorithm sections that are not scalar `cref := expr`
+assignments (if / for / while statement bodies), nonlinear / linear
+algebraic systems (need a JIT-side solver), and `sample()` / time
+events. `emitStmt` covers scalar-assign algorithm bodies via the same
+real / discrete-Boolean / discrete-Integer dispatch the when-body assign
+uses (unconditional, no edge).
 
 ---
 
