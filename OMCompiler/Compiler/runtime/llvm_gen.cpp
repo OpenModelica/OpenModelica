@@ -706,6 +706,34 @@ extern "C" int createInlinedSolveNonlinear(const char *const dataArgName,
   return 0;
 }
 
+/* createInlinedSolveLinear: emit a call to the omc_jit_solve_linear_system1
+ * adapter (seed-solve-throw-writeback for a single-unknown linear tearing
+ * system). The adapter wraps the runtime solve_linear_system; SCTL just
+ * supplies the system index and the iteration variable's flat realVars
+ * slot. Return value (retValue) is discarded -- the adapter throws on
+ * failure. Mirrors createInlinedSolveNonlinear exactly; the adapter file
+ * holds both symbols so the existing force-link entries already pull this
+ * one in transitively. */
+extern "C" int createInlinedSolveLinear(const char *const dataArgName,
+                                        const char *const threadDataArgName,
+                                        const int64_t sysIndex,
+                                        const int64_t varSlot) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32}, false);
+  llvm::FunctionCallee const fn =
+      mod.getOrInsertFunction("omc_jit_solve_linear_system1", fnTy);
+  b.CreateCall(fn, {loadFromSymtab(dataArgName),
+                    loadFromSymtab(threadDataArgName),
+                    llvm::ConstantInt::get(i32, sysIndex),
+                    llvm::ConstantInt::get(i32, varSlot)});
+  return 0;
+}
+
 /* Store an i32 constant into a scalar SIMULATION_INFO field at byteOffset. */
 static void setSIInt32Field(llvm::Value *const dataPtr, const size_t byteOffset,
                             const int32_t v) {
@@ -1060,7 +1088,14 @@ extern "C" int createCallbackTable(const char *const modelName,
                                    const int hasLsSystems,
                                    const int hasMsSystems,
                                    const int hasInitialLambda0,
-                                   const int homotopyMethodCode) {
+                                   const int homotopyMethodCode,
+                                   const int idxJacA,
+                                   const int idxJacADJ,
+                                   const int idxJacB,
+                                   const int idxJacC,
+                                   const int idxJacD,
+                                   const int idxJacF,
+                                   const int idxJacH) {
   if (!program || !program->module) {
     fprintf(stderr, "createCallbackTable: no active module\n");
     return 1;
@@ -1162,16 +1197,24 @@ extern "C" int createCallbackTable(const char *const modelName,
            mod, p + "_function_initSample",    false);
 
   /* The seven INDEX_JAC_* fields are const ints; CodegenC reads them
-   * from <Model>_INDEX_JAC_* macros that expand to 0, 1, ... For
-   * HelloWorld there is no analytic Jacobian, so the runtime never
-   * indexes through them -- zero is the safe sentinel either way. */
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_A,   ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_ADJ, ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_B,   ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_C,   ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_D,   ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_F,   ctx, 0);
-  cbAddI32(fields, omc_layout_callback_INDEX_JAC_H,   ctx, 0);
+   * from <Model>_INDEX_JAC_* macros that expand to the per-matrix
+   * jacobianIndex value (the slot into data->simulationInfo->analyticJacobians[]).
+   * The runtime's DASSL / IDA / CVODE all index through INDEX_JAC_A
+   * (and ADJ in DAE mode); hardcoding 0 was harmless for HelloWorld
+   * (no analytic jacobians, the runtime checks initialAnalyticJacobianA
+   * returning -1 and bails) but for any model with both a model-wide
+   * A jacobian and a tearing-system LSJacN at slot 0 the DASSL init
+   * overwrites the LSJacN sparsePattern with the A pattern, leading
+   * to a singular linear-system matrix at solve time. SCTL now
+   * receives the actual indices from the SimCode jacobianMatrices
+   * list (lookup by matrixName), matching CodegenC's macro expansion. */
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_A,   ctx, idxJacA);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_ADJ, ctx, idxJacADJ);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_B,   ctx, idxJacB);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_C,   ctx, idxJacC);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_D,   ctx, idxJacD);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_F,   ctx, idxJacF);
+  cbAddI32(fields, omc_layout_callback_INDEX_JAC_H,   ctx, idxJacH);
 
   cbAddPtr(fields, omc_layout_callback_initialAnalyticJacobianA,
            mod, p + "_initialAnalyticJacobianA",   false);

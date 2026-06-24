@@ -94,6 +94,36 @@
  * whatever state it had. */
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/nonlinearSystem.h"
+#include "simulation/solver/linearSystem.h"
+
+/* Single-unknown linear tearing system. SCTL emits one call to this per
+ * SES_LINEAR(crefs={one}); mirrors CodegenC's equationLinear body for the
+ * scalar case: seed aux_x[0] with the iteration variable's old realVars
+ * value, run the runtime solve_linear_system (which internally invokes
+ * the setA / setb callbacks the still-clang'd _03lsy.c populates via
+ * data->callback->initialLinearSystem at startup), throw on
+ * non-convergence, write the solution back into the iteration var's
+ * realVars slot. The C runtime's solve_linear_system takes the solution
+ * buffer by pointer rather than via the system-data exchange arrays the
+ * nonlinear solver uses, so this adapter is structurally simpler than
+ * omc_jit_solve_nonlinear_system1 -- there is no nlsxOld / nlsx round
+ * trip, just one stack double. varSlot is the flat realVars index of
+ * the iteration var. */
+int omc_jit_solve_linear_system1(DATA *data, threadData_t *threadData,
+                                 int sysIndex, int varSlot)
+{
+  double aux_x[1];
+  int retValue;
+  aux_x[0] = data->localData[0]->realVars[varSlot];
+  retValue = solve_linear_system(data, threadData, sysIndex, &aux_x[0]);
+  if (retValue > 0) {
+    throwStreamPrint(threadData,
+      "Solving linear system %d failed. For more information use -lv LOG_LS.",
+      sysIndex);
+  }
+  data->localData[0]->realVars[varSlot] = aux_x[0];
+  return retValue;
+}
 
 /* Single-unknown nonlinear tearing system. SCTL emits one call to this
  * per SES_NONLINEAR(nUnknowns=1); it mirrors CodegenC's eqFunction body:

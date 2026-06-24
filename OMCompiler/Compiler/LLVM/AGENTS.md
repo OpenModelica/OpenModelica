@@ -416,18 +416,31 @@ BouncingBall (zero crossings, `when` + `reinit` + `pre`, discrete-Real
 (`y = delay(x, 0.5)`, continuous algebraic via the real
 functionAlgebraics), an algorithm section (`algorithm y := x*x;`), and a
 single-unknown nonlinear system (`y + sin(y) = x + 2`, solved by the
-runtime Newton via the `omc_jit_solve_nonlinear_system1` adapter) -- all
-lower fully and are checked JIT-vs-C. Performance work uses 10-run
-samples on HelloWorld + CoupledClutches and the JIT-cache hot/cold split.
+runtime Newton via the `omc_jit_solve_nonlinear_system1` adapter), and a
+single-unknown linear tearing system (`x = sin(t) - 2y; y = cos(t) + 3x`,
+torn into two scalar `SES_LINEAR`s, solved by `solve_linear_system` via
+the `omc_jit_solve_linear_system1` adapter) -- all lower fully and are
+checked JIT-vs-C. Performance work uses 10-run samples on HelloWorld +
+CoupledClutches and the JIT-cache hot/cold split.
 
 Known still-unsupported (each fails *loudly* with 'Symbols not found',
 never silently): algorithm sections that are not scalar `cref := expr`
 assignments (if / for / while statement bodies), multi-iteration-variable
-nonlinear systems and linear systems, and `sample()` / time events. A
+nonlinear and linear systems, and `sample()` / time events. A
 single-iteration-variable `SES_NONLINEAR` reuses the runtime
 `solve_nonlinear_system` (the adapter seeds the iteration var, solves,
 throws on failure, writes the solution back); the residual / setup /
-Jacobian stay on clang in `_02nls.c` / `_12jac.c`.
+Jacobian stay on clang in `_02nls.c` / `_12jac.c`. A single-iteration-
+variable `SES_LINEAR` is symmetric -- `omc_jit_solve_linear_system1`
+wraps `solve_linear_system` and the runtime's setA / setb / analytic-
+Jacobian callbacks stay on the still-clang'd `_03lsy.c` / `_12jac.c`.
+SCTL's callback table threads the actual `INDEX_JAC_A` / `_ADJ` / `_B`
+/ ... values (looked up by `matrixName` from `simCode.jacobianMatrices`),
+rather than the prior zero-sentinel; the hardcoded zero was harmless for
+HelloWorld but clobbered the `LSJacN.sparsePattern` slot for any model
+whose DASSL `initialAnalyticJacobianA` collided with a tearing-system
+jacobian at the same index, producing a singular linear-system matrix
+at the first `solve_linear_system` call.
 
 ---
 

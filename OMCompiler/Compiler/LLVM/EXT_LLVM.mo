@@ -329,6 +329,21 @@ function genSolveNonlinear
                Include = "int createInlinedSolveNonlinear(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, const int64_t varSlot);");
 end genSolveNonlinear;
 
+function genSolveLinear
+  "Emit a call to the omc_jit_solve_linear_system1 adapter for a
+   single-unknown linear tearing system: seed the iteration variable
+   (flat realVars slot varSlot), run the runtime solve_linear_system
+   for system sysIndex, throw on failure, write the solution back. See
+   createInlinedSolveLinear / omc_jit_solve_linear_system1."
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer sysIndex;
+  input Integer varSlot;
+  external "C" createInlinedSolveLinear(dataArgName, threadDataArgName, sysIndex, varSlot)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSolveLinear(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, const int64_t varSlot);");
+end genSolveLinear;
+
 function genReadIntVar
   "Inline  dst(modelica_integer) = data->localData[0]->integerVars[slot]."
   input String dataArgName;
@@ -501,10 +516,17 @@ function genCallbackTable
   input Integer hasMsSystems;
   input Integer hasInitialLambda0;
   input Integer homotopyMethodCode;
+  input Integer idxJacA;
+  input Integer idxJacADJ;
+  input Integer idxJacB;
+  input Integer idxJacC;
+  input Integer idxJacD;
+  input Integer idxJacF;
+  input Integer idxJacH;
   output Integer status;
-  external "C" status = createCallbackTable(modelName, isFmu, hasNlsSystems, hasLsSystems, hasMsSystems, hasInitialLambda0, homotopyMethodCode)
+  external "C" status = createCallbackTable(modelName, isFmu, hasNlsSystems, hasLsSystems, hasMsSystems, hasInitialLambda0, homotopyMethodCode, idxJacA, idxJacADJ, idxJacB, idxJacC, idxJacD, idxJacF, idxJacH)
     annotation(Library = "omcruntime",
-               Include = "int createCallbackTable(const char *modelName, int isFmu, int hasNlsSystems, int hasLsSystems, int hasMsSystems, int hasInitialLambda0, int homotopyMethodCode);");
+               Include = "int createCallbackTable(const char *modelName, int isFmu, int hasNlsSystems, int hasLsSystems, int hasMsSystems, int hasInitialLambda0, int homotopyMethodCode, int idxJacA, int idxJacADJ, int idxJacB, int idxJacC, int idxJacD, int idxJacF, int idxJacH);");
 end genCallbackTable;
 
 function genSetupDataStrucFull

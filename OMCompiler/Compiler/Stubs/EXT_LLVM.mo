@@ -208,6 +208,15 @@ algorithm
   assert(false, getInstanceName());
 end genSolveNonlinear;
 
+function genSolveLinear
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer sysIndex;
+  input Integer varSlot;
+algorithm
+  assert(false, getInstanceName());
+end genSolveLinear;
+
 function genReadIntVar
   input String dataArgName;
   input Integer slot;
@@ -348,6 +357,13 @@ function genCallbackTable
   input Integer hasMsSystems;
   input Integer hasInitialLambda0;
   input Integer homotopyMethodCode;
+  input Integer idxJacA;
+  input Integer idxJacADJ;
+  input Integer idxJacB;
+  input Integer idxJacC;
+  input Integer idxJacD;
+  input Integer idxJacF;
+  input Integer idxJacH;
   output Integer status = 1;
 end genCallbackTable;
 

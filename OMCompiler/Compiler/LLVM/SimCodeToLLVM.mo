@@ -230,6 +230,18 @@ public uniontype EqRecipe
     Integer varSlot;
   end EQ_SOLVE_NONLINEAR;
 
+  record EQ_SOLVE_LINEAR
+    "A single-unknown linear tearing system, lowered to one call to the
+     omc_jit_solve_linear_system1 adapter. Mirrors EQ_SOLVE_NONLINEAR: the
+     adapter wraps the runtime solve_linear_system and the still-clang'd
+     _03lsy.c populates setA / setb on linearSystemData[i] at startup via
+     the callback table's initialLinearSystem slot. sysIndex is the
+     indexLinearSystem; varSlot is the iteration variable's flat realVars
+     slot."
+    Integer sysIndex;
+    Integer varSlot;
+  end EQ_SOLVE_LINEAR;
+
   record EQ_ALGORITHM
     "An algorithm section whose statements are all simple scalar
      assignments `cref := expr` to a layout-resolved variable. Lowered
@@ -1847,6 +1859,8 @@ algorithm
     case EQ_ALGORITHM() then "ALGORITHM(" + intString(listLength(r.statements)) + " stmt)";
     case EQ_SOLVE_NONLINEAR() then "SOLVE_NLS(sys=" + intString(r.sysIndex) +
                                ", var=" + intString(r.varSlot) + ")";
+    case EQ_SOLVE_LINEAR() then "SOLVE_LS(sys=" + intString(r.sysIndex) +
+                               ", var=" + intString(r.varSlot) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -2219,19 +2233,38 @@ protected function emitCallbackTableBlock
    friends never consult the field. The has<Sys>Systems flags drive
    the conditional NULL slots for initialNonLinearSystem /
    initialLinearSystem / initialMixedSystem; hasInitialLambda0 gates
-   functionInitialEquations_lambda0."
+   functionInitialEquations_lambda0.
+
+   The seven INDEX_JAC_* slots carry the analyticJacobians[] index of
+   each named model-wide jacobian (A, ADJ, B, C, D, F, H), matching
+   CodegenC's `#define <Model>_INDEX_JAC_<name> <jac.jacobianIndex>`.
+   Models with both a model-wide A jacobian and per-tearing-system
+   LSJacN jacobians cannot share the slot-0 sentinel SCTL used to
+   hardcode: DASSL init writes through INDEX_JAC_A and would otherwise
+   clobber the LSJacN sparsePattern, leading to a singular linear-system
+   matrix at the first solve_linear_system call."
   input SimCode.SimCode simCode;
   input Absyn.Path modelName;
 protected
   SimCode.VarInfo vinfo;
   Integer hasNls, hasLs, hasMs, hasLambda0;
+  Integer idxJacA, idxJacADJ, idxJacB, idxJacC, idxJacD, idxJacF, idxJacH;
+  list<SimCode.JacobianMatrix> jacs;
   Integer st;
 algorithm
   vinfo := match simCode.modelInfo case SimCode.MODELINFO(varInfo = vinfo) then vinfo; end match;
+  jacs := simCode.jacobianMatrices;
   hasNls := if vinfo.numNonLinearSystems > 0 then 1 else 0;
   hasLs  := if vinfo.numLinearSystems    > 0 then 1 else 0;
   hasMs  := if vinfo.numMixedSystems     > 0 then 1 else 0;
   hasLambda0 := if listEmpty(simCode.initialEquations_lambda0) then 0 else 1;
+  idxJacA   := lookupJacIndex(jacs, "A");
+  idxJacADJ := lookupJacIndex(jacs, "ADJ");
+  idxJacB   := lookupJacIndex(jacs, "B");
+  idxJacC   := lookupJacIndex(jacs, "C");
+  idxJacD   := lookupJacIndex(jacs, "D");
+  idxJacF   := lookupJacIndex(jacs, "F");
+  idxJacH   := lookupJacIndex(jacs, "H");
   st := EXT_LLVM.genCallbackTable(
     modelSymbolPrefix(modelName),
     0      /* isFmu */,
@@ -2239,11 +2272,38 @@ algorithm
     hasLs,
     hasMs,
     hasLambda0,
-    3      /* homotopyMethodCode = LOCAL_EQUIDISTANT_HOMOTOPY */);
+    3      /* homotopyMethodCode = LOCAL_EQUIDISTANT_HOMOTOPY */,
+    idxJacA, idxJacADJ, idxJacB, idxJacC, idxJacD, idxJacF, idxJacH);
   if st <> 0 then
     fail();
   end if;
 end emitCallbackTableBlock;
+
+protected function lookupJacIndex
+  "Find the jacobianIndex of the JacobianMatrix whose matrixName
+   matches `name`. Returns 0 if no such entry (matching CodegenC's
+   behaviour: HelloWorld-class models with no analytic jacobians get
+   the 0 sentinel and the runtime's initialAnalyticJacobian* return
+   -1, so the slot is never read)."
+  input list<SimCode.JacobianMatrix> jacs;
+  input String name;
+  output Integer idx = 0;
+protected
+  String mn;
+  Integer ji;
+algorithm
+  for jac in jacs loop
+    () := match jac
+      case SimCode.JAC_MATRIX(matrixName = mn, jacobianIndex = ji)
+        algorithm
+          if stringEq(mn, name) then
+            idx := ji;
+            return;
+          end if;
+        then ();
+    end match;
+  end for;
+end lookupJacIndex;
 
 protected function emitSetupDataStrucShellBlock
   "Emit the linkonce_odr <Model>_setupDataStruc full body into the
@@ -2861,6 +2921,10 @@ algorithm
       algorithm
         EXT_LLVM.genSolveNonlinear("data", "threadData", r.sysIndex, r.varSlot);
       then (ctx, true);
+    case EQ_SOLVE_LINEAR()
+      algorithm
+        EXT_LLVM.genSolveLinear("data", "threadData", r.sysIndex, r.varSlot);
+      then (ctx, true);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
     case EQ_PARAM_RANGE_ASSERT()
@@ -3358,6 +3422,7 @@ algorithm
     case EQ_ALGORITHM()
       then List.all(r.statements, function canLowerStmt(layout = layout));
     case EQ_SOLVE_NONLINEAR()   then true;
+    case EQ_SOLVE_LINEAR()      then true;
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
@@ -4604,6 +4669,7 @@ algorithm
           list<BackendDAE.WhenOperator> wstmts;
           list<DAE.Statement> stmts;
           SimCode.NonlinearSystem nlsys;
+          SimCode.LinearSystem lsys;
     case SimCode.SES_SIMPLE_ASSIGN(cref=cref, exp=rhs)
       algorithm
         os := lookupSlot(cref, layout);
@@ -4626,8 +4692,8 @@ algorithm
       end match;
     case SimCode.SES_RESIDUAL()
       then EQ_UNSUPPORTED("SES_RESIDUAL requires solver, deferred");
-    case SimCode.SES_LINEAR()
-      then EQ_UNSUPPORTED("SES_LINEAR requires solver, deferred");
+    case SimCode.SES_LINEAR(lSystem = lsys)
+      then classifyLinear(lsys, layout);
     case SimCode.SES_NONLINEAR(nlSystem = nlsys)
       then classifyNonlinear(nlsys, layout);
     case SimCode.SES_MIXED()
@@ -4702,6 +4768,39 @@ algorithm
     else EQ_UNSUPPORTED("multi-unknown nonlinear system not lowered yet");
   end match;
 end classifyNonlinear;
+
+protected function classifyLinear
+  "Classify a SES_LINEAR. Only a single-unknown tearing system whose one
+   iteration variable resolves to a real layout slot is lowered (to
+   EQ_SOLVE_LINEAR -> the omc_jit_solve_linear_system1 adapter). The
+   matrix-setup callbacks setA / setb plus the iteration variable attribute
+   buffers (min / max / nominal) on linearSystemData[i] are populated by the
+   still-clang'd _03lsy.c at startup via data->callback->initialLinearSystem.
+   Multi-unknown linear systems stay UNSUPPORTED, mirroring classifyNonlinear.
+   `LINEARSYSTEM.vars` (not `crefs` -- the linear record carries SimVars
+   directly) is the iteration-variable list; size 1 picks the scalar case."
+  input SimCode.LinearSystem lsys;
+  input VarLayout layout;
+  output EqRecipe recipe;
+algorithm
+  recipe := match lsys
+    local Integer lidx;
+          DAE.ComponentRef cr;
+          VarSlot vs;
+    case SimCode.LINEARSYSTEM(indexLinearSystem = lidx,
+                              vars = {SimCodeVar.SIMVAR(name = cr)})
+      then match lookupSlot(cr, layout)
+        case SOME(vs as VAR_SLOT(kind = VK_STATE()))
+          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
+        case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
+          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
+        case SOME(vs as VAR_SLOT(kind = VK_ALG()))
+          then EQ_SOLVE_LINEAR(lidx, absoluteSlot(vs.kind, vs.index, layout));
+        else EQ_UNSUPPORTED("linear iteration variable not a real layout slot");
+      end match;
+    else EQ_UNSUPPORTED("multi-unknown linear system not lowered yet");
+  end match;
+end classifyLinear;
 
 protected function opCodeForRelationOp
   "Map a relational DAE.Operator to the small opcode
