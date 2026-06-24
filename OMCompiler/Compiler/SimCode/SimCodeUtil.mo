@@ -137,6 +137,7 @@ import ZeroCrossings;
 import ReduceDAE;
 import Settings;
 import UnorderedSet;
+import UnorderedMap;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -1528,6 +1529,7 @@ tuple<Integer /*uniqueEqIndex*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
 protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type FMIIndexList = list<Integer> "value type for the FMI dependency map (avoids nested >> in generic args)";
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -15529,13 +15531,23 @@ public function createMinimalFMIModelStructure
    ContinuousStateDerivative entries an FMI 3.0 Model Exchange master cannot
    drive the integration; the InitialUnknowns are mandatory in FMI 2.0 and 3.0."
   input SimCode.ModelInfo modelInfo;
+  input list<tuple<Integer, list<Integer>>> fmiDependencies = {}
+    "maps an unknown FMI variable index to the FMI indices of the knowns
+     (states/inputs) it depends on; empty means no dependency information";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
   list<SimCodeVar.SimVar> iu;
+  UnorderedMap<Integer, FMIIndexList> depMap;
 algorithm
-  derivs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
-  outs   := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+  // index -> dependency indices, for O(1) lookup while building the unknowns
+  depMap := UnorderedMap.new<FMIIndexList>(Util.id, intEq, listLength(fmiDependencies) + 1);
+  for tpl in fmiDependencies loop
+    UnorderedMap.add(Util.tuple21(tpl), Util.tuple22(tpl), depMap);
+  end for;
+
+  derivs := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.derivativeVars);
+  outs   := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.outputVars);
 
   // InitialUnknowns according to the FMI specification, but without dependency
   // information (the new backend FMU export does not compute the FMIDER
@@ -15565,6 +15577,20 @@ algorithm
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
 end createMinimalFMIModelStructure;
+
+protected function makeFMIUnknownWithDeps
+  "Builds an FMIUNKNOWN for the given SimVar, attaching the dependency indices
+   from depMap (if any) so the FMI ModelStructure carries correct dependency
+   lists. dependenciesKind is left empty (the importer then assumes 'dependent')."
+  input SimCodeVar.SimVar var;
+  input UnorderedMap<Integer, FMIIndexList> depMap;
+  output SimCode.FmiUnknown unknown;
+protected
+  Integer idx = getVariableFMIIndex(var);
+  list<Integer> deps = UnorderedMap.getOrDefault(idx, depMap, {});
+algorithm
+  unknown := SimCode.FMIUNKNOWN(idx, deps, {});
+end makeFMIUnknownWithDeps;
 
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its

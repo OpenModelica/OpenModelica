@@ -55,7 +55,7 @@ readFile("fmi3_arrays.xml"); getErrorString();
 // 0
 // ""
 // "  <ModelStructure>
-//     <ContinuousStateDerivative valueReference=\"3\"/>
+//     <ContinuousStateDerivative valueReference=\"3\" dependencies=\"0\"/>
 //     <InitialUnknown valueReference=\"3\"/>
 //   </ModelStructure>
 // "
