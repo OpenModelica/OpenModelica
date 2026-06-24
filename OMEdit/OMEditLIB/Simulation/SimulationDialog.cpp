@@ -1774,6 +1774,16 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
     // check if we can compile using the target language
     if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
       createAndShowSimulationOutputWidget(simulationOptions);
+    } else if (targetLanguage.compare("wasm-jit") == 0) {
+#if defined(__EMSCRIPTEN__)
+      runWasmJitSimulation(simulationOptions, simulationParameters);
+#else
+      // TODO: running a translated wasm-jit model natively needs a resimulate API in OpenModelica.
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+        tr("Generated wasm-jit code for <b>%1</b>. Running it from OMEdit is not implemented on this platform yet (needs a resimulate API).").arg(mClassName),
+        Helper::scriptingKind, Helper::notificationLevel));
+#endif
+      return;
     } else {
       QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage).arg(simulationOptions.getWorkingDirectory());
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
@@ -1789,6 +1799,35 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
+
+#if defined(__EMSCRIPTEN__)
+/*!
+ * \brief SimulationDialog::runWasmJitSimulation
+ * Runs the already-translated wasm-jit model in the omc worker. translateModel has
+ * built it, so simulate() is given resimulateExecutable to skip translate+build and
+ * only run; the result file is then loaded like a native run.
+ */
+void SimulationDialog::runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters)
+{
+  QDateTime ts = QDateTime::currentDateTime();
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Running simulation of %1.").arg(mClassName));
+  MainWindow::instance()->getProgressBar()->setRange(0, 0);
+  MainWindow::instance()->showProgressBar();
+  QString params = simulationParameters + ", resimulateExecutable=\"" + simulationOptions.getOutputFileName() + "\"";
+  MainWindow::instance()->getOMCProxy()->sendCommand("simulate(" + mClassName + ", " + params + ")");
+  MainWindow::instance()->getOMCProxy()->printMessagesStringInternal();
+  MainWindow::instance()->hideProgressBar();
+  MainWindow::instance()->getStatusBar()->clearMessage();
+  // omc in the worker can't cd into OMEdit's working directory (it lives in the
+  // page MEMFS, not the worker VFS), so the sim writes its result at the VFS root.
+  // Stage it into MEMFS so OMPlot's raw-stdio .mat reader finds it, and load from there.
+  SimulationOptions opts = simulationOptions;
+  opts.setWorkingDirectory("");
+  extern bool omcWorkerStageFile(const char *path);
+  omcWorkerStageFile(QString("/").append(opts.getFullResultFileName()).toUtf8().constData());
+  simulationProcessFinished(opts, ts);
+}
+#endif
 
 /*!
  * \brief SimulationDialog::saveDialogGeometry

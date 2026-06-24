@@ -655,7 +655,7 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
@@ -1424,7 +1424,19 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        if Config.simCodeTarget() == "omsicpp" then
+        // resimulateExecutable is the last (new) argument; pull it off so the rest
+        // of the pipeline sees the original simulate() argument list.
+        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+        vals := List.stripLast(vals);
+
+        if resimulateExecutable <> "" then
+          // Skip translation and build; simulate the already-built model directly.
+          b := true;
+          executable := resimulateExecutable;
+          compileDir := System.pwd() + Autoconf.pathDelimiter;
+          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+          resultValues := {};
+        elseif Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
          (outCache,simSettings) := calculateSimulationSettings(outCache, vals);

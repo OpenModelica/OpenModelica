@@ -202,6 +202,9 @@ private:
   void saveSimulationFlagsAnnotation();
   void saveTranslationFlagsAnnotation();
   void performSimulation(const SimulationOptions &simulationOptions);
+#if defined(__EMSCRIPTEN__)
+  void runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters);
+#endif
   void saveDialogGeometry();
 public:
   void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);

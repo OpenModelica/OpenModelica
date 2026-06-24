@@ -2771,6 +2771,7 @@ function simulate
   input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
+  input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
     String resultFile;

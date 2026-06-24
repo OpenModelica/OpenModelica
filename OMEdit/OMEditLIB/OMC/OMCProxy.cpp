@@ -285,6 +285,31 @@ QByteArray omcWorkerReadFile(const char *path) {
   free(p);
   return data;
 }
+
+// Copy a worker-VFS file into the page MEMFS at the same path, for readers that
+// use raw C stdio (fopen) instead of QFile — e.g. OMPlot's .mat/.csv readers,
+// which the QAbstractFileEngine cannot intercept. Returns true if staged.
+EM_JS(int, omedit_stage_into_memfs, (int id, const char *path), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) return 0;
+  const p = UTF8ToString(path);
+  try {
+    const slash = p.lastIndexOf("/");
+    if (slash > 0) FS.mkdirTree(p.substring(0, slash));
+    FS.writeFile(p, bytes);
+    return 1;
+  } catch (e) { return 0; }
+});
+
+bool omcWorkerStageFile(const char *path) {
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  return omedit_stage_into_memfs(id, path) != 0;
+}
 #endif // __EMSCRIPTEN__
 
 /*!
