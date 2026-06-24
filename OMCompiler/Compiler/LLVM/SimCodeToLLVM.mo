@@ -407,10 +407,14 @@ algorithm
                       lands. */
     RUNTIME_ENTRY("_bnd_handled_by_clang", MV, {}, EB_TODO("parameter equations need real body for ChuaCircuit"), "_08bnd.c", true),
 
-    /* -- _09alg.c -- ODE-only models have no continuous-time alg.
-                     CodegenC body increments a stat counter and calls
-                     _function_savePreSynchronous; both safely dropped. */
-    RUNTIME_ENTRY("_functionAlgebraics", MI, {MM, MM}, EB_STUB(), "_09alg.c", true),
+    /* -- _09alg.c -- functionAlgebraics recomputes the *continuous*
+                     algebraic equations every step (e.g. y = delay(x)).
+                     A no-op stub only matched ODE-only models and froze
+                     any continuous algebraic var; emitModelEquationsBlock
+                     now emits a real functionAlgebraics from
+                     algebraicEquations and displaces _09alg.c, so this is
+                     EB_TODO (Block-emitter-owned). */
+    RUNTIME_ENTRY("_functionAlgebraics", MI, {MM, MM}, EB_TODO("emitModelEquationsBlock"), "_09alg.c", true),
 
     /* -- _15syn.c -- synchronous-language support. Empty bodies for
                      non-synchronous models. */
@@ -2119,7 +2123,8 @@ protected function emitModelEquationsBlock
 protected
   String prefix;
   String fname;
-  list<EqRecipe> daeRecipes;
+  list<EqRecipe> daeRecipes, algRecipes;
+  list<SimCode.SimEqSystem> algEqs;
 algorithm
   prefix := modelSymbolPrefix(modelName);
 
@@ -2135,6 +2140,21 @@ algorithm
   if List.all(daeRecipes, function canLowerEquation(layout = layout)) then
     if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER, daePrologue = true) then
       _ := EXT_LLVM.setLinkonceOdr(fname);
+    end if;
+  end if;
+
+  /* functionAlgebraics recomputes the continuous algebraic equations
+   * every step (updateContinuousSystem calls it each integrator step);
+   * a stub froze any continuous algebraic var (e.g. y = delay(x)). Emit
+   * it from algebraicEquations when they all lower, and only then
+   * displace _09alg.c. */
+  algEqs := algebraicSimCodeEquations(simCode);
+  algRecipes := List.map1(algEqs, classifySimEq, layout);
+  fname := prefix + "_functionAlgebraics";
+  if List.all(algRecipes, function canLowerEquation(layout = layout)) then
+    if emitEquationFunction(fname, algRecipes, layout, MODELICA_INTEGER) then
+      _ := EXT_LLVM.setLinkonceOdr(fname);
+      recordDisplacedSegment("_09alg.c");
     end if;
   end if;
 
@@ -3263,6 +3283,8 @@ algorithm
       then canLowerExp(e1, layout) and canLowerExp(e2, layout);
     case DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cref)})
       then canLowerPreReal(cref, layout);
+    case DAE.CALL(path = Absyn.IDENT(name = "delay"), expLst = {DAE.ICONST(), e1, e2, sub})
+      then canLowerExp(e1, layout) and canLowerExp(e2, layout) and canLowerExp(sub, layout);
     case DAE.IFEXP(expCond = e1, expThen = e2, expElse = sub)
       then canLowerBoolExp(e1, layout)
            and canLowerExp(e2, layout) and canLowerExp(sub, layout);
@@ -3449,6 +3471,11 @@ algorithm
           ok := false;
         end if;
       then (outCtx, dst, ok);
+    case DAE.CALL(path=Absyn.IDENT(name="delay"),
+                  expLst={DAE.ICONST(integer=i), e1, e2, sub})
+      algorithm
+        (outCtx, dst, ok) := emitDelay(i, e1, e2, sub, ctx);
+      then (outCtx, dst, ok);
     case DAE.CALL(path=Absyn.IDENT(name=tmp), expLst={sub})
       guard isLibmUnaryReal(tmp)
       algorithm
@@ -3501,6 +3528,36 @@ algorithm
       then (ctx, "<unsupported-exp>", false);
   end match;
 end emitExp;
+
+protected function emitDelay
+  "Lower  delay(exprNumber, value, delayTime, delayMax)  into a fresh
+   double alloca via the runtime delayImpl. The matching
+   <Model>_function_storeDelayed (still on clang) feeds the ring buffer
+   through the callback table; this emits the read side only."
+  input Integer exprNumber;
+  input DAE.Exp valExp;
+  input DAE.Exp dtExp;
+  input DAE.Exp dmaxExp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  String valTmp, dtTmp, dmaxTmp;
+  Boolean ok1, ok2, ok3;
+algorithm
+  (outCtx, valTmp, ok1) := emitExp(valExp, ctx);
+  (outCtx, dtTmp, ok2) := emitExp(dtExp, outCtx);
+  (outCtx, dmaxTmp, ok3) := emitExp(dmaxExp, outCtx);
+  ok := ok1 and ok2 and ok3;
+  if ok then
+    (outCtx, dst) := freshTmp(outCtx);
+    EXT_LLVM.genAllocaModelicaReal(dst, false);
+    EXT_LLVM.genDelay("data", "threadData", exprNumber, valTmp, dtTmp, dmaxTmp, dst);
+  else
+    dst := "<delay-arg-failed>";
+  end if;
+end emitDelay;
 
 protected function emitPreReal
   "Lower  pre(<real cref>)  into a fresh double alloca via
@@ -4239,6 +4296,19 @@ algorithm
     case SimCode.SIMCODE(allEquations=eqs) then eqs;
   end match;
 end allSimCodeEquations;
+
+protected function algebraicSimCodeEquations
+  "The flattened algebraicEquations partitions -- the continuous-time
+   algebraic equations CodegenC's functionAlgebraics recomputes every
+   integrator step (e.g. y = delay(x))."
+  input SimCode.SimCode simCode;
+  output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := match simCode
+    local list<list<SimCode.SimEqSystem>> parts;
+    case SimCode.SIMCODE(algebraicEquations=parts) then List.flatten(parts);
+  end match;
+end algebraicSimCodeEquations;
 
 /* ====================================================================== *
  *  VarLayout build                                                       *

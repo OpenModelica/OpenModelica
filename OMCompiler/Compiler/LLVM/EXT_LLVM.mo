@@ -298,6 +298,22 @@ function genSetDiscreteCall
                Include = "int createInlinedSetDiscreteCall(const char *dataArgName, const int64_t value);");
 end genSetDiscreteCall;
 
+function genDelay
+  "Emit  dst(double) = delayImpl(data, threadData, exprNumber, val, dt, dmax)
+   for a delay() expression. val / dt / dmax are double allocas; exprNumber
+   the literal expression id. See createInlinedDelay in omcruntime."
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer exprNumber;
+  input String valName;
+  input String dtName;
+  input String dmaxName;
+  input String dstName;
+  external "C" createInlinedDelay(dataArgName, threadDataArgName, exprNumber, valName, dtName, dmaxName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedDelay(const char *dataArgName, const char *threadDataArgName, const int64_t exprNumber, const char *valName, const char *dtName, const char *dmaxName, const char *dstName);");
+end genDelay;
+
 function genReadIntVar
   "Inline  dst(modelica_integer) = data->localData[0]->integerVars[slot]."
   input String dataArgName;

@@ -187,6 +187,18 @@ algorithm
   assert(false, getInstanceName());
 end genSetDiscreteCall;
 
+function genDelay
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer exprNumber;
+  input String valName;
+  input String dtName;
+  input String dmaxName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genDelay;
+
 function genReadIntVar
   input String dataArgName;
   input Integer slot;

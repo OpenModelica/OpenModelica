@@ -648,6 +648,38 @@ extern "C" int createInlinedSelectReal(const char *const condName,
   return 0;
 }
 
+/* createInlinedDelay: dstName(double) =
+ *   delayImpl(data, threadData, exprNumber, exprValue, delayTime, delayMax).
+ * The runtime's delayImpl reads the per-expression ring buffer the
+ * (still-clang'd) <Model>_function_storeDelayed feeds each step; this just
+ * lowers the read side of `y = delay(x, dt)`. valName / dtName / dmaxName
+ * are double allocas; exprNumber is the literal expression id. delayImpl is
+ * an external runtime symbol resolved by the JIT's process search. */
+extern "C" int createInlinedDelay(const char *const dataArgName,
+                                  const char *const threadDataArgName,
+                                  const int64_t exprNumber,
+                                  const char *const valName,
+                                  const char *const dtName,
+                                  const char *const dmaxName,
+                                  const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+
+  llvm::FunctionType *const fnTy = llvm::FunctionType::get(
+      dbl, {ptrTy, ptrTy, i32, dbl, dbl, dbl}, false);
+  llvm::FunctionCallee const fn = mod.getOrInsertFunction("delayImpl", fnTy);
+  llvm::Value *const res = b.CreateCall(
+      fn, {loadFromSymtab(dataArgName), loadFromSymtab(threadDataArgName),
+           llvm::ConstantInt::get(i32, exprNumber), loadFromSymtab(valName),
+           loadFromSymtab(dtName), loadFromSymtab(dmaxName)});
+  storeIntoSymtab(dstName, res);
+  return 0;
+}
+
 /* Store an i32 constant into a scalar SIMULATION_INFO field at byteOffset. */
 static void setSIInt32Field(llvm::Value *const dataPtr, const size_t byteOffset,
                             const int32_t v) {

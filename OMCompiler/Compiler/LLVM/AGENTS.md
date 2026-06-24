@@ -182,14 +182,21 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    dedups an index that appears in more than one block (e.g. both
    `initialEquations` and `allEquations`).
 
-   functionODE / functionDAE are each emitted **only when every one of
-   their recipes lowers** (`List.all(..., canLowerEquation)`). A partial
-   functionDAE that inlines the lowerable equations and drops the rest
-   is silently wrong -- the dropped equation (a `when` reinit, an
-   undelegated `delay()`) just does not happen and the solver integrates
-   a different model. Leaving the symbol undefined makes the JIT fail
-   loudly instead (so the whole `allEquations` set must lower, which is
-   why `canCoverModel` now checks it, not just the ODE partition).
+   functionAlgebraics is likewise a real SCTL function, inlined from
+   `algebraicEquations` (the continuous-time algebraic partition
+   `updateContinuousSystem` recomputes every integrator step), displacing
+   `_09alg.c` when it lowers. A no-op stub there only matched ODE-only
+   models; it froze any continuous algebraic var (`y = delay(x)`).
+
+   functionODE / functionDAE / functionAlgebraics are each emitted
+   **only when every one of their recipes lowers**
+   (`List.all(..., canLowerEquation)`). A partial body that inlines the
+   lowerable equations and drops the rest is silently wrong -- the
+   dropped equation (a `when` reinit, an unsupported call) just does not
+   happen and the solver integrates a different model. Leaving the symbol
+   undefined makes the JIT fail loudly instead (so the whole
+   `allEquations` set must lower, which is why `canCoverModel` checks it,
+   not just the ODE partition).
 4. **`<Model>_setupDataStruc`.** DONE for the load-bearing fields.
    `createSetupDataStrucFull` wires the two critical pointers plus
    all 41 modelData integer counters (driven by
@@ -242,12 +249,13 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    HelloWorld now runs with no `<Model>.c` on disk and no
    `<prefix>.bc` either (every catalog-displaced satellite
    skips clang too); the JIT consumes the SCTL bitcode alone.
-   A `delay()`-using model fails *loudly* (`Symbols not found:
-   [ <M>_functionDAE ]`): the `y = delay(x, ...)` equation is defined
-   only in the skipped `<Model>.c`, nothing else computes it, so a
-   functionDAE that dropped it would leave `y` frozen. The functionDAE
-   gate refuses the partial body; `delay()` becomes a real lift (lower
-   `delayImpl` to IR) rather than a silently-wrong "it runs".
+   A `delay()`-using model JIT-simulates == C: `emitExp` lowers the
+   `delay(exprNumber, x, dt, dmax)` call to the runtime `delayImpl`
+   (`createInlinedDelay`), and `functionAlgebraics` (see step 3) is now a
+   real SCTL function that recomputes `y = delay(x, dt)` every integrator
+   step. `_07dly.c` (the `storeDelayed` ring-buffer feeder) stays on
+   clang behind the `DELAY_EXPRS` Feature, wired through the callback
+   table.
 
    **No silent fallback.** `target == "llvm-jit"` always skips
    `<Model>.c`. `canCoverModel(simCode)` returning false triggers a
@@ -376,11 +384,11 @@ Boolean observed from a relation (`over = x <= 0.5`), a Boolean
 conjunction (`b = c and x >= 0.1`), a Real if-expression over a
 discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and the full
 BouncingBall (zero crossings, `when` + `reinit` + `pre`, discrete-Real
-`v_new`, integer `n_bounce`) -- all lower fully and are checked
-JIT-vs-C. A `delay()`-using model is still a loud-failure case
-(functionDAE undefined until `delayImpl` lowers). Performance work
-uses 10-run samples on HelloWorld + CoupledClutches and the JIT-cache
-hot/cold split.
+`v_new`, integer `n_bounce`), and a `delay()`-using model
+(`y = delay(x, 0.5)`, continuous algebraic via the real
+functionAlgebraics) -- all lower fully and are checked JIT-vs-C.
+Performance work uses 10-run samples on HelloWorld + CoupledClutches and
+the JIT-cache hot/cold split.
 
 ---
 
