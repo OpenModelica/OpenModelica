@@ -314,6 +314,21 @@ function genDelay
                Include = "int createInlinedDelay(const char *dataArgName, const char *threadDataArgName, const int64_t exprNumber, const char *valName, const char *dtName, const char *dmaxName, const char *dstName);");
 end genDelay;
 
+function genSolveNonlinear
+  "Emit a call to the omc_jit_solve_nonlinear_system1 adapter for a
+   single-unknown nonlinear tearing system: seed the iteration variable
+   (flat realVars slot varSlot), run the runtime solver for system
+   sysIndex, throw on failure, write the solution back. See
+   createInlinedSolveNonlinear / omc_jit_solve_nonlinear_system1."
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer sysIndex;
+  input Integer varSlot;
+  external "C" createInlinedSolveNonlinear(dataArgName, threadDataArgName, sysIndex, varSlot)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSolveNonlinear(const char *dataArgName, const char *threadDataArgName, const int64_t sysIndex, const int64_t varSlot);");
+end genSolveNonlinear;
+
 function genReadIntVar
   "Inline  dst(modelica_integer) = data->localData[0]->integerVars[slot]."
   input String dataArgName;

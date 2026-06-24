@@ -199,6 +199,15 @@ algorithm
   assert(false, getInstanceName());
 end genDelay;
 
+function genSolveNonlinear
+  input String dataArgName;
+  input String threadDataArgName;
+  input Integer sysIndex;
+  input Integer varSlot;
+algorithm
+  assert(false, getInstanceName());
+end genSolveNonlinear;
+
 function genReadIntVar
   input String dataArgName;
   input Integer slot;

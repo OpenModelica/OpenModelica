@@ -680,6 +680,32 @@ extern "C" int createInlinedDelay(const char *const dataArgName,
   return 0;
 }
 
+/* createInlinedSolveNonlinear: emit a call to the omc_jit_solve_nonlinear_
+ * system1 adapter (seed-solve-throw-writeback for a single-unknown
+ * nonlinear tearing system). The adapter wraps the runtime
+ * solve_nonlinear_system + throwStreamPrint; SCTL just supplies the system
+ * index and the iteration variable's flat realVars slot. Return value
+ * (retValue) is discarded -- the adapter throws on failure. */
+extern "C" int createInlinedSolveNonlinear(const char *const dataArgName,
+                                           const char *const threadDataArgName,
+                                           const int64_t sysIndex,
+                                           const int64_t varSlot) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(i32, {ptrTy, ptrTy, i32, i32}, false);
+  llvm::FunctionCallee const fn =
+      mod.getOrInsertFunction("omc_jit_solve_nonlinear_system1", fnTy);
+  b.CreateCall(fn, {loadFromSymtab(dataArgName),
+                    loadFromSymtab(threadDataArgName),
+                    llvm::ConstantInt::get(i32, sysIndex),
+                    llvm::ConstantInt::get(i32, varSlot)});
+  return 0;
+}
+
 /* Store an i32 constant into a scalar SIMULATION_INFO field at byteOffset. */
 static void setSIInt32Field(llvm::Value *const dataPtr, const size_t byteOffset,
                             const int32_t v) {

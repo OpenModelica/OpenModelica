@@ -220,6 +220,16 @@ public uniontype EqRecipe
     list<BackendDAE.WhenOperator> whenStmts;
   end EQ_WHEN;
 
+  record EQ_SOLVE_NONLINEAR
+    "A single-unknown nonlinear tearing system, lowered to one call to the
+     omc_jit_solve_nonlinear_system1 adapter (runtime solve + throw +
+     iteration-variable exchange). The residual / setup / Jacobian stay on
+     clang in _02nls.c / _12jac.c. sysIndex is the indexNonLinearSystem;
+     varSlot is the iteration variable's flat realVars slot."
+    Integer sysIndex;
+    Integer varSlot;
+  end EQ_SOLVE_NONLINEAR;
+
   record EQ_ALGORITHM
     "An algorithm section whose statements are all simple scalar
      assignments `cref := expr` to a layout-resolved variable. Lowered
@@ -1119,8 +1129,8 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN()     then eq.index;
     case SimCode.SES_ALGORITHM()         then eq.index;
     case SimCode.SES_RESIDUAL()          then eq.index;
-    case SimCode.SES_LINEAR()            then 0;
-    case SimCode.SES_NONLINEAR()         then 0;
+    case SimCode.SES_LINEAR()            then nonlinearOrLinearIndex(eq);
+    case SimCode.SES_NONLINEAR()         then nonlinearOrLinearIndex(eq);
     case SimCode.SES_MIXED()             then eq.index;
     case SimCode.SES_WHEN()              then eq.index;
     case SimCode.SES_IFEQUATION()        then eq.index;
@@ -1129,6 +1139,21 @@ algorithm
     else 0;
   end match;
 end simEqIndex;
+
+protected function nonlinearOrLinearIndex
+  "The eqFunction_<idx> number for a SES_LINEAR / SES_NONLINEAR is the
+   torn system's `index` (the source equation index), not the solver's
+   indexLinearSystem / indexNonLinearSystem. The still-clang'd
+   _09alg.c / _06inz.c reference that eqFunction_<idx> symbol."
+  input SimCode.SimEqSystem eq;
+  output Integer index;
+algorithm
+  index := match eq
+    case SimCode.SES_NONLINEAR(nlSystem = SimCode.NONLINEARSYSTEM(index = index)) then index;
+    case SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(index = index)) then index;
+    else 0;
+  end match;
+end nonlinearOrLinearIndex;
 
 protected function emitInitialEquationsDispatcher
   "Emit  void <prefix>_functionInitialEquations_0(DATA *data,
@@ -1819,6 +1844,9 @@ algorithm
     case EQ_BOOL_DISCRETE_ASSIGN() then "BDISC(" + intString(r.slotIndex) + ")";
     case EQ_WHEN() then "WHEN(" + intString(listLength(r.conditions)) + " cond, " +
                                intString(listLength(r.whenStmts)) + " stmt)";
+    case EQ_ALGORITHM() then "ALGORITHM(" + intString(listLength(r.statements)) + " stmt)";
+    case EQ_SOLVE_NONLINEAR() then "SOLVE_NLS(sys=" + intString(r.sysIndex) +
+                               ", var=" + intString(r.varSlot) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -2829,6 +2857,10 @@ algorithm
       algorithm
         (ctx2, exprOk) := emitAlgorithmStmts(r.statements, ctx);
       then (ctx2, exprOk);
+    case EQ_SOLVE_NONLINEAR()
+      algorithm
+        EXT_LLVM.genSolveNonlinear("data", "threadData", r.sysIndex, r.varSlot);
+      then (ctx, true);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
     case EQ_PARAM_RANGE_ASSERT()
@@ -3325,6 +3357,7 @@ algorithm
            and List.all(r.whenStmts, function canLowerWhenStmt(layout = layout));
     case EQ_ALGORITHM()
       then List.all(r.statements, function canLowerStmt(layout = layout));
+    case EQ_SOLVE_NONLINEAR()   then true;
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
@@ -4570,6 +4603,7 @@ algorithm
           list<DAE.ComponentRef> cwhen;
           list<BackendDAE.WhenOperator> wstmts;
           list<DAE.Statement> stmts;
+          SimCode.NonlinearSystem nlsys;
     case SimCode.SES_SIMPLE_ASSIGN(cref=cref, exp=rhs)
       algorithm
         os := lookupSlot(cref, layout);
@@ -4594,8 +4628,8 @@ algorithm
       then EQ_UNSUPPORTED("SES_RESIDUAL requires solver, deferred");
     case SimCode.SES_LINEAR()
       then EQ_UNSUPPORTED("SES_LINEAR requires solver, deferred");
-    case SimCode.SES_NONLINEAR()
-      then EQ_UNSUPPORTED("SES_NONLINEAR requires solver, deferred");
+    case SimCode.SES_NONLINEAR(nlSystem = nlsys)
+      then classifyNonlinear(nlsys, layout);
     case SimCode.SES_MIXED()
       then EQ_UNSUPPORTED("SES_MIXED requires solver, deferred");
     case SimCode.SES_WHEN(elseWhen = SOME(_))
@@ -4636,6 +4670,38 @@ protected function classifyBoolDiscrete
   input DAE.Exp rhs;
   output EqRecipe recipe = EQ_BOOL_DISCRETE_ASSIGN(slotIndex, rhs);
 end classifyBoolDiscrete;
+
+protected function classifyNonlinear
+  "Classify a SES_NONLINEAR. Only a single-unknown tearing system whose
+   one iteration variable resolves to a real layout slot is lowered (to
+   EQ_SOLVE_NONLINEAR -> the omc_jit_solve_nonlinear_system1 adapter).
+   Multi-unknown systems and non-real iteration vars stay UNSUPPORTED, so
+   the model fails loudly rather than mis-solving."
+  input SimCode.NonlinearSystem nlsys;
+  input VarLayout layout;
+  output EqRecipe recipe;
+algorithm
+  recipe := match nlsys
+    local Integer nidx;
+          DAE.ComponentRef cr;
+          VarSlot vs;
+    /* Gate on a single *iteration* variable (crefs), not nUnknowns:
+     * nUnknowns also counts torn-away vars the residual back-substitutes
+     * internally, but the eqFunction (and the nlsx/nlsxOld exchange the
+     * adapter does) only thread the iteration var. size == listLength(crefs). */
+    case SimCode.NONLINEARSYSTEM(indexNonLinearSystem = nidx, crefs = {cr})
+      then match lookupSlot(cr, layout)
+        case SOME(vs as VAR_SLOT(kind = VK_STATE()))
+          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
+        case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
+          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
+        case SOME(vs as VAR_SLOT(kind = VK_ALG()))
+          then EQ_SOLVE_NONLINEAR(nidx, absoluteSlot(vs.kind, vs.index, layout));
+        else EQ_UNSUPPORTED("nonlinear iteration variable not a real layout slot");
+      end match;
+    else EQ_UNSUPPORTED("multi-unknown nonlinear system not lowered yet");
+  end match;
+end classifyNonlinear;
 
 protected function opCodeForRelationOp
   "Map a relational DAE.Operator to the small opcode

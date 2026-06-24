@@ -93,6 +93,33 @@
  * zero (the relation reads as false) and the runtime continues with
  * whatever state it had. */
 #include "simulation/solver/model_help.h"
+#include "simulation/solver/nonlinearSystem.h"
+#include "simulation/solver/linearSystem.h"
+
+/* Single-unknown nonlinear tearing system. SCTL emits one call to this
+ * per SES_NONLINEAR(nUnknowns=1); it mirrors CodegenC's eqFunction body:
+ * seed the iteration variable's old value, run the runtime solver, throw
+ * on non-convergence, write the solution back. The work is the runtime's
+ * solve_nonlinear_system + throwStreamPrint -- this only threads the one
+ * realVars slot through the solver's nlsxOld / nlsx exchange arrays, so
+ * SCTL never reimplements the solver or open-codes the NONLINEAR_SYSTEM_DATA
+ * bookkeeping. varSlot is the flat realVars index of the iteration var. */
+int omc_jit_solve_nonlinear_system1(DATA *data, threadData_t *threadData,
+                                    int sysIndex, int varSlot)
+{
+  NONLINEAR_SYSTEM_DATA *const nls =
+      &(data->simulationInfo->nonlinearSystemData[sysIndex]);
+  int retValue;
+  nls->nlsxOld[0] = data->localData[0]->realVars[varSlot];
+  retValue = solve_nonlinear_system(data, threadData, sysIndex);
+  if (retValue > 0) {
+    throwStreamPrint(threadData,
+      "Solving non-linear system %d failed. For more information use -lv LOG_NLS.",
+      sysIndex);
+  }
+  data->localData[0]->realVars[varSlot] = nls->nlsx[0];
+  return retValue;
+}
 
 void omc_jit_relationhysteresis(DATA *data, modelica_boolean *res,
                                 double exp1, double exp2,

@@ -414,18 +414,20 @@ discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and the full
 BouncingBall (zero crossings, `when` + `reinit` + `pre`, discrete-Real
 `v_new`, integer `n_bounce`), a `delay()`-using model
 (`y = delay(x, 0.5)`, continuous algebraic via the real
-functionAlgebraics), and an algorithm section (`algorithm y := x*x;`)
--- all lower fully and are checked JIT-vs-C. Performance work uses
-10-run samples on HelloWorld + CoupledClutches and the JIT-cache
-hot/cold split.
+functionAlgebraics), an algorithm section (`algorithm y := x*x;`), and a
+single-unknown nonlinear system (`y + sin(y) = x + 2`, solved by the
+runtime Newton via the `omc_jit_solve_nonlinear_system1` adapter) -- all
+lower fully and are checked JIT-vs-C. Performance work uses 10-run
+samples on HelloWorld + CoupledClutches and the JIT-cache hot/cold split.
 
 Known still-unsupported (each fails *loudly* with 'Symbols not found',
 never silently): algorithm sections that are not scalar `cref := expr`
-assignments (if / for / while statement bodies), nonlinear / linear
-algebraic systems (need a JIT-side solver), and `sample()` / time
-events. `emitStmt` covers scalar-assign algorithm bodies via the same
-real / discrete-Boolean / discrete-Integer dispatch the when-body assign
-uses (unconditional, no edge).
+assignments (if / for / while statement bodies), multi-iteration-variable
+nonlinear systems and linear systems, and `sample()` / time events. A
+single-iteration-variable `SES_NONLINEAR` reuses the runtime
+`solve_nonlinear_system` (the adapter seeds the iteration var, solves,
+throws on failure, writes the solution back); the residual / setup /
+Jacobian stay on clang in `_02nls.c` / `_12jac.c`.
 
 ---
 
