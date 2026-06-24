@@ -107,6 +107,7 @@ protected
 
   // Util imports
   import Error;
+  import FMI;
   import StringUtil;
 
   // Script imports
@@ -352,10 +353,15 @@ public
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
-            // make fmi_index globally unique so the FMI ModelStructure dependency
-            // indices (used for both simcode_map and modelInfo below) resolve to
-            // the correct value references, including parameter dependencies
-            vars                                := SimVars.globalizeFMIIndex(vars);
+            // For FMI 3.0 make fmi_index globally unique so the ModelStructure
+            // dependency indices (used for both simcode_map and modelInfo below)
+            // resolve to the correct value references, including parameter
+            // dependencies. Only for FMI 3.0: FMI 2.0 references the ModelStructure
+            // unknowns by the per-base-type index, so renumbering would change its
+            // (still valid) output; normal simulation does not use fmi_index.
+            if FMI.isFMIVersion30() then
+              vars := SimVars.globalizeFMIIndex(vars);
+            end if;
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
             // create empty equation map and fill while creating the blocks

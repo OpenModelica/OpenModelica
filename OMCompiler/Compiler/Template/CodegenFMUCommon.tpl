@@ -625,11 +625,6 @@ match simvar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
 case SIMVAR(initialValue = NONE()) then ''
 case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then '<%startString3(simvar)%>'
-// A continuous-time state is initial = exact (fixed start) or approx (unfixed
-// start); both require the start attribute. The new backend leaves initial_
-// unset for states (it uses the fixed attribute instead), so match the state
-// kind directly, mirroring ArrayStartString3 for array states.
-case SIMVAR(varKind = STATE(__)) then '<%startString3(simvar)%>'
 case SIMVAR(initial_ = initial_) then
   match initial_
     case SOME(SimCodeVar.EXACT()) then '<%startString3(simvar)%>'
