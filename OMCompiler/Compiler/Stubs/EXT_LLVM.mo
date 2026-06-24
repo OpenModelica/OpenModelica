@@ -124,6 +124,19 @@ algorithm
   assert(false, getInstanceName());
 end genRelationSet;
 
+function genBoolDiscreteFromRelation
+  input String dataArgName;
+  input Integer boolSlot;
+  input String exp1Name;
+  input String exp2Name;
+  input Real nom1;
+  input Real nom2;
+  input Integer zcIndex;
+  input Integer opCode;
+algorithm
+  assert(false, getInstanceName());
+end genBoolDiscreteFromRelation;
+
 function genCallExternalObjectDestructors
   input String modelName;
   output Integer status = 1;

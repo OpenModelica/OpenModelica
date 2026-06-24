@@ -189,6 +189,20 @@ static llvm::Value *emitChainToRealVars(llvm::Value *const dataPtr) {
   return emitGEPLoadPtr(sd, omc_layout_SD_realVars);
 }
 
+/* Local helper: emit the load-pointer chain that resolves
+ *
+ *   data->localData[0]->booleanVars
+ *
+ * leaving the booleanVars pointer (a modelica_boolean* == i32*) as the
+ * returned llvm::Value. Mirror of emitChainToRealVars for the discrete
+ * boolean buffer. */
+static llvm::Value *emitChainToBoolVars(llvm::Value *const dataPtr) {
+  llvm::Value *const localDataPP =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_localData);
+  llvm::Value *const sd = emitLoadPtr(localDataPP);
+  return emitGEPLoadPtr(sd, omc_layout_SD_booleanVars);
+}
+
 /* Local helper: store a value into the alloca registered under
  * `dstName` (the requested name, matching the symtab-key rule). */
 static void storeIntoSymtab(const char *const dstName,
@@ -362,6 +376,66 @@ extern "C" int createInlinedRelationSet(const char *const dataArgName,
   llvm::Value *const cmp = b.CreateFCmpOGT(srcDbl, zero, "");
   llvm::Value *const cast = b.CreateZExt(cmp, i32, "");
   b.CreateStore(cast, slotAddr);
+  return 0;
+}
+
+/* createInlinedBoolDiscreteFromRelation: emit the body of a discrete
+ * boolean equation of the shape
+ *
+ *   booleanVars[boolSlot] = relationhysteresis(exp1 <op> exp2)
+ *
+ * i.e. the IR equivalent of CodegenC's
+ *
+ *   modelica_boolean tmp;
+ *   relationhysteresis(data, &tmp, exp1, exp2, nom1, nom2, zcIndex, Op, OpZC);
+ *   data->localData[0]->booleanVars[booleanVarsIndex[boolSlot]] = tmp;
+ *
+ * The runtime's own relationhysteresis is `static inline` in
+ * model_help.h and thus unreachable from emitted IR, so this calls the
+ * external-linkage wrapper omc_jit_relationhysteresis (defined in
+ * omc_jit_perform_simulation_adapter.c) which switches on opCode
+ * (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq) and forwards to the static
+ * inline with the matching op_w / op_w_zc function pointers.
+ *
+ * exp1Name / exp2Name are the symtab names of double allocas holding the
+ * already-lowered relation operands; nom1 / nom2 are the literal nominal
+ * scale factors for those operands. The DynamicLibrarySearchGenerator
+ * resolves omc_jit_relationhysteresis against omcruntime in-process. */
+extern "C" int createInlinedBoolDiscreteFromRelation(
+    const char *const dataArgName, const int64_t boolSlot,
+    const char *const exp1Name, const char *const exp2Name,
+    const double nom1, const double nom2, const int64_t zcIndex,
+    const int64_t opCode) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  /* modelica_boolean (i32) result slot the wrapper writes through. */
+  llvm::AllocaInst *const resAlloca = b.CreateAlloca(i32, nullptr, "");
+  llvm::Value *const e1 = loadFromSymtab(exp1Name);
+  llvm::Value *const e2 = loadFromSymtab(exp2Name);
+
+  llvm::FunctionType *const fnTy = llvm::FunctionType::get(
+      voidTy, {ptrTy, ptrTy, dbl, dbl, dbl, dbl, i32, i32}, false);
+  llvm::FunctionCallee const fn =
+      mod.getOrInsertFunction("omc_jit_relationhysteresis", fnTy);
+  b.CreateCall(fn, {dataPtr, resAlloca, e1, e2,
+                    llvm::ConstantFP::get(dbl, nom1),
+                    llvm::ConstantFP::get(dbl, nom2),
+                    llvm::ConstantInt::get(i32, zcIndex),
+                    llvm::ConstantInt::get(i32, opCode)});
+
+  llvm::Value *const resVal = b.CreateLoad(i32, resAlloca, "");
+  llvm::Value *const boolVars = emitChainToBoolVars(dataPtr);
+  llvm::Value *const slotAddr = b.CreateGEP(
+      i32, boolVars, llvm::ConstantInt::get(i64, boolSlot), "");
+  b.CreateStore(resVal, slotAddr);
   return 0;
 }
 

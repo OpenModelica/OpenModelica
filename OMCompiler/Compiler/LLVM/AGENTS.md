@@ -162,6 +162,14 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
 3. **Equation functions** (`_functionODE`, `_functionDAE`,
    `_ODE_DAG`). DONE. `emitModelEquationsBlock` re-using
    `emitEquationFunction`; `_ODE_DAG` is a void stub (advisory hint).
+   `_functionODE` inlines the ODE-partition recipes; `_functionDAE`
+   classifies and inlines the full `allEquations` set (the discrete
+   context CodegenC's functionDAE iterates), so discrete/algebraic
+   equations -- relation results, observed Booleans -- evaluate
+   instead of staying frozen at their initial values. Unsupported
+   members of `allEquations` are skipped per-recipe (the function
+   stays well-formed); a model whose `allEquations` all lower gets a
+   byte-faithful functionDAE.
 4. **`<Model>_setupDataStruc`.** DONE for the load-bearing fields.
    `createSetupDataStrucFull` wires the two critical pointers plus
    all 41 modelData integer counters (driven by
@@ -235,29 +243,42 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    missing instead of just the one with the unsupported construct.
 
    **BouncingBall.** Currently fails JIT with `Symbols not found:
-   [ BouncingBall_eqFunction_7 ]`. The blockers, in order of how
-   much new SCTL machinery each requires:
+   [ BouncingBall_eqFunction_23 ]` (a `$whenCondition = h<=0 and
+   v<=0` conjunction the still-clang'd `_09alg.c` / `_06inz.c`
+   reference but SCTL does not yet define). The blockers, in order of
+   how much new SCTL machinery each requires:
 
-     1. `eq_7`: `boolean = relationhysteresis(state, threshold, ...)`.
-        Adapter side **DONE**: `omc_jit_relationhysteresis` in
+     1. `boolDiscrete = state <relop> threshold` (e.g. BB's
+        `impact = h <= 0.0`). **DONE.** Adapter
+        `omc_jit_relationhysteresis` in
         `omc_jit_perform_simulation_adapter.c` is the non-static
         wrapper SCTL calls (the runtime's own `relationhysteresis`
         is `static inline` in `model_help.h` and unreachable from
         IR; the wrapper switches on a 0..3 op-code for
         Less/LessEq/Greater/GreaterEq, threading the matching
-        function-pointer args through). MetaModelica side **TODO**:
-        new `VK_BOOL_DISCRETE` VarKind, `buildVarLayout` extension
-        for `data->localData[0]->booleanVars[booleanVarsIndex[idx]]`,
-        new `EqRecipe` variant `EQ_BOOL_DISCRETE_FROM_RELATION`,
-        `classifySimEq` pattern-match for `SES_SIMPLE_ASSIGN(cref =
-        bool-discrete, exp = DAE.RELATION(...))`, and an
-        `emitEquation` branch that GEPs the LHS state, calls
-        `omc_jit_relationhysteresis`, stores the i8 result into the
-        booleanVars slot.
+        function-pointer args through). MetaModelica side: `VK_BOOL_DISCRETE`
+        VarKind over the `boolAlgVars` bucket, `EQ_BOOL_DISCRETE_FROM_RELATION`
+        recipe, `classifyBoolDiscrete` for `SES_SIMPLE_ASSIGN(cref =
+        bool-discrete, exp = DAE.RELATION(...))` with a real
+        zero-crossing index, and an `emitEquation` branch
+        (`createInlinedBoolDiscreteFromRelation`) that lowers both
+        operands, calls `omc_jit_relationhysteresis`, and stores the
+        i32 result into `booleanVars[slot]`. Operand nominals follow
+        `getExpNominal` (constants by magnitude, default 1.0
+        otherwise). Verified end-to-end on a `Boolean over = x <= 0.5`
+        model: JIT `over` flips false->true at the crossing,
+        byte-identical to the C path (BB still needs blockers 2/3 so
+        its own link error is unchanged; the relation lift is exercised
+        by the standalone model and by BB's `impact` inside functionDAE).
 
-     2. `eq_10` (SES_WHEN): edge detection on the discrete
-        boolean, conditional reinit of a state variable, a
-        `needToIterate` store on `simulationInfo`. Hours more.
+     2. When-condition Booleans (`$whenCondition = impact and v <= 0.0`)
+        and `SES_WHEN` bodies (`eq_10`-style): a Boolean conjunction
+        over a relation result plus a discrete read (not a bare
+        relation, so `classifyBoolDiscrete` rejects it today), then
+        edge detection on the discrete Boolean, conditional reinit of
+        a state variable, and a `needToIterate` store on
+        `simulationInfo`. This is what BB's still-undefined
+        `eqFunction_23` etc. need. Hours more.
 
      3. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
         lookups (read `realVarsData[idx].attribute.start.data[0]`),

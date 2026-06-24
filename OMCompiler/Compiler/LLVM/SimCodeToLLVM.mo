@@ -107,11 +107,16 @@ public uniontype VarKind
    ODE residual evaluator in trivial models), and param. Anything
    else makes a model UNSUPPORTED for SimCodeToLLVM and the legacy
    buildModel path takes over."
-  record VK_STATE      end VK_STATE;
-  record VK_DERIVATIVE end VK_DERIVATIVE;
-  record VK_ALG        end VK_ALG;
-  record VK_PARAM      end VK_PARAM;
-  record VK_BOOL_PARAM end VK_BOOL_PARAM;
+  record VK_STATE         end VK_STATE;
+  record VK_DERIVATIVE    end VK_DERIVATIVE;
+  record VK_ALG           end VK_ALG;
+  record VK_PARAM         end VK_PARAM;
+  record VK_BOOL_PARAM    end VK_BOOL_PARAM;
+  record VK_BOOL_DISCRETE
+    "A discrete Boolean variable living in
+     data->localData[0]->booleanVars[index] (the boolAlgVars bucket:
+     when conditions, relation results like `impact`, ...)."
+  end VK_BOOL_DISCRETE;
 end VarKind;
 
 /* Cached singleton instances of every no-field VarKind variant.
@@ -126,6 +131,7 @@ public constant VarKind VKS_DERIVATIVE = VK_DERIVATIVE();
 public constant VarKind VKS_ALG        = VK_ALG();
 public constant VarKind VKS_PARAM      = VK_PARAM();
 public constant VarKind VKS_BOOL_PARAM = VK_BOOL_PARAM();
+public constant VarKind VKS_BOOL_DISCRETE = VK_BOOL_DISCRETE();
 
 public uniontype VarSlot
   record VAR_SLOT
@@ -185,6 +191,23 @@ public uniontype EqRecipe
     Integer slotIndex;
     DAE.Exp rhs;
   end EQ_BOOL_PARAM_ASSIGN;
+
+  record EQ_BOOL_DISCRETE_FROM_RELATION
+    "booleanVars[slot] := (exp1 <op> exp2), a discrete Boolean assigned
+     from a relation that carries a zero-crossing index (e.g.
+     `impact = h <= 0.0`). Lowered to a call to omc_jit_relationhysteresis
+     whose i32 result is stored into the booleanVars buffer. opCode
+     selects the comparison: 0=Less, 1=LessEq, 2=Greater, 3=GreaterEq.
+     nom1 / nom2 are the operands' nominal scale factors (matching
+     CodegenC's daeExpNominalTmp)."
+    Integer slotIndex "absolute booleanVars[] slot";
+    DAE.Exp exp1;
+    DAE.Exp exp2;
+    Real nom1;
+    Real nom2;
+    Integer zcIndex "the relation's zero-crossing index";
+    Integer opCode;
+  end EQ_BOOL_DISCRETE_FROM_RELATION;
 
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
@@ -688,7 +711,7 @@ algorithm
     try emitLinearSystemsBlock(simCode); else reportBlockFailure("emitLinearSystemsBlock", name); end try;
     try emitMixedSystemsBlock(simCode); else reportBlockFailure("emitMixedSystemsBlock", name); end try;
     try emitExternalObjectDestructorsBlock(simCode, name); else reportBlockFailure("emitExternalObjectDestructorsBlock", name); end try;
-    try emitModelEquationsBlock(recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
+    try emitModelEquationsBlock(simCode, recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
     try emitSetupDataStrucShellBlock(name, simCode); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
     try emitMainShimBlock(name); else reportBlockFailure("emitMainShimBlock", name); end try;
@@ -1729,6 +1752,10 @@ algorithm
     case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
+    case EQ_BOOL_DISCRETE_FROM_RELATION() then "BDISC_REL(slot=" +
+                                       intString(r.slotIndex) + ", zc=" +
+                                       intString(r.zcIndex) + ", op=" +
+                                       intString(r.opCode) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -1749,6 +1776,9 @@ algorithm
     case EQ_ALG_ASSIGN(rhs=e)        then ExpressionBasics.printExpStr(e);
     case EQ_PARAM_ASSIGN(rhs=e)      then ExpressionBasics.printExpStr(e);
     case EQ_BOOL_PARAM_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
+    case EQ_BOOL_DISCRETE_FROM_RELATION()
+      then ExpressionBasics.printExpStr(r.exp1) + " <op" +
+           intString(r.opCode) + "> " + ExpressionBasics.printExpStr(r.exp2);
     else "";
   end match;
 end recipeRhsStr;
@@ -2015,13 +2045,25 @@ protected function emitModelEquationsBlock
    the SimEqSystem.index numbering the EqRecipe pipeline does not
    currently track; functionODE / functionDAE inline the equation
    bodies anyway). Equation lowering re-uses the existing
-   emitEquationFunction primitive -- no new C++ machinery."
+   emitEquationFunction primitive -- no new C++ machinery.
+
+   functionODE inlines the ODE-partition recipes (continuous state
+   derivatives). functionDAE inlines the full allEquations set --
+   CodegenC's functionDAE iterates allEquations under the discrete
+   context, evaluating the discrete/algebraic equations (relation
+   results, when conditions, ...) the ODE partition omits. Lowering
+   functionDAE from the ODE recipes alone left every discrete Boolean
+   stuck at its initial value; classifying allEquations here is what
+   lets a model whose only events are observed relations
+   (e.g. `over = x <= 0.5`) report correctly."
+  input SimCode.SimCode simCode;
   input list<EqRecipe> recipes;
   input VarLayout layout;
   input Absyn.Path modelName;
 protected
   String prefix;
   String fname;
+  list<EqRecipe> daeRecipes;
 algorithm
   prefix := modelSymbolPrefix(modelName);
 
@@ -2030,8 +2072,9 @@ algorithm
     _ := EXT_LLVM.setLinkonceOdr(fname);
   end if;
 
+  daeRecipes := List.map1(allSimCodeEquations(simCode), classifySimEq, layout);
   fname := prefix + "_functionDAE";
-  if emitEquationFunction(fname, recipes, layout, MODELICA_INTEGER) then
+  if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER) then
     _ := EXT_LLVM.setLinkonceOdr(fname);
   end if;
 
@@ -2640,7 +2683,7 @@ algorithm
     local Integer slot;
           DAE.Exp rhs;
           EmitCtx ctx2;
-          String rhsTmp;
+          String rhsTmp, rhs2Tmp;
           Boolean exprOk;
     case EQ_DERIVATIVE_ASSIGN(slotIndex=slot, rhs=rhs)
       algorithm
@@ -2678,6 +2721,18 @@ algorithm
         (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
         if exprOk then
           emitWriteBoolParam(slot, rhsTmp);
+        end if;
+      then (ctx2, exprOk);
+    case EQ_BOOL_DISCRETE_FROM_RELATION()
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(r.exp1, ctx);
+        if exprOk then
+          (ctx2, rhs2Tmp, exprOk) := emitExp(r.exp2, ctx2);
+          if exprOk then
+            EXT_LLVM.genBoolDiscreteFromRelation("data",
+              absoluteSlot(VKS_BOOL_DISCRETE, r.slotIndex, ctx2.layout),
+              rhsTmp, rhs2Tmp, r.nom1, r.nom2, r.zcIndex, r.opCode);
+          end if;
         end if;
       then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
@@ -2744,6 +2799,7 @@ algorithm
     case VK_ALG()        then subIndex;
     case VK_PARAM()      then subIndex;
     case VK_BOOL_PARAM() then subIndex;
+    case VK_BOOL_DISCRETE() then subIndex;
   end match;
 end absoluteSlot;
 
@@ -2824,6 +2880,8 @@ algorithm
     case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
+    case EQ_BOOL_DISCRETE_FROM_RELATION()
+      then canLowerExp(r.exp1, layout) and canLowerExp(r.exp2, layout);
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
@@ -3331,6 +3389,18 @@ algorithm
   end match;
 end flattenOdeEquations;
 
+protected function allSimCodeEquations
+  "The model's full allEquations list -- the discrete-context equation
+   set CodegenC's functionDAE iterates (continuous derivatives plus the
+   discrete/algebraic equations the ODE partition omits)."
+  input SimCode.SimCode simCode;
+  output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := match simCode
+    case SimCode.SIMCODE(allEquations=eqs) then eqs;
+  end match;
+end allSimCodeEquations;
+
 /* ====================================================================== *
  *  VarLayout build                                                       *
  * ====================================================================== */
@@ -3343,16 +3413,17 @@ protected function buildVarLayout
   input SimCodeVar.SimVars vars;
   output VarLayout layout;
 protected
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, boolParamVars;
+  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars;
   list<tuple<DAE.ComponentRef, VarSlot>> entries = {};
 algorithm
-  (stateVars, derivativeVars, algVars, paramVars, boolParamVars) := match vars
+  (stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars) := match vars
     case SimCodeVar.SIMVARS(stateVars=stateVars,
                             derivativeVars=derivativeVars,
                             algVars=algVars,
                             paramVars=paramVars,
-                            boolParamVars=boolParamVars)
-      then (stateVars, derivativeVars, algVars, paramVars, boolParamVars);
+                            boolParamVars=boolParamVars,
+                            boolAlgVars=boolAlgVars)
+      then (stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars);
   end match;
 
   entries := List.fold(stateVars, function addEntry(kind = VKS_STATE), entries);
@@ -3360,6 +3431,7 @@ algorithm
   entries := List.fold(algVars, function addEntry(kind = VKS_ALG), entries);
   entries := List.fold(paramVars, function addEntry(kind = VKS_PARAM), entries);
   entries := List.fold(boolParamVars, function addEntry(kind = VKS_BOOL_PARAM), entries);
+  entries := List.fold(boolAlgVars, function addEntry(kind = VKS_BOOL_DISCRETE), entries);
 
   layout := VAR_LAYOUT(entries,
                       listLength(stateVars),
@@ -3388,6 +3460,7 @@ algorithm
       case VK_ALG()        then "ALG";
       case VK_PARAM()      then "PARAM";
       case VK_BOOL_PARAM() then "BPARM";
+      case VK_BOOL_DISCRETE() then "BDISC";
     end match;
     Error.addInternalError("  " + ComponentReferenceBasics.printComponentRefStr(cr) +
       " -> " + kindStr + "(simVarIndex=" + intString(s.index) + ")\n", sourceInfo());
@@ -3470,6 +3543,8 @@ algorithm
           then EQ_PARAM_ASSIGN(s.index, rhs);
         case SOME(s as VAR_SLOT(kind=VK_BOOL_PARAM()))
           then EQ_BOOL_PARAM_ASSIGN(s.index, rhs);
+        case SOME(s as VAR_SLOT(kind=VK_BOOL_DISCRETE()))
+          then classifyBoolDiscrete(s.index, rhs);
         else
           then EQ_UNSUPPORTED("cref not found in layout: "
                               + ComponentReferenceBasics.printComponentRefStr(cref));
@@ -3505,6 +3580,80 @@ algorithm
       then EQ_UNSUPPORTED("unhandled SimEqSystem variant");
   end match;
 end classifySimEq;
+
+protected function classifyBoolDiscrete
+  "Classify a discrete-Boolean assignment whose LHS resolved to a
+   VK_BOOL_DISCRETE slot. Only the relation shape
+     boolVar = exp1 <relop> exp2
+   carrying a real zero-crossing index is lowerable today; it maps to
+   EQ_BOOL_DISCRETE_FROM_RELATION (a call to omc_jit_relationhysteresis).
+   Boolean-algebra RHS (`a and b`, `not p`, pure Boolean crefs, ...) and
+   relations without a zero-crossing index (index = -1) stay
+   EQ_UNSUPPORTED so the still-clang'd segment file keeps its definition."
+  input Integer slotIndex;
+  input DAE.Exp rhs;
+  output EqRecipe recipe;
+algorithm
+  recipe := match rhs
+    local DAE.Exp e1, e2;
+          DAE.Operator op;
+          Integer idx, opc;
+    /* Operand lowerability is checked later in canLowerEquation against
+     * the real layout (same split the EQ_*_ASSIGN recipes use): classify
+     * only screens the relation shape, operator, and zero-crossing index. */
+    case DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx)
+      then match opCodeForRelationOp(op)
+        case SOME(_) guard idx < 0
+          then EQ_UNSUPPORTED("relation has no zero-crossing index (index=-1)");
+        case SOME(opc)
+          then EQ_BOOL_DISCRETE_FROM_RELATION(slotIndex, e1, e2,
+                 relationOperandNominal(e1), relationOperandNominal(e2),
+                 idx, opc);
+        else EQ_UNSUPPORTED("relation operator not one of < / <= / > / >=");
+      end match;
+    else EQ_UNSUPPORTED("discrete Boolean RHS is not a zero-crossing relation");
+  end match;
+end classifyBoolDiscrete;
+
+protected function opCodeForRelationOp
+  "Map a relational DAE.Operator to the small opcode
+   omc_jit_relationhysteresis switches on (0=Less, 1=LessEq, 2=Greater,
+   3=GreaterEq). NONE() for non-relational operators (==, <>) which the
+   runtime handles through a different helper SCTL does not lower yet."
+  input DAE.Operator op;
+  output Option<Integer> code;
+algorithm
+  code := match op
+    case DAE.LESS()      then SOME(0);
+    case DAE.LESSEQ()    then SOME(1);
+    case DAE.GREATER()   then SOME(2);
+    case DAE.GREATEREQ() then SOME(3);
+    else NONE();
+  end match;
+end opCodeForRelationOp;
+
+protected function relationOperandNominal
+  "Nominal scale factor for a relation operand, mirroring the subset of
+   SimCodeUtil.getExpNominal that occurs in zero-crossing relations:
+   constants contribute their magnitude, a unary minus is transparent,
+   and everything else (notably state/variable crefs without an explicit
+   nominal attribute) takes the default 1.0 -- which is exactly what
+   getExpNominal yields for default-nominal Reals, so the emitted call is
+   byte-identical to CodegenC for such models. Operands carrying an
+   explicit nominal attribute fall back to 1.0 (the hysteresis band
+   differs sub-epsilon; it does not change which side of the threshold
+   the relation reports)."
+  input DAE.Exp e;
+  output Real nominal;
+algorithm
+  nominal := match e
+    case DAE.RCONST() then abs(e.real);
+    case DAE.ICONST() then abs(intReal(e.integer));
+    case DAE.UNARY(operator=DAE.UMINUS()) then relationOperandNominal(e.exp);
+    case DAE.UNARY(operator=DAE.UMINUS_ARR()) then relationOperandNominal(e.exp);
+    else 1.0;
+  end match;
+end relationOperandNominal;
 
 protected function countSupported
   input EqRecipe r;

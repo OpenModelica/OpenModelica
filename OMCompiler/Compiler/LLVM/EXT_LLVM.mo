@@ -208,6 +208,26 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
+function genBoolDiscreteFromRelation
+  "Emit  booleanVars[boolSlot] = relationhysteresis(exp1 <op> exp2)  for
+   a discrete boolean equation. exp1Name / exp2Name are the symtab names
+   of the double allocas holding the lowered relation operands; nom1 /
+   nom2 are the operands' nominal scale factors; opCode selects the
+   comparison (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq). See
+   createInlinedBoolDiscreteFromRelation in omcruntime."
+  input String dataArgName;
+  input Integer boolSlot;
+  input String exp1Name;
+  input String exp2Name;
+  input Real nom1;
+  input Real nom2;
+  input Integer zcIndex;
+  input Integer opCode;
+  external "C" createInlinedBoolDiscreteFromRelation(dataArgName, boolSlot, exp1Name, exp2Name, nom1, nom2, zcIndex, opCode)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedBoolDiscreteFromRelation(const char *dataArgName, const int64_t boolSlot, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
+end genBoolDiscreteFromRelation;
+
 function genCallbackTable
   "Emit the <Model>_callback global into the active module as a packed,
    byte-padded constant struct matching openmodelica_func.h's
