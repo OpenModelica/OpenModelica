@@ -393,8 +393,6 @@ public
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
 
-          print("JACMAP:\n" + UnorderedMap.toString(jac_map, ComponentRef.toString, function SimVar.toString(str = "")) + "\n");
-
           try
             local_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
 
