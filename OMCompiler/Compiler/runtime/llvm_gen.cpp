@@ -512,6 +512,27 @@ extern "C" int createInlinedBoolNot(const char *const aName,
   return 0;
 }
 
+/* createInlinedSelectReal: dstName(double) = (cond != 0) ? then : else.
+ * The Real-valued counterpart of CodegenC's `(b ? t : e)` ternary used by
+ * if-expressions whose condition is a discrete Boolean. condName is an
+ * i32 (modelica_boolean) alloca produced by emitBoolExp; thenName /
+ * elseName / dstName are double allocas (dst pre-allocated by the caller
+ * via genAllocaModelicaReal). Both arms are evaluated unconditionally,
+ * matching CodegenC's eager ternary lowering for scalar Real arms. */
+extern "C" int createInlinedSelectReal(const char *const condName,
+                                       const char *const thenName,
+                                       const char *const elseName,
+                                       const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const cond = b.CreateICmpNE(
+      loadFromSymtab(condName), llvm::ConstantInt::get(i32, 0), "");
+  llvm::Value *const sel = b.CreateSelect(
+      cond, loadFromSymtab(thenName), loadFromSymtab(elseName), "");
+  storeIntoSymtab(dstName, sel);
+  return 0;
+}
+
 /* sctlFunctionDefined: 1 iff the active module already holds a *defined*
  * (non-declaration) function named `name`. Used to dedup eqFunction_<idx>
  * emission across blocks that can reference the same equation index (e.g.

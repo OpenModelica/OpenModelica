@@ -208,6 +208,20 @@ function genRelationSet
                Include = "int createInlinedRelationSet(const char *dataArgName, const int64_t idx, const char *srcName);");
 end genRelationSet;
 
+function genSelectReal
+  "Emit  dst(double) = (cond != 0) ? then : else  for a Real if-expression
+   whose condition is a discrete Boolean. condName is an i32 alloca (from
+   emitBoolExp); thenName / elseName / dstName are double allocas, dst
+   pre-allocated. See createInlinedSelectReal in omcruntime."
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+  external "C" createInlinedSelectReal(condName, thenName, elseName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSelectReal(const char *condName, const char *thenName, const char *elseName, const char *dstName);");
+end genSelectReal;
+
 function functionDefined
   "True iff the active module already holds a defined (non-declaration)
    function named fname. See sctlFunctionDefined in omcruntime."

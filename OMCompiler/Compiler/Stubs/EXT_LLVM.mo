@@ -124,6 +124,15 @@ algorithm
   assert(false, getInstanceName());
 end genRelationSet;
 
+function genSelectReal
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genSelectReal;
+
 function functionDefined
   input String fname;
   output Boolean defined = false;

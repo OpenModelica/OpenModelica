@@ -181,6 +181,15 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    JIT-link error names the missing one); `EXT_LLVM.functionDefined`
    dedups an index that appears in more than one block (e.g. both
    `initialEquations` and `allEquations`).
+
+   functionODE / functionDAE are each emitted **only when every one of
+   their recipes lowers** (`List.all(..., canLowerEquation)`). A partial
+   functionDAE that inlines the lowerable equations and drops the rest
+   is silently wrong -- the dropped equation (a `when` reinit, an
+   undelegated `delay()`) just does not happen and the solver integrates
+   a different model. Leaving the symbol undefined makes the JIT fail
+   loudly instead (so the whole `allEquations` set must lower, which is
+   why `canCoverModel` now checks it, not just the ODE partition).
 4. **`<Model>_setupDataStruc`.** DONE for the load-bearing fields.
    `createSetupDataStrucFull` wires the two critical pointers plus
    all 41 modelData integer counters (driven by
@@ -233,9 +242,12 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    HelloWorld now runs with no `<Model>.c` on disk and no
    `<prefix>.bc` either (every catalog-displaced satellite
    skips clang too); the JIT consumes the SCTL bitcode alone.
-   A `delay()`-using model also runs (the Feature warning
-   path that keeps `_07dly.c` on clang absorbs the difference;
-   the dynamic equations all lower cleanly).
+   A `delay()`-using model fails *loudly* (`Symbols not found:
+   [ <M>_functionDAE ]`): the `y = delay(x, ...)` equation is defined
+   only in the skipped `<Model>.c`, nothing else computes it, so a
+   functionDAE that dropped it would leave `y` frozen. The functionDAE
+   gate refuses the partial body; `delay()` becomes a real lift (lower
+   `delayImpl` to IR) rather than a silently-wrong "it runs".
 
    **No silent fallback.** `target == "llvm-jit"` always skips
    `<Model>.c`. `canCoverModel(simCode)` returning false triggers a
@@ -253,10 +265,14 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    the first `EQ_UNSUPPORTED`, which made every dynamic symbol
    missing instead of just the one with the unsupported construct.
 
-   **BouncingBall.** Currently fails JIT with `Symbols not found:
-   [ BouncingBall_eqFunction_21 ]` (`der(v) = if flying then -g else 0`
-   -- the if-expression blocker below). The blockers, in order of how
-   much new SCTL machinery each requires:
+   **BouncingBall.** Currently fails JIT *loudly* with `Symbols not
+   found: [ BouncingBall_functionDAE ]`: SCTL refuses to emit a
+   functionDAE it cannot fully lower (the `SES_WHEN` bodies below), so
+   the model never silently integrates without its bounce `when`.
+   (Before the if-expression lift it failed earlier, at `eqFunction_21`;
+   that arm now lowers, which exposed the partial-functionDAE problem
+   and the gate that fixes it.) The blockers, in order of how much new
+   SCTL machinery each requires:
 
      1. Discrete-Boolean equations: `boolDiscrete = <Boolean exp>` over
         zero-crossing relations, discrete-Boolean cref reads, and / or /
@@ -283,17 +299,21 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
         (conjunction over a cref + relation).
 
      2. If-expressions in a Real RHS reading a discrete Boolean
-        condition (`der(v) = if flying then -g else 0`): `emitExp` has
-        no `DAE.IFEXP` case, so eq_21 is unsupported and left undefined
-        -- BB's current link error. Needs an `emitExp` branch that
-        lowers the (discrete-Boolean) condition via `emitBoolExp`,
-        emits a select / branch over the two Real arms.
+        condition (`der(v) = if flying then -g else 0`). **DONE.**
+        `emitExp` gained a `DAE.IFEXP` case that lowers the condition
+        via `emitBoolExp` and the two Real arms via `emitExp`, then
+        `createInlinedSelectReal` emits `(cond != 0) ? then : else`
+        (eager select, matching CodegenC's scalar ternary). Verified
+        byte-identical to C on `y = if (x <= 0.5) then 2 else 1`.
 
      3. `SES_WHEN` bodies (`eq_18`/`_19`/`_20`): edge detection on a
         discrete Boolean (`b and not pre(b)`), conditional reinit of a
         state variable, integer-var assignment (`n_bounce`), and a
         `needToIterate` store on `simulationInfo`. Needs `pre()` reads,
-        integer var layout, and a `reinit` emit path. Hours more.
+        integer var layout, and a `reinit` emit path. **This is BB's
+        current loud blocker** -- the unlowered `SES_WHEN` recipes keep
+        `canLowerEquation` false for `allEquations`, so functionDAE is
+        left undefined. Hours more.
 
      4. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
         lookups (read `realVarsData[idx].attribute.start.data[0]`),
@@ -330,10 +350,15 @@ linker sees exactly one definition per symbol.
 
 Bug-fix or correctness claims require a real before/after on a
 reproducer that actually triggers the issue, in the PR / commit
-message. Canonical models: HelloWorld (baseline ODE), BouncingBall
-(zero crossings / events), a `delay()`-using model (Feature warning).
-Performance work uses 10-run samples on HelloWorld + CoupledClutches
-and the JIT-cache hot/cold split.
+message. Canonical models: HelloWorld (baseline ODE); a discrete
+Boolean observed from a relation (`over = x <= 0.5`) and a Boolean
+conjunction (`b = c and x >= 0.1`) and a Real if-expression over a
+discrete Boolean (`y = if x <= 0.5 then 2 else 1`) -- all three lower
+fully and are checked JIT-vs-C; BouncingBall (zero crossings / `when`
+events) and a `delay()`-using model are the loud-failure cases
+(functionDAE undefined until those constructs lower). Performance work
+uses 10-run samples on HelloWorld + CoupledClutches and the JIT-cache
+hot/cold split.
 
 ---
 

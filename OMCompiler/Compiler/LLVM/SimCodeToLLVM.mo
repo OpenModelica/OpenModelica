@@ -510,13 +510,16 @@ public function canCoverModel
    the model must have no zero crossings (events would route through
    relationhysteresis / saveZeroCrossings / ... that SCTL cannot
    lower yet), no clocked partitions, no spatialDistribution, no
-   state sets, and no delay() expressions. Every dynamic equation
-   must classify as a supported recipe."
+   state sets, and no delay() expressions. Every ODE *and* allEquations
+   equation must classify as a supported recipe -- a model whose
+   allEquations carries an unlowerable equation that no kept clang'd
+   file computes (a `when` body, a `delay()`) cannot get a complete
+   functionDAE and would otherwise drop those updates silently."
   input SimCode.SimCode simCode;
   output Boolean ok;
 protected
   VarLayout layout;
-  list<SimCode.SimEqSystem> dynamicEqs;
+  list<SimCode.SimEqSystem> dynamicEqs, allEqs;
   list<EqRecipe> recipes;
 algorithm
   ok := listEmpty(simCode.zeroCrossings)
@@ -530,7 +533,12 @@ algorithm
   if listEmpty(dynamicEqs) then
     return;
   end if;
-  recipes := List.map1(dynamicEqs, classifySimEq, layout);
+  /* Both the ODE partition (functionODE) and the full allEquations set
+   * (functionDAE) must lower; emitModelEquationsBlock leaves the
+   * corresponding entry undefined otherwise, so anything short of full
+   * coverage fails loudly at JIT-link rather than dropping equations. */
+  allEqs := allSimCodeEquations(simCode);
+  recipes := List.map1(listAppend(dynamicEqs, allEqs), classifySimEq, layout);
   ok := List.fold(recipes, countUnsupportedAsBoolean, true);
   if ok then
     ok := List.all(recipes, function canLowerEquation(layout = layout));
@@ -2060,7 +2068,16 @@ protected function emitModelEquationsBlock
    functionDAE from the ODE recipes alone left every discrete Boolean
    stuck at its initial value; classifying allEquations here is what
    lets a model whose only events are observed relations
-   (e.g. `over = x <= 0.5`) report correctly."
+   (e.g. `over = x <= 0.5`) report correctly.
+
+   Each function is emitted only when *every* one of its recipes
+   lowers. A partial functionODE / functionDAE would be silently wrong
+   -- it would drop the equations it cannot lower (a `when` body, an
+   unsupported call) and the solver would integrate a model missing
+   those updates (e.g. BouncingBall falling through the floor because
+   its reinit `when` never ran). Leaving the symbol undefined instead
+   makes the JIT fail loudly at materialization (AGENTS.md sections 4,
+   13), so an uncovered model never masquerades as a JIT success."
   input SimCode.SimCode simCode;
   input list<EqRecipe> recipes;
   input VarLayout layout;
@@ -2073,14 +2090,18 @@ algorithm
   prefix := modelSymbolPrefix(modelName);
 
   fname := prefix + "_functionODE";
-  if emitEquationFunction(fname, recipes, layout, MODELICA_INTEGER) then
-    _ := EXT_LLVM.setLinkonceOdr(fname);
+  if List.all(recipes, function canLowerEquation(layout = layout)) then
+    if emitEquationFunction(fname, recipes, layout, MODELICA_INTEGER) then
+      _ := EXT_LLVM.setLinkonceOdr(fname);
+    end if;
   end if;
 
   daeRecipes := List.map1(allSimCodeEquations(simCode), classifySimEq, layout);
   fname := prefix + "_functionDAE";
-  if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER) then
-    _ := EXT_LLVM.setLinkonceOdr(fname);
+  if List.all(daeRecipes, function canLowerEquation(layout = layout)) then
+    if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER) then
+      _ := EXT_LLVM.setLinkonceOdr(fname);
+    end if;
   end if;
 
   /* ODE_DAG: empty body. The C version calls buildEvalDAG_ODE with a
@@ -2916,6 +2937,9 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT(name = name), expLst = {e1, e2})
       guard isLibmBinaryReal(name)
       then canLowerExp(e1, layout) and canLowerExp(e2, layout);
+    case DAE.IFEXP(expCond = e1, expThen = e2, expElse = sub)
+      then canLowerBoolExp(e1, layout)
+           and canLowerExp(e2, layout) and canLowerExp(sub, layout);
     else false;
   end match;
 end canLowerExp;
@@ -3026,9 +3050,9 @@ algorithm
       DAE.Operator op;
       Option<VarSlot> os;
       VarSlot vs;
-      EmitCtx ctx1, ctx2;
-      String tmp, dst1, dst2;
-      Boolean ok1, ok2;
+      EmitCtx ctx1, ctx2, ctx3;
+      String tmp, dst1, dst2, condTmp;
+      Boolean ok1, ok2, ok3;
       Integer absSlot;
     case DAE.RCONST(real=r)
       algorithm
@@ -3103,6 +3127,23 @@ algorithm
         else
           outCtx := ctx2;
           dst := "<libm2-arg-failed>";
+          ok := false;
+        end if;
+      then (outCtx, dst, ok);
+    case DAE.IFEXP(expCond=e1, expThen=e2, expElse=sub)
+      algorithm
+        (ctx1, condTmp, ok1) := emitBoolExp(e1, ctx);
+        (ctx2, dst1, ok2) := emitExp(e2, ctx1);
+        (ctx3, dst2, ok3) := emitExp(sub, ctx2);
+        if ok1 and ok2 and ok3 then
+          (outCtx, tmp) := freshTmp(ctx3);
+          EXT_LLVM.genAllocaModelicaReal(tmp, false);
+          EXT_LLVM.genSelectReal(condTmp, dst1, dst2, tmp);
+          dst := tmp;
+          ok := true;
+        else
+          outCtx := ctx3;
+          dst := "<ifexp-arm-failed>";
           ok := false;
         end if;
       then (outCtx, dst, ok);
