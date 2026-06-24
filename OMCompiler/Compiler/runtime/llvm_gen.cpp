@@ -907,6 +907,71 @@ extern "C" int createInlinedStoreIntVar(const char *const dataArgName,
   return 0;
 }
 
+/* data->simulationInfo->integerParameter (modelica_integer*). The
+ * integer-parameter counterpart of emitChainToIntVars; the buffer hangs
+ * off SIMULATION_INFO, not SIMULATION_DATA. */
+static llvm::Value *emitChainToIntParam(llvm::Value *const dataPtr) {
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  return emitGEPLoadPtr(simInfo, omc_layout_SI_integerParameter);
+}
+
+/* createInlinedReadIntParamReal: read data->simulationInfo->
+ * integerParameter[slot] (a modelica_integer), widen it to double via
+ * sitofp, and store into the pre-created real (double) alloca dstName.
+ * Used when an Integer parameter appears in a Real-context expression
+ * (e.g. a CAST to Real), mirroring CodegenC's `(modelica_real)param`. */
+extern "C" int createInlinedReadIntParamReal(const char *const dataArgName,
+                                             const int64_t slot,
+                                             const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const intParam =
+      emitChainToIntParam(loadFromSymtab(dataArgName));
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, intParam, llvm::ConstantInt::get(i64, slot), "");
+  llvm::Value *const val = b.CreateLoad(ity, valAddr, "");
+  storeIntoSymtab(dstName, b.CreateSIToFP(val, dbl, ""));
+  return 0;
+}
+
+/* createInlinedReadIntParam: read data->simulationInfo->
+ * integerParameter[slot] into a fresh modelica_integer alloca dstName.
+ * The integer-domain counterpart of createInlinedReadIntVar, for an
+ * Integer parameter read inside an emitIntExp (integer) context. */
+extern "C" int createInlinedReadIntParam(const char *const dataArgName,
+                                         const int64_t slot,
+                                         const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const intParam =
+      emitChainToIntParam(loadFromSymtab(dataArgName));
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, intParam, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(b.CreateLoad(ity, valAddr, ""), makeIntAlloca(dstName));
+  return 0;
+}
+
+/* createInlinedWriteIntParam: store the modelica_integer srcName into
+ * data->simulationInfo->integerParameter[slot]. Mirrors
+ * createInlinedStoreIntVar for the integer-parameter buffer. */
+extern "C" int createInlinedWriteIntParam(const char *const dataArgName,
+                                          const int64_t slot,
+                                          const char *const srcName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const ity = modIntTy();
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const intParam =
+      emitChainToIntParam(loadFromSymtab(dataArgName));
+  llvm::Value *const valAddr =
+      b.CreateGEP(ity, intParam, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(loadFromSymtab(srcName), valAddr);
+  return 0;
+}
+
 extern "C" int createInlinedIntConst(const int64_t value,
                                      const char *const dstName) {
   program->builder.CreateStore(llvm::ConstantInt::get(modIntTy(), value, true),

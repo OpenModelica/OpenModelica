@@ -243,6 +243,30 @@ algorithm
   assert(false, getInstanceName());
 end genStoreIntVar;
 
+function genReadIntParamReal
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadIntParamReal;
+
+function genReadIntParam
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadIntParam;
+
+function genWriteIntParam
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+algorithm
+  assert(false, getInstanceName());
+end genWriteIntParam;
+
 function genIntConst
   input Integer value;
   input String dstName;

@@ -122,6 +122,13 @@ public uniontype VarKind
      data->localData[0]->integerVars[index] (the intAlgVars bucket,
      e.g. a when-counter `n_bounce`)."
   end VK_INT_DISCRETE;
+  record VK_INT_PARAM
+    "An Integer parameter living in
+     data->simulationInfo->integerParameter[index] (the intParamVars
+     bucket, e.g. a scalarised colour-array element
+     world.gravitySphereColor[1]). Read into a Real context via sitofp
+     and into an integer context directly."
+  end VK_INT_PARAM;
 end VarKind;
 
 /* Cached singleton instances of every no-field VarKind variant.
@@ -138,6 +145,7 @@ public constant VarKind VKS_PARAM      = VK_PARAM();
 public constant VarKind VKS_BOOL_PARAM = VK_BOOL_PARAM();
 public constant VarKind VKS_BOOL_DISCRETE = VK_BOOL_DISCRETE();
 public constant VarKind VKS_INT_DISCRETE = VK_INT_DISCRETE();
+public constant VarKind VKS_INT_PARAM  = VK_INT_PARAM();
 
 public uniontype VarSlot
   record VAR_SLOT
@@ -197,6 +205,15 @@ public uniontype EqRecipe
     Integer slotIndex;
     DAE.Exp rhs;
   end EQ_BOOL_PARAM_ASSIGN;
+
+  record EQ_INT_PARAM_ASSIGN
+    "integerParameter[idx] := exp. The RHS is lowered in the integer
+     domain (emitIntExp) and stored as a modelica_integer. Covers
+     scalarised Integer-parameter binding equations (e.g.
+     world.gravitySphereColor[1] := 0)."
+    Integer slotIndex;
+    DAE.Exp rhs;
+  end EQ_INT_PARAM_ASSIGN;
 
   record EQ_BOOL_DISCRETE_ASSIGN
     "booleanVars[slot] := <Boolean expression>, a discrete Boolean
@@ -707,6 +724,11 @@ algorithm
         else ();
       end match;
     end for;
+  end if;
+  if Flags.isSet(Flags.FAILTRACE) then
+    dumpUnsupportedBucket("allEquations",      simCode.allEquations,             layout, name);
+    dumpUnsupportedBucket("initialEquations",  simCode.initialEquations,         layout, name);
+    dumpUnsupportedBucket("algebraicEqs",      List.flatten(simCode.algebraicEquations), layout, name);
   end if;
 
   /* Phase 4.2: emit the omc_<prefix>_functionODE shell into a fresh
@@ -1868,6 +1890,7 @@ algorithm
     case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
+    case EQ_INT_PARAM_ASSIGN()  then "IPARM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_DISCRETE_ASSIGN() then "BDISC(" + intString(r.slotIndex) + ")";
     case EQ_WHEN() then "WHEN(" + intString(listLength(r.conditions)) + " cond, " +
                                intString(listLength(r.whenStmts)) + " stmt)";
@@ -1896,6 +1919,7 @@ algorithm
     case EQ_ALG_ASSIGN(rhs=e)        then ExpressionBasics.printExpStr(e);
     case EQ_PARAM_ASSIGN(rhs=e)      then ExpressionBasics.printExpStr(e);
     case EQ_BOOL_PARAM_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
+    case EQ_INT_PARAM_ASSIGN(rhs=e)  then ExpressionBasics.printExpStr(e);
     case EQ_BOOL_DISCRETE_ASSIGN(rhs=e) then ExpressionBasics.printExpStr(e);
     else "";
   end match;
@@ -2916,6 +2940,13 @@ algorithm
           emitWriteBoolParam(slot, rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_INT_PARAM_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitIntExp(rhs, ctx);
+        if exprOk then
+          EXT_LLVM.genWriteIntParam("data", slot, rhsTmp);
+        end if;
+      then (ctx2, exprOk);
     case EQ_BOOL_DISCRETE_ASSIGN(slotIndex=slot, rhs=rhs)
       algorithm
         (ctx2, rhsTmp, exprOk) := emitBoolExp(rhs, ctx);
@@ -3369,6 +3400,7 @@ algorithm
     case VK_BOOL_PARAM() then subIndex;
     case VK_BOOL_DISCRETE() then subIndex;
     case VK_INT_DISCRETE() then subIndex;
+    case VK_INT_PARAM() then subIndex;
   end match;
 end absoluteSlot;
 
@@ -3403,6 +3435,21 @@ algorithm
   EXT_LLVM.genAllocaModelicaReal(dst, false);
   EXT_LLVM.genReadRealParam("data", slot, dst);
 end emitReadRealParam;
+
+protected function emitReadIntParamReal
+  "Inline  (modelica_real)data->simulationInfo->integerParameter[slot]
+   read. Widens the Integer parameter to a double (sitofp) so it
+   composes with the Real-domain emitExp accessors. Used when a CREF
+   resolves to a VK_INT_PARAM slot inside a Real-context expression."
+  input Integer slot;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genReadIntParamReal("data", slot, dst);
+end emitReadIntParamReal;
 
 protected function emitWriteRealVar
   "Inline  data->localData[0]->realVars[slot] = src  store. Replaces
@@ -3449,6 +3496,7 @@ algorithm
     case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
+    case EQ_INT_PARAM_ASSIGN()  then canLowerIntExp(r.rhs, layout);
     case EQ_BOOL_DISCRETE_ASSIGN() then canLowerBoolExp(r.rhs, layout);
     case EQ_WHEN()
       then List.all(r.conditions, function isBoolDiscreteCref(layout = layout))
@@ -3541,6 +3589,10 @@ algorithm
     case DAE.IFEXP(expCond = e1, expThen = e2, expElse = sub)
       then canLowerBoolExp(e1, layout)
            and canLowerExp(e2, layout) and canLowerExp(sub, layout);
+    /* A cast into a Real context (e.g. Real(intParam[2])): emitExp
+     * lowers the inner expression, which already materialises a double
+     * (an Integer parameter read widens via sitofp). */
+    case DAE.CAST(exp = sub) then canLowerExp(sub, layout);
     else false;
   end match;
 end canLowerExp;
@@ -3589,7 +3641,8 @@ algorithm
   end if;
   os := lookupSlot(cref, layout);
   ok := match os
-    /* Discrete Booleans / Integers are not real-readable (see emitCrefRead). */
+    /* Discrete Booleans / Integers are not real-readable (see emitCrefRead);
+     * an Integer *parameter* is, via sitofp (VK_INT_PARAM in emitCrefRead). */
     case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then false;
     case SOME(VAR_SLOT(kind=VK_INT_DISCRETE())) then false;
     case SOME(_) then true;
@@ -3759,6 +3812,10 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
       algorithm
         (ctx1, tmp, ok1) := emitPreReal(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.CAST(exp=sub)
+      algorithm
+        (ctx1, tmp, ok1) := emitExp(sub, ctx);
       then (ctx1, tmp, ok1);
     case DAE.IFEXP(expCond=e1, expThen=e2, expElse=sub)
       algorithm
@@ -4085,7 +4142,9 @@ algorithm
 end emitIntExp;
 
 protected function emitIntCrefRead
-  "Read a discrete-Integer cref (integerVars[slot]) into a fresh alloca."
+  "Read an Integer cref into a fresh modelica_integer alloca. A discrete
+   Integer comes from integerVars[slot]; an Integer parameter from
+   simulationInfo->integerParameter[slot]."
   input DAE.ComponentRef cref;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -4099,6 +4158,11 @@ algorithm
       algorithm
         (outCtx, dst) := freshTmp(ctx);
         EXT_LLVM.genReadIntVar("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
+      then (outCtx, dst, true);
+    case SOME(vs as VAR_SLOT(kind=VK_INT_PARAM()))
+      algorithm
+        (outCtx, dst) := freshTmp(ctx);
+        EXT_LLVM.genReadIntParam("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
       then (outCtx, dst, true);
     else (ctx, "<non-discrete-int-cref>", false);
   end match;
@@ -4186,7 +4250,7 @@ algorithm
           DAE.Operator op;
           DAE.ComponentRef cref;
     case DAE.ICONST() then true;
-    case DAE.CREF(componentRef=cref) then isIntDiscreteCref(cref, layout);
+    case DAE.CREF(componentRef=cref) then isIntReadableCref(cref, layout);
     case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
       then isIntDiscreteCref(cref, layout);
     case DAE.BINARY(exp1=e1, operator=op, exp2=e2)
@@ -4206,6 +4270,20 @@ algorithm
     else false;
   end match;
 end isIntDiscreteCref;
+
+protected function isIntReadableCref
+  "An Integer cref readable in emitIntCrefRead: a discrete Integer
+   (integerVars) or an Integer parameter (integerParameter)."
+  input DAE.ComponentRef cref;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match lookupSlot(cref, layout)
+    case SOME(VAR_SLOT(kind=VK_INT_DISCRETE())) then true;
+    case SOME(VAR_SLOT(kind=VK_INT_PARAM())) then true;
+    else false;
+  end match;
+end isIntReadableCref;
 
 protected function boolBinopCode
   "Map a logical DAE.Operator to genBoolBinop's isOr flag: 0 for AND,
@@ -4376,6 +4454,7 @@ algorithm
          * algebraic vars) reads through omc_jit_get_real_var. */
         (outCtx, dst) := match vs.kind
           case VK_PARAM() then emitReadRealParam(absSlot, ctx);
+          case VK_INT_PARAM() then emitReadIntParamReal(absSlot, ctx);
           else                emitReadRealVar(absSlot, ctx);
         end match;
       then (outCtx, dst, true);
@@ -4514,6 +4593,44 @@ algorithm
   prefix := System.makeC89Identifier(AbsynUtil.pathString(name));
 end modelSymbolPrefix;
 
+protected function dumpUnsupportedBucket
+  "Diagnostic helper -- gated on -d=failtrace -- that classifies every
+   SimEqSystem in `eqs` and prints the unsupported reasons. Used by
+   genSim to surface what is still blocking the JIT path beyond the
+   ODE partition (allEquations / initialEquations / algebraicEquations).
+   Reasons are de-duplicated by string so a 50-equation set with one
+   blocking construct prints once, not 50 times."
+  input String bucketName;
+  input list<SimCode.SimEqSystem> eqs;
+  input VarLayout layout;
+  input Absyn.Path modelName;
+protected
+  list<EqRecipe> rcps;
+  list<String> seen = {};
+  String reason;
+  Integer total;
+algorithm
+  if listEmpty(eqs) then return; end if;
+  rcps := List.map1(eqs, classifySimEq, layout);
+  total := List.fold(rcps, countUnsupported, 0);
+  if total == 0 then return; end if;
+  print("SCTL genSim: unsupported " + bucketName + " for '" +
+        AbsynUtil.pathString(modelName) + "' (" + intString(total) +
+        " of " + intString(listLength(rcps)) + " total):\n");
+  for r in rcps loop
+    () := match r
+      case EQ_UNSUPPORTED(reason = reason)
+        algorithm
+          if not List.contains(seen, reason, stringEqual) then
+            seen := reason :: seen;
+            print("  - " + reason + "\n");
+          end if;
+        then ();
+      else ();
+    end match;
+  end for;
+end dumpUnsupportedBucket;
+
 protected function simCodeVars
   input SimCode.SimCode simCode;
   output SimCodeVar.SimVars vars;
@@ -4575,19 +4692,20 @@ protected function buildVarLayout
   input SimCodeVar.SimVars vars;
   output VarLayout layout;
 protected
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars;
+  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, intParamVars, boolParamVars, boolAlgVars;
   list<tuple<DAE.ComponentRef, VarSlot>> entries = {};
 algorithm
-  (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars) := match vars
+  (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, intParamVars, boolParamVars, boolAlgVars) := match vars
     case SimCodeVar.SIMVARS(stateVars=stateVars,
                             derivativeVars=derivativeVars,
                             algVars=algVars,
                             discreteAlgVars=discreteAlgVars,
                             intAlgVars=intAlgVars,
                             paramVars=paramVars,
+                            intParamVars=intParamVars,
                             boolParamVars=boolParamVars,
                             boolAlgVars=boolAlgVars)
-      then (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, boolParamVars, boolAlgVars);
+      then (stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, paramVars, intParamVars, boolParamVars, boolAlgVars);
   end match;
 
   entries := List.fold(stateVars, function addEntry(kind = VKS_STATE), entries);
@@ -4599,6 +4717,7 @@ algorithm
   entries := List.fold(discreteAlgVars, function addEntry(kind = VKS_ALG), entries);
   entries := List.fold(intAlgVars, function addEntry(kind = VKS_INT_DISCRETE), entries);
   entries := List.fold(paramVars, function addEntry(kind = VKS_PARAM), entries);
+  entries := List.fold(intParamVars, function addEntry(kind = VKS_INT_PARAM), entries);
   entries := List.fold(boolParamVars, function addEntry(kind = VKS_BOOL_PARAM), entries);
   entries := List.fold(boolAlgVars, function addEntry(kind = VKS_BOOL_DISCRETE), entries);
 
@@ -4631,6 +4750,7 @@ algorithm
       case VK_BOOL_PARAM() then "BPARM";
       case VK_BOOL_DISCRETE() then "BDISC";
       case VK_INT_DISCRETE() then "IDISC";
+      case VK_INT_PARAM()    then "IPARM";
     end match;
     Error.addInternalError("  " + ComponentReferenceBasics.printComponentRefStr(cr) +
       " -> " + kindStr + "(simVarIndex=" + intString(s.index) + ")\n", sourceInfo());
@@ -4718,6 +4838,8 @@ algorithm
           then EQ_PARAM_ASSIGN(s.index, rhs);
         case SOME(s as VAR_SLOT(kind=VK_BOOL_PARAM()))
           then EQ_BOOL_PARAM_ASSIGN(s.index, rhs);
+        case SOME(s as VAR_SLOT(kind=VK_INT_PARAM()))
+          then EQ_INT_PARAM_ASSIGN(s.index, rhs);
         case SOME(s as VAR_SLOT(kind=VK_BOOL_DISCRETE()))
           then classifyBoolDiscrete(s.index, rhs);
         else

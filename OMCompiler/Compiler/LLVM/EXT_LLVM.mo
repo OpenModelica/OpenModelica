@@ -379,6 +379,38 @@ function genStoreIntVar
                Include = "int createInlinedStoreIntVar(const char *dataArgName, const int64_t slot, const char *srcName);");
 end genStoreIntVar;
 
+function genReadIntParamReal
+  "Inline  dst(double) = (modelica_real)data->simulationInfo->integerParameter[slot].
+   The Integer parameter is widened to double (sitofp) so it composes
+   with the Real-domain emitExp accessors."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadIntParamReal(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadIntParamReal(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadIntParamReal;
+
+function genReadIntParam
+  "Inline  dst(modelica_integer) = data->simulationInfo->integerParameter[slot]."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadIntParam(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadIntParam(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadIntParam;
+
+function genWriteIntParam
+  "Inline  data->simulationInfo->integerParameter[slot] = src."
+  input String dataArgName;
+  input Integer slot;
+  input String srcName;
+  external "C" createInlinedWriteIntParam(dataArgName, slot, srcName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedWriteIntParam(const char *dataArgName, const int64_t slot, const char *srcName);");
+end genWriteIntParam;
+
 function genIntConst
   "Materialise an Integer literal into the modelica_integer alloca dstName."
   input Integer value;

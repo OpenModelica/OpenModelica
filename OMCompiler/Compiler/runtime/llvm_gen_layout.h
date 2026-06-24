@@ -73,6 +73,7 @@ extern const size_t omc_layout_SI_integerVarsIndex;
 extern const size_t omc_layout_SI_booleanVarsIndex;
 extern const size_t omc_layout_SI_realParamsIndex;
 extern const size_t omc_layout_SI_realParameter;
+extern const size_t omc_layout_SI_integerParameter;
 extern const size_t omc_layout_SI_booleanParameter;
 extern const size_t omc_layout_SI_relations;
 extern const size_t omc_layout_SI_extObjs;
