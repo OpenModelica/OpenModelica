@@ -85,6 +85,7 @@ private:
 
   GuiRequestSocket* mpGuiRequestSocket;
   QProcess* mpGuiProcess;
+  QString mGuiServerScript;
   void startGuiServer();
   bool mServerReady;
 private slots:

@@ -3066,7 +3066,7 @@ void OptionsDialog::saveOMSimulatorSettings()
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
   }
   // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
-  // passed as CLI args to OMSimulatorServer.py at simulation launch — not sent to GuiServer.
+  // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
 }
 
 /*!
