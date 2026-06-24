@@ -265,13 +265,17 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
    the first `EQ_UNSUPPORTED`, which made every dynamic symbol
    missing instead of just the one with the unsupported construct.
 
-   **BouncingBall.** Currently fails JIT *loudly* with `Symbols not
-   found: [ BouncingBall_functionDAE ]`: SCTL refuses to emit a
-   functionDAE it cannot fully lower (the `SES_WHEN` bodies below), so
-   the model never silently integrates without its bounce `when`.
-   (Before the if-expression lift it failed earlier, at `eqFunction_21`;
-   that arm now lowers, which exposed the partial-functionDAE problem
-   and the gate that fixes it.) The blockers, in order of how much new
+   **BouncingBall.** A simplified BB *without* the integer `n_bounce`
+   counter (`BB2`: relation `impact`, `if flying` derivative, and a
+   `when` that assigns the discrete Real `v_new = if edge(impact) then
+   -e*pre(v) else 0`, the Boolean `flying = v_new > 0`, and
+   `reinit(v, v_new)`) now JIT-simulates byte-identical to C -- the ball
+   bounces, the height trace matches to ~13 digits. The full testsuite
+   BB still fails JIT *loudly* with `Symbols not found: [
+   BouncingBall_functionDAE ]` because of the integer when-assign
+   `n_bounce = 1 + pre(n_bounce)` (no integer-var layout yet), which
+   keeps `allEquations` from fully lowering so the functionDAE gate
+   leaves the symbol undefined. The blockers, in order of how much new
    SCTL machinery each requires:
 
      1. Discrete-Boolean equations: `boolDiscrete = <Boolean exp>` over
@@ -306,16 +310,31 @@ then have CodegenC stop emitting it under `-d=jitSimulate`.
         (eager select, matching CodegenC's scalar ternary). Verified
         byte-identical to C on `y = if (x <= 0.5) then 2 else 1`.
 
-     3. `SES_WHEN` bodies (`eq_18`/`_19`/`_20`): edge detection on a
-        discrete Boolean (`b and not pre(b)`), conditional reinit of a
-        state variable, integer-var assignment (`n_bounce`), and a
-        `needToIterate` store on `simulationInfo`. Needs `pre()` reads,
-        integer var layout, and a `reinit` emit path. **This is BB's
-        current loud blocker** -- the unlowered `SES_WHEN` recipes keep
-        `canLowerEquation` false for `allEquations`, so functionDAE is
-        left undefined. Hours more.
+     3. `SES_WHEN` bodies with Real / discrete-Real / Boolean assigns
+        and `reinit`. **DONE.** `EQ_WHEN(conditions, whenStmts)` recipe;
+        `emitWhenEquation` lowers by *predication* rather than a
+        basic-block branch -- the edge `OR(cond and not pre(cond))` is
+        materialised once (`emitWhenEdge`), then each body statement is
+        `lhs = edge ? rhs : lhs` (`emitWhenRealAssign` /
+        `emitWhenBoolAssign` via `genSelectReal` / `genSelectBool`).
+        `reinit(state, v)` predicates the state write and sets
+        `needToIterate` (`genSetNeedToIterate`). Supporting lifts landed
+        here: `pre()` reads (`emitPreReal` / `emitBoolPreRead` over
+        `simulationInfo->{real,boolean}VarsPre`); plain (no-ZC, index=-1)
+        relations as `fcmp` (`genBoolFcmp`, for `v_new > 0`); the
+        `discreteAlgVars` bucket (discrete Reals like `v_new`) folded
+        into the layout as `VK_ALG`; and the functionDAE prologue/epilogue
+        (`needToIterate = 0`, `discreteCall = 1 .. 0`) without which the
+        runtime event-iteration loop spins on a fired reinit. Verified
+        end-to-end on `BB2` (a bouncing ball, JIT == C to ~13 digits).
 
-     4. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
+     4. Integer discrete vars + integer when-assign (`n_bounce =
+        1 + pre(n_bounce)`): an `integerVars` / `integerVarsPre` layout
+        bucket (VK_INT_DISCRETE), `emitExp` integer arithmetic, and an
+        integer predicated assign. This is the full testsuite BB's
+        current loud blocker.
+
+     5. Initial equations `eq_1`, `_3`, `_5`: `$START.X` cref
         lookups (read `realVarsData[idx].attribute.start.data[0]`),
         writes to `simulationInfo->realVarsPre[idx]`, reads from
         `realParameter` into state slots. A handful of EqRecipe
@@ -351,12 +370,14 @@ linker sees exactly one definition per symbol.
 Bug-fix or correctness claims require a real before/after on a
 reproducer that actually triggers the issue, in the PR / commit
 message. Canonical models: HelloWorld (baseline ODE); a discrete
-Boolean observed from a relation (`over = x <= 0.5`) and a Boolean
-conjunction (`b = c and x >= 0.1`) and a Real if-expression over a
-discrete Boolean (`y = if x <= 0.5 then 2 else 1`) -- all three lower
-fully and are checked JIT-vs-C; BouncingBall (zero crossings / `when`
-events) and a `delay()`-using model are the loud-failure cases
-(functionDAE undefined until those constructs lower). Performance work
+Boolean observed from a relation (`over = x <= 0.5`), a Boolean
+conjunction (`b = c and x >= 0.1`), a Real if-expression over a
+discrete Boolean (`y = if x <= 0.5 then 2 else 1`), and `BB2` (a
+bouncing ball: `when` + `reinit` + `pre` + discrete-Real, no integer
+counter) -- all lower fully and are checked JIT-vs-C; the full
+testsuite BouncingBall (integer `n_bounce`) and a `delay()`-using
+model are the loud-failure cases (functionDAE undefined until those
+constructs lower). Performance work
 uses 10-run samples on HelloWorld + CoupledClutches and the JIT-cache
 hot/cold split.
 

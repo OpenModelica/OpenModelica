@@ -203,6 +203,17 @@ public uniontype EqRecipe
     DAE.Exp rhs;
   end EQ_BOOL_DISCRETE_ASSIGN;
 
+  record EQ_WHEN
+    "A when-equation, lowered by predication (no basic-block branch):
+     each body statement runs as `lhs = edge ? rhs : lhs`, identical to
+     CodegenC's `if (edge) { lhs = rhs; }`. `conditions` are the discrete
+     Boolean cref conditions; the edge is the OR over them of
+     `cond and not pre(cond)`. `whenStmts` are ASSIGN / REINIT operators;
+     REINIT also sets simulationInfo->needToIterate (predicated)."
+    list<DAE.ComponentRef> conditions;
+    list<BackendDAE.WhenOperator> whenStmts;
+  end EQ_WHEN;
+
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
      whose body is shared with another equation already emitted in this
@@ -864,11 +875,17 @@ protected function emitEquationFunction
 
    Used both for the runtime-contract _functionODE entry (returns int)
    and for the per-block helpers _functionInitialEquations_0 etc.
-   (return void)."
+   (return void).
+
+   daePrologue brackets the body with the discrete-step bookkeeping
+   CodegenC's functionDAE emits: clear needToIterate at entry and set
+   discreteCall = 1 .. 0 around the equations. Without the needToIterate
+   reset the runtime's event-iteration loop spins on a fired reinit."
   input String fname;
   input list<EqRecipe> recipes;
   input VarLayout layout;
   input Integer retTy;
+  input Boolean daePrologue = false;
   output Boolean ok;
 protected
   EmitCtx ctx;
@@ -879,6 +896,11 @@ algorithm
   EXT_LLVM.genFunctionType(retTy);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
+
+  if daePrologue then
+    EXT_LLVM.genSetNeedToIterateZero("data");
+    EXT_LLVM.genSetDiscreteCall("data", 1);
+  end if;
 
   ctx := EMIT_CTX(layout, 0);
   ok := true;
@@ -912,6 +934,10 @@ algorithm
       end try;
     end if;
   end for;
+
+  if daePrologue then
+    EXT_LLVM.genSetDiscreteCall("data", 0);
+  end if;
 
   if retTy == MODELICA_VOID then
     EXT_LLVM.genReturnVoid();
@@ -1771,6 +1797,8 @@ algorithm
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_DISCRETE_ASSIGN() then "BDISC(" + intString(r.slotIndex) + ")";
+    case EQ_WHEN() then "WHEN(" + intString(listLength(r.conditions)) + " cond, " +
+                               intString(listLength(r.whenStmts)) + " stmt)";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
@@ -2099,7 +2127,7 @@ algorithm
   daeRecipes := List.map1(allSimCodeEquations(simCode), classifySimEq, layout);
   fname := prefix + "_functionDAE";
   if List.all(daeRecipes, function canLowerEquation(layout = layout)) then
-    if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER) then
+    if emitEquationFunction(fname, daeRecipes, layout, MODELICA_INTEGER, daePrologue = true) then
       _ := EXT_LLVM.setLinkonceOdr(fname);
     end if;
   end if;
@@ -2757,6 +2785,10 @@ algorithm
             absoluteSlot(VKS_BOOL_DISCRETE, slot, ctx2.layout), rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_WHEN()
+      algorithm
+        (ctx2, exprOk) := emitWhenEquation(r.conditions, r.whenStmts, ctx);
+      then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
     case EQ_PARAM_RANGE_ASSERT()
@@ -2765,6 +2797,220 @@ algorithm
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
 end emitEquation;
+
+protected function emitWhenEquation
+  "Lower a when-equation by predication. First materialise the edge
+   condition (OR over the conditions of `cond and not pre(cond)`), then
+   emit each body statement as `lhs = edge ? rhs : lhs`."
+  input list<DAE.ComponentRef> conditions;
+  input list<BackendDAE.WhenOperator> whenStmts;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  String edgeTmp;
+  Boolean ok1;
+algorithm
+  (outCtx, edgeTmp, ok) := emitWhenEdge(conditions, ctx);
+  if not ok then
+    return;
+  end if;
+  for st in whenStmts loop
+    (outCtx, ok1) := emitWhenStmt(st, edgeTmp, outCtx);
+    ok := ok and ok1;
+  end for;
+end emitWhenEquation;
+
+protected function emitWhenEdge
+  "Materialise the when activation edge into an i32 alloca:
+   OR over the conditions of  booleanVars[c] and not booleanVarsPre[c].
+   Each condition must resolve to a discrete-Boolean slot."
+  input list<DAE.ComponentRef> conditions;
+  input EmitCtx ctx;
+  output EmitCtx outCtx = ctx;
+  output String edgeTmp = "<no-when-condition>";
+  output Boolean ok = true;
+protected
+  String curTmp, preTmp, notPreTmp, edgeI, newAcc;
+  Boolean okc, okp, haveAcc = false;
+algorithm
+  for cond in conditions loop
+    (outCtx, curTmp, okc) := emitBoolCrefRead(cond, outCtx);
+    (outCtx, preTmp, okp) := emitBoolPreRead(cond, outCtx);
+    if not (okc and okp) then
+      ok := false;
+      return;
+    end if;
+    (outCtx, notPreTmp) := freshTmp(outCtx);
+    EXT_LLVM.genBoolNot(preTmp, notPreTmp);
+    (outCtx, edgeI) := freshTmp(outCtx);
+    EXT_LLVM.genBoolBinop(curTmp, notPreTmp, edgeI, 0 /* AND */);
+    if haveAcc then
+      (outCtx, newAcc) := freshTmp(outCtx);
+      EXT_LLVM.genBoolBinop(edgeTmp, edgeI, newAcc, 1 /* OR */);
+      edgeTmp := newAcc;
+    else
+      edgeTmp := edgeI;
+      haveAcc := true;
+    end if;
+  end for;
+  ok := haveAcc;
+end emitWhenEdge;
+
+protected function emitWhenStmt
+  "Emit one predicated when-body statement. ASSIGN to a Real / discrete
+   Real / state writes  realVars[slot] = edge ? rhs : realVars[slot];
+   ASSIGN to a discrete Boolean writes booleanVars; REINIT writes the
+   state and sets needToIterate (predicated)."
+  input BackendDAE.WhenOperator stmt;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+algorithm
+  (outCtx, ok) := match stmt
+    local DAE.ComponentRef cref;
+          DAE.Exp rhs;
+          EmitCtx c1;
+          Boolean ok1;
+    case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = cref), right = rhs)
+      algorithm
+        (c1, ok1) := emitWhenAssign(cref, rhs, edgeTmp, ctx);
+      then (c1, ok1);
+    case BackendDAE.REINIT(stateVar = cref, value = rhs)
+      algorithm
+        (c1, ok1) := emitWhenReinitStmt(cref, rhs, edgeTmp, ctx);
+      then (c1, ok1);
+    else (ctx, false);
+  end match;
+end emitWhenStmt;
+
+protected function emitWhenAssign
+  "Dispatch a when-body ASSIGN by the LHS slot kind: discrete Boolean
+   stores into booleanVars, every other resolved kind into realVars."
+  input DAE.ComponentRef cref;
+  input DAE.Exp rhs;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, ok) := match os
+    case SOME(vs as VAR_SLOT(kind = VK_BOOL_DISCRETE()))
+      algorithm (outCtx, ok) := emitWhenBoolAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
+    case SOME(vs as VAR_SLOT(kind = VK_STATE()))
+      algorithm (outCtx, ok) := emitWhenRealAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
+    case SOME(vs as VAR_SLOT(kind = VK_DERIVATIVE()))
+      algorithm (outCtx, ok) := emitWhenRealAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
+    case SOME(vs as VAR_SLOT(kind = VK_ALG()))
+      algorithm (outCtx, ok) := emitWhenRealAssign(vs, rhs, edgeTmp, ctx); then (outCtx, ok);
+    else (ctx, false);
+  end match;
+end emitWhenAssign;
+
+protected function emitWhenReinitStmt
+  input DAE.ComponentRef cref;
+  input DAE.Exp value;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, ok) := match os
+    case SOME(vs as VAR_SLOT(kind = VK_STATE()))
+      algorithm (outCtx, ok) := emitWhenReinit(vs, value, edgeTmp, ctx); then (outCtx, ok);
+    else (ctx, false);
+  end match;
+end emitWhenReinitStmt;
+
+protected function emitWhenRealAssign
+  "realVars[slot] = edge ? rhs : realVars[slot]  (predicated Real assign)."
+  input VarSlot vs;
+  input DAE.Exp rhs;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  String rhsTmp, curTmp, selTmp;
+  Integer slot;
+algorithm
+  slot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+  (outCtx, rhsTmp, ok) := emitExp(rhs, ctx);
+  if ok then
+    (outCtx, curTmp) := emitReadRealVar(slot, outCtx);
+    (outCtx, selTmp) := freshTmp(outCtx);
+    EXT_LLVM.genAllocaModelicaReal(selTmp, false);
+    EXT_LLVM.genSelectReal(edgeTmp, rhsTmp, curTmp, selTmp);
+    emitWriteRealVar(slot, selTmp);
+  end if;
+end emitWhenRealAssign;
+
+protected function emitWhenBoolAssign
+  "booleanVars[slot] = edge ? rhs : booleanVars[slot]  (predicated Bool)."
+  input VarSlot vs;
+  input DAE.Exp rhs;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  String rhsTmp, curTmp, selTmp;
+  Integer slot;
+algorithm
+  slot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+  (outCtx, rhsTmp, ok) := emitBoolExp(rhs, ctx);
+  if ok then
+    (outCtx, curTmp) := emitReadBoolVarSlot(slot, outCtx);
+    (outCtx, selTmp) := freshTmp(outCtx);
+    EXT_LLVM.genSelectBool(edgeTmp, rhsTmp, curTmp, selTmp);
+    EXT_LLVM.genStoreBoolVar("data", slot, selTmp);
+  end if;
+end emitWhenBoolAssign;
+
+protected function emitReadBoolVarSlot
+  "Read booleanVars[slot] into a fresh i32 alloca (slot already absolute)."
+  input Integer slot;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genReadBoolVar("data", slot, dst);
+end emitReadBoolVarSlot;
+
+protected function emitWhenReinit
+  "reinit(state, value): realVars[state] = edge ? value : realVars[state]
+   and simulationInfo->needToIterate = edge ? 1 : needToIterate."
+  input VarSlot vs;
+  input DAE.Exp value;
+  input String edgeTmp;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output Boolean ok;
+protected
+  String rhsTmp, curTmp, selTmp;
+  Integer slot;
+algorithm
+  slot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+  (outCtx, rhsTmp, ok) := emitExp(value, ctx);
+  if ok then
+    (outCtx, curTmp) := emitReadRealVar(slot, outCtx);
+    (outCtx, selTmp) := freshTmp(outCtx);
+    EXT_LLVM.genAllocaModelicaReal(selTmp, false);
+    EXT_LLVM.genSelectReal(edgeTmp, rhsTmp, curTmp, selTmp);
+    emitWriteRealVar(slot, selTmp);
+    EXT_LLVM.genSetNeedToIterate("data", edgeTmp);
+  end if;
+end emitWhenReinit;
 
 protected function emitParamRangeAssert
   "Emit  call void @omc_jit_assert_real_<ge|le>(ptr %data, i64 slot, double bound)
@@ -2903,12 +3149,57 @@ algorithm
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_BOOL_DISCRETE_ASSIGN() then canLowerBoolExp(r.rhs, layout);
+    case EQ_WHEN()
+      then List.all(r.conditions, function isBoolDiscreteCref(layout = layout))
+           and List.all(r.whenStmts, function canLowerWhenStmt(layout = layout));
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
     case EQ_PARAM_RANGE_ASSERT() then true;
     case EQ_UNSUPPORTED()       then false;
   end match;
 end canLowerEquation;
+
+protected function isBoolDiscreteCref
+  "True iff cref resolves to a discrete-Boolean slot (a valid when
+   condition / Boolean LHS)."
+  input DAE.ComponentRef cref;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match lookupSlot(cref, layout)
+    case SOME(VAR_SLOT(kind = VK_BOOL_DISCRETE())) then true;
+    else false;
+  end match;
+end isBoolDiscreteCref;
+
+protected function canLowerWhenStmt
+  "True iff a when-body operator lowers: an ASSIGN to a layout-resolved
+   cref (Boolean RHS for a discrete Boolean, Real RHS otherwise) or a
+   REINIT of a state with a lowerable Real value. ASSERT / TERMINATE /
+   NORETCALL are not lowered."
+  input BackendDAE.WhenOperator stmt;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match stmt
+    local DAE.ComponentRef cref;
+          DAE.Exp rhs;
+    case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = cref), right = rhs)
+      then match lookupSlot(cref, layout)
+        case SOME(VAR_SLOT(kind = VK_BOOL_DISCRETE())) then canLowerBoolExp(rhs, layout);
+        case SOME(VAR_SLOT(kind = VK_STATE())) then canLowerExp(rhs, layout);
+        case SOME(VAR_SLOT(kind = VK_DERIVATIVE())) then canLowerExp(rhs, layout);
+        case SOME(VAR_SLOT(kind = VK_ALG())) then canLowerExp(rhs, layout);
+        else false;
+      end match;
+    case BackendDAE.REINIT(stateVar = cref, value = rhs)
+      then match lookupSlot(cref, layout)
+        case SOME(VAR_SLOT(kind = VK_STATE())) then canLowerExp(rhs, layout);
+        else false;
+      end match;
+    else false;
+  end match;
+end canLowerWhenStmt;
 
 protected function canLowerExp
   "Pre-validation mirror of emitExp: true iff every node in <e> falls
@@ -2937,12 +3228,29 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT(name = name), expLst = {e1, e2})
       guard isLibmBinaryReal(name)
       then canLowerExp(e1, layout) and canLowerExp(e2, layout);
+    case DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cref)})
+      then canLowerPreReal(cref, layout);
     case DAE.IFEXP(expCond = e1, expThen = e2, expElse = sub)
       then canLowerBoolExp(e1, layout)
            and canLowerExp(e2, layout) and canLowerExp(sub, layout);
     else false;
   end match;
 end canLowerExp;
+
+protected function canLowerPreReal
+  "pre() of a real cref is lowerable iff the cref resolves to a real-buffer
+   slot (state / derivative / algebraic, incl. discrete-Real)."
+  input DAE.ComponentRef cref;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match lookupSlot(cref, layout)
+    case SOME(VAR_SLOT(kind = VK_STATE())) then true;
+    case SOME(VAR_SLOT(kind = VK_DERIVATIVE())) then true;
+    case SOME(VAR_SLOT(kind = VK_ALG())) then true;
+    else false;
+  end match;
+end canLowerPreReal;
 
 protected function canLowerCref
   "True if emitCrefRead would handle this cref. The supported shapes
@@ -3006,15 +3314,19 @@ algorithm
     local DAE.Exp e1, e2, sub;
           DAE.Operator op;
           DAE.ComponentRef cref;
-          Integer idx;
     case DAE.BCONST() then true;
     case DAE.CREF(componentRef=cref)
       then match lookupSlot(cref, layout)
         case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then true;
         else false;
       end match;
-    case DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx)
-      then isSome(opCodeForRelationOp(op)) and idx >= 0
+    case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
+      then match lookupSlot(cref, layout)
+        case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then true;
+        else false;
+      end match;
+    case DAE.RELATION(exp1=e1, operator=op, exp2=e2)
+      then isSome(opCodeForRelationOp(op))
            and canLowerExp(e1, layout) and canLowerExp(e2, layout);
     case DAE.LBINARY(exp1=e1, operator=op, exp2=e2)
       then isSome(boolBinopCode(op))
@@ -3130,6 +3442,10 @@ algorithm
           ok := false;
         end if;
       then (outCtx, dst, ok);
+    case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
+      algorithm
+        (ctx1, tmp, ok1) := emitPreReal(cref, ctx);
+      then (ctx1, tmp, ok1);
     case DAE.IFEXP(expCond=e1, expThen=e2, expElse=sub)
       algorithm
         (ctx1, condTmp, ok1) := emitBoolExp(e1, ctx);
@@ -3151,6 +3467,45 @@ algorithm
       then (ctx, "<unsupported-exp>", false);
   end match;
 end emitExp;
+
+protected function emitPreReal
+  "Lower  pre(<real cref>)  into a fresh double alloca via
+   data->simulationInfo->realVarsPre[slot]. Only state / derivative /
+   algebraic (incl. discrete-Real) crefs have a realVarsPre slot; anything
+   else is left unsupported."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+  Integer absSlot;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, dst, ok) := match os
+    case SOME(vs as VAR_SLOT(kind=VK_STATE()))
+      then emitPreRealSlot(vs, ctx);
+    case SOME(vs as VAR_SLOT(kind=VK_DERIVATIVE()))
+      then emitPreRealSlot(vs, ctx);
+    case SOME(vs as VAR_SLOT(kind=VK_ALG()))
+      then emitPreRealSlot(vs, ctx);
+    else (ctx, "<pre-of-non-real-var>", false);
+  end match;
+end emitPreReal;
+
+protected function emitPreRealSlot
+  input VarSlot vs;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok = true;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genReadRealVarPre("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
+end emitPreRealSlot;
 
 protected function emitBoolExp
   "Lower a discrete-Boolean-valued DAE.Exp into a modelica_boolean (i32)
@@ -3185,6 +3540,10 @@ algorithm
     case DAE.CREF(componentRef=cref)
       algorithm
         (ctx1, tmp, ok1) := emitBoolCrefRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
+      algorithm
+        (ctx1, tmp, ok1) := emitBoolPreRead(cref, ctx);
       then (ctx1, tmp, ok1);
     case DAE.RELATION()
       algorithm
@@ -3234,10 +3593,36 @@ algorithm
   end match;
 end emitBoolCrefRead;
 
+protected function emitBoolPreRead
+  "Lower  pre(<discrete-Boolean cref>)  into a fresh i32 alloca via
+   data->simulationInfo->booleanVarsPre[slot]."
+  input DAE.ComponentRef cref;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  VarSlot vs;
+algorithm
+  os := lookupSlot(cref, ctx.layout);
+  (outCtx, dst, ok) := match os
+    case SOME(vs as VAR_SLOT(kind=VK_BOOL_DISCRETE()))
+      algorithm
+        (outCtx, dst) := freshTmp(ctx);
+        EXT_LLVM.genReadBoolVarPre("data", absoluteSlot(vs.kind, vs.index, ctx.layout), dst);
+      then (outCtx, dst, true);
+    else (ctx, "<pre-of-non-discrete-bool>", false);
+  end match;
+end emitBoolPreRead;
+
 protected function emitBoolRelation
-  "Lower a zero-crossing relation (exp1 <relop> exp2) into an i32 alloca
-   via omc_jit_relationhysteresis. The operands are Real, so they go
-   through emitExp; the nominals follow relationOperandNominal."
+  "Lower a relation (exp1 <relop> exp2) into an i32 alloca. A relation that
+   carries a zero-crossing index (index >= 0) goes through
+   omc_jit_relationhysteresis; one without (index = -1, e.g. a relation
+   inside a when body that the backend did not register as a crossing,
+   `flying = v_new > 0`) lowers to a plain fp compare. Operands are Real,
+   so they go through emitExp."
   input DAE.Exp e;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -3254,7 +3639,7 @@ protected
 algorithm
   DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=idx) := e;
   oc := opCodeForRelationOp(op);
-  if not isSome(oc) or idx < 0 then
+  if not isSome(oc) then
     outCtx := ctx;
     dst := "<unsupported-relation>";
     ok := false;
@@ -3266,8 +3651,12 @@ algorithm
   ok := ok1 and ok2;
   if ok then
     (outCtx, dst) := freshTmp(ctx2);
-    EXT_LLVM.genRelationHysteresisBool("data", dst, a, bnm,
-      relationOperandNominal(e1), relationOperandNominal(e2), idx, opc);
+    if idx >= 0 then
+      EXT_LLVM.genRelationHysteresisBool("data", dst, a, bnm,
+        relationOperandNominal(e1), relationOperandNominal(e2), idx, opc);
+    else
+      EXT_LLVM.genBoolFcmp(a, bnm, dst, opc);
+    end if;
   else
     outCtx := ctx2;
     dst := "<rel-operand-failed>";
@@ -3664,22 +4053,27 @@ protected function buildVarLayout
   input SimCodeVar.SimVars vars;
   output VarLayout layout;
 protected
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars;
+  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars;
   list<tuple<DAE.ComponentRef, VarSlot>> entries = {};
 algorithm
-  (stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars) := match vars
+  (stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars) := match vars
     case SimCodeVar.SIMVARS(stateVars=stateVars,
                             derivativeVars=derivativeVars,
                             algVars=algVars,
+                            discreteAlgVars=discreteAlgVars,
                             paramVars=paramVars,
                             boolParamVars=boolParamVars,
                             boolAlgVars=boolAlgVars)
-      then (stateVars, derivativeVars, algVars, paramVars, boolParamVars, boolAlgVars);
+      then (stateVars, derivativeVars, algVars, discreteAlgVars, paramVars, boolParamVars, boolAlgVars);
   end match;
 
   entries := List.fold(stateVars, function addEntry(kind = VKS_STATE), entries);
   entries := List.fold(derivativeVars, function addEntry(kind = VKS_DERIVATIVE), entries);
   entries := List.fold(algVars, function addEntry(kind = VKS_ALG), entries);
+  /* Discrete Reals (when-assigned, e.g. v_new) live in the same flat
+   * realVars buffer right after the continuous algebraics, so they read
+   * and write through the VK_ALG accessors. */
+  entries := List.fold(discreteAlgVars, function addEntry(kind = VKS_ALG), entries);
   entries := List.fold(paramVars, function addEntry(kind = VKS_PARAM), entries);
   entries := List.fold(boolParamVars, function addEntry(kind = VKS_BOOL_PARAM), entries);
   entries := List.fold(boolAlgVars, function addEntry(kind = VKS_BOOL_DISCRETE), entries);
@@ -3780,6 +4174,8 @@ algorithm
           DAE.Exp rhs;
           Option<VarSlot> os;
           VarSlot s;
+          list<DAE.ComponentRef> cwhen;
+          list<BackendDAE.WhenOperator> wstmts;
     case SimCode.SES_SIMPLE_ASSIGN(cref=cref, exp=rhs)
       algorithm
         os := lookupSlot(cref, layout);
@@ -3808,8 +4204,10 @@ algorithm
       then EQ_UNSUPPORTED("SES_NONLINEAR requires solver, deferred");
     case SimCode.SES_MIXED()
       then EQ_UNSUPPORTED("SES_MIXED requires solver, deferred");
-    case SimCode.SES_WHEN()
-      then EQ_UNSUPPORTED("SES_WHEN requires event handling, deferred");
+    case SimCode.SES_WHEN(elseWhen = SOME(_))
+      then EQ_UNSUPPORTED("SES_WHEN with else-when not lowered yet");
+    case SimCode.SES_WHEN(conditions = cwhen, whenStmtLst = wstmts)
+      then EQ_WHEN(cwhen, wstmts);
     case SimCode.SES_IFEQUATION()
       then EQ_UNSUPPORTED("SES_IFEQUATION requires event handling, deferred");
     case SimCode.SES_ALGORITHM()

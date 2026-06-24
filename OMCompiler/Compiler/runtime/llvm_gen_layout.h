@@ -76,6 +76,11 @@ extern const size_t omc_layout_SI_realParameter;
 extern const size_t omc_layout_SI_booleanParameter;
 extern const size_t omc_layout_SI_relations;
 extern const size_t omc_layout_SI_extObjs;
+extern const size_t omc_layout_SI_realVarsPre;
+extern const size_t omc_layout_SI_integerVarsPre;
+extern const size_t omc_layout_SI_booleanVarsPre;
+extern const size_t omc_layout_SI_needToIterate;
+extern const size_t omc_layout_SI_discreteCall;
 
 /* DATA.callback (pointer to the OpenModelicaGeneratedFunctionCallbacks
  * struct) + threadData_s.localRoots[] (void* array) + the int slot

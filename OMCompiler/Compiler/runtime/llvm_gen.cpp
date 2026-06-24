@@ -512,6 +512,121 @@ extern "C" int createInlinedBoolNot(const char *const aName,
   return 0;
 }
 
+/* ------------------------------------------------------------------------
+ * pre() / when() primitives.
+ *
+ * A `when` body is lowered by *predication* rather than a basic-block
+ * branch: each assignment `lhs = rhs` becomes `lhs = edge ? rhs : lhs`,
+ * which is semantically identical (no edge -> lhs keeps its value) and
+ * keeps the emitter straight-line. The edge condition and the pre()
+ * reads it needs come from data->simulationInfo->{real,boolean}VarsPre,
+ * indexed directly by the SimVar slot (CodegenC indexes the *Pre buffers
+ * without the *VarsIndex indirection, matching SCTL's flat-slot scheme).
+ * ------------------------------------------------------------------------ */
+
+/* createInlinedReadRealVarPre: dstName(double) =
+ * data->simulationInfo->realVarsPre[slot]. dst pre-allocated by caller. */
+extern "C" int createInlinedReadRealVarPre(const char *const dataArgName,
+                                           const int64_t slot,
+                                           const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const pre = emitGEPLoadPtr(simInfo, omc_layout_SI_realVarsPre);
+  llvm::Value *const valAddr =
+      b.CreateGEP(dbl, pre, llvm::ConstantInt::get(i64, slot), "");
+  storeIntoSymtab(dstName, b.CreateLoad(dbl, valAddr, ""));
+  return 0;
+}
+
+/* createInlinedReadBoolVarPre: dstName(i32, self-allocated) =
+ * data->simulationInfo->booleanVarsPre[slot]. */
+extern "C" int createInlinedReadBoolVarPre(const char *const dataArgName,
+                                           const int64_t slot,
+                                           const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const pre = emitGEPLoadPtr(simInfo, omc_layout_SI_booleanVarsPre);
+  llvm::Value *const valAddr =
+      b.CreateGEP(i32, pre, llvm::ConstantInt::get(i64, slot), "");
+  b.CreateStore(b.CreateLoad(i32, valAddr, ""), makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedSelectBool: dstName(i32, self-allocated) =
+ * (cond != 0) ? then : else. The Boolean counterpart of
+ * createInlinedSelectReal, used to predicate a when-body Boolean assign. */
+extern "C" int createInlinedSelectBool(const char *const condName,
+                                       const char *const thenName,
+                                       const char *const elseName,
+                                       const char *const dstName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const cond = b.CreateICmpNE(
+      loadFromSymtab(condName), llvm::ConstantInt::get(i32, 0), "");
+  llvm::Value *const sel = b.CreateSelect(
+      cond, loadFromSymtab(thenName), loadFromSymtab(elseName), "");
+  b.CreateStore(sel, makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedBoolFcmp: dstName(i32, self-allocated) = (a <op> b) as 0/1,
+ * a plain floating-point comparison for a relation that carries no
+ * zero-crossing index (index = -1) -- e.g. a relation inside a when body
+ * (`flying = v_new > 0.0`), which CodegenC emits as a bare `Greater(...)`
+ * rather than relationhysteresis. opCode: 0=<, 1=<=, 2=>, 3=>=. */
+extern "C" int createInlinedBoolFcmp(const char *const aName,
+                                     const char *const bName,
+                                     const char *const dstName,
+                                     const int64_t opCode) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Value *const av = loadFromSymtab(aName);
+  llvm::Value *const bv = loadFromSymtab(bName);
+  llvm::Value *cmp = nullptr;
+  switch (opCode) {
+    case 0: cmp = b.CreateFCmpOLT(av, bv, ""); break;
+    case 1: cmp = b.CreateFCmpOLE(av, bv, ""); break;
+    case 2: cmp = b.CreateFCmpOGT(av, bv, ""); break;
+    case 3: cmp = b.CreateFCmpOGE(av, bv, ""); break;
+    default:
+      fprintf(stderr, "createInlinedBoolFcmp: bad opCode %lld\n",
+              (long long)opCode);
+      MMC_THROW();
+  }
+  b.CreateStore(b.CreateZExt(cmp, i32, ""), makeBoolI32Alloca(dstName));
+  return 0;
+}
+
+/* createInlinedSetNeedToIterate: predicated store of the reinit flag --
+ * data->simulationInfo->needToIterate = (cond != 0) ? 1 : <current>.
+ * needToIterate is a scalar modelica_boolean field of SIMULATION_INFO. */
+extern "C" int createInlinedSetNeedToIterate(const char *const dataArgName,
+                                             const char *const condName) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(program->context);
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const addr = b.CreateGEP(
+      i8, simInfo, llvm::ConstantInt::get(i64, omc_layout_SI_needToIterate), "");
+  llvm::Value *const cond = b.CreateICmpNE(
+      loadFromSymtab(condName), llvm::ConstantInt::get(i32, 0), "");
+  llvm::Value *const cur = b.CreateLoad(i32, addr, "");
+  b.CreateStore(
+      b.CreateSelect(cond, llvm::ConstantInt::get(i32, 1), cur, ""), addr);
+  return 0;
+}
+
 /* createInlinedSelectReal: dstName(double) = (cond != 0) ? then : else.
  * The Real-valued counterpart of CodegenC's `(b ? t : e)` ternary used by
  * if-expressions whose condition is a discrete Boolean. condName is an
@@ -530,6 +645,39 @@ extern "C" int createInlinedSelectReal(const char *const condName,
   llvm::Value *const sel = b.CreateSelect(
       cond, loadFromSymtab(thenName), loadFromSymtab(elseName), "");
   storeIntoSymtab(dstName, sel);
+  return 0;
+}
+
+/* Store an i32 constant into a scalar SIMULATION_INFO field at byteOffset. */
+static void setSIInt32Field(llvm::Value *const dataPtr, const size_t byteOffset,
+                            const int32_t v) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Type *const i8 = llvm::Type::getInt8Ty(program->context);
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const i64 = llvm::Type::getInt64Ty(program->context);
+  llvm::Value *const simInfo =
+      emitGEPLoadPtr(dataPtr, omc_layout_DATA_simulationInfo);
+  llvm::Value *const addr =
+      b.CreateGEP(i8, simInfo, llvm::ConstantInt::get(i64, byteOffset), "");
+  b.CreateStore(llvm::ConstantInt::get(i32, v), addr);
+}
+
+/* createInlinedSetNeedToIterateZero / SetDiscreteCall: the functionDAE
+ * prologue/epilogue bookkeeping CodegenC emits around the equation bodies.
+ * functionDAE clears needToIterate at entry (the reinit paths set it back
+ * to 1 only when an edge fires) and brackets the body with discreteCall =
+ * 1 .. 0 so relationhysteresis evaluates against the live values during a
+ * discrete step. Without the needToIterate reset the runtime's event loop
+ * (`while(... || needToIterate || ...)`) never converges. */
+extern "C" int createInlinedSetNeedToIterateZero(const char *const dataArgName) {
+  setSIInt32Field(loadFromSymtab(dataArgName), omc_layout_SI_needToIterate, 0);
+  return 0;
+}
+
+extern "C" int createInlinedSetDiscreteCall(const char *const dataArgName,
+                                            const int64_t value) {
+  setSIInt32Field(loadFromSymtab(dataArgName), omc_layout_SI_discreteCall,
+                  value ? 1 : 0);
   return 0;
 }
 

@@ -222,6 +222,82 @@ function genSelectReal
                Include = "int createInlinedSelectReal(const char *condName, const char *thenName, const char *elseName, const char *dstName);");
 end genSelectReal;
 
+function genReadRealVarPre
+  "Inline  dst(double) = data->simulationInfo->realVarsPre[slot]  (pre()
+   of a Real). dst pre-allocated. See createInlinedReadRealVarPre."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadRealVarPre(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadRealVarPre(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadRealVarPre;
+
+function genReadBoolVarPre
+  "Inline  dst(i32) = data->simulationInfo->booleanVarsPre[slot]  (pre()
+   of a discrete Boolean). See createInlinedReadBoolVarPre."
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+  external "C" createInlinedReadBoolVarPre(dataArgName, slot, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedReadBoolVarPre(const char *dataArgName, const int64_t slot, const char *dstName);");
+end genReadBoolVarPre;
+
+function genSelectBool
+  "Emit  dst(i32) = (cond != 0) ? then : else  for a predicated when-body
+   Boolean assign. See createInlinedSelectBool."
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+  external "C" createInlinedSelectBool(condName, thenName, elseName, dstName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSelectBool(const char *condName, const char *thenName, const char *elseName, const char *dstName);");
+end genSelectBool;
+
+function genBoolFcmp
+  "Emit  dst(i32) = (a <op> b)  as a plain fp comparison for a relation
+   with no zero-crossing index. opCode 0=< 1=<= 2=> 3=>=. See
+   createInlinedBoolFcmp."
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer opCode;
+  external "C" createInlinedBoolFcmp(aName, bName, dstName, opCode)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedBoolFcmp(const char *aName, const char *bName, const char *dstName, const int64_t opCode);");
+end genBoolFcmp;
+
+function genSetNeedToIterate
+  "Emit  data->simulationInfo->needToIterate = (cond != 0) ? 1 : <current>
+   -- the reinit flag, predicated on the when edge. See
+   createInlinedSetNeedToIterate."
+  input String dataArgName;
+  input String condName;
+  external "C" createInlinedSetNeedToIterate(dataArgName, condName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSetNeedToIterate(const char *dataArgName, const char *condName);");
+end genSetNeedToIterate;
+
+function genSetNeedToIterateZero
+  "Emit  data->simulationInfo->needToIterate = 0  (functionDAE prologue)."
+  input String dataArgName;
+  external "C" createInlinedSetNeedToIterateZero(dataArgName)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSetNeedToIterateZero(const char *dataArgName);");
+end genSetNeedToIterateZero;
+
+function genSetDiscreteCall
+  "Emit  data->simulationInfo->discreteCall = value  (functionDAE brackets
+   its body with discreteCall = 1 .. 0). See createInlinedSetDiscreteCall."
+  input String dataArgName;
+  input Integer value;
+  external "C" createInlinedSetDiscreteCall(dataArgName, value)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedSetDiscreteCall(const char *dataArgName, const int64_t value);");
+end genSetDiscreteCall;
+
 function functionDefined
   "True iff the active module already holds a defined (non-declaration)
    function named fname. See sctlFunctionDefined in omcruntime."

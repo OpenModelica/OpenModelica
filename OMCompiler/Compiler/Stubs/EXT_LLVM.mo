@@ -133,6 +133,60 @@ algorithm
   assert(false, getInstanceName());
 end genSelectReal;
 
+function genReadRealVarPre
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadRealVarPre;
+
+function genReadBoolVarPre
+  input String dataArgName;
+  input Integer slot;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genReadBoolVarPre;
+
+function genSelectBool
+  input String condName;
+  input String thenName;
+  input String elseName;
+  input String dstName;
+algorithm
+  assert(false, getInstanceName());
+end genSelectBool;
+
+function genBoolFcmp
+  input String aName;
+  input String bName;
+  input String dstName;
+  input Integer opCode;
+algorithm
+  assert(false, getInstanceName());
+end genBoolFcmp;
+
+function genSetNeedToIterate
+  input String dataArgName;
+  input String condName;
+algorithm
+  assert(false, getInstanceName());
+end genSetNeedToIterate;
+
+function genSetNeedToIterateZero
+  input String dataArgName;
+algorithm
+  assert(false, getInstanceName());
+end genSetNeedToIterateZero;
+
+function genSetDiscreteCall
+  input String dataArgName;
+  input Integer value;
+algorithm
+  assert(false, getInstanceName());
+end genSetDiscreteCall;
+
 function functionDefined
   input String fname;
   output Boolean defined = false;
