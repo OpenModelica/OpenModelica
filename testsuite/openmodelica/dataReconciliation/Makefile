@@ -40,7 +40,9 @@ TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter3 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter4 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7 \
-TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE
 
 # These are generated from annotations too, but are not passing tests yet:
 # - PipeCorrelation reports a solveSystemFstar failure and unstable warning text.
@@ -70,9 +72,7 @@ TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter6 \
 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8 \
 TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR \
-TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE \
-TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR \
-TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR
 
 GENERATED_TESTFILES = $(addsuffix .mos,$(TESTMODELS))
 GENERATED_FAILINGTESTFILES = $(addsuffix .mos,$(FAILINGTESTMODELS))

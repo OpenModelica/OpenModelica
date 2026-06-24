@@ -9,8 +9,7 @@ model SG_DR_WithHARE
 equation
   annotation (
     __OpenModelica_simulationFlags(
-      lv="LOG_STDOUT,LOG_ASSERT,LOG_STATS",
-      reconcileState="()",
+      lv="LOG_JAC",
       s="dassl",
       sx="modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_WithHARE_OS.csv",
       variableFilter=".*"));
