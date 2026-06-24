@@ -872,7 +872,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
     );
     for (i, (name, _, _)) in BUILTINS.iter().enumerate() {
-        imports.import("env", *name, we::EntityType::Function(i as u32));
+        // Math builtins are provided in-wasm by the runtime module (via libm),
+        // not the host `env` namespace — see the runtime's rt_math exports.
+        imports.import("rt", *name, we::EntityType::Function(i as u32));
     }
     for (j, (name, _, _)) in RT_BUILTINS.iter().enumerate() {
         imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + j) as u32));

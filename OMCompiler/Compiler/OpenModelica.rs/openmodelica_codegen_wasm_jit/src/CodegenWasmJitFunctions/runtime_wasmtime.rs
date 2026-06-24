@@ -108,42 +108,10 @@ fn read_sig(path: &str) -> Result<Sig> {
 /// Register the host-imported math builtins (module `"env"`), matching
 /// `super::BUILTINS` one-for-one.
 pub(crate) fn add_host_builtins(linker: &mut wasmtime::Linker<()>) -> Result<()> {
-    macro_rules! f1 {
-        ($name:literal, $f:expr) => {
-            wt(linker.func_wrap("env", $name, |x: f64| -> f64 { ($f)(x) }))?;
-        };
-    }
-    macro_rules! f2 {
-        ($name:literal, $f:expr) => {
-            wt(linker.func_wrap("env", $name, |x: f64, y: f64| -> f64 { ($f)(x, y) }))?;
-        };
-    }
-    f2!("pow", f64::powf);
-    f2!("atan2", f64::atan2);
-    f1!("sin", f64::sin);
-    f1!("cos", f64::cos);
-    f1!("tan", f64::tan);
-    f1!("asin", f64::asin);
-    f1!("acos", f64::acos);
-    f1!("atan", f64::atan);
-    f1!("sinh", f64::sinh);
-    f1!("cosh", f64::cosh);
-    f1!("tanh", f64::tanh);
-    f1!("exp", f64::exp);
-    f1!("log", f64::ln);
-    f1!("log10", f64::log10);
-    // libm `external "C"` math functions (see `super::BUILTINS`). Routed to the
-    // host's libm via `f64`'s methods, matching the C target's libm.
-    f1!("cbrt", f64::cbrt);
-    f1!("expm1", f64::exp_m1);
-    f1!("log1p", f64::ln_1p);
-    f1!("exp2", f64::exp2);
-    f1!("log2", f64::log2);
-    f1!("asinh", f64::asinh);
-    f1!("acosh", f64::acosh);
-    f1!("atanh", f64::atanh);
-    f2!("hypot", f64::hypot);
-    f2!("fmod", |a: f64, b: f64| a % b);
+    // The transcendental math `BUILTINS` are now provided in-wasm by the runtime
+    // module (`rt_math*` exports, via libm) and imported under the `rt` namespace,
+    // so they no longer cross the wasm<->host boundary. Only the effectful
+    // `ENV_EXTRA` imports remain host-side here.
     // `rt_assert` (see `super::ENV_EXTRA`): record the failing assertion's message
     // and source-info handles so `load_and_execute` can route them to the error
     // buffer after the generated code traps. The handles point into the shared

@@ -870,6 +870,49 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     if neg { 1.0 / result } else { result }
 }
 
+// Transcendental math builtins that generated model modules import (the
+// `BUILTINS` table in CodegenWasmJitFunctions). Previously these crossed the
+// wasm->host boundary (`add_host_builtins`, module `env`); providing them
+// in-wasm via `libm` removes that per-call crossing — a win on the browser js
+// backend — and lets a merged standalone module be self-contained. Exported
+// under their bare libm names so the generated `rt`-namespace import resolves.
+macro_rules! rt_math1 {
+    ($name:ident) => {
+        #[unsafe(no_mangle)]
+        pub extern "C" fn $name(x: f64) -> f64 { libm::$name(x) }
+    };
+}
+macro_rules! rt_math2 {
+    ($name:ident) => {
+        #[unsafe(no_mangle)]
+        pub extern "C" fn $name(x: f64, y: f64) -> f64 { libm::$name(x, y) }
+    };
+}
+rt_math2!(pow);
+rt_math2!(atan2);
+rt_math1!(sin);
+rt_math1!(cos);
+rt_math1!(tan);
+rt_math1!(asin);
+rt_math1!(acos);
+rt_math1!(atan);
+rt_math1!(sinh);
+rt_math1!(cosh);
+rt_math1!(tanh);
+rt_math1!(exp);
+rt_math1!(log);
+rt_math1!(log10);
+rt_math1!(cbrt);
+rt_math1!(expm1);
+rt_math1!(log1p);
+rt_math1!(exp2);
+rt_math1!(log2);
+rt_math1!(asinh);
+rt_math1!(acosh);
+rt_math1!(atanh);
+rt_math2!(hypot);
+rt_math2!(fmod);
+
 /// Scalar `base ^ exp` for a non-integer-literal exponent, replicating the C
 /// target's inlined generic real-power semantics so the result stays
 /// byte-identical. A negative base with an (effectively) integer exponent or an
