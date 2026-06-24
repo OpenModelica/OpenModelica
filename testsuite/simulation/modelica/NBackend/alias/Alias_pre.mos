@@ -49,7 +49,7 @@ simulate(Alias_pre); getErrorString();
 //
 // [dumprepl] Found But Illegal Alias Replacements (added as equations):
 // ***********************************************************************
-// 	[SCAL] (1) b = (-3.0) + y ($RES_SIM_6)
+// 	[SCAL] (1) b = (-3.0) + y ($RES_SIM_9)
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
