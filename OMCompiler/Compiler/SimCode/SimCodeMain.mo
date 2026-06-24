@@ -448,7 +448,8 @@ algorithm
         // are FMI variable indices as referenced by the FMI 3.0 ModelStructure;
         // FMI 2.0 references dependencies differently, so only populate them for 3.0.
         oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo,
-          if FMI.isFMIVersion30() then NSimCode.SimCode.createFMIDependencies(bdae, simCode) else {});
+          if FMI.isFMIVersion30() then NSimCode.SimCode.createFMIDependencies(bdae, simCode) else {},
+          if FMI.isFMIVersion30() then NSimCode.SimCode.createFMIDependencies(bdae, simCode, forInitialization = true) else {});
         callTargetTemplatesFMU(oldSimCode, Config.simCodeTarget(), FMI.getFMIVersionString(), fmuType, SymbolTable.getAbsyn());
       then ();
       else algorithm

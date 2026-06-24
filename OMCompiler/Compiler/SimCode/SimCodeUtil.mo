@@ -15534,25 +15534,33 @@ public function createMinimalFMIModelStructure
   input list<tuple<Integer, list<Integer>>> fmiDependencies = {}
     "maps an unknown FMI variable index to the FMI indices of the knowns
      (states/inputs) it depends on; empty means no dependency information";
+  input list<tuple<Integer, list<Integer>>> fmiInitialDependencies = {}
+    "same as fmiDependencies but for the initialization (knowns also include
+     the parameters); used for the InitialUnknown dependency lists";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
   list<SimCodeVar.SimVar> iu;
-  UnorderedMap<Integer, FMIIndexList> depMap;
+  UnorderedMap<Integer, FMIIndexList> depMap, initDepMap;
 algorithm
   // index -> dependency indices, for O(1) lookup while building the unknowns
   depMap := UnorderedMap.new<FMIIndexList>(Util.id, intEq, listLength(fmiDependencies) + 1);
   for tpl in fmiDependencies loop
     UnorderedMap.add(Util.tuple21(tpl), Util.tuple22(tpl), depMap);
   end for;
+  initDepMap := UnorderedMap.new<FMIIndexList>(Util.id, intEq, listLength(fmiInitialDependencies) + 1);
+  for tpl in fmiInitialDependencies loop
+    UnorderedMap.add(Util.tuple21(tpl), Util.tuple22(tpl), initDepMap);
+  end for;
 
   derivs := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.derivativeVars);
   outs   := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.outputVars);
 
-  // InitialUnknowns according to the FMI specification, but without dependency
-  // information (the new backend FMU export does not compute the FMIDER
-  // Jacobian here). Omitting the dependencies is valid; the importer then
-  // assumes a dependency on all knowns. The list consists of:
+  // InitialUnknowns according to the FMI specification. The dependencies (when
+  // available) are the initialization dependencies; for the entries without
+  // dependency information (e.g. approximated states, calculated parameters)
+  // omitting them is valid (the importer then assumes a dependency on all
+  // knowns). The list consists of:
   //  1. outputs with initial = approx or calculated
   //  2. calculatedParameters
   //  3. continuous-time states with initial = approx or calculated
@@ -15567,7 +15575,7 @@ algorithm
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
   iu := Dangerous.listReverseInPlace(iu);
-  initialUnknowns := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in iu);
+  initialUnknowns := list(makeFMIUnknownWithDeps(v, initDepMap) for v in iu);
 
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),

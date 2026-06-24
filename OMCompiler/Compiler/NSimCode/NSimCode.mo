@@ -352,6 +352,10 @@ public
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
+            // make fmi_index globally unique so the FMI ModelStructure dependency
+            // indices (used for both simcode_map and modelInfo below) resolve to
+            // the correct value references, including parameter dependencies
+            vars                                := SimVars.globalizeFMIIndex(vars);
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
             // create empty equation map and fill while creating the blocks
@@ -519,9 +523,12 @@ public
        result maps an unknown FMI index to the FMI indices of the knowns it depends
        on. Array variables are exported as a single FMI variable; scalar element
        crefs that are not variables of their own are looked up by their array cref
-       and the dependencies of all elements are merged per FMI index."
+       and the dependencies of all elements are merged per FMI index.
+       With forInitialization = true the initialization dependencies are computed
+       (derivatives/outputs additionally depend on the parameters)."
       input BackendDAE bdae;
       input SimCode simCode;
+      input Boolean forInitialization = false;
       output list<tuple<Integer, list<Integer>>> fmiDependencies = {};
     protected
       UnorderedMap<ComponentRef, SimVar> simcode_map = simCode.simcode_map;
@@ -533,7 +540,7 @@ public
       UnorderedMap<Integer, IntSet> dep_map;
       IntSet depSet;
     algorithm
-      sparsity := NBJacobian.createFMISparsity(bdae);
+      sparsity := NBJacobian.createFMISparsity(bdae, forInitialization);
       dep_map := UnorderedMap.new<IntSet>(Util.id, intEq);
       for row in sparsity loop
         (uCref, depCrefs) := row;

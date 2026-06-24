@@ -183,8 +183,17 @@ public
      the building blocks (StrongComponent.collectCrefs, resolveRowDependencies)
      with our own seeds, rows and a non-ODE Jacobian type so that input (known)
      dependencies are kept instead of being substituted away.
-     The crefs are scalarized; array variables are recombined by the caller."
+     The crefs are scalarized; array variables are recombined by the caller.
+
+     With forInitialization = true the same machinery is run over the
+     initialization partitions with the parameters added to the seeds: at
+     initialization the derivatives and outputs additionally depend on the
+     (independent) parameters, which is what the FMI <InitialUnknown> dependency
+     lists require (continuous-time states keep being seeds; calculated
+     parameters and approximated states are reported without dependencies, which
+     is valid)."
     input BackendDAE bdae;
+    input Boolean forInitialization = false;
     output list<tuple<ComponentRef, list<ComponentRef>>> dependencies = {};
   protected
     VariablePointers seedCandidates, relevanceCandidates;
@@ -192,7 +201,7 @@ public
     list<Partition.Partition> partitions;
     list<StrongComponent> comps = {};
     list<ComponentRef> seed_vars, relevant_vars, seed_vars_array, relevant_vars_array, row_crefs;
-    list<Pointer<Variable>> output_vars;
+    list<Pointer<Variable>> seed_lst, output_vars;
     UnorderedMap<ComponentRef, CrefLst> map;
     UnorderedSet<ComponentRef> set, seed_set;
   algorithm
@@ -200,18 +209,32 @@ public
       local
         VarData varData;
       case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM()) algorithm
-        // seeds (columns) = continuous states + top level inputs
-        seedCandidates := VariablePointers.fromList(listAppend(
-          VariablePointers.toList(varData.states),
-          VariablePointers.toList(varData.top_level_inputs)));
-        // relevance set = all unknowns (state derivatives, algebraic and discrete
-        // variables) so intermediate variables are tracked for the transitive
-        // closure down to states/inputs
-        relevanceCandidates := varData.unknowns;
+        // seeds (columns): for the continuous structure the continuous states and
+        // top level inputs; for the initialization additionally all knowns
+        // (parameters, constants and states) since outputs/derivatives depend on
+        // the parameters at initialization
+        seed_lst := listAppend(VariablePointers.toList(varData.states),
+                               VariablePointers.toList(varData.top_level_inputs));
+        if forInitialization then
+          // at initialization the knowns also include the parameters/constants
+          seed_lst := listAppend(VariablePointers.toList(varData.knowns), seed_lst);
+        end if;
+        seedCandidates := VariablePointers.fromList(seed_lst);
+        // relevance set so intermediate variables are tracked for the transitive
+        // closure down to the seeds: all unknowns for the continuous structure,
+        // all variables for the initialization (intermediate parameters included)
+        relevanceCandidates := if forInitialization then varData.variables else varData.unknowns;
 
-        // collect the strong components of all continuous simulation partitions
-        partitions := listAppend(listAppend(bdae.ode, bdae.ode_event),
-                                 listAppend(bdae.algebraic, bdae.alg_event));
+        // collect the strong components of the relevant partitions
+        if forInitialization then
+          partitions := bdae.init;
+          if isSome(bdae.init_0) then
+            partitions := listAppend(Util.getOption(bdae.init_0), partitions);
+          end if;
+        else
+          partitions := listAppend(listAppend(bdae.ode, bdae.ode_event),
+                                   listAppend(bdae.algebraic, bdae.alg_event));
+        end if;
         for part in partitions loop
           comps := match part.strongComponents
             local array<StrongComponent> arr;
