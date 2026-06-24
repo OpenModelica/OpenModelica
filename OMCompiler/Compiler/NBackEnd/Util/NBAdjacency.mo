@@ -513,7 +513,6 @@ public
           list<UnorderedSet<ComponentRef>> reps = {};
           list<list<ComponentRef>> solved_crefs = {};
 
-
         case FULL() algorithm
           // create the equation name -> index map
           for i in 1:arrayLength(full.equation_names) loop
