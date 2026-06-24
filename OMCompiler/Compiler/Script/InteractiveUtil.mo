@@ -1748,8 +1748,8 @@ protected function buildEnvForGraphicProgramFull
    instantiating the currently used class."
   input Absyn.Program inProgram;
   input Absyn.Path inModelPath;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
+  output FCore.Cache outCache = FCore.emptyCache();
+  output FCore.Graph outEnv = FGraph.empty();
   output Absyn.Program outProgram;
 protected
   Boolean check_model, eval_param, failed = false, graphics_mode;
@@ -3532,7 +3532,7 @@ protected function transformPathedElementInClassDef
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassDef def;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -3572,7 +3572,7 @@ protected function transformPathedElementInClassPart
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassPart part;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -3612,7 +3612,7 @@ protected function transformPathedElementInElementItem
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementItem item;
-        output Option<Absyn.Element> outElement;
+        output Option<Absyn.Element> outElement = NONE();
         output Boolean success;
 
   partial function Func
@@ -3647,7 +3647,7 @@ protected function transformPathedElementInElement
   input Absyn.Path path;
   input Func func;
   input output Absyn.Element element;
-        output Option<Absyn.Element> outElement;
+        output Option<Absyn.Element> outElement = NONE();
         output Boolean success;
 
   partial function Func
@@ -3675,7 +3675,7 @@ protected function transformPathedElementInElementSpec
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementSpec spec;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -4878,7 +4878,7 @@ public function accessClass
   end Fn;
 protected
   Access access;
-  Boolean silent, eval_params, graphics_exp_mode;
+  Boolean silent = false, eval_params, graphics_exp_mode;
 algorithm
   eval_params := Config.getEvaluateParametersInAnnotations();
   graphics_exp_mode := Config.getGraphicsExpMode();

@@ -3559,13 +3559,13 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name = "change"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), -1, NONE()), true);
+      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), -1, NONE()), true);
 
     // edge(b) = b and not pre(b)
     case DAE.CALL(path=Absyn.IDENT(name = "edge"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())))), true);
+      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)))), true);
 
     else (inExp,inB);
   end matchcontinue;
@@ -4251,7 +4251,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   Integer n, size, idx = 1, m, j;
-  BackendDAE.Equation eqn, eqn1;
+  BackendDAE.Equation eqn = BackendDAE.DUMMY_EQUATION(), eqn1;
   DAE.Exp left, right, e1, e2, e, e3;
   list<DAE.Exp> left_lst, right_lst;
   list<Integer> indRemove;

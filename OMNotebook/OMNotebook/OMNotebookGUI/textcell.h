@@ -71,6 +71,9 @@ namespace IAEX
     QString textHtml();
     QTextCursor textCursor();
     QTextEdit* textEdit();
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
 
     void clear();
     virtual void accept(Visitor &v);

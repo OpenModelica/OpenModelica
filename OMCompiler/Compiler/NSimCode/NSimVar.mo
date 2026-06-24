@@ -48,6 +48,7 @@ protected
   import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
@@ -77,6 +78,7 @@ protected
   import NSimCode.SimCodeIndices;
 
   // Util imports
+  import Config;
   import Error;
   import Pointer;
   import StringUtil;
@@ -104,7 +106,7 @@ public
       Option<Causality> causality;
       Option<Integer> variable_index "valueReference";
       Option<Integer> fmi_index "index of variable in modelDescription.xml";
-      list<String> numArrayElement;
+      list<Expression> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
@@ -190,7 +192,7 @@ public
             causality           = SOME(causality),
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
-            numArrayElement     = {},
+            numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
@@ -333,7 +335,7 @@ public
         causality           = NONE(),  //ToDo update this!
         variable_index      = simVar.variable_index,
         fmi_index           = simVar.fmi_index,
-        numArrayElement     = simVar.numArrayElement,
+        numArrayElement     = list(Expression.toString(e) for e in simVar.numArrayElement),
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
@@ -390,7 +392,7 @@ public
             start := varAttr.start;
             nominal := varAttr.nominal;
             // FIXME parameters have default fixed = true
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
@@ -408,7 +410,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -416,7 +418,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -430,7 +432,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_STRING())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -440,7 +442,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -1261,6 +1263,21 @@ public
       Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
+    function listScalarSize
+      "Var-vector size for a simvar list. The C++ target keeps arrays un-expanded
+       but sizes its var vectors and value references per scalar element, so the
+       array sizes are summed. Every other target (notably the C runtime, which
+       also supports simCodeScalarize=false) keeps one slot per simvar."
+      input list<SimVar> vars;
+      output Integer sz;
+    algorithm
+      if stringEqual(Config.simCodeTarget(), "Cpp") then
+        sz := sum(product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) for v in vars);
+      else
+        sz := listLength(vars);
+      end if;
+    end listScalarSize;
+
     function create
       input SimVars vars;
       input EventInfo eventInfo;
@@ -1272,23 +1289,23 @@ public
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
-        numStateVars                 = listLength(vars.stateVars),
-        numAlgVars                   = listLength(vars.algVars),
-        numDiscreteReal              = listLength(vars.discreteAlgVars),
-        numIntAlgVars                = listLength(vars.intAlgVars),
-        numBoolAlgVars               = listLength(vars.boolAlgVars),
-        numAlgAliasVars              = listLength(vars.aliasVars),
-        numIntAliasVars              = listLength(vars.intAliasVars),
-        numBoolAliasVars             = listLength(vars.boolAliasVars),
-        numParams                    = listLength(vars.paramVars),
-        numIntParams                 = listLength(vars.intParamVars),
-        numBoolParams                = listLength(vars.boolParamVars),
+        numStateVars                 = listScalarSize(vars.stateVars),
+        numAlgVars                   = listScalarSize(vars.algVars),
+        numDiscreteReal              = listScalarSize(vars.discreteAlgVars),
+        numIntAlgVars                = listScalarSize(vars.intAlgVars),
+        numBoolAlgVars               = listScalarSize(vars.boolAlgVars),
+        numAlgAliasVars              = listScalarSize(vars.aliasVars),
+        numIntAliasVars              = listScalarSize(vars.intAliasVars),
+        numBoolAliasVars             = listScalarSize(vars.boolAliasVars),
+        numParams                    = listScalarSize(vars.paramVars),
+        numIntParams                 = listScalarSize(vars.intParamVars),
+        numBoolParams                = listScalarSize(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
         numInVars                    = listLength(vars.inputVars),
         numExternalObjects           = listLength(vars.extObjVars),
-        numStringAlgVars             = listLength(vars.stringAlgVars),
-        numStringParamVars           = listLength(vars.stringParamVars),
-        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numStringAlgVars             = listScalarSize(vars.stringAlgVars),
+        numStringParamVars           = listScalarSize(vars.stringParamVars),
+        numStringAliasVars           = listScalarSize(vars.stringAliasVars),
         numEquations                 = simCodeIndices.equationIndex,
         numLinearSystems             = simCodeIndices.linearSystemIndex,
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,

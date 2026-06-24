@@ -4043,6 +4043,12 @@ package Expression
     input Boolean allow_arrays;
     output Boolean b;
   end isSimpleLiteralValue;
+
+  function makeCrefExp
+    input DAE.ComponentRef inCref;
+    input DAE.Type inExpType;
+    output DAE.Exp outExp;
+  end makeCrefExp;
 end Expression;
 
 package ExpressionDump

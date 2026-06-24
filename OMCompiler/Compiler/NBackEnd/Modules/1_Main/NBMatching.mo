@@ -349,8 +349,8 @@ protected
     Integer nVars = arrayLength(mT), nEqns = arrayLength(m);
     array<Integer> var_to_eqn;
     array<Integer> eqn_to_var;
-    array<Boolean> var_marks;
-    array<Boolean> eqn_marks;
+    array<Boolean> var_marks = arrayCreate(0, false);
+    array<Boolean> eqn_marks = arrayCreate(0, false);
     Boolean pathFound;
   algorithm
     var_to_eqn := arrayCreate(nVars, -1);

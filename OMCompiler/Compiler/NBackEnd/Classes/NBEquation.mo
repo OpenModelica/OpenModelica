@@ -823,7 +823,7 @@ public
         [...]"
       input output Iterator iter;
       input Expression condition;
-      output Solve.Status status;
+      output Solve.Status status = NBSolve.Status.UNSOLVABLE;
     protected
       type IterOpt = Option<Iterator>; // needed for the map
       list<ComponentRef> names;
@@ -1285,7 +1285,7 @@ public
       eqn := Pointer.access(eqn_ptr);
       size_lst := match eqn
         case SCALAR_EQUATION() then {1};
-        case ARRAY_EQUATION()  then {Type.sizeOf(eqn.ty, resize)}; //needs to be updated to represent the dimensions
+        case ARRAY_EQUATION()  then list(Dimension.size(dim, resize) for dim in Type.arrayDims(eqn.ty));
         case RECORD_EQUATION() then {Type.sizeOf(eqn.ty, resize)};
         case ALGORITHM()       then {eqn.size};
         case IF_EQUATION()     then {eqn.size};
@@ -2786,6 +2786,8 @@ public
           slicing_status  := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
           if slicing_status == SlicingStatus.NONTRIVIAL then
             sliced_eqn := sliceFor(listHead(eqn.body), getForIterator(eqn), sizes, listReverse(getForFrames(eqn)), indices);
+          else
+            sliced_eqn := {Pointer.create(eqn)};
           end if;
         then (sliced_eqn, slicing_status);
 
@@ -2875,7 +2877,7 @@ public
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
       input UnorderedMap<Path, Function> funcMap                  "func map for solving";
-      output Solve.Status solve_status                            "solve success status";
+      output Solve.Status solve_status = NBSolve.Status.EXPLICIT  "solve success status";
     protected
       Equation eqn;
       list<Integer> location;
@@ -4191,6 +4193,7 @@ public
         SOME(residualVar) := attr.residualVar;
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing residualVar!"});
+        fail();
       end try;
     end getResidualVar;
 
@@ -4292,8 +4295,8 @@ public
       String index;
       Boolean useMapping = isSome(mapping_opt);
       Boolean filterEqs = isSome(filter_opt);
-      array<tuple<Integer,Integer>> mapping;
-      UnorderedSet<String> filter;
+      array<tuple<Integer,Integer>> mapping = listArray({});
+      UnorderedSet<String> filter = UnorderedSet.new(stringHashDjb2, stringEq);
       Pointer<Equation> eqn;
     algorithm
       // check if mapping is used
@@ -4470,11 +4473,8 @@ public
       Equation eq, new_eq;
       list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
       Boolean debug = not listEmpty(followEquations);
-      UnorderedSet<String> debug_eqns;
+      UnorderedSet<String> debug_eqns = UnorderedSet.fromList(followEquations, stringHashDjb2, stringEq);
     algorithm
-      if debug then
-        debug_eqns := UnorderedSet.fromList(followEquations, stringHashDjb2, stringEq);
-      end if;
 
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then

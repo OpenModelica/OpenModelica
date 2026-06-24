@@ -1775,6 +1775,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedVariableNumber;
 
 
@@ -1792,6 +1793,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedEquationNumber;
 
 public function dumpMatching

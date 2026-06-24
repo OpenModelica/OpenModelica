@@ -312,7 +312,7 @@ protected
   Integer numRelatedBoundaryConditions;
   String fullPathPrefix, fileNamePrefixHash, iterationVarsStr;
 
-  SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
+  SimCode.OMSIFunction omsiInitEquations = SimCode.emptyOMSIFunction, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
   SimCode.SimulationSettings theSettings;
 
@@ -683,7 +683,8 @@ algorithm
     // Generates c code for setC-results which calculates c(x,y) for dataReconciliation
     if isSome(shared.dataReconciliationData) then
         tmpSimVars := modelInfo.vars;
-        //BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+        BackendDAE.DATA_RECON(setcVars=setcVars, datareconinputs=datareconinputvars, setBVars=setBVars, relatedBoundaryConditions=numRelatedBoundaryConditions) := Util.getOption(shared.dataReconciliationData);
+        emptyVars := BackendVariable.emptyVars();
        (tmpsetcVars, _) :=  BackendVariable.traverseBackendDAEVars(setcVars, traversingdlowvarToSimvar, ({}, emptyVars));
         tmpsetcVars := rewriteIndex(tmpsetcVars, 0);
         tmpSimVars.dataReconSetcVars := tmpsetcVars;
@@ -2397,13 +2398,8 @@ algorithm
         varexp := Expression.crefExp(cr);
         varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) := shared;
-        b := true;
         try
           (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
-        else
-          b := false;
-        end try;
-        if b then
           solveEqns := listReverse(solveEqns);
           solveCr := listReverse(solveCr);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
@@ -2424,7 +2420,7 @@ algorithm
           (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
           eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind), NONE()), NONE(), eqAttr)};
           uniqueEqIndex := uniqueEqIndex+1;
-        end if;
+        end try;
       then (eqSystlst, uniqueEqIndex,tempvars);
 
     // Algorithm for single variable.
@@ -3395,7 +3391,7 @@ algorithm
         end for;
         outSimEqn := listReverse(outSimEqn);
       else
-        Error.assertion(false, getInstanceName() + " failed because expression "
+        Error.terminate(getInstanceName() + " failed because expression "
           + ExpressionBasics.printExpStr(right) + " could not be scalarized.", sourceInfo());
       end try;
     then (outSimEqn, ouniqueEqIndex);
@@ -9400,7 +9396,7 @@ end subPartitionString;
 
 public function dumpSimCodeDAEmodeDataString
   input Option<SimCode.DaeModeData> inDaeModedata;
-  output String str;
+  output String str = "";
 algorithm
   () := match inDaeModedata
   local
@@ -9826,6 +9822,7 @@ algorithm
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
   else
     Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
+    fail();
   end try;
 end createCrefToSimVarHT;
 
@@ -12145,14 +12142,14 @@ protected function getVarIndexInfosByMapping "author: marcusw
   input Boolean iColumnMajor; //true if the subscripts should be evaluated in column major
   input String iIndexForUndefinedReferences;
   output list<String> oVarIndexList; //if the variable is part of an array, all array indices are returned in this list (the list contains one element if the variable is a scalar)
-  output String oConcreteVarIndex; //the scalar index of the variable (this value is always part of oVarIndexList)
+  output String oConcreteVarIndex = ""; //the scalar index of the variable (this value is always part of oVarIndexList)
 protected
   DAE.ComponentRef varName = iVarName;
   Integer arrayIdx, idx, arraySize, concreteVarIndex;
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
   list<DAE.Subscript> arraySubscripts;
-  list<Integer> arrayDimensions, arrayDimensionsReverse;
+  list<Integer> arrayDimensions, arrayDimensionsReverse = {};
   Boolean toColumnMajor;
   Boolean isContiguous;
 algorithm
@@ -13872,6 +13869,30 @@ else
     discreteStates := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                            for v in getScalarVars(clockedStates));
 
+    // Compute the InitialUnknowns even though the symbolic Jacobian (and thus
+    // the dependency information) is missing. Omitting the dependencies is valid
+    // according to the FMI specification; the importer then assumes a dependency
+    // on all knowns. The InitialUnknowns are mandatory in FMI 2.0 and 3.0. The
+    // list consists of (per the FMI spec):
+    //  1. outputs with initial = approx or calculated
+    //  2. calculatedParameters
+    //  3. continuous-time states with initial = approx or calculated
+    //  4. state derivatives with initial = approx or calculated
+    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
+    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
+    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
+    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
+    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
+    tmpInitialUnknowns := {};
+    tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := List.filterCons(getScalarVars(getAllParamSimVars(inModelInfo)), isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
+    // A continuous state with a fixed start value has initial = exact (a known),
+    // so it is not an initial unknown; an unfixed start makes it initial = approx.
+    tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
+    allInitialUnknowns := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in tmpInitialUnknowns);
+
     contPartSimDer := NONE();
     initPartSimDer := NONE();
     outFmiModelStructure :=
@@ -13882,7 +13903,7 @@ else
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {})));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -13913,6 +13934,20 @@ algorithm
     else false;
   end match;
 end isInitialApproxOrCalculatedSimVar;
+
+protected function isStateInitialUnknownSimVar
+  "A continuous-time state is an FMI initial unknown unless its start value is
+   fixed: a fixed start makes the state initial = exact (a known), an unfixed
+   start makes it initial = approx (an unknown). This mirrors the initial
+   attribute emitted for states by the FMI templates."
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match simVar
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) then not simVar.isFixed;
+    else isInitialApproxOrCalculatedSimVar(simVar);
+  end match;
+end isStateInitialUnknownSimVar;
 
 protected function isInitialApproxOrCalculated
   "return true if the initial attribute is CALCULATED or APPROX else false"

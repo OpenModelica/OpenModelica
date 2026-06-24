@@ -36,6 +36,23 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
+#include <sstream>
+#include <vector>
+
+// Build the Modelica name of a scalar element of a row-major array,
+// e.g. arrayElementName("a", {2,3}, 4) -> "a[2,2]". Used to expose the
+// elements of a non-scalarized array variable as individual result signals.
+static std::string arrayElementName(const std::string& base, const std::vector<int>& dims, int linearOffset)
+{
+  std::vector<int> idx(dims.size());
+  int rem = linearOffset;
+  for (int k = (int)dims.size() - 1; k >= 0; k--) { idx[k] = rem % dims[k]; rem /= dims[k]; }
+  std::stringstream ss;
+  ss << base << "[";
+  for (size_t k = 0; k < idx.size(); k++) { if (k) ss << ","; ss << (idx[k] + 1); }
+  ss << "]";
+  return ss.str();
+}
 
 XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile)
   : IPropertyReader()
@@ -74,7 +91,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
       LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
       FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
       {
-        if (vars.first == "ScalarVariable")
+        if (vars.first == "ScalarVariable" || vars.first == "ArrayVariable")
         {
           refIdxOpt = vars.second.get_optional<int>("<xmlattr>.valueReference");
 
@@ -98,6 +115,25 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           bool isAlias = aliasInfo.compare("alias") == 0;
           bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
+          // For a non-scalarized array (kept un-expanded with simCodeScalarize=false),
+          // collect the per-dimension sizes so each scalar element a[i,j,...] can be
+          // registered as its own result signal at the contiguous reference refIdx+offset.
+          bool isArray = (vars.first == "ArrayVariable");
+          std::vector<int> arrayDims;
+          int arraySize = 1;
+          if (isArray)
+          {
+            FOREACH(ptree::value_type const& dimNode, vars.second.get_child(""))
+            {
+              if (dimNode.first == "Dimension")
+              {
+                boost::optional<int> d = dimNode.second.get_optional<int>("<xmlattr>.start");
+                if (d) { arrayDims.push_back(*d); arraySize *= *d; }
+              }
+            }
+            if (arrayDims.empty()) { arrayDims.push_back(1); }
+          }
+
           bool emitResult = false;
           if (emitResults != EMIT_NONE) {
             emitResult = std::regex_match(name, filterRegex);
@@ -114,7 +150,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
           FOREACH(ptree::value_type const& var, vars.second.get_child(""))
           {
-             if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
+            if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
             {
                //If a start value is given for the alias and the referred variable, skip the alias declaration
               if (!(isAlias || isNegatedAlias))
@@ -123,17 +159,33 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                 if (v) {
                   double value = *v;
                   LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
-                  system.setRealStartValue(realVars[refIdx], value);
+                  for (int off = 0; off < (isArray ? arraySize : 1); off++)
+                    system.setRealStartValue(realVars[refIdx + off], value);
                 }
               }
-              const double& realVar = sim_vars->getRealVar(refIdx);
-              const double* realVarPtr = &realVar;
               if (emitResult)
               {
-                if (isParameter)
-                  _realVars.addParameter(name, descripton, realVarPtr);
+                if (isArray)
+                {
+                  // expose each scalar element a[i,j,...] as its own result signal
+                  for (int off = 0; off < arraySize; off++)
+                  {
+                    const double* p = &sim_vars->getRealVar(refIdx + off);
+                    std::string elname = arrayElementName(name, arrayDims, off);
+                    if (isParameter)
+                      _realVars.addParameter(elname, descripton, p);
+                    else
+                      _realVars.addOutputVar(elname, descripton, p, isNegatedAlias);
+                  }
+                }
                 else
-                  _realVars.addOutputVar(name, descripton, realVarPtr, isNegatedAlias);
+                {
+                  const double* realVarPtr = &sim_vars->getRealVar(refIdx);
+                  if (isParameter)
+                    _realVars.addParameter(name, descripton, realVarPtr);
+                  else
+                    _realVars.addOutputVar(name, descripton, realVarPtr, isNegatedAlias);
+                }
               }
             }
             else if (var.first == "Integer")
@@ -211,7 +263,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     {
       std::stringstream sstream;
       sstream << "Could not read start values. Current variable reference is " << refIdx;
-      throw ModelicaSimulationError(UTILITY,sstream.str());
+      throw ModelicaSimulationError(UTILITY, sstream.str());
     }
     _isInitialized = true;
     file.close();

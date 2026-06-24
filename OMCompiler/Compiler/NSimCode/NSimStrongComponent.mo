@@ -54,6 +54,7 @@ protected
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -804,6 +805,8 @@ public
       blck := match (eqn, slice.indices)
         local
           Block tmp;
+          Integer i;
+          list<Subscript> subs;
           list<ComponentRef> names;
           list<Expression> ranges;
 
@@ -813,14 +816,32 @@ public
           res_idx := res_idx + 1;
         then tmp;
 
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        then tmp;
+
+        // unsliced array equation
         case (BEquation.ARRAY_EQUATION(), {}) algorithm
           tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
-        case (BEquation.IF_EQUATION(), _) algorithm
-          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        // single slice array equation
+        case (BEquation.ARRAY_EQUATION(), {i}) algorithm
+          // get subscripts and apply them to rhs
+          subs := list(Subscript.fromExp(Expression.INTEGER(s)) for s in Slice.indexToLocation(i, Equation.sizes(Slice.getT(slice))));
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, Expression.applySubscripts(subs, eqn.rhs), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + listLength(slice.indices);
+        then tmp;
+
+        // handle large slice array equation as full slice
+        // Note: could be improved -> scalarize? find good pattern?
+        case (BEquation.ARRAY_EQUATION(), _) algorithm
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized

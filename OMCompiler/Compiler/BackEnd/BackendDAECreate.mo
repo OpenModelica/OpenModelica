@@ -450,7 +450,7 @@ protected
   DAE.ComponentRef cref;
   DAE.ComponentRef rec_cref;
   ArrayBindingList arrayBindingExpList;
-  list<Integer> subscriptLst;
+  list<Integer> subscriptLst = {};
   DAE.Exp binding;
   DAE.Exp scalarBinding;
   list<DAE.Exp> expLst;

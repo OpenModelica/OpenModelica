@@ -1536,7 +1536,7 @@ public
     exp := match exp
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad = diffArguments.current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
         list<Expression> rest, diffRest;
         Type ty;
         DifferentiationType diffType;
@@ -2900,7 +2900,7 @@ public
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
         Operator operator, addOp, mulOp, powOp, divOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad;
+        Expression current_grad = diffArguments.current_grad;
         // Local reverse grads (to assign before recursing)
         Expression grad_exp1, grad_exp2, denom2, numUF;
         Boolean isVec1, isVec2, isMat1, isMat2;
@@ -3214,9 +3214,9 @@ public
         list<Expression> diff_arguments, diff_inv_arguments;
         Operator operator, addOp, powOp, mulEWOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad, upstream, e_over_f, e_over_g, numProd, denomProd;
+        Expression current_grad = diffArguments.current_grad, upstream, e_over_f, e_over_g, numProd, denomProd;
         List<Expression> arg_rest;
-        Boolean hasArray, hasArrayNum;
+        Boolean hasArray = false, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
         Type powTy;
@@ -3449,9 +3449,9 @@ public
     input output DifferentiationArguments diffArguments;
     input Operator operator;
   protected
-    Expression diff_arg, current_grad, localUp, restProd;
-    Array<List<Expression>> diff_lists;
-    List<Expression> arg_products, restArgs;
+    Expression diff_arg, current_grad = diffArguments.current_grad, localUp, restProd;
+    Array<List<Expression>> diff_lists = listArray({});
+    List<Expression> arg_products = {}, restArgs;
     Integer idx = 1;
     Boolean isReverse = isSome(diffArguments.adjoint_map);
     Operator mulEWOp = Operator.fromClassification(

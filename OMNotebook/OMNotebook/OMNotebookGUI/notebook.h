@@ -111,15 +111,15 @@ public slots:
   QVector<Cell*> SearchCells(Cell* current);  // search the cells in a document and return the number of cells
 
 protected:
-  void keyPressEvent(QKeyEvent *event);
-  void keyReleaseEvent(QKeyEvent *event);
+  void keyPressEvent(QKeyEvent *event) override;
+  void keyReleaseEvent(QKeyEvent *event) override;
   void SearchCells(Cell* current, QVector<Cell*> * total);
 
 private slots:
   void newFile();
   void openFile(const QString filename="");
   void closeFile();
-  void closeEvent( QCloseEvent *event );
+  void closeEvent(QCloseEvent *event) override;
   void aboutQTNotebook();
   void aboutQT();
   void helpText();

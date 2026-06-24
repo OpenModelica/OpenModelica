@@ -6628,6 +6628,7 @@ algorithm
     end if;
   end for;
 
+  fail();
 end findInIntTuple1;
 
 

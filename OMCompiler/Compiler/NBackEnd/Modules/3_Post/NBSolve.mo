@@ -324,14 +324,14 @@ public
           comp.status := Status.IMPLICIT;
         then ({comp}, Status.IMPLICIT);
 
-        case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+        case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
           (generic_comp, solve_status, implicit_index) := solveGenericEquation(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then ({generic_comp}, solve_status);
 
-        case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
+        case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
-          (eqn_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
           comp.eqn := eqn_slice;
           comp.status := solve_status;
         then ({comp}, solve_status);
@@ -343,7 +343,7 @@ public
           if solve_status < Status.UNSOLVABLE then
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
           else
-            (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
             comp.eqn := eqn_slice;
           end if;
           comp.status := solve_status;
@@ -452,7 +452,7 @@ public
     if solve_status < Status.UNSOLVABLE then
       solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
     else
-      (solved_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, functions, kind, implicit_index, slicing_map, varData, eqData);
+      (solved_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
 
     // create a generic component if its a for-equation, otherwise create a sliced component
@@ -480,7 +480,7 @@ public
       // empty variable name implies equation without return value
       (eqn, status) := (eqn, Status.EXPLICIT);
     else
-      (var_cref, status) := getVarSlice(var.name, eqn);
+      (var_cref, status) := getVarSlice(var.name, SOME(var.name), eqn);
       var_cref := if status < Status.UNSOLVABLE then var_cref else var.name;
       (eqn, status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -542,7 +542,7 @@ public
     input list<Slice<Pointer<Variable>>> var_slices;
     output Equation solved_eqn = eqn;
     input UnorderedMap<Path, Function> funcMap;
-    output Status status;
+    output Status status = Status.UNPROCESSED;
   protected
     list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
     Expression lhs = Util.getOption(Equation.getLHS(eqn));
@@ -566,7 +566,8 @@ public
         // check if all belong to the same record
         record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for var_slice in var_slices loop
-          (var_cref, status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+          var_cref := BVariable.getVarName(Slice.getT(var_slice));
+          (var_cref, status) := getVarSlice(var_cref, SOME(var_cref), eqn);
           UnorderedSet.add(var_cref, record_crefs);
           if status == Status.UNSOLVABLE then break; end if;
         end for;
@@ -644,7 +645,7 @@ public
     fixed_cref := ComponentRef.stripSubscriptsAll(cref);
     ty := ComponentRef.getSubscriptedType(fixed_cref, true);
     if Type.isArray(ty) and Type.sizeOf(ty) == 1 then
-      fixed_cref := getVarSlice(fixed_cref, eqn);
+      fixed_cref := getVarSlice(fixed_cref, SOME(cref), eqn);
     else
       fixed_cref := cref;
     end if;
@@ -836,7 +837,7 @@ protected
     input ComponentRef cref;
     input Equation eqn;
     output Equation eqnOut = eqn "don't change the equation";
-    output Status status;
+    output Status status = Status.UNSOLVABLE;
     output RelationInversion invertRelation = RelationInversion.FALSE;
   algorithm
     for stmt in body.when_stmts loop
@@ -1047,7 +1048,7 @@ protected
     input ComponentRef cref;
     input output Boolean crefFound;
     input output list<Expression> inverseInstructions;
-    output Status status;
+    output Status status = Status.EXPLICIT; // just set this per default, since the algorithm detects implicit equations
   protected
     list<Expression> argList = {}, invargList = {};
     Boolean crefFoundInRecursion;
@@ -1557,26 +1558,46 @@ protected
 
   function getVarSlice
     input output ComponentRef var_cref;
+    input Option<ComponentRef> reference;
     input Equation eqn;
     output Status solve_status;
   protected
     list<ComponentRef> slices_lst;
     Option<Pointer<Variable>> record_parent;
+    function checkReference
+      input ComponentRef var_cref;
+      input Option<ComponentRef> reference_opt;
+      output Boolean fit;
+    algorithm
+      fit := match reference_opt
+        local
+          ComponentRef reference;
+        case SOME(reference) then Type.sizeOf(ComponentRef.getSubscriptedType(var_cref), true) == Type.sizeOf(ComponentRef.getSubscriptedType(reference), true);
+        else true;
+      end match;
+    end checkReference;
   algorithm
     slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = var_cref));
 
     if List.hasOneElement(slices_lst) then
       var_cref := listHead(slices_lst);
-      solve_status := Status.UNPROCESSED;
+      // only accept the cref if it has the same size as the one we are trying to solve for
+      if checkReference(var_cref, reference) then
+        solve_status := Status.UNPROCESSED;
+      else
+        solve_status := Status.IMPLICIT;
+      end if;
     else
       // check if the record parents occur (todo: vice versa?)
       record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref, sourceInfo()));
       if isSome(record_parent) then
-        (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
+        // do not pass reference for record elements
+        (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), NONE(), eqn);
+      elseif listEmpty(slices_lst) then
+        solve_status := Status.UNSOLVABLE;
       else
         // todo: choose best slice of list if more than one.
-        // only fail for listEmpty
-        solve_status := Status.UNSOLVABLE;
+        solve_status := Status.IMPLICIT;
       end if;
     end if;
   end getVarSlice;
@@ -1584,6 +1605,7 @@ protected
   function solveForVarSlice
     input output Slice<EquationPointer> eqn_slice;
     input Slice<VariablePointer> var_slice;
+    input ComponentRef cref;
     input UnorderedMap<Path, Function> funcMap;
     input BPartition.Kind kind;
     input output Integer implicit_index;
@@ -1596,9 +1618,9 @@ protected
     ComponentRef var_cref;
   algorithm
     eqn := Pointer.access(Slice.getT(eqn_slice));
-    (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+    (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), SOME(cref), eqn);
 
-    if solve_status < Status.UNSOLVABLE then
+    if solve_status < Status.IMPLICIT then
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
     end if;

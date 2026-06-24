@@ -302,7 +302,7 @@ function explicitReturnInClassPart
   "@author:johti17
    Only works for Algorithms!"
   input list<Absyn.ClassPart> classParts;
-  output Boolean existsImplicitReturn;
+  output Boolean existsImplicitReturn = false;
 algorithm
   for cp in classParts loop
     existsImplicitReturn := match cp
@@ -316,7 +316,7 @@ end explicitReturnInClassPart;
 function algorithmItemsContainsReturn
   "@author: johti17"
   input list<Absyn.AlgorithmItem> contents;
-  output Boolean existsReturn;
+  output Boolean existsReturn = false;
 algorithm
   for item in contents loop
     existsReturn := match item

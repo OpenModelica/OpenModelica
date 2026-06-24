@@ -1,0 +1,87 @@
+// name: FlowAlias10
+// status: correct
+
+loadString("
+  package TestAliasStream
+    constant Real c = 4200;
+    constant Real rho = 1000;
+    constant Real p_atm = 1e5;
+    constant Real g = 9.81;
+
+    connector FluidPort
+      Real p;
+      flow Types.MassFlowRate w;
+      stream Real h;
+    end FluidPort;
+
+    model Pump
+      FluidPort outlet;
+      parameter Real T = 20;
+      input Types.MassFlowRate w;
+      Real P;
+    equation
+      outlet.w = -w;
+      outlet.h = c*T;
+      P = if w > 0 then w*(outlet.p - p_atm)/rho else 0;
+    end Pump;
+
+    model Tank
+      FluidPort port;
+      parameter Real A = 1e-3;
+      Real y(start = 1, fixed = true);
+      Real T(start = 20, fixed = true);
+    equation
+      rho*A*der(y) = port.w;
+      rho*A*c*der(y*T) = port.w*actualStream(port.h);
+      port.h = c*T;
+      port.p = p_atm + rho*g*y;
+    end Tank;
+
+    model Test10
+      Pump pump(w = sin(time));
+      Tank tank;
+    equation
+      connect(pump.outlet, tank.port);
+    end Test10;
+
+    package Types
+      type MassFlowRate = Real(quantity = \"MassFlowRate\", unit = \"kg/s\", min = -60, max = 60);
+    end Types;
+  end TestAliasStream;
+"); getErrorString();
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(TestAliasStream.Test10); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test10'
+//   model 'Test10'
+//     Real 'pump.outlet.p';
+//     Real 'pump.outlet.h';
+//     parameter Real 'pump.T' = 20.0;
+//     Real 'pump.P';
+//     Real 'tank.port.p';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'pump.w'(min = -60.0, max = 60.0, unit = \"kg/s\", quantity = \"MassFlowRate\") = sin(time);
+//     Real 'tank.port.w'(max = 60.0, min = -60.0, unit = \"kg/s\", quantity = \"MassFlowRate\") = 'pump.w' \"Alias variable\";
+//     Real 'pump.outlet.w'(max = 60.0, min = -60.0, unit = \"kg/s\", quantity = \"MassFlowRate\") = -'pump.w' \"Alias variable\";
+//   equation
+//     'pump.outlet.p' = 'tank.port.p';
+//     'pump.outlet.h' = 4200.0 * 'pump.T';
+//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     1000.0 * 'tank.A' * der('tank.y') = 'pump.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = 'pump.w' * (if 'pump.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h');
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//   end 'Test10';
+// end 'Test10';
+// "
+// ""
+// endResult

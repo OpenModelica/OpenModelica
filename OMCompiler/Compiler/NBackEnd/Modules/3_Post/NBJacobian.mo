@@ -205,7 +205,7 @@ public
     input String name;
     output BackendDAE jacobian;
   protected
-    JacobianType jacType;
+    JacobianType jacType = JacobianType.NLS;
     list<Pointer<Variable>> variables = {}, unknowns = {}, auxiliaryVars = {}, aliasVars = {};
     list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
     list<StrongComponent> comps = {};
@@ -1350,6 +1350,7 @@ protected
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
+      fail();
     end if;
 
     // create seed vars

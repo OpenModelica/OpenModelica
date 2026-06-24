@@ -1011,7 +1011,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
 
@@ -1470,7 +1470,6 @@ public
     output Integer stop;
   algorithm
     (start, step, stop) := match range
-      local
       case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
@@ -1481,12 +1480,12 @@ public
             step := if start > stop then -1 else 1;
           end if;
         else
-          Error.assertion(false, getInstanceName() + " range could not be parsed to integer values: " + toString(range), sourceInfo());
+          Error.terminate(getInstanceName() + " range could not be parsed to integer values: " + toString(range), sourceInfo());
           fail();
         end try;
       then (start, step, stop);
       else algorithm
-        Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
+        Error.terminate(getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
       then fail();
     end match;
   end getIntegerRange;
@@ -1506,7 +1505,7 @@ public
     i := match SimplifyExp.simplify(e)
       case INTEGER(i) then i;
       else algorithm
-        Error.assertion(false, getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
+        Error.terminate(getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
       then fail();
     end match;
   end getInteger;
@@ -1810,7 +1809,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
         then
           fail();
 
@@ -2002,7 +2001,7 @@ public
 
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then
-      Error.assertion(false, getInstanceName() + ": too few dimensions in " +
+      Error.terminate(getInstanceName() + ": too few dimensions in " +
         toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
     end if;
 
@@ -2633,7 +2632,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
         then
           fail();
 
@@ -2754,7 +2753,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
         then
           fail();
 
@@ -2826,7 +2825,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled expression " + toString(exp), sourceInfo());
+          Error.terminate(getInstanceName() + " got unhandled expression " + toString(exp), sourceInfo());
         then
           fail();
     end match;
@@ -5596,7 +5595,7 @@ public
     input Boolean isArray;
     input Integer dims;
     input list<Type> types;
-    output Expression outExp;
+    output Expression outExp = exp;
   algorithm
     outExp := match (exp, types)
       local
@@ -5715,7 +5714,7 @@ public
       case INSTANCE_NAME() then Variability.CONSTANT;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
     end match;
@@ -5796,7 +5795,7 @@ public
       case INSTANCE_NAME() then Purity.PURE;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
     end match;

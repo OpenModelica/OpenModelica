@@ -39,7 +39,7 @@
 # The OpenModelica automatic parallelization (`omc --parmodauto`) can export the
 # simulation task graph together with its clustering as JSON:
 #
-#     ./<model> -parmodDumpTaskGraph=taskgraph.json          # final task graph + clustering
+#     ./<model> -parmodExportTaskGraph=taskgraph.json          # final task graph + clustering
 #     ./<model> -parmodDumpStages=stages                     # one snapshot per optimization
 #
 # This script reads such a file and renders it (SVG by default, PNG with --png)
@@ -95,7 +95,7 @@ function parse_args(argv)
         elseif a == "-h" || a == "--help"
             println("""
             parmod_graph_plot.jl - render a ParModelica auto task-graph/clustering
-            JSON export (from -parmodDumpTaskGraph / -parmodDumpStages) with GraphPlot.jl.
+            JSON export (from -parmodExportTaskGraph / -parmodDumpStages) with GraphPlot.jl.
 
             usage: julia parmod_graph_plot.jl [options] JSON
 

@@ -92,8 +92,7 @@ namespace IAEX
     next_(0),
     last_(0),
     previous_(0),
-    child_(0),
-    references_(0)
+    child_(0)
   {
     setMouseTracking(true);
     setEnabled(true);
@@ -144,15 +143,10 @@ namespace IAEX
    */
   Cell::~Cell()
   {
-    //Delete if there are no references to this cell.
-    if(references_ <= 0)
-    {
-      setMouseTracking(false);
-
-      delete treeView_;
-      delete mainWidget_;
-      delete label_;
-    }
+    setMouseTracking(false);
+    delete treeView_;
+    delete mainWidget_;
+    delete label_;
   }
 
   /*!
@@ -888,14 +882,4 @@ namespace IAEX
       printCell(current->child());
     }
   }
-
-  //    void Cell::retain(s)
-  //    {
-  //       references_ += 1;
-  //    }
-
-  //    void Cell::release()
-  //    {
-  //       references_ -= 1;
-  //    }
 }

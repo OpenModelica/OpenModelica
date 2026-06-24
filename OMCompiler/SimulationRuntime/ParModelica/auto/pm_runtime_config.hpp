@@ -35,7 +35,7 @@
 
     The values are taken from the simulation-executable command-line flags
     (parmodScheduler, parmodClustering, parmodClustersPerLevel,
-    parmodDumpTaskGraph, parmodImportClustering), with the older environment
+    parmodExportTaskGraph, parmodImportClustering), with the older environment
     variables (PARMOD_CLUSTERING, PARMOD_CLUSTERS_PER_LEVEL) kept as a fallback.
 
     This header intentionally does NOT include the C runtime's options header, so
@@ -48,7 +48,7 @@ struct ParmodConfig {
     std::string scheduler;         /*!< "flow" (default) or "level". */
     std::string clustering;        /*!< "default", "fixed_width_min_height" or "none". */
     int         clusters_per_level; /*!< <= 0 means "use the clustering's own default". */
-    const char* dump_taskgraph;    /*!< output json path, or NULL. */
+    const char* export_taskgraph;    /*!< output json path, or NULL. */
     const char* import_clustering; /*!< input json path, or NULL. */
     const char* dump_stages;       /*!< output json file-name prefix for the per-optimization
                                         before/after snapshots, or NULL. */

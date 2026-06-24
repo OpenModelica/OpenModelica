@@ -640,6 +640,7 @@ private:
     bool isType() const;
     bool isDerivedType() const;
     bool isPartial() const;
+    bool isParameter() const;
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const;

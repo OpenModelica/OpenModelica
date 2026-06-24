@@ -875,7 +875,7 @@ public
   function expandBinaryPowMatrix
     input Expression exp;
     input Boolean resize;
-    output Expression outExp;
+    output Expression outExp = exp;
     output Boolean expanded;
   protected
     Expression exp1, exp2;

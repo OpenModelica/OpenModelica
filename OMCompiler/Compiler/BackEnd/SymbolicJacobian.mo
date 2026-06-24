@@ -2074,8 +2074,8 @@ protected function generateGenericJacobian "author: wbraun"
   input Boolean daeMode = false;
   output Option<BackendDAE.SymbolicJacobian> outJacobian;
   output AvlTreePathFunction.Tree outFunctionTree;
-  output BackendDAE.SparsePattern outSparsePattern;
-  output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.SparsePattern outSparsePattern = BackendDAE.emptySparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring = {};
   output BackendDAE.NonlinearPattern nonlinearPattern;
 protected
   BackendDAE.SymbolicJacobian symbolicJacobian;
@@ -2196,7 +2196,7 @@ algorithm
       BackendDAE.BackendDAE backendDAE, backendDAE2;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      Boolean b;
+      Boolean b = false;
       list<String> strPostOptModules;
 
       case (BackendDAE.DAE(syst::{}, shared), {}, _)
@@ -4561,7 +4561,7 @@ uniontype LinearJacobian
         then ();
 
         else algorithm
-          Error.assertion(false, getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
+          Error.terminate(getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
         then ();
        end match;
     end for;
