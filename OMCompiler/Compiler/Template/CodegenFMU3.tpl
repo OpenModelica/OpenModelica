@@ -441,15 +441,15 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
-      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
+      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
     case T_STRING(__) then
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%StringStartChild3(simVar)%><%AliasElements3(simVar, simCode)%></String>'
     case T_ENUMERATION(path=path) then
-      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
 
@@ -501,6 +501,24 @@ case FMI_CLOCK(__) then
   let res = if boolNot(stringEq(resolution, "")) then ' resolution="<%resolution%>"'
   '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="<%causality%>" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
 end Clock3;
+
+template ScalarStartString3(SimVar simVar)
+ "Generates the start attribute for an FMI 3.0 scalar variable. Like the shared
+  StartString2 but additionally emits the start for continuous-time states: a
+  state is initial = exact (fixed start) or approx (unfixed start) and both
+  require a start, but the new backend leaves initial_ unset for states (it uses
+  the fixed attribute instead). FMI 3.0 specific so the FMI 2.0 output (which
+  uses StartString2) is unchanged. Mirrors ArrayStartString3 for array states."
+::=
+match simVar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(initialValue = NONE()) then ''
+case SIMVAR(varKind = STATE(__)) then startString3(simVar)
+case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then startString3(simVar)
+case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then startString3(simVar)
+case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then startString3(simVar)
+else ''
+end ScalarStartString3;
 
 template ArrayStartString3(SimVar simVar)
  "Generates the start attribute (a space separated list of the scalar element
