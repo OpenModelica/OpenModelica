@@ -48,6 +48,7 @@ import HashTableCrefSimVar;
 import List;
 import Pointer;
 import UnorderedMap;
+import UnorderedSet;
 import Util;
 import ProgramUtil;
 
@@ -83,6 +84,7 @@ protected
   import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import NBJacobian;
   import Partition = NBPartition;
 
   // SimCode imports
@@ -110,6 +112,8 @@ protected
   // Script imports
 
 public
+  type IntSet = UnorderedSet<Integer> "value type for the FMI dependency set (avoids nested >> in generic args)";
+
   uniontype SimCodeIndices
     record SIM_CODE_INDICES
       "Unique simulation code indices"
@@ -507,6 +511,71 @@ public
         then fail();
       end match;
     end create;
+
+    function createFMIDependencies
+      "Computes the FMI <ModelStructure> dependency lists for the new backend.
+       Builds the structural sparsity (states/inputs -> derivatives/outputs) and
+       translates the crefs into FMI variable indices via the sim code map, so the
+       result maps an unknown FMI index to the FMI indices of the knowns it depends
+       on. Array variables are exported as a single FMI variable; scalar element
+       crefs that are not variables of their own are looked up by their array cref
+       and the dependencies of all elements are merged per FMI index."
+      input BackendDAE bdae;
+      input SimCode simCode;
+      output list<tuple<Integer, list<Integer>>> fmiDependencies = {};
+    protected
+      UnorderedMap<ComponentRef, SimVar> simcode_map = simCode.simcode_map;
+      list<tuple<ComponentRef, list<ComponentRef>>> sparsity;
+      ComponentRef uCref;
+      list<ComponentRef> depCrefs;
+      Option<Integer> uIdxOpt, dIdxOpt;
+      Integer uIdx;
+      UnorderedMap<Integer, IntSet> dep_map;
+      IntSet depSet;
+    algorithm
+      sparsity := NBJacobian.createFMISparsity(bdae);
+      dep_map := UnorderedMap.new<IntSet>(Util.id, intEq);
+      for row in sparsity loop
+        (uCref, depCrefs) := row;
+        uIdxOpt := lookupFMIIndex(uCref, simcode_map);
+        if isSome(uIdxOpt) then
+          SOME(uIdx) := uIdxOpt;
+          depSet := UnorderedMap.getOrDefault(uIdx, dep_map, UnorderedSet.new(Util.id, intEq));
+          for d in depCrefs loop
+            dIdxOpt := lookupFMIIndex(d, simcode_map);
+            if isSome(dIdxOpt) then
+              UnorderedSet.add(Util.getOption(dIdxOpt), depSet);
+            end if;
+          end for;
+          UnorderedMap.add(uIdx, depSet, dep_map);
+        end if;
+      end for;
+      for uIdx in UnorderedMap.keyList(dep_map) loop
+        depSet := UnorderedMap.getOrFail(uIdx, dep_map);
+        fmiDependencies := (uIdx, List.sort(UnorderedSet.toList(depSet), intGt)) :: fmiDependencies;
+      end for;
+    end createFMIDependencies;
+
+    function lookupFMIIndex
+      "Looks up the FMI variable index of a (possibly scalarized) cref in the sim
+       code map, falling back to the array cref when the scalar element is not a
+       variable of its own (native array export)."
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output Option<Integer> index;
+    protected
+      Option<SimVar> svOpt;
+    algorithm
+      svOpt := UnorderedMap.get(cref, simcode_map);
+      if isNone(svOpt) then
+        svOpt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), simcode_map);
+      end if;
+      index := match svOpt
+        local Integer i;
+        case SOME(SimVar.SIMVAR(fmi_index = SOME(i))) then SOME(i);
+        else NONE();
+      end match;
+    end lookupFMIIndex;
 
     function convert
       input SimCode simCode;
