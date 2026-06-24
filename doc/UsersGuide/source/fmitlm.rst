@@ -9,6 +9,134 @@ different Modelica or non-Modelica tools.
 
 See also :ref:`OMSimulator documentation<omsimulator-documentation>`.
 
+FMI Standards
+-------------
+
+.. list-table:: FMI standard versions
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Version
+     - Support in OpenModelica
+   * - `1.0.1 <https://fmi-standard.org/assets/releases/FMI_for_ModelExchange_v1.0.1.pdf>`_
+     - Deprecated
+   * - `2.0.5 <https://github.com/modelica/fmi-standard/releases/download/v2.0.5/FMI-Specification-2.0.5.pdf>`_
+     - Supported
+   * - `3.0.2 <https://fmi-standard.org/docs/3.0.2/>`_
+     - Experimental
+
+Layered Standards
+~~~~~~~~~~~~~~~~~~
+
+Layered standards extend FMI 3.0 with optional, separately versioned
+specifications.
+
+.. list-table:: FMI 3.0 layered standards
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Layered standard
+     - Support in OpenModelica
+   * - `FMI-LS-BUS <https://github.com/modelica/fmi-ls-bus>`_
+     - Not planned
+   * - `FMI-LS-XCP <https://github.com/modelica/fmi-ls-xcp>`_
+     - Not planned
+   * - `FMI-LS-STRUCT <https://github.com/modelica/fmi-ls-struct>`_
+     - Planned
+   * - `FMI-LS-REF <https://github.com/modelica/fmi-ls-ref>`_
+     - Planned
+   * - `FMI-LS-DAE <https://github.com/modelica/fmi-ls-dae>`_
+     - Planned (demonstrator in progress)
+
+Supported Capability Flags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The optional capabilities advertised in the ``modelDescription.xml`` of an
+exported FMU, per FMI version and interface type (Model Exchange, Co-Simulation
+and, for FMI 3.0, Scheduled Execution).
+
+.. list-table:: Exported capability flags
+   :header-rows: 1
+   :widths: 32 11 11 11 11 13
+
+   * - Capability
+     - 2.0 ME
+     - 2.0 CS
+     - 3.0 ME
+     - 3.0 CS
+     - 3.0 SE
+   * - Get and set FMU state
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+   * - Serialize FMU state
+     - no
+     - no
+     - yes
+     - yes
+     - yes
+   * - Directional derivatives
+     - cond
+     - exp
+     - cond
+     - cond
+     - cond
+   * - Adjoint derivatives
+     - —
+     - —
+     - wip
+     - wip
+     - wip
+   * - Per-element dependencies
+     - —
+     - —
+     - no
+     - no
+     - no
+   * - Variable communication step size
+     - —
+     - yes
+     - —
+     - yes
+     - —
+   * - Interpolate inputs
+     - —
+     - yes
+     - —
+     - —
+     - —
+   * - Max output derivative order
+     - —
+     - 1
+     - —
+     - 1
+     - —
+   * - Event mode
+     - —
+     - —
+     - —
+     - yes
+     - —
+   * - Intermediate update
+     - —
+     - —
+     - —
+     - no
+     - —
+
+Legend:
+
+- ``yes`` / ``no`` — the capability flag is exported as ``true`` / ``false``.
+- ``cond`` — exported as ``true`` only when a symbolic directional-derivative
+  Jacobian is available, i.e. not disabled via
+  :ref:`-d=disableDirectionalDerivatives<omcflag-debug-disableDirectionalDerivatives>`.
+- ``exp`` — only enabled with the experimental flag ``-d=fmuExperimental``
+  (``false`` by default). In FMI 3.0 these state features are always enabled.
+- ``wip`` — in active development; currently exported as ``false``.
+- ``—`` — not applicable to this interface type or FMI version.
+
 FMI Export
 ----------
 
@@ -57,8 +185,8 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0.4 for Co-Simulation
-FMUs.
+We support FMI 1.0 (deprecated) and FMI 2.0 for Model Exchange and Co-Simulation FMUs,
+with experimental support for FMI 3.0 (see the version table above).
 
 For the Co-Simulation FMU two integrator methods are available:
 

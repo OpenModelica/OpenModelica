@@ -23,6 +23,7 @@ cppruntime.log \
 cppruntimeHpcom.log \
 cppruntimeFMU1.log \
 cppruntimeFMU2.log \
+cppruntimeFMU3.log \
 cppruntimeOutputFormat.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
@@ -187,6 +188,9 @@ streams.log \
 redeclare.log \
 fmi_me_10.log \
 fmi_me_20.log \
+fmi_me_30.log \
+fmi_cs_30.log \
+fmi_se_30.log \
 omsimulator.log \
 fmi_cs_st.log \
 uncertainties.log \
@@ -526,6 +530,9 @@ cppruntimeFMU1.log: omc-diff
 cppruntimeFMU2.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
 	@echo $@ done
+cppruntimeFMU3.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/3.0 -f Makefile test  > $@
+	@echo $@ done
 cppruntimeOutputFormat.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/outputFormat -f Makefile test  > $@
 	@echo $@ done
@@ -601,14 +608,23 @@ fmi_me_10.log: omc-diff
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@
 	@echo $@ done
+fmi_me_30.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/ModelExchange/3.0/ -f Makefile test > $@
+	@echo $@ done
 omsimulator.log: omc-diff
 	$(MAKE) -C omsimulator/ -f Makefile test > $@
 	@echo $@ done
 fmi_cs.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile test > $@
 	@echo $@ done
+fmi_cs_30.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile test > $@
+	@echo $@ done
 fmi_cs_st.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile test > $@
+	@echo $@ done
+fmi_se_30.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/ScheduledExecution/3.0 -f Makefile test > $@
 	@echo $@ done
 flatteningPlanarMechanics.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile test > $@
@@ -785,6 +801,7 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cppruntime/omedit -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/3.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/genDebugSymbols -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hardcodedStartValues -f Makefile clean
@@ -853,9 +870,11 @@ clean_g_4:
 	fi
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
+	$(MAKE) -C openmodelica/fmi/CoSimulation/3.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0 -f Makefile clean
+	$(MAKE) -C openmodelica/fmi/ModelExchange/3.0 -f Makefile clean
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean

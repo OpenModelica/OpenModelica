@@ -1905,15 +1905,25 @@ FMI Options
 
   -  Version
 
-    -  *1.0* - Sets the FMI export version to 1.0
+    -  *1.0* - Sets the FMI export version to 1.0.
 
-    -  *2.0* - Sets the FMI export version to 2.0
+    .. warning ::
+      Deprecated and will be removed in a future version of OpenModelica
+
+    -  *2.0* - Sets the FMI export version to 2.0.x
+
+    -  *3.0* - Sets the FMI export version to 3.0.x
+
+    .. warning ::
+      Experimental support
 
   -  Type
 
-    -  *Model Exchange* - Sets the FMI export type to Model Exchange.
+    -  *Model Exchange* - Sets the FMI export type to `Model Exchange`_ (ME).
 
-    -  *Co-Simulation* - Sets the FMI export type to Co-Simulation.
+    -  *Co-Simulation* - Sets the FMI export type to `Co-Simulation`_ (CS).
+
+    -  *Scheduled Execution* - Sets the FMI export type to `Scheduled Execution`_ (SE), needs at least FMI version 3.0.
 
     -  *Model Exchange and Co-Simulation* - Sets the FMI export type to Model Exchange and Co-Simulation.
 
@@ -1944,6 +1954,10 @@ FMI Options
 
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
      then the temporary FMU directory that is created for importing the FMU will be deleted.
+
+.. _Model Exchange: https://fmi-standard.org/docs/3.0.2/#_fmi_for_model_exchange_me
+.. _Co-Simulation: https://fmi-standard.org/docs/3.0.2/#_fmi_for_co_simulation_cs
+.. _Scheduled Execution: https://fmi-standard.org/docs/3.0.2/#_fmi_for_scheduled_execution_se
 
 OMSimulator/SSP Options
 ~~~~~~~~~~~~~~~~~~~~~~~
