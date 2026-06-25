@@ -1,0 +1,39 @@
+// name: fmi3_msl_clocked_drive
+// keywords: FMI 3.0 export MSL Clocked CoSimulation FMPy
+// status: correct
+// teardown_command: rm -rf ClkDrive.fmu ClkDrive.fmutmp/ ClkDrive_ref* ClkDrive_fmpy.csv ClkDrive_diff.*.csv ClkDrive_info.json *.log
+//
+// MSL 4.1.0 round-trip check (clocked / synchronous model): export
+// Modelica.Clocked.Examples.SimpleControlledDrive.ExactlyClockedWithDiscreteController
+// as an FMI 3.0 Co-Simulation FMU, simulate it with an independent FMI importer
+// (FMPy) and verify it reproduces OpenModelica's own (non-FMU) simulation. The
+// model has a discrete PI controller on an exact 100 ms periodic clock driving a
+// rotational load; Co-Simulation lets the FMU advance its own clock internally.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+simulate(Modelica.Clocked.Examples.SimpleControlledDrive.ExactlyClockedWithDiscreteController, stopTime=5.0, fileNamePrefix="ClkDrive_ref"); getErrorString();
+
+buildModelFMU(Modelica.Clocked.Examples.SimpleControlledDrive.ExactlyClockedWithDiscreteController, version="3.0", fmuType="cs", fileNamePrefix="ClkDrive"); getErrorString();
+
+system("python3 ../../simulate_fmu_fmpy.py ClkDrive.fmu ClkDrive_fmpy.csv 5.0 load.w load.phi"); getErrorString();
+diffSimulationResults("ClkDrive_fmpy.csv", "ClkDrive_ref_res.mat", "ClkDrive_diff", vars={"load.w","load.phi"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ClkDrive_ref_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ClkDrive_ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "ClkDrive.fmu"
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// endResult

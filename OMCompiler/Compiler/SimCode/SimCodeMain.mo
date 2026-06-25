@@ -89,6 +89,7 @@ import ErrorExt;
 import ExecStat;
 import FGraph;
 import Flags;
+import FlagsUtil;
 import FlatModel = NFFlatModel;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
@@ -398,6 +399,7 @@ function generateModelCodeNewBackend
   input Absyn.Path className;
   input String fileNamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
+  input TranslateModelKind kind = TranslateModelKind.NORMAL() "FMU() to generate an FMU instead of a simulation";
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode = 0.0;
@@ -431,7 +433,24 @@ algorithm
     end if;
 
     System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-    callTargetTemplates(oldSimCode, Config.simCodeTarget());
+    () := match kind
+      local String fmuType, fmuTarget;
+      case TranslateModelKind.FMU(kind = fmuType, targetName = fmuTarget) algorithm
+        // The FMU model interface source files are written into the FMU's tmp
+        // sources directory; mirror the old backend (see createSimCode).
+        oldSimCode.fmuTargetName := fmuTarget;
+        oldSimCode.fullPathPrefix := Util.hashFileNamePrefix(fileNamePrefix) + ".fmutmp/sources/";
+        // cref -> value reference map used by the FMU model interface templates (lookupVR).
+        oldSimCode.valueReferences := SimCodeUtil.getValueReferenceMapping(oldSimCode.modelInfo);
+        // Minimal ModelStructure (state derivatives + outputs) so an FMI master
+        // can drive Model Exchange integration. TODO: add dependencies.
+        oldSimCode.modelStructure := SimCodeUtil.createMinimalFMIModelStructure(oldSimCode.modelInfo);
+        callTargetTemplatesFMU(oldSimCode, Config.simCodeTarget(), FMI.getFMIVersionString(), fmuType, SymbolTable.getAbsyn());
+      then ();
+      else algorithm
+        callTargetTemplates(oldSimCode, Config.simCodeTarget());
+      then ();
+    end match;
     timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
     ExecStat.execStat("Templates");
   else
@@ -766,6 +785,7 @@ algorithm
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
       String modelDefinesHeaderStr;
+      String fmu_dummy_include_defines;
       list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -922,6 +942,13 @@ algorithm
         if FMUVersion == "1.0" then
           copyFiles(RuntimeSources.fmi1Files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := RuntimeSources.fmi1Files;
+        elseif FMUVersion == "3.0" then
+          // FMI 3.0 export. fmu3_model_interface.c is built on top of the FMI 2.0
+          // ModelInstance and the generated per-base-type get/set helpers, so the
+          // FMI 2.0 header (but not the FMI 2.0 interface .c) is required as well.
+          copyFiles(RuntimeSources.fmi3_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.fmi3_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := RuntimeSources.fmi3_sources;
         else
           copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
@@ -935,6 +962,17 @@ algorithm
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
 
+        // For FMI 3.0 also copy the FMI 3.0 reference headers into the FMU sources.
+        if FMUVersion == "3.0" then
+          copyFiles({"fmi/fmi3Functions.h","fmi/fmi3FunctionTypes.h","fmi/fmi3PlatformTypes.h"}, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
+          // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
+          // model has connector-derived terminals.
+          if not listEmpty(SimCodeUtil.getFMI3Terminals(simCode)) then
+            Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
+          end if;
+        end if;
+
         /*
         * fix issue fhttps://github.com/OpenModelica/OpenModelica/issues/13260
         * Check if modelicaStandardTables source files are needed
@@ -944,7 +982,7 @@ algorithm
         copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
-        System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
+        System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" elseif FMUVersion=="3.0" then "3" else "2"), "");
 
         model_gen_files := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
 
@@ -1046,14 +1084,23 @@ algorithm
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
-        // Set model define include in fmu2_model_interface.c
+        // Set model define include in the FMI model interface source. The
+        // interface source includes a version-specific placeholder header
+        // ("fmu2_dummy_model_defines.h" / "fmu3_dummy_model_defines.h") that is
+        // replaced here with the generated model-specific "<model>_FMU.h".
         // Only for FMI 2.0+. FMI 1.0 includes fmu1_model_interface.c.inc directly into
         // the generated <model>_FMU.c (which already has the model defines), so there is
         // no standalone fmu2_model_interface.c to patch. See issue #15838.
         if FMUVersion <> "1.0" then
-          modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
-          modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
-          System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+          fmu_dummy_include_defines := (if FMUVersion == "2.0" then "fmu2" else "fmu3") + "_dummy_model_defines.h";
+          for fmuModelInterfaceFile in (
+              if FMUVersion == "3.0"
+              then {"fmi-export/fmu3_model_interface.c"}
+              else {"fmi-export/fmu2_model_interface.c"}) loop
+            modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + fmuModelInterfaceFile);
+            modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, fmu_dummy_include_defines, "../" + simCode.fileNamePrefix + "_FMU.h");
+            System.writeFile(fmu_tmp_sources_dir + fmuModelInterfaceFile, modelDefinesHeaderStr);
+          end for;
         end if;
 
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
@@ -1214,6 +1261,14 @@ algorithm
 
   // new backend - also activates new frontend by default
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // The C++ runtime keeps arrays un-expanded (StatArrayDim members) and cannot
+    // use the scalarized var layout; the C runtime does not yet support
+    // non-scalarized arrays. Force simCodeScalarize=false for the C++ target only,
+    // leaving the default (true) for the C target (issue #15496). Must happen
+    // before any scalarize-dependent decision in the pipeline.
+    if stringEqual(Config.simCodeTarget(), "Cpp") then
+      FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
+    end if;
     // ToDo: set permanently matching -> SBGraphs
     System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStatReset();
@@ -1224,7 +1279,7 @@ algorithm
 
     if runBackend then
       funcMap := UnorderedMap.fromLists(FunctionTreeImpl.listKeys(funcTree), FunctionTreeImpl.listValues(funcTree), AbsynUtil.pathHash, AbsynUtil.pathEqual);
-      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcMap, className, inFileNamePrefix, inSimSettingsOpt);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcMap, className, inFileNamePrefix, inSimSettingsOpt, kind);
     else
       funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
@@ -1318,6 +1373,13 @@ algorithm
   file_name_prefix := if fileNamePrefix == "<default>" then AbsynUtil.pathString(className) else fileNamePrefix;
 
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    // The C++ runtime keeps arrays un-expanded (StatArrayDim members) and cannot
+    // use the scalarized var layout; the C runtime, on the other hand, does not
+    // yet support non-scalarized arrays. So force simCodeScalarize=false for the
+    // C++ target only, leaving the default (true) for the C target (issue #15496).
+    if stringEqual(Config.simCodeTarget(), "Cpp") then
+      FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
+    end if;
     func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
     (outLibs, outFileDir, resultValues, _) := translateModelCallBackendNB(flatModel, func_map, className, file_name_prefix, simSettings);
   else
@@ -1412,14 +1474,16 @@ algorithm
         ExecStat.execStat("Serialize dlow");
       end if;
 
+      // FMI 2.0 and 3.0 both provide a ModelStructure with dependencies and
+      // partial derivatives, so they share the same backend preparation.
       (isFMI2,fmuType) := match kind
-        case TranslateModelKind.FMU(fmuType) then (FMI.isFMIVersion20(),fmuType);
+        case TranslateModelKind.FMU(fmuType) then (FMI.isFMIVersion20() or FMI.isFMIVersion30(),fmuType);
         else (false,"");
       end match;
-      // FMI 2.0: enable postOptModule to create alias variables for output states
+      // FMI 2.0/3.0: enable postOptModule to create alias variables for output states
       strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
 
-      // FMI 2.0: enable postOptModule "introduceOutputRealDerivatives" to set maxOutputDerivativeOrder = 1
+      // FMI 2.0/3.0: enable postOptModule "introduceOutputRealDerivatives" to set maxOutputDerivativeOrder = 1
       if (isFMI2 and fmuType == "cs") then
         strPreOptModules := SOME("introduceOutputRealDerivatives":: Util.getOption(strPreOptModules));
       end if;
@@ -1577,6 +1641,7 @@ protected function translateModelCallBackendNB
   input Absyn.Path inClassName "path for the model";
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input TranslateModelKind kind = TranslateModelKind.NORMAL() "FMU() to generate an FMU instead of a simulation";
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
@@ -1599,7 +1664,7 @@ algorithm
   ExecStat.execStat("backend");
   FlagsUtil.set(Flags.NF_API, nf_api);
 
-  (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
+  (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt, kind);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),

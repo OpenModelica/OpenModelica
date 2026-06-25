@@ -2932,14 +2932,9 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name="initial"))
     then (DAE.BCONST(false), inUseHomotopy);
 
-    // replace homotopy(actual, simplified) with actual, EXCEPT in DAE mode where
-    // we keep homotopy() in the simulation residual so the runtime can
-    // regularize a (possibly singular) initial DAE Jacobian via a lambda
-    // continuation. The homotopy macro is simplified*(1-lambda)+actual*lambda;
-    // once lambda=1 this is identical to using actual, so normal DAE-mode
-    // behaviour is unchanged.
+    // replace homotopy(actual, simplified) with actual
     case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_)
-    then (if Flags.getConfigBool(Flags.DAE_MODE) then inExp else actual, true);
+    then (actual, true);
 
     else (inExp, inUseHomotopy);
   end match;
