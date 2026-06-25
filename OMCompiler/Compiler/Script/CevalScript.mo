@@ -2336,8 +2336,8 @@ algorithm
 
         /*JIT compile. Return a newval.*/
         newval := match midCodeProgram.functions
-          local MidCode.Function H; List<MidCode.Function> T = {};
-    case H::T then MidToLLVM.JIT(H,vallst);
+          local MidCode.Function H; list<MidCode.Function> T;
+          case H::T then MidToLLVM.JIT(H,vallst);
           else algorithm
             Error.addInternalError("Error occured when attempting JIT evaluation", sourceInfo());
           then fail();

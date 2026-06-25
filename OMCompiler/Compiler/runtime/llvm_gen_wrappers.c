@@ -1145,7 +1145,7 @@ modelica_integer arrayLength_jit(modelica_metatype arr)
 modelica_metatype alloc_base_array_t_jit()
 {
   base_array_t *arr;
-  arr = GC_MALLOC(sizeof(arr));
+  arr = GC_MALLOC(sizeof(*arr));
   return arr;
 }
 

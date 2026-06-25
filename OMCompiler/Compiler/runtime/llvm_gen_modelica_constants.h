@@ -43,7 +43,10 @@
 #define DBG(...) //fprintf(stderr, __VA_ARGS__)
 
 //Specifies how many bits we have for our integers in the enviroment.
-const size_t NBITS_MODELICA_INTEGER = sizeof(modelica_integer) * 8;
+//A macro (not a file-scope `const`) so this header can be included in more
+//than one translation unit without colliding at link time, and so it is
+//evaluated where modelica_integer is in scope rather than here.
+#define NBITS_MODELICA_INTEGER (sizeof(modelica_integer) * 8)
 
 #ifdef __cplusplus
 extern "C" {
