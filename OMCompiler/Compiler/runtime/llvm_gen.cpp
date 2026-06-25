@@ -519,6 +519,29 @@ extern "C" int createInlinedZcValue(
   return 0;
 }
 
+/* createInlinedAssert: emit  omc_jit_assert(threadData, <cond>, <msg>)
+ * for a STMT_ASSERT. condName is the i32 alloca holding the lowered assert
+ * condition; msg is the model's static assert string, staged as a private
+ * global. The adapter throws iff the condition is false. */
+extern "C" int createInlinedAssert(const char *const threadDataArgName,
+                                   const char *const condName,
+                                   const char *const msg) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+  llvm::Value *const cond = loadFromSymtab(condName);
+  llvm::Value *const msgPtr = b.CreateGlobalStringPtr(msg);
+  llvm::FunctionType *const fnTy =
+      llvm::FunctionType::get(voidTy, {ptrTy, i32, ptrTy}, false);
+  llvm::FunctionCallee const fn =
+      mod.getOrInsertFunction("omc_jit_assert", fnTy);
+  b.CreateCall(fn, {loadFromSymtab(threadDataArgName), cond, msgPtr});
+  return 0;
+}
+
 /* createInlinedBoolBinop: dstName(i32) = (a != 0) <and|or> (b != 0), as 0/1.
  * Normalising both operands to i1 before combining matches C's && / ||
  * truthiness regardless of how the operands were produced. isOr selects OR. */
@@ -1843,7 +1866,8 @@ extern "C" int createSetupDataStrucShell(const char *const modelName) {
  *
  * Returns 0 on success.
  * ------------------------------------------------------------------------ */
-extern "C" int createMainShim(const char *const modelName) {
+extern "C" int createMainShim(const char *const modelName,
+                              const char *const filePrefix) {
   if (!program || !program->module) {
     fprintf(stderr, "createMainShim: no active module\n");
     return 1;
@@ -1909,11 +1933,17 @@ extern "C" int createMainShim(const char *const modelName) {
     gv->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
     return gv;
   };
+  /* The modelName / modelFilePrefix / info.json strings name on-disk
+   * artifacts (init.xml, info.json) that SerializeInitXML wrote under the
+   * file prefix (dotted for a qualified model), NOT the underscore symbol
+   * prefix. The global *names* still key off the symbol prefix p so two
+   * models never collide; only the string *values* use the file prefix. */
   const std::string p(modelName);
-  llvm::Constant *const sName = emitStr(p, p + "_jit_modelName");
-  llvm::Constant *const sPrefix = emitStr(p, p + "_jit_modelPrefix");
+  const std::string fp(filePrefix);
+  llvm::Constant *const sName = emitStr(fp, p + "_jit_modelName");
+  llvm::Constant *const sPrefix = emitStr(fp, p + "_jit_modelPrefix");
   llvm::Constant *const sJson =
-      emitStr(p + "_info.json", p + "_jit_jsonFile");
+      emitStr(fp + "_info.json", p + "_jit_jsonFile");
 
   llvm::FunctionType *const adapterTy = llvm::FunctionType::get(
       i32, {i32, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy, ptrTy},
@@ -2038,6 +2068,7 @@ extern "C" double omc_jit_zc_value(struct DATA *, double, double, double, double
 extern "C" void omc_jit_array_call2_real(struct DATA *, struct threadData_s *,
                                          void *, const double *, int,
                                          const double *, int, int, int, int, int);
+extern "C" void omc_jit_assert(struct threadData_s *, int, const char *);
 static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_performSimulation),
   reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
@@ -2046,6 +2077,7 @@ static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_relationhysteresis),
   reinterpret_cast<void *>(&omc_jit_zc_value),
   reinterpret_cast<void *>(&omc_jit_array_call2_real),
+  reinterpret_cast<void *>(&omc_jit_assert),
 };
 
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,

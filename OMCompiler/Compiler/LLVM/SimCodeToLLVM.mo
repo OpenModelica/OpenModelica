@@ -828,7 +828,7 @@ algorithm
     try emitModelEquationsBlock(simCode, recipes, layout, name); else reportBlockFailure("emitModelEquationsBlock", name); end try;
     try emitCallbackTableBlock(simCode, name); else reportBlockFailure("emitCallbackTableBlock", name); end try;
     try emitSetupDataStrucShellBlock(name, simCode); else reportBlockFailure("emitSetupDataStrucShellBlock", name); end try;
-    try emitMainShimBlock(name); else reportBlockFailure("emitMainShimBlock", name); end try;
+    try emitMainShimBlock(name, simCode); else reportBlockFailure("emitMainShimBlock", name); end try;
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -2537,13 +2537,24 @@ protected function emitMainShimBlock
   "Emit  int main(int, char**)  into the active Pass-2 module. Must
    run after emitSetupDataStrucShellBlock so the shim's call to
    <Model>_setupDataStruc resolves within the same module. The
-   adapter reads the model GUID out of <prefix>_init.xml at runtime
-   so SCTL never has to coordinate with SerializeInitXML."
+   adapter reads the model GUID out of <filePrefix>_init.xml at runtime
+   so SCTL never has to coordinate with SerializeInitXML.
+
+   Two prefixes: the symbol prefix (model path with dots -> underscores)
+   names the <prefix>_setupDataStruc symbol the shim calls; the file
+   prefix (simCode.fileNamePrefix, the dotted model name for a plain
+   simulate()) names the on-disk <filePrefix>_init.xml / _info.json the
+   runtime reads. They coincide for a dot-free model name (HelloWorld)
+   but not for a qualified one (Modelica.Mechanics...Engine1a), where the
+   init.xml is written with dots."
   input Absyn.Path modelName;
+  input SimCode.SimCode simCode;
 protected
   Integer st;
+  String filePrefix;
 algorithm
-  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName));
+  filePrefix := match simCode case SimCode.SIMCODE(fileNamePrefix = filePrefix) then filePrefix; end match;
+  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName), filePrefix);
   if st <> 0 then
     fail();
   end if;
@@ -3342,12 +3353,20 @@ protected function emitStmt
 algorithm
   (outCtx, ok) := match stmt
     local DAE.ComponentRef cref;
-          DAE.Exp rhs;
+          DAE.Exp rhs, cond;
           EmitCtx c1;
           Boolean ok1;
+          String condTmp, msg;
     case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cref), exp = rhs)
       algorithm
         (c1, ok1) := emitStmtAssign(cref, rhs, ctx);
+      then (c1, ok1);
+    case DAE.STMT_ASSERT(cond = cond, msg = DAE.SCONST(string = msg))
+      algorithm
+        (c1, condTmp, ok1) := emitBoolExp(cond, ctx);
+        if ok1 then
+          EXT_LLVM.genAssert("threadData", condTmp, msg);
+        end if;
       then (c1, ok1);
     else (ctx, false);
   end match;
@@ -3408,7 +3427,7 @@ protected function canLowerStmt
 algorithm
   ok := match stmt
     local DAE.ComponentRef cref;
-          DAE.Exp rhs;
+          DAE.Exp rhs, cond;
     case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cref), exp = rhs)
       then match lookupSlot(cref, layout)
         case SOME(VAR_SLOT(kind = VK_BOOL_DISCRETE())) then canLowerBoolExp(rhs, layout);
@@ -3416,6 +3435,10 @@ algorithm
         case SOME(VAR_SLOT()) then canLowerExp(rhs, layout);
         else false;
       end match;
+    /* assert(cond, "<static msg>") -- lowerable when the condition is a
+     * supported Boolean expression and the message is a string literal. */
+    case DAE.STMT_ASSERT(cond = cond, msg = DAE.SCONST())
+      then canLowerBoolExp(cond, layout);
     else false;
   end match;
 end canLowerStmt;
@@ -3662,6 +3685,8 @@ algorithm
       then canLowerExp(e1, layout) and canLowerExp(e2, layout);
     case DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cref)})
       then canLowerPreReal(cref, layout);
+    case DAE.CALL(path = Absyn.IDENT(name = "noEvent"), expLst = {sub})
+      then canLowerExp(sub, layout);
     case DAE.CALL(path = Absyn.IDENT(name = "delay"), expLst = {DAE.ICONST(), e1, e2, sub})
       then canLowerExp(e1, layout) and canLowerExp(e2, layout) and canLowerExp(sub, layout);
     case DAE.IFEXP(expCond = e1, expThen = e2, expElse = sub)
@@ -3765,6 +3790,8 @@ algorithm
         case SOME(VAR_SLOT(kind=VK_BOOL_DISCRETE())) then true;
         else false;
       end match;
+    case DAE.CALL(path=Absyn.IDENT(name="noEvent"), expLst={sub})
+      then canLowerBoolExp(sub, layout);
     case DAE.RELATION(exp1=e1, operator=op, exp2=e2)
       then isSome(opCodeForRelationOp(op))
            and canLowerExp(e1, layout) and canLowerExp(e2, layout);
@@ -3890,6 +3917,11 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
       algorithm
         (ctx1, tmp, ok1) := emitPreReal(cref, ctx);
+      then (ctx1, tmp, ok1);
+    /* noEvent(<real>) is transparent for evaluation. */
+    case DAE.CALL(path=Absyn.IDENT(name="noEvent"), expLst={sub})
+      algorithm
+        (ctx1, tmp, ok1) := emitExp(sub, ctx);
       then (ctx1, tmp, ok1);
     case DAE.CAST(exp=sub)
       algorithm
@@ -4023,6 +4055,13 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cref)})
       algorithm
         (ctx1, tmp, ok1) := emitBoolPreRead(cref, ctx);
+      then (ctx1, tmp, ok1);
+    /* noEvent(<bool>) is transparent for evaluation -- it only tells the
+     * backend not to register a zero crossing, which is already reflected
+     * in the inner relation carrying no zc index (a plain fcmp). */
+    case DAE.CALL(path=Absyn.IDENT(name="noEvent"), expLst={sub})
+      algorithm
+        (ctx1, tmp, ok1) := emitBoolExp(sub, ctx);
       then (ctx1, tmp, ok1);
     case DAE.RELATION()
       algorithm

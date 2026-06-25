@@ -225,6 +225,20 @@ double omc_jit_zc_value(DATA *data, double exp1, double exp2,
  * byte-for-byte the body CodegenC emits with real_array_create +
  * real_array_copy_data. The operand and result data stay contiguous in
  * realVars exactly as the C path lays them out. */
+/* omc_jit_assert: the runtime side of a STMT_ASSERT lowered by SCTL.
+ * SCTL evaluates the assert condition (a modelica_boolean) and passes it
+ * plus the static assert message; if the condition is false we throw,
+ * matching CodegenC's `if (!cond) omc_assert(..., msg)`. Using
+ * throwStreamPrint keeps the contract simple (no FILE_INFO/equation-index
+ * plumbing); the message text is the model's own assert string. */
+void omc_jit_assert(threadData_t *threadData, modelica_boolean cond,
+                    const char *msg)
+{
+  if (!cond) {
+    throwStreamPrint(threadData, "%s", msg);
+  }
+}
+
 void omc_jit_array_call2_real(DATA *data, threadData_t *threadData,
                               void *fnptr,
                               const modelica_real *a_data, int a_len,

@@ -346,6 +346,14 @@ algorithm
   assert(false, getInstanceName());
 end genZcValue;
 
+function genAssert
+  input String threadDataArgName;
+  input String condName;
+  input String msg;
+algorithm
+  assert(false, getInstanceName());
+end genAssert;
+
 function genArrayCall2Real
   input String dataArgName;
   input String threadDataArgName;
@@ -400,6 +408,7 @@ end genSetupDataStrucFull;
 
 function genMainShim
   input String modelName;
+  input String filePrefix;
   output Integer status = 1;
 end genMainShim;
 

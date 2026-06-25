@@ -532,6 +532,18 @@ function genZcValue
                Include = "int createInlinedZcValue(const char *dataArgName, const char *dstName, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
 end genZcValue;
 
+function genAssert
+  "Emit  omc_jit_assert(threadData, <cond>, <msg>)  for a STMT_ASSERT.
+   condName is the i32 alloca holding the lowered assert condition; msg is
+   the model's static assert string. The adapter throws iff cond is false."
+  input String threadDataArgName;
+  input String condName;
+  input String msg;
+  external "C" createInlinedAssert(threadDataArgName, condName, msg)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedAssert(const char *threadDataArgName, const char *condName, const char *msg);");
+end genAssert;
+
 function genArrayCall2Real
   "Emit the omc_jit_array_call2_real adapter call for a SES_ARRAY_CALL_ASSIGN
    of the shape  <realVars array> = fn(<const vec>, <const vec>), where fn
@@ -646,11 +658,12 @@ function genMainShim
    read out of <prefix>_init.xml by the adapter itself so SCTL and
    SerializeInitXML do not have to share state. Returns 0 on
    success."
-  input String modelName;
+  input String modelName "underscore symbol prefix (names <prefix>_setupDataStruc)";
+  input String filePrefix "dotted file prefix (names <filePrefix>_init.xml / _info.json)";
   output Integer status;
-  external "C" status = createMainShim(modelName)
+  external "C" status = createMainShim(modelName, filePrefix)
     annotation(Library = "omcruntime",
-               Include = "int createMainShim(const char *modelName);");
+               Include = "int createMainShim(const char *modelName, const char *filePrefix);");
 end genMainShim;
 
 function setLinkonceOdr
