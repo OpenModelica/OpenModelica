@@ -38,7 +38,6 @@ CopyClass7.mos \
 CopyClass8.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
-daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \

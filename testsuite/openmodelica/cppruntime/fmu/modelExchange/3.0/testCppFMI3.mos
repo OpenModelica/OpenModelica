@@ -1,0 +1,85 @@
+// name: testCppFMI3
+// keywords: FMI 3.0 export Cpp
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml testCppFMI3.fmu testCppFMI3.fmutmp output.log
+// cflags: -d=-newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model testCppFMI3
+  Real x(start=1.0);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+  y = 2*x + a;
+end testCppFMI3;
+"); getErrorString();
+
+buildModelFMU(testCppFMI3, version="3.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet; strip volatile attributes
+system("unzip -cqq testCppFMI3.fmu modelDescription.xml | grep -v instantiationToken | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml"); getErrorString();
+readFile("modelDescription.tmp.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "testCppFMI3.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"3.0\"
+//   modelName=\"testCppFMI3\"
+//   description=\"\"
+//   version=\"\"
+//   variableNamingConvention=\"structured\"
+//   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+//   xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd\">
+//   <ModelExchange
+//     modelIdentifier=\"testCppFMI3\"
+//     needsExecutionTool=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canGetAndSetFMUState=\"true\"
+//     canSerializeFMUState=\"true\"
+//     providesDirectionalDerivatives=\"false\"
+//     providesAdjointDerivatives=\"false\"
+//     providesPerElementDependencies=\"false\"
+//     needsCompletedIntegratorStep=\"true\"/>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi3Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
+//   <ModelVariables>
+//   <Float64 name=\"time\" valueReference=\"5\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//   <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
+//   <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
+//   <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
+//   <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Output valueReference=\"2\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"1\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"1\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
+//     <InitialUnknown valueReference=\"2\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// ""
+// endResult

@@ -1,0 +1,76 @@
+// name: fmi3_cs_01.mos
+// keywords: FMI 3.0 export CoSimulation
+// status: correct
+// teardown_command: rm -rf fmi3_cs_01.fmu fmi3_cs_01.xml fmi3_cs_01_tmp.xml fmi3_cs_01.fmutmp/ fmi3_cs_01_res.mat fmi3_cs_01_fmpy.csv fmi3_cs_01_diff.*.csv fmi3_cs_01_info.json
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+loadString("
+model fmi3_cs_01
+  Real x(start=1.0);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+  y = 2*x + a;
+end fmi3_cs_01;
+"); getErrorString();
+
+buildModelFMU(fmi3_cs_01, version="3.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq fmi3_cs_01.fmu modelDescription.xml > fmi3_cs_01_tmp.xml"); getErrorString();
+system("sed -n \"/<CoSimulation/,/\\/>/p\" fmi3_cs_01_tmp.xml > fmi3_cs_01.xml"); getErrorString();
+readFile("fmi3_cs_01.xml"); getErrorString();
+
+// Validate the exported FMU with an independent FMI importer: simulate the
+// model in OpenModelica, co-simulate the FMU with FMPy, and check that the FMU
+// reproduces OpenModelica's own (non-FMU) simulation results.
+simulate(fmi3_cs_01, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py fmi3_cs_01.fmu fmi3_cs_01_fmpy.csv 1.0 x y"); getErrorString();
+diffSimulationResults("fmi3_cs_01_fmpy.csv", "fmi3_cs_01_res.mat", "fmi3_cs_01_diff", vars={"x","y"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_01.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <CoSimulation
+//     modelIdentifier=\"fmi3_cs_01\"
+//     needsExecutionTool=\"false\"
+//     canHandleVariableCommunicationStepSize=\"true\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     maxOutputDerivativeOrder=\"1\"
+//     providesIntermediateUpdate=\"false\"
+//     mightReturnEarlyFromDoStep=\"true\"
+//     canReturnEarlyAfterIntermediateUpdate=\"false\"
+//     hasEventMode=\"true\"
+//     providesEvaluateDiscreteStates=\"false\"
+//     recommendedIntermediateInputSmoothness=\"0\"
+//     canGetAndSetFMUState=\"true\"
+//     canSerializeFMUState=\"true\"
+//     providesDirectionalDerivatives=\"false\"
+//     providesAdjointDerivatives=\"false\"
+//     providesPerElementDependencies=\"false\"/>
+// "
+// ""
+// record SimulationResult
+//     resultFile = "fmi3_cs_01_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_cs_01', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// endResult

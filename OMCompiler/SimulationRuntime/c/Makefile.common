@@ -361,6 +361,8 @@ endif
 	      ../fmi/export/openmodelica/fmu1_model_interface.h  $(builddir_inc)/c/fmi-export
 	cp -p ../fmi/export/openmodelica/fmu2_model_interface.c \
 	      ../fmi/export/openmodelica/fmu2_model_interface.h \
+	      ../fmi/export/openmodelica/fmu3_model_interface.c \
+	      ../fmi/export/openmodelica/fmu3_model_interface.h \
 	      ../fmi/export/openmodelica/fmu_read_flags.c \
 	      ../fmi/export/openmodelica/fmu_read_flags.h  $(builddir_inc)/c/fmi-export
 
