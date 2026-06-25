@@ -100,6 +100,7 @@ encapsulated package List
 "
 
 public
+  // these styles can be used with List.toString() to get predefined behaviour. Use List.toStringCustom for full control.
   type Style = enumeration(NONE, FLAT, FLAT_BRACKETS, FLAT_CURLY, FLAT_CURLY_SHORT, NEWLINE, NEWLINE_INDENT, NEWLINE_TAB);
 
 protected
