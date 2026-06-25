@@ -11,7 +11,7 @@
 // reference and JIT runs get independent GUIDs / init.xml files.
 //
 // This test is registered (via CTest, run through rtest) only when omc was
-// built with OM_OMC_ENABLE_LLVM_JIT=ON; see the CMakeLists.txt next to it.
+// built with OM_OMC_ENABLE_LLVM=ON; see the CMakeLists.txt next to it.
 
 loadString("
 model Mref
