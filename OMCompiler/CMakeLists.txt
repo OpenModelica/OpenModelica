@@ -43,8 +43,15 @@ omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 # Compiler/LLVM/* MetaModelica sources plus the Compiler/runtime/llvm_gen.cpp
 # backend; when OFF it links against stubs and -d=jitSimulate no-ops.
 #
-# The path is built and validated on Linux. A non-MSYS clang toolchain on
-# Windows is left open; macOS and MSYS/MinGW Windows are not supported.
+# Default OFF: the JIT is experimental and strictly opt-in. A build that does
+# not pass -DOM_OMC_ENABLE_LLVM_JIT=ON proceeds exactly as before through the
+# stub path, whether or not a host LLVM is installed -- so a machine or CI
+# image without llvm-dev (which today includes the build-deps image) is
+# completely unaffected, and the mere presence of an LLVM install never changes
+# the default build. Enable it explicitly to build and test the JIT;
+# Compiler/runtime then locates the host LLVM, preferring 18 then 16. A
+# non-MSYS clang toolchain on Windows is left open; macOS and MSYS/MinGW Windows
+# are not supported.
 set(OM_OMC_LLVM_JIT_PLATFORM_OK FALSE)
 if(NOT APPLE)
   if(NOT WIN32)
@@ -54,42 +61,7 @@ if(NOT APPLE)
   endif()
 endif()
 
-# Default the option ON when the platform is supported and a usable LLVM is
-# actually present, so any build with a host LLVM (developer machines, or CI
-# once llvm-dev is added to the build-deps image) exercises the JIT. A QUIET
-# config probe (with the same zstd shim the real find in Compiler/runtime needs
-# on LLVM-16 Debian) keeps a supported box without LLVM -- which today includes
-# the CI image, where this resolves to OFF and the stub path is built -- from
-# failing the default build.
-set(OM_OMC_LLVM_JIT_DEFAULT OFF)
-if(OM_OMC_LLVM_JIT_PLATFORM_OK)
-  if(NOT TARGET zstd::libzstd_shared)
-    find_library(OMC_ZSTD_LIB NAMES zstd libzstd libzstd.so.1
-                 PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
-    if(NOT OMC_ZSTD_LIB)
-      find_file(OMC_ZSTD_SO NAMES libzstd.so.1
-                PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
-      set(OMC_ZSTD_LIB ${OMC_ZSTD_SO})
-    endif()
-    if(OMC_ZSTD_LIB)
-      add_library(zstd::libzstd_shared SHARED IMPORTED GLOBAL)
-      set_target_properties(zstd::libzstd_shared PROPERTIES IMPORTED_LOCATION ${OMC_ZSTD_LIB})
-    endif()
-  endif()
-  find_package(LLVM 18 CONFIG QUIET)
-  if(NOT LLVM_FOUND)
-    find_package(LLVM 16 CONFIG QUIET)
-  endif()
-  if(NOT LLVM_FOUND)
-    find_package(LLVM CONFIG QUIET)
-  endif()
-  if(LLVM_FOUND AND NOT LLVM_PACKAGE_VERSION VERSION_LESS 16)
-    set(OM_OMC_LLVM_JIT_DEFAULT ON)
-    message(STATUS "LLVM ${LLVM_PACKAGE_VERSION} found; defaulting OM_OMC_ENABLE_LLVM_JIT ON.")
-  endif()
-endif()
-
-omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." ${OM_OMC_LLVM_JIT_DEFAULT})
+omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." OFF)
 
 # Safety net: if the option is forced ON on an unsupported platform (macOS,
 # MSYS/MinGW Windows, a non-clang Windows compiler), turn it back off with a
