@@ -271,6 +271,10 @@ public
             case Adjacency.Matrix.FINAL() algorithm
               // phase 3 tarjan
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching);
+              // filter out SCCs consisting only of ELEMENT nodes: their equations are already
+              // tracked by the parent ARRAY_BUCKET or ALGEBRAIC_LOOP super node, and their
+              // adjacency rows are cleared (zero-edge nodes), so Tarjan creates trivial SCCs for them.
+              phase2_indices := list(comp for comp guard(not List.all(list(super_nodes[i] for i in comp), SuperNode.isElement)) in phase2_indices);
               comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching, vars, eqns) for comp in phase2_indices);
             then ();
 
@@ -427,6 +431,17 @@ public
         else false;
       end match;
     end isArrayBucket;
+
+    function isElement
+      "Returns true if the super node is an ELEMENT (belongs to an ARRAY_BUCKET or ALGEBRAIC_LOOP parent)."
+      input SuperNode node;
+      output Boolean b;
+    algorithm
+      b := match node
+        case ELEMENT() then true;
+        else false;
+      end match;
+    end isElement;
 
     function getEqnIndices
       input SuperNode node;
