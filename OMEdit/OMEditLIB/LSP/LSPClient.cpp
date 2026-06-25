@@ -89,10 +89,10 @@ bool LSPClient::start(const QString &executable, const QString &rootUri)
       return false;
     }
     mpProcess->setProgram(node);
-    mpProcess->setArguments({executable});
+    mpProcess->setArguments({executable, QStringLiteral("--stdio")});
   } else {
     mpProcess->setProgram(executable);
-    mpProcess->setArguments({});
+    mpProcess->setArguments({QStringLiteral("--stdio")});
   }
   mpProcess->start();
   if (!mpProcess->waitForStarted(5000)) {
@@ -514,7 +514,8 @@ QString LSPClient::findNodeExecutable()
 
 /*!
  * \brief LSPClient::findBundledServer
- * Looks for the bundled server.js shipped alongside OMEdit.
+ * Looks for the language server shipped alongside OMEdit.
+ * Prefers a standalone binary (no Node.js required) over server.js.
  * Checks next to the executable first (Windows / dev builds), then the
  * installed share directory (Linux / macOS).
  */
@@ -522,14 +523,29 @@ QString LSPClient::findBundledServer()
 {
   QDir appDir(QCoreApplication::applicationDirPath());
 
-  // Next to the executable: <appDir>/languageserver/server.js
-  QString candidate = appDir.filePath(QStringLiteral("languageserver/server.js"));
+#ifdef Q_OS_WIN
+  const QString binaryName = QStringLiteral("languageserver/modelica-language-server.exe");
+#else
+  const QString binaryName = QStringLiteral("languageserver/modelica-language-server");
+#endif
+  const QString jsName = QStringLiteral("languageserver/server.js");
+
+  // Prefer standalone binary — no Node.js required.
+  QString candidate = appDir.filePath(binaryName);
   if (QFile::exists(candidate)) {
     return candidate;
   }
-  // Installed share path: <appDir>/../share/omedit/languageserver/server.js
-  candidate = QDir::cleanPath(appDir.filePath(
-    QStringLiteral("../share/omedit/languageserver/server.js")));
+  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + binaryName));
+  if (QFile::exists(candidate)) {
+    return candidate;
+  }
+
+  // Fall back to server.js (requires Node.js on PATH).
+  candidate = appDir.filePath(jsName);
+  if (QFile::exists(candidate)) {
+    return candidate;
+  }
+  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + jsName));
   if (QFile::exists(candidate)) {
     return candidate;
   }
