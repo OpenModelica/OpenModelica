@@ -3357,7 +3357,7 @@ void OptionsDialog::addListItems()
   pTraceabilityItem->setText(tr("Traceability"));
   // Language Server Item
   QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
-  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/general.svg"));
+  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/language-server.svg"));
   pLanguageServerItem->setText(tr("Language Server"));
 }
 
