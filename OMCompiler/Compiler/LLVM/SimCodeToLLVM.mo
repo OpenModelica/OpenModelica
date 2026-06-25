@@ -911,7 +911,6 @@ protected function finalizeAndReport
 protected
   String odeSym;
   Integer st;
-  list<Real> rvIn, rvOut;
 algorithm
   odeSym := modelFilePrefix() + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
@@ -921,32 +920,17 @@ algorithm
       "') returned " + intString(st) + "\n", sourceInfo());
     return;
   end if;
-  /* Phase 6 (smoke-invoke functionODE) is intentionally disabled.
-   * It was useful while bootstrapping the IR emission but is now a
-   * liability: the inlined DATA-struct accessors (genReadRealParam,
-   * genReadTime) chase data->simulationInfo and data->localData[0]
-   * through real GEP / load chains, which crash against the fake
-   * DATA struct omc_jit_invoke_functionODE used to fabricate (it
-   * left simulationInfo == NULL). Pass 1 still proves
-   * materialisation via jitFinalizeNoEntry above; the actual
-   * correctness check is the real DASSL simulation in Pass 2. */
-  rvIn := List.fill(1.0, 2 * layout.nStates + layout.nAlgs + layout.nParams);
-  /* (rvOut, ..., realVarsString) intentionally unused after the
-   * smoke-invoke was removed; the locals stay so the bind shapes
-   * around the call site do not shift if Phase 6 returns. */
+  /* Phase 6 (smoke-invoke functionODE) was removed: the inlined DATA-struct
+   * accessors chase data->simulationInfo / data->localData[0] through GEP/load
+   * chains that crash against a fabricated DATA struct (simulationInfo == NULL).
+   * Materialisation is still proven by jitFinalizeNoEntry above; the real
+   * correctness check is the DASSL simulation in Pass 2. */
   if Flags.isSet(Flags.JIT_DUMP_IR) then
     Error.addInternalError(
       "SimCodeToLLVM Phase 5: materialised '" + odeSym + "'\n",
       sourceInfo());
   end if;
 end finalizeAndReport;
-
-protected function realVarsString
-  input list<Real> rs;
-  output String s;
-algorithm
-  s := "[" + stringDelimitList(List.map(rs, realString), ", ") + "]";
-end realVarsString;
 
 protected function emitODEEntryShell
   "Emit the function definition
