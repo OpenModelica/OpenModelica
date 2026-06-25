@@ -39,26 +39,61 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 # LLVM JIT path for MetaModelica function evaluation (PR #11766 revive).
-# Default OFF: build links against stubs and the JIT_EVAL_FUNC debug flag
-# silently no-ops at runtime. When ON, find a host LLVM (16 or 18) and
-# wire up the real Compiler/LLVM/* MetaModelica sources plus the
-# Compiler/runtime/llvm_gen.cpp backend.
-omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." OFF)
-
-# The LLVM JIT path (in-process ORC plus the perform-simulation adapter that
-# pulls perform_simulation.c.inc into omcruntime) is only built and validated
-# on Linux. Force the option off on macOS and on MSYS/MinGW Windows, where it
-# is neither compiled nor tested, so an accidental -DOM_OMC_ENABLE_LLVM_JIT=ON
-# (for example in CI) degrades to the stub path instead of failing the build.
-# The one case left open is a non-MSYS clang toolchain on Windows.
-if(OM_OMC_ENABLE_LLVM_JIT)
-  if(APPLE)
-    message(WARNING "OM_OMC_ENABLE_LLVM_JIT is not supported on macOS yet; forcing it OFF.")
-    set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
-  elseif(WIN32 AND NOT (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW AND NOT MSYS))
-    message(WARNING "OM_OMC_ENABLE_LLVM_JIT on Windows requires a non-MSYS clang toolchain; forcing it OFF.")
-    set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
+# When ON the build finds a host LLVM (>= 16) and wires up the real
+# Compiler/LLVM/* MetaModelica sources plus the Compiler/runtime/llvm_gen.cpp
+# backend; when OFF it links against stubs and -d=jitSimulate no-ops.
+#
+# The path is built and validated on Linux. A non-MSYS clang toolchain on
+# Windows is left open; macOS and MSYS/MinGW Windows are not supported.
+set(OM_OMC_LLVM_JIT_PLATFORM_OK FALSE)
+if(NOT APPLE)
+  if(NOT WIN32)
+    set(OM_OMC_LLVM_JIT_PLATFORM_OK TRUE)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW AND NOT MSYS)
+    set(OM_OMC_LLVM_JIT_PLATFORM_OK TRUE)
   endif()
+endif()
+
+# Default the option ON when the platform is supported and a usable LLVM is
+# actually present, so CI builds and exercises the JIT. A QUIET config probe
+# (with the same zstd shim the real find in Compiler/runtime needs on LLVM-16
+# Debian) keeps a supported box without LLVM from failing the default build.
+set(OM_OMC_LLVM_JIT_DEFAULT OFF)
+if(OM_OMC_LLVM_JIT_PLATFORM_OK)
+  if(NOT TARGET zstd::libzstd_shared)
+    find_library(OMC_ZSTD_LIB NAMES zstd libzstd libzstd.so.1
+                 PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+    if(NOT OMC_ZSTD_LIB)
+      find_file(OMC_ZSTD_SO NAMES libzstd.so.1
+                PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+      set(OMC_ZSTD_LIB ${OMC_ZSTD_SO})
+    endif()
+    if(OMC_ZSTD_LIB)
+      add_library(zstd::libzstd_shared SHARED IMPORTED GLOBAL)
+      set_target_properties(zstd::libzstd_shared PROPERTIES IMPORTED_LOCATION ${OMC_ZSTD_LIB})
+    endif()
+  endif()
+  find_package(LLVM 18 CONFIG QUIET)
+  if(NOT LLVM_FOUND)
+    find_package(LLVM 16 CONFIG QUIET)
+  endif()
+  if(NOT LLVM_FOUND)
+    find_package(LLVM CONFIG QUIET)
+  endif()
+  if(LLVM_FOUND AND NOT LLVM_PACKAGE_VERSION VERSION_LESS 16)
+    set(OM_OMC_LLVM_JIT_DEFAULT ON)
+    message(STATUS "LLVM ${LLVM_PACKAGE_VERSION} found; defaulting OM_OMC_ENABLE_LLVM_JIT ON.")
+  endif()
+endif()
+
+omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." ${OM_OMC_LLVM_JIT_DEFAULT})
+
+# Safety net: if the option is forced ON on an unsupported platform (macOS,
+# MSYS/MinGW Windows, a non-clang Windows compiler), turn it back off with a
+# warning rather than fail the build.
+if(OM_OMC_ENABLE_LLVM_JIT AND NOT OM_OMC_LLVM_JIT_PLATFORM_OK)
+  message(WARNING "OM_OMC_ENABLE_LLVM_JIT is not supported on this platform; forcing it OFF.")
+  set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
 endif()
 
 
