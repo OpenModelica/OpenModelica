@@ -3171,6 +3171,7 @@ void OptionsDialog::readLanguageServerSettings()
   } else {
     mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
   }
+  mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
 }
 
 /*!
@@ -3206,6 +3207,7 @@ void OptionsDialog::saveLanguageServerSettings()
   } else {
     mpSettings->setValue("languageServer/executable", executable);
   }
+  mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
 
   // Apply the change to the running session without requiring a restart.
   if (enabled) {
@@ -7045,6 +7047,9 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // Enable LSP checkbox
   mpEnableLSPCheckBox = new QCheckBox(tr("Enable Language Server"));
   mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information, go-to-definition, and document symbols."));
+  // Enable logging checkbox
+  mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
+  mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
   // Server executable
   mpServerExecutableLabel = new Label(tr("Server Executable:"));
   mpServerExecutableTextBox = new QLineEdit;
@@ -7063,6 +7068,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 1, 1);
   pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 1, 2);
   pGroupBoxLayout->addWidget(mpAutoDetectButton, 2, 1);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 3, 0, 1, 3);
   mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
   // Main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

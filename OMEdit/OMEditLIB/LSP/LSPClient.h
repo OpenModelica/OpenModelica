@@ -76,6 +76,7 @@ signals:
   void declarationResult(int requestId, LSP::Location location);
   void documentSymbolsResult(int requestId, QList<LSP::DocumentSymbol> symbols);
   void serverError(QString message);
+  void logMessage(QString message, int type);
 
 private slots:
   void onReadyRead();

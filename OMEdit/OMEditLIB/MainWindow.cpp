@@ -196,8 +196,35 @@ void MainWindow::startLanguageServer()
   }
   LSPClient *pLSPClient = new LSPClient(this);
   mpLSPClient = pLSPClient;
+  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
+  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
   QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
   pLSPClient->start(executable, rootUri);
+}
+
+/*!
+ * \brief MainWindow::onLanguageServerLogMessage
+ * Writes a language server message to the Messages Browser when language server
+ * logging is enabled. All messages are prefixed with "LSP". The LSP message type
+ * (1=Error, 2=Warning, others=Info) is mapped to the OMEdit message level.
+ */
+void MainWindow::onLanguageServerLogMessage(QString message, int type)
+{
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (!pSettings->value("languageServer/logging", false).toBool()) {
+    return;
+  }
+  if (message.isEmpty()) {
+    return;
+  }
+  QString level = Helper::notificationLevel;
+  if (type == 1) {
+    level = Helper::errorLevel;
+  } else if (type == 2) {
+    level = Helper::warningLevel;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QStringLiteral("LSP: %1").arg(message),
+                                                        Helper::scriptingKind, level));
 }
 
 /*!

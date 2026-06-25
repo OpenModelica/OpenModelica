@@ -1180,11 +1180,13 @@ class LanguageServerPage : public QWidget
 public:
   LanguageServerPage(OptionsDialog *pOptionsDialog);
   QCheckBox* getEnableLSPCheckBox() {return mpEnableLSPCheckBox;}
+  QCheckBox* getEnableLoggingCheckBox() {return mpEnableLoggingCheckBox;}
   QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpLanguageServerGroupBox;
   QCheckBox *mpEnableLSPCheckBox;
+  QCheckBox *mpEnableLoggingCheckBox;
   Label *mpServerExecutableLabel;
   QLineEdit *mpServerExecutableTextBox;
   QPushButton *mpBrowseServerExecutableButton;

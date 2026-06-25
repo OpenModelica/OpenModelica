@@ -530,9 +530,11 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
  */
 void LSPClient::handleNotification(const QString &method, const QJsonObject &params)
 {
-  Q_UNUSED(method)
-  Q_UNUSED(params)
-  // Server-initiated notifications (diagnostics, etc.) are not yet consumed.
+  if (method == QStringLiteral("window/logMessage") || method == QStringLiteral("window/showMessage")) {
+    emit logMessage(params["message"].toString(), params["type"].toInt(4));
+    return;
+  }
+  // Other server-initiated notifications (diagnostics, etc.) are not yet consumed.
 }
 
 /*!

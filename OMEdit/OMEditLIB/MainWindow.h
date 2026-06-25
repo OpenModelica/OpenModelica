@@ -590,6 +590,7 @@ public slots:
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
 private slots:
+  void onLanguageServerLogMessage(QString message, int type = 1);
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);
