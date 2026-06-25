@@ -346,6 +346,21 @@ algorithm
   assert(false, getInstanceName());
 end genZcValue;
 
+function genArrayCall2Real
+  input String dataArgName;
+  input String threadDataArgName;
+  input String fnName;
+  input list<Real> aData;
+  input list<Real> bData;
+  input String gvBaseName;
+  input Integer destSlot;
+  input Integer destNdims;
+  input Integer destD0;
+  input Integer destD1;
+algorithm
+  assert(false, getInstanceName());
+end genArrayCall2Real;
+
 function genBoolBinop
   input String aName;
   input String bName;

@@ -532,6 +532,29 @@ function genZcValue
                Include = "int createInlinedZcValue(const char *dataArgName, const char *dstName, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
 end genZcValue;
 
+function genArrayCall2Real
+  "Emit the omc_jit_array_call2_real adapter call for a SES_ARRAY_CALL_ASSIGN
+   of the shape  <realVars array> = fn(<const vec>, <const vec>), where fn
+   returns a real_array (e.g. MultiBody from_nxy). aData / bData are the two
+   constant operand vectors (staged as [N x double] globals named
+   gvBaseName_a / _b); fnName is the model function symbol (in the still-clang'd
+   <Model>_functions.c); destSlot is the flat realVars start slot of the
+   destination array; destNdims/destD0/destD1 its 2-D shape."
+  input String dataArgName;
+  input String threadDataArgName;
+  input String fnName;
+  input list<Real> aData;
+  input list<Real> bData;
+  input String gvBaseName;
+  input Integer destSlot;
+  input Integer destNdims;
+  input Integer destD0;
+  input Integer destD1;
+  external "C" createInlinedArrayCall2Real(dataArgName, threadDataArgName, fnName, aData, bData, gvBaseName, destSlot, destNdims, destD0, destD1)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedArrayCall2Real(const char *dataArgName, const char *threadDataArgName, const char *fnName, void *aData, void *bData, const char *gvBaseName, const int64_t destSlot, const int64_t destNdims, const int64_t destD0, const int64_t destD1);");
+end genArrayCall2Real;
+
 function genBoolBinop
   "Emit  dst(i32) = (a != 0) <and|or> (b != 0)  as 0/1. isOr selects OR.
    See createInlinedBoolBinop in omcruntime."

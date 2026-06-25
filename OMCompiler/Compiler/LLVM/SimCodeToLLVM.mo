@@ -84,10 +84,13 @@ protected
 import Absyn;
 import AbsynUtil;
 import BackendDAE;
+import CodegenUtil.{underscorePath};
+import ComponentReference;
 import ComponentReferenceBasics;
 import DAE;
 import DAEDump;
 import ExpressionBasics;
+import Tpl.{textString};
 import Error;
 import Flags;
 import Global;
@@ -214,6 +217,25 @@ public uniontype EqRecipe
     Integer slotIndex;
     DAE.Exp rhs;
   end EQ_INT_PARAM_ASSIGN;
+
+  record EQ_ARRAY_CALL2
+    "<realVars array> := fn(<const vec>, <const vec>), a SES_ARRAY_CALL_ASSIGN
+     whose RHS is a call to a real_array-returning function with two constant
+     real-vector arguments (e.g. MultiBody
+     world.z_label.R_lines = Frames.TransformationMatrices.from_nxy(n_x, n_y)).
+     Lowered to the omc_jit_array_call2_real adapter: it builds the operand
+     descriptors, calls fnName (in the still-clang'd <Model>_functions.c), and
+     copies the result into the realVars block at destSlot. eqIndex names the
+     per-equation operand globals."
+    String fnName;
+    list<Real> aData;
+    list<Real> bData;
+    Integer destSlot;
+    Integer ndims;
+    Integer d0;
+    Integer d1;
+    Integer eqIndex;
+  end EQ_ARRAY_CALL2;
 
   record EQ_BOOL_DISCRETE_ASSIGN
     "booleanVars[slot] := <Boolean expression>, a discrete Boolean
@@ -1939,6 +1961,7 @@ algorithm
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
     case EQ_INT_PARAM_ASSIGN()  then "IPARM(" + intString(r.slotIndex) + ")";
+    case EQ_ARRAY_CALL2()       then "ARRCALL2(" + r.fnName + " -> slot " + intString(r.destSlot) + ")";
     case EQ_BOOL_DISCRETE_ASSIGN() then "BDISC(" + intString(r.slotIndex) + ")";
     case EQ_WHEN() then "WHEN(" + intString(listLength(r.conditions)) + " cond, " +
                                intString(listLength(r.whenStmts)) + " stmt)";
@@ -2995,6 +3018,12 @@ algorithm
           EXT_LLVM.genWriteIntParam("data", slot, rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_ARRAY_CALL2()
+      algorithm
+        EXT_LLVM.genArrayCall2Real("data", "threadData", r.fnName,
+          r.aData, r.bData, "sctl_arr_" + intString(r.eqIndex),
+          r.destSlot, r.ndims, r.d0, r.d1);
+      then (ctx, true);
     case EQ_BOOL_DISCRETE_ASSIGN(slotIndex=slot, rhs=rhs)
       algorithm
         (ctx2, rhsTmp, exprOk) := emitBoolExp(rhs, ctx);
@@ -3545,6 +3574,7 @@ algorithm
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_INT_PARAM_ASSIGN()  then canLowerIntExp(r.rhs, layout);
+    case EQ_ARRAY_CALL2()       then true;
     case EQ_BOOL_DISCRETE_ASSIGN() then canLowerBoolExp(r.rhs, layout);
     case EQ_WHEN()
       then List.all(r.conditions, function isBoolDiscreteCref(layout = layout))
@@ -4864,7 +4894,7 @@ protected function classifySimEq
 algorithm
   recipe := match eq
     local DAE.ComponentRef cref;
-          DAE.Exp rhs;
+          DAE.Exp rhs, lhsExp;
           Option<VarSlot> os;
           VarSlot s;
           list<DAE.ComponentRef> cwhen;
@@ -4910,8 +4940,8 @@ algorithm
       then EQ_UNSUPPORTED("SES_IFEQUATION requires event handling, deferred");
     case SimCode.SES_ALGORITHM(statements = stmts)
       then EQ_ALGORITHM(stmts);
-    case SimCode.SES_ARRAY_CALL_ASSIGN()
-      then EQ_UNSUPPORTED("SES_ARRAY_CALL_ASSIGN requires array lowering, deferred");
+    case SimCode.SES_ARRAY_CALL_ASSIGN(lhs = lhsExp, exp = rhs)
+      then classifyArrayCallAssign(eq.index, lhsExp, rhs, layout);
     case SimCode.SES_FOR_LOOP()
       then EQ_UNSUPPORTED("SES_FOR_LOOP requires loop lowering, deferred");
     case SimCode.SES_FOR_EQUATION()
@@ -4927,6 +4957,97 @@ algorithm
       then EQ_UNSUPPORTED("unhandled SimEqSystem variant");
   end match;
 end classifySimEq;
+
+protected function classifyArrayCallAssign
+  "Classify a SES_ARRAY_CALL_ASSIGN of the shape
+     <realVars array> = fn(<const vec>, <const vec>)
+   where fn returns a real_array (the MultiBody from_nxy pattern). The two
+   call arguments must be constant real vectors and the destination array's
+   first element must resolve in the layout (a contiguous realVars block).
+   Anything else stays UNSUPPORTED so functionDAE keeps falling back."
+  input Integer eqIndex;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input VarLayout layout;
+  output EqRecipe recipe;
+algorithm
+  recipe := match (lhs, rhs)
+    local
+      DAE.ComponentRef arrCref;
+      Absyn.Path fnPath;
+      DAE.Exp arg1, arg2;
+      Integer d0, d1, destSlot;
+      list<Real> aData, bData;
+    case (DAE.CREF(componentRef = arrCref,
+                   ty = DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = d0),
+                                            DAE.DIM_INTEGER(integer = d1)})),
+          DAE.CALL(path = fnPath, expLst = {arg1, arg2}))
+      then match (extractConstRealVec(arg1), extractConstRealVec(arg2),
+                  arrayDestSlot(arrCref, layout))
+        case (SOME(aData), SOME(bData), SOME(destSlot))
+          then EQ_ARRAY_CALL2(mangleFunctionName(fnPath), aData, bData,
+                              destSlot, 2, d0, d1, eqIndex);
+        else EQ_UNSUPPORTED("SES_ARRAY_CALL_ASSIGN: non-constant args or destination not in layout");
+      end match;
+    else EQ_UNSUPPORTED("SES_ARRAY_CALL_ASSIGN: unsupported shape (need fn(constVec, constVec) -> 2-D realVars array)");
+  end match;
+end classifyArrayCallAssign;
+
+protected function extractConstRealVec
+  "Unwrap a SHARED_LITERAL / ARRAY of Real (or Integer) constants into a
+   list<Real>; NONE() if any element is non-constant."
+  input DAE.Exp e;
+  output Option<list<Real>> vals;
+algorithm
+  vals := match e
+    local DAE.Exp innerExp; list<DAE.Exp> arr;
+    case DAE.SHARED_LITERAL(exp = innerExp) then extractConstRealVec(innerExp);
+    case DAE.ARRAY(array = arr) then extractRconstList(arr, {});
+    else NONE();
+  end match;
+end extractConstRealVec;
+
+protected function extractRconstList
+  input list<DAE.Exp> exps;
+  input list<Real> acc;
+  output Option<list<Real>> vals;
+algorithm
+  vals := match exps
+    local DAE.Exp e; list<DAE.Exp> rest; Real r; Integer i;
+    case {} then SOME(listReverse(acc));
+    case DAE.RCONST(real = r) :: rest then extractRconstList(rest, r :: acc);
+    case DAE.ICONST(integer = i) :: rest then extractRconstList(rest, intReal(i) :: acc);
+    else NONE();
+  end match;
+end extractRconstList;
+
+protected function arrayDestSlot
+  "The flat realVars start slot of <arrCref>[1,1] -- the first element of the
+   destination array, which the runtime real_array descriptor wraps as a
+   contiguous block. NONE() if it is not in the layout."
+  input DAE.ComponentRef arrCref;
+  input VarLayout layout;
+  output Option<Integer> slot;
+protected
+  DAE.ComponentRef elemCref;
+algorithm
+  elemCref := ComponentReference.crefSetLastSubs(arrCref,
+                {DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1))});
+  slot := match lookupSlot(elemCref, layout)
+    local VarSlot vs;
+    case SOME(vs) then SOME(absoluteSlot(vs.kind, vs.index, layout));
+    else NONE();
+  end match;
+end arrayDestSlot;
+
+protected function mangleFunctionName
+  "Mangle a function path to its C symbol the way MidToLLVM.genFunction does:
+   omc_ + underscorePath (identifier underscores doubled)."
+  input Absyn.Path path;
+  output String name;
+algorithm
+  name := "omc_" + textString(underscorePath(Tpl.MEM_TEXT({}, {}), path));
+end mangleFunctionName;
 
 protected function classifyBoolDiscrete
   "Classify a discrete-Boolean assignment whose LHS resolved to a

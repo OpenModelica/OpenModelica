@@ -80,6 +80,8 @@
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/events.h"
 #include "simulation/arrayIndex.h"
+#include "util/real_array.h"
+#include "util/generic_array.h"
 
 /* ===== relationhysteresis wrapper =====
  *
@@ -208,6 +210,39 @@ double omc_jit_zc_value(DATA *data, double exp1, double exp2,
     default: r = 0; break;
   }
   return r ? 1.0 : -1.0;
+}
+
+/* omc_jit_array_call2_real: lower a SES_ARRAY_CALL_ASSIGN of the shape
+ *   <realVars array> = fn(<const real vector>, <const real vector>)
+ * where fn returns a real_array (by value) -- e.g. the MultiBody
+ *   world.z_label.R_lines = Frames.TransformationMatrices.from_nxy(n_x, n_y).
+ * SCTL passes the constant operand data as plain double buffers (it built
+ * them as IR globals), the model function as a raw pointer (resolved from
+ * <Model>_functions.c against omcruntime), and the destination as the flat
+ * realVars start slot plus the 2-D shape. We wrap the operands in stack
+ * real_array descriptors, call fn through the pointer (clang owns the
+ * struct-by-value ABI), then copy the result into the realVars block --
+ * byte-for-byte the body CodegenC emits with real_array_create +
+ * real_array_copy_data. The operand and result data stay contiguous in
+ * realVars exactly as the C path lays them out. */
+void omc_jit_array_call2_real(DATA *data, threadData_t *threadData,
+                              void *fnptr,
+                              const modelica_real *a_data, int a_len,
+                              const modelica_real *b_data, int b_len,
+                              int destSlot, int destNdims,
+                              int destD0, int destD1)
+{
+  typedef real_array (*fn2_t)(threadData_t *, real_array, real_array);
+  fn2_t fn = (fn2_t) fnptr;
+  _index_t adims[1]; _index_t bdims[1];
+  real_array a; real_array b; real_array dst;
+  adims[0] = (_index_t) a_len;
+  bdims[0] = (_index_t) b_len;
+  a.ndims = 1; a.dim_size = adims; a.data = (void *) a_data; a.flexible = 0;
+  b.ndims = 1; b.dim_size = bdims; b.data = (void *) b_data; b.flexible = 0;
+  real_array_create(&dst, &data->localData[0]->realVars[destSlot],
+                    destNdims, (_index_t) destD0, (_index_t) destD1);
+  real_array_copy_data(fn(threadData, a, b), dst);
 }
 
 /* ===== perform_simulation block ===== */

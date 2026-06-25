@@ -756,6 +756,93 @@ static llvm::Constant *emitVarSlotsArrayGlobal(const char *const arrName,
   return gv;
 }
 
+/* Emit a private constant `[N x double]` global named `arrName` holding the
+ * values walked out of a MetaModelica `list<Real>`. Returns the global and,
+ * via *outLen, the element count. Used by createInlinedArrayCall2Real to
+ * stage the constant operand vectors of an array-call assignment. */
+static llvm::GlobalVariable *emitRealArrayGlobal(const char *const arrName,
+                                                 void *const realList,
+                                                 int64_t *const outLen) {
+  llvm::Module &mod = *program->module;
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(ctx);
+
+  std::vector<double> vals;
+  {
+    void *lst = realList;
+    while (lst && MMC_GETHDR(lst) == MMC_CONSHDR) {
+      vals.push_back(mmc_prim_get_real(MMC_CAR(lst)));
+      lst = MMC_CDR(lst);
+    }
+  }
+  if (outLen) {
+    *outLen = (int64_t) vals.size();
+  }
+  if (llvm::GlobalVariable *const existing = mod.getNamedGlobal(arrName)) {
+    return existing;
+  }
+  std::vector<llvm::Constant *> initElts;
+  initElts.reserve(vals.size());
+  for (double v : vals) {
+    initElts.push_back(llvm::ConstantFP::get(dbl, v));
+  }
+  llvm::ArrayType *const arrTy = llvm::ArrayType::get(dbl, vals.size());
+  llvm::Constant *const init = llvm::ConstantArray::get(arrTy, initElts);
+  llvm::GlobalVariable *const gv = new llvm::GlobalVariable(
+      mod, arrTy, /*isConstant=*/true,
+      llvm::GlobalValue::PrivateLinkage, init, arrName);
+  gv->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+  return gv;
+}
+
+/* createInlinedArrayCall2Real: emit the call to the omc_jit_array_call2_real
+ * adapter for  <realVars array> = fn(<const vec>, <const vec>). The two
+ * constant operand vectors arrive as MetaModelica list<Real> values; they are
+ * staged as private [N x double] globals (gvBaseName + "_a" / "_b"). The model
+ * function fnName (real_array-returning, defined in the still-clang'd
+ * <Model>_functions.c) is referenced by name -- its address passes as the
+ * void* fnptr and the JIT resolves it against omcruntime; the IR-declared
+ * placeholder type is irrelevant since SCTL never calls it directly. */
+extern "C" int createInlinedArrayCall2Real(
+    const char *const dataArgName, const char *const threadDataArgName,
+    const char *const fnName, void *const aData, void *const bData,
+    const char *const gvBaseName, const int64_t destSlot,
+    const int64_t destNdims, const int64_t destD0, const int64_t destD1) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::LLVMContext &ctx = program->context;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(ctx);
+  llvm::Type *const voidTy = llvm::Type::getVoidTy(ctx);
+  llvm::PointerType *const ptrTy = llvm::PointerType::getUnqual(ctx);
+
+  int64_t aLen = 0, bLen = 0;
+  llvm::GlobalVariable *const aGV =
+      emitRealArrayGlobal((std::string(gvBaseName) + "_a").c_str(), aData, &aLen);
+  llvm::GlobalVariable *const bGV =
+      emitRealArrayGlobal((std::string(gvBaseName) + "_b").c_str(), bData, &bLen);
+
+  /* Reference the model function by name; its address is the void* fnptr. */
+  llvm::FunctionType *const fnPlaceholder =
+      llvm::FunctionType::get(voidTy, false);
+  llvm::FunctionCallee modelFn = mod.getOrInsertFunction(fnName, fnPlaceholder);
+
+  llvm::FunctionType *const adapterTy = llvm::FunctionType::get(
+      voidTy, {ptrTy, ptrTy, ptrTy, ptrTy, i32, ptrTy, i32, i32, i32, i32, i32},
+      false);
+  llvm::FunctionCallee adapter =
+      mod.getOrInsertFunction("omc_jit_array_call2_real", adapterTy);
+  b.CreateCall(adapter, {loadFromSymtab(dataArgName),
+                         loadFromSymtab(threadDataArgName),
+                         modelFn.getCallee(), aGV,
+                         llvm::ConstantInt::get(i32, aLen), bGV,
+                         llvm::ConstantInt::get(i32, bLen),
+                         llvm::ConstantInt::get(i32, destSlot),
+                         llvm::ConstantInt::get(i32, destNdims),
+                         llvm::ConstantInt::get(i32, destD0),
+                         llvm::ConstantInt::get(i32, destD1)});
+  return 0;
+}
+
 /* createInlinedSolveNonlinearN: emit a call to the omc_jit_solve_nonlinear_
  * system_n adapter. varSlotsList is a MetaModelica list<Integer> of the
  * iteration variables' flat realVars slots (length == nUnknowns); SCTL
@@ -1948,6 +2035,9 @@ extern "C" void omc_jit_relationhysteresis(struct DATA *, void *, double, double
                                            double, double, int, int);
 extern "C" double omc_jit_zc_value(struct DATA *, double, double, double, double,
                                    int, int);
+extern "C" void omc_jit_array_call2_real(struct DATA *, struct threadData_s *,
+                                         void *, const double *, int,
+                                         const double *, int, int, int, int, int);
 static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_performSimulation),
   reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
@@ -1955,6 +2045,7 @@ static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_main_runtime),
   reinterpret_cast<void *>(&omc_jit_relationhysteresis),
   reinterpret_cast<void *>(&omc_jit_zc_value),
+  reinterpret_cast<void *>(&omc_jit_array_call2_real),
 };
 
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
