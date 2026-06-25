@@ -316,9 +316,16 @@ public
           Dimension dim;
           list<Expression> elements;
           Integer size;
+          Pointer<Variable> var_ptr;
 
-        // don't inline simple cref equalities
-        case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) guard(not inlineSimple) then eqn;
+        // don't inline simple cref equalities, UNLESS the record has mixed continuity
+        // (e.g. ThermodynamicState with Integer phase): expand those to avoid index reduction issues
+        case Equation.RECORD_EQUATION(lhs = lhs as Expression.CREF(), rhs = Expression.CREF())
+          guard(not inlineSimple)
+          algorithm
+            var_ptr := BVariable.getVarPointer(lhs.cref, sourceInfo());
+          then if not (BVariable.isRecord(var_ptr) and not BVariable.isContinuous(var_ptr, false)) then eqn
+            else inlineRecordEquation(eqn, eqn.lhs, eqn.rhs, iter, eqn.attr, eqn.recordSize, variables, new_eqns, set, index, inlineSimple);
         case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF())  guard(not inlineSimple) then eqn;
 
         // try to inline other record equations. try catch to be sure to not discard

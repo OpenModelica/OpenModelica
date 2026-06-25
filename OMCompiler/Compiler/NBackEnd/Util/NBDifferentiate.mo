@@ -840,6 +840,7 @@ public
         Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
+        list<Expression> new_elements;
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -887,8 +888,6 @@ public
       case (Expression.CREF(), _, _)
         guard(BVariable.isStart(var_ptr))
       then (Expression.makeZero(exp.ty), diffArguments);
-
-      // ToDo: Records, Arrays, WILD (?)
 
       // Types: (SIMPLE)
       //  D(x)/dx => 1
@@ -941,6 +940,20 @@ public
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isState(var_ptr))
       then (Expression.fromCref(BVariable.getPartnerCref(exp.cref, BVariable.getVarDer)), diffArguments);
+
+      // Types: (TIME)
+      // RECORD with mixed continuous/discrete fields (e.g. ThermodynamicState with Integer phase)
+      // D(record)/dt = RECORD(D(field1)/dt, D(field2)/dt, ...)
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isRecord(var_ptr) and not BVariable.isContinuous(var_ptr, false))
+        algorithm
+          new_elements := {};
+          for child_cref in BVariable.getRecordChildrenCref(exp.cref) loop
+            (res, diffArguments) := differentiateExpression(Expression.fromCref(child_cref), diffArguments);
+            new_elements := res :: new_elements;
+          end for;
+          res := Expression.RECORD(InstNode.scopePath(Type.complexNode(exp.ty)), exp.ty, listReverse(new_elements));
+      then (res, diffArguments);
 
       // Types: (TIME)
       // D(y)/dtime --> der(y) --> $DER.y
@@ -1072,6 +1085,8 @@ public
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(crefExp.cref, sourceInfo());
+      // discrete/non-continuous variables (e.g. Integer phase in ThermodynamicState) have zero derivative
+      case _ guard(Expression.isZero(crefExp)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
           + " because the result is expected to be a variable but turned out to be " + Expression.toString(crefExp) + "."});
