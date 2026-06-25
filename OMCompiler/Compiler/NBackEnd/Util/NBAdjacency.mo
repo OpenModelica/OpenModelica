@@ -404,7 +404,7 @@ public
       MatrixStrictness st                 "strictness with which it was created";
     end FINAL;
 
-    record SPARSITY
+    record SPARSITY "contains sparsity information to create sparsity patterns for jacobians"
       array<ComponentRef> equation_names;
       array<Iterator> equation_iterators;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
