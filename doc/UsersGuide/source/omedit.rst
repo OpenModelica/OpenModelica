@@ -1977,6 +1977,61 @@ Sensitivity Optimization Options
 
   -  *python* - sets the Python executable to run OMSens scripts.
 
+.. _omedit-options-language-server :
+
+Language Server Options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OMEdit can connect to an external Modelica language server that speaks the
+`Language Server Protocol (LSP) <https://microsoft.github.io/language-server-protocol/>`_
+over stdin/stdout. When enabled, the language server provides:
+
+-  **Hover** - hover the mouse over a symbol in the text editor to see its
+   documentation in a tooltip.
+
+-  **Go to definition** - Ctrl+Click a symbol to navigate to where it is
+   defined (including across files).
+
+-  **Document symbols** - the language server tracks every open document and
+   can supply a symbol outline (used internally).
+
+The feature is opt-in and disabled by default.
+
+-  Language Server Protocol (LSP)
+
+  -  *Enable Language Server Protocol (LSP)* - when checked, OMEdit starts
+     the language server process on launch and connects to it.
+
+  -  *Server Executable* - path to the language server executable.
+     Leave blank to let OMEdit search for ``modelica-language-server`` on
+     the system ``PATH``.  Use the *Browse* button to select a file manually
+     or *Auto Detect* to search ``PATH`` immediately.
+
+**Installing the language server**
+
+The officially supported server is the
+`Modelica Language Server <https://github.com/OpenModelica/modelica-language-server>`_:
+
+.. code-block:: sh
+
+   npm install --global modelica-language-server
+
+After installation, open *Tools > Options > Language Server*, check
+*Enable Language Server Protocol (LSP)*, leave *Server Executable* blank
+(or click *Auto Detect*), then click *OK* and restart OMEdit.
+
+**Configuration via omedit.ini**
+
+The same settings can be written directly to ``~/.config/openmodelica/omedit.ini``:
+
+.. code-block:: ini
+
+   [languageServer]
+   enabled=true
+   executable=
+
+Leave ``executable`` empty to use ``PATH`` auto-detection.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 
