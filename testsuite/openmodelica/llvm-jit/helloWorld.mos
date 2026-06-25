@@ -1,0 +1,52 @@
+// name: helloWorld
+// keywords: llvm jit simulation
+// status: correct
+// teardown_command: rm -f HelloWorld* helloWorld_diff.csv
+//
+// Reuses the canonical testsuite HelloWorld
+// (../../simulation/modelica/equations/HelloWorld.mo) rather than redefining
+// it, and simulates it through the default C path and through the LLVM JIT
+// (-d=jitSimulate); the result files must agree. The thin alias
+// HelloWorld_jit = HelloWorld gives the JIT run a distinct model name so it
+// gets its own GUID / init.xml.
+//
+// Registered via CTest (run through rtest) only when omc was built with
+// OM_OMC_ENABLE_LLVM=ON; see the CMakeLists.txt next to it.
+
+loadFile("../../simulation/modelica/equations/HelloWorld.mo"); getErrorString();
+loadString("model HelloWorld_jit = HelloWorld;"); getErrorString();
+
+simulate(HelloWorld, stopTime = 1.0); getErrorString();
+
+setCommandLineOptions("-d=jitSimulate"); getErrorString();
+simulate(HelloWorld_jit, stopTime = 1.0); getErrorString();
+
+compareSimulationResults("HelloWorld_jit_res.mat", "HelloWorld_res.mat", "helloWorld_diff.csv", 1e-6, 1e-6);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HelloWorld_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'HelloWorld', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HelloWorld_jit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'HelloWorld_jit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {"Files Equal!"}
+// endResult
