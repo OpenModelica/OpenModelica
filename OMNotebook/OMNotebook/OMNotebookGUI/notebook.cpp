@@ -102,14 +102,14 @@ QString NotebookWindow::linkDir_ = QString();
   * 2006-01-16 AF, Added an icon to the window
   * Also made som other updates /AF
   */
-NotebookWindow::NotebookWindow(Document *subject,
+NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
                                const QString filename, int isDrModelica, QWidget *parent)
   : DocumentView(parent),
-    subject_(subject),
+    app_( subject->application() ),
+    subject_(std::move(subject)),
     filename_(filename),
-    closing_(false),
-    app_( subject->application() ), //AF
-    findForm_( 0 )          //AF
+    findForm_( 0 ),
+    closing_(false)
 {
   if(!isDrModelica && !filename_.isNull() ) {
     saveDir_ = openDir_ = QFileInfo( filename_ ).absolutePath();
@@ -164,19 +164,19 @@ NotebookWindow::NotebookWindow(Document *subject,
 
   connect( subject_->getCursor(), SIGNAL( changedPosition() ),
            this, SLOT( updateMenus() ));
-  connect( subject_, SIGNAL( contentChanged() ),
+  connect( subject_.get(), SIGNAL( contentChanged() ),
            this, SLOT( updateWindowTitle() ));
-  connect( subject_, SIGNAL( hoverOverFile(QString) ),
+  connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
            this, SLOT( setStatusMessage(QString) ));
   // 2006-04-27 AF
-  connect( subject_, SIGNAL( forwardAction(int) ),
+  connect( subject_.get(), SIGNAL( forwardAction(int) ),
            this, SLOT( forwardedAction(int) ));
 
-  connect( subject_, SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+  connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
 
-  connect( subject_, SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+  connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
 
-  connect( subject_, SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
+  connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
 
   updateWindowTitle();//
   updateChapterCounters();
@@ -218,7 +218,7 @@ NotebookWindow::NotebookWindow(Document *subject,
   */
 NotebookWindow::~NotebookWindow()
 {
-  //2006-01-27 AF, remove document view from application lsit
+  //2006-01-27 AF, remove document view from application list
   application()->removeDocumentView( this );
 
   //2006-01-05 AF, add all inputcell to removelist on highlighter
@@ -226,8 +226,6 @@ NotebookWindow::~NotebookWindow()
   subject_->runVisitor( visitor );
 
   subject_->detach(this);
-  delete subject_;
-  //subject_ = 0;
 }
 
 /*!
@@ -249,11 +247,11 @@ void NotebookWindow::update()
   * \author Anders Fernström
   * \date 2005-11-30
   *
-  * \brief Return the notebook windons document
+  * \brief Return the notebook windows document
   */
 Document* NotebookWindow::document()
 {
-  return subject_;
+  return subject_.get();
 }
 
 /*!
@@ -498,7 +496,7 @@ void NotebookWindow::createEditMenu()
   showExprAction->setStatusTip( tr("View the raw text in the cell") );
   showExprAction->setCheckable(true);
   showExprAction->setChecked(false);
-  connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
+  connect(showExprAction, SIGNAL(toggled(bool)), subject_.get(), SLOT(showHTML(bool)));
 
 
 #if USE_OMSKETCH
@@ -1442,8 +1440,8 @@ bool NotebookWindow::cellEditable()
   */
 void NotebookWindow::evalCells()
 {
-  application()->commandCenter()->executeCommand(
-        new EvalSelectedCells( subject_ ));
+  application()->commandCenter().executeCommand(
+        std::make_unique<EvalSelectedCells>( subject_.get() ));
 }
 
 /*!
@@ -2018,12 +2016,10 @@ void NotebookWindow::updateWindowMenu()
   windowMenu->clear();
 
   // add new menu items
-  std::vector<DocumentView *> windowViews = application()->documentViewList();
-  std::vector<DocumentView *>::iterator v_iter = windowViews.begin();
   int k = 1;
-  while( v_iter != windowViews.end() )
+  for (auto v: application()->documentViewList())
   {
-    QString title = (*v_iter)->windowTitle();
+    QString title = v->windowTitle();
     title.remove( "OMNotebook: " );
 
     QAction *action = new QAction( title, windowMenu );
@@ -2031,9 +2027,8 @@ void NotebookWindow::updateWindowMenu()
       action->setShortcut( QKeySequence::fromString("Ctrl+"+QString::number(k)) );
       k++;
     }
-    windows_[action] = (*v_iter);
+    windows_[action] = v;
     windowMenu->addAction( action );
-    ++v_iter;
   }
 }
 
@@ -2041,7 +2036,7 @@ void NotebookWindow::updateWindowMenu()
   * \author Anders Fernström
   * \date 2006-01-17
   *
-  * \brief Method for updateing the window title
+  * \brief Method for updating the window title
   */
 void NotebookWindow::updateWindowTitle()
 {
@@ -2066,12 +2061,12 @@ void NotebookWindow::updateWindowTitle()
   * \author Anders Fernström
   * \date 2006-03-02
   *
-  * \brief Method for updateing the chapter counters
+  * \brief Method for updating the chapter counters
   */
 void NotebookWindow::updateChapterCounters()
 {
-  application()->commandCenter()->executeCommand(
-        new UpdateChapterCounters( subject_ ));
+  application()->commandCenter().executeCommand(
+        std::make_unique<UpdateChapterCounters>( subject_.get() ));
 }
 
 /*!
@@ -2220,7 +2215,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
 void NotebookWindow::newFile()
 {
   /*
-  application()->commandCenter()->executeCommand(new NewFileCommand());
+  application()->commandCenter().executeCommand(new NewFileCommand());
 
   closeFile();
 
@@ -2240,7 +2235,7 @@ void NotebookWindow::newFile()
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
-    application()->commandCenter()->executeCommand(new OpenFileCommand(QString()));
+    application()->commandCenter().executeCommand(std::make_unique<OpenFileCommand>(QString()));
   }
   else
   {
@@ -2257,9 +2252,9 @@ void NotebookWindow::newFile()
         return;
     }
 
-    subject_ = new CellDocument(app_, QString());
-    dynamic_cast<CellDocument*>(subject_)->autoIndent = autoIndentAction->isChecked();
-    subject_->executeCommand(new NewFileCommand());
+    subject_ = std::make_unique<CellDocument>(app_, QString());
+    dynamic_cast<CellDocument*>(subject_.get())->autoIndent = autoIndentAction->isChecked();
+    subject_->executeCommand(std::make_unique<NewFileCommand>());
     subject_->attach(this);
 
     update();
@@ -2321,7 +2316,7 @@ void NotebookWindow::openFile(const QString filename)
 
       updateRecentFiles(filename_);
 
-      application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+      application()->commandCenter().executeCommand(std::make_unique<OpenFileCommand>(filename_));
     }
     else
     {
@@ -2503,8 +2498,8 @@ void NotebookWindow::helpText()
 
     if( dir.exists( helpFile ) )
     {
-      application()->commandCenter()->executeCommand(
-            new OpenFileCommand( helpFile ));
+      application()->commandCenter().executeCommand(
+            std::make_unique<OpenFileCommand>( helpFile ));
     }
     else
     {
@@ -2573,7 +2568,7 @@ void NotebookWindow::saveas()
     //QMessageBox::about(this,"entered ","image witten ");
 
     statusBar()->showMessage(tr("Saving file"));
-    application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, filename));
+    application()->commandCenter().executeCommand(std::make_unique<SaveDocumentCommand>(subject_.get(), filename));
 
     filename_ = filename;
     statusBar()->showMessage(tr("Ready"));
@@ -2606,7 +2601,7 @@ void NotebookWindow::save()
   else
   {
     statusBar()->showMessage(tr("Saving file"));
-    application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_));
+    application()->commandCenter().executeCommand(std::make_unique<SaveDocumentCommand>(subject_.get()));
     statusBar()->showMessage(tr("Ready"));
 
     updateWindowTitle();
@@ -2640,14 +2635,14 @@ void NotebookWindow::print()
   //printer.setFullPage( true );
   //printer.setColorMode( QPrinter::GrayScale );
 
-  QPrintDialog *dlg = new QPrintDialog(&printer, this);
-  if( dlg->exec() == QDialog::Accepted )
+  QPrintDialog dlg(&printer, this);
+  if( dlg.exec() == QDialog::Accepted )
   {
     // 2006-03-03 AF, make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new PrintDocumentCommand(subject_, &printer));
+    application()->commandCenter().executeCommand(
+          std::make_unique<PrintDocumentCommand>(subject_.get(), &printer));
 
     //currentEditor->document()->print(&printer);
 
@@ -2657,10 +2652,12 @@ void NotebookWindow::print()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()));
+    if( printer.outputFormat() == QPrinter::NativeFormat ) {
+      QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()));
+    } else {
+      QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed to %2." ).arg(title, printer.outputFileName()));
+    }
   }
-
-  delete dlg;
 }
 
 /*!
@@ -2711,8 +2708,8 @@ void NotebookWindow::pdf()
     // make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new PrintDocumentCommand(subject_, &printer));
+    application()->commandCenter().executeCommand(
+          std::make_unique<PrintDocumentCommand>(subject_.get(), &printer));
 
     //currentEditor->document()->print(&printer);
 
@@ -3270,9 +3267,9 @@ void NotebookWindow::findEdit()
   {
     // initiate findform, check if it is already visible, or set the current document
     if( !findForm_ )
-      findForm_ = new SearchForm( this, subject_ );
+      findForm_ = new SearchForm( this, subject_.get() );
     else
-      findForm_->setDocument( subject_ );
+      findForm_->setDocument( subject_.get() );
 
     // show/start find form
     if( !findForm_->isVisible() )
@@ -3292,9 +3289,9 @@ void NotebookWindow::replaceEdit()
   {
     // initiate findform(replace), check if it is already visible, or set the current document
     if( !findForm_ )
-      findForm_ = new SearchForm( this, subject_, true );
+      findForm_ = new SearchForm( this, subject_.get(), true );
     else
-      findForm_->setDocument( subject_ );
+      findForm_->setDocument( subject_.get() );
 
     // show/start find form
     if( !findForm_->isVisible() )
@@ -3505,8 +3502,8 @@ void NotebookWindow::openOldFile()
       // 2006-03-01 AF, Update openDir_
       openDir_ = QFileInfo( filename ).absolutePath();
 
-      application()->commandCenter()->executeCommand(
-            new OpenOldFileCommand( filename, READMODE_OLD ));
+      application()->commandCenter().executeCommand(
+            std::make_unique<OpenOldFileCommand>( filename, READMODE_OLD ));
     }
   }
   catch(std::exception &e )
@@ -3550,8 +3547,8 @@ void NotebookWindow::pureText()
     // 2006-03-03 AF, make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new ExportToPureText(subject_, filename) );
+    application()->commandCenter().executeCommand(
+          std::make_unique<ExportToPureText>(subject_.get(), filename) );
 
     // 2006-03-24 AF, added message box - so user know when
     // export is done
@@ -3677,7 +3674,7 @@ void NotebookWindow::groupCellsAction()
     }
     else
     {
-      subject_->executeCommand(new MakeGroupCellCommand());
+      subject_->executeCommand(std::make_unique<MakeGroupCellCommand>());
       subject_->updateScrollArea();
     }
   }
@@ -3692,21 +3689,21 @@ void NotebookWindow::groupCellsAction()
   */
 void NotebookWindow::inputCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Graph"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
 
 void NotebookWindow::latexCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Latex"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
 
 void NotebookWindow::textCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Text"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Text"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
@@ -3848,7 +3845,7 @@ void NotebookWindow::shiftcellsUp()
             QString currentoutput=g->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             GraphCell *newcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
             newcell->setEvaluated(true);
             newcell->setClosed(false);
@@ -3860,7 +3857,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3875,7 +3872,7 @@ void NotebookWindow::shiftcellsUp()
             QString latexoutput=l->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
             //newcell->setEvaluated(true);
             //newcell->setClosed(false);
@@ -3887,7 +3884,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3901,7 +3898,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>(style));
             subject_->getCursor()->currentCell()->setTextHtml(textoutput);
           }
         }
@@ -3956,7 +3953,7 @@ void NotebookWindow::shiftcellsDown()
             QString currentoutput=d->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             GraphCell *gcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
             gcell->setEvaluated(true);
             gcell->setClosed(false);
@@ -3967,7 +3964,7 @@ void NotebookWindow::shiftcellsDown()
           {
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3982,7 +3979,7 @@ void NotebookWindow::shiftcellsDown()
             QString latexoutput_d=ld->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
             //newcell_d->setEvaluated(true);
             //newcell_d->setClosed(false);
@@ -3994,7 +3991,7 @@ void NotebookWindow::shiftcellsDown()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -4007,7 +4004,7 @@ void NotebookWindow::shiftcellsDown()
             QString textoutput=current->textHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>(style));
             subject_->getCursor()->currentCell()->setTextHtml(textoutput);
           }
         }

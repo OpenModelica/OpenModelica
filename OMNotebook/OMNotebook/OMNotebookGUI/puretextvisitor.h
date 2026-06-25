@@ -57,7 +57,7 @@ namespace IAEX
 
   public:
     PureTextVisitor(QFile *file);
-    virtual ~PureTextVisitor();
+    virtual ~PureTextVisitor() {};
 
     virtual void visitCellNodeBefore(Cell *node);
     virtual void visitCellNodeAfter(Cell *node);
@@ -81,7 +81,7 @@ namespace IAEX
     virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
   private:
-    QTextStream *ts_;
+    QTextStream ts_;
   };
 }
 #endif

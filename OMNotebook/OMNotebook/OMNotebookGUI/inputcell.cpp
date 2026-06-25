@@ -252,10 +252,9 @@ namespace IAEX
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -315,17 +314,6 @@ namespace IAEX
     createOutputCell();
 
     //setBackgroundColor(QColor(200,200,255));
-  }
-
-  /*!
-   * \author Ingemar Axelsson and Anders Fernström
-   *
-   * \brief The class destructor
-   */
-  InputCell::~InputCell()
-  {
-    delete input_;
-    delete output_;
   }
 
   /*!

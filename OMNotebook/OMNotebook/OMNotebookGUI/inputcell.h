@@ -63,7 +63,7 @@ namespace IAEX
 
   public:
     InputCell(Document *doc, QWidget *parent=0);
-    virtual ~InputCell();
+    virtual ~InputCell() {};
 
     QString text() override;
     QString textHtml() override;

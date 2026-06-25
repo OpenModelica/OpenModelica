@@ -251,13 +251,6 @@ namespace IAEX
     createTextWidget();
   }
 
-  TextCell::TextCell(TextCell &t)
-    : Cell(t)
-  {
-    setText(t.text());
-    setStyle(*t.style());
-  }
-
   /*!
    * \author Ingemar Axelsson
    *

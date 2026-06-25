@@ -41,6 +41,7 @@
 
 #include <exception>
 #include <stdexcept>
+#include <algorithm>
 
 //IAEX Headers
 #include "cell.h"
@@ -114,28 +115,6 @@ namespace IAEX
     setPalette(palette);
   }
 
-  Cell::Cell(Cell &c) : QWidget()
-  {
-    setMouseTracking(true);
-
-    mainlayout_ = new QGridLayout(this);
-    mainlayout_->setContentsMargins(0, 0, 0, 0);
-    mainlayout_->setSpacing(0);
-
-    setLabel(new QLabel(this));
-
-    setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
-    // PORT >> setBackgroundMode(Qt::PaletteBase);
-    setBackgroundRole( QPalette::Base );
-    setTreeWidget(new TreeView(this));
-    setStyle( *c.style() );
-
-
-    QPalette palette;
-    palette.setColor(c.backgroundRole(), c.backgroundColor());
-    setPalette(palette);
-  }
-
   /*!
    * \author Ingemar Axelsson
    *
@@ -144,9 +123,6 @@ namespace IAEX
   Cell::~Cell()
   {
     setMouseTracking(false);
-    delete treeView_;
-    delete mainWidget_;
-    delete label_;
   }
 
   /*!
@@ -255,40 +231,40 @@ namespace IAEX
    * inputcells should be evaled from the start if the value is true.
    * (Anders Fernström)
    */
-  void Cell::addRule(Rule *r)
+  void Cell::addRule(Rule r)
   {
     // TODO: DEBUG code: Remove when doing release,
     // just a check to find new rules
     QRegularExpression expression("InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border");
-    if( 0 > r->attribute().indexOf( expression ))
+    if( 0 > r.attribute().indexOf( expression ))
     {
-      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << std::endl;
+      std::cout << "[NEW] Rule <" << r.attribute().toStdString() << "> <" << r.value().toStdString() << ">" << std::endl;
     }
     else
     {
-      if( r->attribute() == "FontSlant" )
+      if( r.attribute() == "FontSlant" )
       {
         QRegularExpression fontslant( "Italic" );
-        if( 0 > r->value().indexOf( fontslant ))
-          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( fontslant ))
+          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "TextAlignment" )
+      else if( r.attribute() == "TextAlignment" )
       {
         QRegularExpression textalignment( "Right|Left|Center|Justify" );
-        if( 0 > r->value().indexOf( textalignment ))
-          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( textalignment ))
+          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "TextJustification" )
+      else if( r.attribute() == "TextJustification" )
       {
         QRegularExpression textjustification( "1|0" );
-        if( 0 > r->value().indexOf( textjustification ))
-          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( textjustification ))
+          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "FontWeight" )
+      else if( r.attribute() == "FontWeight" )
       {
         QRegularExpression fontweight( "Bold|Plain" );
-        if( 0 > r->value().indexOf( fontweight ))
-          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( fontweight ))
+          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r.value().toStdString() << std::endl;
       }
     }
 
@@ -303,27 +279,20 @@ namespace IAEX
     // to the cell
     QRegularExpression ignoreRules("PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion");
 
-    if( 0 > r->attribute().indexOf( ignoreRules ) )
+    if( 0 > r.attribute().indexOf( ignoreRules ) )
     {
-      // check if rule already existes
-      bool found = false;
-      rules_t::iterator iter = rules_.begin();
-      while( iter != rules_.end() )
-      {
-        if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
-        {
-          found = true;
-          (*iter)->setValue( r->value() );
-          break;
-        }
-        ++iter;
-      }
+      // check if rule already exists
+      auto it = std::find_if(rules_.begin(), rules_.end(), [&r] (const auto &rule) {
+          return rule.attribute().indexOf(r.attribute(), 0, Qt::CaseInsensitive) == 0;
+        });
 
-      if( !found )
-        rules_.push_back(r);
+      if (it != rules_.end()) {
+        it->setValue(r.value());
+      } else {
+        rules_.push_back(std::move(r));
+      }
     }
   }
-
 
   /*!
    * \author Anders Fernström
@@ -335,33 +304,32 @@ namespace IAEX
    */
   void Cell::applyRulesToStyle()
   {
-    rules_t::iterator current = rules_.begin();
-    while( current != rules_.end() )
+    for (const auto &rule: rules_)
     {
-      if( (*current)->attribute() == "FontSlant" )
+      if( rule.attribute() == "FontSlant" )
       {
-        if( (*current)->value() == "Italic" )
+        if( rule.value() == "Italic" )
           style_.textCharFormat()->setFontItalic( true );
       }
-      else if( (*current)->attribute() == "TextAlignment" )
+      else if( rule.attribute() == "TextAlignment" )
       {
-        if( (*current)->value() == "Left" )
+        if( rule.value() == "Left" )
           style_.setAlignment( Qt::AlignLeft );
-        else if( (*current)->value() == "Right" )
+        else if( rule.value() == "Right" )
           style_.setAlignment( Qt::AlignRight );
-        else if( (*current)->value() == "Center" )
+        else if( rule.value() == "Center" )
           style_.setAlignment( Qt::AlignHCenter );
-        else if( (*current)->value() == "Justify" )
+        else if( rule.value() == "Justify" )
           style_.setAlignment( Qt::AlignJustify );
       }
-      else if( (*current)->attribute() == "TextJustification" )
+      else if( rule.attribute() == "TextJustification" )
       {
         //values: 1,0
       }
-      else if( (*current)->attribute() == "FontSize" )
+      else if( rule.attribute() == "FontSize" )
       {
         bool ok;
-        int size = (*current)->value().toInt(&ok);
+        int size = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -369,32 +337,32 @@ namespace IAEX
             style_.textCharFormat()->setFontPointSize( size );
         }
       }
-      else if( (*current)->attribute() == "FontWeight" )
+      else if( rule.attribute() == "FontWeight" )
       {
 
-        if( (*current)->value() == "Bold" )
+        if( rule.value() == "Bold" )
           style_.textCharFormat()->setFontWeight( QFont::Bold );
-        if( (*current)->value() == "Plain" )
+        if( rule.value() == "Plain" )
           style_.textCharFormat()->setFontWeight( QFont::Normal );
       }
-      else if( (*current)->attribute() == "FontFamily" )
+      else if( rule.attribute() == "FontFamily" )
       {
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-        style_.textCharFormat()->setFontFamilies({(*current)->value()});
+        style_.textCharFormat()->setFontFamilies({rule.value()});
 #else
-        style_.textCharFormat()->setFontFamily( (*current)->value() );
+        style_.textCharFormat()->setFontFamily( rule.value() );
 #endif
       }
-      else if( (*current)->attribute() == "InitializationCell" )
+      else if( rule.attribute() == "InitializationCell" )
       {}
-      else if( (*current)->attribute() == "CellTags" )
+      else if( rule.attribute() == "CellTags" )
       {
-        celltag_ = (*current)->value();
+        celltag_ = rule.value();
       }
-      else if( (*current)->attribute() == "OMNotebook_Margin" )
+      else if( rule.attribute() == "OMNotebook_Margin" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -402,10 +370,10 @@ namespace IAEX
             style_.textFrameFormat()->setMargin( value );
         }
       }
-      else if( (*current)->attribute() == "OMNotebook_Padding" )
+      else if( rule.attribute() == "OMNotebook_Padding" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -413,10 +381,10 @@ namespace IAEX
             style_.textFrameFormat()->setPadding( value );
         }
       }
-      else if( (*current)->attribute() == "OMNotebook_Border" )
+      else if( rule.attribute() == "OMNotebook_Border" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -424,8 +392,6 @@ namespace IAEX
             style_.textFrameFormat()->setBorder( value );
         }
       }
-
-      ++current;
     }
   }
 
@@ -476,18 +442,19 @@ namespace IAEX
     mainlayout_->addWidget( treeView_, 1, 3, Qt::AlignTop );
   }
 
-
   // ***************************************************************
 
 
   /*! \brief Set the cells mainwidget.
   *
-  * \todo Delete old widget. (Ingemar Axelsson)
-  *
   * \param newWidget A pointer to the cells new mainwidget.
   */
   void Cell::setMainWidget(QWidget *newWidget)
   {
+    // Forbid swapping the mainWidget, since that would be messy and isn't needed for now.
+    if (mainWidget_)
+      throw std::logic_error("Cell::setMainWidget(): mainWidget already set.");
+
     if(newWidget != 0)
     {
       mainWidget_ = newWidget;
@@ -499,8 +466,6 @@ namespace IAEX
       palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
       mainWidget_->setPalette(palette);
     }
-    else
-      mainWidget_= 0;
   }
 
   /*!
@@ -739,7 +704,7 @@ namespace IAEX
   }
 
 
-  Cell::rules_t Cell::rules() const
+  const Cell::rules_t& Cell::rules() const
   {
     return rules_;
   }
