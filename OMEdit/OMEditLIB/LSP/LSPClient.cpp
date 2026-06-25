@@ -409,11 +409,11 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
 
   if (method == QStringLiteral("initialize")) {
     // Complete the handshake
-    QJsonObject initialized;
-    initialized["jsonrpc"] = QStringLiteral("2.0");
-    initialized["method"] = QStringLiteral("initialized");
-    initialized["params"] = QJsonObject{};
-    sendMessage(initialized);
+    QJsonObject initializedNotif;
+    initializedNotif["jsonrpc"] = QStringLiteral("2.0");
+    initializedNotif["method"] = QStringLiteral("initialized");
+    initializedNotif["params"] = QJsonObject{};
+    sendMessage(initializedNotif);
     mInitialized = true;
     emit initialized();
     return;
