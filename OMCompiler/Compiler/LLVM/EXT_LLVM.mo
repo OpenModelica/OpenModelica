@@ -513,6 +513,25 @@ function genRelationHysteresisBool
                Include = "int createInlinedRelationHysteresisBool(const char *dataArgName, const char *dstName, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
 end genRelationHysteresisBool;
 
+function genZcValue
+  "Emit  dst(double) = omc_jit_zc_value(exp1, exp2, nom1, nom2, zcIndex, opCode),
+   the hysteresis +1/-1 gout value for one zero crossing (matching CodegenC's
+   function_ZeroCrossings). dstName is a pre-created double alloca; exp1Name /
+   exp2Name are double allocas holding the lowered operands; opCode selects the
+   comparison (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq)."
+  input String dataArgName;
+  input String dstName;
+  input String exp1Name;
+  input String exp2Name;
+  input Real nom1;
+  input Real nom2;
+  input Integer zcIndex;
+  input Integer opCode;
+  external "C" createInlinedZcValue(dataArgName, dstName, exp1Name, exp2Name, nom1, nom2, zcIndex, opCode)
+    annotation(Library = "omcruntime",
+               Include = "int createInlinedZcValue(const char *dataArgName, const char *dstName, const char *exp1Name, const char *exp2Name, double nom1, double nom2, const int64_t zcIndex, const int64_t opCode);");
+end genZcValue;
+
 function genBoolBinop
   "Emit  dst(i32) = (a != 0) <and|or> (b != 0)  as 0/1. isOr selects OR.
    See createInlinedBoolBinop in omcruntime."

@@ -1763,7 +1763,7 @@ algorithm
    * JIT materialization time. */
   for zc in zcs loop
     try
-      (ctx, valTmp, ok) := emitZeroCrossingResidual(zc, ctx);
+      (ctx, valTmp, ok) := emitZeroCrossingGout(zc, i, ctx);
       if not ok then
         (ctx, valTmp) := freshTmp(ctx);
         EXT_LLVM.genAllocaModelicaReal(valTmp, false);
@@ -1776,6 +1776,54 @@ algorithm
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
 end emitZeroCrossingsBody;
+
+protected function emitZeroCrossingGout
+  "Emit the gout value the solver root-finds for a single zero crossing,
+   matching CodegenC's function_ZeroCrossings:
+     gout[idx] = <op>ZC(lhs, rhs, lhs_nom, rhs_nom, storedRelations[idx]) ? 1 : -1
+   via the omc_jit_zc_value adapter. Using the hysteresis +1/-1 step rather
+   than the raw continuous residual (lhs - rhs) is what makes state events
+   fire inside the tolZC band exactly as the C path does; the raw residual
+   fired events at the exact crossing, diverging every event-model trace.
+   zcIndex is the storedRelations / gout slot (the zero-crossing's position
+   in simCode.zeroCrossings)."
+  input BackendDAE.ZeroCrossing zc;
+  input Integer zcIndex;
+  input EmitCtx ctxIn;
+  output EmitCtx outCtx;
+  output String dst;
+  output Boolean ok;
+protected
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+  Integer opc;
+  Option<Integer> oc;
+  EmitCtx ctx1, ctx2;
+  String dst1, dst2;
+  Boolean ok1, ok2;
+algorithm
+  BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2)) := zc;
+  oc := opCodeForRelationOp(op);
+  if not isSome(oc) then
+    outCtx := ctxIn;
+    dst := "<zc-op-unsupported>";
+    ok := false;
+    return;
+  end if;
+  SOME(opc) := oc;
+  (ctx1, dst1, ok1) := emitExp(e1, ctxIn);
+  (ctx2, dst2, ok2) := emitExp(e2, ctx1);
+  ok := ok1 and ok2;
+  if not ok then
+    outCtx := ctx2;
+    dst := "<zc-gout-unlowerable>";
+    return;
+  end if;
+  (outCtx, dst) := freshTmp(ctx2);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genZcValue("data", dst, dst1, dst2,
+    relationOperandNominal(e1), relationOperandNominal(e2), zcIndex, opc);
+end emitZeroCrossingGout;
 
 protected function emitUpdateRelationsBody
   "Emit  int <fname>(DATA *data, threadData_t *threadData, int evalForZeroCross) {

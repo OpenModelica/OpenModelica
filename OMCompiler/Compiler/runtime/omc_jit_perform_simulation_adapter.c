@@ -184,6 +184,32 @@ void omc_jit_relationhysteresis(DATA *data, modelica_boolean *res,
   }
 }
 
+/* omc_jit_zc_value: the gout value the solver root-finds for a single zero
+ * crossing, mirroring CodegenC's function_ZeroCrossings body
+ *   gout[index] = <op>ZC(exp1, exp2, exp1_nominal, exp2_nominal,
+ *                        storedRelations[index]) ? 1 : -1;
+ * The op_code maps the same way as omc_jit_relationhysteresis
+ * (0=Less, 1=LessEq, 2=Greater, 3=GreaterEq). Returning the hysteresis
+ * +1/-1 step (rather than the raw continuous residual lhs-rhs) is what
+ * makes the JIT detect state events inside the tolZC band exactly as the
+ * C path does -- the raw residual fired events at the exact crossing,
+ * which diverged every event-model trace (e.g. BouncingBall). */
+double omc_jit_zc_value(DATA *data, double exp1, double exp2,
+                        double exp1_nominal, double exp2_nominal,
+                        int index, int op_code)
+{
+  modelica_boolean dir = data->simulationInfo->storedRelations[index];
+  modelica_boolean r;
+  switch (op_code) {
+    case 0: r = LessZC(exp1, exp2, exp1_nominal, exp2_nominal, dir);      break;
+    case 1: r = LessEqZC(exp1, exp2, exp1_nominal, exp2_nominal, dir);    break;
+    case 2: r = GreaterZC(exp1, exp2, exp1_nominal, exp2_nominal, dir);   break;
+    case 3: r = GreaterEqZC(exp1, exp2, exp1_nominal, exp2_nominal, dir); break;
+    default: r = 0; break;
+  }
+  return r ? 1.0 : -1.0;
+}
+
 /* ===== perform_simulation block ===== */
 
 #define prefixedName_performSimulation       omc_jit_performSimulation

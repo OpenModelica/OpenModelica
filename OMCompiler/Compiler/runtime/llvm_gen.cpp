@@ -484,6 +484,41 @@ extern "C" int createInlinedRelationHysteresisBool(
   return 0;
 }
 
+/* createInlinedZcValue: dstName(double) =
+ *   omc_jit_zc_value(exp1, exp2, nom1, nom2, zcIndex, opCode);
+ * the hysteresis +1/-1 gout value for one zero crossing, matching
+ * CodegenC's function_ZeroCrossings body. exp1Name / exp2Name are double
+ * allocas holding the lowered operands; dstName is a pre-created double
+ * alloca that receives the result. */
+extern "C" int createInlinedZcValue(
+    const char *const dataArgName, const char *const dstName,
+    const char *const exp1Name, const char *const exp2Name,
+    const double nom1, const double nom2, const int64_t zcIndex,
+    const int64_t opCode) {
+  llvm::IRBuilder<> &b = program->builder;
+  llvm::Module &mod = *program->module;
+  llvm::Type *const i32 = llvm::Type::getInt32Ty(program->context);
+  llvm::Type *const dbl = llvm::Type::getDoubleTy(program->context);
+  llvm::PointerType *const ptrTy =
+      llvm::PointerType::getUnqual(program->context);
+
+  llvm::Value *const dataPtr = loadFromSymtab(dataArgName);
+  llvm::Value *const e1 = loadFromSymtab(exp1Name);
+  llvm::Value *const e2 = loadFromSymtab(exp2Name);
+
+  llvm::FunctionType *const fnTy = llvm::FunctionType::get(
+      dbl, {ptrTy, dbl, dbl, dbl, dbl, i32, i32}, false);
+  llvm::FunctionCallee const fn =
+      mod.getOrInsertFunction("omc_jit_zc_value", fnTy);
+  llvm::Value *const res = b.CreateCall(fn, {dataPtr, e1, e2,
+                    llvm::ConstantFP::get(dbl, nom1),
+                    llvm::ConstantFP::get(dbl, nom2),
+                    llvm::ConstantInt::get(i32, zcIndex),
+                    llvm::ConstantInt::get(i32, opCode)});
+  storeIntoSymtab(dstName, res);
+  return 0;
+}
+
 /* createInlinedBoolBinop: dstName(i32) = (a != 0) <and|or> (b != 0), as 0/1.
  * Normalising both operands to i1 before combining matches C's && / ||
  * truthiness regardless of how the operands were produced. isOr selects OR. */
@@ -1911,12 +1946,15 @@ extern "C" int omc_jit_main_runtime(int, char **, void *, void *, void *,
                                     const char *);
 extern "C" void omc_jit_relationhysteresis(struct DATA *, void *, double, double,
                                            double, double, int, int);
+extern "C" double omc_jit_zc_value(struct DATA *, double, double, double, double,
+                                   int, int);
 static void *const kOmcJitAdapterForceLink[] __attribute__((used)) = {
   reinterpret_cast<void *>(&omc_jit_performSimulation),
   reinterpret_cast<void *>(&omc_jit_performQSSSimulation),
   reinterpret_cast<void *>(&omc_jit_updateContinuousSystem),
   reinterpret_cast<void *>(&omc_jit_main_runtime),
   reinterpret_cast<void *>(&omc_jit_relationhysteresis),
+  reinterpret_cast<void *>(&omc_jit_zc_value),
 };
 
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,

@@ -333,6 +333,19 @@ algorithm
   assert(false, getInstanceName());
 end genRelationHysteresisBool;
 
+function genZcValue
+  input String dataArgName;
+  input String dstName;
+  input String exp1Name;
+  input String exp2Name;
+  input Real nom1;
+  input Real nom2;
+  input Integer zcIndex;
+  input Integer opCode;
+algorithm
+  assert(false, getInstanceName());
+end genZcValue;
+
 function genBoolBinop
   input String aName;
   input String bName;
