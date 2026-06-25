@@ -3,8 +3,8 @@ omc_add_subdirectory(difftool)
 omc_add_subdirectory(ReferenceFiles)
 
 # LLVM-JIT simulation test. The CMakeLists.txt there registers the rtest-based
-# test with CTest only when OM_OMC_ENABLE_LLVM_JIT is set, so it runs on
-# LLVM-JIT-enabled builds and is a no-op otherwise.
+# test with CTest only when OM_OMC_ENABLE_LLVM is set, so it runs on
+# LLVM-enabled builds and is a no-op otherwise.
 omc_add_subdirectory(openmodelica/llvm-jit)
 
 add_custom_target(ffi-test-lib

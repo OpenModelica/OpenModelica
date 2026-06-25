@@ -39,16 +39,15 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 # LLVM backend for the MetaModelica compiler (PR #11766 revive).
-# OM_OMC_ENABLE_LLVM is the general master switch: when ON the build finds a
-# host LLVM (>= 16) and wires up the real Compiler/LLVM/* MetaModelica sources
-# plus the Compiler/runtime/llvm_gen.cpp IR backend; when OFF it links against
-# stubs. It is deliberately general so a future ahead-of-time (AoT) LLVM
-# code path can share the same find/IR-generation infrastructure as the JIT.
-#
-# OM_OMC_ENABLE_LLVM_JIT selects the JIT execution path specifically (the
-# omc_jit_perform_simulation_adapter, -d=jitSimulate). It depends on
-# OM_OMC_ENABLE_LLVM and defaults ON when the LLVM backend is enabled, since
-# the JIT is the only consumer today; an AoT path would be a sibling sub-option.
+# OM_OMC_ENABLE_LLVM: when ON the build finds a host LLVM (>= 16) and wires up
+# the real Compiler/LLVM/* MetaModelica sources plus the
+# Compiler/runtime/llvm_gen.cpp backend (IR generation and the in-process JIT
+# that runs it, -d=jitSimulate); when OFF it links against stubs. A single flag
+# is deliberate: IR generation and JIT execution currently share one
+# translation unit (llvm_gen.cpp), so there is nothing yet to gate separately.
+# If an ahead-of-time (AoT) path is added later -- and the JIT runtime is split
+# out of llvm_gen.cpp -- a JIT/AoT sub-option can be reintroduced under this
+# master.
 #
 # Default OFF: the LLVM backend is experimental and strictly opt-in. A build
 # that does not pass -DOM_OMC_ENABLE_LLVM=ON proceeds exactly as before through
@@ -68,23 +67,15 @@ if(NOT APPLE)
   endif()
 endif()
 
-omc_option(OM_OMC_ENABLE_LLVM "Enable the LLVM backend for the MetaModelica compiler (experimental, revive of PR #11766). Master switch for the JIT and any future AoT path." OFF)
+omc_option(OM_OMC_ENABLE_LLVM "Enable the LLVM backend (IR generation + in-process JIT) for the MetaModelica compiler (experimental, revive of PR #11766)." OFF)
 
 # Safety net: if the option is forced ON on an unsupported platform (macOS,
 # MSYS/MinGW Windows, a non-clang Windows compiler), turn it back off with a
 # warning rather than fail the build.
 if(OM_OMC_ENABLE_LLVM AND NOT OM_OMC_LLVM_PLATFORM_OK)
   message(WARNING "OM_OMC_ENABLE_LLVM is not supported on this platform; forcing it OFF.")
-  set(OM_OMC_ENABLE_LLVM OFF CACHE BOOL "Enable the LLVM backend for the MetaModelica compiler (experimental, revive of PR #11766). Master switch for the JIT and any future AoT path." FORCE)
+  set(OM_OMC_ENABLE_LLVM OFF CACHE BOOL "Enable the LLVM backend (IR generation + in-process JIT) for the MetaModelica compiler (experimental, revive of PR #11766)." FORCE)
 endif()
-
-# JIT execution path. Sub-option of OM_OMC_ENABLE_LLVM: ON by default when the
-# LLVM backend is enabled (the JIT is its only consumer today), forced OFF when
-# OM_OMC_ENABLE_LLVM is OFF.
-include(CMakeDependentOption)
-cmake_dependent_option(OM_OMC_ENABLE_LLVM_JIT
-  "Enable the in-process LLVM JIT simulation path (-d=jitSimulate). Requires OM_OMC_ENABLE_LLVM."
-  ON "OM_OMC_ENABLE_LLVM" OFF)
 
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely

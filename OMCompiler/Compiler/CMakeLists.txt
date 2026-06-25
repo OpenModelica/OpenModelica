@@ -274,14 +274,14 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
-# When OM_OMC_ENABLE_LLVM_JIT is on, omc_jit_perform_simulation_adapter.c
+# When OM_OMC_ENABLE_LLVM is on, omc_jit_perform_simulation_adapter.c
 # (compiled into omcruntime) pulls in perform_simulation.c.inc's body
 # which references symbols from libSimulationRuntimeC (storePreValues,
 # handleTimers, ...). Link that shared library so the omc binary can
 # resolve them at static-link time. At simulate-time the same library is
 # already dlopen'd from runModelViaJIT, so this is purely a link-time
 # requirement.
-if(OM_OMC_ENABLE_LLVM_JIT)
+if(OM_OMC_ENABLE_LLVM)
   target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::simruntime)
 endif()
 

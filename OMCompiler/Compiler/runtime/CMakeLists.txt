@@ -67,27 +67,22 @@ set(OMC_RUNTIIME_SOURCES
 # Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
 if(OM_OMC_ENABLE_LLVM)
   # llvm_gen_wrappers.c defines run_jit_internal which llvm_gen.cpp
-  # forward-declares and the JIT path calls at runtime. llvm_gen.cpp is the
-  # shared IR backend (the eventual AoT path would use it too).
-  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c)
-  # llvm_gen_layout.c uses offsetof() on the runtime DATA struct, so it
-  # needs the simulation_data.h header on its include path. The header
-  # itself lives in OMCompiler/SimulationRuntime/c/ and is part of the
-  # runtime build; we only need its layout, not the full runtime here.
+  # forward-declares and the JIT path calls at runtime. llvm_gen.cpp holds both
+  # the IR backend and the in-process JIT; omc_jit_perform_simulation_adapter.c
+  # drives a simulation against the JIT'd model.
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c
+    omc_jit_perform_simulation_adapter.c)
+  # llvm_gen_layout.c uses offsetof() on the runtime DATA struct, so it needs
+  # the simulation_data.h header on its include path. The header itself lives in
+  # OMCompiler/SimulationRuntime/c/ and is part of the runtime build; we only
+  # need its layout, not the full runtime here.
+  # omc_jit_perform_simulation_adapter.c re-uses the runtime's solver .inc files
+  # and needs the same include path.
   set_source_files_properties(
     llvm_gen_layout.c
+    omc_jit_perform_simulation_adapter.c
     PROPERTIES INCLUDE_DIRECTORIES
       "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
-  # JIT execution path: the perform-simulation adapter is JIT-specific.
-  # omc_jit_perform_simulation_adapter.c re-uses the runtime's solver
-  # .inc files and needs the same include path.
-  if(OM_OMC_ENABLE_LLVM_JIT)
-    list(APPEND OMC_RUNTIIME_SOURCES omc_jit_perform_simulation_adapter.c)
-    set_source_files_properties(
-      omc_jit_perform_simulation_adapter.c
-      PROPERTIES INCLUDE_DIRECTORIES
-        "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
-  endif()
 else()
   list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
 endif()
@@ -169,10 +164,7 @@ if(OM_OMC_ENABLE_LLVM)
 
   target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})
   target_compile_definitions(omcruntime PUBLIC ${LLVM_DEFINITIONS_LIST})
-  # OMC_HAVE_LLVM_JIT advertises the JIT execution path specifically.
-  if(OM_OMC_ENABLE_LLVM_JIT)
-    target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM_JIT)
-  endif()
+  target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM)
   # Path to the matching clang/llvm-link, used to lower a model's C to bitcode
   # for the `llvm` simCodeTarget regardless of the configured CC.
   target_compile_definitions(omcruntime PRIVATE OMC_LLVM_TOOLS_DIR="${LLVM_TOOLS_BINARY_DIR}")
