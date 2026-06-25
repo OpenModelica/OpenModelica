@@ -4592,8 +4592,8 @@ end replaceAtIndexFirst;
 public function replaceAtWithList<T>
   "Takes an list, a position and a list, and replaces the element at the given
   position with the first list in the second list. Position is an integer
-  between 0 and n - 1 for a list of n elements.
-     Example: replaceAt({'A', 'B'}, 1, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
+  between 1 and n for a list of n elements.
+     Example: replaceAt({'A', 'B'}, 2, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
   input list<T> inReplacementList;
   input Integer inPosition;
   input list<T> inList;
@@ -4602,10 +4602,10 @@ protected
   T e;
   list<T> rest = inList;
 algorithm
-  true := inPosition >= 0;
+  true := inPosition > 0;
 
   // Shuffle elements from inList to outList until the position is reached.
-  for i in 0:inPosition-1 loop
+  for i in 1:inPosition-1 loop
     e :: rest := rest;
     outList := e :: outList;
   end for;

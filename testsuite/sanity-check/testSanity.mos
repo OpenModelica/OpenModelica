@@ -303,8 +303,11 @@ end M_total;
 
 saveTotalSCode("m.mo", M); getErrorString();
 
-// build an FMU out of the model
+// build an FMI 2.0 FMU out of the model
 buildModelFMU(M); getErrorString();
+
+// build an FMI 3.0 FMU out of the model
+buildModelFMU(M, version = "3.0", fmuType = "me", fileNamePrefix = "M_fmi3"); getErrorString();
 
 // build an simulation executable out of the model
 buildModel(M); getErrorString();

@@ -58,7 +58,9 @@ set(OMC_RUNTIIME_SOURCES
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp
-    ffi_omc.cpp)
+    ffi_omc.cpp
+    OMGraphics.cpp
+    OMGraphics_omc.cpp)
 
 # Pick the LLVM JIT backend: real implementation when OM_OMC_ENABLE_LLVM_JIT
 # is ON, otherwise the no-op stubs. The stubs match the symbol list expected

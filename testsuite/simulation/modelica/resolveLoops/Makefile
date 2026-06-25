@@ -14,6 +14,7 @@ ElectricalCircuit4.mos \
 ElectricalCircuit5.mos \
 ElectricalCircuit6.mos \
 Issue13292.mos \
+Issue15901.mos \
 NPendulum2.mos \
 NPendulum3.mos
 #AmplifierWithOpAmpDetailed.mos \
