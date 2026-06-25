@@ -2003,22 +2003,36 @@ The feature is opt-in and disabled by default.
      the language server process on launch and connects to it.
 
   -  *Server Executable* - path to the language server executable.
-     Leave blank to let OMEdit search for ``modelica-language-server`` on
-     the system ``PATH``.  Use the *Browse* button to select a file manually
-     or *Auto Detect* to search ``PATH`` immediately.
+     Leave blank (recommended) to use the server bundled with OMEdit.
+     Use *Browse* to select a custom server or *Auto Detect* to locate one
+     automatically.
 
-**Installing the language server**
+**Runtime requirement: Node.js**
 
-The officially supported server is the
-`Modelica Language Server <https://github.com/OpenModelica/modelica-language-server>`_:
+OMEdit ships with a pre-built Modelica language server.  The only
+external dependency is `Node.js <https://nodejs.org>`_ (version 16 or later),
+which is used to run the bundled server.  If Node.js is not installed when you
+enable the language server, OMEdit shows a one-time setup dialog with
+platform-specific installation instructions.
 
-.. code-block:: sh
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
 
-   npm install --global modelica-language-server
+   * - Platform
+     - Install command
+   * - Windows
+     - ``winget install OpenJS.NodeJS.LTS``
+   * - macOS
+     - ``brew install node``
+   * - Linux (Debian/Ubuntu)
+     - ``sudo apt install nodejs``
+   * - Linux (Fedora/RHEL)
+     - ``sudo dnf install nodejs``
 
-After installation, open *Tools > Options > Language Server*, check
-*Enable Language Server Protocol (LSP)*, leave *Server Executable* blank
-(or click *Auto Detect*), then click *OK* and restart OMEdit.
+After installing Node.js, open *Tools > Options > Language Server*, check
+*Enable Language Server Protocol (LSP)*, leave *Server Executable* blank,
+click *OK*, and restart OMEdit.
 
 **Configuration via omedit.ini**
 
@@ -2030,7 +2044,7 @@ The same settings can be written directly to ``~/.config/openmodelica/omedit.ini
    enabled=true
    executable=
 
-Leave ``executable`` empty to use ``PATH`` auto-detection.
+Leave ``executable`` empty to use the bundled server.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------

@@ -36,8 +36,11 @@
 #include "LSP/LSPClient.h"
 
 #include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QStandardPaths>
 #include <QUrl>
 
 /*!
@@ -79,7 +82,18 @@ bool LSPClient::start(const QString &executable, const QString &rootUri)
   mPendingRequests.clear();
   mNextId = 1;
 
-  mpProcess->setProgram(executable);
+  if (executable.endsWith(QStringLiteral(".js"))) {
+    QString node = findNodeExecutable();
+    if (node.isEmpty()) {
+      emit serverError(tr("Node.js not found on PATH. The language server cannot start."));
+      return false;
+    }
+    mpProcess->setProgram(node);
+    mpProcess->setArguments({executable});
+  } else {
+    mpProcess->setProgram(executable);
+    mpProcess->setArguments({});
+  }
   mpProcess->start();
   if (!mpProcess->waitForStarted(5000)) {
     emit serverError(tr("Failed to start language server: %1").arg(executable));
@@ -487,6 +501,39 @@ void LSPClient::handleNotification(const QString &method, const QJsonObject &par
   Q_UNUSED(method)
   Q_UNUSED(params)
   // Server-initiated notifications (diagnostics, etc.) are not yet consumed.
+}
+
+/*!
+ * \brief LSPClient::findNodeExecutable
+ * Returns the full path to the node executable, or an empty string if not found.
+ */
+QString LSPClient::findNodeExecutable()
+{
+  return QStandardPaths::findExecutable(QStringLiteral("node"));
+}
+
+/*!
+ * \brief LSPClient::findBundledServer
+ * Looks for the bundled server.js shipped alongside OMEdit.
+ * Checks next to the executable first (Windows / dev builds), then the
+ * installed share directory (Linux / macOS).
+ */
+QString LSPClient::findBundledServer()
+{
+  QDir appDir(QCoreApplication::applicationDirPath());
+
+  // Next to the executable: <appDir>/languageserver/server.js
+  QString candidate = appDir.filePath(QStringLiteral("languageserver/server.js"));
+  if (QFile::exists(candidate)) {
+    return candidate;
+  }
+  // Installed share path: <appDir>/../share/omedit/languageserver/server.js
+  candidate = QDir::cleanPath(appDir.filePath(
+    QStringLiteral("../share/omedit/languageserver/server.js")));
+  if (QFile::exists(candidate)) {
+    return candidate;
+  }
+  return QString();
 }
 
 QJsonObject LSPClient::makePosition(int line, int character)

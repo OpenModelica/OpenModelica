@@ -39,6 +39,7 @@
 
 #include "MCP/MCPServer.h"
 #include "LSP/LSPClient.h"
+#include "LSP/LSPSetupDialog.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -284,11 +285,29 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 
   if (pSettings->contains("languageServer/enabled") && pSettings->value("languageServer/enabled").toBool()) {
+    // Resolve the server executable: user setting → bundled server.js → PATH
     QString executable = pSettings->value("languageServer/executable").toString().trimmed();
+    if (executable.isEmpty()) {
+      executable = LSPClient::findBundledServer();
+    }
     if (executable.isEmpty()) {
       executable = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
     }
-    if (!executable.isEmpty()) {
+
+    bool canStart = !executable.isEmpty();
+    if (canStart && executable.endsWith(QStringLiteral(".js"))
+        && LSPClient::findNodeExecutable().isEmpty()) {
+      // Node.js is missing — prompt the user
+      LSPSetupDialog setupDialog(pMainwindow);
+      setupDialog.exec();
+      if (setupDialog.result() == QDialog::Rejected) {
+        // User chose to disable LSP; persist the choice
+        pSettings->setValue(QStringLiteral("languageServer/enabled"), false);
+      }
+      canStart = setupDialog.wasNodeFound();
+    }
+
+    if (canStart) {
       LSPClient *pLSPClient = new LSPClient(pMainwindow);
       QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
       pLSPClient->start(executable, rootUri);

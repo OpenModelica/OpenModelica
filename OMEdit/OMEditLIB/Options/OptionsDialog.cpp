@@ -51,6 +51,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "LSP/LSPClient.h"
 #include <limits>
 
 #include <QStringBuilder>
@@ -7062,12 +7063,27 @@ void LanguageServerPage::browseServerExecutable()
  */
 void LanguageServerPage::autoDetectServerExecutable()
 {
-  QString found = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+  // Bundled server.js shipped alongside OMEdit
+  QString found = LSPClient::findBundledServer();
   if (!found.isEmpty()) {
     mpServerExecutableTextBox->setText(found);
-  } else {
-    QMessageBox::information(this, Helper::applicationName,
-                             tr("Could not find 'modelica-language-server' on the system PATH.\n"
-                                "Install it with: npm install -g @modelica/modelica-language-server"));
+    if (LSPClient::findNodeExecutable().isEmpty()) {
+      QMessageBox::information(this, Helper::applicationName,
+                               tr("Found the bundled language server at:\n%1\n\n"
+                                  "Node.js is required to run it but was not found on the PATH.\n"
+                                  "Install Node.js from https://nodejs.org and restart OMEdit.")
+                               .arg(found));
+    }
+    return;
   }
+  // Standalone binary on PATH
+  found = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+    return;
+  }
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("No language server found.\n\n"
+                              "Install Node.js (https://nodejs.org) — OMEdit will use the "
+                              "bundled server automatically on next launch."));
 }

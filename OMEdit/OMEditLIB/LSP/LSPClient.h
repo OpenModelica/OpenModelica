@@ -58,6 +58,9 @@ public:
   void stop();
   bool isRunning() const;
 
+  static QString findNodeExecutable();
+  static QString findBundledServer();
+
   void openDocument(const QString &uri, const QString &languageId, const QString &text);
   void changeDocument(const QString &uri, int version, const QString &text);
   void closeDocument(const QString &uri);

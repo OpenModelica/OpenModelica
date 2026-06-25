@@ -18,6 +18,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
+                      LSP/LSPSetupDialog.cpp
                       Util/Helper.cpp
                       Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
@@ -151,6 +152,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       resource_omedit.qrc)
 
 set(OMEDITLIB_HEADERS LSP/LSPClient.h
+                      LSP/LSPSetupDialog.h
                       LSP/LSPProtocol.h
                       MCP/MCPServer.h
                       Util/Helper.h
@@ -388,3 +390,25 @@ target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Sc
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
         FILES_MATCHING PATTERN "*.qm")
+
+# Install the bundled Modelica language server (optional — skipped when not built)
+set(MODELICA_LS_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../modelica-language-server/server/out"
+    CACHE PATH "Directory containing the built modelica-language-server (server.js and WASM files)")
+if(EXISTS "${MODELICA_LS_DIR}/server.js")
+  set(MODELICA_LS_FILES
+      "${MODELICA_LS_DIR}/server.js"
+      "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm"
+      "${MODELICA_LS_DIR}/web-tree-sitter.wasm")
+  if(WIN32)
+    # On Windows, place next to OMEdit.exe so findBundledServer() finds it
+    install(FILES ${MODELICA_LS_FILES}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}/languageserver)
+  else()
+    install(FILES ${MODELICA_LS_FILES}
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit/languageserver)
+  endif()
+  message(STATUS "Bundled Modelica language server will be installed from ${MODELICA_LS_DIR}")
+else()
+  message(STATUS "Modelica language server not found at ${MODELICA_LS_DIR} — skipping bundled install")
+endif()
