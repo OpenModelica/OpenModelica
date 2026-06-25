@@ -56,10 +56,10 @@ public:
   bool isConnected() const { return mSocketConnected; }
   bool sendCommand(const QJsonObject &obj, QJsonObject &reply);
 private:
-  void* mpContext;
-  void* mpSocket;
+  void* mpContext = nullptr;
+  void* mpSocket = nullptr;
   QString mEndPoint;
-  bool mSocketConnected;
+  bool mSocketConnected = false;
 };
 
 class OMSProxy : public QObject
@@ -83,11 +83,11 @@ private:
   void logCommand(QString command);
   void logResponse(QString method, QString status, QElapsedTimer *responseTime);
 
-  GuiRequestSocket* mpGuiRequestSocket;
-  QProcess* mpGuiProcess;
+  GuiRequestSocket* mpGuiRequestSocket = nullptr;
+  QProcess* mpGuiProcess = nullptr;
   QString mGuiServerScript;
   void startGuiServer();
-  bool mServerReady;
+  bool mServerReady = false;
 private slots:
   void guiProcessStarted();
   void guiProcessError(QProcess::ProcessError error);
