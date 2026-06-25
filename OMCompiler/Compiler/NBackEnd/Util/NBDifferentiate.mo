@@ -2102,6 +2102,7 @@ public
         String der_func_name;
         list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
+        UnorderedSet<InstNode> existingLocals;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
         new_cls := match Pointer.access(cls)
@@ -2132,6 +2133,14 @@ public
 
             // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
+            // Build a set of already-present local names to avoid duplicates when differentiating
+            // a function that was itself already differentiated (2nd+ order): derivative locals
+            // from the prior pass (e.g. $fDER_a1) appear both in der_func.locals and as new
+            // entries in `locals` (derivatives of the original vars), causing C redeclaration errors.
+            existingLocals := UnorderedSet.fromList(der_func.locals, InstNode.hash, InstNode.nameEqual);
+            locals        := list(n for n guard not UnorderedSet.contains(n, existingLocals) in locals);
+            for n in locals loop UnorderedSet.add(n, existingLocals); end for;
+            local_outputs := list(n for n guard not UnorderedSet.contains(n, existingLocals) in local_outputs);
             der_func.locals   := List.flatten({der_func.locals, locals, local_outputs});
             der_func.outputs  := outputs;
             // also add the new locals to the class
