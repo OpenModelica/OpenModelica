@@ -46,11 +46,14 @@
 #include "LSP/LSPProtocol.h"
 
 #include <QPoint>
+#include <QPointer>
 #include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class ModelWidget;
 class LibraryTreeItem;
+class LSPClient;
+class QAction;
 
 class ModelicaEditor : public BaseEditor
 {
@@ -85,11 +88,19 @@ private:
   int mPendingHoverRequestId;
   int mPendingDefinitionRequestId;
   QPoint mLastToolTipGlobalPos;
+  QPointer<LSPClient> mConnectedLSPClient;
+  bool mLSPDocumentOpened;
+  QAction *mpLSPGoToDefinitionAction;
+  QAction *mpLSPGoToDeclarationAction;
   QString documentUri() const;
+  bool ensureLanguageServerConnected();
+  void notifyLanguageServerContentChanged();
 private slots:
   virtual void showContextMenu(QPoint point) override;
   void onLSPHoverResult(int requestId, const QString &content);
   void onLSPDefinitionResult(int requestId, const LSP::Location &location);
+  void goToLSPDefinition();
+  void goToLSPDeclaration();
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;

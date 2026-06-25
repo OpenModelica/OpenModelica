@@ -284,27 +284,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 
   if (pSettings->contains("languageServer/enabled") && pSettings->value("languageServer/enabled").toBool()) {
-    // Resolve the server executable: user setting → bundled server.js → PATH
-    QString executable = pSettings->value("languageServer/executable").toString().trimmed();
-    if (executable.isEmpty()) {
-      executable = LSPClient::findBundledServer();
-    }
-    if (executable.isEmpty()) {
-      executable = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
-    }
-
-    // For .js servers, silently skip if Node.js is absent — the user was
-    // already notified when they enabled LSP in the Options dialog.
-    bool canStart = !executable.isEmpty() &&
-                    !(executable.endsWith(QStringLiteral(".js")) &&
-                      LSPClient::findNodeExecutable().isEmpty());
-
-    if (canStart) {
-      LSPClient *pLSPClient = new LSPClient(pMainwindow);
-      QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
-      pLSPClient->start(executable, rootUri);
-      pMainwindow->setLSPClient(pLSPClient);
-    }
+    pMainwindow->startLanguageServer();
   }
 
   if (!testsuiteRunning) {

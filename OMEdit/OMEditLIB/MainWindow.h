@@ -128,6 +128,8 @@ public:
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   LSPClient* getLSPClient() {return mpLSPClient;}
   void setLSPClient(LSPClient *pLSPClient) {mpLSPClient = pLSPClient;}
+  void startLanguageServer();
+  void stopLanguageServer();
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}

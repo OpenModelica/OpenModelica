@@ -83,7 +83,11 @@
 #include "CrashReport/CrashReportDialog.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "PlotCurve.h"
+#include "LSP/LSPClient.h"
 #include <QtSvg/QSvgGenerator>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QDir>
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 
@@ -163,6 +167,51 @@ MainWindow *MainWindow::instance()
     mpInstance = new MainWindow;
   }
   return mpInstance;
+}
+
+/*!
+ * \brief MainWindow::startLanguageServer
+ * Starts the language server process if it is not already running.
+ * Resolves the executable from the user setting, then the bundled server,
+ * then the system PATH. Skips silently when no usable server is available.
+ */
+void MainWindow::startLanguageServer()
+{
+  if (mpLSPClient) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QString executable = pSettings->value("languageServer/executable").toString().trimmed();
+  if (executable.isEmpty()) {
+    executable = LSPClient::findBundledServer();
+  }
+  if (executable.isEmpty()) {
+    executable = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+  }
+  // For .js servers, skip when Node.js is absent. The user is notified in the Options dialog.
+  bool canStart = !executable.isEmpty() &&
+                  !(executable.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty());
+  if (!canStart) {
+    return;
+  }
+  LSPClient *pLSPClient = new LSPClient(this);
+  mpLSPClient = pLSPClient;
+  QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+  pLSPClient->start(executable, rootUri);
+}
+
+/*!
+ * \brief MainWindow::stopLanguageServer
+ * Stops and destroys the language server process if it is running.
+ */
+void MainWindow::stopLanguageServer()
+{
+  if (!mpLSPClient) {
+    return;
+  }
+  mpLSPClient->stop();
+  mpLSPClient->deleteLater();
+  mpLSPClient = nullptr;
 }
 
 /*!

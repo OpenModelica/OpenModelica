@@ -282,6 +282,34 @@ int LSPClient::requestDefinition(const QString &uri, int line, int character)
 }
 
 /*!
+ * \brief LSPClient::requestDeclaration
+ * Sends textDocument/declaration request. Result arrives via declarationResult(id, ...) signal.
+ * \param line 0-based line number
+ * \param character 0-based character offset
+ * \return request id, or -1 if not running
+ */
+int LSPClient::requestDeclaration(const QString &uri, int line, int character)
+{
+  if (!mInitialized) {
+    return -1;
+  }
+  int id = nextId();
+  mPendingRequests.insert(id, QStringLiteral("textDocument/declaration"));
+
+  QJsonObject params;
+  params["textDocument"] = makeTextDocumentIdentifier(uri);
+  params["position"] = makePosition(line, character);
+
+  QJsonObject request;
+  request["jsonrpc"] = QStringLiteral("2.0");
+  request["id"] = id;
+  request["method"] = QStringLiteral("textDocument/declaration");
+  request["params"] = params;
+  sendMessage(request);
+  return id;
+}
+
+/*!
  * \brief LSPClient::requestDocumentSymbols
  * Sends textDocument/documentSymbol request. Result arrives via documentSymbolsResult(id, ...) signal.
  * \return request id, or -1 if not running
@@ -447,7 +475,7 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
     return;
   }
 
-  if (method == QStringLiteral("textDocument/definition")) {
+  if (method == QStringLiteral("textDocument/definition") || method == QStringLiteral("textDocument/declaration")) {
     LSP::Location location;
     QJsonObject locObj;
     if (result.isArray() && !result.toArray().isEmpty()) {
@@ -465,7 +493,11 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
       location.range.end.line = endObj["line"].toInt();
       location.range.end.character = endObj["character"].toInt();
     }
-    emit definitionResult(id, location);
+    if (method == QStringLiteral("textDocument/declaration")) {
+      emit declarationResult(id, location);
+    } else {
+      emit definitionResult(id, location);
+    }
     return;
   }
 

@@ -48,6 +48,7 @@
 #include "Util/Helper.h"
 #include "Options/NotificationsDialog.h"
 
+#include <QAction>
 #include <QCompleter>
 #include <QEvent>
 #include <QHelpEvent>
@@ -68,7 +69,9 @@
  */
 ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false),
-    mDocumentVersion(1), mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1)
+    mDocumentVersion(1), mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1),
+    mConnectedLSPClient(nullptr), mLSPDocumentOpened(false),
+    mpLSPGoToDefinitionAction(nullptr), mpLSPGoToDeclarationAction(nullptr)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
@@ -80,11 +83,11 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   }
   // Install event filter for LSP hover support
   mpPlainTextEdit->viewport()->installEventFilter(this);
-  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (pLSPClient) {
-    connect(pLSPClient, SIGNAL(hoverResult(int,QString)), this, SLOT(onLSPHoverResult(int,QString)));
-    connect(pLSPClient, SIGNAL(definitionResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
-  }
+  // LSP navigation actions; added to the context menu only when the server is running
+  mpLSPGoToDefinitionAction = new QAction(tr("LSP: Go to Definition"), this);
+  connect(mpLSPGoToDefinitionAction, SIGNAL(triggered()), SLOT(goToLSPDefinition()));
+  mpLSPGoToDeclarationAction = new QAction(tr("LSP: Go to Declaration"), this);
+  connect(mpLSPGoToDeclarationAction, SIGNAL(triggered()), SLOT(goToLSPDeclaration()));
 }
 
 ModelicaEditor::~ModelicaEditor()
@@ -125,6 +128,7 @@ bool ModelicaEditor::eventFilter(QObject *pObject, QEvent *pEvent)
     QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
     LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
     if (pLSPClient && pLSPClient->isRunning()) {
+      ensureLanguageServerConnected();
       QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pHelpEvent->pos());
       mLastToolTipGlobalPos = pHelpEvent->globalPos();
       QString uri = documentUri();
@@ -183,6 +187,92 @@ void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &l
       pModelWidget->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
     }
   });
+}
+
+/*!
+ * \brief ModelicaEditor::ensureLanguageServerConnected
+ * Connects this editor to the active language server (once per client) and opens
+ * the document on the server if it has not been opened yet.
+ * \return true if the document was opened during this call
+ */
+bool ModelicaEditor::ensureLanguageServerConnected()
+{
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (!pLSPClient || !pLSPClient->isRunning()) {
+    return false;
+  }
+  if (mConnectedLSPClient != pLSPClient) {
+    connect(pLSPClient, SIGNAL(hoverResult(int,QString)), this, SLOT(onLSPHoverResult(int,QString)));
+    connect(pLSPClient, SIGNAL(definitionResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
+    connect(pLSPClient, SIGNAL(declarationResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
+    mConnectedLSPClient = pLSPClient;
+    mLSPDocumentOpened = false;
+  }
+  if (!mLSPDocumentOpened) {
+    QString uri = documentUri();
+    if (!uri.isEmpty()) {
+      pLSPClient->openDocument(uri, QStringLiteral("modelica"), mpPlainTextEdit->toPlainText());
+      mLSPDocumentOpened = true;
+      mDocumentVersion = 1;
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
+ * \brief ModelicaEditor::notifyLanguageServerContentChanged
+ * Sends the current document content to the language server as a change,
+ * opening the document first if necessary.
+ */
+void ModelicaEditor::notifyLanguageServerContentChanged()
+{
+  if (ensureLanguageServerConnected()) {
+    return; // the open notification already carried the latest content
+  }
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient && pLSPClient->isRunning()) {
+    QString uri = documentUri();
+    if (!uri.isEmpty()) {
+      pLSPClient->changeDocument(uri, ++mDocumentVersion, mpPlainTextEdit->toPlainText());
+    }
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::goToLSPDefinition
+ * Requests textDocument/definition at the context-menu position.
+ */
+void ModelicaEditor::goToLSPDefinition()
+{
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (!pLSPClient || !pLSPClient->isRunning() || !mContextMenuStartPositionValid) {
+    return;
+  }
+  ensureLanguageServerConnected();
+  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(mContextMenuStartPosition);
+  QString uri = documentUri();
+  if (!uri.isEmpty()) {
+    mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, cursor.blockNumber(), cursor.columnNumber());
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::goToLSPDeclaration
+ * Requests textDocument/declaration at the context-menu position.
+ */
+void ModelicaEditor::goToLSPDeclaration()
+{
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (!pLSPClient || !pLSPClient->isRunning() || !mContextMenuStartPositionValid) {
+    return;
+  }
+  ensureLanguageServerConnected();
+  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(mContextMenuStartPosition);
+  QString uri = documentUri();
+  if (!uri.isEmpty()) {
+    mPendingDefinitionRequestId = pLSPClient->requestDeclaration(uri, cursor.blockNumber(), cursor.columnNumber());
+  }
 }
 
 /*!
@@ -312,17 +402,7 @@ void ModelicaEditor::symbolAtPosition(const QPoint &pos)
   if (!mpModelWidget) {
     return;
   }
-  // Try LSP go-to-definition first when available
-  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (pLSPClient && pLSPClient->isRunning()) {
-    QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
-    QString uri = documentUri();
-    if (!uri.isEmpty()) {
-      mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, cursor.blockNumber(), cursor.columnNumber());
-      return; // Result arrives via onLSPDefinitionResult
-    }
-  }
-  // Fall back to OMEdit class tree navigation
+  // OMEdit class tree navigation. LSP navigation is exposed via the context menu.
   QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
   cursor.select(QTextCursor::WordUnderCursor);
 
@@ -718,6 +798,12 @@ void ModelicaEditor::showContextMenu(QPoint point)
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
   pMenu->addAction(mpOpenClassAction);
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient && pLSPClient->isRunning()) {
+    pMenu->addSeparator();
+    pMenu->addAction(mpLSPGoToDefinitionAction);
+    pMenu->addAction(mpLSPGoToDeclarationAction);
+  }
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->addSeparator();
@@ -771,18 +857,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
     OptionsDialog::instance()->emitModelicaEditorSettingsChanged();
     mpPlainTextEdit->foldAll();
     // Notify LSP server of the new document content
-    LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-    if (pLSPClient && pLSPClient->isRunning()) {
-      QString uri = documentUri();
-      if (!uri.isEmpty()) {
-        if (mDocumentVersion == 1) {
-          pLSPClient->openDocument(uri, QStringLiteral("modelica"), contents);
-        } else {
-          pLSPClient->changeDocument(uri, mDocumentVersion, contents);
-        }
-        mDocumentVersion++;
-      }
-    }
+    notifyLanguageServerContentChanged();
   }
 }
 
@@ -809,13 +884,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
         contentsChanged();
         setTextChanged(true);
         // Notify LSP server of content change
-        LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-        if (pLSPClient && pLSPClient->isRunning()) {
-          QString uri = documentUri();
-          if (!uri.isEmpty()) {
-            pLSPClient->changeDocument(uri, ++mDocumentVersion, mpPlainTextEdit->toPlainText());
-          }
-        }
+        notifyLanguageServerContentChanged();
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {

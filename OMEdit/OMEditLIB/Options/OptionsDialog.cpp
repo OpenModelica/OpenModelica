@@ -3206,6 +3206,13 @@ void OptionsDialog::saveLanguageServerSettings()
   } else {
     mpSettings->setValue("languageServer/executable", executable);
   }
+
+  // Apply the change to the running session without requiring a restart.
+  if (enabled) {
+    MainWindow::instance()->startLanguageServer();
+  } else {
+    MainWindow::instance()->stopLanguageServer();
+  }
 }
 
 //! Sets up the Options Widget dialog
