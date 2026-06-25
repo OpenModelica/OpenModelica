@@ -72,7 +72,7 @@ LSPClient::~LSPClient()
  * \param rootUri workspace root as a file URI
  * \return true if the process started successfully
  */
-bool LSPClient::start(const QString &executable, const QString &rootUri)
+bool LSPClient::start(const QString &executable, const QString &rootUri, const QStringList &libraries)
 {
   if (mpProcess->state() != QProcess::NotRunning) {
     return true;
@@ -106,6 +106,15 @@ bool LSPClient::start(const QString &executable, const QString &rootUri)
   QJsonObject initializeParams;
   initializeParams["processId"] = static_cast<int>(QCoreApplication::applicationPid());
   initializeParams["rootUri"] = rootUri;
+  if (!libraries.isEmpty()) {
+    QJsonArray modelicaPath;
+    for (const QString &lib : libraries) {
+      modelicaPath.append(lib);
+    }
+    QJsonObject initializationOptions;
+    initializationOptions["modelicaPath"] = modelicaPath;
+    initializeParams["initializationOptions"] = initializationOptions;
+  }
   QJsonObject capabilities;
   QJsonObject textDocumentCapabilities;
   QJsonObject hoverCapabilities;
@@ -484,8 +493,15 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
       locObj = result.toObject();
     }
     if (!locObj.isEmpty()) {
-      location.uri = locObj["uri"].toString();
+      // Accept both Location (uri/range) and LocationLink (targetUri/targetSelectionRange).
+      QString uri = locObj["uri"].toString();
       QJsonObject rangeObj = locObj["range"].toObject();
+      if (uri.isEmpty()) {
+        uri = locObj["targetUri"].toString();
+        rangeObj = locObj.contains("targetSelectionRange") ? locObj["targetSelectionRange"].toObject()
+                                                           : locObj["targetRange"].toObject();
+      }
+      location.uri = uri;
       QJsonObject startObj = rangeObj["start"].toObject();
       location.range.start.line = startObj["line"].toInt();
       location.range.start.character = startObj["character"].toInt();

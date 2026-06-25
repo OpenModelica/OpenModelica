@@ -199,7 +199,19 @@ void MainWindow::startLanguageServer()
   connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
   connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
   QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
-  pLSPClient->start(executable, rootUri);
+  // Optional library roots the server loads so go-to-definition/declaration can resolve across files.
+  QStringList libraries;
+  const QString librariesSetting = pSettings->value("languageServer/libraries").toString().trimmed();
+  if (!librariesSetting.isEmpty()) {
+    const QStringList parts = librariesSetting.split(QLatin1Char(';'), Qt::SkipEmptyParts);
+    for (const QString &part : parts) {
+      const QString trimmed = part.trimmed();
+      if (!trimmed.isEmpty()) {
+        libraries.append(trimmed);
+      }
+    }
+  }
+  pLSPClient->start(executable, rootUri, libraries);
 }
 
 /*!

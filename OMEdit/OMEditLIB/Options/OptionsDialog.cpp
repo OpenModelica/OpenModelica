@@ -3172,6 +3172,7 @@ void OptionsDialog::readLanguageServerSettings()
     mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
   }
   mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
+  mpLanguageServerPage->getLibrariesTextBox()->setText(mpSettings->value("languageServer/libraries").toString());
 }
 
 /*!
@@ -3180,6 +3181,11 @@ void OptionsDialog::readLanguageServerSettings()
  */
 void OptionsDialog::saveLanguageServerSettings()
 {
+  // Capture previous LSP-relevant settings to decide whether a running server must restart.
+  const bool wasEnabled = mpSettings->value("languageServer/enabled", false).toBool();
+  const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
+  const QString oldLibraries = mpSettings->value("languageServer/libraries").toString().trimmed();
+
   bool enabled = mpLanguageServerPage->getEnableLSPCheckBox()->isChecked();
   QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
 
@@ -3208,9 +3214,20 @@ void OptionsDialog::saveLanguageServerSettings()
     mpSettings->setValue("languageServer/executable", executable);
   }
   mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
+  QString libraries = mpLanguageServerPage->getLibrariesTextBox()->text().trimmed();
+  if (libraries.isEmpty()) {
+    mpSettings->remove("languageServer/libraries");
+  } else {
+    mpSettings->setValue("languageServer/libraries", libraries);
+  }
 
   // Apply the change to the running session without requiring a restart.
   if (enabled) {
+    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable) || (oldLibraries != libraries);
+    if (settingsChanged) {
+      // Restart so a new executable or library set is picked up.
+      MainWindow::instance()->stopLanguageServer();
+    }
     MainWindow::instance()->startLanguageServer();
   } else {
     MainWindow::instance()->stopLanguageServer();
@@ -7060,6 +7077,13 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
   mpAutoDetectButton->setAutoDefault(false);
   connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  // Library roots loaded by the server (enables cross-file go-to-definition/declaration)
+  mpLibrariesLabel = new Label(tr("Library Paths:"));
+  mpLibrariesTextBox = new QLineEdit;
+  mpLibrariesTextBox->setPlaceholderText(tr("Semicolon-separated library roots, e.g. /path/to/Modelica 4.0.0"));
+  mpLibrariesTextBox->setToolTip(tr("Modelica library root directories (each containing a package.mo) the language server loads "
+                                    "so go-to-definition and go-to-declaration can resolve across files. Loading large libraries "
+                                    "such as the MSL can take several seconds at startup."));
   // Layout inside group box
   QGridLayout *pGroupBoxLayout = new QGridLayout;
   pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -7068,7 +7092,9 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 1, 1);
   pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 1, 2);
   pGroupBoxLayout->addWidget(mpAutoDetectButton, 2, 1);
-  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 3, 0, 1, 3);
+  pGroupBoxLayout->addWidget(mpLibrariesLabel, 3, 0);
+  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 3, 1, 1, 2);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 4, 0, 1, 3);
   mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
   // Main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

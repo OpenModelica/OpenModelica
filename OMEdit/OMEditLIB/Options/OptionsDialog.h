@@ -1182,6 +1182,7 @@ public:
   QCheckBox* getEnableLSPCheckBox() {return mpEnableLSPCheckBox;}
   QCheckBox* getEnableLoggingCheckBox() {return mpEnableLoggingCheckBox;}
   QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
+  QLineEdit* getLibrariesTextBox() {return mpLibrariesTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpLanguageServerGroupBox;
@@ -1191,6 +1192,8 @@ private:
   QLineEdit *mpServerExecutableTextBox;
   QPushButton *mpBrowseServerExecutableButton;
   QPushButton *mpAutoDetectButton;
+  Label *mpLibrariesLabel;
+  QLineEdit *mpLibrariesTextBox;
 private slots:
   void browseServerExecutable();
   void autoDetectServerExecutable();

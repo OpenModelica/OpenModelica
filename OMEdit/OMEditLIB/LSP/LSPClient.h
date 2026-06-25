@@ -54,7 +54,7 @@ public:
   explicit LSPClient(QObject *pParent = nullptr);
   ~LSPClient();
 
-  bool start(const QString &executable, const QString &rootUri);
+  bool start(const QString &executable, const QString &rootUri, const QStringList &libraries = QStringList());
   void stop();
   bool isRunning() const;
 
