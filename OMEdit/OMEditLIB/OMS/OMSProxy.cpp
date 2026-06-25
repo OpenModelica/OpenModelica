@@ -560,8 +560,8 @@ bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int
     return false;
 
   const QJsonArray warnings = reply["warnings"].toArray();
-  if (count)
-    count = warnings.size();
+
+  count = warnings.size();
   for (const QJsonValue &w : warnings) {
     emitLogGUIMessage(MessageItem(MessageItem::Modelica, w.toString(), Helper::scriptingKind, Helper::warningLevel));
   }
@@ -660,7 +660,9 @@ bool OMSProxy::getBoolean(QString cref, bool &value)
   if (!sendZmqCommand(obj, reply))
     return false;
 
-  value = reply["value"].toString().toLower() == "true" || reply["value"].toString() == "1";
+  const QJsonValue jsonValue = reply["value"];
+  value = jsonValue.isBool() ? jsonValue.toBool()
+                             : (jsonValue.toString().toLower() == "true" || jsonValue.toString() == "1");
   return true;
 }
 
@@ -707,7 +709,8 @@ bool OMSProxy::getFixedStepSize(QString cref, double& stepSize)
   if (!sendZmqCommand(obj, reply))
     return false;
 
-  stepSize = reply["value"].toString().toDouble();
+  const QJsonValue jsonValue = reply["value"];
+  stepSize = jsonValue.isDouble() ? jsonValue.toDouble() : jsonValue.toString().toDouble();
   return true;
 }
 
@@ -751,7 +754,8 @@ bool OMSProxy::getInteger(QString cref, int &value)
   if (!sendZmqCommand(obj, reply))
     return false;
 
-  value = reply["value"].toString().toInt();
+  const QJsonValue jsonValue = reply["value"];
+  value = jsonValue.isDouble() ? static_cast<int>(jsonValue.toDouble()) : jsonValue.toString().toInt();
   return true;
 }
 
@@ -775,7 +779,8 @@ bool OMSProxy::getReal(QString cref, double &value)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  value = reply["value"].toString().toDouble();
+  const QJsonValue jsonValue = reply["value"];
+  value = jsonValue.isDouble() ? jsonValue.toDouble() : jsonValue.toString().toDouble();
   return true;
 }
 
@@ -840,7 +845,8 @@ bool OMSProxy::getStartTime(QString cref, double& startTime)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  startTime = reply["value"].toString().toDouble();
+  const QJsonValue jsonValue = reply["value"];
+  startTime = jsonValue.isDouble() ? jsonValue.toDouble() : jsonValue.toString().toDouble();
   return true;
 }
 
@@ -859,7 +865,8 @@ bool OMSProxy::getStopTime(QString cref, double& stopTime)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  stopTime = reply["value"].toString().toDouble();
+  const QJsonValue jsonValue = reply["value"];
+  stopTime = jsonValue.isDouble() ? jsonValue.toDouble() : jsonValue.toString().toDouble();
   return true;
 }
 
@@ -901,7 +908,8 @@ bool OMSProxy::getTolerance(QString cref, double &relativeTolerance)
   if (!sendZmqCommand(obj, reply))
     return false;
 
-  relativeTolerance = reply["value"].toString().toDouble();
+  const QJsonValue jsonValue = reply["value"];
+  relativeTolerance = jsonValue.isDouble() ? jsonValue.toDouble() : jsonValue.toString().toDouble();
   return true;
 }
 
@@ -924,9 +932,12 @@ bool OMSProxy::getVariableStepSize(QString cref, QString solverName, double& ini
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  initialStepSize = reply["initialStepSize"].toString().toDouble();
-  minimumStepSize = reply["minimumStepSize"].toString().toDouble();
-  maximumStepSize = reply["maximumStepSize"].toString().toDouble();
+  const QJsonValue jsonInitial = reply["initialStepSize"];
+  const QJsonValue jsonMinimum = reply["minimumStepSize"];
+  const QJsonValue jsonMaximum = reply["maximumStepSize"];
+  initialStepSize = jsonInitial.isDouble() ? jsonInitial.toDouble() : jsonInitial.toString().toDouble();
+  minimumStepSize = jsonMinimum.isDouble() ? jsonMinimum.toDouble() : jsonMinimum.toString().toDouble();
+  maximumStepSize = jsonMaximum.isDouble() ? jsonMaximum.toDouble() : jsonMaximum.toString().toDouble();
 
   return true;
 }
@@ -1392,7 +1403,7 @@ bool OMSProxy::setTolerance(QString cref, double relativeTolerance)
 bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize)
 {
   QJsonObject obj, args;
-  obj["method"] = "setTolerance";
+  obj["method"] = "setVariableStepSize";
   obj["model"]  = cref.split('.').first();
   args["initialStepSize"] = initialStepSize;
   args["minimumStepSize"] = minimumStepSize;

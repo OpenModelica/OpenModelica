@@ -56,12 +56,9 @@ class SystemWidget : public QWidget
 public:
   SystemWidget(QWidget *pParent = 0);
   QLineEdit* getNameTextBox() {return mpNameTextBox;}
-  QComboBox* getTypeComboBox() {return mpTypeComboBox;}
 private:
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
-  Label *mpTypeLabel;
-  QComboBox *mpTypeComboBox;
 };
 
 class CreateModelDialog : public QDialog

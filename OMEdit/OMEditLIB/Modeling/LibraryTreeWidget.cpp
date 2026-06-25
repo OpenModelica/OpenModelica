@@ -117,6 +117,10 @@ LibraryTreeItem::~LibraryTreeItem()
     mpModelWidget->deleteLater();
   }
   removeChildren();
+  if (mpOMSModel) {
+    delete mpOMSModel;
+    mpOMSModel = 0;
+  }
 }
 
 QString LibraryTreeItem::getWhereToMoveFMU()

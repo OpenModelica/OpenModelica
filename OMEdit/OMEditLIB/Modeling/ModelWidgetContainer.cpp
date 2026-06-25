@@ -6207,7 +6207,7 @@ void ModelWidget::addUpdateDeleteOMSElementIcon(const QString &iconPath)
     OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
     const QString currentIcon = elementGeometry.getIconSource();
     QString commandText = iconPath.isEmpty() ? "Delete" : (currentIcon.isEmpty() ? "Add" : "Update");
-    const QString fileURI = iconPath.isEmpty() ? "" : "file:///" + iconPath;
+    const QString fileURI = iconPath.isEmpty() ? "" : QUrl::fromLocalFile(iconPath).toString();
     elementGeometry.setIconSource(fileURI);
     if (OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry)) {
       mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
