@@ -2007,7 +2007,26 @@ The feature is opt-in and disabled by default.
      Use *Browse* to select a custom server or *Auto Detect* to locate one
      automatically.
 
+  -  *Library Paths* - optional semicolon-separated list of Modelica library
+     root directories (each containing a ``package.mo``) that the server loads
+     on startup.  These enable *Go to Definition* and *Go to Declaration* and
+     richer hover across files.  Loading large libraries such as the Modelica
+     Standard Library can take a few seconds at startup.
+
+  -  *Log language server messages to the Messages Browser* - when checked,
+     messages from the language server are shown in the Messages Browser,
+     prefixed with ``LSP``.
+
+Hover information is shown as a tooltip.  *Go to Definition* and
+*Go to Declaration* are available from the editor right-click menu (prefixed
+with ``LSP``) when the server is running.  Enabling or disabling the language
+server takes effect immediately; a restart is not required.
+
 **Runtime requirement: Node.js**
+
+If a standalone server binary is bundled with OMEdit, no external runtime is
+required.  Otherwise the bundled JavaScript server is used and the only external
+dependency is Node.js, as described below.
 
 OMEdit ships with a pre-built Modelica language server.  The only
 external dependency is `Node.js <https://nodejs.org>`_ (version 16 or later),
@@ -2043,8 +2062,13 @@ The same settings can be written directly to ``~/.config/openmodelica/omedit.ini
    [languageServer]
    enabled=true
    executable=
+   libraries=/path/to/Modelica 4.0.0;/path/to/MyLibrary
+   logging=false
 
-Leave ``executable`` empty to use the bundled server.
+Leave ``executable`` empty to use the bundled server.  ``libraries`` is an
+optional semicolon-separated list of library roots; leave it empty for the
+fastest startup (hover and in-file features still work).  Set ``logging=true``
+to echo language server messages to the Messages Browser.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
