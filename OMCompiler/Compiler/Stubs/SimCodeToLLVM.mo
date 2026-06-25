@@ -47,5 +47,14 @@ function displacedSegmentFiles
   output list<String> files = {};
 end displacedSegmentFiles;
 
+function canCoverModel<T>
+  "Stub. SimCodeMain.callTargetTemplates calls this to decide whether to
+   emit the llvm-jit coverage warning. With the JIT compiled out the target
+   is never the JIT, so the value is moot; return false to mirror the
+   'cannot cover' semantics of the rest of this stub."
+  input T simCode;
+  output Boolean ok = false;
+end canCoverModel;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeToLLVM;
