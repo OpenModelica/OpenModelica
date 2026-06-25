@@ -847,17 +847,16 @@ algorithm
     end if;
   end if;
 
-  Error.addInternalError(
-    "SimCodeToLLVM: model '" + AbsynUtil.pathString(name) +
-    "' layout: nStates=" + intString(layout.nStates) +
-    " nAlgs=" + intString(layout.nAlgs) +
-    " nParams=" + intString(layout.nParams) +
-    "; eqs: supported=" + intString(nSupported) +
-    " unsupported=" + intString(nUnsupported) +
-    " (Phase 4.2 -- ODE entry shell can be emitted with +d=jit_dump_ir;" +
-    " per-equation body and JIT execution not yet wired, falling back " +
-    "to legacy buildModel)\n",
-    sourceInfo());
+  if Flags.isSet(Flags.JIT_DUMP_IR) then
+    Error.addInternalError(
+      "SimCodeToLLVM: model '" + AbsynUtil.pathString(name) +
+      "' layout: nStates=" + intString(layout.nStates) +
+      " nAlgs=" + intString(layout.nAlgs) +
+      " nParams=" + intString(layout.nParams) +
+      "; eqs: supported=" + intString(nSupported) +
+      " unsupported=" + intString(nUnsupported) + "\n",
+      sourceInfo());
+  end if;
   success := false;
 end genSim;
 
@@ -930,9 +929,11 @@ algorithm
   /* (rvOut, ..., realVarsString) intentionally unused after the
    * smoke-invoke was removed; the locals stay so the bind shapes
    * around the call site do not shift if Phase 6 returns. */
-  Error.addInternalError(
-    "SimCodeToLLVM Phase 5: materialised '" + odeSym + "'\n",
-    sourceInfo());
+  if Flags.isSet(Flags.JIT_DUMP_IR) then
+    Error.addInternalError(
+      "SimCodeToLLVM Phase 5: materialised '" + odeSym + "'\n",
+      sourceInfo());
+  end if;
 end finalizeAndReport;
 
 protected function realVarsString

@@ -1,0 +1,75 @@
+// name: jitSimulate
+// keywords: llvm jit simulation
+// status: correct
+// teardown_command: rm -f Mref* Mjit* jit_diff.csv
+//
+// Verifies the LLVM-JIT simulation path (-d=jitSimulate): two identically
+// defined models are simulated, one with the default C-codegen path and one
+// with the JIT, and their result files must agree to a tight tolerance. The
+// model exercises state events (when / reinit, the zero-crossing hysteresis
+// path) and an Integer when-counter. Two distinct model names are used so the
+// reference and JIT runs get independent GUIDs / init.xml files.
+//
+// This test is registered (via CTest, run through rtest) only when omc was
+// built with OM_OMC_ENABLE_LLVM_JIT=ON; see the CMakeLists.txt next to it.
+
+loadString("
+model Mref
+  Real h(start = 1.0, fixed = true);
+  Real v(start = 0.0, fixed = true);
+  parameter Real e = 0.7;
+  Integer n(start = 0, fixed = true);
+equation
+  der(h) = v;
+  der(v) = -9.81;
+  when h <= 0.0 then
+    reinit(v, -e * pre(v));
+    n = pre(n) + 1;
+  end when;
+end Mref;
+
+model Mjit
+  Real h(start = 1.0, fixed = true);
+  Real v(start = 0.0, fixed = true);
+  parameter Real e = 0.7;
+  Integer n(start = 0, fixed = true);
+equation
+  der(h) = v;
+  der(v) = -9.81;
+  when h <= 0.0 then
+    reinit(v, -e * pre(v));
+    n = pre(n) + 1;
+  end when;
+end Mjit;
+"); getErrorString();
+
+simulate(Mref, stopTime = 3.0); getErrorString();
+
+setCommandLineOptions("-d=jitSimulate"); getErrorString();
+simulate(Mjit, stopTime = 3.0); getErrorString();
+
+compareSimulationResults("Mjit_res.mat", "Mref_res.mat", "jit_diff.csv", 1e-6, 1e-6);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Mref_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Mref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Mjit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Mjit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult
