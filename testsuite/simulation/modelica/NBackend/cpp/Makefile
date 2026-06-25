@@ -1,49 +1,33 @@
-TEST = ../../../rtest -v
-
-FAILINGTESTFILES = 
+TEST = ../../../../rtest -v
 
 TESTFILES = \
-Circuit1x.mos \
-Circuit2x.mos \
-Circuit3x.mos \
-Circuit4x.mos \
-ElectricalCircuit1.mos \
-ElectricalCircuit2.mos \
-ElectricalCircuit3.mos \
-ElectricalCircuit4.mos \
-ElectricalCircuit5.mos \
-ElectricalCircuit6.mos \
-Issue13292.mos \
-Issue15901.mos \
-NPendulum2.mos \
-NPendulum3.mos
-#AmplifierWithOpAmpDetailed.mos \
-			
+ParArray.mos\
+der_for_array.mos\
+
+# test that currently fail. Move up when fixed.
+# Run make failingtest
+FAILINGTESTFILES = \
+
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-ReferenceFiles \
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-
 .PHONY : test clean getdeps failingtest
-
 
 test:
 	@echo
 	@echo Running tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(TESTFILES) 
+	@$(TEST) $(TESTFILES)
 
-	
-# Cleans all files that are not listed as dependencies 
-clean :
+# Cleans all files that are not listed as dependencies
+clean:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 
@@ -51,15 +35,15 @@ clean :
 # do it after cleaning and updating the folder
 # then you can get a list of file names (which must be dependencies
 # since you got them from repository + your own new files)
-# then add them to the DEPENDENCIES. You can find the 
+# then add them to the DEPENDENCIES. You can find the
 # list in deps.txt
-getdeps: 
+getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt	
+	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt
 	@echo Dependency list saved in deps.txt.
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
-	
-failingtest :
+
+failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo

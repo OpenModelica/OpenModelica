@@ -1,0 +1,50 @@
+// name: ParArray
+// keywords: NewBackend, Cpp, array variables, non-scalarized, ticket:15496
+// status: correct
+//
+// New Backend + C++ runtime with arrays kept un-expanded (simCodeScalarize is
+// forced false for the Cpp target). Exact MWE from issue #15496: a degenerate
+// parameter-array start with der(a) = 0. Exercises the value-reference mapping,
+// element-aware var sizing, StatArrayDim member init and result element export.
+
+setCommandLineOptions("--newBackend --simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model ParArray
+  function getArr
+    input Real u;
+    output Real[3] y;
+  algorithm
+    y := fill(u, 3);
+  end getArr;
+  parameter Real p = 1;
+protected
+  parameter Real[3] a_start = getArr(p);
+  Real[3] a(start = a_start);
+equation
+  der(a) = zeros(3);
+end ParArray;
+"); getErrorString();
+
+simulate(ParArray, stopTime = 1.0); getErrorString();
+val(a[1], 1.0);
+val(a[2], 1.0);
+val(a[3], 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ParArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ParArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: a[1]
+// 	Available keys: a, $DER.a
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
+// "
+// 1.0
+// 1.0
+// 1.0
+// endResult
