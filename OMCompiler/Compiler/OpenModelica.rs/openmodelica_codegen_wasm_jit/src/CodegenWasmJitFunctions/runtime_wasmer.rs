@@ -123,8 +123,12 @@ pub(crate) fn add_host_builtins(store: &mut Store, imports: &mut wasmer::Imports
     // and source-info handles so `load_and_execute` can route them to the error
     // buffer after the generated code traps. The handles point into the shared
     // linear memory, which is still live when `load_and_execute` reads them.
+    // Registered under `rt` (not `env`): the model imports rt_assert from `rt` so
+    // the standalone wasip1 export — where the merged runtime provides it — never
+    // needs an `env` namespace. The runtime instance does not export rt_assert, so
+    // merging it into the `rt` namespace alongside `rt_inst.exports` cannot collide.
     imports.define(
-        "env",
+        "rt",
         "rt_assert",
         Function::new_typed(
             store,
@@ -978,14 +982,15 @@ mod tests {
 
     #[test]
     fn host_builtin_sin() {
-        // main(x) = sin(x), importing the host builtin "sin" (index 2 in env).
+        // main(x) = sin(x), importing the runtime builtin "sin" (now provided
+        // in-wasm by the runtime under module "rt", not the host "env").
         let mut m = we::Module::new();
         let mut types = we::TypeSection::new();
         types.ty().function([we::ValType::F64], [we::ValType::F64]); // type 0: sin
         types.ty().function([we::ValType::F64], [we::ValType::F64]); // type 1: main
         m.section(&types);
         let mut imports = we::ImportSection::new();
-        imports.import("env", "sin", we::EntityType::Function(0));
+        imports.import("rt", "sin", we::EntityType::Function(0));
         m.section(&imports);
         let mut funcs = we::FunctionSection::new();
         funcs.function(1);

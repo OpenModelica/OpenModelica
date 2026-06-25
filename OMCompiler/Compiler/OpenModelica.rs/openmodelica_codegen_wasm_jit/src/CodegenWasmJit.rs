@@ -332,6 +332,89 @@ pub fn finishCompile(fileNamePrefix: ArcStr) {
     }
 }
 
+/// `CodegenWasmJit.emitStandalone`: the `wasm` simCodeTarget's counterpart of
+/// [`translateModel`]. Lower the model and `wasm-merge` it with the wasip1 runtime
+/// into a self-contained WASI *command* module written to `<prefix>.wasm`, runnable
+/// with `wasmtime run <prefix>.wasm --dir .::.` ([`runSimulationWasmtime`]). Unlike
+/// `translateModel` it neither JIT-compiles nor stashes the model — the run is a
+/// separate `wasmtime` process. Native only (the omc wasm build cannot `wasm-merge`).
+pub fn emitStandalone(simCode: SimCode::SimCode) {
+    let prefix = simCode.fileNamePrefix.to_string();
+    let _ = std::fs::remove_file(format!("{prefix}.wasm"));
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = simCode;
+        panic!("CodegenWasmJit: simCodeTarget=wasm (standalone export) is unavailable in the wasm omc build");
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    match emit_standalone_module(&simCode) {
+        Ok(bytes) => {
+            if let Err(e) = write_output(&format!("{prefix}.wasm"), &bytes) {
+                panic!("CodegenWasmJit: cannot write {prefix}.wasm: {e:#}");
+            }
+        }
+        Err(e) => panic!("CodegenWasmJit: cannot build standalone module for `{prefix}`: {e:#}"),
+    }
+}
+
+/// `CodegenWasmJit.runSimulationWasmtime`: run the standalone module emitted by
+/// [`emitStandalone`] in a `wasmtime` subprocess (the `wasm` target's counterpart
+/// of [`runSimulation`]). The module's `_start` writes `<prefix>_res.mat` via WASI;
+/// returns 0 on success, 1 on failure (matching the C executable's exit code).
+pub fn runSimulationWasmtime(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
+    let res = run_wasmtime_inner(&fileNamePrefix, &resultFile, &simflags);
+    // The simulate flow reads `<prefix>.log` after a run (the C target's executable
+    // writes one); mirror runSimulation so the success path is taken.
+    let log = match &res {
+        Ok(()) => "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n\
+                    LOG_SUCCESS       | info    | The simulation finished successfully.\n"
+            .to_string(),
+        Err(e) => format!("LOG_ERROR         | error   | wasm standalone simulation failed: {e:#}\n"),
+    };
+    let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
+    match res {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("CodegenWasmJit: wasmtime run of `{fileNamePrefix}` failed: {e:#}");
+            1
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn run_wasmtime_inner(prefix: &str, result_file: &str, _simflags: &str) -> Result<()> {
+    use std::process::Command;
+    let module = format!("{prefix}.wasm");
+    if !std::path::Path::new(&module).exists() {
+        bail!("standalone module `{module}` not found (emitStandalone not run?)");
+    }
+    let wasmtime = std::env::var("OMC_WASMTIME").unwrap_or_else(|_| "wasmtime".to_owned());
+    // `--dir .::.` preopens the cwd as the guest `.`; the module writes the result
+    // file there with a relative path.
+    let status = Command::new(&wasmtime)
+        .arg("run")
+        .arg("--dir")
+        .arg(".::.")
+        .arg(&module)
+        .status()
+        .map_err(|e| anyhow!("cannot run `{wasmtime}` (is it on PATH? override with OMC_WASMTIME): {e}"))?;
+    if !status.success() {
+        bail!("`{wasmtime} run {module}` failed with {status}");
+    }
+    // The module writes `<prefix>_res.mat`; rename if omc selected another name.
+    let produced = format!("{prefix}_res.mat");
+    if result_file != produced && std::path::Path::new(&produced).exists() {
+        std::fs::rename(&produced, result_file)
+            .map_err(|e| anyhow!("cannot rename {produced} -> {result_file}: {e}"))?;
+    }
+    Ok(())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
+    bail!("CodegenWasmJit: simCodeTarget=wasm is unavailable in the wasm omc build")
+}
+
 fn run_simulation_inner(prefix: &str, result_file: &str, _simflags: &str) -> Result<()> {
     let model = sim_models()
         .lock()
@@ -354,6 +437,78 @@ fn run_simulation_inner(prefix: &str, result_file: &str, _simflags: &str) -> Res
             "CodegenWasmJit: only the `mat` and `empty` output formats are supported (got `{other}`)"
         ),
     }
+}
+
+// ===========================================================================
+// Standalone WASI command-module export (native only)
+// ===========================================================================
+
+/// The `wasm32-wasip1` standalone runtime (`_start` + the in-wasm driver in
+/// `openmodelica_codegen_wasm_jit_runtime::standalone`), embedded for the native
+/// standalone-export path. Empty when omc itself targets wasm32, or when the
+/// wasip1 build was unavailable (see `build.rs`); [`emit_standalone_module`] then
+/// reports the absence rather than producing a broken module.
+#[cfg(not(target_arch = "wasm32"))]
+static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1.wasm"));
+
+/// Emit a self-contained `wasm32-wasip1` *command* module for `sim_code`: lower
+/// the model to its wasm module, then `wasm-merge` it with the standalone runtime
+/// so the merged module's `_start` runs the whole simulation in-wasm and writes
+/// `<prefix>_res.mat` over WASI (`wasmtime run <module> --dir .::.`). Native only —
+/// `wasm-merge` is an external tool, absent in the omc wasm build.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
+    let model = build_sim_model(sim_code)?;
+    merge_standalone(&model.wasm)
+}
+
+/// `wasm-merge` the standalone runtime (module name `rt`) with a model module
+/// (module name `model`), resolving both directions of the merge contract (see
+/// `openmodelica_codegen_wasm_jit_runtime::standalone`) and leaving only the WASI
+/// imports. The merge tool is `wasm-merge` on `PATH`, overridable with
+/// `OMC_WASM_MERGE`.
+#[cfg(not(target_arch = "wasm32"))]
+fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
+    use std::process::Command;
+    if RUNTIME_WASIP1.is_empty() {
+        bail!(
+            "CodegenWasmJit: the wasip1 standalone runtime was not built \
+             (run `rustup target add wasm32-wasip1` and rebuild, or set \
+             OMC_WASM_RUNTIME_WASIP1=/path/to/runtime_wasip1.wasm)"
+        );
+    }
+    let merge = std::env::var("OMC_WASM_MERGE").unwrap_or_else(|_| "wasm-merge".to_owned());
+
+    let dir = std::env::temp_dir().join(format!(
+        "om-wasm-merge-{}-{:p}",
+        std::process::id(),
+        model_wasm.as_ptr()
+    ));
+    std::fs::create_dir_all(&dir)?;
+    let rt_path = dir.join("runtime.wasm");
+    let model_path = dir.join("model.wasm");
+    let out_path = dir.join("standalone.wasm");
+    std::fs::write(&rt_path, RUNTIME_WASIP1)?;
+    std::fs::write(&model_path, model_wasm)?;
+
+    // `-all` enables every wasm feature so the model's bulk-memory `memory.init`
+    // (the metadata data segment) and the runtime's features pass through unmodified.
+    let status = Command::new(&merge)
+        .arg(&rt_path)
+        .arg("rt")
+        .arg(&model_path)
+        .arg("model")
+        .arg("-o")
+        .arg(&out_path)
+        .arg("-all")
+        .status()
+        .map_err(|e| anyhow!("CodegenWasmJit: cannot run `{merge}`: {e}"))?;
+    if !status.success() {
+        bail!("CodegenWasmJit: `{merge}` failed with {status}");
+    }
+    let bytes = std::fs::read(&out_path)?;
+    let _ = std::fs::remove_dir_all(&dir);
+    Ok(bytes)
 }
 
 // ===========================================================================
@@ -840,6 +995,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         algebraics: eq_base + 3,
     };
     let simulate_idx = eq_base + 4;
+    // The two metadata accessors the standalone wasip1 runtime imports
+    // (`om_meta_ptr`/`om_meta_len`), appended after `simulate`.
+    let om_meta_ptr_idx = eq_base + 5;
+    let om_meta_len_idx = eq_base + 6;
 
     // --- Type section: one type per import, per model function, per equation
     // function (all take one i32 `SimData` ptr, no result), then `simulate`
@@ -873,6 +1032,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         [we::ValType::I32, we::ValType::F64, we::ValType::F64, we::ValType::I32],
         [we::ValType::I32],
     );
+    // `om_meta_ptr`/`om_meta_len` type: () -> i32.
+    let meta_fn_type = types.len();
+    types.ty().function([], [we::ValType::I32]);
 
     // --- Import section. ---
     let mut imports = we::ImportSection::new();
@@ -890,7 +1052,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + j) as u32));
     }
     for (k, (name, _, _)) in ENV_EXTRA.iter().enumerate() {
-        imports.import("env", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
+        // `rt_assert` is imported from `rt`, not the host `env`: for the JIT path
+        // the host registers it under `rt` alongside the runtime instance, and for
+        // the standalone wasip1 export the merged runtime provides it — so the
+        // model module never imports anything from `env` (clean wasm-merge).
+        imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
     }
 
     // --- Compile bodies (collecting String literals into the module pool). ---
@@ -916,6 +1082,44 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     // The integrator loop.
     bodies.push(build_simulate(&layout, &eqfn));
 
+    // --- Standalone-export metadata: encode the SimData layout, the run settings
+    // and the result variables into a blob the standalone wasip1 runtime decodes
+    // (via the `om_meta_ptr`/`om_meta_len` exports). It rides in the last passive
+    // data segment and is materialized at run time into a runtime-allocated buffer
+    // with `memory.init`, exactly like a String literal. These accessors are
+    // harmless on the JIT path (unused). ---
+    let settings = sim_code
+        .simulationSettingsOpt
+        .as_ref()
+        .ok_or_else(|| anyhow!("CodegenWasmJit: model has no simulation settings"))?;
+    let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
+    let meta_bytes = openmodelica_sim_meta::encode(&build_sim_meta(&layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix));
+    let meta_len = meta_bytes.len() as u32;
+    let meta_seg = literals.len() as u32;
+    literals.push(meta_bytes);
+    {
+        // om_meta_ptr(): rt_alloc(len), memory.init the blob into it, return ptr.
+        use we::Instruction as I;
+        let mut f = we::Function::new([(1, we::ValType::I32)]);
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc")));
+        f.instruction(&I::LocalTee(0));
+        f.instruction(&I::I32Const(0));
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::MemoryInit { mem: 0, data_index: meta_seg });
+        f.instruction(&I::LocalGet(0));
+        f.instruction(&I::End);
+        bodies.push(f);
+    }
+    {
+        // om_meta_len(): the constant blob length.
+        use we::Instruction as I;
+        let mut f = we::Function::new([]);
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::End);
+        bodies.push(f);
+    }
+
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
     for ti in &model_fn_type {
@@ -925,6 +1129,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         functions.function(eqfn_type);
     }
     functions.function(simulate_type);
+    functions.function(meta_fn_type); // om_meta_ptr
+    functions.function(meta_fn_type); // om_meta_len
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -940,6 +1146,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     exports.export("functionODE", we::ExportKind::Func, eqfn.ode);
     exports.export("functionAlgebraics", we::ExportKind::Func, eqfn.algebraics);
     exports.export("simulate", we::ExportKind::Func, simulate_idx);
+    exports.export("om_meta_ptr", we::ExportKind::Func, om_meta_ptr_idx);
+    exports.export("om_meta_len", we::ExportKind::Func, om_meta_len_idx);
 
     let mut module = we::Module::new();
     module.section(&types);
@@ -958,11 +1166,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         module.section(&data);
     }
     let wasm = module.finish();
-
-    let settings = sim_code
-        .simulationSettingsOpt
-        .as_ref()
-        .ok_or_else(|| anyhow!("CodegenWasmJit: model has no simulation settings"))?;
 
     // Kick off the (cranelift) JIT compile of this model module on a background
     // thread now, while the rest of the OMC pipeline (remaining templates,
@@ -989,13 +1192,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         prepared: Mutex::new(None),
         layout,
         result_vars,
-        model_name: openmodelica_frontend_dump::AbsynUtil::pathString(
-            mi.name.clone(),
-            arcstr::literal!("."),
-            true,
-            false,
-        )?
-        .to_string(),
+        model_name,
         start_time: settings.startTime.into_inner(),
         stop_time: settings.stopTime.into_inner(),
         n_intervals: settings.numberOfIntervals.max(0) as u32,
@@ -1003,6 +1200,62 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         method: settings.method.to_string(),
         tolerance: settings.tolerance.into_inner(),
     })
+}
+
+/// Build the [`openmodelica_sim_meta::SimMeta`] embedded in the model module
+/// (decoded by the standalone wasip1 runtime's `_start`) from the resolved
+/// layout, result variables and run settings. The lean `MatKind`-equivalent
+/// `Param` keeps its `SimData` offset/type so the runtime reads the value back.
+fn build_sim_meta(
+    layout: &SimLayout,
+    result_vars: &[ResultVar],
+    settings: &SimCode::SimulationSettings,
+    model_name: &str,
+    prefix: &str,
+) -> openmodelica_sim_meta::SimMeta {
+    use openmodelica_sim_meta as sm;
+    sm::SimMeta {
+        layout: sm::Layout {
+            n_states: layout.n_states,
+            n_real_alg: layout.n_real_alg,
+            rparam_off: layout.rparam_off,
+            int_off: layout.int_off,
+            iparam_off: layout.iparam_off,
+            bool_off: layout.bool_off,
+            bparam_off: layout.bparam_off,
+            str_off: layout.str_off,
+            sparam_off: layout.sparam_off,
+            total: layout.total,
+        },
+        start_time: settings.startTime.into_inner(),
+        stop_time: settings.stopTime.into_inner(),
+        n_intervals: settings.numberOfIntervals.max(0) as u32,
+        method: settings.method.to_string(),
+        tolerance: settings.tolerance.into_inner(),
+        output_format: settings.outputFormat.to_string(),
+        prefix: prefix.to_string(),
+        model_name: model_name.to_string(),
+        vars: result_vars
+            .iter()
+            .map(|v| sm::MetaVar {
+                name: v.name.clone(),
+                comment: v.comment.clone(),
+                kind: match &v.kind {
+                    ResultKind::Time => sm::MetaKind::Time,
+                    ResultKind::Column { col, negate } => sm::MetaKind::Column { col: *col, negate: *negate },
+                    ResultKind::Param { off, wty, negate } => sm::MetaKind::Param {
+                        off: *off,
+                        wty: match wty {
+                            WTy::F64 => sm::WTy::F64,
+                            WTy::I32 => sm::WTy::I32,
+                        },
+                        negate: *negate,
+                    },
+                    ResultKind::Const { value } => sm::MetaKind::Const { value: *value },
+                },
+            })
+            .collect(),
+    }
 }
 
 /// A fresh `T_REAL` type for synthesizing the lhs `CREF` expression of a simple
@@ -1375,4 +1628,96 @@ fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: 
     let bytes = openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, params);
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| anyhow!("CodegenWasmJit: cannot write {path}: {e}"))
+}
+
+// The standalone-export merge uses `wasmtime::Module` to validate the result, so
+// this test runs only under the default (wasmtime) engine on a native host.
+#[cfg(test)]
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+mod standalone_tests {
+    use super::*;
+    use wasm_encoder as we;
+
+    /// A minimal stand-in for a lowered model module: it exports the four model
+    /// functions and the two metadata accessors the standalone runtime imports
+    /// (module `model`), and imports `rt.memory` + `rt.rt_alloc` like a real model,
+    /// so the merge must resolve both directions of the contract.
+    fn build_stub_model() -> Vec<u8> {
+        use we::Instruction as I;
+        let mut m = we::Module::new();
+
+        let mut types = we::TypeSection::new();
+        types.ty().function([we::ValType::I32], [we::ValType::I32]); // 0: (i32)->i32  (rt_alloc)
+        types.ty().function([we::ValType::I32], []); // 1: (i32)->()   (model fns)
+        types.ty().function([], [we::ValType::I32]); // 2: ()->i32      (om_meta_*)
+        m.section(&types);
+
+        let mut imports = we::ImportSection::new();
+        imports.import(
+            "rt",
+            "memory",
+            we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
+        );
+        imports.import("rt", "rt_alloc", we::EntityType::Function(0));
+        m.section(&imports);
+        // Imported func index: rt_alloc = 0.
+
+        let mut funcs = we::FunctionSection::new();
+        for _ in 0..4 {
+            funcs.function(1); // functionParameters/InitialEquations/ODE/Algebraics
+        }
+        funcs.function(2); // om_meta_ptr
+        funcs.function(2); // om_meta_len
+        m.section(&funcs);
+
+        let mut exports = we::ExportSection::new();
+        exports.export("functionParameters", we::ExportKind::Func, 1);
+        exports.export("functionInitialEquations", we::ExportKind::Func, 2);
+        exports.export("functionODE", we::ExportKind::Func, 3);
+        exports.export("functionAlgebraics", we::ExportKind::Func, 4);
+        exports.export("om_meta_ptr", we::ExportKind::Func, 5);
+        exports.export("om_meta_len", we::ExportKind::Func, 6);
+        m.section(&exports);
+
+        let mut code = we::CodeSection::new();
+        for _ in 0..4 {
+            let mut f = we::Function::new([]);
+            f.instruction(&I::End);
+            code.function(&f);
+        }
+        // om_meta_ptr(): rt_alloc(8) — exercises the model->rt import resolution.
+        let mut ptr = we::Function::new([]);
+        ptr.instruction(&I::I32Const(8));
+        ptr.instruction(&I::Call(0));
+        ptr.instruction(&I::End);
+        code.function(&ptr);
+        // om_meta_len(): 0.
+        let mut len = we::Function::new([]);
+        len.instruction(&I::I32Const(0));
+        len.instruction(&I::End);
+        code.function(&len);
+        m.section(&code);
+
+        m.finish()
+    }
+
+    #[test]
+    fn merge_leaves_only_wasi_imports() {
+        let merged = merge_standalone(&build_stub_model()).expect("wasm-merge should succeed");
+        let engine = wasmtime::Engine::default();
+        let module = wasmtime::Module::new(&engine, &merged).expect("merged module should validate");
+        // After the merge the only remaining imports are the WASI surface the shim
+        // (or `wasmtime run`) provides; every `rt.*`/`model.*` import is internalized.
+        for imp in module.imports() {
+            assert_eq!(
+                imp.module(),
+                "wasi_snapshot_preview1",
+                "unexpected unresolved import {}::{}",
+                imp.module(),
+                imp.name()
+            );
+        }
+        // And the command entry point survives the merge.
+        assert!(module.get_export("_start").is_some(), "merged module must export `_start`");
+    }
 }

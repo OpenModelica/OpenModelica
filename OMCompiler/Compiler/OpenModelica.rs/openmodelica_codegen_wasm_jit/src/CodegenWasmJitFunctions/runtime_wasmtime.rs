@@ -117,7 +117,11 @@ pub(crate) fn add_host_builtins(linker: &mut wasmtime::Linker<()>) -> Result<()>
     // buffer after the generated code traps. The handles point into the shared
     // linear memory, which is still live when `load_and_execute` reads them.
     wt(linker.func_wrap(
-        "env",
+        // Registered under `rt` (not `env`): the model imports rt_assert from `rt`
+        // so the standalone wasip1 export — where the merged runtime provides it —
+        // never needs an `env` namespace. The runtime instance does not export
+        // rt_assert, so there is no collision with `linker.instance(.., "rt", ..)`.
+        "rt",
         "rt_assert",
         |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
             PENDING_ASSERT.with(|p| {

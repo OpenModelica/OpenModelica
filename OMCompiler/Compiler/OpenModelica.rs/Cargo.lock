@@ -6491,6 +6491,7 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
+ "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_util",
  "openmodelica_vfs",

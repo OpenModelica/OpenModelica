@@ -49,24 +49,36 @@ fn main() {
     for f in &tracked {
         println!("cargo:rerun-if-changed={}", f.display());
     }
+    // The JIT runtime (wasm32-unknown-unknown) and the standalone runtime
+    // (wasm32-wasip1) are built from the same sources; both must run on every
+    // invocation (the JIT build short-circuits on its own cache/override).
+    build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
+    build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
+}
+
+/// Build + embed the `wasm32-unknown-unknown` JIT runtime (`runtime.wasm`): the
+/// allocator / refcount / string + array primitives the generated model/function
+/// modules import at JIT time. Honours the `OMC_WASM_RUNTIME` override and an
+/// input-hash cache, falling back to a committed `runtime.wasm`.
+fn build_jit_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, dest: &Path, hash: &str) {
     let stamp = out_dir.join("runtime.wasm.hash");
 
     // Explicit override always wins (and is cheap), so check it before the cache.
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME") {
-        copy(Path::new(&path), &dest);
+        copy(Path::new(&path), dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
 
     // Cache hit: the cached wasm is present and its inputs are unchanged.
-    if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(hash.as_str()) {
+    if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(hash) {
         return;
     }
 
-    match build_runtime_wasm(&runtime_dir, &out_dir) {
+    match build_runtime_wasm(runtime_dir, out_dir, "wasm32-unknown-unknown") {
         Ok(produced) => {
-            copy(&produced, &dest);
-            std::fs::write(&stamp, &hash).expect("write runtime.wasm.hash");
+            copy(&produced, dest);
+            std::fs::write(&stamp, hash).expect("write runtime.wasm.hash");
         }
         Err(e) => {
             // Fall back to a prebuilt artifact committed/dropped next to the crate.
@@ -77,7 +89,7 @@ fn main() {
                      using the prebuilt {}",
                     committed.display()
                 );
-                copy(&committed, &dest);
+                copy(&committed, dest);
                 std::fs::write(&stamp, "prebuilt").ok();
             } else {
                 panic!(
@@ -90,23 +102,84 @@ fn main() {
     }
 }
 
+/// Build + embed the `wasm32-wasip1` variant of the runtime (the `_start` + driver
+/// half, `src/standalone.rs`) as `runtime_wasip1.wasm`. This is the merge input
+/// for the standalone-export module (`emit_standalone_module`, native only), so it
+/// is only built when omc itself targets a native host — never folded into the omc
+/// wasm module, which cannot run `wasm-merge`. An empty placeholder is written when
+/// the omc target is wasm32 or the wasip1 target/build is unavailable, so the
+/// native `include_bytes!` still compiles (`emit_standalone_module` reports the
+/// absence at call time).
+fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, hash: &str) {
+    let dest = out_dir.join("runtime_wasip1.wasm");
+    let stamp = out_dir.join("runtime_wasip1.wasm.hash");
+
+    // omc-on-wasm never emits standalone modules (no `wasm-merge`), so skip the
+    // (native-host) wasip1 build and leave only an empty placeholder.
+    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
+        if !dest.exists() {
+            std::fs::write(&dest, []).ok();
+        }
+        return;
+    }
+
+    if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1");
+
+    // The wasip1 variant is built from the same sources, so the same input hash
+    // gates the cache.
+    if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(hash) {
+        return;
+    }
+
+    match build_runtime_wasm(runtime_dir, out_dir, "wasm32-wasip1") {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            std::fs::write(&stamp, hash).expect("write runtime_wasip1.wasm.hash");
+        }
+        Err(e) => {
+            let committed = crate_dir.join("runtime_wasip1.wasm");
+            if committed.exists() {
+                println!(
+                    "cargo:warning=could not rebuild the wasip1 standalone runtime ({e}); \
+                     using the prebuilt {}",
+                    committed.display()
+                );
+                copy(&committed, &dest);
+                std::fs::write(&stamp, "prebuilt").ok();
+            } else {
+                // Non-fatal: the JIT path does not need it. Only the standalone
+                // export (`emit_standalone_module`) does, and it checks for empty.
+                println!(
+                    "cargo:warning=could not build the wasip1 standalone runtime ({e}); \
+                     standalone-export modules will be unavailable. \
+                     Install the target with `rustup target add wasm32-wasip1`."
+                );
+                std::fs::write(&dest, []).ok();
+                std::fs::write(&stamp, "missing").ok();
+            }
+        }
+    }
+}
+
 /// Compile `openmodelica_codegen_wasm_jit_runtime` to `wasm32-unknown-unknown`
 /// (release) and return the path of the produced `.wasm`. Builds into an
 /// isolated target dir under `OUT_DIR` so it never contends with the host
 /// build's lock, and scrubs host `RUSTFLAGS`/codegen-backend settings (the host
 /// workspace selects the cranelift backend, which cannot target wasm — the
 /// runtime must build with the default LLVM backend).
-fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path) -> Result<PathBuf, String> {
-    let target_dir = out_dir.join("runtime-target");
+fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Result<PathBuf, String> {
+    // One target dir per triple so the two variants (wasm32-unknown-unknown JIT
+    // runtime + wasm32-wasip1 standalone runtime) don't churn each other's cache.
+    let target_dir = out_dir.join(format!("runtime-target-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let status = Command::new(cargo)
         .current_dir(runtime_dir)
-        .args([
-            "build",
-            "--release",
-            "--target",
-            "wasm32-unknown-unknown",
-        ])
+        .args(["build", "--release", "--target", target])
         .arg("--target-dir")
         .arg(&target_dir)
         // Don't inherit the host build's flags/backend selection.
@@ -117,10 +190,10 @@ fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path) -> Result<PathBuf, Str
         .status()
         .map_err(|e| format!("could not spawn cargo: {e}"))?;
     if !status.success() {
-        return Err(format!("cargo build for wasm32 exited with {status}"));
+        return Err(format!("cargo build for {target} exited with {status}"));
     }
     let produced = target_dir
-        .join("wasm32-unknown-unknown")
+        .join(target)
         .join("release")
         .join("openmodelica_codegen_wasm_jit_runtime.wasm");
     if !produced.exists() {

@@ -7,6 +7,7 @@ edition = "2024"
 web-time = "1"
 openmodelica_vfs.workspace = true
 openmodelica_mat_writer.workspace = true
+openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true
 openmodelica_simcode_types.workspace = true
