@@ -45,6 +45,22 @@ omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 # Compiler/runtime/llvm_gen.cpp backend.
 omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." OFF)
 
+# The LLVM JIT path (in-process ORC plus the perform-simulation adapter that
+# pulls perform_simulation.c.inc into omcruntime) is only built and validated
+# on Linux. Force the option off on macOS and on MSYS/MinGW Windows, where it
+# is neither compiled nor tested, so an accidental -DOM_OMC_ENABLE_LLVM_JIT=ON
+# (for example in CI) degrades to the stub path instead of failing the build.
+# The one case left open is a non-MSYS clang toolchain on Windows.
+if(OM_OMC_ENABLE_LLVM_JIT)
+  if(APPLE)
+    message(WARNING "OM_OMC_ENABLE_LLVM_JIT is not supported on macOS yet; forcing it OFF.")
+    set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
+  elseif(WIN32 AND NOT (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW AND NOT MSYS))
+    message(WARNING "OM_OMC_ENABLE_LLVM_JIT on Windows requires a non-MSYS clang toolchain; forcing it OFF.")
+    set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
+  endif()
+endif()
+
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,
