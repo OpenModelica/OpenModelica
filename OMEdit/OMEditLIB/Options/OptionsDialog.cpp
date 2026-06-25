@@ -55,6 +55,7 @@
 
 #include <QStringBuilder>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QColorDialog>
 #include <QButtonGroup>
 
@@ -132,6 +133,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
+  mpLanguageServerPage = new LanguageServerPage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
   if (!MainWindow::instance()->isTestsuiteRunning()) {
@@ -183,6 +185,7 @@ void OptionsDialog::readSettings()
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
   readTraceabilitySettings();
+  readLanguageServerSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -3149,6 +3152,45 @@ void OptionsDialog::saveTraceabilitySettings()
     mpSettings->setValue("traceability/Port", port);
   }
 }
+
+/*!
+ * \brief OptionsDialog::readLanguageServerSettings
+ * Reads language server settings from omedit.ini.
+ */
+void OptionsDialog::readLanguageServerSettings()
+{
+  if (mpSettings->contains("languageServer/enabled")) {
+    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
+  } else {
+    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+  }
+  if (mpSettings->contains("languageServer/executable")) {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
+  } else {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
+  }
+}
+
+/*!
+ * \brief OptionsDialog::saveLanguageServerSettings
+ * Saves language server settings to omedit.ini.
+ */
+void OptionsDialog::saveLanguageServerSettings()
+{
+  bool enabled = mpLanguageServerPage->getEnableLSPCheckBox()->isChecked();
+  if (!enabled) {
+    mpSettings->remove("languageServer/enabled");
+  } else {
+    mpSettings->setValue("languageServer/enabled", enabled);
+  }
+  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
+  if (executable.isEmpty()) {
+    mpSettings->remove("languageServer/executable");
+  } else {
+    mpSettings->setValue("languageServer/executable", executable);
+  }
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -3296,6 +3338,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
   pTraceabilityItem->setText(tr("Traceability"));
+  // Language Server Item
+  QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
+  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/general.svg"));
+  pLanguageServerItem->setText(tr("Language Server"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -3326,6 +3372,7 @@ void OptionsDialog::createPages()
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
+  addPage(mpLanguageServerPage);
 }
 
 void OptionsDialog::addPage(QWidget* pPage)
@@ -3433,6 +3480,7 @@ void OptionsDialog::saveSettings()
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
+  saveLanguageServerSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -6959,4 +7007,67 @@ void CRMLPage::browseCompilerProcessFile()
 void CRMLPage::resetCompilerProcessPath()
 {
   mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+/*!
+ * \brief LanguageServerPage::LanguageServerPage
+ * \param pOptionsDialog
+ */
+LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
+  // Enable LSP checkbox
+  mpEnableLSPCheckBox = new QCheckBox(tr("Enable Language Server"));
+  mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information, go-to-definition, and document symbols."));
+  // Server executable
+  mpServerExecutableLabel = new Label(tr("Server Executable:"));
+  mpServerExecutableTextBox = new QLineEdit;
+  mpServerExecutableTextBox->setPlaceholderText(tr("e.g. modelica-language-server"));
+  mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
+  mpBrowseServerExecutableButton->setAutoDefault(false);
+  connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
+  mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
+  mpAutoDetectButton->setAutoDefault(false);
+  connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  // Layout inside group box
+  QGridLayout *pGroupBoxLayout = new QGridLayout;
+  pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGroupBoxLayout->addWidget(mpEnableLSPCheckBox, 0, 0, 1, 3);
+  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 1, 0);
+  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 1, 1);
+  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 1, 2);
+  pGroupBoxLayout->addWidget(mpAutoDetectButton, 2, 1);
+  mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
+  // Main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpLanguageServerGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LanguageServerPage::browseServerExecutable
+ * Opens a file browser to select the language server executable.
+ */
+void LanguageServerPage::browseServerExecutable()
+{
+  mpServerExecutableTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
+}
+
+/*!
+ * \brief LanguageServerPage::autoDetectServerExecutable
+ * Searches PATH for the modelica-language-server executable.
+ */
+void LanguageServerPage::autoDetectServerExecutable()
+{
+  QString found = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+  } else {
+    QMessageBox::information(this, Helper::applicationName,
+                             tr("Could not find 'modelica-language-server' on the system PATH.\n"
+                                "Install it with: npm install -g @modelica/modelica-language-server"));
+  }
 }

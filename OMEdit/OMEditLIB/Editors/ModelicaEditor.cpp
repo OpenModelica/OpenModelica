@@ -39,6 +39,7 @@
 
 #include "ModelicaEditor.h"
 #include "MainWindow.h"
+#include "LSP/LSPClient.h"
 #include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
@@ -48,8 +49,13 @@
 #include "Options/NotificationsDialog.h"
 
 #include <QCompleter>
+#include <QEvent>
+#include <QHelpEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QTimer>
+#include <QToolTip>
+#include <QUrl>
 
 
 /*!
@@ -61,7 +67,8 @@
  * \param pParent
  */
 ModelicaEditor::ModelicaEditor(QWidget *pParent)
-  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false),
+    mDocumentVersion(1), mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
@@ -71,6 +78,111 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   } else {
     mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   }
+  // Install event filter for LSP hover support
+  mpPlainTextEdit->viewport()->installEventFilter(this);
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient) {
+    connect(pLSPClient, SIGNAL(hoverResult(int,QString)), this, SLOT(onLSPHoverResult(int,QString)));
+    connect(pLSPClient, SIGNAL(definitionResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
+  }
+}
+
+ModelicaEditor::~ModelicaEditor()
+{
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient) {
+    pLSPClient->disconnect(this);
+    if (pLSPClient->isRunning()) {
+      pLSPClient->closeDocument(documentUri());
+    }
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::documentUri
+ * Returns the LSP document URI for the current editor content.
+ */
+QString ModelicaEditor::documentUri() const
+{
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+    QString fileName = mpModelWidget->getLibraryTreeItem()->getFileName();
+    if (!fileName.isEmpty()) {
+      return QUrl::fromLocalFile(fileName).toString();
+    }
+    // Synthetic URI for in-memory classes
+    return QStringLiteral("modelica:///") + mpModelWidget->getLibraryTreeItem()->getNameStructure();
+  }
+  return QString();
+}
+
+/*!
+ * \brief ModelicaEditor::eventFilter
+ * Intercepts QEvent::ToolTip on the viewport to request LSP hover information.
+ */
+bool ModelicaEditor::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject == mpPlainTextEdit->viewport() && pEvent->type() == QEvent::ToolTip) {
+    QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
+    LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+    if (pLSPClient && pLSPClient->isRunning()) {
+      QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pHelpEvent->pos());
+      mLastToolTipGlobalPos = pHelpEvent->globalPos();
+      QString uri = documentUri();
+      if (!uri.isEmpty()) {
+        mPendingHoverRequestId = pLSPClient->requestHover(uri, cursor.blockNumber(), cursor.columnNumber());
+      }
+      return true;
+    }
+  }
+  return QWidget::eventFilter(pObject, pEvent);
+}
+
+/*!
+ * \brief ModelicaEditor::onLSPHoverResult
+ * Shows the LSP hover content as a tooltip if this editor made the request.
+ */
+void ModelicaEditor::onLSPHoverResult(int requestId, const QString &content)
+{
+  if (requestId != mPendingHoverRequestId) {
+    return;
+  }
+  mPendingHoverRequestId = -1;
+  if (!content.isEmpty()) {
+    QToolTip::showText(mLastToolTipGlobalPos, content, mpPlainTextEdit);
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::onLSPDefinitionResult
+ * Navigates to the location returned by the LSP go-to-definition request if this editor made the request.
+ */
+void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &location)
+{
+  if (requestId != mPendingDefinitionRequestId) {
+    return;
+  }
+  mPendingDefinitionRequestId = -1;
+  if (!location.isValid()) {
+    return;
+  }
+  QString filePath = QUrl(location.uri).toLocalFile();
+  if (filePath.isEmpty()) {
+    return;
+  }
+  // Open the file in OMEdit (no-op if already open)
+  MainWindow::instance()->getLibraryWidget()->openFile(filePath, Helper::utf8, true, true);
+  // Navigate to the line (1-based) after the widget is shown
+  int lineNumber = location.range.start.line + 1;
+  QTimer::singleShot(0, this, [lineNumber]() {
+    ModelWidgetContainer *pContainer = MainWindow::instance()->getModelWidgetContainer();
+    if (!pContainer) {
+      return;
+    }
+    ModelWidget *pModelWidget = pContainer->getCurrentModelWidget();
+    if (pModelWidget && pModelWidget->getEditor()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
+    }
+  });
 }
 
 /*!
@@ -197,31 +309,43 @@ QString ModelicaEditor::wordUnderCursor()
  */
 void ModelicaEditor::symbolAtPosition(const QPoint &pos)
 {
-  if (mpModelWidget) {
-    QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
-    cursor.select(QTextCursor::WordUnderCursor);
-
-    int mid = cursor.position();
-    int end = mid;
-
-    while (end < cursor.block().length()) {
-      QChar ch = mpPlainTextEdit->document()->characterAt(end);
-      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
-        break;
-      end++;
-    }
-
-    int begin = mid - 1;
-    while (begin >= 0) {
-      QChar ch = mpPlainTextEdit->document()->characterAt(begin);
-      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
-        break;
-      begin--;
-    }
-    begin++;
-
-    mpModelWidget->navigateToClass(mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin));
+  if (!mpModelWidget) {
+    return;
   }
+  // Try LSP go-to-definition first when available
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient && pLSPClient->isRunning()) {
+    QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
+    QString uri = documentUri();
+    if (!uri.isEmpty()) {
+      mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, cursor.blockNumber(), cursor.columnNumber());
+      return; // Result arrives via onLSPDefinitionResult
+    }
+  }
+  // Fall back to OMEdit class tree navigation
+  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
+  cursor.select(QTextCursor::WordUnderCursor);
+
+  int mid = cursor.position();
+  int end = mid;
+
+  while (end < cursor.block().length()) {
+    QChar ch = mpPlainTextEdit->document()->characterAt(end);
+    if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+      break;
+    end++;
+  }
+
+  int begin = mid - 1;
+  while (begin >= 0) {
+    QChar ch = mpPlainTextEdit->document()->characterAt(begin);
+    if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+      break;
+    begin--;
+  }
+  begin++;
+
+  mpModelWidget->navigateToClass(mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin));
 }
 
 /*!
@@ -646,6 +770,19 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
      */
     OptionsDialog::instance()->emitModelicaEditorSettingsChanged();
     mpPlainTextEdit->foldAll();
+    // Notify LSP server of the new document content
+    LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+    if (pLSPClient && pLSPClient->isRunning()) {
+      QString uri = documentUri();
+      if (!uri.isEmpty()) {
+        if (mDocumentVersion == 1) {
+          pLSPClient->openDocument(uri, QStringLiteral("modelica"), contents);
+        } else {
+          pLSPClient->changeDocument(uri, mDocumentVersion, contents);
+        }
+        mDocumentVersion++;
+      }
+    }
   }
 }
 
@@ -671,6 +808,14 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
       if (!mForceSetPlainText) {
         contentsChanged();
         setTextChanged(true);
+        // Notify LSP server of content change
+        LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+        if (pLSPClient && pLSPClient->isRunning()) {
+          QString uri = documentUri();
+          if (!uri.isEmpty()) {
+            pLSPClient->changeDocument(uri, ++mDocumentVersion, mpPlainTextEdit->toPlainText());
+          }
+        }
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {

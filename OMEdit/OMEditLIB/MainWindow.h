@@ -100,6 +100,7 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
+class LSPClient;
 
 class MainWindow : public QMainWindow
 {
@@ -125,6 +126,8 @@ public:
   bool isSkipExpressionEvaluation() const {return mSkipExpressionEvaluation;}
   void setSkipExpressionEvaluation(bool skipExpressionEvaluation) {mSkipExpressionEvaluation = skipExpressionEvaluation;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
+  LSPClient* getLSPClient() {return mpLSPClient;}
+  void setLSPClient(LSPClient *pLSPClient) {mpLSPClient = pLSPClient;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}
@@ -283,6 +286,7 @@ private:
   bool mTestsuiteRunning = false;
   bool mSkipExpressionEvaluation = false;
   OMCProxy *mpOMCProxy;
+  LSPClient *mpLSPClient = nullptr;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
   SearchWidget *mpSearchWidget;

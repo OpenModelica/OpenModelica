@@ -17,7 +17,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(OMEDITLIB_SOURCES Util/Helper.cpp
+set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
+                      Util/Helper.cpp
                       Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
@@ -149,7 +150,9 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
 
-set(OMEDITLIB_HEADERS MCP/MCPServer.h
+set(OMEDITLIB_HEADERS LSP/LSPClient.h
+                      LSP/LSPProtocol.h
+                      MCP/MCPServer.h
                       Util/Helper.h
                       Search/FindUsageWidget.h
                       Util/Utilities.h

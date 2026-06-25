@@ -43,7 +43,9 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
+#include "LSP/LSPProtocol.h"
 
+#include <QPoint>
 #include <QRegExp>
 #include <QSyntaxHighlighter>
 
@@ -55,6 +57,7 @@ class ModelicaEditor : public BaseEditor
   Q_OBJECT
 public:
   ModelicaEditor(QWidget *pParent);
+  ~ModelicaEditor();
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -74,11 +77,19 @@ public:
   static void getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations);
   static bool getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
   static QList<CompleterItem> getCodeSnippets();
+  bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 private:
   QString mLastValidText;
   bool mTextChanged;
+  int mDocumentVersion;
+  int mPendingHoverRequestId;
+  int mPendingDefinitionRequestId;
+  QPoint mLastToolTipGlobalPos;
+  QString documentUri() const;
 private slots:
   virtual void showContextMenu(QPoint point) override;
+  void onLSPHoverResult(int requestId, const QString &content);
+  void onLSPDefinitionResult(int requestId, const LSP::Location &location);
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;

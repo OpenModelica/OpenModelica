@@ -74,6 +74,7 @@ class FigaroPage;
 class CRMLPage;
 class DebuggerPage;
 class FMIPage;
+class LanguageServerPage;
 class OMSimulatorPage;
 class SensitivityOptimizationPage;
 class TraceabilityPage;
@@ -125,6 +126,7 @@ public:
   void readOMSimulatorSettings();
   void readSensitivityOptimizationSettings();
   void readTraceabilitySettings();
+  void readLanguageServerSettings();
   void saveGeneralSettings();
   void saveNFAPISettings();
   void saveLibrariesSettings();
@@ -139,6 +141,7 @@ public:
   void saveOMSimulatorSettings();
   void saveSensitivityOptimizationSettings();
   void saveTraceabilitySettings();
+  void saveLanguageServerSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveGlobalSimulationSettings();
@@ -179,6 +182,7 @@ public:
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
+  LanguageServerPage* getLanguageServerPage() {return mpLanguageServerPage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
   void show();
@@ -233,6 +237,7 @@ private:
   OMSimulatorPage *mpOMSimulatorPage;
   SensitivityOptimizationPage *mpSensitivityOptimizationPage;
   TraceabilityPage *mpTraceabilityPage;
+  LanguageServerPage *mpLanguageServerPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -1167,6 +1172,26 @@ private slots:
   void browseCompilerJar();
   void browseCompilerProcessFile();
   void resetCompilerProcessPath();
+};
+
+class LanguageServerPage : public QWidget
+{
+  Q_OBJECT
+public:
+  LanguageServerPage(OptionsDialog *pOptionsDialog);
+  QCheckBox* getEnableLSPCheckBox() {return mpEnableLSPCheckBox;}
+  QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpLanguageServerGroupBox;
+  QCheckBox *mpEnableLSPCheckBox;
+  Label *mpServerExecutableLabel;
+  QLineEdit *mpServerExecutableTextBox;
+  QPushButton *mpBrowseServerExecutableButton;
+  QPushButton *mpAutoDetectButton;
+private slots:
+  void browseServerExecutable();
+  void autoDetectServerExecutable();
 };
 
 #endif // OPTIONSDIALOG_H

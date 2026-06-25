@@ -38,6 +38,7 @@
  */
 
 #include "MCP/MCPServer.h"
+#include "LSP/LSPClient.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -48,7 +49,10 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
 #include <QMessageBox>
+#include <QStandardPaths>
+#include <QUrl>
 #include <QTextCodec>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QStyleHints>
@@ -277,6 +281,19 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
     }
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
+  }
+
+  if (pSettings->contains("languageServer/enabled") && pSettings->value("languageServer/enabled").toBool()) {
+    QString executable = pSettings->value("languageServer/executable").toString().trimmed();
+    if (executable.isEmpty()) {
+      executable = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+    }
+    if (!executable.isEmpty()) {
+      LSPClient *pLSPClient = new LSPClient(pMainwindow);
+      QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+      pLSPClient->start(executable, rootUri);
+      pMainwindow->setLSPClient(pLSPClient);
+    }
   }
 
   if (!testsuiteRunning) {
