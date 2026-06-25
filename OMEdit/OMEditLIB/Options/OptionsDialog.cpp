@@ -52,6 +52,7 @@
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
 #include "LSP/LSPClient.h"
+#include "LSP/LSPSetupDialog.h"
 #include <limits>
 
 #include <QStringBuilder>
@@ -3179,12 +3180,27 @@ void OptionsDialog::readLanguageServerSettings()
 void OptionsDialog::saveLanguageServerSettings()
 {
   bool enabled = mpLanguageServerPage->getEnableLSPCheckBox()->isChecked();
+  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
+
+  // When enabling, check that Node.js is present for .js-based servers
+  if (enabled) {
+    QString resolved = executable.isEmpty() ? LSPClient::findBundledServer() : executable;
+    if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
+      LSPSetupDialog setupDialog(this);
+      setupDialog.exec();
+      if (setupDialog.result() == QDialog::Rejected) {
+        // User chose to disable — uncheck the box before saving
+        mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+        enabled = false;
+      }
+    }
+  }
+
   if (!enabled) {
     mpSettings->remove("languageServer/enabled");
   } else {
     mpSettings->setValue("languageServer/enabled", enabled);
   }
-  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
   if (executable.isEmpty()) {
     mpSettings->remove("languageServer/executable");
   } else {

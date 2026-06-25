@@ -39,7 +39,6 @@
 
 #include "MCP/MCPServer.h"
 #include "LSP/LSPClient.h"
-#include "LSP/LSPSetupDialog.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -294,18 +293,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       executable = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
     }
 
-    bool canStart = !executable.isEmpty();
-    if (canStart && executable.endsWith(QStringLiteral(".js"))
-        && LSPClient::findNodeExecutable().isEmpty()) {
-      // Node.js is missing — prompt the user
-      LSPSetupDialog setupDialog(pMainwindow);
-      setupDialog.exec();
-      if (setupDialog.result() == QDialog::Rejected) {
-        // User chose to disable LSP; persist the choice
-        pSettings->setValue(QStringLiteral("languageServer/enabled"), false);
-      }
-      canStart = setupDialog.wasNodeFound();
-    }
+    // For .js servers, silently skip if Node.js is absent — the user was
+    // already notified when they enabled LSP in the Options dialog.
+    bool canStart = !executable.isEmpty() &&
+                    !(executable.endsWith(QStringLiteral(".js")) &&
+                      LSPClient::findNodeExecutable().isEmpty());
 
     if (canStart) {
       LSPClient *pLSPClient = new LSPClient(pMainwindow);
