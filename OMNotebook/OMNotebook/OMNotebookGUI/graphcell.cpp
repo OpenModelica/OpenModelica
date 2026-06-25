@@ -604,7 +604,7 @@ namespace IAEX {
     updatePosition();
   }
 
-  void MyTextEdit2::setAutoIndent(bool b)
+  void MyTextEdit2::setAutoIndent(bool)
   {
   }
 
@@ -683,9 +683,8 @@ namespace IAEX {
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent) :
-   Cell(parent), evaluated_(false), closed_(true), delegate_(0),
-    oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
+  GraphCell::GraphCell(Document *doc, QWidget *parent)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -1251,7 +1250,7 @@ namespace IAEX {
   *
   * 2006-03-02 AF, clear text selection in chapter counter
   */
-  void GraphCell::setReadOnly(const bool readonly)
+  void GraphCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -1287,7 +1286,7 @@ namespace IAEX {
   *
   * \param evaluated The boolean value of evaluated property
   */
-  void GraphCell::setEvaluated(const bool evaluated)
+  void GraphCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -1303,18 +1302,15 @@ namespace IAEX {
   * calculate the new height, to reflect the changes made when
   * porting from Q3TextEdit to QTextEdit.
   */
-  void GraphCell::setClosed(const bool closed, bool update)
+  void GraphCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -1324,7 +1320,7 @@ namespace IAEX {
   /*!
   * \author Ingemar Axelsson and Anders Fernström
   */
-  void GraphCell::setFocus(const bool focus)
+  void GraphCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -1333,7 +1329,7 @@ namespace IAEX {
   /*!
   * \author Anders Fernström
   */
-  void GraphCell::setFocusOutput(const bool focus)
+  void GraphCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -1407,7 +1403,7 @@ namespace IAEX {
   *
   * \return State of GraphCell (closed or not)
   */
-  bool GraphCell::isClosed()
+  bool GraphCell::isClosed() const
   {
     return closed_;
   }
@@ -1423,7 +1419,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool GraphCell::isEditable()
+  bool GraphCell::isEditable() const
   {
     return false;
   }
@@ -1447,7 +1443,7 @@ namespace IAEX {
     input_->setPlainText(expr);
   }
 
-  void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+  void GraphCell::PlotCallbackFunction(void *p, int /*externalWindow*/, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                        const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
@@ -1872,7 +1868,7 @@ namespace IAEX {
       next()->accept(v);
   }
 
-  void GraphCell::viewExpression(const bool flag) {
+  void GraphCell::viewExpression(bool) {
   }
 
 }

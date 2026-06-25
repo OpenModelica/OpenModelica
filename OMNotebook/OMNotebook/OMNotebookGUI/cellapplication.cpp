@@ -194,7 +194,7 @@ namespace IAEX
               stylesheetfile += '/';
           stylesheetfile += "share/omnotebook/stylesheet.xml";
           Stylesheet::instance(stylesheetfile);
-      } catch (std::exception &e) {
+      } catch (const std::exception &e) {
           QMessageBox::warning(nullptr, tr("Error"), e.what());
           std::exit(-1);
       }
@@ -206,7 +206,7 @@ namespace IAEX
               commandfile += '/';
           commandfile += "share/omnotebook/commands.xml";
           CommandCompletion::instance(commandfile);
-      } catch (std::exception &e) {
+      } catch (const std::exception &e) {
           QString msg = e.what();
           msg += "\nCould not create command completion class, exiting OMNotebook";
           QMessageBox::warning(nullptr, tr("Error"), msg);
@@ -340,61 +340,57 @@ namespace IAEX
    */
   void CellApplication::open(const QString filename, int readmode, int isDrModelica)
   {
-      try {
-          // 1. Create the document
-          auto d = std::make_unique<CellDocument>(this, filename, readmode);
+    // 1. Create the document
+    auto d = std::make_unique<CellDocument>(this, filename, readmode);
 
-          // 2. Create the view (NotebookWindow)
-          NotebookWindow *v = new NotebookWindow(std::move(d), filename, isDrModelica);
-          add(v);
+    // 2. Create the view (NotebookWindow)
+    NotebookWindow *v = new NotebookWindow(std::move(d), filename, isDrModelica);
+    add(v);
 
-      // 2006-01-31 AF, Open window minimized instead of normal
+    // 2006-01-31 AF, Open window minimized instead of normal
 
-      //v->showMinimized();
+    //v->showMinimized();
 
-      // 2005-10-11 AF, Porting, added resize so all cells get the
-      // correct size. Ugly way!
+    // 2005-10-11 AF, Porting, added resize so all cells get the
+    // correct size. Ugly way!
 
-      //v->resize( 810, 610 ); //not working with Qt 4.3
+    //v->resize( 810, 610 ); //not working with Qt 4.3
 
-      // 2006-01-17 AF, when the document have been opened, set the
-      // changed variable to false.
-          // 3. Initialise the view – size, position, etc.
-          v->document()->setChanged(false);
+    // 2006-01-17 AF, when the document have been opened, set the
+    // changed variable to false.
+    // 3. Initialise the view – size, position, etc.
+    v->document()->setChanged(false);
 
-      // 2006-01-31 AF, show window again
-          v->show();
-          v->raise();               // macOS
-          v->activateWindow();      // Windows
+    // 2006-01-31 AF, show window again
+    v->show();
+    v->raise();               // macOS
+    v->activateWindow();      // Windows
 
-          // Update the Window‑menu for all open notebooks
-          for (auto &v: views_) {
-            v->updateWindowMenu();
-          }
+    // Update the Window‑menu for all open notebooks
+    for (auto &v: views_) {
+      v->updateWindowMenu();
+    }
 
-          //  Position the window at the top‑left corner and resize it to the
-          //  full screen size – using Qt‑6‑compatible API.
-          v->move(0, 0);
+    //  Position the window at the top‑left corner and resize it to the
+    //  full screen size – using Qt‑6‑compatible API.
+    v->move(0, 0);
 
-          // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
-          // The code works for any Qt version ≥ 5.0 (QGuiApplication existed
-          // already) and therefore also for Qt 6.
-          QScreen *screen = QGuiApplication::primaryScreen();
-          if (screen) {
-              // Use *availableGeometry* so the window does not overlap the task‑bar / dock.
-              QRect geom = screen->availableGeometry();
-              v->resize(geom.width(), geom.height());
-          } else {
-              // Fallback – extremely unlikely, but keeps the old behaviour.
-              v->resize(800, 600);
-          }
+    // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
+    // The code works for any Qt version ≥ 5.0 (QGuiApplication existed
+    // already) and therefore also for Qt 6.
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (screen) {
+      // Use *availableGeometry* so the window does not overlap the task‑bar / dock.
+      QRect geom = screen->availableGeometry();
+      v->resize(geom.width(), geom.height());
+    } else {
+      // Fallback – extremely unlikely, but keeps the old behaviour.
+      v->resize(800, 600);
+    }
 
-          // Apply the "show‑/hide‑closed‑groupcells" visitor.
-          UpdateGroupcellVisitor visitor;
-          v->document()->runVisitor(visitor);
-      } catch (std::exception &e) {
-          throw e;
-      }
+    // Apply the "show‑/hide‑closed‑groupcells" visitor.
+    UpdateGroupcellVisitor visitor;
+    v->document()->runVisitor(visitor);
   }
 
   /*!

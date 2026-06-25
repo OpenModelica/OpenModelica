@@ -83,7 +83,7 @@ namespace IAEX
   {}
 
   // GROUPCELL
-  void PureTextVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  void PureTextVisitor::visitCellGroupNodeBefore(CellGroup *)
   {}
 
   void PureTextVisitor::visitCellGroupNodeAfter(CellGroup *)

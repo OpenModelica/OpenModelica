@@ -85,15 +85,7 @@ namespace IAEX
    */
   Cell::Cell(QWidget *parent)
     : QWidget(parent),
-    selected_(false),
-    treeviewVisible_(true),
-    viewexpression_(false),
-    backgroundColor_(QColor(255,255,255)),
-    parent_(0),
-    next_(0),
-    last_(0),
-    previous_(0),
-    child_(0)
+      backgroundColor_(QColor(255,255,255))
   {
     setMouseTracking(true);
     setEnabled(true);
@@ -208,7 +200,7 @@ namespace IAEX
    *
    * \return boolean, that tells if the cell is set to view expression
    */
-  const bool Cell::isViewExpression() const
+  bool Cell::isViewExpression() const
   {
     return viewexpression_;
   }
@@ -509,8 +501,8 @@ namespace IAEX
     treeView_->setBackgroundColor(backgroundColor());
     treeView_->show();
 
-    connect(this, SIGNAL(selected(const bool)),
-      treeView_, SLOT(setSelected(const bool)));
+    connect(this, SIGNAL(selected(bool)),
+      treeView_, SLOT(setSelected(bool)));
   }
 
   TreeView *Cell::treeView()
@@ -527,7 +519,7 @@ namespace IAEX
   *
   *\todo test if repaint is needed here. (Ingemar Axelsson)
   */
-  void Cell::hideTreeView(const bool hidden)
+  void Cell::hideTreeView(bool hidden)
   {
     if(hidden)
     {
@@ -544,7 +536,7 @@ namespace IAEX
 
   /*! \return TRUE if treeview is hidden. Otherwise FALSE.
   */
-  const bool Cell::isTreeViewVisible() const
+  bool Cell::isTreeViewVisible() const
   {
     return treeviewVisible_;
   }
@@ -554,7 +546,7 @@ namespace IAEX
   *
   * \param height New height for cell.
   */
-  void Cell::setHeight(const int height)
+  void Cell::setHeight(int height)
   {
     int h = height;
 
@@ -566,7 +558,7 @@ namespace IAEX
     }*/
 
     if(!treeView_)
-      throw std::logic_error("SetHeight(const int height): TreeView is not set.");
+      throw std::logic_error("SetHeight(int height): TreeView is not set.");
 
         setFixedHeight(h);
 
@@ -653,7 +645,7 @@ namespace IAEX
   /*!
   * \return true if cell is selected, false otherwise.
   */
-  const bool Cell::isSelected() const
+  bool Cell::isSelected() const
   {
     return selected_;
   }
@@ -670,7 +662,7 @@ namespace IAEX
   *
   * \param selected true if cell should be selected, false otherwise
   */
-  void Cell::setSelected(const bool sel)
+  void Cell::setSelected(bool sel)
   {
     selected_ = sel;
     emit selected(selected_);

@@ -159,15 +159,15 @@ namespace IAEX
     void mouseClickedOnCellOutput(Cell *clickedCell);
     void linkClicked(const QUrl *url);
 //    void anchorClicked(const QUrl *url);
-    virtual void cursorMoveAfter(Cell *aCell, const bool open);
+    virtual void cursorMoveAfter(Cell *aCell, bool open);
     void showHTML(bool b);
 
 
   signals:
     void setAutoIndent(bool);
-    void widthChanged(const int);
+    void widthChanged(int);
     void cursorChanged();
-    void viewExpression(const bool);
+    void viewExpression(bool);
     void contentChanged();
     void hoverOverFile( QString );
     void forwardAction( int );
@@ -182,32 +182,32 @@ namespace IAEX
 
 
   private:
-    bool changed_;
-    bool open_;
-    bool saved_;
+    bool changed_ = false;
+    bool open_ = false;
+    bool saved_ = false;
 
     CellApplication *app_;
     QString filename_;
 
-    Cell *workspace_;        //This should alwas be a cellgroup.
-    Cell *lastClickedCell_;
+    Cell *workspace_ = nullptr;        //This should alwas be a cellgroup.
+    Cell *lastClickedCell_ = nullptr;
     std::unique_ptr<QFrame> mainFrame_;
 
 
-    QScrollArea *scroll_;
-    QGridLayout *mainLayout_;
+    QScrollArea *scroll_ = nullptr;
+    QGridLayout *mainLayout_ = nullptr;
 
-    CellCursor *current_;
+    CellCursor *current_ = nullptr;
     std::unique_ptr<Factory> factory_;
 
     std::vector<Cell*> selectedCells_;
 
   public:
     observers_t observers_;
-    bool autoIndent;
+    bool autoIndent = false;
   private:
     QHash<QString, QImage> images_;
-    int currentImageNo_;
+    int currentImageNo_ = 0;
   };
 
 }

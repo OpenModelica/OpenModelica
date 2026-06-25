@@ -112,20 +112,20 @@ namespace IAEX
     virtual QTextDocument* document() { return nullptr; }
     virtual QTextCursor textCursor();
     virtual QTextEdit* textEdit(){return 0;}
-    virtual void viewExpression(const bool){}
+    virtual void viewExpression(bool){}
     virtual void cutText() {}
     virtual void copyText() {}
     virtual void pasteText() {}
-    virtual bool findText(const QString &exp, QTextDocument::FindFlags options) { return false; }
+    virtual bool findText(const QString &/*exp*/, QTextDocument::FindFlags /*options*/) { return false; }
 
     virtual void clearSelection() {}
-    virtual void moveCursor(QTextCursor::MoveOperation operation) {}
+    virtual void moveCursor(QTextCursor::MoveOperation /*operation*/) {}
 
     //Cellgroup interface.
     virtual void addChild(Cell *){}
     virtual void removeChild(Cell *){}
-    virtual bool isClosed() const{ return false;}
-    virtual void setClosed(const bool closed, bool update = true){}
+    virtual bool isClosed() const { return false; }
+    virtual void setClosed(bool /*closed*/, bool /*update*/ = true){}
 
     virtual void addCellWidget(Cell *newCell); //Protected?
 
@@ -137,10 +137,10 @@ namespace IAEX
     virtual void accept(Visitor &v);
 
     //Flags
-    const bool isSelected() const;
-    const bool isTreeViewVisible() const;
-    virtual bool isEditable() = 0;
-    const bool isViewExpression() const;
+    bool isSelected() const;
+    bool isTreeViewVisible() const;
+    virtual bool isEditable() const = 0;
+    bool isViewExpression() const;
 
     //Properties
     const QColor backgroundColor() const;
@@ -155,20 +155,20 @@ namespace IAEX
 
   public slots:
     virtual void addRule(Rule r);
-    virtual void setText(QString text){}
-    virtual void setText(QString text, QTextCharFormat format){}
-    virtual void setTextHtml(QString html){}
+    virtual void setText(QString /*text*/) {}
+    virtual void setText(QString /*text*/, QTextCharFormat /*format*/) {}
+    virtual void setTextHtml(QString /*html*/) {}
     virtual void setStyle(const QString &stylename);
     virtual void setStyle(CellStyle style);
     void setCellTag(QString tagname);
-    virtual void setReadOnly(const bool){}
-    virtual void setFocus(const bool focus) = 0;
-    virtual void applyLinksToText(){}
+    virtual void setReadOnly(bool) {}
+    virtual void setFocus(bool focus) = 0;
+    virtual void applyLinksToText() {}
 
     virtual void setBackgroundColor(const QColor color);
-    virtual void setSelected(const bool selected);
-    virtual void setHeight(const int height);
-    void hideTreeView(const bool hidden);
+    virtual void setSelected(bool selected);
+    virtual void setHeight(int height);
+    void hideTreeView(bool hidden);
 
     void wheelEvent(QWheelEvent * event) override;      //tmp
 
@@ -181,8 +181,8 @@ namespace IAEX
   signals:
     void clicked(Cell*);
     void doubleClicked(int);
-    void changedWidth(const int);
-    void selected(const bool);
+    void changedWidth(int);
+    void selected(bool);
 
     // 2005-10-06 AF, bytt från Qt::ButtonState till
     // Qt::KeyboardModifiers p.g.a. portning
@@ -190,7 +190,7 @@ namespace IAEX
 
     void heightChanged();
     void openLink(const QUrl *link);
-    void cellOpened(Cell *, const bool);
+    void cellOpened(Cell *, bool);
 
   protected:
     //Events
@@ -201,27 +201,27 @@ namespace IAEX
     void applyRulesToStyle();
 
     // variables
-    bool viewexpression_;
+    bool viewexpression_ = false;
     CellStyle style_;
 
   private:
     QString celltag_;
-    QGridLayout *mainlayout_;
-    TreeView *treeView_;
+    QGridLayout *mainlayout_ = nullptr;
+    TreeView *treeView_ = nullptr;
     QWidget *mainWidget_ = nullptr;
-    QLabel *label_;
+    QLabel *label_ = nullptr;
 
-    bool selected_;
-    bool treeviewVisible_;
+    bool selected_ = false;
+    bool treeviewVisible_ = true;
     QColor backgroundColor_;
 
     rules_t rules_;
 
-    Cell *parent_;
-    Cell *next_;
-    Cell *last_;
-    Cell *previous_;
-    Cell *child_;
+    Cell *parent_ = nullptr;
+    Cell *next_ = nullptr;
+    Cell *last_ = nullptr;
+    Cell *previous_ = nullptr;
+    Cell *child_ = nullptr;
   };
 }
 #endif

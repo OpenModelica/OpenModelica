@@ -59,28 +59,28 @@ namespace IAEX
     RemoveHighlighterVisitor(){}
     virtual ~RemoveHighlighterVisitor(){}
 
-    virtual void visitCellNodeBefore(Cell *node){}
-    virtual void visitCellNodeAfter(Cell *node){}
+    virtual void visitCellNodeBefore(Cell *){}
+    virtual void visitCellNodeAfter(Cell *){}
 
-    virtual void visitCellGroupNodeBefore(CellGroup *node){}
-    virtual void visitCellGroupNodeAfter(CellGroup *node){}
+    virtual void visitCellGroupNodeBefore(CellGroup *){}
+    virtual void visitCellGroupNodeAfter(CellGroup *){}
 
-    virtual void visitTextCellNodeBefore(TextCell *node){}
-    virtual void visitTextCellNodeAfter(TextCell *node){}
+    virtual void visitTextCellNodeBefore(TextCell *){}
+    virtual void visitTextCellNodeAfter(TextCell *){}
 
-    virtual void visitInputCellNodeBefore(InputCell *node){}
-    virtual void visitInputCellNodeAfter(InputCell *node){}
+    virtual void visitInputCellNodeBefore(InputCell *){}
+    virtual void visitInputCellNodeAfter(InputCell *){}
 
-    virtual void visitGraphCellNodeBefore(GraphCell *node){}
-    virtual void visitGraphCellNodeAfter(GraphCell *node){}
-
-
-    virtual void visitLatexCellNodeBefore(LatexCell *node){}
-    virtual void visitLatexCellNodeAfter(LatexCell *node){}
+    virtual void visitGraphCellNodeBefore(GraphCell *){}
+    virtual void visitGraphCellNodeAfter(GraphCell *){}
 
 
-    virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
-    virtual void visitCellCursorNodeAfter(CellCursor *cursor){}
+    virtual void visitLatexCellNodeBefore(LatexCell *){}
+    virtual void visitLatexCellNodeAfter(LatexCell *){}
+
+
+    virtual void visitCellCursorNodeBefore(CellCursor *){}
+    virtual void visitCellCursorNodeAfter(CellCursor *){}
   };
 }
 #endif

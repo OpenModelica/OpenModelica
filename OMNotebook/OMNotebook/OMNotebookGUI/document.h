@@ -108,7 +108,7 @@ namespace IAEX
     virtual CellCursor *getCursor() = 0;
     virtual void cursorStepUp() = 0;
     virtual void cursorStepDown() = 0;
-    virtual void cursorMoveAfter(Cell *aCell, const bool open) = 0;
+    virtual void cursorMoveAfter(Cell *aCell, bool open) = 0;
     virtual void cursorUngroupCell() = 0;
     virtual void cursorSplitCell() = 0;
     virtual void cursorAddCell() = 0;

@@ -80,11 +80,11 @@ namespace IAEX
     virtual QString text(){return QString();}
 
     //Flag
-    bool isEditable();
+    bool isEditable() const override;
     bool isClickedOn();
 
   public slots:
-    virtual void setFocus(const bool){}
+    virtual void setFocus(bool){}
 
   signals:
     void changedPosition();

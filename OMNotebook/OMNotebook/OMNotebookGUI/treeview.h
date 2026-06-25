@@ -64,12 +64,12 @@ namespace IAEX
 
       void setBackgroundColor(const QColor col);
 
-      const bool selected() const;
-      const bool isClosed() const;
+      bool selected() const;
+      bool isClosed() const;
 
    public slots:
-      void setClosed(const bool closed);
-      void setSelected(const bool sel);
+      void setClosed(bool closed);
+      void setSelected(bool sel);
 
    protected:
       void paintEvent(QPaintEvent *event);

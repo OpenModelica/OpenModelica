@@ -79,8 +79,8 @@ public:
     void             addCellWidgets()    override;
     void             removeCellWidgets() override;
     void             accept(Visitor &v)  override;
-    bool             isClosed();                 // not virtual in Cell
-    bool             isEditable() override;      // not virtual in Cell
+    bool             isClosed() const override;
+    bool             isEditable() const override;
     bool             isEvaluated();              // not virtual in Cell
 
     /* ----- GraphCell‑specific members (non‑virtual) ----- */
