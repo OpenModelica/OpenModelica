@@ -48,6 +48,8 @@
 #include <stdexcept>
 #include <fstream>
 #include <algorithm>
+#include <array>
+
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
@@ -1150,14 +1152,14 @@ void NotebookWindow::createFormatMenu()
   borderMenu = formatMenu->addMenu( tr("&Border") );
   auto bordersgroup = new QActionGroup( this );
 
-  int borderSizes[] = { 0,1,2,3,4,5,6,7,8,9,10 };
-  for( int i = 0; i < sizeof(borderSizes)/sizeof(int); i++ )
+  auto borderSizes = std::array{ 0,1,2,3,4,5,6,7,8,9,10 };
+  for (auto sz: borderSizes)
   {
     QString name;
-    name.setNum( borderSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    borders_.insert( borderSizes[i], tmp );
+    borders_.insert( sz, tmp );
     borderMenu->addAction( tmp );
     bordersgroup->addAction( tmp );
   }
@@ -1185,14 +1187,14 @@ void NotebookWindow::createFormatMenu()
   marginMenu = formatMenu->addMenu( tr("&Margin") );
   auto marginsgroup = new QActionGroup( this );
 
-  int marginSizes[] = { 0,1,2,3,4,5,6,7,8,9,10,15,20,25,30 };
-  for( int i = 0; i < sizeof(marginSizes)/sizeof(int); i++ )
+  auto marginSizes = std::array{ 0,1,2,3,4,5,6,7,8,9,10,15,20,25,30 };
+  for (auto sz: marginSizes)
   {
     QString name;
-    name.setNum( marginSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    margins_.insert( marginSizes[i], tmp );
+    margins_.insert( sz, tmp );
     marginMenu->addAction( tmp );
     marginsgroup->addAction( tmp );
   }
@@ -1220,14 +1222,14 @@ void NotebookWindow::createFormatMenu()
   paddingMenu = formatMenu->addMenu( tr("&Padding") );
   auto paddingsgroup = new QActionGroup( this );
 
-  int paddingSizes[] = { 0,2,4,6,8,10,15 };
-  for( int i = 0; i < sizeof(paddingSizes)/sizeof(int); i++ )
+  auto paddingSizes = std::array{ 0,2,4,6,8,10,15 };
+  for (auto sz: paddingSizes)
   {
     QString name;
-    name.setNum( paddingSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    paddings_.insert( paddingSizes[i], tmp );
+    paddings_.insert( sz, tmp );
     paddingMenu->addAction( tmp );
     paddingsgroup->addAction( tmp );
   }
@@ -2323,7 +2325,7 @@ void NotebookWindow::openFile(const QString filename)
       //Cancel pushed. Do nothing
     }
   }
-  catch(std::exception &e)
+  catch(const std::exception &e)
   {
     QMessageBox::warning(nullptr, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what());
     openFile();
@@ -2506,7 +2508,7 @@ void NotebookWindow::helpText()
       QMessageBox::warning(nullptr, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"));
     }
   }
-  catch(std::exception &e)
+  catch(const std::exception &e)
   {
     QString msg = tr("In HelpText(), Exception: \n") + e.what();
     QMessageBox::warning(nullptr, tr("Warning"), msg);
@@ -3506,7 +3508,7 @@ void NotebookWindow::openOldFile()
             std::make_unique<OpenOldFileCommand>( filename, READMODE_OLD ));
     }
   }
-  catch(std::exception &e )
+  catch(const std::exception &e )
   {
     QString msg = QString("In NotebookWindow(), Exception:\r\n") + e.what();
     QMessageBox::warning(nullptr, tr("Warning"), msg);

@@ -109,7 +109,7 @@ namespace IAEX
         else
           throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( std::exception e )
+      catch( const std::exception &e )
       {
         QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
@@ -118,7 +118,7 @@ namespace IAEX
       {
         text->setDelegate(OmcInteractiveEnvironment::getInstance());
       }
-      catch( std::exception e )
+      catch( const std::exception &e )
       {}
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
@@ -168,8 +168,8 @@ namespace IAEX
     {
       Cell *text = new CellGroup(parent);
 
-      QObject::connect(text, SIGNAL(cellOpened(Cell *, const bool)),
-        doc_, SLOT(cursorMoveAfter(Cell*, const bool)));
+      QObject::connect(text, SIGNAL(cellOpened(Cell *, bool)),
+        doc_, SLOT(cursorMoveAfter(Cell*, bool)));
       QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
         doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
       QObject::connect(text, SIGNAL(clicked(Cell *)),
@@ -195,9 +195,8 @@ namespace IAEX
         else
           throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( std::exception e )
+      catch( const std::exception &e )
       {
-
         QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
@@ -251,19 +250,12 @@ namespace IAEX
         else
           throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( std::exception e )
+      catch( const std::exception &e )
       {
         QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
-      try
-      {
-        text->setDelegate(OmcInteractiveEnvironment::getInstance());
-      }
-      catch( std::exception e )
-      {
-        e.what();
-      }
+      text->setDelegate(OmcInteractiveEnvironment::getInstance());
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
         doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));

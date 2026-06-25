@@ -201,7 +201,7 @@ namespace IAEX{
    *
    * \return False
    */
-  bool CellGroup::isEditable()
+  bool CellGroup::isEditable() const
   {
     return false;
   }
@@ -301,7 +301,7 @@ namespace IAEX{
    * \bug This function could create a segmentation fault in some
    * special cases. Try to find them.
    */
-  void CellGroup::setClosed(const bool closed, bool update)
+  void CellGroup::setClosed(bool closed, bool update)
   {
     closed_ = closed;
 
@@ -370,7 +370,7 @@ namespace IAEX{
    *
    * \todo Should this be moved to treeview?(Ingemar Axelsson)
    */
-  void CellGroup::mouseDoubleClickEvent(QMouseEvent *event)
+  void CellGroup::mouseDoubleClickEvent(QMouseEvent *)
   {
     if( treeView()->testAttribute(Qt::WA_UnderMouse) )
     {
@@ -395,7 +395,7 @@ namespace IAEX{
 
   // ***************************************************************
 
-  void CellGroup::setFocus(const bool focus)
+  void CellGroup::setFocus(bool focus)
   {
     if(hasChilds())
       child()->setFocus(focus);
@@ -543,7 +543,7 @@ namespace IAEX{
     adjustHeight();
   }
 
-  void CellGroup::viewExpression(const bool flag) {
+  void CellGroup::viewExpression(bool) {
   }
 
   QString CellGroup::text() {

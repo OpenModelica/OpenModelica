@@ -69,12 +69,12 @@ namespace IAEX
     ~ReplaceAllVisitor(){}
 
     // Visitor function - CELL
-    void visitCellNodeBefore( Cell *node ){}
-    void visitCellNodeAfter( Cell *node ){}
+    void visitCellNodeBefore( Cell * ){}
+    void visitCellNodeAfter( Cell * ){}
 
     // Visitor function - GROUPCELL
-    void visitCellGroupNodeBefore( CellGroup *node ){}
-    void visitCellGroupNodeAfter( CellGroup *node ){}
+    void visitCellGroupNodeBefore( CellGroup * ){}
+    void visitCellGroupNodeAfter( CellGroup * ){}
 
     // Visitor function - TEXTCELL
     void visitTextCellNodeBefore( TextCell *node )
@@ -103,7 +103,7 @@ namespace IAEX
         }
       }
     }
-    void visitTextCellNodeAfter( TextCell *node ){}
+    void visitTextCellNodeAfter( TextCell * ){}
 
     // Visitor function - INPUTCELL
     void visitInputCellNodeBefore( InputCell *node )
@@ -132,7 +132,7 @@ namespace IAEX
         }
       }
     }
-    void visitInputCellNodeAfter( InputCell *node ){}
+    void visitInputCellNodeAfter( InputCell * ){}
 
 
     // Visitor function - GRAPHCELL
@@ -162,7 +162,7 @@ namespace IAEX
         }
       }
     }
-    void visitGraphCellNodeAfter( GraphCell *node ){}
+    void visitGraphCellNodeAfter( GraphCell * ){}
 
     void visitLatexCellNodeBefore( LatexCell *node )
     {
@@ -191,11 +191,11 @@ namespace IAEX
       }
     }
 
-    void visitLatexCellNodeAfter( LatexCell *node ){}
+    void visitLatexCellNodeAfter( LatexCell * ){}
 
     // Visitor function - CURSORCELL
-    void visitCellCursorNodeBefore( CellCursor *cursor ){}
-    void visitCellCursorNodeAfter( CellCursor *cursor ){}
+    void visitCellCursorNodeBefore( CellCursor * ){}
+    void visitCellCursorNodeAfter( CellCursor * ){}
 
 
   private:

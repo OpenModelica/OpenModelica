@@ -63,8 +63,8 @@ namespace IAEX
     virtual ~CursorPosVisitor(){}
     virtual int position(){ return position_; }
 
-    virtual void visitCellNodeBefore(Cell *node){}
-    virtual void visitCellNodeAfter(Cell *node){}
+    virtual void visitCellNodeBefore(Cell *){}
+    virtual void visitCellNodeAfter(Cell *){}
 
     virtual void visitCellGroupNodeBefore(CellGroup *node)
     {
@@ -88,35 +88,35 @@ namespace IAEX
       }
     }
 
-    virtual void visitTextCellNodeBefore(TextCell *node){}
+    virtual void visitTextCellNodeBefore(TextCell *){}
     virtual void visitTextCellNodeAfter(TextCell *node)
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitGraphCellNodeBefore(GraphCell *node) {}
+    virtual void visitGraphCellNodeBefore(GraphCell *) {}
     virtual void visitGraphCellNodeAfter(GraphCell *node)
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitLatexCellNodeBefore(LatexCell *node) {}
+    virtual void visitLatexCellNodeBefore(LatexCell *) {}
     virtual void visitLatexCellNodeAfter(LatexCell *node)
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitInputCellNodeBefore(InputCell *node){}
+    virtual void visitInputCellNodeBefore(InputCell *){}
     virtual void visitInputCellNodeAfter(InputCell *node)
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
+    virtual void visitCellCursorNodeBefore(CellCursor *){}
     virtual void visitCellCursorNodeAfter(CellCursor *cursor)
     {
       if( count_ && !closed_ )

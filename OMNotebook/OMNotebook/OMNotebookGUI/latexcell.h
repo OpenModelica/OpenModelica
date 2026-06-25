@@ -65,7 +65,7 @@ namespace IAEX
     virtual QTextCursor textCursor() override;
     virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    void viewExpression(const bool) override;
+    void viewExpression(bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -77,8 +77,8 @@ namespace IAEX
     virtual void addCellWidgets() override;
     virtual void removeCellWidgets() override;
     virtual void accept(Visitor &v) override;
-    virtual bool isClosed();
-    virtual bool isEditable() override;
+    virtual bool isClosed() const override;
+    virtual bool isEditable() const override;
     virtual bool isEvaluated();
 
   signals:
@@ -104,11 +104,11 @@ namespace IAEX
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly) override;
-    void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true) override;
-    virtual void setFocus(const bool focus) override;
-    virtual void setFocusOutput(const bool focus);
+    void setReadOnly(bool readonly) override;
+    void setEvaluated(bool evaluated);
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
+    virtual void setFocusOutput(bool focus);
     void setExpr(QString);
     void setState(int state);
 

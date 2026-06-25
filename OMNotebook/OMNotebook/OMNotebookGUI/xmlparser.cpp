@@ -185,20 +185,13 @@ namespace IAEX
     file.close();
 
     // go to correct parse function
-    try
+    switch( readmode_ )
     {
-      switch( readmode_ )
-      {
-      case READMODE_OLD:
-        return parseOld( domdoc );
-      case READMODE_NORMAL:
-      default:
-        return parseNormal( domdoc );
-      }
-    }
-    catch( std::exception &e )
-    {
-      throw e;
+    case READMODE_OLD:
+      return parseOld( domdoc );
+    case READMODE_NORMAL:
+    default:
+      return parseNormal( domdoc );
     }
   }
 
@@ -236,15 +229,8 @@ namespace IAEX
     // Create the grouppcell that will be the root parent.
     Cell *rootcell = factory_->createCell( "cellgroup", 0 );
 
-    try
-    {
-      if( !node.isNull() )
-        traverseCells( rootcell, node );
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    if( !node.isNull() )
+      traverseCells( rootcell, node );
 
     return rootcell;
   }
@@ -306,36 +292,29 @@ namespace IAEX
   */
   void XMLParser::traverseCells( Cell *parent, QDomNode &node )
   {
-    try
+    while( !node.isNull() )
     {
-      while( !node.isNull() )
+      QDomElement element = node.toElement();
+      if( !element.isNull() )
       {
-        QDomElement element = node.toElement();
-        if( !element.isNull() )
+        if( element.tagName() == XML_GROUPCELL )
+          traverseGroupCell( parent, element );
+        else if( element.tagName() == XML_TEXTCELL )
+          traverseTextCell( parent, element );
+        else if( element.tagName() == XML_INPUTCELL )
+          traverseInputCell( parent, element );
+        else if( element.tagName() == XML_GRAPHCELL )
+          traverseGraphCell( parent, element );
+        else if( element.tagName() == XML_LATEXCELL )
+          traverseLatexCell( parent, element );
+        else
         {
-          if( element.tagName() == XML_GROUPCELL )
-            traverseGroupCell( parent, element );
-          else if( element.tagName() == XML_TEXTCELL )
-            traverseTextCell( parent, element );
-          else if( element.tagName() == XML_INPUTCELL )
-            traverseInputCell( parent, element );
-          else if( element.tagName() == XML_GRAPHCELL )
-            traverseGraphCell( parent, element );
-          else if( element.tagName() == XML_LATEXCELL )
-            traverseLatexCell( parent, element );
-          else
-          {
-            std::string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
-            throw std::runtime_error( msg.c_str() );
-          }
+          std::string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
+          throw std::runtime_error( msg.c_str() );
         }
-
-        node = node.nextSibling();
       }
-    }
-    catch( std::exception &e )
-    {
-      throw e;
+
+      node = node.nextSibling();
     }
   }
 

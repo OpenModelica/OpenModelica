@@ -210,7 +210,7 @@ namespace IAEX
    * \param name
    * \param type
    */
-  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType type)
+  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType /*type*/)
   {
     emit openLink( &name );
   }
@@ -679,7 +679,7 @@ namespace IAEX
    *
    * \param readonly The boolean value of readonly property
    */
-  void TextCell::setReadOnly(const bool readonly)
+  void TextCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -706,7 +706,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    */
-  void TextCell::setFocus(const bool focus)
+  void TextCell::setFocus(bool focus)
   {
     if(focus)
       text_->setFocus();
@@ -840,7 +840,7 @@ namespace IAEX
    *
    * \return True
    */
-  bool TextCell::isEditable()
+  bool TextCell::isEditable() const
   {
     return true;
   }
@@ -855,7 +855,7 @@ namespace IAEX
    * 2005-11-01 AF, Remade the function to reflect the new
    * QTextEdit
    */
-  void TextCell::viewExpression(const bool expr)
+  void TextCell::viewExpression(bool expr)
   {
     if( expr != isViewExpression() )
     {

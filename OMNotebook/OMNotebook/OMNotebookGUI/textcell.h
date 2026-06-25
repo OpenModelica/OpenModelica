@@ -76,8 +76,8 @@ namespace IAEX
 
     void clear();
     virtual void accept(Visitor &v);
-    virtual bool isEditable();
-    virtual void viewExpression(const bool expr);
+    virtual bool isEditable() const override;
+    virtual void viewExpression(bool expr);
 
   signals:
     void textChanged();
@@ -95,8 +95,8 @@ namespace IAEX
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly);
-    virtual void setFocus(const bool focus);
+    void setReadOnly(bool readonly);
+    virtual void setFocus(bool focus);
 
 
 

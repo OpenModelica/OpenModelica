@@ -91,13 +91,20 @@ namespace IAEX
   class SaveDocumentCommand : public Command
   {
   public:
-    SaveDocumentCommand(Document *doc) : doc_(doc)
+    SaveDocumentCommand(Document *doc)
+      : doc_(doc)
     {
       filename_ = doc->getFilename();
     }
-    SaveDocumentCommand(Document *doc, const QString filename) : doc_(doc), filename_(filename)
-    {}
+
+    SaveDocumentCommand(Document *doc, const QString filename)
+      : filename_(filename), doc_(doc)
+    {
+
+    }
+
     virtual ~SaveDocumentCommand(){}
+
     void execute()
     {
       try
@@ -114,30 +121,23 @@ namespace IAEX
         QString newFilepath;
 
         // 2005-12-05 AF, update links
-        try
+        oldFilepath = doc_->getFilename();
+        newFilepath = QFileInfo( filename_ ).absolutePath();
+
+        // if no oldFilepath, use current work dir
+        if( oldFilepath.isNull() || oldFilepath.isEmpty() )
         {
-          oldFilepath = doc_->getFilename();
-          newFilepath = QFileInfo( filename_ ).absolutePath();
-
-          // if no oldFilepath, use current work dir
-          if( oldFilepath.isNull() || oldFilepath.isEmpty() )
-          {
-            QDir dir;
-            oldFilepath  = dir.absolutePath();
-          }
-          else
-            oldFilepath = QFileInfo(oldFilepath).absolutePath();
-
-          // use visitor if the new path is different from the old
-          if( oldFilepath != newFilepath )
-          {
-            UpdateLinkVisitor visitor( oldFilepath, newFilepath );
-            doc_->runVisitor( visitor );
-          }
+          QDir dir;
+          oldFilepath  = dir.absolutePath();
         }
-        catch(std::exception &e )
+        else
+          oldFilepath = QFileInfo(oldFilepath).absolutePath();
+
+        // use visitor if the new path is different from the old
+        if( oldFilepath != newFilepath )
         {
-          throw e;
+          UpdateLinkVisitor visitor( oldFilepath, newFilepath );
+          doc_->runVisitor( visitor );
         }
 
         // save the document
@@ -195,7 +195,7 @@ namespace IAEX
           throw std::runtime_error( msg.c_str() );
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("SaveDocumentCommand(), Exception: ") + e.what();
@@ -225,7 +225,7 @@ namespace IAEX
       {
         application()->open( filename_, READMODE_NORMAL );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("OpenFileCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -258,7 +258,7 @@ namespace IAEX
       {
         application()->open( filename_, readmode_ );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("OpenOldFileCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -302,7 +302,7 @@ namespace IAEX
 
         printDocument.print( printer_ );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("PrintDocumentCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -332,7 +332,7 @@ namespace IAEX
 
         document()->close();
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CloseFileCommand(), Exception: ") + e.what();
@@ -362,7 +362,7 @@ namespace IAEX
         doc = new CellDocument( application(), QString() );
         */
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("NewFileCommand(), Exception: ") + e.what();
@@ -403,7 +403,7 @@ namespace IAEX
 
         file.close();
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("ExportToPureText(), Exception: ") + e.what();
@@ -445,7 +445,7 @@ namespace IAEX
 
         doc_->setChanged( true );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string str = std::string("EvalSelectedCells(), Exception: ") + e.what();
         throw std::runtime_error( str.c_str() );
@@ -509,7 +509,7 @@ namespace IAEX
         ChapterCounterVisitor visitor;
         doc_->runVisitor( visitor );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string str = std::string("UpdateChapterCounters(), Exception: ") + e.what();
         throw std::runtime_error( str.c_str() );

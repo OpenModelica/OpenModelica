@@ -75,7 +75,7 @@ namespace IAEX
     {
       cmd->execute();
     }
-    catch( std::exception &e )
+    catch( const std::exception &e )
     {
       QString msg = e.what();
 

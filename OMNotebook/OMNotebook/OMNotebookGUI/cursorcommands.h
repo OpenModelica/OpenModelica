@@ -93,7 +93,7 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveUpCommand(), Exception: ") + e.what();
@@ -147,7 +147,7 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveDownCommand(), Exception: ") + e.what();
@@ -202,7 +202,7 @@ namespace IAEX
         }
 
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveAfterCommand(), Exception: ") + e.what();

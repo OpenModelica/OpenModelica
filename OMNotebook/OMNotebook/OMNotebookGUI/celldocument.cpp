@@ -122,14 +122,8 @@ namespace IAEX
    *
    * \todo Remove the dependency of QFrame from document.(Ingemar Axelsson)
    */
-  CellDocument::CellDocument( CellApplication *a, const QString filename,
-    int readmode )
-    : changed_(false),
-    open_(false),
-    saved_(false),
-    app_(a),
-    currentImageNo_(0),
-    lastClickedCell_(0)
+  CellDocument::CellDocument( CellApplication *a, const QString filename, int readmode )
+    : app_(a)
   {
     filename_ = filename;
     //Initialize SoQT
@@ -152,16 +146,8 @@ namespace IAEX
       this, SLOT( updateScrollArea() ));
 
     // 2005-12-01 AF, Added try-catch
-    try
-    {
-      if(!filename_.isNull())
-        open( filename_, readmode );
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
-
+    if(!filename_.isNull())
+      open( filename_, readmode );
 
 //    open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
   }
@@ -199,18 +185,9 @@ namespace IAEX
     auto parserFactory = std::make_unique<CellParserFactory>();
     auto parser = parserFactory->createParser(filename_, factory_.get(), this, readmode);
 
-    // 2005-12-01 AF, Added try-catch
-    try
-    {
-      Cell *cell = parser->parse();
-      setWorkspace( cell );
-    }
-    catch( std::exception e )
-    {
-      throw e;
-    }
+    Cell *cell = parser->parse();
+    setWorkspace( cell );
 
-    // 2005-09-22 AF, Added this...
     open_ = true;
 
     // 2005-11-02 AF, set saved_ to true if the loaded file is .onb
@@ -311,16 +288,9 @@ namespace IAEX
    */
   void CellDocument::cursorAddCell()
   {
-    try
-    {
-      executeCommand(std::make_unique<AddCellCommand>());
-      open_ = true;
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<AddCellCommand>());
+    open_ = true;
+    emit cursorChanged();
   }
 
   /*!
@@ -331,15 +301,8 @@ namespace IAEX
    */
   void CellDocument::cursorUngroupCell()
   {
-    try
-    {
-      executeCommand(std::make_unique<UngroupCellCommand>() );
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<UngroupCellCommand>() );
+    emit cursorChanged();
   }
 
   /*!
@@ -350,15 +313,8 @@ namespace IAEX
    */
   void CellDocument::cursorSplitCell()
   {
-    try
-    {
-      executeCommand(std::make_unique<SplitCellCommand>() );
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<SplitCellCommand>() );
+    emit cursorChanged();
   }
 
   /*!
@@ -403,7 +359,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    */
-  void CellDocument::cursorMoveAfter(Cell *aCell, const bool open)
+  void CellDocument::cursorMoveAfter(Cell *aCell, bool /*open*/)
   {
     //if(!open)
     executeCommand(std::make_unique<CursorMoveAfterCommand>(aCell));
@@ -914,7 +870,7 @@ namespace IAEX
     clearSelection();
 
     //Remove focus from old cell.
-    if(getCursor()->currentCell()->isClosed())
+    if(getCursor()->currentCell()->isClosed() && getCursor()->currentCell()->child())
     {
       getCursor()->currentCell()->child()->setReadOnly(true);
       getCursor()->currentCell()->child()->setFocus(false);
