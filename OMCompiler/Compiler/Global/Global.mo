@@ -104,6 +104,16 @@ constant Integer simCodeModelGuid = 34;
 // false (the safer fallback) for any path that does not flip it.
 constant Integer simCodeSctlCanCover = 35;
 
+// SimCodeToLLVM: the per-build model symbol prefix, set once at the start of
+// genSim to System.makeC89Identifier(simCode.fileNamePrefix). SCTL must name
+// its emitted model-level symbols (functionODE, callback, setupDataStruc, ...)
+// the same way CodegenC does, namely from fileNamePrefix and NOT from the
+// model name, so the JIT linker resolves SCTL's IR against the clang'd
+// satellites. The two coincide for the default fileNamePrefix but diverge for
+// an explicit one (e.g. simulate(M, fileNamePrefix="x")). Read via
+// SimCodeToLLVM.modelFilePrefix().
+constant Integer simCodeToLLVMFilePrefix = 36;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index

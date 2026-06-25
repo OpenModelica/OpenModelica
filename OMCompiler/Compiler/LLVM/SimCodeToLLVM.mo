@@ -726,6 +726,11 @@ algorithm
    * emitting. Each successful emitInitialEquationsBlock /
    * emit<Segment> call records its segmentFile back into this list. */
   resetDynamicSkips();
+  /* Per-build model symbol prefix. CodegenC names every model-level symbol
+   * from makeC89Identifier(fileNamePrefix); SCTL must match so the JIT linker
+   * resolves its IR against the clang'd satellites. Set it once here and read
+   * it through modelFilePrefix() everywhere a model symbol is built. */
+  setGlobalRoot(Global.simCodeToLLVMFilePrefix, simCodeFilePrefix(simCode));
   name := simCodeName(simCode);
   vars := simCodeVars(simCode);
   odeEqs := flattenOdeEquations(simCode);
@@ -781,7 +786,7 @@ algorithm
      * The module is consumed (moved) by jitFinalizeNoEntry into the
      * function-JIT, so it cannot be serialised after this. */
     if nUnsupported == 0 then
-      EXT_LLVM.initGen(modelSymbolPrefix(name) + "_ode");
+      EXT_LLVM.initGen(modelFilePrefix() + "_ode");
       if emitODEEntryShell(name, recipes, layout) then
         if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
         finalizeAndReport(name, layout, vars);
@@ -793,7 +798,7 @@ algorithm
      * until SCTL can prove out the full ODE call site. Every stub
      * emitted here lets the matching .c file be dropped from the
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
-    EXT_LLVM.initGen(modelSymbolPrefix(name) + "_sctl");
+    EXT_LLVM.initGen(modelFilePrefix() + "_sctl");
     emitDisplacingStubs(simCode, name);
     /* emitUserFunctions(simCode) is intentionally not called here.
      * The DAEToMid + MidToLLVM pipeline emits wrong-signature stubs
@@ -842,7 +847,7 @@ algorithm
     end if;
     /* Optional debug dump alongside, gated on jit_dump_ir. */
     if Flags.isSet(Flags.JIT_DUMP_IR) then
-      sctlBcPath := modelSymbolPrefix(name) + "_sctl.bc";
+      sctlBcPath := modelFilePrefix() + "_sctl.bc";
       bcSt := EXT_LLVM.writeBitcodeToFile(sctlBcPath);
     end if;
   end if;
@@ -908,7 +913,7 @@ protected
   Integer st;
   list<Real> rvIn, rvOut;
 algorithm
-  odeSym := modelSymbolPrefix(name) + "_functionODE";
+  odeSym := modelFilePrefix() + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
   if st <> 0 then
     Error.addInternalError(
@@ -1290,7 +1295,7 @@ protected
   Absyn.Path name;
 algorithm
   name := simCodeName(simCode);
-  prefix := modelSymbolPrefix(name);
+  prefix := modelFilePrefix();
   initEqs := match simCode
     case SimCode.SIMCODE(initialEquations = initEqs) then initEqs;
   end match;
@@ -1360,7 +1365,7 @@ protected
   EqRecipe recipe;
 algorithm
   name := simCodeName(simCode);
-  prefix := modelSymbolPrefix(name);
+  prefix := modelFilePrefix();
   allEqs := allSimCodeEquations(simCode);
   if listEmpty(allEqs) then
     ok := true;
@@ -1534,7 +1539,7 @@ algorithm
     return;
   end if;
   if not List.all(recipes, function canLowerEquation(layout = layout)) then return; end if;
-  prefix := modelSymbolPrefix(name);
+  prefix := modelFilePrefix();
   /* Emit any synthetic SimCodeFunction.Function the classifier built
    * (one per SES_ALGORITHM) before the call sites reference them.
    * The synthetics ride the same DAEToMid + MidToLLVM pipeline as
@@ -1602,7 +1607,7 @@ algorithm
     return;
   end if;
   name := simCodeName(simCode);
-  prefix := modelSymbolPrefix(name);
+  prefix := modelFilePrefix();
   /* column / DAG / const helpers -- never called when no analytic
    * Jacobian is exposed */
   emitStub(prefix + "_functionJacA_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
@@ -1657,7 +1662,7 @@ algorithm
     case SimCode.SIMCODE(zeroCrossings = zcs, relations = rels) then (zcs, rels);
   end match;
   name := simCodeName(simCode);
-  prefix := modelSymbolPrefix(name);
+  prefix := modelFilePrefix();
   if listEmpty(zcs) and listEmpty(rels) then
     /* No events -- pure-stub set, runtime never reads gout. */
     emitRuntimeVoidStub(prefix + "_function_initSample");
@@ -2145,7 +2150,7 @@ algorithm
   if listEmpty(synths) then
     return;
   end if;
-  moduleName := modelSymbolPrefix(modelName) + "_synth";
+  moduleName := modelFilePrefix() + "_synth";
   midProgram := DAEToMid.daeProgramToMid(moduleName, synths, {});
   MidToLLVM.genProgram(midProgram);
 end emitSyntheticFunctions;
@@ -2176,7 +2181,7 @@ algorithm
   if listEmpty(simFuncs) and listEmpty(recordDecls) then
     return;
   end if;
-  moduleName := modelSymbolPrefix(modelName) + "_userfuncs";
+  moduleName := modelFilePrefix() + "_userfuncs";
   midProgram := DAEToMid.daeProgramToMid(moduleName, simFuncs, recordDecls);
   MidToLLVM.genProgram(midProgram);
 end emitUserFunctions;
@@ -2230,7 +2235,7 @@ algorithm
   if not listEmpty(vars) then
     fail();
   end if;
-  prefix := modelSymbolPrefix(modelName);
+  prefix := modelFilePrefix();
   st := EXT_LLVM.genCallExternalObjectDestructors(prefix);
   if st <> 0 then
     fail();
@@ -2289,7 +2294,7 @@ protected
   list<EqRecipe> daeRecipes, algRecipes;
   list<SimCode.SimEqSystem> algEqs;
 algorithm
-  prefix := modelSymbolPrefix(modelName);
+  prefix := modelFilePrefix();
 
   fname := prefix + "_functionODE";
   if List.all(recipes, function canLowerEquation(layout = layout)) then
@@ -2377,7 +2382,7 @@ algorithm
   idxJacF   := lookupJacIndex(jacs, "F");
   idxJacH   := lookupJacIndex(jacs, "H");
   st := EXT_LLVM.genCallbackTable(
-    modelSymbolPrefix(modelName),
+    modelFilePrefix(),
     0      /* isFmu */,
     hasNls,
     hasLs,
@@ -2438,7 +2443,7 @@ protected
   list<Integer> counters;
 algorithm
   counters := modelDataCounters(simCode);
-  st := EXT_LLVM.genSetupDataStrucFull(modelSymbolPrefix(modelName), counters);
+  st := EXT_LLVM.genSetupDataStrucFull(modelFilePrefix(), counters);
   if st <> 0 then
     fail();
   end if;
@@ -2555,7 +2560,7 @@ protected
   String filePrefix;
 algorithm
   filePrefix := match simCode case SimCode.SIMCODE(fileNamePrefix = filePrefix) then filePrefix; end match;
-  st := EXT_LLVM.genMainShim(modelSymbolPrefix(modelName), filePrefix);
+  st := EXT_LLVM.genMainShim(modelFilePrefix(), filePrefix);
   if st <> 0 then
     fail();
   end if;
@@ -2724,7 +2729,7 @@ protected
   list<String> blockedFiles = {};
   list<String> displaceCandidates = {};
 algorithm
-  prefix := modelSymbolPrefix(modelName);
+  prefix := modelFilePrefix();
   catalog := runtimeEntryCatalog();
   /* Pass 1: classify each entry. An entry is blocked when its body is
    * EB_TODO (file owned by a Block emitter or by clang) or when the
@@ -4677,7 +4682,7 @@ protected function odeEntryName
   input Absyn.Path modelName;
   output String name;
 algorithm
-  name := modelSymbolPrefix(modelName) + "_functionODE";
+  name := modelFilePrefix() + "_functionODE";
 end odeEntryName;
 
 /* ====================================================================== *
@@ -4692,6 +4697,30 @@ algorithm
     case SimCode.SIMCODE(modelInfo=SimCode.MODELINFO(name=name)) then name;
   end match;
 end simCodeName;
+
+protected function simCodeFilePrefix
+  "The C symbol prefix CodegenC uses for this model, namely
+   makeC89Identifier(fileNamePrefix). genSim stashes the result in the
+   Global.simCodeToLLVMFilePrefix root; modelFilePrefix() reads it back."
+  input SimCode.SimCode simCode;
+  output String prefix;
+protected
+  String fp;
+algorithm
+  fp := match simCode case SimCode.SIMCODE(fileNamePrefix = fp) then fp; end match;
+  prefix := System.makeC89Identifier(fp);
+end simCodeFilePrefix;
+
+protected function modelFilePrefix
+  "Per-build model symbol prefix, set once by genSim from the model's
+   fileNamePrefix (see simCodeFilePrefix). Every SCTL caller that builds a
+   model-level symbol name routes through this so the names match CodegenC's
+   clang'd satellites. Use modelSymbolPrefix(path) only for symbols keyed on a
+   non-model path (e.g. a user function's own Absyn.Path)."
+  output String prefix;
+algorithm
+  prefix := getGlobalRoot(Global.simCodeToLLVMFilePrefix);
+end modelFilePrefix;
 
 protected function modelSymbolPrefix
   "C symbol prefix matching CodegenC's makeC89Identifier
