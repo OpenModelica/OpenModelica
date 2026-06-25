@@ -527,12 +527,13 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c/RuntimeSources.mo
 )
 
-# LLVM JIT MetaModelica sources — picked at configure time. Default OFF
+# LLVM backend MetaModelica sources — picked at configure time. Default OFF
 # uses the Stubs/ versions added in Stage 1 of the LLVM revive (see
 # PR #11766 successor); they satisfy the imports added on the branch
 # but execute as no-ops at runtime. ON uses the real LLVM/ modules
-# which drive Compiler/runtime/llvm_gen.cpp.
-if(OM_OMC_ENABLE_LLVM_JIT)
+# which drive Compiler/runtime/llvm_gen.cpp (shared by the JIT and any
+# future AoT path, hence gated on the general OM_OMC_ENABLE_LLVM).
+if(OM_OMC_ENABLE_LLVM)
   list(APPEND OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/LLVM/MidToLLVMUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/LLVM/EXT_LLVM.mo

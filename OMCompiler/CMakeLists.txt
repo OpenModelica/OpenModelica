@@ -38,38 +38,53 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
-# LLVM JIT path for MetaModelica function evaluation (PR #11766 revive).
-# When ON the build finds a host LLVM (>= 16) and wires up the real
-# Compiler/LLVM/* MetaModelica sources plus the Compiler/runtime/llvm_gen.cpp
-# backend; when OFF it links against stubs and -d=jitSimulate no-ops.
+# LLVM backend for the MetaModelica compiler (PR #11766 revive).
+# OM_OMC_ENABLE_LLVM is the general master switch: when ON the build finds a
+# host LLVM (>= 16) and wires up the real Compiler/LLVM/* MetaModelica sources
+# plus the Compiler/runtime/llvm_gen.cpp IR backend; when OFF it links against
+# stubs. It is deliberately general so a future ahead-of-time (AoT) LLVM
+# code path can share the same find/IR-generation infrastructure as the JIT.
 #
-# Default OFF: the JIT is experimental and strictly opt-in. A build that does
-# not pass -DOM_OMC_ENABLE_LLVM_JIT=ON proceeds exactly as before through the
-# stub path, whether or not a host LLVM is installed -- so a machine or CI
+# OM_OMC_ENABLE_LLVM_JIT selects the JIT execution path specifically (the
+# omc_jit_perform_simulation_adapter, -d=jitSimulate). It depends on
+# OM_OMC_ENABLE_LLVM and defaults ON when the LLVM backend is enabled, since
+# the JIT is the only consumer today; an AoT path would be a sibling sub-option.
+#
+# Default OFF: the LLVM backend is experimental and strictly opt-in. A build
+# that does not pass -DOM_OMC_ENABLE_LLVM=ON proceeds exactly as before through
+# the stub path, whether or not a host LLVM is installed -- so a machine or CI
 # image without llvm-dev (which today includes the build-deps image) is
 # completely unaffected, and the mere presence of an LLVM install never changes
-# the default build. Enable it explicitly to build and test the JIT;
+# the default build. Enable it explicitly to build and test the backend;
 # Compiler/runtime then locates the host LLVM, preferring 18 then 16. A
 # non-MSYS clang toolchain on Windows is left open; macOS and MSYS/MinGW Windows
 # are not supported.
-set(OM_OMC_LLVM_JIT_PLATFORM_OK FALSE)
+set(OM_OMC_LLVM_PLATFORM_OK FALSE)
 if(NOT APPLE)
   if(NOT WIN32)
-    set(OM_OMC_LLVM_JIT_PLATFORM_OK TRUE)
+    set(OM_OMC_LLVM_PLATFORM_OK TRUE)
   elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW AND NOT MSYS)
-    set(OM_OMC_LLVM_JIT_PLATFORM_OK TRUE)
+    set(OM_OMC_LLVM_PLATFORM_OK TRUE)
   endif()
 endif()
 
-omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." OFF)
+omc_option(OM_OMC_ENABLE_LLVM "Enable the LLVM backend for the MetaModelica compiler (experimental, revive of PR #11766). Master switch for the JIT and any future AoT path." OFF)
 
 # Safety net: if the option is forced ON on an unsupported platform (macOS,
 # MSYS/MinGW Windows, a non-clang Windows compiler), turn it back off with a
 # warning rather than fail the build.
-if(OM_OMC_ENABLE_LLVM_JIT AND NOT OM_OMC_LLVM_JIT_PLATFORM_OK)
-  message(WARNING "OM_OMC_ENABLE_LLVM_JIT is not supported on this platform; forcing it OFF.")
-  set(OM_OMC_ENABLE_LLVM_JIT OFF CACHE BOOL "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." FORCE)
+if(OM_OMC_ENABLE_LLVM AND NOT OM_OMC_LLVM_PLATFORM_OK)
+  message(WARNING "OM_OMC_ENABLE_LLVM is not supported on this platform; forcing it OFF.")
+  set(OM_OMC_ENABLE_LLVM OFF CACHE BOOL "Enable the LLVM backend for the MetaModelica compiler (experimental, revive of PR #11766). Master switch for the JIT and any future AoT path." FORCE)
 endif()
+
+# JIT execution path. Sub-option of OM_OMC_ENABLE_LLVM: ON by default when the
+# LLVM backend is enabled (the JIT is its only consumer today), forced OFF when
+# OM_OMC_ENABLE_LLVM is OFF.
+include(CMakeDependentOption)
+cmake_dependent_option(OM_OMC_ENABLE_LLVM_JIT
+  "Enable the in-process LLVM JIT simulation path (-d=jitSimulate). Requires OM_OMC_ENABLE_LLVM."
+  ON "OM_OMC_ENABLE_LLVM" OFF)
 
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely

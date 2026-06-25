@@ -62,25 +62,32 @@ set(OMC_RUNTIIME_SOURCES
     OMGraphics.cpp
     OMGraphics_omc.cpp)
 
-# Pick the LLVM JIT backend: real implementation when OM_OMC_ENABLE_LLVM_JIT
-# is ON, otherwise the no-op stubs. The stubs match the symbol list expected
-# by Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
-if(OM_OMC_ENABLE_LLVM_JIT)
+# Pick the LLVM backend: real implementation when OM_OMC_ENABLE_LLVM is ON,
+# otherwise the no-op stubs. The stubs match the symbol list expected by
+# Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
+if(OM_OMC_ENABLE_LLVM)
   # llvm_gen_wrappers.c defines run_jit_internal which llvm_gen.cpp
-  # forward-declares and the JIT path calls at runtime.
-  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c
-    omc_jit_perform_simulation_adapter.c)
+  # forward-declares and the JIT path calls at runtime. llvm_gen.cpp is the
+  # shared IR backend (the eventual AoT path would use it too).
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c)
   # llvm_gen_layout.c uses offsetof() on the runtime DATA struct, so it
   # needs the simulation_data.h header on its include path. The header
   # itself lives in OMCompiler/SimulationRuntime/c/ and is part of the
   # runtime build; we only need its layout, not the full runtime here.
-  # omc_jit_perform_simulation_adapter.c re-uses the runtime's solver
-  # .inc files and needs the same include path.
   set_source_files_properties(
     llvm_gen_layout.c
-    omc_jit_perform_simulation_adapter.c
     PROPERTIES INCLUDE_DIRECTORIES
       "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
+  # JIT execution path: the perform-simulation adapter is JIT-specific.
+  # omc_jit_perform_simulation_adapter.c re-uses the runtime's solver
+  # .inc files and needs the same include path.
+  if(OM_OMC_ENABLE_LLVM_JIT)
+    list(APPEND OMC_RUNTIIME_SOURCES omc_jit_perform_simulation_adapter.c)
+    set_source_files_properties(
+      omc_jit_perform_simulation_adapter.c
+      PROPERTIES INCLUDE_DIRECTORIES
+        "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
+  endif()
 else()
   list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
 endif()
@@ -107,11 +114,12 @@ if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 endif()
 
-# LLVM JIT (revive of PR #11766). Prefer LLVM 18 then 16. The JIT backend
+# LLVM backend (revive of PR #11766). Prefer LLVM 18 then 16. The backend
 # uses Core, MCJIT, Orc (legacy ORCv1 in the branch — Stage 3 will port to
 # ORCv2), TransformUtils, IPO and the native target. Component names are
-# resolved via llvm_map_components_to_libnames.
-if(OM_OMC_ENABLE_LLVM_JIT)
+# resolved via llvm_map_components_to_libnames. Gated on the general
+# OM_OMC_ENABLE_LLVM so a future AoT path reuses the same find + libs.
+if(OM_OMC_ENABLE_LLVM)
   # LLVM 16's LLVMSupport export references zstd::libzstd_shared as a link
   # dependency. Some Debian/Ubuntu images ship libzstd.so without the CMake
   # config that defines that target — declare a thin imported shim here so
@@ -151,7 +159,7 @@ if(OM_OMC_ENABLE_LLVM_JIT)
   if(LLVM_PACKAGE_VERSION VERSION_LESS 16)
     message(FATAL_ERROR "OMC LLVM JIT needs LLVM >= 16 (ORC v2 LLJIT); found ${LLVM_PACKAGE_VERSION}.")
   endif()
-  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} for OMC JIT (headers at ${LLVM_INCLUDE_DIRS}).")
+  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} for OMC (headers at ${LLVM_INCLUDE_DIRS}).")
 
   llvm_map_components_to_libnames(LLVM_JIT_LIBS
     core orcjit mcjit executionengine
@@ -161,7 +169,10 @@ if(OM_OMC_ENABLE_LLVM_JIT)
 
   target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})
   target_compile_definitions(omcruntime PUBLIC ${LLVM_DEFINITIONS_LIST})
-  target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM_JIT)
+  # OMC_HAVE_LLVM_JIT advertises the JIT execution path specifically.
+  if(OM_OMC_ENABLE_LLVM_JIT)
+    target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM_JIT)
+  endif()
   # Path to the matching clang/llvm-link, used to lower a model's C to bitcode
   # for the `llvm` simCodeTarget regardless of the configured CC.
   target_compile_definitions(omcruntime PRIVATE OMC_LLVM_TOOLS_DIR="${LLVM_TOOLS_BINARY_DIR}")
