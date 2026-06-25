@@ -54,6 +54,7 @@
 #include <QHelpEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QTextDocument>
 #include <QTimer>
 #include <QToolTip>
 #include <QUrl>
@@ -152,13 +153,17 @@ void ModelicaEditor::onLSPHoverResult(int requestId, const QString &content)
   }
   mPendingHoverRequestId = -1;
   if (!content.isEmpty()) {
-    QToolTip::showText(mLastToolTipGlobalPos, content, mpPlainTextEdit);
+    // The LSP returns Markdown but QToolTip only renders rich text (HTML); convert so it displays formatted.
+    QTextDocument document;
+    document.setMarkdown(content, QTextDocument::MarkdownDialectGitHub);
+    QToolTip::showText(mLastToolTipGlobalPos, document.toHtml(), mpPlainTextEdit);
   }
 }
 
 /*!
  * \brief ModelicaEditor::onLSPDefinitionResult
- * Navigates to the location returned by the LSP go-to-definition request if this editor made the request.
+ * Navigates to the location returned by an LSP go-to-definition or go-to-declaration request if this editor made the request.
+ * Opens the already-loaded class for the target file/line when available, otherwise opens the file as plain text.
  */
 void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &location)
 {
@@ -173,20 +178,24 @@ void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &l
   if (filePath.isEmpty()) {
     return;
   }
-  // Open the file in OMEdit (no-op if already open)
-  MainWindow::instance()->getLibraryWidget()->openFile(filePath, Helper::utf8, true, true);
-  // Navigate to the line (1-based) after the widget is shown
-  int lineNumber = location.range.start.line + 1;
-  QTimer::singleShot(0, this, [lineNumber]() {
-    ModelWidgetContainer *pContainer = MainWindow::instance()->getModelWidgetContainer();
-    if (!pContainer) {
-      return;
+  const int lineNumber = location.range.start.line + 1; // LSP positions are 0-based, OMEdit lines are 1-based
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // Prefer the class already loaded for this file/line; reuse the shared open-at-line helper so navigation
+  // does not re-run omc's grammar check on an isolated library file.
+  if (pLibraryTreeModel->getLibraryTreeItemFromFile(filePath, lineNumber)) {
+    MainWindow::instance()->findFileAndGoToLine(filePath, QString::number(lineNumber));
+    return;
+  }
+  // Not part of a loaded library: open as plain text (loadExternalModel = true) and go to the line in the text item.
+  MainWindow::instance()->getLibraryWidget()->openFile(filePath, Helper::utf8, true, true, true);
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(filePath);
+  if (pLibraryTreeItem) {
+    pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+      pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
+      pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
     }
-    ModelWidget *pModelWidget = pContainer->getCurrentModelWidget();
-    if (pModelWidget && pModelWidget->getEditor()) {
-      pModelWidget->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
-    }
-  });
+  }
 }
 
 /*!
