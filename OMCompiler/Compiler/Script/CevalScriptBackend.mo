@@ -1483,9 +1483,12 @@ algorithm
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
            // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable.
+           // writes the result file directly, instead of spawning an executable;
+           // the wasm target runs the standalone module in a wasmtime subprocess.
            if Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           elseif Config.simCodeTarget() == "wasm" then
+             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
            end if;
@@ -6028,10 +6031,13 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Config.simCodeTarget() <> "wasm-jit" then
-              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
-            else
+            if Config.simCodeTarget() == "wasm-jit" then
               CodegenWasmJit.finishCompile(filenameprefix);
+            elseif Config.simCodeTarget() == "wasm" then
+              // The standalone module was already produced in emitStandalone;
+              // there is nothing to compile/link here.
+            else
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
             end if;
           else
             success := false;

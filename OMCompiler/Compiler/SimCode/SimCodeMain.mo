@@ -710,6 +710,13 @@ algorithm
       SerializeInitXML.simulationInitFile(simCode, guid);
     then ();
 
+    case "wasm" algorithm
+      // Standalone WASI command module (merged model + runtime); run on the
+      // desktop with wasmtime. The module carries its own metadata, so no
+      // _init.xml is needed for a CLI simulate.
+      CodegenWasmJit.emitStandalone(simCode);
+    then ();
+
     case "None"
     then ();
 
