@@ -199,7 +199,7 @@ void MainWindow::startLanguageServer()
   connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
   connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
   QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
-  // Optional library roots the server loads so go-to-definition/declaration can resolve across files.
+  // Optional library roots the server loads so go-to-definition can resolve across files.
   QStringList libraries;
   const QString librariesSetting = pSettings->value("languageServer/libraries").toString().trimmed();
   if (!librariesSetting.isEmpty()) {

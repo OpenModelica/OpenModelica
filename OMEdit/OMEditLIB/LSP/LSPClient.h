@@ -66,14 +66,12 @@ public:
   void closeDocument(const QString &uri);
   int requestHover(const QString &uri, int line, int character);
   int requestDefinition(const QString &uri, int line, int character);
-  int requestDeclaration(const QString &uri, int line, int character);
   int requestDocumentSymbols(const QString &uri);
 
 signals:
   void initialized();
   void hoverResult(int requestId, QString content);
   void definitionResult(int requestId, LSP::Location location);
-  void declarationResult(int requestId, LSP::Location location);
   void documentSymbolsResult(int requestId, QList<LSP::DocumentSymbol> symbols);
   void serverError(QString message);
   void logMessage(QString message, int type);

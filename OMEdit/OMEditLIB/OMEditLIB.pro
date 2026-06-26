@@ -203,7 +203,9 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/Parser.cpp \
   MCP/MCPServer.cpp \
   MCP/MCPToolsDiagram.cpp \
-  MCP/MCPToolsSimulation.cpp
+  MCP/MCPToolsSimulation.cpp \
+  LSP/LSPClient.cpp \
+  LSP/LSPSetupDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Search/FindUsageWidget.h \
@@ -325,7 +327,10 @@ HEADERS  += Util/Helper.h \
   FlatModelica/ExpressionFuncs.h \
   FlatModelica/Parser.h \
   MCP/MCPServer.h \
-  MCP/MCPServerPrivate.h
+  MCP/MCPServerPrivate.h \
+  LSP/LSPClient.h \
+  LSP/LSPProtocol.h \
+  LSP/LSPSetupDialog.h
 
 CONFIG(osg) {
 

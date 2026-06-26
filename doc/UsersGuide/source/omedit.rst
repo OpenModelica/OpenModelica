@@ -2009,18 +2009,18 @@ The feature is opt-in and disabled by default.
 
   -  *Library Paths* - optional semicolon-separated list of Modelica library
      root directories (each containing a ``package.mo``) that the server loads
-     on startup.  These enable *Go to Definition* and *Go to Declaration* and
-     richer hover across files.  Loading large libraries such as the Modelica
-     Standard Library can take a few seconds at startup.
+     on startup.  These enable *Go to Definition* and richer hover across
+     files.  Loading large libraries such as the Modelica Standard Library can
+     take a few seconds at startup.
 
   -  *Log language server messages to the Messages Browser* - when checked,
      messages from the language server are shown in the Messages Browser,
      prefixed with ``LSP``.
 
-Hover information is shown as a tooltip.  *Go to Definition* and
-*Go to Declaration* are available from the editor right-click menu (prefixed
-with ``LSP``) when the server is running.  Enabling or disabling the language
-server takes effect immediately; a restart is not required.
+Hover information is shown as a tooltip.  *Go to Definition* is available from
+the editor right-click menu (marked with the language server icon) when the
+server is running.  Enabling or disabling the language server takes effect
+immediately; a restart is not required.
 
 **Runtime requirement: Node.js**
 

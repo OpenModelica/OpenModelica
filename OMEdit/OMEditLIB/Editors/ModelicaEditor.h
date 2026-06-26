@@ -91,7 +91,6 @@ private:
   QPointer<LSPClient> mConnectedLSPClient;
   bool mLSPDocumentOpened;
   QAction *mpLSPGoToDefinitionAction;
-  QAction *mpLSPGoToDeclarationAction;
   QString documentUri() const;
   bool ensureLanguageServerConnected();
   void notifyLanguageServerContentChanged();
@@ -100,7 +99,6 @@ private slots:
   void onLSPHoverResult(int requestId, const QString &content);
   void onLSPDefinitionResult(int requestId, const LSP::Location &location);
   void goToLSPDefinition();
-  void goToLSPDeclaration();
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;

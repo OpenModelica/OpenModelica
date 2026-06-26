@@ -7077,12 +7077,12 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
   mpAutoDetectButton->setAutoDefault(false);
   connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
-  // Library roots loaded by the server (enables cross-file go-to-definition/declaration)
+  // Library roots loaded by the server (enables cross-file go-to-definition)
   mpLibrariesLabel = new Label(tr("Library Paths:"));
   mpLibrariesTextBox = new QLineEdit;
   mpLibrariesTextBox->setPlaceholderText(tr("Semicolon-separated library roots, e.g. /path/to/Modelica 4.0.0"));
   mpLibrariesTextBox->setToolTip(tr("Modelica library root directories (each containing a package.mo) the language server loads "
-                                    "so go-to-definition and go-to-declaration can resolve across files. Loading large libraries "
+                                    "so go-to-definition can resolve across files. Loading large libraries "
                                     "such as the MSL can take several seconds at startup."));
   // Layout inside group box
   QGridLayout *pGroupBoxLayout = new QGridLayout;

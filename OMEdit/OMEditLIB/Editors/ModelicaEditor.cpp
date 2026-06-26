@@ -52,6 +52,7 @@
 #include <QCompleter>
 #include <QEvent>
 #include <QHelpEvent>
+#include <QIcon>
 #include <QMenu>
 #include <QMessageBox>
 #include <QTextDocument>
@@ -72,7 +73,7 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false),
     mDocumentVersion(1), mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1),
     mConnectedLSPClient(nullptr), mLSPDocumentOpened(false),
-    mpLSPGoToDefinitionAction(nullptr), mpLSPGoToDeclarationAction(nullptr)
+    mpLSPGoToDefinitionAction(nullptr)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
@@ -84,11 +85,9 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   }
   // Install event filter for LSP hover support
   mpPlainTextEdit->viewport()->installEventFilter(this);
-  // LSP navigation actions; added to the context menu only when the server is running
-  mpLSPGoToDefinitionAction = new QAction(tr("LSP: Go to Definition"), this);
+  // LSP navigation action; added to the context menu only when the server is running
+  mpLSPGoToDefinitionAction = new QAction(QIcon(":/Resources/icons/language-server.svg"), tr("Go to Definition"), this);
   connect(mpLSPGoToDefinitionAction, SIGNAL(triggered()), SLOT(goToLSPDefinition()));
-  mpLSPGoToDeclarationAction = new QAction(tr("LSP: Go to Declaration"), this);
-  connect(mpLSPGoToDeclarationAction, SIGNAL(triggered()), SLOT(goToLSPDeclaration()));
 }
 
 ModelicaEditor::~ModelicaEditor()
@@ -162,7 +161,7 @@ void ModelicaEditor::onLSPHoverResult(int requestId, const QString &content)
 
 /*!
  * \brief ModelicaEditor::onLSPDefinitionResult
- * Navigates to the location returned by an LSP go-to-definition or go-to-declaration request if this editor made the request.
+ * Navigates to the location returned by an LSP go-to-definition request if this editor made the request.
  * Opens the already-loaded class for the target file/line when available, otherwise opens the file as plain text.
  */
 void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &location)
@@ -213,7 +212,6 @@ bool ModelicaEditor::ensureLanguageServerConnected()
   if (mConnectedLSPClient != pLSPClient) {
     connect(pLSPClient, SIGNAL(hoverResult(int,QString)), this, SLOT(onLSPHoverResult(int,QString)));
     connect(pLSPClient, SIGNAL(definitionResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
-    connect(pLSPClient, SIGNAL(declarationResult(int,LSP::Location)), this, SLOT(onLSPDefinitionResult(int,LSP::Location)));
     mConnectedLSPClient = pLSPClient;
     mLSPDocumentOpened = false;
   }
@@ -263,24 +261,6 @@ void ModelicaEditor::goToLSPDefinition()
   QString uri = documentUri();
   if (!uri.isEmpty()) {
     mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, cursor.blockNumber(), cursor.columnNumber());
-  }
-}
-
-/*!
- * \brief ModelicaEditor::goToLSPDeclaration
- * Requests textDocument/declaration at the context-menu position.
- */
-void ModelicaEditor::goToLSPDeclaration()
-{
-  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (!pLSPClient || !pLSPClient->isRunning() || !mContextMenuStartPositionValid) {
-    return;
-  }
-  ensureLanguageServerConnected();
-  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(mContextMenuStartPosition);
-  QString uri = documentUri();
-  if (!uri.isEmpty()) {
-    mPendingDefinitionRequestId = pLSPClient->requestDeclaration(uri, cursor.blockNumber(), cursor.columnNumber());
   }
 }
 
@@ -811,7 +791,6 @@ void ModelicaEditor::showContextMenu(QPoint point)
   if (pLSPClient && pLSPClient->isRunning()) {
     pMenu->addSeparator();
     pMenu->addAction(mpLSPGoToDefinitionAction);
-    pMenu->addAction(mpLSPGoToDeclarationAction);
   }
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
