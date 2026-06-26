@@ -38,6 +38,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h> /* memcpy */
+#include <float.h>  /* DBL_MAX */
 
 #include "../options.h"
 #include "../simulation_info_json.h"
@@ -1298,6 +1299,57 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
 }
 
 
+/*! \fn boundedStepFactor
+ *
+ *  Largest fraction lambda in [0,1] of the Newton step dy such that
+ *  x + lambda*dy stays inside [minValue, maxValue] for every component.
+ *  Bounds equal to +/-DBL_MAX (the default min/max) are treated as unbounded.
+ *  Used when the -nlsEnforceMinMax flag is active (ticket #14104).
+ */
+static double boundedStepFactor(int n, const double* x, const double* dy,
+                                const double* minValue, const double* maxValue)
+{
+  int i;
+  double lambda = 1.0;
+  for (i = 0; i < n; i++) {
+    double step = dy[i];
+    if (step > 0.0 && maxValue[i] < DBL_MAX) {
+      double room = maxValue[i] - x[i];           /* distance to upper bound */
+      if (room <= 0.0) {
+        lambda = 0.0;                              /* already at/above max */
+      } else if (step > room) {
+        double l = room / step;
+        if (l < lambda) lambda = l;
+      }
+    } else if (step < 0.0 && minValue[i] > -DBL_MAX) {
+      double room = minValue[i] - x[i];           /* <= 0 when x >= min */
+      if (room >= 0.0) {
+        lambda = 0.0;                              /* already at/below min */
+      } else if (step < room) {
+        double l = room / step;                    /* both negative -> positive */
+        if (l < lambda) lambda = l;
+      }
+    }
+  }
+  if (lambda < 0.0) lambda = 0.0;
+  return lambda;
+}
+
+/*! \fn clampToBounds
+ *
+ *  Project x componentwise into [minValue, maxValue]. Safety net so the
+ *  returned solution respects min/max "by construction" even if the line
+ *  search floor (lambdaMin) slightly overshoots a bound.
+ */
+static void clampToBounds(int n, double* x, const double* minValue, const double* maxValue)
+{
+  int i;
+  for (i = 0; i < n; i++) {
+    if (minValue[i] > -DBL_MAX && x[i] < minValue[i]) x[i] = minValue[i];
+    if (maxValue[i] <  DBL_MAX && x[i] > maxValue[i]) x[i] = maxValue[i];
+  }
+}
+
 /*! \fn solve system with damped Newton-Raphson
  *
  *  \author bbachmann
@@ -1321,6 +1373,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int constraintViolated;
   int solverinfo = 0;
   int lastWasGood = 0; /* boolean, keeps track of previous x */
+  int enforceMinMax = omc_flag[FLAG_NLS_ENFORCE_MIN_MAX]; /* steer/constrain by min/max, ticket #14104 */
 
   int assert = 1;
   DATA* data = solverData->userData->data;
@@ -1336,6 +1389,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
   /* set default solver message */
   solverData->info = 0;
+
+  /* project the initial guess into [min, max] so the iteration starts feasible */
+  if (enforceMinMax) {
+    clampToBounds(solverData->n, x, solverData->minValue, solverData->maxValue);
+  }
 
   /* calculated error of function values */
   error_f_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
@@ -1372,6 +1430,18 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
       /* Damping strategy, performance is very sensitive on the value of lambda */
       lambda1 = 1.0;
+      /* Limit the step so that no unknown leaves its [min, max] interval.
+       * This steers the iteration towards the feasible solution and prevents
+       * unknowns being thrown far out of range by a single Newton step. */
+      if (enforceMinMax) {
+        double lambdaBox = boundedStepFactor(solverData->n, x, solverData->dy0,
+                                             solverData->minValue, solverData->maxValue);
+        if (lambdaBox < lambda1) lambda1 = lambdaBox;
+        /* keep at least lambdaMin to avoid a spurious abort when a bound is
+         * active; clampToBounds() then removes the tiny overshoot */
+        if (lambda1 < lambdaMin) lambda1 = lambdaMin;
+        vecAddScal(solverData->n, x, solverData->dy0, lambda1, solverData->x1);
+      }
       assert = 1;
       firstrun = 1;
       while (assert && (lambda1 > lambdaMin))
@@ -1575,6 +1645,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       else
       {
         vecCopy(solverData->n, solverData->x1, x);
+        if (enforceMinMax) clampToBounds(solverData->n, x, solverData->minValue, solverData->maxValue);
       }
 
       /* update statistics */
@@ -1639,6 +1710,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
     /* updating x */
     vecCopy(solverData->n, solverData->x1, x);
+    if (enforceMinMax) clampToBounds(solverData->n, x, solverData->minValue, solverData->maxValue);
 
     /* calculate jacobian and function values (both stored in fJac, last column is fvec) */
     solverData->fJac_f(solverData, x, solverData->fJac);
