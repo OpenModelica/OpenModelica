@@ -477,7 +477,7 @@ public
       list<tuple<Mode, Value>> buckets = UnorderedMap.toList(buck);
       Mode mode;
       Value val;
-      Integer index, shift;
+      Integer index, shift, merge_start_idx;
       list<Integer> var_lst, eqn_lst;
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
@@ -501,26 +501,32 @@ public
           buckets := list(bucket_tpl for bucket_tpl guard(PseudoBucket.relevant(bucket_tpl)) in buckets);
           shift := listLength(algebraic_loops) + listLength(buckets);
 
+          // Super-node slots must be above ALL equation and variable indices.
+          // When N_vars < N_eqns, using arrayLength(mT)+1 = N_vars+1 can land on a real
+          // equation index that is also an SCC member, causing its ALGEBRAIC_LOOP entry to
+          // be overwritten by the ELEMENT mark of that member.
+          merge_start_idx := max(arrayLength(phase2_adj.m), arrayLength(phase2_adj.mT)) + 1;
+
           // ### 2. initialize super nodes ###
-          super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:arrayLength(phase2_adj.m) + shift));
+          super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:merge_start_idx + shift - 1));
 
           // ### 3. expand matching ###
           index := arrayLength(phase2_matching.eqn_to_var);
-          phase2_matching.eqn_to_var := Array.expandToSize(arrayLength(phase2_matching.eqn_to_var) + shift, phase2_matching.eqn_to_var, -1);
-          for i in index+1:index+shift loop
+          phase2_matching.eqn_to_var := Array.expandToSize(merge_start_idx + shift - 1, phase2_matching.eqn_to_var, -1);
+          for i in index+1:merge_start_idx + shift - 1 loop
             phase2_matching.eqn_to_var[i] := i;
           end for;
 
           index := arrayLength(phase2_matching.var_to_eqn);
-          phase2_matching.var_to_eqn := Array.expandToSize(arrayLength(phase2_matching.var_to_eqn) + shift, phase2_matching.var_to_eqn, -1);
-          for i in index+1:index+shift loop
+          phase2_matching.var_to_eqn := Array.expandToSize(merge_start_idx + shift - 1, phase2_matching.var_to_eqn, -1);
+          for i in index+1:merge_start_idx + shift - 1 loop
             phase2_matching.var_to_eqn[i] := i;
           end for;
 
           // ### 4. adjust transposed matrix ###
-          // 4.1. enlarge transposed matrix by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.mT) + 1;
-          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
+          // 4.1. enlarge transposed matrix to cover all super-node slots
+          index := merge_start_idx;
+          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, merge_start_idx + shift - 1 - arrayLength(phase2_adj.mT));
 
           // 4.2. merge all algebraic loop variables of one scc to one single variable
           for scc in algebraic_loops loop
@@ -541,9 +547,9 @@ public
           end for;
 
           /// ### 5. adjust normal matrix ###
-          // 5.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.m) + 1;
-          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, arrayLength(phase2_adj.m) + shift);
+          // 5.1. transpose the transposed matrix and enlarge it to cover all super-node slots
+          index := merge_start_idx;
+          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, merge_start_idx + shift - 1);
           // 5.2 merge all algebraic loop equations of one scc to one single equation
           for scc in algebraic_loops loop
             mergeLoopNodes(super_nodes, scc, index, true);

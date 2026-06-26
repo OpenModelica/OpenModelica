@@ -324,6 +324,7 @@ protected
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
         comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+
       then (variables, equations, full, matching, comps);
     end match;
 
