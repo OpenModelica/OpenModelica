@@ -297,9 +297,7 @@ fn err(msg: &ErrorTypes::Message, tokens: impl IntoIterator<Item = ArcStr>) -> R
 /// when the path or mtime changed. Returns `None` (after emitting a scripting
 /// error) for unsupported suffixes or open failures.
 fn lock_reader(filename: &ArcStr) -> Result<Option<MutexGuard<'static, Option<CachedReader>>>> {
-    let mtime = std::fs::metadata(filename.as_str())
-        .ok()
-        .and_then(|m| m.modified().ok());
+    let mtime = openmodelica_wasi::fs::modified(filename.as_str()).ok();
     let mut guard = READER_CACHE.lock().unwrap();
     let reuse = matches!(&*guard, Some(c)
         if c.fileName == *filename && mtime.is_some() && c.mtime == mtime);

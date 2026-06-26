@@ -44,11 +44,6 @@ nalgebra = { version = "0.33", default-features = false, features = ["std"] }
 # is translated first).
 regex = "1"
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-# Drop-in Instant/SystemTime over the JS clock (`performance.now`/`Date.now`);
-# std::time::*::now() panics on wasm32-unknown-unknown. See System.rs.
-web-time = "1"
-
 [features]
 # `zeromq` is NOT a default feature: it pulls native libzmq (no wasm target),
 # and a default feature cannot be turned off per-target. The native interactive

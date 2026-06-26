@@ -72,7 +72,7 @@ fn select_grammar(acceptedGram: i32, languageStandardInt: i32) -> Grammar {
 /// file are flagged read-only in their SOURCEINFO. Inlined here so the parser
 /// crate need not depend on the rest of the util crate.
 fn regular_file_writable(path: &str) -> bool {
-    std::fs::OpenOptions::new().write(true).open(path).is_ok()
+    openmodelica_wasi::fs::is_writable(path)
 }
 
 fn report_syntax_messages(info_filename: &str) {
@@ -168,18 +168,11 @@ fn file_timestamp(filename: &str) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `time(NULL)` for string parses, like parseString in Parser/parse.c.
-/// `SystemTime::now` panics on wasm32-unknown-unknown; web-time backs it with
-/// the JS clock there.
+/// `time(NULL)` for string parses, like parseString in Parser/parse.c. The wall
+/// clock comes from `openmodelica_wasi` (JS clock on wasm, where
+/// `std::time::SystemTime::now()` panics).
 fn now_timestamp() -> f64 {
-    #[cfg(not(target_arch = "wasm32"))]
-    use std::time::{SystemTime, UNIX_EPOCH};
-    #[cfg(target_arch = "wasm32")]
-    use web_time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as f64)
-        .unwrap_or(0.0)
+    (openmodelica_wasi::realtime_nanos() / 1_000_000_000) as f64
 }
 
 pub fn parse(

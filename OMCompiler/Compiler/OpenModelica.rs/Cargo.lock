@@ -5164,8 +5164,8 @@ dependencies = [
  "arcstr",
  "metamodelica_derive",
  "num-traits",
+ "openmodelica_wasi",
  "ordered-float",
- "web-time",
 ]
 
 [[package]]
@@ -6043,7 +6043,6 @@ dependencies = [
  "metamodelica",
  "openmodelica_error",
  "openmodelica_wasi",
- "web-time",
  "winnow 0.7.15",
 ]
 
@@ -6498,7 +6497,6 @@ dependencies = [
  "wasm-encoder 0.252.0",
  "wasmer",
  "wasmtime",
- "web-time",
 ]
 
 [[package]]
@@ -6836,7 +6834,6 @@ dependencies = [
  "openmodelica_wasi",
  "regex",
  "roxmltree",
- "web-time",
  "zip",
  "zmq",
 ]
@@ -6856,6 +6853,10 @@ dependencies = [
 [[package]]
 name = "openmodelica_wasi"
 version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "web-time",
+]
 
 [[package]]
 name = "openssl"

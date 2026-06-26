@@ -72,21 +72,8 @@ pub fn valueConstructor<A>(value: &A) -> Result<i32> {
 
 /// Returns the current time in seconds relative to process start.
 /// Not very accurate, intended for diff comparisons.
-// `Instant::now` panics on wasm32-unknown-unknown (no clock); web-time backs it
-// with the JS clock there.
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
-#[cfg(target_arch = "wasm32")]
-use web_time::Instant;
-
-fn getStartInstant() -> Instant {
-    use std::sync::OnceLock;
-    static START: OnceLock<Instant> = OnceLock::new();
-    *START.get_or_init(Instant::now)
-}
-
 pub fn clock() -> Real {
-    OrderedFloat(getStartInstant().elapsed().as_secs_f64())
+    OrderedFloat(openmodelica_wasi::monotonic_nanos() as f64 / 1.0e9)
 }
 
 #[cfg(test)]

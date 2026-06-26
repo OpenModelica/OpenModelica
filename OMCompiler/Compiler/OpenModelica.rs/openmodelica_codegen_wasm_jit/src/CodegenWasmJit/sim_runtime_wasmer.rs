@@ -21,9 +21,22 @@
 use anyhow::{Result, anyhow, bail};
 use std::cell::Cell;
 use std::sync::OnceLock;
-// `web-time` re-exports `std::time` on native (zero cost) and backs `Instant`
-// with the JS monotonic clock on wasm, where `Instant::now()` panics.
-use web_time::Instant;
+
+/// Monotonic instant over `openmodelica_wasi::monotonic_nanos` (wasm-safe;
+/// `std::time::Instant::now()` panics on wasm32-unknown-unknown). Sharing this
+/// one clock means the host bench timers and the WASI guest's
+/// `clock_time_get(MONOTONIC)` measure against the same zero-point. Drop-in for
+/// the `Instant::now()`/`.elapsed()` this module uses.
+#[derive(Clone, Copy)]
+struct Instant(u64);
+impl Instant {
+    fn now() -> Self {
+        Instant(openmodelica_wasi::monotonic_nanos())
+    }
+    fn elapsed(&self) -> std::time::Duration {
+        std::time::Duration::from_nanos(openmodelica_wasi::monotonic_nanos().saturating_sub(self.0))
+    }
+}
 
 use super::{REAL_OFF, ResultKind, SimModel, TIME_OFF};
 use crate::CodegenWasmJitFunctions::WTy;

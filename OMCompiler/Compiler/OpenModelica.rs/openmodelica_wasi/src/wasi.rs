@@ -302,13 +302,13 @@ impl WasiCtx {
 
     /// `fd_filestat_get`: fill a 64-byte `filestat` for an open fd.
     pub fn fd_filestat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
-        let (filetype, size) = match self.fds.get(&fd) {
-            Some(Fd::File { buf, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64),
-            Some(Fd::PreopenDir { .. }) => (FILETYPE_DIRECTORY, 0),
-            Some(Fd::Stdout | Fd::Stderr) => (FILETYPE_CHARACTER_DEVICE, 0),
+        let (filetype, size, mtime) = match self.fds.get(&fd) {
+            Some(Fd::File { buf, vfs_path, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64, crate::mtime(vfs_path).map(|d| d.as_nanos() as u64).unwrap_or(0)),
+            Some(Fd::PreopenDir { .. }) => (FILETYPE_DIRECTORY, 0, 0),
+            Some(Fd::Stdout | Fd::Stderr) => (FILETYPE_CHARACTER_DEVICE, 0, 0),
             None => return ERRNO_BADF,
         };
-        Self::write_filestat(mem, buf, filetype, size)
+        Self::write_filestat(mem, buf, filetype, size, mtime)
     }
 
     /// `path_filestat_get`: stat a file by name relative to a preopen dir.
@@ -316,12 +316,12 @@ impl WasiCtx {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
         let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
         match crate::read(&vfs_path) {
-            Some(b) => Self::write_filestat(mem, buf, FILETYPE_REGULAR_FILE, b.len() as u64),
+            Some(b) => Self::write_filestat(mem, buf, FILETYPE_REGULAR_FILE, b.len() as u64, crate::mtime(&vfs_path).map(|d| d.as_nanos() as u64).unwrap_or(0)),
             None => ERRNO_NOENT,
         }
     }
 
-    fn write_filestat<M: GuestMem>(mem: &mut M, buf: u32, filetype: u8, size: u64) -> i32 {
+    fn write_filestat<M: GuestMem>(mem: &mut M, buf: u32, filetype: u8, size: u64, mtime: u64) -> i32 {
         // dev(0) ino(8) filetype(16) nlink(24) size(32) atim(40) mtim(48) ctim(56)
         if mem.size() < buf as usize + 64 {
             return ERRNO_FAULT;
@@ -331,9 +331,9 @@ impl WasiCtx {
         let _ = Self::wr_u8(mem, buf + 16, filetype);
         let _ = Self::wr_u64(mem, buf + 24, 1); // nlink
         let _ = Self::wr_u64(mem, buf + 32, size);
-        let _ = Self::wr_u64(mem, buf + 40, 0);
-        let _ = Self::wr_u64(mem, buf + 48, 0);
-        let _ = Self::wr_u64(mem, buf + 56, 0);
+        let _ = Self::wr_u64(mem, buf + 40, mtime);
+        let _ = Self::wr_u64(mem, buf + 48, mtime);
+        let _ = Self::wr_u64(mem, buf + 56, mtime);
         ERRNO_SUCCESS
     }
 
@@ -402,18 +402,38 @@ impl WasiCtx {
 
     // ── misc ─────────────────────────────────────────────────────────────────
 
-    pub fn clock_time_get<M: GuestMem>(&mut self, mem: &mut M, _id: u32, _precision: u64, time: u32) -> i32 {
-        if !Self::wr_u64(mem, time, 0) {
+    /// `clock_time_get`: real time, so a guest sees a clock consistent with file
+    /// mtimes. `MONOTONIC` reads an `Instant` (never backwards); everything else
+    /// (`REALTIME` and the cputime clocks) reads the wall clock — the same source
+    /// as the store's mtimes. Sim reproducibility is the seeded RNG's job, not a
+    /// frozen clock.
+    pub fn clock_time_get<M: GuestMem>(&mut self, mem: &mut M, id: u32, _precision: u64, time: u32) -> i32 {
+        const CLOCKID_MONOTONIC: u32 = 1;
+        let nanos = if id == CLOCKID_MONOTONIC {
+            crate::monotonic_nanos()
+        } else {
+            crate::realtime_nanos()
+        };
+        if !Self::wr_u64(mem, time, nanos) {
             return ERRNO_FAULT;
         }
         ERRNO_SUCCESS
     }
 
-    /// Deterministic "randomness": enough for libc's HashMap seeding without
-    /// pulling in a host RNG (the simulation result is reproducible anyway).
+    /// `random_get`: real entropy (OS RNG natively, Web Crypto on wasm via
+    /// getrandom). Simulations that need reproducible draws use explicit seeds,
+    /// so the host RNG here doesn't compromise that. Falls back to a deterministic
+    /// fill if the host RNG is somehow unavailable, so libc HashMap seeding can't
+    /// hard-fail at startup.
     pub fn random_get<M: GuestMem>(&mut self, mem: &mut M, buf: u32, len: u32) -> i32 {
-        for i in 0..len {
-            if !Self::wr_u8(mem, buf + i, (i as u8).wrapping_mul(31).wrapping_add(17)) {
+        let mut bytes = vec![0u8; len as usize];
+        if getrandom::fill(&mut bytes).is_err() {
+            for (i, b) in bytes.iter_mut().enumerate() {
+                *b = (i as u8).wrapping_mul(31).wrapping_add(17);
+            }
+        }
+        for (i, b) in bytes.iter().enumerate() {
+            if !Self::wr_u8(mem, buf + i as u32, *b) {
                 return ERRNO_FAULT;
             }
         }

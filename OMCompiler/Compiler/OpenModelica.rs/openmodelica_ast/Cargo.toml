@@ -15,8 +15,4 @@ winnow.workspace = true
 # (ErrorExt::addSourceMessage), like the C parser links against errorext.
 openmodelica_error.workspace = true
 
-# SystemTime over the JS clock (std::time::*::now panics on wasm). See ParserExt.rs.
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web-time = "1"
-
 [dev-dependencies]

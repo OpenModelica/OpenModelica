@@ -24,13 +24,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
-// std::time::*::now() panics on wasm32-unknown-unknown (no clock); web-time
-// provides the same API backed by the JS clock there. `Duration` is clock-free,
-// so it stays from std on both.
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
-#[cfg(target_arch = "wasm32")]
-use web_time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, bail};
 use arcstr::{ArcStr, literal};
@@ -68,14 +61,16 @@ struct SysState {
     tick_max: Vec<i32>,
 
     // realtime stopwatches keyed by clockIndex. Each slot remembers either
-    // a running start (`Instant`) or the accumulated duration since the last
-    // `realtimeAccumulate`. `ntick` counts the number of completed tick/tock
-    // pairs — used by profiler reports.
+    // a running start (monotonic-clock nanos) or the accumulated duration since
+    // the last `realtimeAccumulate`. `ntick` counts the number of completed
+    // tick/tock pairs — used by profiler reports. The clock is
+    // `openmodelica_wasi::monotonic_nanos` so the host and the WASI guest
+    // (`clock_time_get` MONOTONIC) share one monotonic source.
     rt: HashMap<i32, RtSlot>,
 
     // Free-running timer with a stack (start/stop/reset). Mirrors the
     // `rt_timer_t` global the C runtime uses for `getTimerElapsedTime`.
-    timer_running: Option<Instant>,
+    timer_running: Option<u64>,
     timer_accum: f64,
     timer_last_interval: f64,
     timer_stack: i32,
@@ -90,7 +85,7 @@ struct SysState {
 
 #[derive(Clone, Copy)]
 enum RtSlot {
-    Running { start: Instant, accumulated_ns: u128, ntick: i32 },
+    Running { start: u64, accumulated_ns: u128, ntick: i32 },
     Stopped { accumulated_ns: u128, ntick: i32 },
 }
 
@@ -99,9 +94,7 @@ thread_local! {
         // Seed the LCG from system time so test runs are non-deterministic
         // unless the caller explicitly resets it. The exact constants don't
         // matter — see intRand below.
-        rng: SystemTime::now().duration_since(UNIX_EPOCH)
-            .map(|d| d.as_nanos() as u64)
-            .unwrap_or(1) | 1,
+        rng: openmodelica_wasi::realtime_nanos() | 1,
         ..SysState::default()
     });
 }
@@ -872,8 +865,7 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
     // given prefix until one creates successfully. The prefix is a *path
     // prefix*, not a parent directory, matching the .mo semantics.
     for _ in 0..32 {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH)
-            .map(|d| d.subsec_nanos()).unwrap_or(0);
+        let nanos = (openmodelica_wasi::realtime_nanos() % 1_000_000_000) as u32;
         let salt: u32 = with(|s| {
             s.rng = s.rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
             (s.rng >> 33) as u32
@@ -1224,8 +1216,7 @@ pub fn getLoadModelPath(
 }
 
 pub fn time() -> metamodelica::Real {
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs_f64()).unwrap_or(0.0);
+    let secs = openmodelica_wasi::realtime_nanos() as f64 / 1.0e9;
     metamodelica::OrderedFloat(secs)
 }
 
@@ -1398,8 +1389,7 @@ pub fn getCurrentDateTime() -> (i32, i32, i32, i32, i32, i32) {
     // `year` is the full year (e.g. 2026). chrono isn't a dependency, so
     // compute by hand from a unix timestamp: this is good enough for the
     // `getCurrentTimeStr` formatter, which is the only consumer.
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64).unwrap_or(0);
+    let secs = (openmodelica_wasi::realtime_nanos() / 1_000_000_000) as i64;
     let (year, mon, mday, hour, min, sec) = epoch_to_civil(secs);
     (sec, min, hour, mday, mon, year)
 }
@@ -1548,7 +1538,7 @@ fn rt_slot_mut(s: &mut SysState, idx: i32) -> &mut RtSlot {
 pub fn realtimeTick(clockIndex: i32) -> Result<()> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        *slot = RtSlot::Running { start: Instant::now(), accumulated_ns: 0, ntick: 0 };
+        *slot = RtSlot::Running { start: openmodelica_wasi::monotonic_nanos(), accumulated_ns: 0, ntick: 0 };
     });
     Ok(())
 }
@@ -1566,7 +1556,7 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
         let slot = rt_slot_mut(s, clockIndex);
         match slot {
             RtSlot::Running { start, ntick, .. } => {
-                let elapsed = start.elapsed().as_nanos();
+                let elapsed = openmodelica_wasi::monotonic_nanos().saturating_sub(*start) as u128;
                 *ntick += 1;
                 elapsed
             }
@@ -1588,7 +1578,7 @@ pub fn realtimeAccumulate(clockIndex: i32) -> Result<metamodelica::Real> {
         let slot = rt_slot_mut(s, clockIndex);
         match *slot {
             RtSlot::Running { start, accumulated_ns, ntick } => {
-                let new_acc = accumulated_ns + start.elapsed().as_nanos();
+                let new_acc = accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128;
                 *slot = RtSlot::Stopped { accumulated_ns: new_acc, ntick: ntick + 1 };
                 Ok(metamodelica::OrderedFloat(new_acc as f64 / 1.0e9))
             }
@@ -1603,7 +1593,7 @@ pub fn realtimeAccumulated(clockIndex: i32) -> Result<metamodelica::Real> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
         let nanos = match *slot {
-            RtSlot::Running { start, accumulated_ns, .. } => accumulated_ns + start.elapsed().as_nanos(),
+            RtSlot::Running { start, accumulated_ns, .. } => accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
             RtSlot::Stopped { accumulated_ns, .. } => accumulated_ns,
         };
         Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
@@ -1632,7 +1622,7 @@ pub fn resetTimer() {
 pub fn startTimer() {
     with(|s| {
         if s.timer_running.is_none() {
-            s.timer_running = Some(Instant::now());
+            s.timer_running = Some(openmodelica_wasi::monotonic_nanos());
         }
         s.timer_stack += 1;
     });
@@ -1640,7 +1630,7 @@ pub fn startTimer() {
 pub fn stopTimer() {
     with(|s| {
         if let Some(t0) = s.timer_running.take() {
-            let elapsed = t0.elapsed().as_secs_f64();
+            let elapsed = openmodelica_wasi::monotonic_nanos().saturating_sub(t0) as f64 / 1.0e9;
             s.timer_last_interval = elapsed;
             s.timer_accum += elapsed;
         }
@@ -1656,7 +1646,7 @@ pub fn getTimerCummulatedTime() -> metamodelica::Real {
 pub fn getTimerElapsedTime() -> metamodelica::Real {
     metamodelica::OrderedFloat(with(|s| {
         match s.timer_running {
-            Some(t0) => s.timer_accum + t0.elapsed().as_secs_f64(),
+            Some(t0) => s.timer_accum + openmodelica_wasi::monotonic_nanos().saturating_sub(t0) as f64 / 1.0e9,
             None => s.timer_accum,
         }
     }))

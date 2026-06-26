@@ -196,8 +196,8 @@ pub fn releaseFMIImport(
 /// entry paths. Unix permissions are restored like in `Unzip.unzipPath`
 /// (rw-r--r-- base for files, rwxr-xr-x for directories).
 fn extract_fmu(zip_path: &str, dest_dir: &str) -> Result<(), ()> {
-    let file = std::fs::File::open(zip_path).map_err(|_| ())?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|_| ())?;
+    let bytes = openmodelica_wasi::fs::read(zip_path).map_err(|_| ())?;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|_| ())?;
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|_| ())?;
         // Skip entries that would escape the destination (zip-slip). The C
@@ -205,16 +205,17 @@ fn extract_fmu(zip_path: &str, dest_dir: &str) -> Result<(), ()> {
         // safer and never triggers for well-formed FMUs.
         let Some(rel) = entry.enclosed_name() else { continue };
         let out_path = std::path::Path::new(dest_dir).join(rel);
+        let out_str = out_path.to_string_lossy();
         if entry.is_dir() {
-            std::fs::create_dir_all(&out_path).map_err(|_| ())?;
+            openmodelica_wasi::fs::create_dir_all(&out_str).map_err(|_| ())?;
             continue;
         }
         if let Some(parent) = out_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|_| ())?;
+            openmodelica_wasi::fs::create_dir_all(&parent.to_string_lossy()).map_err(|_| ())?;
         }
         let mut contents = Vec::new();
         entry.read_to_end(&mut contents).map_err(|_| ())?;
-        std::fs::write(&out_path, contents).map_err(|_| ())?;
+        openmodelica_wasi::fs::write(&out_str, &contents).map_err(|_| ())?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

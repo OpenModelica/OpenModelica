@@ -24,6 +24,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
 
 pub mod wasi;
 pub mod fs;
@@ -123,33 +124,84 @@ fn normalize(path: &str) -> String {
 
 // ──────────────────────────── writable store ─────────────────────────────────
 
-fn store() -> &'static Mutex<HashMap<String, Vec<u8>>> {
-    static STORE: OnceLock<Mutex<HashMap<String, Vec<u8>>>> = OnceLock::new();
+/// A stored file: its bytes plus the wall-clock modification time, kept as a
+/// `Duration` since the Unix epoch (clock-free to store; `Default` = the epoch).
+#[derive(Default)]
+struct Entry {
+    data: Vec<u8>,
+    mtime: Duration,
+}
+
+/// "Now" as a duration since the Unix epoch. `std::time::SystemTime::now()`
+/// panics on wasm32-unknown-unknown, so the JS clock (`web-time`) is used there;
+/// every other target (native, wasip1) uses the std wall clock.
+fn now_since_epoch() -> Duration {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_time::SystemTime::now().duration_since(web_time::SystemTime::UNIX_EPOCH).unwrap_or_default()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap_or_default()
+    }
+}
+
+/// Wall-clock time in nanoseconds since the Unix epoch (WASI `REALTIME`). Same
+/// source as file mtimes, so a guest can compute a file's age consistently.
+pub fn realtime_nanos() -> u64 {
+    now_since_epoch().as_nanos() as u64
+}
+
+/// Monotonic time in nanoseconds since the first call (WASI `MONOTONIC`). Backed
+/// by `Instant` (`performance.now` on web): high-resolution and never runs
+/// backwards, unlike the wall clock — the right source for measuring elapsed time.
+pub fn monotonic_nanos() -> u64 {
+    #[cfg(target_arch = "wasm32")]
+    use web_time::Instant;
+    #[cfg(not(target_arch = "wasm32"))]
+    use std::time::Instant;
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_nanos() as u64
+}
+
+fn store() -> &'static Mutex<HashMap<String, Entry>> {
+    static STORE: OnceLock<Mutex<HashMap<String, Entry>>> = OnceLock::new();
     STORE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 /// Write `bytes` to `path`, replacing any existing entry.
 pub fn write(path: &str, bytes: Vec<u8>) {
-    store().lock().unwrap().insert(normalize(path), bytes);
+    let mtime = now_since_epoch();
+    store().lock().unwrap().insert(normalize(path), Entry { data: bytes, mtime });
 }
 
 /// Append `bytes` to `path`, creating it if absent.
 pub fn append(path: &str, bytes: &[u8]) {
-    store()
-        .lock()
-        .unwrap()
-        .entry(normalize(path))
-        .or_default()
-        .extend_from_slice(bytes);
+    let mtime = now_since_epoch();
+    let mut s = store().lock().unwrap();
+    let e = s.entry(normalize(path)).or_default();
+    e.data.extend_from_slice(bytes);
+    e.mtime = mtime;
 }
 
 /// Read `path`: an exact store entry wins, otherwise the embedded builtin whose
 /// basename matches. Returns `None` if neither exists.
 pub fn read(path: &str) -> Option<Vec<u8>> {
-    if let Some(b) = store().lock().unwrap().get(&normalize(path)) {
-        return Some(b.clone());
+    if let Some(e) = store().lock().unwrap().get(&normalize(path)) {
+        return Some(e.data.clone());
     }
     builtin_by_basename(basename(path)).map(|s| s.as_bytes().to_vec())
+}
+
+/// The modification time of `path` as a duration since the Unix epoch: a stored
+/// file's last-write wall-clock time (the JS clock on the web target), the epoch
+/// (`0`) for an immutable embedded builtin, `None` when neither exists. Drives
+/// mtime-based caching ([`fs::modified`]) and the WASI `filestat` mtim field.
+pub fn mtime(path: &str) -> Option<Duration> {
+    if let Some(e) = store().lock().unwrap().get(&normalize(path)) {
+        return Some(e.mtime);
+    }
+    builtin_by_basename(basename(path)).map(|_| Duration::ZERO)
 }
 
 /// True when [`read`] would succeed for `path` (a stored file).
@@ -214,5 +266,24 @@ mod normalize_tests {
         assert_eq!(normalize("a\\b"), "/a/b");
         assert_eq!(normalize("/"), "/");
         assert_eq!(normalize(""), "/");
+    }
+}
+
+#[cfg(test)]
+mod mtime_tests {
+    use super::{mtime, write};
+    use std::time::Duration;
+
+    #[test]
+    fn records_write_time() {
+        assert_eq!(mtime("/mt/missing"), None);
+        write("/mt/a", b"1".to_vec());
+        // A stored file reports a real wall-clock time (past the epoch); an
+        // unchanged file keeps that stamp so the read cache hits.
+        let t0 = mtime("/mt/a").unwrap();
+        assert!(t0 > Duration::ZERO);
+        assert_eq!(mtime("/mt/a"), Some(t0));
+        // Embedded builtins are immutable: a stable stamp at the epoch.
+        assert_eq!(mtime("ModelicaBuiltin.mo"), Some(Duration::ZERO));
     }
 }

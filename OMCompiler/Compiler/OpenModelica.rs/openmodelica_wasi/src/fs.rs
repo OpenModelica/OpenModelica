@@ -175,8 +175,11 @@ pub fn len(path: &str) -> io::Result<u64> {
 
 pub fn modified(path: &str) -> io::Result<SystemTime> {
     if IN_MEMORY {
-        // The store keeps no timestamps; "newer than" checks then tie.
-        if crate::exists(path) { Ok(SystemTime::UNIX_EPOCH) } else { Err(not_found(path)) }
+        // The store keeps the write time as a duration since the epoch (real
+        // wall clock via the JS `Date.now` on web); rebuild a SystemTime from it.
+        crate::mtime(path)
+            .map(|d| SystemTime::UNIX_EPOCH + d)
+            .ok_or_else(|| not_found(path))
     } else {
         std::fs::metadata(path)?.modified()
     }

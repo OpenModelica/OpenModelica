@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-web-time = "1"
 openmodelica_wasi.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_sim_meta.workspace = true
