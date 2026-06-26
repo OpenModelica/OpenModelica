@@ -1455,7 +1455,7 @@ fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
   int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
   int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
-  if (invalidState(comp, "omcGetFMUstate", meStates, csStates))
+  if (invalidState(comp, "omcSetFMUstate", meStates, csStates))
     return fmi3Error;
 
   INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;

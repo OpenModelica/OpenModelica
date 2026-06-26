@@ -1320,8 +1320,8 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
 
   if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
     return fmi2Error;
@@ -1404,10 +1404,10 @@ fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
 
-  if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
+  if (invalidState(comp, "fmi2SetFMUstate", meStates, csStates))
     return fmi2Error;
 
   INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
@@ -1455,8 +1455,8 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
 
   if (invalidState(comp, "fmi2FreeFMUstate", meStates, csStates))
     return fmi2Error;
