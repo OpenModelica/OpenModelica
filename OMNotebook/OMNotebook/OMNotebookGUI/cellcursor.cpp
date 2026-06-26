@@ -559,6 +559,14 @@ namespace IAEX
     //      emit positionChanged(x(), y(), 5, 5);
   }
 
+  void CellCursor::setFocus(bool)
+  {
+  }
+
+  QString CellCursor::text()
+  {
+    return QString();
+  }
 
   /*! \class CursorWidget
   *

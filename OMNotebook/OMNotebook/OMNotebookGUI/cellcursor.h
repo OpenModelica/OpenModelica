@@ -76,22 +76,22 @@ namespace IAEX
     void moveBefore(Cell *current);
     void moveAfter(Cell *current);
 
-    virtual void accept(Visitor &v);
-    virtual QString text(){return QString();}
+    virtual void accept(Visitor &v) override;
+    virtual QString text() override;
 
     //Flag
     bool isEditable() const override;
     bool isClickedOn();
 
   public slots:
-    virtual void setFocus(bool){}
+    virtual void setFocus(bool) override;
 
   signals:
     void changedPosition();
     void positionChanged(int x, int y, int xm, int ym);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
 
   private:
     void cursorIsMoved();
