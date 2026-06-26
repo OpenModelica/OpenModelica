@@ -65,7 +65,7 @@ namespace IAEX
    class NullFactory : public Factory
    {
    public:
-      virtual Cell *createCell(const QString &, Cell * = nullptr) { return nullptr; }
+      virtual Cell *createCell(const QString &, Cell * = nullptr) override { return nullptr; }
    };
 }
 #endif

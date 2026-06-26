@@ -66,7 +66,7 @@ namespace IAEX
       CellParserFactory();
       virtual ~CellParserFactory();
 
-      std::unique_ptr<NBParser> createParser(QString filename, Factory *f, Document *document, int readmode);
+      std::unique_ptr<NBParser> createParser(QString filename, Factory *f, Document *document, int readmode) override;
    };
 };
 

@@ -105,7 +105,7 @@ namespace IAEX
 
     virtual ~SaveDocumentCommand(){}
 
-    void execute()
+    void execute() override
     {
       try
       {
@@ -219,7 +219,7 @@ namespace IAEX
   public:
     OpenFileCommand(const QString filename) : filename_(filename){}
     virtual ~OpenFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -252,7 +252,7 @@ namespace IAEX
     OpenOldFileCommand( const QString filename, int readmode )
       : filename_( filename ), readmode_( readmode ){}
     virtual ~OpenOldFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -286,7 +286,7 @@ namespace IAEX
     PrintDocumentCommand( Document *doc, QPrinter *printer )
       : doc_( doc ), printer_( printer ){}
     virtual ~PrintDocumentCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -325,7 +325,7 @@ namespace IAEX
   public:
     CloseFileCommand(){}
     virtual ~CloseFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -353,7 +353,7 @@ namespace IAEX
   public:
     NewFileCommand(){}
     virtual ~NewFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -385,7 +385,7 @@ namespace IAEX
     ExportToPureText(Document *doc, const QString filename)
       :filename_(filename), doc_(doc){}
     virtual ~ExportToPureText(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -430,7 +430,7 @@ namespace IAEX
     EvalSelectedCells( Document *doc )
       :doc_(doc){}
     virtual ~EvalSelectedCells(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -502,7 +502,7 @@ namespace IAEX
     UpdateChapterCounters( Document *doc )
       :doc_(doc){}
     virtual ~UpdateChapterCounters(){}
-    void execute()
+    void execute() override
     {
       try
       {

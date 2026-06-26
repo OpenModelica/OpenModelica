@@ -111,7 +111,7 @@ namespace IAEX
       virtual ~CursorWidget(){}
 
   protected:
-    void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event) override;
   };
 }
 #endif

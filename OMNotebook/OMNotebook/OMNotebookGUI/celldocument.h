@@ -75,91 +75,91 @@ namespace IAEX
     virtual ~CellDocument();
 
     void setApplication(CellApplication *app){app_ = app;}
-    CellApplication *application(){ return app_;}
+    CellApplication *application() override { return app_;}
 
     //Document implementations
-    virtual void open( const QString filename, int readmode = READMODE_NORMAL );
-    virtual void close();
-    virtual QString getFilename();
-    virtual void setFilename( QString filename );  //AF
-    virtual void setSaved( bool saved );      //AF
+    virtual void open( const QString filename, int readmode = READMODE_NORMAL ) override;
+    virtual void close() override;
+    virtual QString getFilename() override;
+    virtual void setFilename( QString filename ) override;   //AF
+    virtual void setSaved( bool saved ) override;       //AF
 
-    virtual void attach(DocumentView *d);
-    virtual void detach(DocumentView *d);
-    virtual void notify();
+    virtual void attach(DocumentView *d) override;
+    virtual void detach(DocumentView *d) override;
+    virtual void notify() override;
 
     // Cursor methods
-    virtual void cursorStepUp();
-    virtual void cursorStepDown();
-    virtual void cursorAddCell();
-    virtual void cursorUngroupCell();
-    virtual void cursorSplitCell();
-    virtual void cursorDeleteCell();
-    virtual void cursorCutCell();
-    virtual void cursorCopyCell();
-    virtual void cursorPasteCell();
-    virtual void cursorChangeStyle(CellStyle style);
+    virtual void cursorStepUp() override;
+    virtual void cursorStepDown() override;
+    virtual void cursorAddCell() override;
+    virtual void cursorUngroupCell() override;
+    virtual void cursorSplitCell() override;
+    virtual void cursorDeleteCell() override;
+    virtual void cursorCutCell() override;
+    virtual void cursorCopyCell() override;
+    virtual void cursorPasteCell() override;
+    virtual void cursorChangeStyle(CellStyle style) override;
 
     // TextCursor operations
-    virtual void textcursorCutText();
-    virtual void textcursorCopyText();
-    virtual void textcursorPasteText();
-    virtual void textcursorChangeFontFamily( QString family );
-    virtual void textcursorChangeFontFace( int face );
-    virtual void textcursorChangeFontSize( int size );
-    virtual void textcursorChangeFontStretch( int stretch );
-    virtual void textcursorChangeFontColor( QColor color );
-    virtual void textcursorChangeTextAlignment( int alignment );
-    virtual void textcursorChangeVerticalAlignment( int alignment );
-    virtual void textcursorChangeMargin( int margin );
-    virtual void textcursorChangePadding( int padding );
-    virtual void textcursorChangeBorder( int border );
+    virtual void textcursorCutText() override;
+    virtual void textcursorCopyText() override;
+    virtual void textcursorPasteText() override;
+    virtual void textcursorChangeFontFamily( QString family ) override;
+    virtual void textcursorChangeFontFace( int face ) override;
+    virtual void textcursorChangeFontSize( int size ) override;
+    virtual void textcursorChangeFontStretch( int stretch ) override;
+    virtual void textcursorChangeFontColor( QColor color ) override;
+    virtual void textcursorChangeTextAlignment( int alignment ) override;
+    virtual void textcursorChangeVerticalAlignment( int alignment ) override;
+    virtual void textcursorChangeMargin( int margin ) override;
+    virtual void textcursorChangePadding( int padding ) override;
+    virtual void textcursorChangeBorder( int border ) override;
 
     // Image operations
-    virtual void textcursorInsertImage( QString filepath, QSize size );
-    virtual QString addImage( QImage image );
-    virtual QImage getImage( QString name );
+    virtual void textcursorInsertImage( QString filepath, QSize size ) override;
+    virtual QString addImage( QImage image ) override;
+    virtual QImage getImage( QString name ) override;
 
     // Link operations
-    virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor);
+    virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor) override;
 
     //State operations
-    virtual bool hasChanged() const;
-    bool isOpen() const;
-    bool isSaved() const;
-    bool isEmpty() const;
+    virtual bool hasChanged() const override;
+    bool isOpen() const override;
+    bool isSaved() const override;
+    bool isEmpty() const override;
 
     //Cursor operations
-    CellCursor *getCursor();
-    Factory *cellFactory();
-    Cell* getMainCell();
-    std::vector<Cell*> getSelection();
+    CellCursor *getCursor() override;
+    Factory *cellFactory() override;
+    Cell* getMainCell() override;
+    std::vector<Cell*> getSelection() override;
 
     //Command
-    void executeCommand(std::unique_ptr<Command> cmd);
+    void executeCommand(std::unique_ptr<Command> cmd) override;
 
     //Traversals.
-    void runVisitor(Visitor &v);
+    void runVisitor(Visitor &v) override;
 
-    virtual void setAutoIndent2(bool);
+    virtual void setAutoIndent2(bool) override;
 
     //observer
-    QFrame *getState();
+    QFrame *getState() override;
 
   public slots:
     void toggleMainTreeView();
     void setEditable(bool editable);
     void cursorChangedPosition();
-    void updateScrollArea();
-    void setChanged( bool changed );
-    void hoverOverUrl( const QUrl &link );
+    void updateScrollArea() override;
+    void setChanged( bool changed ) override;
+    void hoverOverUrl( const QUrl &link ) override;
     void selectedACell(Cell *selected, Qt::KeyboardModifiers);
-    void clearSelection();
+    void clearSelection() override;
     void mouseClickedOnCell(Cell *clickedCell);
     void mouseClickedOnCellOutput(Cell *clickedCell);
     void linkClicked(const QUrl *url);
 //    void anchorClicked(const QUrl *url);
-    virtual void cursorMoveAfter(Cell *aCell, bool open);
+    virtual void cursorMoveAfter(Cell *aCell, bool open) override;
     void showHTML(bool b);
 
 
@@ -174,7 +174,7 @@ namespace IAEX
 
   protected:
     void setWorkspace(Cell *newWorkspace);
-    bool eventFilter(QObject *o, QEvent *e);
+    bool eventFilter(QObject *o, QEvent *e) override;
 
   private:
     void addSelectedCell( Cell* cell );
