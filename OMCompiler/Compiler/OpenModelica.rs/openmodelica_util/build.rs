@@ -9,8 +9,16 @@ fn main() {
         return;
     }
 
-    println!("cargo:rustc-link-lib=dylib=lapack");
-    println!("cargo:rustc-link-lib=dylib=blas");
+    // The nalgebra LAPACK fallback (Lapack_nalgebra.rs) replaces the system-LAPACK
+    // FFI on Windows (no MSVC-ABI LAPACK) and under the `lapack-nalgebra` feature,
+    // so there is nothing to link in those configurations. The C error shim below
+    // (used by dynload) is still built.
+    let nalgebra_lapack = std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
+        || std::env::var("CARGO_FEATURE_LAPACK_NALGEBRA").is_ok();
+    if !nalgebra_lapack {
+        println!("cargo:rustc-link-lib=dylib=lapack");
+        println!("cargo:rustc-link-lib=dylib=blas");
+    }
 
     // Runtime error interception shim for evaluated external C functions
     // (see src/runtime_error_shim.c and the rebinding in dynload::ensure_runtime).

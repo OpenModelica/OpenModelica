@@ -52,7 +52,7 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
 // QtWebEngine stubs come in via DocumentationWidget.h on wasm.
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEnginePage>
@@ -1537,7 +1537,7 @@ void DocumentationViewer::setFocusInternal()
  */
 void DocumentationViewer::createActions()
 {
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
   // QWebEnginePage shim has no page actions (action() returns nullptr).
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
@@ -1651,7 +1651,7 @@ void DocumentationViewer::showContextMenu(QPoint point)
 {
   QMenu menu(this);
   // add QWebPage default actions
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
   // QWebEnginePage shim has no page actions.
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   menu.addAction(page()->action(QWebEnginePage::SelectAll));

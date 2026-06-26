@@ -4735,9 +4735,8 @@ dependencies = [
 
 [[package]]
 name = "libffi-sys"
-version = "4.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71d4f1d4ce15091955144350b75db16a96d4a63728500122706fb4d29a26afbb"
+version = "4.2.0"
+source = "git+https://github.com/sjoelund/libffi-rs?branch=cargo-xwin-assembler#9f98f03d0ce7e50fa3d9723f664ea5ededd0c24e"
 dependencies = [
  "cc",
 ]
@@ -4793,7 +4792,7 @@ dependencies = [
  "openmodelica_script_util",
  "openmodelica_scripting_qt",
  "openmodelica_util",
- "openmodelica_vfs",
+ "openmodelica_wasi",
  "wasm-bindgen",
  "web-sys",
  "zip",
@@ -6043,7 +6042,7 @@ dependencies = [
  "loop_unwrap",
  "metamodelica",
  "openmodelica_error",
- "openmodelica_vfs",
+ "openmodelica_wasi",
  "web-time",
  "winnow 0.7.15",
 ]
@@ -6494,7 +6493,7 @@ dependencies = [
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_util",
- "openmodelica_vfs",
+ "openmodelica_wasi",
  "ordered-float",
  "wasm-encoder 0.252.0",
  "wasmer",
@@ -6722,7 +6721,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
- "openmodelica_vfs",
+ "openmodelica_wasi",
  "zip",
 ]
 
@@ -6834,7 +6833,7 @@ dependencies = [
  "nalgebra 0.33.3",
  "openmodelica_error",
  "openmodelica_util_datatypes_basic",
- "openmodelica_vfs",
+ "openmodelica_wasi",
  "regex",
  "roxmltree",
  "web-time",
@@ -6855,7 +6854,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openmodelica_vfs"
+name = "openmodelica_wasi"
 version = "0.1.0"
 
 [[package]]

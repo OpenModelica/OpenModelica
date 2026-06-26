@@ -65,7 +65,7 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
         }
     };
     #[cfg(target_arch = "wasm32")]
-    let reader = match openmodelica_vfs::read(zip_file_name) {
+    let reader = match openmodelica_wasi::read(zip_file_name) {
         Some(bytes) => std::io::Cursor::new(bytes),
         None => {
             add_error("Failed to open file: %s", &[zip_file_name]);
@@ -147,8 +147,11 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
                     add_error("Failed to open file for writing %s", &[&out_path]);
                     return Err(());
                 }
-                use std::os::unix::fs::PermissionsExt;
-                let _ = std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(0o755));
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(0o755));
+                }
             }
             continue;
         }
@@ -181,15 +184,19 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
                     }
                 }
             }
-            use std::os::unix::fs::PermissionsExt;
             // Restore permissions from the entry: keep user-execute and all
             // group/other bits, with rw-r--r-- as the base — exactly the
             // `((external_fa >> 16) & 0x7F) | 0644` computation in om_unzip.c.
-            let mode = (entry.unix_mode().unwrap_or(0) & 0o177) | 0o644;
-            if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err()
+            // Windows has no unix permission bits, so this is unix-only.
+            #[cfg(unix)]
             {
-                add_error("fchmod failed for %s: %s", &[&out_path, "set_permissions failed"]);
-                return Err(());
+                use std::os::unix::fs::PermissionsExt;
+                let mode = (entry.unix_mode().unwrap_or(0) & 0o177) | 0o644;
+                if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err()
+                {
+                    add_error("fchmod failed for %s: %s", &[&out_path, "set_permissions failed"]);
+                    return Err(());
+                }
             }
         }
         #[cfg(target_arch = "wasm32")]
@@ -199,7 +206,7 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
                 add_error("minizip failed to open read data in %s", &[zip_file_name]);
                 return Err(());
             }
-            openmodelica_vfs::write(&out_path, data);
+            openmodelica_wasi::write(&out_path, data);
         }
     }
     Ok(())

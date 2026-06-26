@@ -65,4 +65,8 @@ wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "HtmlCanvasElement", "Performance"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1", features = ["time"] }
+# Runtime-agnostic timer: the dioxus webview / Blitz event loops don't run a
+# Tokio runtime with the time driver where use_future's task is polled, so a
+# tokio timer panics with "no reactor running". futures-timer uses its own
+# background thread and needs no reactor.
+futures-timer = "3"

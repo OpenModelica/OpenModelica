@@ -1950,23 +1950,45 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
     ("Curl", Some("Curl_wasm.rs")),
     // OMSimulator scripting API; drives the dropped OMSimulatorExt (libOMSimulator).
     ("CevalScriptOMSimulator", Some("CevalScriptOMSimulator_wasm.rs")),
-    // FFI to system LAPACK/BLAS (d*_ routines); no LAPACK to link on wasm.
-    ("Lapack", Some("Lapack_wasm.rs")),
+    // FFI to system LAPACK/BLAS (d*_ routines); the pure-Rust nalgebra fallback
+    // replaces it on wasm (no LAPACK to link), on Windows (no MSVC-ABI LAPACK)
+    // and under the `lapack-nalgebra` feature (see stub_active_cfg).
+    ("Lapack", Some("Lapack_nalgebra.rs")),
 ];
 
+/// The cfg predicate under which a gated module's hand-written stub is used
+/// instead of its native implementation. The default is "wasm only"; a few
+/// modules also fall back on Windows (no buildable native dependency there):
+///   * `Lapack` — no MSVC-ABI LAPACK; also opt-in on any target via the
+///     `lapack-nalgebra` feature (lets the fallback be testsuite-validated).
+/// (FFI uses the system libffi on Windows — built from the GNU-syntax `win64.S`
+/// with clang-cl — so it keeps the native module there.)
+fn stub_active_cfg(name: &str) -> &'static str {
+    match name {
+        "Lapack" => {
+            "any(target_arch = \"wasm32\", target_os = \"windows\", feature = \"lapack-nalgebra\")"
+        }
+        _ => "target_arch = \"wasm32\"",
+    }
+}
+
 /// Emit a top-level `pub mod NAME;`, cfg-gating the native-only modules listed
-/// in [`WASM_GATED_TOP_MODULES`] so the wasm build drops or stubs them.
+/// in [`WASM_GATED_TOP_MODULES`] so the wasm (and, for some, Windows) build
+/// drops or stubs them — see [`stub_active_cfg`].
 fn emit_top_mod_decl(out: &mut String, name: &str) {
     match WASM_GATED_TOP_MODULES.iter().find(|(m, _)| *m == name) {
         Some((_, Some(stub))) => {
-            writeln!(out, "#[cfg(not(target_arch = \"wasm32\"))]").unwrap();
+            let cfg = stub_active_cfg(name);
+            writeln!(out, "#[cfg(not({cfg}))]").unwrap();
             writeln!(out, "pub mod {name};").unwrap();
-            writeln!(out, "#[cfg(target_arch = \"wasm32\")]").unwrap();
+            writeln!(out, "#[cfg({cfg})]").unwrap();
             writeln!(out, "#[path = \"{stub}\"]").unwrap();
             writeln!(out, "pub mod {name};").unwrap();
         }
         Some((_, None)) => {
-            writeln!(out, "#[cfg(not(target_arch = \"wasm32\"))]").unwrap();
+            // Dropped where the stub is active, present (native) elsewhere.
+            let cfg = stub_active_cfg(name);
+            writeln!(out, "#[cfg(not({cfg}))]").unwrap();
             writeln!(out, "pub mod {name};").unwrap();
         }
         None => {

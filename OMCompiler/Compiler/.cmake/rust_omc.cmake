@@ -89,6 +89,31 @@ else()
   set(RUST_OMC_TARGET_SUBDIR "debug")
 endif()
 
+# ---------------------------------------------------------------------------
+# Cross-compile the omc *artifacts* (cdylib + launcher + GUI clients) for
+# RUST_OMC_TARGET via `cargo xwin`; the build tools stay on/for the host. Empty
+# = native build. Only *-windows-msvc is wired (cargo-xwin targets MSVC); the
+# artifacts then land in target/<triple>/<profile>/ with .exe/.dll names.
+set(RUST_OMC_TARGET "" CACHE STRING
+    "Rust target triple to cross-compile the omc artifacts for via cargo-xwin (e.g. x86_64-pc-windows-msvc). Empty = native host build.")
+if(RUST_OMC_TARGET)
+  if(NOT RUST_OMC_TARGET MATCHES "windows-msvc$")
+    message(FATAL_ERROR "RUST_OMC_TARGET=${RUST_OMC_TARGET} is unsupported; only *-windows-msvc triples are wired (cargo-xwin).")
+  endif()
+  # The dev profile selects the cranelift rustc backend, which cannot target
+  # windows-msvc; a cross build must use release (LLVM backend).
+  if(NOT RUST_OMC_PROFILE STREQUAL "release")
+    message(FATAL_ERROR "Cross-compiling (RUST_OMC_TARGET set) requires -DRUST_OMC_PROFILE=release (the dev profile's cranelift backend cannot target ${RUST_OMC_TARGET}).")
+  endif()
+  set(RUST_OMC_ARTIFACT_SUBDIR ${RUST_OMC_TARGET}/${RUST_OMC_TARGET_SUBDIR})
+  set(RUST_OMC_EXE_SUFFIX ".exe")
+  set(RUST_OMC_CDYLIB_NAME "OpenModelicaCompiler.dll")
+else()
+  set(RUST_OMC_ARTIFACT_SUBDIR ${RUST_OMC_TARGET_SUBDIR})
+  set(RUST_OMC_EXE_SUFFIX "")
+  set(RUST_OMC_CDYLIB_NAME "libOpenModelicaCompiler.so")
+endif()
+
 # Cargo incremental compilation: ON for fast local iteration, OFF for CI (set by
 # RUST_OMC_CI). Honoured by every cargo invocation via CARGO_ENV below.
 option(RUST_OMC_INCREMENTAL "Use cargo incremental compilation for the Rust omc build (OFF for CI)." ${_rust_omc_incremental_default})
@@ -187,8 +212,24 @@ list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}")
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
 set(CARGO_BUILD ${CARGO_ENV} ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
+# The build tools (mmtorust, susan, scripting_api_gen) always run on and target
+# the host, so they use ${CARGO_BUILD} and live in target/<profile>/.
 set(SUSAN_BIN   ${RUST_TARGET_DIR}/release/susan)
 set(MMTORUST_BIN ${RUST_TARGET_DIR}/release/mmtorust)
+
+# ${CARGO_BUILD_ARTIFACT}: the cargo invocation for the omc *artifacts* (cdylib,
+# launcher, native GUI clients). Identical to ${CARGO_BUILD} for a native build;
+# for a cross build (RUST_OMC_TARGET set) it becomes `cargo xwin build --target
+# <triple>`, which wraps cargo with clang-cl + the cached MSVC CRT/SDK. cargo-xwin
+# is a separate cargo subcommand binary; require it up front when cross.
+if(RUST_OMC_TARGET)
+  find_program(CARGO_XWIN_EXECUTABLE cargo-xwin REQUIRED
+               HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+  set(CARGO_BUILD_ARTIFACT ${CARGO_ENV} XWIN_ACCEPT_LICENSE=1
+      ${CARGO_EXECUTABLE} xwin build --target ${RUST_OMC_TARGET} --target-dir ${RUST_TARGET_DIR})
+else()
+  set(CARGO_BUILD_ARTIFACT ${CARGO_BUILD})
+endif()
 
 # ---------------------------------------------------------------------------
 # ctest: run the workspace's cargo tests. The top-level CMakeLists already calls
@@ -443,6 +484,14 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_SCRIPTING_API)
     list(APPEND _rust_omc_features scripting_api)
   endif()
+  # Force the pure-Rust nalgebra LAPACK fallback over the system-LAPACK FFI on a
+  # native build, to validate it against the testsuite. openmodelica_util is a
+  # direct dependency of the cdylib, so its feature can be enabled by the
+  # `<dep>/<feature>` form. (wasm and Windows select it unconditionally already.)
+  option(RUST_OMC_LAPACK_NALGEBRA "Build the native omc with the pure-Rust nalgebra LAPACK fallback instead of system LAPACK (for testsuite validation)." OFF)
+  if(RUST_OMC_LAPACK_NALGEBRA)
+    list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
+  endif()
   list(JOIN _rust_omc_features "," _rust_omc_features_csv)
   set(RUST_OMC_CDYLIB_FEATURES --no-default-features --features ${_rust_omc_features_csv})
 
@@ -459,20 +508,20 @@ function(omc_rust_setup_codegen)
   add_custom_target(rust_libopenmodelica ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
     JOB_SERVER_AWARE TRUE
-    COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} ${RUST_OMC_CDYLIB_FEATURES} -p libopenmodelica_compiler
+    COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} ${RUST_OMC_CDYLIB_FEATURES} -p libopenmodelica_compiler
     # Declares THIS target as the producer of the cdylib (consumed via the
     # IMPORTED OpenModelicaCompiler target's IMPORTED_LOCATION). Enough for Ninja,
     # which tracks byproducts globally; the cross-directory build order for the
     # Unix Makefiles generator is the add_dependencies in omc_rust_setup_omedit.
-    BYPRODUCTS ${RUST_TARGET_DIR}/${RUST_OMC_TARGET_SUBDIR}/libOpenModelicaCompiler.so
+    BYPRODUCTS ${RUST_TARGET_DIR}/${RUST_OMC_ARTIFACT_SUBDIR}/${RUST_OMC_CDYLIB_NAME}
     DEPENDS rust_codegen
-    COMMENT "Rust: building libOpenModelicaCompiler (${RUST_OMC_PROFILE})"
+    COMMENT "Rust: building ${RUST_OMC_CDYLIB_NAME} (${RUST_OMC_PROFILE})"
     VERBATIM)
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
     JOB_SERVER_AWARE TRUE
-    COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica
+    COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p openmodelica
     DEPENDS rust_codegen rust_libopenmodelica
     COMMENT "Rust: building omc (cargo build -p openmodelica, ${RUST_OMC_PROFILE})"
     VERBATIM)
@@ -486,11 +535,19 @@ function(omc_rust_setup_codegen)
   # rpath ($ORIGIN/../lib/<triple>/omc) then resolves both the cdylib and the
   # dlopened runtime libs. Build the targets first: `make && make install`.
   # -------------------------------------------------------------------------
-  set(RUST_OMC_ARTIFACT_DIR ${RUST_TARGET_DIR}/${RUST_OMC_TARGET_SUBDIR})
-  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/openmodelica
-          DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME omc COMPONENT omc)
-  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/libOpenModelicaCompiler.so
-          DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+  set(RUST_OMC_ARTIFACT_DIR ${RUST_TARGET_DIR}/${RUST_OMC_ARTIFACT_SUBDIR})
+  install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/openmodelica${RUST_OMC_EXE_SUFFIX}
+          DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME omc${RUST_OMC_EXE_SUFFIX} COMPONENT omc)
+  # Windows resolves a DLL from the executable's directory, so the cdylib is
+  # installed next to omc.exe in bin/; unix puts the .so under lib/<triple>/omc
+  # (next to the simulation-runtime libs) where the launcher's rpath finds it.
+  if(RUST_OMC_TARGET MATCHES "windows")
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/${RUST_OMC_CDYLIB_NAME}
+            DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
+  else()
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/${RUST_OMC_CDYLIB_NAME}
+            DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+  endif()
 
   # The native egui OMShell client (omshell_egui), built when the GUI clients are
   # enabled (OM_ENABLE_GUI_CLIENTS, the same flag that drives OMEdit). It links the
@@ -500,14 +557,15 @@ function(omc_rust_setup_codegen)
   # The browser build of OMShell is handled by the wasm target (also gated on
   # OM_ENABLE_GUI_CLIENTS).
   if(OM_ENABLE_GUI_CLIENTS)
+    # Serialised after rust_omc: concurrent cargo-xwin runs race on the shared clang-cl wrapper.
     add_custom_target(rust_omshell_egui ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
       JOB_SERVER_AWARE TRUE
-      COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p omshell_egui --bin OMShell-egui
-      DEPENDS rust_codegen
+      COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG} -p omshell_egui --bin OMShell-egui
+      DEPENDS rust_codegen rust_omc
       COMMENT "Rust: building OMShell-egui (${RUST_OMC_PROFILE})"
       VERBATIM)
-    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-egui${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
 
     # The native dioxus client uses Blitz (dioxus-native), not a webview, so the
@@ -517,12 +575,12 @@ function(omc_rust_setup_codegen)
     add_custom_target(rust_omshell_dioxus ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
       JOB_SERVER_AWARE TRUE
-      COMMAND ${CARGO_BUILD} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
+      COMMAND ${CARGO_BUILD_ARTIFACT} ${RUST_OMC_PROFILE_FLAG} ${RUST_OMC_TIMINGS_FLAG}
               -p omshell_dioxus --bin OMShell-dioxus --no-default-features --features native
-      DEPENDS rust_codegen
+      DEPENDS rust_codegen rust_omshell_egui
       COMMENT "Rust: building OMShell-dioxus (native/Blitz, ${RUST_OMC_PROFILE})"
       VERBATIM)
-    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus
+    install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/OMShell-dioxus${RUST_OMC_EXE_SUFFIX}
             DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   endif()
   install(FILES
@@ -565,8 +623,8 @@ function(omc_rust_setup_omedit)
     set(OMC_SCRIPTING_API_QT_DIR ${RUST_OMC_PREBUILT_SCRIPTING_API_QT_DIR}
         CACHE INTERNAL "Generated OpenModelicaScriptingAPIQt C++ sources (prebuilt)")
   else()
-    set(RUST_OMC_ARTIFACT_DIR ${RUST_TARGET_DIR}/${RUST_OMC_TARGET_SUBDIR})
-    set(_cdylib ${RUST_OMC_ARTIFACT_DIR}/libOpenModelicaCompiler.so)
+    set(RUST_OMC_ARTIFACT_DIR ${RUST_TARGET_DIR}/${RUST_OMC_ARTIFACT_SUBDIR})
+    set(_cdylib ${RUST_OMC_ARTIFACT_DIR}/${RUST_OMC_CDYLIB_NAME})
   endif()
 
   # The OpenModelicaCompiler target the Qt GUI clients link: the cargo cdylib,
@@ -581,6 +639,10 @@ function(omc_rust_setup_omedit)
     IMPORTED_NO_SONAME TRUE
     INTERFACE_INCLUDE_DIRECTORIES "${RUST_OMC_DIR}/libopenmodelica_compiler/include;${_simrt_c_inc}"
     INTERFACE_COMPILE_DEFINITIONS OMC_RUST_ABI)
+  # Windows links a DLL through its import library (cargo emits <dll>.lib).
+  if(RUST_OMC_TARGET MATCHES "windows")
+    set_target_properties(OpenModelicaCompiler PROPERTIES IMPORTED_IMPLIB "${_cdylib}.lib")
+  endif()
   # Deps the clients inherited transitively from the C OpenModelicaCompiler but
   # which the cdylib does not carry, so propagate the targets here:
   #   * fmilib (via backendruntime), libzmq (via runtime) — 3rd-party libs.

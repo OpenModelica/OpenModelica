@@ -10,7 +10,7 @@
 // the argument/result `Values`). This module owns the process-global state for
 // that path:
 //
-//   * the `dlopen`ed shared objects and the resolved `in_*` addresses, and
+//   * the loaded shared objects and the resolved `in_*` addresses, and
 //   * the one-time runtime initialisation: `mmc_init()` (GC + thread key) plus
 //     a `threadData` buffer to thread through the generated entry points.
 //
@@ -20,19 +20,16 @@
 // `System` forward here; the `Values` marshalling lives in
 // `openmodelica_script_util` (it needs the frontend `Values` type) and reaches
 // the loaded function through [`function_addr`] and [`thread_data`].
+//
+// The platform dynamic-loading primitives (dlopen/LoadLibrary etc.) live in the
+// [`dl`] submodule, with a POSIX backend and a Windows (kernel32) backend; the
+// rest of the module is platform-neutral.
 
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
 use std::sync::{LazyLock, Mutex};
 
 use anyhow::{Result, bail};
-use libc::{c_int, c_void};
-
-// dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
-#[cfg(target_os = "linux")]
-const DLOPEN_FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW | libc::RTLD_DEEPBIND;
-#[cfg(not(target_os = "linux"))]
-const DLOPEN_FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW;
+use core::ffi::c_void;
 
 // `threadData_t` is 304 bytes in the current runtime; over-allocate generously
 // so a minor runtime struct change cannot make the generated `in_*` wrapper
@@ -40,8 +37,173 @@ const DLOPEN_FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW;
 // pointers the GC could mistake for roots).
 const THREADDATA_SIZE: usize = 4096;
 
+// ---------------------------------------------------------------------------
+// Platform dynamic-loading primitives. The POSIX backend wraps libdl; the
+// Windows backend wraps the kernel32 module API. Both expose the same set of
+// `usize`-handle helpers the loader below is written against.
+// ---------------------------------------------------------------------------
+#[cfg(unix)]
+pub(crate) mod dl {
+    use anyhow::{Result, bail};
+    use core::ffi::c_void;
+    use libc::c_int;
+    use std::ffi::{CStr, CString};
+
+    // dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
+    #[cfg(target_os = "linux")]
+    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW | libc::RTLD_DEEPBIND;
+    #[cfg(not(target_os = "linux"))]
+    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW;
+
+    // C-runtime shared objects external-function libraries link against
+    // (DT_NEEDED), preloaded RTLD_GLOBAL so the loader resolves them.
+    pub const RUNTIME_LIBS: &[&str] =
+        &["libOpenModelicaRuntimeC.so", "libopenblas.so.0", "libomcruntime.so"];
+
+    pub fn last_error() -> String {
+        let e = unsafe { libc::dlerror() };
+        if e.is_null() {
+            "unknown error".to_owned()
+        } else {
+            unsafe { CStr::from_ptr(e) }.to_string_lossy().into_owned()
+        }
+    }
+
+    pub fn open(path: &str) -> Result<usize> {
+        let c = CString::new(path)?;
+        unsafe { libc::dlerror() }; // clear any stale error
+        let h = unsafe { libc::dlopen(c.as_ptr(), FLAGS) };
+        if h.is_null() {
+            bail!("dlopen `{path}`: {}", last_error());
+        }
+        Ok(h as usize)
+    }
+
+    /// Open the running process (resolve symbols already in the image).
+    pub fn open_self() -> Result<usize> {
+        unsafe { libc::dlerror() };
+        let h = unsafe { libc::dlopen(std::ptr::null(), FLAGS) };
+        if h.is_null() {
+            bail!("dlopen process: {}", last_error());
+        }
+        Ok(h as usize)
+    }
+
+    /// Preload a library into the global scope so later loads resolve its
+    /// symbols. Returns true on success.
+    pub fn open_global(name: &str) -> bool {
+        let Ok(c) = CString::new(name) else { return false };
+        unsafe { libc::dlerror() };
+        !unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_NOW) }.is_null()
+    }
+
+    pub fn sym(handle: usize, name: &str) -> Option<usize> {
+        let c = CString::new(name).ok()?;
+        let p = unsafe { libc::dlsym(handle as *mut c_void, c.as_ptr()) };
+        if p.is_null() { None } else { Some(p as usize) }
+    }
+
+    pub fn close(handle: usize) {
+        unsafe { libc::dlclose(handle as *mut c_void) };
+    }
+
+    /// Pin the shared object containing `addr` (re-open it `RTLD_NODELETE`) so a
+    /// later `close` of a function library cannot unload it.
+    pub fn pin_containing(addr: usize) {
+        unsafe {
+            let mut info: libc::Dl_info = std::mem::zeroed();
+            if libc::dladdr(addr as *const c_void, &mut info) != 0 && !info.dli_fname.is_null() {
+                libc::dlopen(info.dli_fname, libc::RTLD_NOW | libc::RTLD_GLOBAL | libc::RTLD_NODELETE);
+            }
+        }
+    }
+}
+
+#[cfg(windows)]
+pub(crate) mod dl {
+    use anyhow::{Result, bail};
+    use core::ffi::{c_char, c_void};
+    use std::ffi::CString;
+
+    type HMODULE = *mut c_void;
+
+    unsafe extern "system" {
+        fn LoadLibraryA(name: *const c_char) -> HMODULE;
+        fn GetModuleHandleA(name: *const c_char) -> HMODULE;
+        fn GetProcAddress(module: HMODULE, name: *const c_char) -> *mut c_void;
+        fn FreeLibrary(module: HMODULE) -> i32;
+        fn GetLastError() -> u32;
+        fn GetModuleHandleExA(flags: u32, addr: *const c_char, module: *mut HMODULE) -> i32;
+    }
+    const GET_MODULE_HANDLE_EX_FLAG_PIN: u32 = 0x1;
+    const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: u32 = 0x4;
+
+    // The Windows DLLs an external-function library depends on are resolved by
+    // the loader through the executable's directory and PATH; preloading them by
+    // name pins the same copy in the process. Names mirror RUNTIME_LIBS above.
+    pub const RUNTIME_LIBS: &[&str] =
+        &["OpenModelicaRuntimeC.dll", "libopenblas.dll", "omcruntime.dll"];
+
+    pub fn last_error() -> String {
+        format!("error {}", unsafe { GetLastError() })
+    }
+
+    pub fn open(path: &str) -> Result<usize> {
+        let c = CString::new(path)?;
+        let h = unsafe { LoadLibraryA(c.as_ptr()) };
+        if h.is_null() {
+            bail!("LoadLibrary `{path}`: {}", last_error());
+        }
+        Ok(h as usize)
+    }
+
+    pub fn open_self() -> Result<usize> {
+        let h = unsafe { GetModuleHandleA(std::ptr::null()) };
+        if h.is_null() {
+            bail!("GetModuleHandle(process): {}", last_error());
+        }
+        Ok(h as usize)
+    }
+
+    pub fn open_global(name: &str) -> bool {
+        let Ok(c) = CString::new(name) else { return false };
+        let h = unsafe { LoadLibraryA(c.as_ptr()) };
+        if h.is_null() {
+            return false;
+        }
+        // Pin it so its globals (PRNG seed, Print/error buffers) survive a
+        // later FreeLibrary of a function DLL.
+        let mut module: HMODULE = std::ptr::null_mut();
+        unsafe {
+            GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_PIN, c.as_ptr(), &mut module);
+        }
+        true
+    }
+
+    pub fn sym(handle: usize, name: &str) -> Option<usize> {
+        let c = CString::new(name).ok()?;
+        let p = unsafe { GetProcAddress(handle as HMODULE, c.as_ptr()) };
+        if p.is_null() { None } else { Some(p as usize) }
+    }
+
+    pub fn close(handle: usize) {
+        unsafe { FreeLibrary(handle as HMODULE) };
+    }
+
+    pub fn pin_containing(addr: usize) {
+        let mut module: HMODULE = std::ptr::null_mut();
+        unsafe {
+            GetModuleHandleExA(
+                GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                addr as *const c_char,
+                &mut module,
+            );
+        }
+    }
+}
+
 struct Registry {
-    /// loadLibrary handle → `dlopen` handle (cast to usize so the map is `Send`).
+    /// loadLibrary handle → module handle (cast to usize so the map is `Send`).
     libs: HashMap<i32, usize>,
     /// lookupFunction handle → `in_*` function address.
     funcs: HashMap<i32, usize>,
@@ -121,25 +283,8 @@ fn install_omc_assert_interception(lib: usize) {
     }
 }
 
-fn last_dlerror() -> String {
-    let e = unsafe { libc::dlerror() };
-    if e.is_null() { "unknown error".to_owned() } else { unsafe { CStr::from_ptr(e) }.to_string_lossy().into_owned() }
-}
-
-fn dlopen_path(path: &str) -> Result<usize> {
-    let c = CString::new(path)?;
-    unsafe { libc::dlerror() }; // clear any stale error
-    let h = unsafe { libc::dlopen(c.as_ptr(), DLOPEN_FLAGS) };
-    if h.is_null() {
-        bail!("dlopen `{path}`: {}", last_dlerror());
-    }
-    Ok(h as usize)
-}
-
 fn dlsym_addr(handle: usize, name: &str) -> Option<usize> {
-    let c = CString::new(name).ok()?;
-    let p = unsafe { libc::dlsym(handle as *mut c_void, c.as_ptr()) };
-    if p.is_null() { None } else { Some(p as usize) }
+    dl::sym(handle, name)
 }
 
 /// Preload the OMC C runtime libraries that external-function shared
@@ -159,27 +304,25 @@ fn ensure_runtime_solibs() {
         // libomcruntime holds process-global state — the System PRNG seed
         // (`system_random_seed`), the Print buffers, the errorext message
         // stack. In the C omc that state lives in the executable and never
-        // resets; pin the library here so the dlclose of a function library
-        // (each `-d=gen` call frees its `.so` afterwards) can never drop its
+        // resets; pin the library here so the close of a function library
+        // (each `-d=gen` call frees its lib afterwards) can never drop its
         // refcount to zero and reset those statics. Its `RTLD_NOW` load needs
         // two symbol sources that the C omc's executable provides by linking
         // them outright: openblas (libomcruntime underlinks LAPACK — `dgesv_`
         // and friends are not in its DT_NEEDED closure), pinned global just
         // before it, and `omc_Error_getCurrentComponent` from the executable's
         // dynamic symbol table (the shim in DynLoadExt.rs).
-        for lib in ["libOpenModelicaRuntimeC.so", "libopenblas.so.0", "libomcruntime.so"] {
+        for lib in dl::RUNTIME_LIBS {
             // First by basename: this resolves through the binary's RUNPATH
             // (`$ORIGIN/../lib/<triple>/omc`, see openmodelica/build.rs) and
             // — crucially — registers the library in ld.so's link map under
             // its DT_NEEDED name, since it has no SONAME. Only then does a
             // dependent library's `NEEDED libOpenModelicaRuntimeC.so` match
             // the already-loaded copy, exactly as it does in the reference
-            // omc process (which links the library outright).
-            let by_name = CString::new(lib).unwrap();
-            unsafe { libc::dlerror() };
-            if !unsafe { libc::dlopen(by_name.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_NOW) }
-                .is_null()
-            {
+            // omc process (which links the library outright). On Windows the
+            // loader resolves DLL dependencies via the exe directory and PATH,
+            // so the basename load both finds and pins the runtime DLL.
+            if dl::open_global(lib) {
                 continue;
             }
             // Fallback for uninstalled layouts (e.g. running from
@@ -188,30 +331,22 @@ fn ensure_runtime_solibs() {
             // references (the link-map name is then the full path).
             let Ok(install_dir) = crate::Settings::getInstallationDirectoryPath() else { return };
             let path = format!("{install_dir}/lib/{}/omc/{lib}", crate::Autoconf::triple);
-            if let Ok(c) = CString::new(path) {
-                unsafe {
-                    libc::dlerror();
-                    libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_NOW);
-                }
-            }
+            dl::open_global(&path);
         }
     });
 }
 
-/// `System.loadLibrary`: `dlopen` the shared object and return a handle.
+/// `System.loadLibrary`: open the shared object and return a handle.
 /// `relative` resolves the name against the current directory like the C
 /// runtime (`./name`); an empty name opens the running process.
 pub fn load_library(path: &str, relative: bool, debug: bool) -> Result<i32> {
     ensure_runtime_solibs();
     let handle = if path.is_empty() {
-        unsafe { libc::dlerror() };
-        let h = unsafe { libc::dlopen(std::ptr::null(), DLOPEN_FLAGS) };
-        if h.is_null() { bail!("dlopen process: {}", last_dlerror()); }
-        h as usize
+        dl::open_self()?
     } else if relative && !path.starts_with('/') {
-        dlopen_path(&format!("./{path}"))?
+        dl::open(&format!("./{path}"))?
     } else {
-        dlopen_path(path)?
+        dl::open(path)?
     };
     let mut reg = REGISTRY.lock().unwrap();
     let idx = reg.next_lib;
@@ -228,7 +363,7 @@ pub fn load_library(path: &str, relative: bool, debug: bool) -> Result<i32> {
 pub fn lookup_function(lib: i32, name: &str) -> Result<i32> {
     let mut reg = REGISTRY.lock().unwrap();
     let handle = *reg.libs.get(&lib).ok_or_else(|| anyhow::anyhow!("lookupFunction: invalid library handle {lib}"))?;
-    let addr = dlsym_addr(handle, name).ok_or_else(|| anyhow::anyhow!("lookupFunction: `{name}` not found: {}", last_dlerror()))?;
+    let addr = dlsym_addr(handle, name).ok_or_else(|| anyhow::anyhow!("lookupFunction: `{name}` not found: {}", dl::last_error()))?;
     let idx = reg.next_func;
     reg.next_func += 1;
     reg.funcs.insert(idx, addr);
@@ -242,13 +377,13 @@ pub fn free_function(func: i32, _debug: bool) -> Result<()> {
     Ok(())
 }
 
-/// `System.freeLibrary`: `dlclose` the shared object. The C runtime itself is
+/// `System.freeLibrary`: close the shared object. The C runtime itself is
 /// pinned (see [`ensure_runtime`]), so closing a function library never unloads
 /// the shared GC/`threadData` state.
 pub fn free_library(lib: i32, _debug: bool) -> Result<()> {
     let handle = REGISTRY.lock().unwrap().libs.remove(&lib);
     if let Some(h) = handle {
-        unsafe { libc::dlclose(h as *mut c_void); }
+        dl::close(h);
     }
     Ok(())
 }
@@ -277,14 +412,11 @@ fn ensure_runtime(reg: &mut Registry) -> Result<()> {
     let &lib = reg.libs.values().next().ok_or_else(|| anyhow::anyhow!("executeFunction: no library loaded"))?;
     let mmc_init = dlsym_addr(lib, "mmc_init").ok_or_else(|| anyhow::anyhow!("runtime symbol `mmc_init` not found"))?;
     let gc_alloc = dlsym_addr(lib, "GC_malloc_uncollectable").ok_or_else(|| anyhow::anyhow!("runtime symbol `GC_malloc_uncollectable` not found"))?;
+    // Pin the runtime shared object: locate it from `mmc_init`'s address and
+    // re-open it so later closes of function libraries leave the GC heap and
+    // `threadData` valid.
+    dl::pin_containing(mmc_init);
     unsafe {
-        // Pin the runtime shared object: locate it from `mmc_init`'s address and
-        // re-open it `RTLD_NODELETE` so later `dlclose`s of function libraries
-        // leave the GC heap and `threadData` valid.
-        let mut info: libc::Dl_info = std::mem::zeroed();
-        if libc::dladdr(mmc_init as *const c_void, &mut info) != 0 && !info.dli_fname.is_null() {
-            libc::dlopen(info.dli_fname, libc::RTLD_NOW | libc::RTLD_GLOBAL | libc::RTLD_NODELETE);
-        }
         let init: extern "C" fn() = std::mem::transmute(mmc_init);
         init();
         let alloc: extern "C" fn(usize) -> *mut c_void = std::mem::transmute(gc_alloc);

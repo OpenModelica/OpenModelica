@@ -21,6 +21,9 @@ libc.workspace=true
 
 # libffi drives FFI.callFunction (external "C" evaluation via dlopen+libffi),
 # which is native-only; wasm uses the FFI_wasm.rs stub and the wasm JIT instead.
+# On Windows-MSVC libffi-sys is made to work via a workspace [patch] that
+# assembles the GNU-syntax win64.S with clang-cl instead of the MASM trampoline
+# (which needs the unavailable ml64) — see the root Cargo.toml.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libffi.workspace=true
 

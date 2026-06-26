@@ -78,7 +78,8 @@ susan = ["dep:openmodelica_susan"]
 engine-wasmer = ["openmodelica_codegen_wasm_jit/engine-wasmer"]
 
 # Enable the native ZeroMQ interactive server (Main.rs uses ZeroMQ.rs). The
-# `zeromq` feature pulls native libzmq, which has no wasm target, so it is
-# only requested off-wasm; wasm builds use ZeroMQ.rs's feature-off fallback.
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# `zeromq` feature pulls native libzmq, which has no wasm target and no
+# MSVC-ABI build here, so it is only requested off-wasm and off-Windows; those
+# builds use ZeroMQ.rs's feature-off fallback (interactive ZMQ unavailable).
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows")))'.dependencies]
 openmodelica_util = { workspace = true, features = ["zeromq"] }

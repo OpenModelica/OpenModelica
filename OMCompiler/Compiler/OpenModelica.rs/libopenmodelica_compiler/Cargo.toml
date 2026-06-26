@@ -31,7 +31,7 @@ libc.workspace = true
 # since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "=0.2.125"
-openmodelica_vfs.workspace = true
+openmodelica_wasi.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C

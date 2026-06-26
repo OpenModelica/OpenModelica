@@ -211,6 +211,7 @@ set(OMEDITLIB_HEADERS MCP/MCPServer.h
                       Element/ElementProperties.h
                       Element/Transformation.h
                       Modeling/DocumentationWidget.h
+                      Modeling/qtwebengine_compat.h
                       Simulation/SimulationOptions.h
                       Simulation/TranslationFlagsWidget.h
                       Simulation/SimulationDialog.h
@@ -314,6 +315,20 @@ set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMC_SCRIPTING_API_QT_DIR}/OpenModel
 set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp GENERATED)
 set_source_files_properties(${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h GENERATED)
 
+# Quick 3D backend: ViewerWidget/ExtraShapes/OpenGLWidget have unguarded osg includes,
+# so swap them for the Quick 3D sources (the shared Visualization* sources keep their
+# osg parts behind OMEDIT_ANIMATION_QUICK3D guards). Mirrors the wasm source set.
+if(OM_OMEDIT_ANIMATION_QUICK3D)
+  list(REMOVE_ITEM OMEDITLIB_SOURCES
+       Animation/ViewerWidget.cpp Animation/ExtraShapes.cpp Animation/OpenGLWidget.cpp)
+  list(REMOVE_ITEM OMEDITLIB_HEADERS
+       Animation/ViewerWidget.h Animation/ExtraShapes.h Animation/OpenGLWidget.h)
+  list(APPEND OMEDITLIB_SOURCES
+       Animation/Quick3D/Quick3DScene.cpp Animation/Quick3D/Quick3DViewerWidget.cpp)
+  list(APPEND OMEDITLIB_HEADERS
+       Animation/Quick3D/Quick3DScene.h Animation/Quick3D/Quick3DViewerWidget.h)
+endif()
+
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
 # Wait for the generated Qt API (rust_codegen); AUTOGEN_TARGET_DEPENDS so AUTOMOC waits too.
@@ -325,13 +340,16 @@ if(OM_OMC_ENABLE_RUST AND TARGET rust_codegen)
 endif()
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-# OpenSceneGraph does not provide imported targets yet. Add includes manually.
-target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
+if(NOT OM_OMEDIT_ANIMATION_QUICK3D)
+  # OpenSceneGraph does not provide imported targets yet. Add includes manually.
+  target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
+endif()
 
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
 if(WIN32)
-  target_compile_definitions(OMEditLib PRIVATE UNICODE)
+  # NOMINMAX: windows.h's min/max macros otherwise break std::numeric_limits<>::max() etc.
+  target_compile_definitions(OMEditLib PRIVATE UNICODE NOMINMAX)
 endif()
 
 if(OM_ENABLE_ENCRYPTION)
@@ -349,7 +367,12 @@ target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+if (MSVC)
+  # Stock-Qt WebEngine crashes in Chromium/ANGLE init on the aqt msvc Qt kit
+  # (OMDev's patched MinGW Qt works); stub it via qtwebengine_compat.h instead of
+  # linking, so OMEdit runs on MSVC without the HTML documentation/traceability views.
+  target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_NO_WEBENGINE)
+elseif (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebEngineWidgets)
 else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
@@ -374,7 +397,14 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
-target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+if(OM_OMEDIT_ANIMATION_QUICK3D)
+  target_compile_definitions(OMEditLib PUBLIC OMEDIT_ANIMATION_QUICK3D)
+  target_link_libraries(OMEditLib PUBLIC
+    Qt${OM_QT_MAJOR_VERSION}::Quick Qt${OM_QT_MAJOR_VERSION}::Quick3D
+    Qt${OM_QT_MAJOR_VERSION}::Qml Qt${OM_QT_MAJOR_VERSION}::QuickWidgets)
+else()
+  target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+endif()
 target_link_libraries(OMEditLib PUBLIC OpenGL::GL)
 
 # Silence OpenGL deprecation warnings on macOS

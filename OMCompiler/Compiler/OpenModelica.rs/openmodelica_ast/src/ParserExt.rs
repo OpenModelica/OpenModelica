@@ -119,13 +119,7 @@ fn run_parse(src: &str, filename: &str, info_filename: &str, grammar: Grammar, r
 /// with the original — and the original bytes are returned so the lexer can
 /// reproduce the per-string-literal warning + ASCII fallback.
 fn read_source_file(filename: &str) -> std::io::Result<(String, Option<Arc<[u8]>>)> {
-    // On wasm there is no OS filesystem; serve the embedded builtins (and any
-    // host-provided files) from the in-memory VFS instead.
-    #[cfg(target_arch = "wasm32")]
-    if let Some(bytes) = openmodelica_wasi::read(filename) {
-        return Ok(sanitize_source_bytes(bytes));
-    }
-    Ok(sanitize_source_bytes(std::fs::read(filename)?))
+    Ok(sanitize_source_bytes(openmodelica_wasi::fs::read(filename)?))
 }
 
 fn sanitize_source_bytes(bytes: Vec<u8>) -> (String, Option<Arc<[u8]>>) {
@@ -168,9 +162,7 @@ fn file_timestamp(filename: &str) -> f64 {
     if std::env::var_os("OPENMODELICA_BACKEND_STUBS").is_some_and(|v| v == "1") {
         return 0.0;
     }
-    std::fs::metadata(filename)
-        .and_then(|m| m.modified())
-        .ok()
+    openmodelica_wasi::fs::modified(filename).ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as f64)
         .unwrap_or(0.0)

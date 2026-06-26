@@ -40,7 +40,9 @@ use std::ffi::{CStr, CString};
 use std::sync::Mutex;
 
 use arcstr::ArcStr;
-use libc::{c_char, c_double, c_int, c_void};
+use libc::{c_char, c_double, c_int};
+
+use crate::dynload::dl;
 
 use crate::Autoconf;
 use crate::Settings;
@@ -62,12 +64,10 @@ fn missing_function(name: &str) -> ! {
 fn resolve(name: &str) -> usize {
     let dll = OMSIMULATOR_DLL.lock().unwrap();
     let Some(handle) = *dll else { missing_function(name) };
-    let c_name = CString::new(name).expect("oms symbol names contain no NUL");
-    let addr = unsafe { libc::dlsym(handle as *mut c_void, c_name.as_ptr()) };
-    if addr.is_null() {
-        missing_function(name);
+    match dl::sym(handle, name) {
+        Some(addr) => addr,
+        None => missing_function(name),
     }
-    addr as usize
 }
 
 /// MetaModelica `String` → C string. MM strings are NUL-terminated in the C
@@ -117,14 +117,19 @@ pub fn loadOMSimulator() -> i32 {
         } else {
             format!("{path}/lib/{}/omc/libOMSimulator{}", Autoconf::triple, Autoconf::dllExt)
         };
-        let c_path = c_string(&ArcStr::from(full_file_name.as_str()));
-        let handle = unsafe { libc::dlopen(c_path.as_ptr(), libc::RTLD_LAZY) };
-        if handle.is_null() {
+        #[cfg(unix)]
+        let handle = {
+            let c_path = c_string(&ArcStr::from(full_file_name.as_str()));
+            unsafe { libc::dlopen(c_path.as_ptr(), libc::RTLD_LAZY) as usize }
+        };
+        #[cfg(windows)]
+        let handle = dl::open(&full_file_name).unwrap_or(0);
+        if handle == 0 {
             // Message and exit status mirror OMSimulator_loadDLL.
             println!("Could not load the dynamic library {full_file_name} Exiting the program");
             std::process::exit(0);
         }
-        *dll = Some(handle as usize);
+        *dll = Some(handle);
     }
     0
 }
@@ -133,7 +138,7 @@ pub fn unloadOMSimulator() -> i32 {
     let mut dll = OMSIMULATOR_DLL.lock().unwrap();
     match dll.take() {
         Some(handle) => {
-            unsafe { libc::dlclose(handle as *mut c_void) };
+            dl::close(handle);
             0
         }
         None => {

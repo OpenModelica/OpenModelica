@@ -44,8 +44,8 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#if defined(__EMSCRIPTEN__)
-#include "Modeling/qtwebengine_compat.h" // QtWebEngine is unavailable on wasm
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+#include "Modeling/qtwebengine_compat.h" // QtWebEngine unavailable on wasm / stubbed on MSVC
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
 #include <QWebEnginePage>

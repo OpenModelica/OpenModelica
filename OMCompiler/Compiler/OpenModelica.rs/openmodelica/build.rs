@@ -13,6 +13,31 @@
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+
+    // The cdylib (libopenmodelica_compiler) is built first by the cmake
+    // `rust_libopenmodelica` target, ordered before this binary, into the cargo
+    // profile directory. Derive that directory from OUT_DIR
+    // (`<target>/<profile>/build/openmodelica-<hash>/out`) — three parents up —
+    // so it is correct with or without a `--target <triple>` subdir.
+    let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR set by cargo");
+    let dir = std::path::Path::new(&out_dir)
+        .ancestors()
+        .nth(3)
+        .expect("OUT_DIR has the <target>/<profile>/build/<pkg>/out layout")
+        .display()
+        .to_string();
+
+    // Windows: link the cdylib's import library directly by path. rustc emits it
+    // as `OpenModelicaCompiler.dll.lib` next to the DLL; passing the full path as
+    // a link arg sidesteps the default `-l` search for `OpenModelicaCompiler.lib`.
+    // DLL dependencies resolve via the executable's directory and PATH at run
+    // time, so no rpath equivalent is needed.
+    if target_os == "windows" {
+        println!("cargo:rustc-link-arg-bins={dir}/OpenModelicaCompiler.dll.lib");
+        println!("cargo:rerun-if-changed={dir}/OpenModelicaCompiler.dll.lib");
+        return;
+    }
+
     let triple = match target_os.as_str() {
         // Same per-OS layout as `Autoconf::triple` in openmodelica_util.
         "linux" => format!("{target_arch}-linux-gnu"),
@@ -20,12 +45,7 @@ fn main() {
         _ => return,
     };
     // Thin-launcher linkage. This binary contains no compiler code; it calls
-    // `omc_cli_run` in libOpenModelicaCompiler.so. That cdylib is built first by
-    // `cargo build -p libopenmodelica_compiler` (the cmake `rust_libopenmodelica`
-    // target, ordered before this binary), which writes it to the cargo profile
-    // directory. Derive that directory from OUT_DIR
-    // (`<target>/<profile>/build/openmodelica-<hash>/out`) — three parents up —
-    // so it is correct with or without a `--target <triple>` subdir.
+    // `omc_cli_run` in libOpenModelicaCompiler.so.
     //
     // Runtime rpath search order matters because more than one copy of the .so
     // can exist. The INSTALL layout comes first (relocatable, `$ORIGIN/../lib/
@@ -34,13 +54,6 @@ fn main() {
     // installed cdylib. In a dev/build tree that path does not exist, so ld.so
     // falls through to the absolute profile dir (the just-built copy), and
     // finally $ORIGIN.
-    let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR set by cargo");
-    let dir = std::path::Path::new(&out_dir)
-        .ancestors()
-        .nth(3)
-        .expect("OUT_DIR has the <target>/<profile>/build/<pkg>/out layout")
-        .display()
-        .to_string();
     println!("cargo:rustc-link-arg-bins=-Wl,-rpath,$ORIGIN/../lib/{triple}/omc");
     println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{dir}");
     // Link `-lOpenModelicaCompiler` as a *trailing* link-arg rather than a

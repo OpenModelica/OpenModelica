@@ -35,6 +35,10 @@ include(cmake/omc_check_exists.cmake)
 ## Get the revision info. The version is saved in the variable SOURCE_REVISION
 include(cmake/omc_git_revision.cmake)
 
+# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W/OpenBLAS/Boost.
+# Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
+include(${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/Compiler/OpenModelica.rs/.cmake/windows-deps.cmake)
+
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
 # well as linux. See the file for more info.

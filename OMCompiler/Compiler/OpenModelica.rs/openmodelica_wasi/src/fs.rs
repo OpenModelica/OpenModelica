@@ -71,6 +71,30 @@ pub fn is_dir(path: &str) -> bool {
     }
 }
 
+pub fn is_file(path: &str) -> bool {
+    if IN_MEMORY {
+        crate::exists(path) && !crate::is_dir(path)
+    } else {
+        std::fs::metadata(path).map(|m| m.is_file()).unwrap_or(false)
+    }
+}
+
+pub fn is_readable(path: &str) -> bool {
+    if IN_MEMORY {
+        crate::exists(path)
+    } else {
+        std::fs::File::open(path).is_ok()
+    }
+}
+
+pub fn is_writable(path: &str) -> bool {
+    if IN_MEMORY {
+        crate::exists(path)
+    } else {
+        std::fs::OpenOptions::new().write(true).open(path).is_ok()
+    }
+}
+
 pub fn remove_file(path: &str) -> io::Result<()> {
     if IN_MEMORY {
         if crate::remove(path) { Ok(()) } else { Err(not_found(path)) }

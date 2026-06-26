@@ -15,7 +15,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Qt6 REQUIRED COMPONENTS
   Widgets PrintSupport Svg Xml Core5Compat Concurrent OpenGL OpenGLWidgets Network
-  CorePrivate)
+  CorePrivate
+  Quick Quick3D Qml QuickWidgets)
 qt_standard_project_setup()
 
 # Qt forces -sERROR_ON_UNDEFINED_SYMBOLS=1 via Qt6::Platform; emcc takes the last
@@ -120,6 +121,22 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp PR
 # QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)
 # rather than guarding its ~40 use sites out.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
+# 3D animation via Qt Quick 3D (OSG does not build for wasm). The renderer-neutral
+# data classes + the Quick 3D backend; the OSG renderer sources (ViewerWidget,
+# ExtraShapes, GLWidget/OpenGLWidget, the OSGScene/UpdateVisitor parts of
+# Visualization.cpp) stay out via the OMEDIT_ANIMATION_QUICK3D guards. FMU animation
+# (VisualizationFMU/FMUWrapper/FMUSettingsDialog) is excluded (no fmilib on wasm).
+list(APPEND OMEDITLIB_SOURCES
+  ${LIB}/Animation/AbstractVisualizer.cpp
+  ${LIB}/Animation/Shape.cpp
+  ${LIB}/Animation/Vector.cpp
+  ${LIB}/Animation/Visualization.cpp
+  ${LIB}/Animation/VisualizationMAT.cpp
+  ${LIB}/Animation/VisualizationCSV.cpp
+  ${LIB}/Animation/AbstractAnimationWindow.cpp
+  ${LIB}/Animation/AnimationWindow.cpp
+  ${LIB}/Animation/Quick3D/Quick3DScene.cpp
+  ${LIB}/Animation/Quick3D/Quick3DViewerWidget.cpp)
 set_source_files_properties(
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/om_format.c
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/d2s.c
@@ -130,7 +147,12 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
 # WITHOUT_OSG: no OpenSceneGraph animation. OMC_RUST_ABI: the MMC-free embedding
 # ABI (omc_rust_embedding.h). PUBLIC so main.cpp inherits both.
-target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI WITHOUT_OSG)
+# OMEDIT_ANIMATION_QUICK3D selects the Qt Quick 3D animation backend (over OSG).
+# WITHOUT_OSG is intentionally NOT defined: it gates off the animation *features*
+# (the New Animation action, addAnimationWindow, simulate-with-animation), which are
+# now available through the Quick 3D backend. OSG-renderer code stays out via the
+# OMEDIT_ANIMATION_QUICK3D guards in Animation/, not via WITHOUT_OSG.
+target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI OMEDIT_ANIMATION_QUICK3D)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
 # Headers for subsystems whose libs aren't linked on wasm (OMSimulator, antlr/
 # OMParser, open62541) compile fine for the static lib; the symbols are deferred.
@@ -145,11 +167,21 @@ target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
   ${OM_ROOT}/OMCompiler/3rdParty/open62541)
 target_link_libraries(OMEditLib PUBLIC
   OMPlotLib Qt6::Widgets Qt6::Xml Qt6::PrintSupport Qt6::Svg Qt6::Concurrent
-  Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Core5Compat Qt6::Network Qt6::CorePrivate)
+  Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Core5Compat Qt6::Network Qt6::CorePrivate
+  # Qt Quick 3D animation backend
+  Qt6::Quick Qt6::Quick3D Qt6::Qml Qt6::QuickWidgets)
 
 # ---- OMEdit executable ----
 qt_add_executable(OMEdit-qt ${GUI}/main.cpp)
 target_link_libraries(OMEdit-qt PRIVATE OMEditLib)
+# Static wasm build: the QtQuick/QtQuick3D/QtQml QML plugins must be linked for the
+# animation View3D. The scene QML is built from inline strings (QQmlComponent::setData),
+# which qmlimportscanner can't see, so a tiny module whose .qml carries the imports
+# makes the scanner pull in (and statically register) those plugins.
+qt_add_qml_module(OMEdit-qt
+  URI OMEditAnimImports
+  VERSION 1.0
+  QML_FILES qml/AnimImports.qml)
 target_link_options(OMEdit-qt PRIVATE
   -sASYNCIFY
   -sASYNCIFY_STACK_SIZE=131072
@@ -163,9 +195,27 @@ target_link_options(OMEdit-qt PRIVATE
   -Wl,--allow-undefined
   -sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToNewUTF8,FS,lengthBytesUTF8,stringToUTF8)
 
-# -g2 keeps wasm function names in browser traces. Don't add -sASSERTIONS: its
-# checkInt32 aborts on Qt's NaN-into-int write in QLocalTime (release tolerates it).
+# -g2 keeps wasm function names in browser traces.
 option(OMEDIT_WASM_DEBUG "Build OMEdit-qt with debug function names" ON)
 if(OMEDIT_WASM_DEBUG)
   target_link_options(OMEdit-qt PRIVATE -g2)
+endif()
+
+# Diagnostic only. -sASSERTIONS makes emscripten print the exact expected-vs-actual
+# signature + offending function on a function-pointer-cast trap (instead of the bare
+# "function signature mismatch"). Caveat: ASSERTIONS' checkInt32 aborts on Qt's
+# NaN-into-int write in QLocalTime (release tolerates it), so an ASSERTIONS build may
+# stop there first; keep OFF for normal builds.
+option(OMEDIT_WASM_ASSERTIONS "Build OMEdit-qt with -sASSERTIONS (diagnostic)" OFF)
+if(OMEDIT_WASM_ASSERTIONS)
+  target_link_options(OMEdit-qt PRIVATE -sASSERTIONS=1)
+endif()
+
+# Diagnostic/unblock. Routes indirect calls through varargs trampolines so a
+# function-pointer call whose pointer type != the call-site type no longer traps
+# ("function signature mismatch"). If this clears the post-qt_add_qml_module crash,
+# the blocker is a fp-cast signature mismatch (heavy: bigger/slower wasm).
+option(OMEDIT_WASM_EMULATE_FP_CASTS "Build OMEdit-qt with -sEMULATE_FUNCTION_POINTER_CASTS (diagnostic)" OFF)
+if(OMEDIT_WASM_EMULATE_FP_CASTS)
+  target_link_options(OMEdit-qt PRIVATE -sEMULATE_FUNCTION_POINTER_CASTS=1)
 endif()

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-openmodelica_vfs.workspace = true
+openmodelica_wasi.workspace = true
 anyhow.workspace=true
 metamodelica.workspace=true
 openmodelica_error.workspace=true
@@ -20,6 +20,11 @@ libc.workspace=true
 roxmltree.workspace=true
 # FMU extraction in the hand-written FMIExt.rs.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# Pure-Rust LAPACK fallback (Lapack_nalgebra.rs), used over the system-LAPACK
+# FFI when the `lapack-nalgebra` feature is on (also auto-selected on wasm and
+# Windows via the target block below). Optional so the normal native FFI build
+# does not compile it.
+nalgebra = { version = "0.33", default-features = false, features = ["std"], optional = true }
 # Safe ZeroMQ bindings for the hand-written ZeroMQ.rs. Optional: the `zeromq`
 # feature (on by default) gates the interactive `--interactive=zmq` server.
 # Native-only: libzmq has no wasm target, so the dep is absent there and the
@@ -28,13 +33,18 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 zmq = { workspace = true, optional = true }
 
-# On wasm there is no system LAPACK to FFI into; Lapack_wasm.rs implements the
-# LAPACK builtins over nalgebra's pure-Rust decompositions (LU/SVD/QR/eigen).
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Lapack_nalgebra.rs implements the LAPACK builtins over nalgebra's pure-Rust
+# decompositions (LU/SVD/QR/eigen). Used unconditionally where there is no
+# linkable system LAPACK: wasm (none) and Windows (no MSVC-ABI build); on other
+# targets the `lapack-nalgebra` feature opts in (the optional dep above).
+[target.'cfg(any(target_arch = "wasm32", target_os = "windows"))'.dependencies]
 nalgebra = { version = "0.33", default-features = false, features = ["std"] }
-# No POSIX libc regcomp/regexec on wasm; System::regex is reimplemented over the
-# pure-Rust `regex` crate (POSIX ERE maps directly; BRE is translated first).
+# No POSIX libc regcomp/regexec on wasm or Windows; System::regex is
+# reimplemented over the pure-Rust `regex` crate (POSIX ERE maps directly; BRE
+# is translated first).
 regex = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 # Drop-in Instant/SystemTime over the JS clock (`performance.now`/`Date.now`);
 # std::time::*::now() panics on wasm32-unknown-unknown. See System.rs.
 web-time = "1"
@@ -49,6 +59,10 @@ default = []
 # ZeroMQ.initialize call reports failure and the interactive ZMQ mode is
 # unavailable, but the build needs neither the zmq crate nor libzmq.
 zeromq = ["dep:zmq"]
+# Use the pure-Rust nalgebra LAPACK fallback (Lapack_nalgebra.rs) instead of the
+# system-LAPACK FFI on a native non-Windows target — lets the fallback be tested
+# against the full testsuite on Linux. (wasm/Windows select it unconditionally.)
+lapack-nalgebra = ["dep:nalgebra"]
 
 [build-dependencies]
 # Compiles src/runtime_error_shim.c (va_list error interception shim).

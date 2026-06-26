@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-openmodelica_vfs.workspace = true
+openmodelica_wasi.workspace = true
 openmodelica_error.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true
@@ -23,5 +23,15 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # Curl_wasm.rs implementation on wasm, so the dep is native-only. On wasm the host
 # performs the transfer (Curl_wasm only bookkeeps via the VFS), so no browser/JS
 # crates are needed here.
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows")))'.dependencies]
 curl.workspace = true
+
+# On Windows there is no system libcurl to link; build the bundled libcurl from
+# source (static-curl). The `ssl` feature selects the OS TLS backend (schannel)
+# on Windows — not OpenSSL (openssl-sys is gated to unix in curl-sys) — without it
+# libcurl has no TLS vtls and https fails with "Unsupported protocol".
+# Declared directly (not `workspace = true`): cargo forbids overriding the
+# workspace dep's default-features when inheriting. Keep the version in sync
+# with workspace.dependencies.curl.
+[target.'cfg(target_os = "windows")'.dependencies]
+curl = { version = "0.4", default-features = false, features = ["static-curl", "ssl"] }

@@ -60,16 +60,8 @@ use read_matlab4::MatReader;
 pub mod result_readers;
 use result_readers::{CsvReader, PltReader, PltVal};
 
-/// Write `bytes` to `path`: the OS filesystem natively, or the in-memory VFS on
-/// wasm (where filtered/diff result files are staged for the JS host to read).
 fn write_output_file(path: &str, bytes: &[u8]) -> std::io::Result<()> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_wasi::write(path, bytes.to_vec());
-        Ok(())
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    std::fs::write(path, bytes)
+    openmodelica_wasi::fs::write(path, bytes)
 }
 
 // Scripting error messages, mirroring the inline `c_add_message(NULL, -1, ...)`
@@ -1074,13 +1066,7 @@ fn write_log_file(
             if dd.interpolate { '1' } else { '0' }
         );
     }
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_wasi::write(filename, s.into_bytes());
-        return Ok(());
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    std::fs::write(filename, s)
+    openmodelica_wasi::fs::write(filename, s.as_bytes())
 }
 
 pub fn cmpSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, mut reffilename: ArcStr, mut logfilename: ArcStr, mut refTol: metamodelica::Real, mut absTol: metamodelica::Real, mut vars: Arc<metamodelica::List<ArcStr>>) -> Result<Arc<metamodelica::List<ArcStr>>> {

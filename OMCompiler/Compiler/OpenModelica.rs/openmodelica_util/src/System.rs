@@ -189,7 +189,7 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
 /// is empty and `nmatch` is 1 on match, 0 otherwise. On a compile error
 /// `nmatch` is 0 and (for `maxMatches > 0`) the error message is the first
 /// element.
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 pub fn regex(
     str: ArcStr,
     re: ArcStr,
@@ -197,7 +197,7 @@ pub fn regex(
     extended: bool,
     ignoreCase: bool,
 ) -> (i32, Arc<List<ArcStr>>) {
-    // POSIX regcomp/regexec are libc-only; on wasm we run the `regex` crate
+    // POSIX regcomp/regexec are libc-only; on wasm and Windows we run the `regex`
     // instead. POSIX ERE maps almost directly onto its syntax; POSIX BRE has the
     // grouping/quantifier metacharacter conventions reversed, so translate first.
     use regex::RegexBuilder;
@@ -280,7 +280,7 @@ pub fn regex(
 /// Backreferences (`\1`…) aren't supported by the crate and don't occur in OMC's
 /// patterns; a literal backslash inside a bracket expression (POSIX-literal, but
 /// an escape to the crate) likewise doesn't occur and is left as-is.
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 fn posix_to_rust(re: &str, extended: bool) -> String {
     let mut out = String::with_capacity(re.len() + 8);
     let mut chars = re.chars().peekable();
@@ -341,7 +341,7 @@ fn posix_to_rust(re: &str, extended: bool) -> String {
     out
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
 pub fn regex(
     str: ArcStr,
     re: ArcStr,
@@ -647,45 +647,19 @@ pub fn freeLibrary(inLibHandle: i32, inPrintDebug: bool) -> Result<()> {
 // ───────────────────────────────── file I/O ──────────────────────────────────
 
 pub fn writeFile(fileNameToWrite: ArcStr, stringToBeWritten: ArcStr) -> Result<()> {
-    // On wasm there is no OS filesystem; keep written files in the in-memory VFS
-    // so the rest of the run (and the JS host) can read them back.
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_vfs::write(fileNameToWrite.as_str(), stringToBeWritten.as_bytes().to_vec());
-        return Ok(());
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        fs::write(fileNameToWrite.as_str(), stringToBeWritten.as_bytes())
-            .with_context(|| format!("System.writeFile: cannot write {}", fileNameToWrite))?;
-        Ok(())
-    }
+    openmodelica_wasi::fs::write(fileNameToWrite.as_str(), stringToBeWritten.as_bytes())
+        .with_context(|| format!("System.writeFile: cannot write {}", fileNameToWrite))?;
+    Ok(())
 }
 
 pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_vfs::append(file.as_str(), data.as_bytes());
-        return Ok(());
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        use std::io::Write as _;
-        let mut f = fs::OpenOptions::new().create(true).append(true)
-            .open(file.as_str())
-            .with_context(|| format!("System.appendFile: cannot open {file}"))?;
-        f.write_all(data.as_bytes())
-            .with_context(|| format!("System.appendFile: cannot write to {file}"))?;
-        Ok(())
-    }
+    openmodelica_wasi::fs::append(file.as_str(), data.as_bytes())
+        .with_context(|| format!("System.appendFile: cannot append to {file}"))?;
+    Ok(())
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
-    #[cfg(target_arch = "wasm32")]
-    let bytes = openmodelica_vfs::read(inString.as_str())
-        .with_context(|| format!("System.readFile: cannot read {inString}"))?;
-    #[cfg(not(target_arch = "wasm32"))]
-    let bytes = fs::read(inString.as_str())
+    let bytes = openmodelica_wasi::fs::read(inString.as_str())
         .with_context(|| format!("System.readFile: cannot read {inString}"))?;
     let s = String::from_utf8(bytes)
         .with_context(|| format!("System.readFile: {inString} is not valid UTF-8"))?;
@@ -735,6 +709,14 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {
+    // Windows has no popen; the C runtime returns this verbatim with status 1.
+    #[cfg(windows)]
+    {
+        let _ = command;
+        return (literal!("Windows does not have popen"), 1);
+    }
+    #[cfg(not(windows))]
+    {
     use std::process::Command;
     match Command::new("/bin/sh").arg("-c").arg(command.as_str()).output() {
         Ok(o) => {
@@ -742,6 +724,7 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
             (ArcStr::from(out), o.status.code().unwrap_or(-1))
         }
         Err(_) => (literal!(""), -1),
+    }
     }
 }
 
@@ -864,7 +847,8 @@ pub fn loadModelCallBack(modelName: ArcStr) {
 // ───────────────────────────────── directory ops ──────────────────────────────
 
 pub fn cd(inString: ArcStr) -> i32 {
-    match std::env::set_current_dir(inString.as_str()) {
+    // fs facade so it also sets the store cwd on wasm (set_current_dir is a no-op there).
+    match openmodelica_wasi::fs::set_cwd(inString.as_str()) {
         Ok(()) => 0,
         Err(_) => -1,
     }
@@ -898,7 +882,7 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
         // VFS directories are implicit, so a unique name is "created" by just
         // returning it (files written under it materialise the directory).
         #[cfg(target_arch = "wasm32")]
-        if !openmodelica_vfs::exists(&candidate) && !openmodelica_vfs::is_dir(&candidate) {
+        if !openmodelica_wasi::exists(&candidate) && !openmodelica_wasi::is_dir(&candidate) {
             return Ok(ArcStr::from(candidate));
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -911,7 +895,18 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
 
 pub fn pwd() -> ArcStr {
     match std::env::current_dir() {
-        Ok(p) => ArcStr::from(p.to_string_lossy().as_ref()),
+        // OMC uses forward slashes on Windows (mirrors the C `SystemImpl__pwd`,
+        // which runs `toWindowsSeperators`, i.e. `\` → `/`). Scripting `cd()`
+        // returns `pwd()`, and callers compare it against forward-slash paths
+        // (e.g. OMShell vs QDir::canonicalPath), so backslashes break them.
+        Ok(p) => {
+            let s = p.to_string_lossy();
+            if cfg!(windows) {
+                ArcStr::from(s.replace('\\', "/"))
+            } else {
+                ArcStr::from(s.as_ref())
+            }
+        }
         Err(_) => literal!(""),
     }
 }
@@ -963,29 +958,13 @@ pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
 }
 
 pub fn subDirectories(inString: ArcStr) -> Arc<List<ArcStr>> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        let out: Vec<ArcStr> = openmodelica_vfs::list_dir(inString.as_str())
-            .into_iter()
-            .filter(|(_, is_dir)| *is_dir)
-            .map(|(name, _)| ArcStr::from(name))
-            .collect();
-        return list_from_vec(out);
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let mut out: Vec<ArcStr> = Vec::new();
-        if let Ok(rd) = fs::read_dir(inString.as_str()) {
-            for ent in rd.flatten() {
-                let p = ent.path();
-                if p.is_dir()
-                    && let Some(name) = p.file_name() {
-                        out.push(ArcStr::from(name.to_string_lossy().as_ref()));
-                    }
-            }
-        }
-        list_from_vec(out)
-    }
+    let out: Vec<ArcStr> = openmodelica_wasi::fs::read_dir(inString.as_str())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|e| e.is_dir)
+        .map(|e| ArcStr::from(e.name))
+        .collect();
+    list_from_vec(out)
 }
 
 fn files_with_ext(dir: &str, ext: &str) -> Vec<ArcStr> {
@@ -997,34 +976,12 @@ fn files_with_ext(dir: &str, ext: &str) -> Vec<ArcStr> {
     // NULL comparator); callers that care sort the combined list themselves.
     let package_file = format!("package.{ext}");
     let dot_ext = format!(".{ext}");
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_vfs::list_dir(dir)
-            .into_iter()
-            .filter(|(name, is_dir)| {
-                !is_dir && name.ends_with(&dot_ext) && name.as_str() != package_file.as_str()
-            })
-            .map(|(name, _)| ArcStr::from(name))
-            .collect()
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let _ = &dot_ext;
-        let mut out: Vec<ArcStr> = Vec::new();
-        if let Ok(rd) = fs::read_dir(dir) {
-            for ent in rd.flatten() {
-                let p = ent.path();
-                if p.is_file()
-                    && p.extension().map(|e| e == ext).unwrap_or(false)
-                    && let Some(name) = p.file_name()
-                    && name.to_string_lossy() != package_file.as_str()
-                {
-                    out.push(ArcStr::from(name.to_string_lossy().as_ref()));
-                }
-            }
-        }
-        out
-    }
+    openmodelica_wasi::fs::read_dir(dir)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|e| !e.is_dir && e.name.ends_with(&dot_ext) && e.name != package_file)
+        .map(|e| ArcStr::from(e.name))
+        .collect()
 }
 
 pub fn moFiles(inString: ArcStr) -> Arc<List<ArcStr>> {
@@ -1129,35 +1086,17 @@ fn get_all_modelica_paths(name: &str, mps: &Arc<List<ArcStr>>) -> Vec<ModelicaPa
 /// Immediate children of `dir` as `(name, is_dir)`: the OS filesystem natively,
 /// the in-memory VFS on wasm. Used by the MODELICAPATH scan.
 fn dir_entries(dir: &str) -> Vec<(String, bool)> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_vfs::list_dir(dir)
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let mut out = Vec::new();
-        if let Ok(rd) = fs::read_dir(dir) {
-            for ent in rd.flatten() {
-                if let Ok(name) = ent.file_name().into_string() {
-                    out.push((name, ent.path().is_dir()));
-                }
-            }
-        }
-        out
-    }
+    openmodelica_wasi::fs::read_dir(dir)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|e| (e.name, e.is_dir))
+        .collect()
 }
 
 /// True when `path` is an existing regular file: the OS filesystem natively, the
 /// VFS on wasm.
 fn path_is_file(path: &str) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_vfs::exists(path)
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        fs::metadata(path).map(|m| m.is_file()).unwrap_or(false)
-    }
+    openmodelica_wasi::fs::is_file(path)
 }
 
 fn version_equal(v1: &[i64], v2: &[i64], num_to_test: usize) -> bool {
@@ -1291,64 +1230,31 @@ pub fn time() -> metamodelica::Real {
 }
 
 pub fn regularFileExists(inString: ArcStr) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    return openmodelica_vfs::exists(inString.as_str());
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::metadata(inString.as_str()).map(|m| m.is_file()).unwrap_or(false)
+    openmodelica_wasi::fs::is_file(inString.as_str())
 }
 
 pub fn regularFileReadable(inString: ArcStr) -> bool {
-    // No portable "readable" probe in std without actually opening — try
-    // and immediately drop. Matches what `access(R_OK)` reports modulo
-    // races. On wasm, a present VFS file is readable.
-    #[cfg(target_arch = "wasm32")]
-    return openmodelica_vfs::exists(inString.as_str());
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::File::open(inString.as_str()).is_ok()
+    openmodelica_wasi::fs::is_readable(inString.as_str())
 }
 
 pub fn regularFileWritable(inString: ArcStr) -> bool {
-    // The VFS is always writable; report writable iff the file exists (matching
-    // the native "open an existing file for writing" probe).
-    #[cfg(target_arch = "wasm32")]
-    return openmodelica_vfs::exists(inString.as_str());
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::OpenOptions::new().write(true).open(inString.as_str()).is_ok()
+    openmodelica_wasi::fs::is_writable(inString.as_str())
 }
 
 pub fn removeFile(fileName: ArcStr) -> i32 {
-    // 0 on success, -1 if the file was absent / could not be removed — matching
-    // the C runtime and `fs::remove_file`. On wasm the file lives in the VFS, so
-    // `fs::remove_file` would always fail (no OS filesystem); route to the VFS.
-    #[cfg(target_arch = "wasm32")]
-    return if openmodelica_vfs::remove(fileName.as_str()) { 0 } else { -1 };
-    #[cfg(not(target_arch = "wasm32"))]
-    match fs::remove_file(fileName.as_str()) {
+    // 0 on success, -1 if the file was absent / could not be removed.
+    match openmodelica_wasi::fs::remove_file(fileName.as_str()) {
         Ok(()) => 0,
         Err(_) => -1,
     }
 }
 
 pub fn directoryExists(inString: ArcStr) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    return openmodelica_vfs::is_dir(inString.as_str());
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::metadata(inString.as_str()).map(|m| m.is_dir()).unwrap_or(false)
+    openmodelica_wasi::fs::is_dir(inString.as_str())
 }
 
 pub fn copyFile(source: ArcStr, destination: ArcStr) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    {
-        match openmodelica_vfs::read(source.as_str()) {
-            Some(bytes) => {
-                openmodelica_vfs::write(destination.as_str(), bytes);
-                true
-            }
-            None => false,
-        }
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::copy(source.as_str(), destination.as_str()).is_ok()
+    openmodelica_wasi::fs::copy(source.as_str(), destination.as_str()).is_ok()
 }
 
 pub fn removeDirectory(inString: ArcStr) -> bool {
@@ -1373,18 +1279,18 @@ pub fn removeDirectory(inString: ArcStr) -> bool {
 #[cfg(target_arch = "wasm32")]
 fn wasm_remove_path(path: &str) -> bool {
     if let Some((pre, post)) = path.split_once('*') {
-        for f in openmodelica_vfs::list() {
+        for f in openmodelica_wasi::list() {
             if f.len() >= pre.len() + post.len() && f.starts_with(pre) && f.ends_with(post) {
-                openmodelica_vfs::remove(&f);
+                openmodelica_wasi::remove(&f);
             }
         }
         return true;
     }
-    openmodelica_vfs::remove(path);
+    openmodelica_wasi::remove(path);
     let prefix = format!("{}/", path.trim_end_matches('/'));
-    for f in openmodelica_vfs::list() {
+    for f in openmodelica_wasi::list() {
         if f.starts_with(&prefix) {
-            openmodelica_vfs::remove(&f);
+            openmodelica_wasi::remove(&f);
         }
     }
     true
@@ -1475,13 +1381,9 @@ pub fn getVariableValue(
 }
 
 pub fn getFileModificationTime(fileName: ArcStr) -> Option<metamodelica::Real> {
-    // The VFS keeps no timestamps; report epoch (0) for a file that exists so
-    // callers get `Some` for present files and `None` for missing ones.
-    #[cfg(target_arch = "wasm32")]
-    return openmodelica_vfs::exists(fileName.as_str()).then(|| metamodelica::OrderedFloat(0.0));
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::metadata(fileName.as_str()).ok()
-        .and_then(|m| m.modified().ok())
+    // The store keeps no timestamps and reports epoch (0) for present files, so
+    // callers get Some for present files and None for missing ones.
+    openmodelica_wasi::fs::modified(fileName.as_str()).ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| metamodelica::OrderedFloat(d.as_secs_f64()))
 }
@@ -2433,48 +2335,27 @@ pub fn getTerminalWidth() -> i32 {
 }
 
 pub fn fileIsNewerThan(file1: ArcStr, file2: ArcStr) -> Result<bool> {
-    // The VFS has no timestamps to compare; conservatively treat `file1` as
-    // newer (so freshness-gated work re-runs) when it exists.
-    #[cfg(target_arch = "wasm32")]
-    {
+    if openmodelica_wasi::fs::IN_MEMORY {
+        // The store has no timestamps; treat file1 as newer when present so
+        // freshness-gated work re-runs.
         let _ = &file2;
-        return Ok(openmodelica_vfs::exists(file1.as_str()));
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let m1 = fs::metadata(file1.as_str()).with_context(|| format!("stat {file1}"))?;
-        let m2 = fs::metadata(file2.as_str()).with_context(|| format!("stat {file2}"))?;
-        Ok(m1.modified()? > m2.modified()?)
+        Ok(openmodelica_wasi::fs::is_file(file1.as_str()))
+    } else {
+        let t1 = openmodelica_wasi::fs::modified(file1.as_str()).with_context(|| format!("stat {file1}"))?;
+        let t2 = openmodelica_wasi::fs::modified(file2.as_str()).with_context(|| format!("stat {file2}"))?;
+        Ok(t1 > t2)
     }
 }
 
 pub fn fileContentsEqual(file1: ArcStr, file2: ArcStr) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    return match (openmodelica_vfs::read(file1.as_str()), openmodelica_vfs::read(file2.as_str())) {
-        (Some(a), Some(b)) => a == b,
-        _ => false,
-    };
-    #[cfg(not(target_arch = "wasm32"))]
-    match (fs::read(file1.as_str()), fs::read(file2.as_str())) {
+    match (openmodelica_wasi::fs::read(file1.as_str()), openmodelica_wasi::fs::read(file2.as_str())) {
         (Ok(a), Ok(b)) => a == b,
         _ => false,
     }
 }
 
 pub fn rename(source: ArcStr, dest: ArcStr) -> bool {
-    #[cfg(target_arch = "wasm32")]
-    {
-        match openmodelica_vfs::read(source.as_str()) {
-            Some(bytes) => {
-                openmodelica_vfs::write(dest.as_str(), bytes);
-                openmodelica_vfs::remove(source.as_str());
-                true
-            }
-            None => false,
-        }
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    fs::rename(source.as_str(), dest.as_str()).is_ok()
+    openmodelica_wasi::fs::rename(source.as_str(), dest.as_str()).is_ok()
 }
 
 pub fn numProcessors() -> i32 {
@@ -2567,37 +2448,21 @@ impl Ord for StatFileType {
 }
 
 pub fn stat(filename: ArcStr) -> (bool, metamodelica::Real, metamodelica::Real, StatFileType) {
-    #[cfg(target_arch = "wasm32")]
-    {
-        let f = filename.as_str();
-        if let Some(bytes) = openmodelica_vfs::read(f) {
-            return (true, metamodelica::OrderedFloat(bytes.len() as f64),
-                    metamodelica::OrderedFloat(0.0), StatFileType::RegularFile);
-        }
-        if openmodelica_vfs::is_dir(f) {
-            return (true, metamodelica::OrderedFloat(0.0),
-                    metamodelica::OrderedFloat(0.0), StatFileType::Directory);
-        }
-        return (false, metamodelica::OrderedFloat(0.0), metamodelica::OrderedFloat(0.0), StatFileType::NoFile);
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    match fs::metadata(filename.as_str()) {
-        Ok(m) => {
-            let size = m.len() as f64;
-            let mtime = m.modified().ok()
-                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                .map(|d| d.as_secs_f64())
-                .unwrap_or(0.0);
-            let kind = if m.is_file() {
-                StatFileType::RegularFile
-            } else if m.is_dir() {
-                StatFileType::Directory
-            } else {
-                StatFileType::SpecialFile
-            };
-            (true, metamodelica::OrderedFloat(size), metamodelica::OrderedFloat(mtime), kind)
-        }
-        Err(_) => (false, metamodelica::OrderedFloat(0.0), metamodelica::OrderedFloat(0.0), StatFileType::NoFile),
+    let f = filename.as_str();
+    let zero = metamodelica::OrderedFloat(0.0);
+    if openmodelica_wasi::fs::is_file(f) {
+        let size = openmodelica_wasi::fs::len(f).unwrap_or(0) as f64;
+        let mtime = openmodelica_wasi::fs::modified(f).ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+        (true, metamodelica::OrderedFloat(size), metamodelica::OrderedFloat(mtime), StatFileType::RegularFile)
+    } else if openmodelica_wasi::fs::is_dir(f) {
+        (true, zero, zero, StatFileType::Directory)
+    } else if openmodelica_wasi::fs::exists(f) {
+        (true, zero, zero, StatFileType::SpecialFile)
+    } else {
+        (false, zero, zero, StatFileType::NoFile)
     }
 }
 
@@ -2632,10 +2497,25 @@ pub fn alarm(seconds: i32) -> i32 {
 }
 
 #[cfg(not(unix))]
-pub fn alarm(_seconds: i32) -> i32 {
-    // The Windows runtime uses the C library's `alarm` directly without a
-    // custom SIGALRM disposition; no MSVC target is built here yet.
-    todo!("System.alarm: non-unix SIGALRM scheduling not yet ported")
+pub fn alarm(seconds: i32) -> i32 {
+    // The C runtime is just `return alarm(seconds)`. The MSVC CRT has no POSIX
+    // `alarm`/SIGALRM, so reproduce its effect (default SIGALRM disposition
+    // terminates the process after the timeout — `--alarm=N` bounds omc's
+    // runtime) with a one-shot watchdog thread. Unlike the C `alarm`, it cannot
+    // be rescheduled or cancelled; `--alarm` is set once at startup, so that is
+    // sufficient. Returns 0 (no previously scheduled alarm is tracked).
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static ARMED: AtomicBool = AtomicBool::new(false);
+    if seconds > 0
+        && ARMED.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok()
+    {
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(seconds as u64));
+            // 128 + SIGALRM(14): the shell convention for an alarm-killed process.
+            std::process::exit(142);
+        });
+    }
+    0
 }
 
 pub fn covertTextFileToCLiteral(_textFile: ArcStr, _outFile: ArcStr, _target: ArcStr) -> bool {

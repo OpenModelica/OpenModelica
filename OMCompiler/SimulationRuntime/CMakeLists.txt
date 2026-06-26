@@ -25,9 +25,15 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
   if(NOT DEFINED PLATFORM AND NOT DEFINED CACHE{PLATFORM})
     set(PLATFORM "static")
   endif()
-  omc_add_subdirectory(OMSI)
-  omc_add_subdirectory(OMSIC)
-  omc_add_subdirectory(OMSICpp)
+  # The OMSI runtimes assume a MinGW/MSYS2 toolchain on Windows (OMSICpp hard-
+  # requires $ENV{MSYSTEM_PREFIX} and bundled-under-OMHOME Boost), so they are
+  # not yet buildable in the MSVC cross build — disable for MSVC, like
+  # ModelicaExternalC / ParModelica above.
+  if(NOT MSVC)
+    omc_add_subdirectory(OMSI)
+    omc_add_subdirectory(OMSIC)
+    omc_add_subdirectory(OMSICpp)
+  endif()
 
   # omc_add_subdirectory(opc)
 

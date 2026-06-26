@@ -6,20 +6,8 @@
 // `read_matlab4.rs`; `SimulationResults.rs` dispatches between the three
 // by file suffix exactly like `SimulationResultsImpl__openFile`.
 
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
-
-/// Read a result file's bytes: the OS filesystem natively, or the in-memory VFS
-/// on wasm (where the simulation wrote its result there).
 fn read_result_bytes(filename: &str) -> Result<Vec<u8>, String> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        openmodelica_wasi::read(filename).ok_or_else(|| format!("No such file: {filename}"))
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        fs::read(filename).map_err(|e| e.to_string())
-    }
+    openmodelica_wasi::fs::read(filename).map_err(|e| e.to_string())
 }
 
 // ─────────────────────────────────── CSV ──────────────────────────────────

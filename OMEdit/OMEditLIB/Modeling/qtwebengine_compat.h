@@ -7,12 +7,16 @@
 // these stubs only let it compile and link. Native builds include the real
 // QtWebEngine headers instead (DocumentationWidget guards the include).
 //
+// Also stubbed for the MSVC (clang-cl cross) build via OM_OMEDIT_NO_WEBENGINE:
+// the aqt msvc Qt's WebEngine crashes in Chromium/ANGLE init (OMDev's patched Qt
+// is fine), so the documentation/traceability views are no-ops there too.
+//
 // The stub bases are Q_OBJECT so moc can chain DocumentationViewer/Documentation
 // Page (which derive from them and carry Q_OBJECT). Methods are inline no-ops;
 // the callback-taking ones (runJavaScript/toHtml) are templates that accept and
 // ignore any functor. Base-class signals are connected via the string-based
 // SIGNAL()/SLOT() macros at the call sites, so they need not be declared here.
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
 
 #include <QWidget>
 #include <QObject>

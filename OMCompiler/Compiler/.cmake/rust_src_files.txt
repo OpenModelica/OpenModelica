@@ -208,7 +208,7 @@ openmodelica_util/src/Global.rs
 openmodelica_util/src/Globals.rs
 openmodelica_util/src/IOStreamExt.rs
 openmodelica_util/src/Lapack.rs
-openmodelica_util/src/Lapack_wasm.rs
+openmodelica_util/src/Lapack_nalgebra.rs
 openmodelica_util/src/OMSimulatorExt.rs
 openmodelica_util/src/Print.rs
 openmodelica_util/src/Settings.rs
@@ -242,8 +242,10 @@ openmodelica_util_datatypes_basic/src/unittests/list_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mod.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_cycle_drop_tests.rs
 openmodelica_util_datatypes_basic/src/unittests/mutable_tests.rs
-openmodelica_vfs/Cargo.toml
-openmodelica_vfs/src/lib.rs
+openmodelica_wasi/Cargo.toml
+openmodelica_wasi/src/lib.rs
+openmodelica_wasi/src/wasi.rs
+openmodelica_wasi/src/fs.rs
 rust-toolchain.toml
 susanSources.txt
 wasm/index.html

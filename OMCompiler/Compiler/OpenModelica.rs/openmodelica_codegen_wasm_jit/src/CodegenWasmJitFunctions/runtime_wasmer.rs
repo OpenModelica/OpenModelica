@@ -89,16 +89,8 @@ struct Sig {
 }
 
 fn read_sig(path: &str) -> Result<Sig> {
-    // Native reads the sidecar from disk; wasm reads it from the VFS where
-    // `translateFunctions` staged it.
-    #[cfg(target_arch = "wasm32")]
-    let text = {
-        let bytes = openmodelica_wasi::read(path)
-            .ok_or_else(|| anyhow!("CodegenWasmJit: no such sidecar in VFS: {path}"))?;
-        String::from_utf8(bytes)?
-    };
-    #[cfg(not(target_arch = "wasm32"))]
-    let text = std::fs::read_to_string(path)?;
+    let text = openmodelica_wasi::fs::read_to_string(path)
+        .with_context(|| format!("CodegenWasmJit: cannot read sidecar {path}"))?;
     let mut lines = text.lines();
     let parse = |line: Option<&str>| -> Result<Vec<SigTy>> {
         super::parse_sig_types(line.unwrap_or(""))
@@ -190,11 +182,8 @@ pub(super) fn load_and_execute(
 ) -> Result<Arc<Values::Value>> {
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
-    #[cfg(target_arch = "wasm32")]
-    let bytes = openmodelica_wasi::read(&wasm_path)
-        .ok_or_else(|| anyhow!("CodegenWasmJit: no such module in VFS: {wasm_path}"))?;
-    #[cfg(not(target_arch = "wasm32"))]
-    let bytes = std::fs::read(&wasm_path)?;
+    let bytes = openmodelica_wasi::fs::read(&wasm_path)
+        .with_context(|| format!("CodegenWasmJit: cannot read module {wasm_path}"))?;
 
     // Reuse the shared engine and the per-content compiled module. Each call
     // gets a fresh store + runtime instance (its own heap/linear memory); the

@@ -106,6 +106,18 @@ static PREV_REPLY: AtomicPtr<OmcRtBox> = AtomicPtr::new(ptr::null_mut());
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_System_initGarbageCollector(_thread_data: *mut c_void) {}
 
+/// OMEdit (Utilities.cpp) calls this omc `System.*` function directly to learn the
+/// MSYS2 platform ("ucrt64"/"mingw64"). Interned so the returned pointer stays valid.
+#[unsafe(no_mangle)]
+pub extern "C" fn System_openModelicaPlatform() -> *const c_char {
+    static S: std::sync::OnceLock<std::ffi::CString> = std::sync::OnceLock::new();
+    S.get_or_init(|| {
+        std::ffi::CString::new(openmodelica_util::System::openModelicaPlatform().as_bytes())
+            .unwrap_or_default()
+    })
+    .as_ptr()
+}
+
 /// Initialise the compiler, forwarding the boxed argument list (a cons list of
 /// flag strings such as `+locale=sv_SE`) to the Rust init. Returns the
 /// thread-data pointer unchanged (OMEdit ignores the result).

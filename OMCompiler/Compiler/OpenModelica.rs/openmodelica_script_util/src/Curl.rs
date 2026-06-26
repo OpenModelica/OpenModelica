@@ -231,6 +231,19 @@ mod tests {
         (l, ArcStr::from(file))
     }
 
+    /// libcurl must be built with a TLS backend, else the package-index https
+    /// download fails with "Unsupported protocol". On Windows this requires the
+    /// `ssl` feature (schannel); dropping it regressed silently. No network needed.
+    #[test]
+    fn curl_has_tls_backend() {
+        let v = curl::Version::get();
+        assert!(v.ssl_version().is_some(), "libcurl built without a TLS backend");
+        assert!(
+            v.protocols().any(|p| p == "https"),
+            "libcurl does not support https"
+        );
+    }
+
     /// Download via file:// URLs so the test runs without network access.
     #[test]
     fn downloads_and_retries_mirrors() {

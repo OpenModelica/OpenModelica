@@ -93,16 +93,20 @@ pub fn setTempDirectoryPath(inString: ArcStr) {
 }
 
 pub fn getTempDirectoryPath() -> ArcStr {
-    // `SettingsImpl__getTempDirectoryPath`: lazily initialise from `$TMPDIR`,
-    // defaulting to `/tmp`. (The Windows branch uses `GetTempPath`; we only
-    // build for Unix here, and Autoconf::isWindows would gate a port of it.)
+    // `SettingsImpl__getTempDirectoryPath`: on Windows the C runtime uses
+    // `GetTempPath` (TMP/TEMP/USERPROFILE/windir), which is exactly what
+    // `std::env::temp_dir()` returns; on Unix it is `$TMPDIR` or `/tmp`.
     let mut state = STATE.lock().unwrap();
     if let Some(p) = &state.temp_directory_path {
         return p.clone();
     }
-    let path = match std::env::var("TMPDIR") {
-        Ok(s) if !s.is_empty() => ArcStr::from(s),
-        _ => arcstr::literal!("/tmp"),
+    let path = if Autoconf::isWindows {
+        convert_to_forward_slashes(&std::env::temp_dir().to_string_lossy())
+    } else {
+        match std::env::var("TMPDIR") {
+            Ok(s) if !s.is_empty() => ArcStr::from(s),
+            _ => arcstr::literal!("/tmp"),
+        }
     };
     state.temp_directory_path = Some(path.clone());
     path
@@ -285,11 +289,10 @@ pub fn getModelicaPath(runningTestsuite: bool) -> Result<ArcStr> {
 
 pub fn getHomeDir(runningTestsuite: bool) -> ArcStr {
     // `Settings_getHomeDir`: the testsuite must be insensitive to the real home
-    // directory, so it always sees "". Otherwise read `$HOME`, caching the
-    // result. (The C runtime additionally falls back to `getpwuid()` when
-    // `$HOME` is unset; that path needs libc and is not ported — `$HOME` is
-    // set in every environment we target. An unset `$HOME` yields "", matching
-    // the C runtime's final fallback.)
+    // directory, so it always sees "". Otherwise read `$APPDATA`/`$HOME` (Windows)
+    // or `$HOME` (Unix), caching the result. (On Unix the C runtime additionally
+    // falls back to `getpwuid()` when `$HOME` is unset; that needs libc and is not
+    // ported. An unset home yields "", matching the C runtime's final fallback.)
     if runningTestsuite {
         return arcstr::literal!("");
     }
@@ -297,9 +300,18 @@ pub fn getHomeDir(runningTestsuite: bool) -> ArcStr {
     if let Some(p) = &state.user_home {
         return p.clone();
     }
-    let home = match std::env::var("HOME") {
-        Ok(s) if !s.is_empty() => convert_to_forward_slashes(&s),
-        _ => arcstr::literal!(""),
+    let home = if Autoconf::isWindows {
+        // `Settings_getHomeDir` on Windows reads `$APPDATA` (so `.openmodelica`
+        // lives under AppData\Roaming), falling back to `$HOME`.
+        match std::env::var("APPDATA").or_else(|_| std::env::var("HOME")) {
+            Ok(s) if !s.is_empty() => convert_to_forward_slashes(&s),
+            _ => arcstr::literal!(""),
+        }
+    } else {
+        match std::env::var("HOME") {
+            Ok(s) if !s.is_empty() => convert_to_forward_slashes(&s),
+            _ => arcstr::literal!(""),
+        }
     };
     state.user_home = Some(home.clone());
     home

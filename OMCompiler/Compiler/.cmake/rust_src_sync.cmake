@@ -22,9 +22,9 @@ foreach(_rel ${_lines})
   file(COPY ${SRC}/${_rel} DESTINATION ${DST}/${_dir})
 endforeach()
 
-# Builtin .mo that openmodelica_vfs include_str!s via ../../../{FrontEnd,NFFrontEnd}
+# Builtin .mo that openmodelica_wasi include_str!s via ../../../{FrontEnd,NFFrontEnd}
 # (paths reaching past the crate tree into Compiler/); mirror them beside the copy
-# at the same relative depth. Keep in sync with openmodelica_vfs/src/lib.rs.
+# at the same relative depth. Keep in sync with openmodelica_wasi/src/lib.rs.
 get_filename_component(_src_parent ${SRC} DIRECTORY)
 get_filename_component(_dst_parent ${DST} DIRECTORY)
 foreach(_rel

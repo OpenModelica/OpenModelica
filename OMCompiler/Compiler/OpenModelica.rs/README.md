@@ -68,10 +68,104 @@ Add `-DRUST_OMC_THREADS=N` to parallelise the rustc front-end (`-Zthreads=N`,
 nightly only) — useful for the few huge generated crates that bottleneck the
 otherwise-parallel `cargo` build.
 
+## Cross-compiling to Windows (x86_64-pc-windows-msvc)
+
+The build *tools* (mmtorust, susan, scripting_api_gen) always run on and target
+the host; only the omc *artifacts* (the cdylib + launcher, and the GUI clients)
+are cross-compiled, with [`cargo-xwin`](https://github.com/rust-cross/cargo-xwin)
+(clang-cl + lld-link against a cached MSVC CRT/SDK). Pass `-DRUST_OMC_TARGET`:
+
+```bash
+# One-time setup
+rustup target add --toolchain nightly-2026-05-31 x86_64-pc-windows-msvc
+cargo install cargo-xwin
+# cc-rs invokes the LLVM archiver as `llvm-lib`; on a stock LLVM install only the
+# versioned name exists, so expose it (adjust 21 to your llvm version):
+ln -s "$(command -v llvm-lib-21)" ~/.local/bin/llvm-lib   # must be on PATH
+
+cd ../../..
+cmake -S . -B build-win -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_TARGET=x86_64-pc-windows-msvc -DOM_ENABLE_GUI_CLIENTS=OFF
+cmake --build build-win --target install
+# -> install_cmake/bin/{omc.exe, OpenModelicaCompiler.dll}
+```
+
+A cross build requires the release profile (the dev profile's cranelift backend
+cannot target MSVC). The third-party native libraries the cdylib would otherwise
+need are handled per-target in the crates so no MSVC-ABI build of them is
+required: LAPACK/BLAS use the pure-Rust nalgebra fallback, libcurl is built from
+source (`static-curl`), and libzmq is dropped (interactive `=zmq` mode
+unavailable). libffi (for compile-time `external "C"` evaluation) *is* built: a
+workspace `[patch.crates-io]` pointing libffi-sys at the `cargo-xwin-assembler`
+branch of `github.com/sjoelund/libffi-rs` makes it assemble libffi's GNU-syntax
+`win64.S` trampoline with clang-cl's integrated assembler instead of the MASM
+`win64_intel.S` (which needs ml64, unavailable here) — see that crate's
+`build/msvc.rs`. The Qt headers for the GUI clients are not wired
+yet, so build with `-DOM_ENABLE_GUI_CLIENTS=OFF`.
+
+The nalgebra LAPACK fallback can also be exercised on a native Linux build with
+`-DRUST_OMC_PROFILE=release` plus the crate feature: build
+`openmodelica_util`/the cdylib with `--features lapack-nalgebra` (or run the
+testsuite against such a build) to validate it against system LAPACK.
+
+### Cross-compiling the C/C++ runtime too (`.cmake/xwin-toolchain.cmake`)
+
+The command above cross-compiles only the Rust omc; the C/C++ parts (3rdParty +
+SimulationRuntime) still build for the host. To cross-compile those to MSVC as
+well — reusing the *same* cargo-xwin CRT/SDK cache so the ABI matches — add the
+toolchain file. It points clang-cl + lld-link at `~/.cache/cargo-xwin/xwin` and
+forces the release CRT (xwin ships no debug CRT):
+
+```bash
+# Extra one-time setup (clang-cl's linker + resource compiler + archiver):
+ln -s "$(rustc --print sysroot)/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld" \
+      ~/.local/bin/lld-link                      # rust's bundled lld speaks lld-link
+ln -s "$(command -v llvm-rc-21)" ~/.local/bin/llvm-rc
+# (llvm-lib symlink from above is also required)
+
+cmake -S . -B build-win \
+      -DCMAKE_TOOLCHAIN_FILE=OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_TARGET=x86_64-pc-windows-msvc -DOM_ENABLE_GUI_CLIENTS=OFF
+```
+
+The cargo-xwin sysroot must already exist (run the Rust-only cross build once, or
+any `cargo xwin build`). The toolchain emits MSVC COFF objects and links with
+lld-link (validated on 3rdParty/zlib + the configure below).
+
+OpenModelica's CMake already supports MSVC, but expects the Windows dependency
+libraries to be supplied — the xwin sysroot provides only the CRT/SDK. The
+LAPACK/BLAS (OpenBLAS) and Boost deps are fetched automatically at configure
+time by `.cmake/windows-deps.cmake` (auto-included when cross-compiling to
+Windows; toggle with `OM_WINDOWS_FETCH_DEPS`): OpenBLAS as the prebuilt MSVC
+release, Boost cross-built through vcpkg with the checked-in overlay triplet
+`.cmake/x64-windows-xwin.cmake`. Only the downloaded artifacts are cached, under
+`OM_WINDOWS_DOWNLOADS_DIR` — repoint it at an in-source directory to bundle them
+into an offline source tarball. PThreads4W is the one dep still passed by hand
+(its vcpkg port is nmake-only and cannot cross from Linux): build it from its
+CMake fork with the toolchain and pass `-Dpthreads_DIR=<prefix>`.
+
+```bash
+# Disable the Fortran components: flang can compile Fortran to windows-msvc
+# objects but cannot yet link them (no flang_rt/clang_rt.builtins for that target).
+cmake -S . -B build-win \
+  -DCMAKE_TOOLCHAIN_FILE=OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake \
+  -DCMAKE_BUILD_TYPE=Release -Dpthreads_DIR=<pthreads4w-prefix> \
+  -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+  -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+  -DRUST_OMC_TARGET=x86_64-pc-windows-msvc -DOM_ENABLE_GUI_CLIENTS=OFF
+```
+
+Status: the C and C++ simulation runtimes now **compile** with clang-cl (final
+link/install of the full distribution is the remaining work); see
+`HANDOFF-windows-msvc.md`. The Rust-only cross build (earlier section) is
+self-contained and needs none of these deps.
+
 ## Web bundle only (make all builds just the wasm):
 ```bash
 cd ../../..
-cmake -S . -B build-web -DOM_OMC_WASM=ON -DRUST_OMC_WASM_MODE=web-release -DRUST_OMC_CI=ON
+cmake -S . -B build-web -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_WASM=ON -DRUST_OMC_WASM_MODE=web-release -DRUST_OMC_CI=ON
 cmake --build build-web --target install
 # To test locally
 python3 -m http.server -d build-web/install_cmake/share/omc/web/ 8000

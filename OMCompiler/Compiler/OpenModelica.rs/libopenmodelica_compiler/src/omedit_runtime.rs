@@ -354,6 +354,15 @@ pub struct rtclock_t {
     tv_nsec: i64,
 }
 
+/// Process-global monotonic origin. `rtclock_t` stores the elapsed time since
+/// this origin (decomposed into sec/nsec), so tick/tock measure a relative
+/// interval — all OMEdit's TimeManager needs. `Instant` is monotonic on every
+/// platform, avoiding a POSIX `clock_gettime` (absent on Windows libc).
+fn rt_clock_origin() -> std::time::Instant {
+    static ORIGIN: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+    *ORIGIN.get_or_init(std::time::Instant::now)
+}
+
 /// Record the current (monotonic) time into `*tp` — OMEdit's animation
 /// TimeManager uses this to pace real-time playback.
 #[unsafe(no_mangle)]
@@ -361,11 +370,10 @@ pub extern "C" fn rt_ext_tp_tick_realtime(tp: *mut rtclock_t) {
     if tp.is_null() {
         return;
     }
-    let mut ts: libc::timespec = unsafe { std::mem::zeroed() };
-    unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut ts) };
+    let d = rt_clock_origin().elapsed();
     unsafe {
-        (*tp).tv_sec = ts.tv_sec as i64;
-        (*tp).tv_nsec = ts.tv_nsec as i64;
+        (*tp).tv_sec = d.as_secs() as i64;
+        (*tp).tv_nsec = d.subsec_nanos() as i64;
     }
 }
 
@@ -375,10 +383,9 @@ pub extern "C" fn rt_ext_tp_tock(tp: *mut rtclock_t) -> c_double {
     if tp.is_null() {
         return 0.0;
     }
-    let mut now: libc::timespec = unsafe { std::mem::zeroed() };
-    unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut now) };
+    let now = rt_clock_origin().elapsed().as_secs_f64();
     let (s, ns) = unsafe { ((*tp).tv_sec, (*tp).tv_nsec) };
-    (now.tv_sec as i64 - s) as c_double + (now.tv_nsec as i64 - ns) as c_double * 1e-9
+    now - (s as c_double + ns as c_double * 1e-9)
 }
 
 // ─────────────────────────── number formatting ───────────────────────────────

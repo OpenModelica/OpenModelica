@@ -524,6 +524,9 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #else
   mpCommandsLogFile = fopen(commandsLogFilePath.toUtf8().constData(), "w");
 #endif
+  // Unbuffered: a crash mid-startup still leaves the last command on disk.
+  if (mpCommunicationLogFile) setvbuf(mpCommunicationLogFile, NULL, _IONBF, 0);
+  if (mpCommandsLogFile) setvbuf(mpCommandsLogFile, NULL, _IONBF, 0);
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
