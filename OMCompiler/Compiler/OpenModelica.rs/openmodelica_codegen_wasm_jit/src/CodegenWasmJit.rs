@@ -72,7 +72,7 @@ mod sim_runtime;
 #[path = "CodegenWasmJit/sim_runtime_stub.rs"]
 mod sim_runtime;
 
-// The `wasi_snapshot_preview1` shim over `openmodelica_vfs`, for running the
+// The `wasi_snapshot_preview1` shim over `openmodelica_wasi`, for running the
 // standalone wasip1 simulation command module. Not yet wired into the run path
 // (its consumer — the merged standalone module — is a later step), so it is
 // dead until then. The engine-independent `WasiCtx` is registered for both the
@@ -251,7 +251,7 @@ fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
 fn write_output(path: &str, bytes: &[u8]) -> std::io::Result<()> {
     #[cfg(target_arch = "wasm32")]
     {
-        openmodelica_vfs::write(path, bytes.to_vec());
+        openmodelica_wasi::write(path, bytes.to_vec());
         Ok(())
     }
     #[cfg(not(target_arch = "wasm32"))]

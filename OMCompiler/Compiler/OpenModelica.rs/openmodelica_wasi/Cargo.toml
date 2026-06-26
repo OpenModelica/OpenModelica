@@ -1,5 +1,5 @@
 [package]
-name = "openmodelica_vfs"
+name = "openmodelica_wasi"
 version = "0.1.0"
 edition = "2024"
 

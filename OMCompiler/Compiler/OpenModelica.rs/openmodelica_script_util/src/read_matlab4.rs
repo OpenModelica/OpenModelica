@@ -260,7 +260,7 @@ impl MatReader {
         let mut file = File::open(filename).map_err(|e| e.to_string())?;
         #[cfg(target_arch = "wasm32")]
         let mut file = std::io::Cursor::new(
-            openmodelica_vfs::read(filename).ok_or_else(|| format!("No such file: {filename}"))?,
+            openmodelica_wasi::read(filename).ok_or_else(|| format!("No such file: {filename}"))?,
         );
         const MATRIX_NAMES: [&str; 6] =
             ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];

@@ -16,7 +16,7 @@
 // itself — Curl_wasm records the missing file as "pending" and the command fails.
 // evalWithDownloads() drains that pending list (omc_take_pending_downloads),
 // fetches each file here with a streaming reader (posting {progress} so the GUI
-// can show a real download bar), stages the bytes in the VFS (omc_vfs_put), and
+// can show a real download bar), stages the bytes in the store (wasi_write_file), and
 // re-runs the command, which now finds them. This needs no SharedArrayBuffer /
 // cross-origin isolation. See openmodelica_script_util/src/Curl_wasm.rs.
 //
@@ -26,8 +26,12 @@ import init, {
   omc_init,
   omc_eval,
   omc_set_env,
-  omc_vfs_put,
-  omc_vfs_get,
+  wasi_path_open,
+  wasi_fd_read,
+  wasi_fd_close,
+  wasi_path_filestat_get,
+  wasi_readdir,
+  wasi_write_file,
   omc_take_pending_downloads,
   omc_take_plot_commands,
 } from "./omc/OpenModelicaCompiler.js";
@@ -37,7 +41,19 @@ import init, {
 import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
-console.log("omc_worker.js loaded (vfsGet handler present)");
+console.log("omc_worker.js loaded (WASI file surface)");
+
+// Read a whole file from the worker store through the WASI preview1 flow
+// (path_open → fd_read → fd_close). Returns a Uint8Array or undefined if absent.
+function wasiReadFile(path) {
+  const fd = wasi_path_open(path);
+  if (fd < 0) return undefined;
+  try {
+    return wasi_fd_read(fd) || undefined;
+  } finally {
+    wasi_fd_close(fd);
+  }
+}
 
 // Instantiate the omc wasm module once. omc_set_env mirrors the old host page:
 // builtins resolve by basename, so OPENMODELICAHOME only needs to be non-empty.
@@ -87,7 +103,7 @@ async function fetchToVfs(urls, filename) {
   for (const url of urls) {
     try {
       const bytes = await fetchWithProgress(url, label);
-      omc_vfs_put(filename, bytes);
+      wasi_write_file(filename, bytes);
       return;
     } catch (_) {
       // try the next mirror
@@ -159,7 +175,7 @@ function collectPlots() {
   const transfer = [];
   for (const args of cmds) {
     const file = args[0] || "";
-    const bytes = file ? omc_vfs_get(file) : undefined;
+    const bytes = file ? wasiReadFile(file) : undefined;
     plots.push({ args, file, bytes });
     if (bytes) transfer.push(bytes.buffer);
   }
@@ -195,13 +211,24 @@ self.onmessage = async (e) => {
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
       self.postMessage({ kind: "abiResult", id: msg.id, response });
     } else if (msg.cmd === "vfsGet") {
-      // OMEdit reads some files (library index, install manifests) on the main
-      // thread; omc wrote them into this worker's VFS, so copy the bytes back so
-      // the page can stage them into its own MEMFS.
+      // OMEdit reads some files (library index, install manifests, visual.xml)
+      // on the main thread; omc wrote them into this worker's store, so read them
+      // back through the WASI surface and hand the bytes to the page's file engine.
       let bytes;
-      try { bytes = omc_vfs_get(msg.path); } catch (e) { bytes = undefined; }
+      try { bytes = wasiReadFile(msg.path); } catch (e) { bytes = undefined; }
       const transfer = bytes ? [bytes.buffer] : [];
       self.postMessage({ kind: "vfsResult", id: msg.id, bytes: bytes || null }, transfer);
+    } else if (msg.cmd === "vfsList") {
+      // Directory enumeration for the page's QDir over worker-owned paths
+      // (WASI fd_readdir). Returns [{ name, isDir }]; [] for a missing/empty dir.
+      let entries;
+      try { entries = wasi_readdir(msg.path) || []; } catch (e) { entries = []; }
+      self.postMessage({ kind: "vfsListResult", id: msg.id, entries });
+    } else if (msg.cmd === "vfsStat") {
+      // WASI path_filestat_get's size (-1 if absent), for the file engine's size().
+      let size;
+      try { size = wasi_path_filestat_get(msg.path); } catch (e) { size = -1; }
+      self.postMessage({ kind: "vfsStatResult", id: msg.id, size });
     }
   } catch (err) {
     // A trap inside omc must not silently wedge the shell: report it on the

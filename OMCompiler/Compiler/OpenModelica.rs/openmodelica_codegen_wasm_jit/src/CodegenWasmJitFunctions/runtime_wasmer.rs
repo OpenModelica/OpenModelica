@@ -93,7 +93,7 @@ fn read_sig(path: &str) -> Result<Sig> {
     // `translateFunctions` staged it.
     #[cfg(target_arch = "wasm32")]
     let text = {
-        let bytes = openmodelica_vfs::read(path)
+        let bytes = openmodelica_wasi::read(path)
             .ok_or_else(|| anyhow!("CodegenWasmJit: no such sidecar in VFS: {path}"))?;
         String::from_utf8(bytes)?
     };
@@ -191,7 +191,7 @@ pub(super) fn load_and_execute(
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
     #[cfg(target_arch = "wasm32")]
-    let bytes = openmodelica_vfs::read(&wasm_path)
+    let bytes = openmodelica_wasi::read(&wasm_path)
         .ok_or_else(|| anyhow!("CodegenWasmJit: no such module in VFS: {wasm_path}"))?;
     #[cfg(not(target_arch = "wasm32"))]
     let bytes = std::fs::read(&wasm_path)?;

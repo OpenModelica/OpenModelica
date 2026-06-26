@@ -5181,8 +5181,8 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     // stage them in the VFS where `load_and_execute` reads them back.
     #[cfg(target_arch = "wasm32")]
     {
-        openmodelica_vfs::write(&format!("{base}.wasm"), bytes);
-        openmodelica_vfs::write(&format!("{base}.wasm.sig"), sig.into_bytes());
+        openmodelica_wasi::write(&format!("{base}.wasm"), bytes);
+        openmodelica_wasi::write(&format!("{base}.wasm.sig"), sig.into_bytes());
     }
     #[cfg(not(target_arch = "wasm32"))]
     {

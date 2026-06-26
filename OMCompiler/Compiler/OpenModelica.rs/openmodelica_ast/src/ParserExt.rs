@@ -122,7 +122,7 @@ fn read_source_file(filename: &str) -> std::io::Result<(String, Option<Arc<[u8]>
     // On wasm there is no OS filesystem; serve the embedded builtins (and any
     // host-provided files) from the in-memory VFS instead.
     #[cfg(target_arch = "wasm32")]
-    if let Some(bytes) = openmodelica_vfs::read(filename) {
+    if let Some(bytes) = openmodelica_wasi::read(filename) {
         return Ok(sanitize_source_bytes(bytes));
     }
     Ok(sanitize_source_bytes(std::fs::read(filename)?))

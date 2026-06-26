@@ -15,9 +15,17 @@
 //!
 //! The crate compiles on every target (it is a plain dependency) but the store
 //! is only meant to be consulted on wasm; native builds keep using `std::fs`.
+//!
+//! On top of the raw key/value store this crate also provides [`wasi`], a
+//! `wasi_snapshot_preview1` view over the same store ([`wasi::WasiCtx`]). It is
+//! the single filesystem surface the standalone wasm-jit *command* module and
+//! the OMEdit worker file engine both speak, so the backing store can be
+//! swapped without touching either client.
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
+
+pub mod wasi;
 
 // ─────────────────────────── embedded builtins ───────────────────────────────
 
@@ -59,27 +67,50 @@ fn basename(path: &str) -> &str {
     path.rsplit(['/', '\\']).next().unwrap_or(path)
 }
 
-/// Canonicalise a path key: backslashes → `/`, collapse repeated slashes, and
-/// drop any trailing slash (except for the root `/`). So `a//b/`, `a/b`, and
-/// `a\b` all map to the same key — essential for prefix-based directory queries
-/// when MODELICAPATH and the compiler concatenate paths with stray slashes.
+/// The working directory used to resolve relative paths. Defaults to `/`.
+/// `System.cd()` will eventually drive this (the wasm `set_current_dir` is a no-op),
+/// so omc and OMEdit agree on one working directory.
+fn cwd_store() -> &'static Mutex<String> {
+    static CWD: OnceLock<Mutex<String>> = OnceLock::new();
+    CWD.get_or_init(|| Mutex::new(String::from("/")))
+}
+
+/// Set the working directory used to resolve relative path keys.
+pub fn set_cwd(dir: &str) {
+    let n = normalize(dir);
+    *cwd_store().lock().unwrap() = n;
+}
+
+/// Canonicalise a path key to an absolute, slash-normalised, dot-folded form:
+/// backslashes → `/`, **relative paths resolve against the cwd** (default `/`),
+/// repeated slashes collapse, and `.`/`..` segments fold. So a relative write
+/// (`<model>_visual.xml`) and an absolute read (`/<model>_visual.xml`) map to the
+/// same key, and `a//b/`, `a/b`, `a\b`, `/a/./b`, `/a/c/../b` all agree.
 fn normalize(path: &str) -> String {
-    let mut out = String::with_capacity(path.len());
-    let mut prev_slash = false;
-    for c in path.chars() {
-        let c = if c == '\\' { '/' } else { c };
-        if c == '/' {
-            if !prev_slash {
-                out.push('/');
+    let path = path.replace('\\', "/");
+    // Relative paths are prefixed with the cwd; absolute paths stand alone.
+    let base = if path.starts_with('/') {
+        String::new()
+    } else {
+        cwd_store().lock().unwrap().clone()
+    };
+    let mut comps: Vec<&str> = Vec::new();
+    for seg in base.split('/').chain(path.split('/')) {
+        match seg {
+            "" | "." => {}
+            ".." => {
+                comps.pop();
             }
-            prev_slash = true;
-        } else {
-            out.push(c);
-            prev_slash = false;
+            s => comps.push(s),
         }
     }
-    if out.len() > 1 && out.ends_with('/') {
-        out.pop();
+    let mut out = String::with_capacity(path.len() + base.len() + 1);
+    for c in &comps {
+        out.push('/');
+        out.push_str(c);
+    }
+    if out.is_empty() {
+        out.push('/');
     }
     out
 }
@@ -162,4 +193,20 @@ pub fn list() -> Vec<String> {
 /// Number of files currently held in the writable store.
 pub fn len() -> usize {
     store().lock().unwrap().len()
+}
+
+#[cfg(test)]
+mod normalize_tests {
+    use super::normalize;
+    #[test]
+    fn resolves_and_folds() {
+        assert_eq!(normalize("DoublePendulum_visual.xml"), "/DoublePendulum_visual.xml");
+        assert_eq!(normalize("/DoublePendulum_visual.xml"), "/DoublePendulum_visual.xml");
+        assert_eq!(normalize("a//b/"), "/a/b");
+        assert_eq!(normalize("/a/./b"), "/a/b");
+        assert_eq!(normalize("/a/c/../b"), "/a/b");
+        assert_eq!(normalize("a\\b"), "/a/b");
+        assert_eq!(normalize("/"), "/");
+        assert_eq!(normalize(""), "/");
+    }
 }

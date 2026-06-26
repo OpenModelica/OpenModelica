@@ -65,7 +65,7 @@ use result_readers::{CsvReader, PltReader, PltVal};
 fn write_output_file(path: &str, bytes: &[u8]) -> std::io::Result<()> {
     #[cfg(target_arch = "wasm32")]
     {
-        openmodelica_vfs::write(path, bytes.to_vec());
+        openmodelica_wasi::write(path, bytes.to_vec());
         Ok(())
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -1076,7 +1076,7 @@ fn write_log_file(
     }
     #[cfg(target_arch = "wasm32")]
     {
-        openmodelica_vfs::write(filename, s.into_bytes());
+        openmodelica_wasi::write(filename, s.into_bytes());
         return Ok(());
     }
     #[cfg(not(target_arch = "wasm32"))]

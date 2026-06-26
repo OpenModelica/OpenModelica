@@ -83,26 +83,80 @@ pub fn omc_init() -> bool {
     matches!(catch_unwind(AssertUnwindSafe(|| capi::init(&args))), Ok(Ok(())))
 }
 
-/// Write one file into the in-memory VFS at `path`. Lets the JS host stage files
-/// the compiler will read — e.g. download a Modelica library file-by-file (a
-/// manifest of paths, each fetched and put here) before `loadModel`.
-#[wasm_bindgen]
-pub fn omc_vfs_put(path: &str, bytes: &[u8]) {
-    openmodelica_vfs::write(path, bytes.to_vec());
+// ── WASI preview1 file surface for the host ───────────────────────────────────
+//
+// The host reads/lists the worker-owned store through a `wasi_snapshot_preview1`
+// view (`openmodelica_wasi::wasi::WasiCtx`) — the same surface the standalone
+// wasm-jit command module speaks — so the backing store is swappable. A read is
+// the spec flow `path_open` → `fd_read` → `fd_close`; listing/stat are by path.
+
+thread_local! {
+    /// The host's WASI view of the store. cwd `"/"` so absolute paths and the
+    /// store's keys agree (matching `openmodelica_wasi::normalize`'s default cwd).
+    static WASI: RefCell<openmodelica_wasi::wasi::WasiCtx> =
+        RefCell::new(openmodelica_wasi::wasi::WasiCtx::new("/", vec!["omc".to_string()]));
 }
 
-/// Read a file back out of the VFS (e.g. a simulation result the run wrote), or
-/// `None` if absent.
+/// preview1 `path_open` (read-only) of absolute key `path`. Returns the new fd,
+/// or `-1` if the file is absent.
 #[wasm_bindgen]
-pub fn omc_vfs_get(path: &str) -> Option<Vec<u8>> {
-    openmodelica_vfs::read(path)
+pub fn wasi_path_open(path: &str) -> i32 {
+    WASI.with(|w| match w.borrow_mut().open_read(path) {
+        Some(fd) => fd as i32,
+        None => -1,
+    })
+}
+
+/// preview1 `fd_read` (whole file) of an fd from [`wasi_path_open`], or `None`.
+#[wasm_bindgen]
+pub fn wasi_fd_read(fd: u32) -> Option<Vec<u8>> {
+    WASI.with(|w| w.borrow().read_all(fd))
+}
+
+/// preview1 `fd_close`.
+#[wasm_bindgen]
+pub fn wasi_fd_close(fd: u32) {
+    WASI.with(|w| {
+        w.borrow_mut().close(fd);
+    });
+}
+
+/// preview1 `path_filestat_get`'s `size` for absolute key `path`, or `-1` if
+/// absent (a JS number; sizes here are small config/result files).
+#[wasm_bindgen]
+pub fn wasi_path_filestat_get(path: &str) -> f64 {
+    openmodelica_wasi::wasi::stat_size(path).map(|n| n as f64).unwrap_or(-1.0)
+}
+
+/// List directory `path` (absolute; `"/"` is the root) as an array of
+/// `{ name: string, isDir: bool }`. The worker-side of preview1 `fd_readdir` for
+/// a JS caller (which cannot pass guest dirent buffers): drives the engine's
+/// `QDir` enumeration of worker-owned paths.
+#[wasm_bindgen]
+pub fn wasi_readdir(path: &str) -> JsValue {
+    let arr = js_sys::Array::new();
+    for e in openmodelica_wasi::wasi::readdir(path) {
+        let item = js_sys::Object::new();
+        let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&e.name));
+        let _ = js_sys::Reflect::set(&item, &JsValue::from_str("isDir"), &JsValue::from_bool(e.is_dir));
+        arr.push(&item);
+    }
+    arr.into()
+}
+
+/// Create/overwrite absolute key `path` with `bytes` (preview1
+/// `path_open`(O_CREAT|O_TRUNC) → `fd_write` → `fd_close` collapsed). Lets the JS
+/// host stage downloaded library/result files into the store.
+#[wasm_bindgen]
+pub fn wasi_write_file(path: &str, bytes: &[u8]) {
+    openmodelica_wasi::write(path, bytes.to_vec());
 }
 
 /// Drain the files the last command tried to download but did not find in the
 /// VFS, as an array of `{ urls: string[], filename: string }`. `omc_eval` is
 /// synchronous, so it cannot fetch over the network itself; instead the JS host
 /// fetches each pending file (the browser streams it for download progress),
-/// stages the bytes with [`omc_vfs_put`], and re-runs the command, which then
+/// stages the bytes with [`wasi_write_file`], and re-runs the command, which then
 /// finds them in the VFS. See `openmodelica_script_util::Curl` (Curl_wasm).
 #[wasm_bindgen]
 pub fn omc_take_pending_downloads() -> JsValue {
@@ -127,7 +181,7 @@ pub fn omc_take_pending_downloads() -> JsValue {
 /// Drain the plot commands the last `omc_eval` recorded, as an array of string
 /// arrays (each the 18 `PlotCallback` args in ABI order, result file at index 0).
 /// A host with its own renderer (OMNotebook-qt) drains this, then reads each
-/// result file from the VFS with [`omc_vfs_get`] and draws it.
+/// result file from the VFS with [`wasi_path_open`]+[`wasi_fd_read`] and draws it.
 #[wasm_bindgen]
 pub fn omc_take_plot_commands() -> JsValue {
     let arr = js_sys::Array::new();
@@ -161,7 +215,7 @@ pub fn omc_vfs_load_zip(mount: &str, data: &[u8]) -> Result<usize, String> {
         let path = format!("{}/{}", mount.trim_end_matches('/'), name.to_string_lossy());
         let mut buf = Vec::with_capacity(entry.size() as usize);
         std::io::Read::read_to_end(&mut entry, &mut buf).map_err(|e| format!("read {name:?}: {e}"))?;
-        openmodelica_vfs::write(&path, buf);
+        openmodelica_wasi::write(&path, buf);
         count += 1;
     }
     Ok(count)

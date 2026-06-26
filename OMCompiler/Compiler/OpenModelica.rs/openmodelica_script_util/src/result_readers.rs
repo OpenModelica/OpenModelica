@@ -14,7 +14,7 @@ use std::fs;
 fn read_result_bytes(filename: &str) -> Result<Vec<u8>, String> {
     #[cfg(target_arch = "wasm32")]
     {
-        openmodelica_vfs::read(filename).ok_or_else(|| format!("No such file: {filename}"))
+        openmodelica_wasi::read(filename).ok_or_else(|| format!("No such file: {filename}"))
     }
     #[cfg(not(target_arch = "wasm32"))]
     {

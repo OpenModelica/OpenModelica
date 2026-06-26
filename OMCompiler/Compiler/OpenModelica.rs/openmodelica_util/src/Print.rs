@@ -119,14 +119,24 @@ pub fn saveAndClearBuf() -> Result<i32> {
 
 pub fn writeBuf(filename: ArcStr) -> Result<()> {
     let contents = with(|s| s.buf.clone());
-    let mut f = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(filename.as_str())
-        .with_context(|| format!("Print.writeBuf: cannot open {filename}"))?;
-    f.write_all(contents.as_bytes())
-        .with_context(|| format!("Print.writeBuf: write failed for {filename}"))?;
+    // wasm32 has no OS filesystem; route through the in-memory store like the
+    // other file writers (System::writeFile, File). Otherwise the Tpl-generated
+    // files (e.g. <model>_visual.xml) would silently vanish.
+    #[cfg(target_arch = "wasm32")]
+    {
+        openmodelica_wasi::write(filename.as_str(), contents.into_bytes());
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let mut f = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(filename.as_str())
+            .with_context(|| format!("Print.writeBuf: cannot open {filename}"))?;
+        f.write_all(contents.as_bytes())
+            .with_context(|| format!("Print.writeBuf: write failed for {filename}"))?;
+    }
     Ok(())
 }
 

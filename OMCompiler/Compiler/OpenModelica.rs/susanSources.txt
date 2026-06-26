@@ -5,7 +5,7 @@
 // __OpenModelica_Interface annotation) into the susan binary's crate
 // dependency tree: openmodelica_susan + openmodelica_tpl + openmodelica_util +
 // openmodelica_util_datatypes_basic + openmodelica_error (metamodelica and
-// openmodelica_vfs are hand-written, no .mo). `mmtorust --sources susanSources.txt`
+// openmodelica_wasi are hand-written, no .mo). `mmtorust --sources susanSources.txt`
 // (or `mmtorust susan`) transpiles only these, so the build can produce the
 // Susan binary without first transpiling the whole compiler.
 //

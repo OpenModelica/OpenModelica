@@ -4,13 +4,13 @@
 //! synchronously and cannot await a `fetch()` from inside the compiler call.
 //!
 //! So this module does no network I/O of its own. `multiDownload` checks the
-//! in-memory VFS (`openmodelica_vfs`) for each requested file: a file already
+//! in-memory VFS (`openmodelica_wasi`) for each requested file: a file already
 //! present counts as downloaded; a missing one is recorded as *pending* and the
 //! call reports failure (which makes the caller, e.g. `installPackage`, abort
 //! cleanly). The wasm host — the OMShell Web Worker in the browser, or
 //! `omc-cli.js` under Node — then drains the pending list with
 //! [`take_pending_downloads`], fetches each file (the browser host streams it so
-//! it can report download progress), stages the bytes with `omc_vfs_put`, and
+//! it can report download progress), stages the bytes with `wasi_write_file`, and
 //! re-runs the command. On the re-run the files are in the VFS, so `multiDownload`
 //! succeeds and the command proceeds. A package install needs only a couple of
 //! files (the index, then the library zip), so the command re-runs a handful of
@@ -50,7 +50,7 @@ pub fn multiDownload(
 
     let mut cur = urlFileList;
     while let List::Cons { head: (urls, filename), tail } = &*cur {
-        if openmodelica_vfs::read(filename.as_str()).is_none() {
+        if openmodelica_wasi::read(filename.as_str()).is_none() {
             // Flatten this item's mirror URLs and record it for the host to fetch.
             let mut mirrors: Vec<String> = Vec::new();
             let mut u = urls.clone();

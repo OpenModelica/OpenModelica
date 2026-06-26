@@ -37,7 +37,7 @@ function evalWithDownloads(src) {
       for (const url of item.urls) {
         try {
           const buf = execFileSync('curl', ['-sSL', '-m', '120', '--fail', url], { maxBuffer: 1 << 30 });
-          omc.omc_vfs_put(item.filename, new Uint8Array(buf));
+          omc.wasi_write_file(item.filename, new Uint8Array(buf));
           break;
         } catch {
           // try the next mirror
@@ -48,7 +48,7 @@ function evalWithDownloads(src) {
 }
 
 // Seed the install dir (no OS environment inside wasm). The builtin Modelica
-// environment is embedded (openmodelica_vfs), so OPENMODELICAHOME only needs to
+// environment is embedded (openmodelica_wasi), so OPENMODELICAHOME only needs to
 // be a non-empty path — the builtins resolve by basename regardless of value.
 omc.omc_set_env('OPENMODELICAHOME', process.env.OPENMODELICAHOME || '/usr');
 

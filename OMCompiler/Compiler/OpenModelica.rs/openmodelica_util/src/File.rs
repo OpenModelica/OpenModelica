@@ -121,7 +121,7 @@ impl FileInner {
     /// Persist the buffer to the VFS (Write-mode files only).
     fn flush_to_vfs(&self) {
         if self.mode == Some(Mode::Write) {
-            openmodelica_vfs::write(self.name.as_str(), self.buf.clone());
+            openmodelica_wasi::write(self.name.as_str(), self.buf.clone());
         }
     }
 }
@@ -240,7 +240,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         guard.flush_to_vfs();
         match mode {
             Mode::Read => {
-                let bytes = openmodelica_vfs::read(filename.as_str()).ok_or_else(|| {
+                let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
                     anyhow::anyhow!("File.open: Failed to open file {filename} with mode {mode:?}: no such file")
                 })?;
                 guard.buf = bytes;
@@ -248,7 +248,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
             Mode::Write => {
                 guard.buf = Vec::new();
                 // Create/truncate now so the file exists even if nothing is written.
-                openmodelica_vfs::write(filename.as_str(), Vec::new());
+                openmodelica_wasi::write(filename.as_str(), Vec::new());
             }
         }
         guard.pos = 0;
