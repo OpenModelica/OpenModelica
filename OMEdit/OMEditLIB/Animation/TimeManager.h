@@ -45,6 +45,7 @@
 #include <util/rtclock.h>
 
 #include <QTimer>
+#include <QElapsedTimer>
 
 class TimeManager
 {
@@ -98,6 +99,13 @@ class TimeManager
   double getSpeedUp();
   QTimer* getUpdateSceneTimer() {return mpUpdateSceneTimer;}
 
+  /*! \brief Wall-clock seconds elapsed since the previous call (0 on the first
+   *  call after a reset). Used to advance visualization time in real time, so a
+   *  slow frame skips ahead instead of letting playback fall behind. */
+  double getPlaybackDelta();
+  /*! \brief Restart the playback delta baseline; call when (re)starting playback. */
+  void resetPlaybackClock();
+
  private:
   //! Time of the current simulation step.
   double _simTime;
@@ -120,6 +128,8 @@ class TimeManager
   double mSpeedUp;
   int mTimeDiscretization;
   rtclock_t _visualTimer;
+  //! Monotonic wall clock for real-time playback advance (see getPlaybackDelta).
+  QElapsedTimer _playbackTimer;
   QTimer *mpUpdateSceneTimer;
 };
 

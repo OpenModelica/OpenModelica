@@ -47,6 +47,11 @@
 
 #include <QColor>
 #include <QImage>
+
+// The OpenSceneGraph renderer (OSGScene/UpdateVisitor/...) does not build for
+// Emscripten; on wasm only the renderer-neutral data classes and math helpers of
+// this header are used, with a Qt Quick 3D backend (see Animation/Quick3D/).
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 #include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/Version>
@@ -70,17 +75,20 @@
 #include <OpenThreads/Mutex>
 
 #include "ExtraShapes.h"
+#endif
 
 #include "AnimationUtil.h"
 #include "TimeManager.h"
 #include "rapidxml.hpp"
 
+#include "AnimationScene.h"
 #include "AbstractVisualizer.h"
 #include "Shape.h"
 #include "Vector.h"
 
 class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
 
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 class UpdateVisitor : public osg::NodeVisitor
 {
 public:
@@ -156,7 +164,7 @@ private:
   AbstractVisualizerObject* _visualizer;
 };
 
-class OSGScene
+class OSGScene : public AnimationScene
 {
 public:
   OSGScene(VisualizationAbstract* visualization);
@@ -164,14 +172,17 @@ public:
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
   osg::ref_ptr<osg::Group> getRootNode();
-  std::string getPath() const;
-  void setPath(const std::string path);
-  void setUpScene(std::vector<ShapeObject>& shapes);
-  void setUpScene(std::vector<VectorObject>& vectors);
+  std::string getPath() const override;
+  void setPath(const std::string& path) override;
+  void setUpShapes(std::vector<ShapeObject>& shapes) override;
+  void setUpVectors(std::vector<VectorObject>& vectors) override;
+  void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
+  void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
 private:
   osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
+  UpdateVisitor _updateVisitor;
 };
 
 class OMVisScene
@@ -186,6 +197,7 @@ public:
 private:
   OSGScene _scene;
 };
+#endif // !OMEDIT_ANIMATION_QUICK3D
 
 class OMVisualBase
 {
@@ -219,12 +231,13 @@ public:
   void setUpScene();
 
   void updateVectorCoords(VectorObject& vector, const double time);
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
+#endif
 private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
-  UpdateVisitor _updateVisitor;
   VisualizationAbstract* _visualization;
   std::vector<ShapeObject> _shapes;
   std::vector<VectorObject> _vectors;
@@ -237,7 +250,15 @@ public:
   virtual ~VisualizationAbstract() = default;
 
   VisType getVisType() const;
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   OMVisScene* getOMVisScene() const;
+#else
+  // On wasm the scene is the Qt Quick 3D scene owned by the viewer widget, injected here.
+  void setScene(AnimationScene* scene) {mpScene = scene;}
+#endif
+  // Renderer-neutral scene the data classes drive (the OSG scene natively, the
+  // Qt Quick 3D scene on wasm).
+  AnimationScene* getScene() const;
   OMVisualBase* getBaseData() const;
   TimeManager* getTimeManager() const;
 
@@ -259,19 +280,23 @@ public:
 private:
   const VisType _visType;
 protected:
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   OMVisScene* mpOMVisScene;
+#else
+  AnimationScene* mpScene = nullptr;
+#endif
   OMVisualBase* mpOMVisualBase;
   TimeManager* mpTimeManager;
 };
 
-osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
-osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M);
-osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2);
-osg::Vec3f normalize(osg::Vec3f vec);
-osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
-Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
-void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir);
+Vec3 Mat3mulV3(Mat3 M, Vec3 V);
+Vec3 V3mulMat3(Vec3 V, Mat3 M);
+Mat3 Mat3mulMat3(Mat3 M1, Mat3 M2);
+Vec3 normalize(Vec3 vec);
+Vec3 cross(Vec3 vec1, Vec3 vec2);
+Directions fixDirections(Vec3 lDir, Vec3 wDir);
+void assemblePokeMatrix(Mat4& M, const Mat3& T, const Vec3& r);
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 r_shape, Vec3 lDir, Vec3 wDir, std::string type);
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 dir);
 
 #endif
