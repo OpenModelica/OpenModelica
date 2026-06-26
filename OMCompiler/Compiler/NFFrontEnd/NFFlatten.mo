@@ -1608,13 +1608,21 @@ public function flattenExp
   input output Expression exp;
   input Prefix prefix;
   input SourceInfo info;
+protected
+  Boolean had_split;
 algorithm
   exp := match exp
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
         exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
+        had_split := ComponentRef.hasSplitSubscripts(exp.cref);
         exp.cref := flattenCref(exp.cref, prefix, info);
-        exp.ty := flattenType(exp.ty, prefix, info);
+        // Flattening split subscripts can change the dimensions of the cref
+        // (e.g. a vector value indexed by a split index that expands back to the
+        // whole array), so recompute the expression's type from the cref in that
+        // case to avoid keeping a stale (scalar) type (#15937).
+        exp.ty := if had_split then ComponentRef.getSubscriptedType(exp.cref)
+                  else flattenType(exp.ty, prefix, info);
       then
         exp;
 
@@ -1625,6 +1633,19 @@ algorithm
 
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY())
       then flattenConditionalArrayIfExp(exp, prefix, info);
+
+    case Expression.IF()
+      algorithm
+        exp.condition := flattenExp(exp.condition, prefix, info);
+        exp.trueBranch := flattenExp(exp.trueBranch, prefix, info);
+        exp.falseBranch := flattenExp(exp.falseBranch, prefix, info);
+        // Recompute the type from the branches, since flattening split indices
+        // can turn scalar branches back into arrays (e.g. a vector start value
+        // assigned with an if-expression), and the stored type would otherwise
+        // be stale (#15937).
+        exp.ty := Expression.typeOf(exp.trueBranch);
+      then
+        exp;
 
     case Expression.INSTANCE_NAME()
       then Expression.STRING(Prefix.instanceName(prefix));
