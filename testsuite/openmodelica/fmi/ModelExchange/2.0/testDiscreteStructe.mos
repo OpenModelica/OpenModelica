@@ -57,8 +57,8 @@ readFile("modelDescription.tmp.xml");
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
 //     canNotUseMemoryManagementFunctions=\"false\"
-//     canGetAndSetFMUstate=\"false\"
-//     canSerializeFMUstate=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"true\">
 //     <SourceFiles>
 //       <File name=\"testDID.c\" />
