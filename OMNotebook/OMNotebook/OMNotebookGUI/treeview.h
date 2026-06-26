@@ -72,7 +72,7 @@ namespace IAEX
       void setSelected(bool sel);
 
    protected:
-      void paintEvent(QPaintEvent *event);
+      void paintEvent(QPaintEvent *event) override;
       //void mousePressedEvent(QMouseEvent *event);
       //void mouseReleaseEvent(QMouseEvent *event);
       QColor selectedColor() const;
@@ -90,7 +90,7 @@ namespace IAEX
    public:
       InputTreeView(QWidget *parent=0);
    protected:
-      void paintEvent(QPaintEvent *event);
+      void paintEvent(QPaintEvent *event) override;
    };
 }
 #endif

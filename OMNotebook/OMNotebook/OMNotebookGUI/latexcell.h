@@ -169,11 +169,11 @@ namespace IAEX
     //void showVariableButton(bool);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void keyPressEvent(QKeyEvent *event );
-    void insertFromMimeData(const QMimeData *source);
-    void focusInEvent(QFocusEvent* event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event ) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent* event) override;
 
   private:
   };

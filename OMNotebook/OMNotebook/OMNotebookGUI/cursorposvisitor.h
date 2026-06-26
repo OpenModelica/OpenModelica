@@ -63,10 +63,10 @@ namespace IAEX
     virtual ~CursorPosVisitor(){}
     virtual int position(){ return position_; }
 
-    virtual void visitCellNodeBefore(Cell *){}
-    virtual void visitCellNodeAfter(Cell *){}
+    virtual void visitCellNodeBefore(Cell *) override {}
+    virtual void visitCellNodeAfter(Cell *) override {}
 
-    virtual void visitCellGroupNodeBefore(CellGroup *node)
+    virtual void visitCellGroupNodeBefore(CellGroup *node) override
     {
       if( count_ )
         if( node->isClosed() )
@@ -75,7 +75,7 @@ namespace IAEX
           closedCell_ = node;
         }
     }
-    virtual void visitCellGroupNodeAfter(CellGroup *node)
+    virtual void visitCellGroupNodeAfter(CellGroup *node) override
     {
       if( count_ )
       {
@@ -88,36 +88,36 @@ namespace IAEX
       }
     }
 
-    virtual void visitTextCellNodeBefore(TextCell *){}
-    virtual void visitTextCellNodeAfter(TextCell *node)
+    virtual void visitTextCellNodeBefore(TextCell *) override {}
+    virtual void visitTextCellNodeAfter(TextCell *node) override
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitGraphCellNodeBefore(GraphCell *) {}
-    virtual void visitGraphCellNodeAfter(GraphCell *node)
+    virtual void visitGraphCellNodeBefore(GraphCell *) override {}
+    virtual void visitGraphCellNodeAfter(GraphCell *node) override
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitLatexCellNodeBefore(LatexCell *) {}
-    virtual void visitLatexCellNodeAfter(LatexCell *node)
+    virtual void visitLatexCellNodeBefore(LatexCell *) override {}
+    virtual void visitLatexCellNodeAfter(LatexCell *node) override
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitInputCellNodeBefore(InputCell *){}
-    virtual void visitInputCellNodeAfter(InputCell *node)
+    virtual void visitInputCellNodeBefore(InputCell *) override {}
+    virtual void visitInputCellNodeAfter(InputCell *node) override
     {
       if( count_ && !closed_ )
         position_ += node->height();
     }
 
-    virtual void visitCellCursorNodeBefore(CellCursor *){}
-    virtual void visitCellCursorNodeAfter(CellCursor *cursor)
+    virtual void visitCellCursorNodeBefore(CellCursor *) override {}
+    virtual void visitCellCursorNodeAfter(CellCursor *cursor) override
     {
       if( count_ && !closed_ )
         position_ += cursor->height();

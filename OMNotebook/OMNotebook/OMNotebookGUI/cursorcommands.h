@@ -57,7 +57,7 @@ namespace IAEX
   public:
     CursorMoveUpCommand(){}
     virtual ~CursorMoveUpCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -111,7 +111,7 @@ namespace IAEX
   public:
     CursorMoveDownCommand(){}
     virtual ~CursorMoveDownCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -165,7 +165,7 @@ namespace IAEX
   public:
     CursorMoveAfterCommand(Cell *cell):cell_(cell){}
     virtual ~CursorMoveAfterCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
