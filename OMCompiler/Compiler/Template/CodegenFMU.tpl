@@ -3539,12 +3539,16 @@ template ScalarVariableFMU(SimVar simVar, String classType)
 end ScalarVariableFMU;
 
 template DimensionsFMU(SimVar simVar, String classType, String ci)
- "Sets the runtime array dimensions of a non-scalarized variable so that
+ "Sets the runtime array dimensions of a non-scalarized array variable so that
   calculateAllScalarLength / computeVarIndices size the value vectors correctly.
-  Emits nothing for scalars (numberOfDimensions defaults to 0)."
+  Emits nothing for scalars (numberOfDimensions defaults to 0). Only genuine
+  array variables (type_ = T_ARRAY) are dimensioned: a scalarized array element
+  still carries the parent numArrayElement but is a scalar and must keep
+  numberOfDimensions 0, otherwise the start/min/max/nominal bound-attribute
+  update treats it as an array."
 ::=
 match simVar
-case SIMVAR(numArrayElement = dims) then
+case SIMVAR(type_ = T_ARRAY(), numArrayElement = dims) then
   if listEmpty(dims) then '' else
   <<
   modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
