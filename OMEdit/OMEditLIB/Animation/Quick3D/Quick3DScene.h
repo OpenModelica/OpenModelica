@@ -81,12 +81,14 @@ private:
     QObject* node = nullptr;           // body transform Node (also stored as the visualizer's transform handle)
     QObject* model = nullptr;          // Model carrying the mesh
     QObject* material = nullptr;       // PrincipledMaterial
-    Quick3DGeometry* geometry = nullptr; // custom mesh (pipe/spring/arrow), reused across rebuilds
+    Quick3DGeometry* geometry = nullptr; // custom mesh (pipe/spring/arrow/CAD), reused across rebuilds
     QString geomKey;                   // last geometry signature, to skip per-frame rebuilds
+    bool cadLoaded = false;            // a CAD file parsed successfully (scale via length/width/height)
   };
 
   Item createItem(AbstractVisualizerObject* visualizer);
   void applyShapeGeometry(const ShapeObject& shape, Item& item);
+  void applyCadGeometry(const ShapeObject& shape, Item& item);
   void applyVectorGeometry(const VectorObject& vector, Item& item);
   Quick3DGeometry* ensureGeometry(Item& item);
   void useBuiltinMesh(const Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler);

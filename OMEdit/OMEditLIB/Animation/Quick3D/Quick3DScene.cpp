@@ -51,6 +51,7 @@
 #include <QtQuick3D/QQuick3DObject>
 
 #include "Animation/AbstractVisualizer.h"
+#include "Animation/AnimationUtil.h"
 #include "Animation/Shape.h"
 #include "Animation/Vector.h"
 
@@ -208,6 +209,10 @@ void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, Item& item)
   if (!item.model) {
     return;
   }
+  if (isCADType(shape._type)) { // STL/DXF/OBJ/3DS: load + scale the mesh, own caching
+    applyCadGeometry(shape, item);
+    return;
+  }
   const float length = shape._length.exp;
   const float width = shape._width.exp;
   const float height = shape._height.exp;
@@ -237,8 +242,42 @@ void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, Item& item)
     ensureGeometry(item)->buildSpring(width, height, extra, length);
     useCustomGeometry(item);
   } else {
-    // CAD (dxf/stl/obj/3ds) / unknown: bounding-box placeholder. TODO mesh import.
+    // Unknown shape type: bounding-box placeholder.
     useBuiltinMesh(item, kCube, QVector3D(width / 100.f, height / 100.f, length / 100.f), pos, QVector3D(0, 0, 0));
+  }
+}
+
+void Quick3DScene::applyCadGeometry(const ShapeObject& shape, Item& item)
+{
+  // Parse the mesh once (it doesn't change), then scale every update. The mesh
+  // loads in native coordinates; OSG scales the vertices by length/width/height
+  // on x/y/z when `extra` is set, else leaves them native — do the same via the
+  // model's scale property (cheap) rather than rebuilding the mesh.
+  const QString fileKey = QStringLiteral("cad|%1|%2")
+                            .arg(QString::fromStdString(shape._type), QString::fromStdString(shape._fileName));
+  if (item.geomKey != fileKey) {
+    item.geomKey = fileKey;
+    Quick3DGeometry* geom = ensureGeometry(item);
+    item.cadLoaded = geom->buildFromCadFile(QString::fromStdString(shape._type), QString::fromStdString(shape._fileName));
+    if (item.cadLoaded) {
+      item.model->setProperty("source", QUrl());
+      item.model->setProperty("geometry", QVariant::fromValue<QQuick3DGeometry*>(geom));
+      item.model->setProperty("position", QVector3D(0, 0, 0));
+      item.model->setProperty("eulerRotation", QVector3D(0, 0, 0));
+      if (item.node) {
+        item.node->setProperty("omDoubleSided", true);
+      }
+    } else {
+      // Missing/unparsable file: unit-cube placeholder so the object is still visible.
+      qWarning("Quick3DScene: could not load CAD file %s (%s)", shape._fileName.c_str(), shape._type.c_str());
+      useBuiltinMesh(item, kCube, QVector3D(1, 1, 1), QVector3D(0, 0, 0), QVector3D(0, 0, 0));
+    }
+  }
+  if (item.cadLoaded) {
+    const QVector3D scale = (shape._extra.exp != 0.0f)
+                              ? QVector3D(shape._length.exp, shape._width.exp, shape._height.exp)
+                              : QVector3D(1, 1, 1);
+    item.model->setProperty("scale", scale);
   }
 }
 

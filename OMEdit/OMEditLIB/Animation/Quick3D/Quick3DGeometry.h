@@ -38,6 +38,8 @@
 
 #include <QtQuick3D/QQuick3DGeometry>
 
+class QString;
+
 /*
  * Procedural meshes for the shapes Qt Quick 3D has no built-in primitive for
  * (hollow pipe, coil spring, arrow) — public QQuick3DGeometry only, no private
@@ -55,6 +57,13 @@ public:
   void buildPipe(float innerRadius, float outerRadius, float length);
   void buildSpring(float coilRadius, float wireRadius, float windings, float length);
   void buildArrow(float radius, float length, float headRadius, float headLength);
+
+  // Load a CAD mesh (type is "STL", "DXF", "OBJ" or "3DS"; the data parser is
+  // chosen accordingly) in its native coordinates. Returns false if the file is
+  // missing/unparsable so the caller can fall back to a placeholder. Scaling to
+  // length/width/height is the caller's job (via the model's scale property),
+  // mirroring the OSG CADFile::scaleVertices convention.
+  bool buildFromCadFile(const QString& type, const QString& fileName);
 };
 
 #endif // QUICK3DGEOMETRY_H
