@@ -646,14 +646,16 @@ bool OMSProxy::deleteConnection(QString crefA, QString crefB)
  * \param value
  * \return
  */
-bool OMSProxy::getBoolean(QString cref, bool &value)
+bool OMSProxy::getBoolean(const QString &componentCref, const QString &varName, bool &value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "getValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   obj["args"]   = args;
 
   QJsonObject reply;
@@ -740,14 +742,16 @@ bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
  * \param value
  * \return
  */
-bool OMSProxy::getInteger(QString cref, int &value)
+bool OMSProxy::getInteger(const QString &componentCref, const QString &varName, int &value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "getValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   obj["args"]   = args;
 
   QJsonObject reply;
@@ -766,14 +770,16 @@ bool OMSProxy::getInteger(QString cref, int &value)
  * \param value
  * \return
  */
-bool OMSProxy::getReal(QString cref, double &value)
+bool OMSProxy::getReal(const QString &componentCref, const QString &varName, double &value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "getValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   obj["args"]   = args;
 
   QJsonObject reply;
@@ -1101,14 +1107,16 @@ bool OMSProxy::saveModel(QString cref, QString filename)
  * \param value
  * \return
  */
-bool OMSProxy::setBoolean(QString cref, bool value)
+bool OMSProxy::setBoolean(const QString &componentCref, const QString &varName, bool value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "setValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   args["value"] = value ? QString("true") : QString("false");
   obj["args"]   = args;
   QJsonObject reply;
@@ -1253,14 +1261,16 @@ bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
  * \param value
  * \return
  */
-bool OMSProxy::setInteger(QString cref, int value)
+bool OMSProxy::setInteger(const QString &componentCref, const QString &varName, int value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "setValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   args["value"] = QString::number(value);
   obj["args"]   = args;
   QJsonObject reply;
@@ -1274,14 +1284,16 @@ bool OMSProxy::setInteger(QString cref, int value)
  * \param value
  * \return
  */
-bool OMSProxy::setReal(QString cref, double value)
+bool OMSProxy::setReal(const QString &componentCref, const QString &varName, double value)
 {
-  QStringList parts = cref.split('.');
+  QStringList parts = componentCref.split('.');
   QJsonObject obj, args;
   obj["method"] = "setValue";
   obj["model"]  = parts.first();
   parts.removeFirst();
-  args["cref"]  = QJsonArray::fromStringList(parts);
+  QJsonArray crefArray = QJsonArray::fromStringList(parts);
+  crefArray.append(varName);
+  args["cref"]  = crefArray;
   args["value"] = QString::number(value);
   obj["args"]   = args;
   QJsonObject reply;
