@@ -58,6 +58,8 @@
 #include <QMenu>
 #include <QToolBar>
 
+#include <algorithm>
+
 using namespace OMPlot;
 
 namespace VariableItemData {
@@ -690,6 +692,50 @@ void VariablesTreeModel::removeVariableTreeItem(VariablesTreeItem *pVariablesTre
     mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
   }
   mpVariablesTreeView->getVariablesWidget()->findVariables();
+}
+
+/*!
+ * \brief sortVariablesTreeItemChildren
+ * Recursively sorts a tree item's children by the natural sort of their display
+ * name. The comparator calls the non-virtual VariablesTreeItem::data, so unlike
+ * QSortFilterProxyModel::lessThan there is no virtual call_indirect (which traps
+ * under Asyncify on wasm).
+ * \param pVariablesTreeItem
+ */
+static void sortVariablesTreeItemChildren(VariablesTreeItem *pVariablesTreeItem)
+{
+  std::sort(pVariablesTreeItem->mChildren.begin(), pVariablesTreeItem->mChildren.end(),
+            [](VariablesTreeItem *pLeft, VariablesTreeItem *pRight) {
+              return StringHandler::naturalSort(pLeft->data(0, Qt::DisplayRole).toString(),
+                                                pRight->data(0, Qt::DisplayRole).toString());
+            });
+  for (VariablesTreeItem *pChild : pVariablesTreeItem->mChildren) {
+    sortVariablesTreeItemChildren(pChild);
+  }
+}
+
+/*!
+ * \brief VariablesTreeModel::sortVariablesTreeItems
+ * Sorts the variable tree in place (each node's children by natural sort),
+ * preserving persistent indexes. Used on wasm instead of the proxy sort.
+ */
+void VariablesTreeModel::sortVariablesTreeItems()
+{
+  emit layoutAboutToBeChanged();
+  const QModelIndexList oldIndexes = persistentIndexList();
+  QVector<VariablesTreeItem*> items;
+  items.reserve(oldIndexes.size());
+  for (const QModelIndex &index : oldIndexes) {
+    items << static_cast<VariablesTreeItem*>(index.internalPointer());
+  }
+  sortVariablesTreeItemChildren(mpRootVariablesTreeItem);
+  for (int i = 0; i < oldIndexes.size(); ++i) {
+    VariablesTreeItem *pItem = items.at(i);
+    if (pItem) {
+      changePersistentIndex(oldIndexes.at(i), createIndex(pItem->row(), oldIndexes.at(i).column(), pItem));
+    }
+  }
+  emit layoutChanged();
 }
 
 /*!
@@ -1574,8 +1620,12 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   mOpenedResultFileName = "";
   initializeVisualization();
 #if defined(__EMSCRIPTEN__)
-  // FIXME: QSortFilterProxyModel::sort traps ("function signature mismatch") on
-  // the wasm/Quick3D build; leave sorting off so the visualization path can run.
+  // QSortFilterProxyModel::sort traps under Asyncify on wasm: the proxy's
+  // lessThan virtual dispatch is a call_indirect whose function pointer is
+  // threaded through Asyncify's instrumentation and gets mis-typed. Sort the
+  // source items directly instead (a non-virtual comparator, no call_indirect)
+  // and leave the proxy's own sorting off — the proxy then shows source order.
+  mpVariablesTreeModel->sortVariablesTreeItems();
   mpVariablesTreeView->setSortingEnabled(false);
 #else
   mpVariablesTreeView->setSortingEnabled(true);
