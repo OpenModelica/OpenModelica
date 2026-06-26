@@ -5215,10 +5215,14 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setWindowTitle(tr("About %1").arg(Helper::applicationName));
   setAttribute(Qt::WA_DeleteOnClose);
 
+  const QString omsVersionLine = OMSProxy::instance()
+      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      : QString();
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3 %4 encryption support</b><br />"
-     "<b>Connected to %5</b><br /><br />"
+     "%5"
+     "<br />"
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
@@ -5235,7 +5239,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 #else
           "without",
 #endif
-          OMSProxy::instance() ? OMSProxy::instance()->getVersion() : QString("OMSimulator"),
+          omsVersionLine,
           Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
           QString::fromLatin1(qVersion()));

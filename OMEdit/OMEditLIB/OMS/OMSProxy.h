@@ -108,11 +108,11 @@ public:
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
   bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
-  bool getBoolean(QString signal, bool &value);
+  bool getBoolean(const QString &componentCref, const QString &varName, bool &value);
   bool getElementsJson(QString cref, QJsonArray &elements);
   bool getFixedStepSize(QString cref, double& stepSize);
-  bool getInteger(QString signal, int &value);
-  bool getReal(QString cref, double &value);
+  bool getInteger(const QString &componentCref, const QString &varName, int &value);
+  bool getReal(const QString &componentCref, const QString &varName, double &value);
   bool getSolverSettings(const QString &cref, QJsonObject &settings);
   bool setSolverSettings(const QString &cref, const QJsonObject &settings);
   bool setSolver(const QString &cref, const QString &solverName);
@@ -128,14 +128,14 @@ public:
   bool rename(const QString &cref, const QString &newCref);
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
-  bool setBoolean(QString signal, bool value);
+  bool setBoolean(const QString &componentCref, const QString &varName, bool value);
   bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);
   bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
   bool setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry);
   bool setFixedStepSize(QString cref, double stepSize);
   bool setLoggingInterval(QString cref, double loggingInterval);
-  bool setInteger(QString signal, int value);
-  bool setReal(QString cref, double value);
+  bool setInteger(const QString &componentCref, const QString &varName, int value);
+  bool setReal(const QString &componentCref, const QString &varName, double value);
   bool setResultFile(QString cref, QString fileName, int bufferSize);
   bool getResultFile(QString cref, QString& fileName, int& bufferSize);
   // setSolver(const QString&, const QString&) declared above with getSolverSettings

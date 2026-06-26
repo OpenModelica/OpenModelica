@@ -177,25 +177,28 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
       hasParameter = true;
       const QString name = pConnector->getName();
       const QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), name);
-      mParameterLabels.append(new Label(name));
+      const QString componentCref = mpComponent->getLibraryTreeItem()->getNameStructure();
+      Label *pNameLabel = new Label(name);
+      pNameLabel->setToolTip(nameStructure);
+      mParameterLabels.append(pNameLabel);
       QLineEdit *pParameterLineEdit = new QLineEdit;
       pParameterLineEdit->installEventFilter(this);
       bool status = false;
       if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real) {
         pParameterLineEdit->setValidator(new QDoubleValidator(this));
         double value;
-        if ((status = OMSProxy::instance()->getReal(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getReal(componentCref, name, value)))
           pParameterLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
               || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum) {
         pParameterLineEdit->setValidator(new QIntValidator(this));
         int value;
-        if ((status = OMSProxy::instance()->getInteger(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getInteger(componentCref, name, value)))
           pParameterLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean) {
         pParameterLineEdit->setValidator(new QIntValidator(this));
         bool value;
-        if ((status = OMSProxy::instance()->getBoolean(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getBoolean(componentCref, name, value)))
           pParameterLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string) {
         qDebug() << "ElementPropertiesDialog: oms_signal_type_string not implemented yet.";
@@ -208,10 +211,12 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
     }
     if (hasParameter)
       mpTabWidget->addTab(pParametersScrollArea, Helper::parameters);
-  } else if (pOMSModelConnector && pOMSModelConnector->isParameter()) {
+  } else if (pOMSModelConnector && pOMSModelConnector->isParameter()) { // toplevel system parameter
     hasParameter = true;
     const QString nameStructure = mpComponent->getLibraryTreeItem()->getNameStructure();
-    Label *pNameLabel = new Label(pOMSModelConnector->getName());
+    const QString name = pOMSModelConnector->getName();
+    const QString componentCref = nameStructure.section('.', 0, -2);
+    Label *pNameLabel = new Label(name);
     pNameLabel->setToolTip(nameStructure);
     mParameterLabels.append(pNameLabel);
     QLineEdit *pParameterLineEdit = new QLineEdit;
@@ -220,18 +225,18 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
     if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real) {
       pParameterLineEdit->setValidator(new QDoubleValidator(this));
       double value;
-      if ((status = OMSProxy::instance()->getReal(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getReal(componentCref, name, value)))
         pParameterLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
             || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum) {
       pParameterLineEdit->setValidator(new QIntValidator(this));
       int value;
-      if ((status = OMSProxy::instance()->getInteger(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getInteger(componentCref, name, value)))
         pParameterLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean) {
       pParameterLineEdit->setValidator(new QIntValidator(this));
       bool value;
-      if ((status = OMSProxy::instance()->getBoolean(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getBoolean(componentCref, name, value)))
         pParameterLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string) {
       qDebug() << "ElementPropertiesDialog: oms_signal_type_string not implemented yet.";
@@ -264,6 +269,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
       hasInput = true;
       const QString name = pConnector->getName();
       const QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), name);
+      const QString componentCref = mpComponent->getLibraryTreeItem()->getNameStructure();
       Label *pNameLabel = new Label(name);
       pNameLabel->setToolTip(nameStructure);
       mInputLabels.append(pNameLabel);
@@ -273,18 +279,18 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
       if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real) {
         pInputLineEdit->setValidator(new QDoubleValidator(this));
         double value;
-        if ((status = OMSProxy::instance()->getReal(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getReal(componentCref, name, value)))
           pInputLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
               || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum) {
         pInputLineEdit->setValidator(new QIntValidator(this));
         int value;
-        if ((status = OMSProxy::instance()->getInteger(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getInteger(componentCref, name, value)))
           pInputLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean) {
         pInputLineEdit->setValidator(new QIntValidator(this));
         bool value;
-        if ((status = OMSProxy::instance()->getBoolean(nameStructure, value)))
+        if ((status = OMSProxy::instance()->getBoolean(componentCref, name, value)))
           pInputLineEdit->setText(QString::number(value));
       } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string) {
         qDebug() << "ElementPropertiesDialog: oms_signal_type_string not implemented yet.";
@@ -300,7 +306,9 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   } else if (pOMSModelConnector && pOMSModelConnector->isInput()) {
     hasInput = true;
     const QString nameStructure = mpComponent->getLibraryTreeItem()->getNameStructure();
-    Label *pNameLabel = new Label(pOMSModelConnector->getName());
+    const QString name = pOMSModelConnector->getName();
+    const QString componentCref = nameStructure.section('.', 0, -2);
+    Label *pNameLabel = new Label(name);
     pNameLabel->setToolTip(nameStructure);
     mInputLabels.append(pNameLabel);
     QLineEdit *pInputLineEdit = new QLineEdit;
@@ -309,18 +317,18 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
     if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real) {
       pInputLineEdit->setValidator(new QDoubleValidator(this));
       double value;
-      if ((status = OMSProxy::instance()->getReal(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getReal(componentCref, name, value)))
         pInputLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
             || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum) {
       pInputLineEdit->setValidator(new QIntValidator(this));
       int value;
-      if ((status = OMSProxy::instance()->getInteger(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getInteger(componentCref, name, value)))
         pInputLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean) {
       pInputLineEdit->setValidator(new QIntValidator(this));
       bool value;
-      if ((status = OMSProxy::instance()->getBoolean(nameStructure, value)))
+      if ((status = OMSProxy::instance()->getBoolean(componentCref, name, value)))
         pInputLineEdit->setText(QString::number(value));
     } else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string) {
       qDebug() << "ElementPropertiesDialog: oms_signal_type_string not implemented yet.";
@@ -375,38 +383,31 @@ void ElementPropertiesDialog::updateProperties()
   OMSModel::Element *pElement = mpComponent->getLibraryTreeItem()->getOMSModelElement();
   if (pElement) {
     int parametersIndex = 0, inputsIndex = 0;
+    const QString nameStructure = mpComponent->getLibraryTreeItem()->getNameStructure();
     for (OMSModel::Connector *pConnector : pElement->getConnectors()) {
-      const QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), pConnector->getName());
+      const QString connectorName = pConnector->getName();
       if (pConnector->isParameter()) {
         const QString value = mParameterLineEdits.at(parametersIndex++)->text();
-        if (value.isEmpty()) {
-          OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        } else {
-          if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
-            OMSProxy::instance()->setReal(nameStructure, value.toDouble());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
-                || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
-            OMSProxy::instance()->setInteger(nameStructure, value.toInt());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
-            OMSProxy::instance()->setBoolean(nameStructure, value.toInt());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
-            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-        }
+        if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
+          OMSProxy::instance()->setReal(nameStructure, connectorName, value.toDouble());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
+              || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
+          OMSProxy::instance()->setInteger(nameStructure, connectorName, value.toInt());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
+          OMSProxy::instance()->setBoolean(nameStructure, connectorName, value.toInt());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
+          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
       } else if (pConnector->isInput()) {
         const QString value = mInputLineEdits.at(inputsIndex++)->text();
-        if (value.isEmpty()) {
-          OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        } else {
-          if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
-            OMSProxy::instance()->setReal(nameStructure, value.toDouble());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
-                || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
-            OMSProxy::instance()->setInteger(nameStructure, value.toInt());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
-            OMSProxy::instance()->setBoolean(nameStructure, value.toInt());
-          else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
-            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-        }
+        if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
+          OMSProxy::instance()->setReal(nameStructure, connectorName, value.toDouble());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
+              || pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
+          OMSProxy::instance()->setInteger(nameStructure, connectorName, value.toInt());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
+          OMSProxy::instance()->setBoolean(nameStructure, connectorName, value.toInt());
+        else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
+          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
       }
     }
   } else { // top level system and subsystem connectors
@@ -414,37 +415,30 @@ void ElementPropertiesDialog::updateProperties()
     if (!pOMSModelConnector) {
       return;
     }
-    const QString nameStructure = mpComponent->getLibraryTreeItem()->getNameStructure();
+    const QString nameStructure = mpComponent->getLibraryTreeItem()->getNameStructure().section('.', 0, -2);
+    const QString connectorName = pOMSModelConnector->getName();
     if (pOMSModelConnector->isParameter() && !mParameterLineEdits.isEmpty()) {
       const QString value = mParameterLineEdits.at(0)->text();
-      if (value.isEmpty()) {
-        OMSProxy::instance()->omsDelete(nameStructure);
-      } else {
-        if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
-          OMSProxy::instance()->setReal(nameStructure, value.toDouble());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
-              || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
-          OMSProxy::instance()->setInteger(nameStructure, value.toInt());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
-          OMSProxy::instance()->setBoolean(nameStructure, value.toInt());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-      }
+      if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
+        OMSProxy::instance()->setReal(nameStructure, connectorName, value.toDouble());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
+            || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
+        OMSProxy::instance()->setInteger(nameStructure, connectorName, value.toInt());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
+        OMSProxy::instance()->setBoolean(nameStructure, connectorName, value.toInt());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
+        qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
     } else if (pOMSModelConnector->isInput() && !mInputLineEdits.isEmpty()) {
       const QString value = mInputLineEdits.at(0)->text();
-      if (value.isEmpty()) {
-        OMSProxy::instance()->omsDelete(nameStructure + ":start");
-      } else {
-        if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
-          OMSProxy::instance()->setReal(nameStructure, value.toDouble());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
-              || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
-          OMSProxy::instance()->setInteger(nameStructure, value.toInt());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
-          OMSProxy::instance()->setBoolean(nameStructure, value.toInt());
-        else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-      }
+      if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real)
+        OMSProxy::instance()->setReal(nameStructure, connectorName, value.toDouble());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer
+            || pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_enum)
+        OMSProxy::instance()->setInteger(nameStructure, connectorName, value.toInt());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean)
+        OMSProxy::instance()->setBoolean(nameStructure, connectorName, value.toInt());
+      else if (pOMSModelConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_string)
+        qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
     }
   }
   // if the name is same as old then skip.
@@ -512,21 +506,23 @@ void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(const QString na
   if (!pConnector) return;
   if (!pConnector->isParameter() && !pConnector->isInput()) return;
 
-  const QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), pConnector->getName());
+  const QString componentCref = mpComponent->getLibraryTreeItem()->getNameStructure();
+  const QString connectorName = pConnector->getName();
+  const QString nameStructure = QString("%1.%2").arg(componentCref, connectorName);
   OMSProxy::instance()->omsDelete(nameStructure + ":start");
 
   bool status = false;
   if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_real) {
     double value;
-    if ((status = OMSProxy::instance()->getReal(nameStructure, value)))
+    if ((status = OMSProxy::instance()->getReal(componentCref, connectorName, value)))
       pLineEdit->setText(QString::number(value));
   } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_integer) {
     int value;
-    if ((status = OMSProxy::instance()->getInteger(nameStructure, value)))
+    if ((status = OMSProxy::instance()->getInteger(componentCref, connectorName, value)))
       pLineEdit->setText(QString::number(value));
   } else if (pConnector->getSignalType() == OMSModel::SignalType::oms_signal_type_boolean) {
     bool value;
-    if ((status = OMSProxy::instance()->getBoolean(nameStructure, value)))
+    if ((status = OMSProxy::instance()->getBoolean(componentCref, connectorName, value)))
       pLineEdit->setText(QString::number(value));
   }
   if (!status) pLineEdit->setPlaceholderText("unknown");
