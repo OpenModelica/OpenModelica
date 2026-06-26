@@ -12,6 +12,7 @@ bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
+cseOutsideNoEvent.mos \
 discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
@@ -23,6 +24,7 @@ IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
 noEventEmit.mos \
+noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
