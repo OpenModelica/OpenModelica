@@ -52,8 +52,8 @@ readFile("modelDescription.tmp.xml");
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
 //     canNotUseMemoryManagementFunctions=\"false\"
-//     canGetAndSetFMUstate=\"false\"
-//     canSerializeFMUstate=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">
 //     <SourceFiles>
 //       <File name=\"test_Bug2764.c\" />
