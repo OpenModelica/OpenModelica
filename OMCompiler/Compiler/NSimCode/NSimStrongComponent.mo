@@ -1203,25 +1203,18 @@ public
 
     function fixIndices
       input list<Block> blcks;
-      output list<Block> oBlcks;
+      input output list<Block> acc;
       input output SimCodeIndices indices;
     algorithm
-      // oBlcks := {};
-      // for blck in blcks loop
-      //   (blck, indices) := fixIndex(blck, indices);
-      //   oBlcks := blck :: oBlcks;
-      // end for;
-      // oBlcks := listReverseInPlace(oBlcks);
-
-      // this is more efficient as it builds the list directly
-      // but it's equivalent to the above code
-      oBlcks := list(match blck
-          local
-            Block b;
-          case _ algorithm
-            (b, indices) := fixIndex(blck, indices);
-          then b;
-        end match for blck in blcks);
+      (acc, indices) := match blcks
+        local
+          Block blck;
+          list<Block> rest;
+        case blck :: rest algorithm
+          (blck, indices) := fixIndex(blck, indices);
+        then fixIndices(rest, blck :: acc, indices);
+        else (acc, indices);
+      end match;
     end fixIndices;
 
     function fixIndex
@@ -1302,7 +1295,7 @@ public
 
         case HYBRID() algorithm
           (tmp, indices) := fixIndex(blck.continuous, indices);
-          (tmp_lst, indices) := fixIndices(blck.discreteEqs, indices);
+          (tmp_lst, indices) := fixIndices(blck.discreteEqs, {}, indices);
           blck.continuous := tmp;
           blck.discreteEqs := tmp_lst;
         then blck;
