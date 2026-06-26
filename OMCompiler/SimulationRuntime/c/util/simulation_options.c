@@ -121,6 +121,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NLSS_MIN_SIZE */                "nlssMinSize",
   /* FLAG_NLS_JAC_TEST_ATOL */            "nlsJacTestATol",
   /* FLAG_NLS_JAC_TEST_RTOL */            "nlsJacTestRTol",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          "nlsEnforceMinMax",
   /* FLAG_NOEMIT */                       "noemit",
   /* FLAG_NOEQUIDISTANT_GRID */           "noEquidistantTimeGrid",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "noEquidistantOutputFrequency",
@@ -282,6 +283,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLSS_MIN_SIZE */                "[int (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ")] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          "enforce min/max attributes as bounds while solving nonlinear systems",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */           "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "value controls the output frequency in noEquidistantTimeGrid mode",
@@ -582,6 +584,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */
   "  Value specifies the relative tolerance for the Jacobian derivative test.",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */
+  "  Enforce the min/max attributes of the iteration variables as bounds while\n"
+  "  solving nonlinear systems. The Newton step is damped so that no unknown\n"
+  "  leaves its [min, max] interval.",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
@@ -834,6 +840,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_NLSS_MIN_SIZE */                FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_JAC_TEST_ATOL */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_JAC_TEST_RTOL */            FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEMIT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_GRID */           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_REPEAT_POLICY_FORBID,
@@ -994,6 +1001,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NLSS_MIN_SIZE */                FLAG_TYPE_OPTION,
   /* FLAG_NLS_JAC_TEST_ATOL */            FLAG_TYPE_OPTION,
   /* FLAG_NLS_JAC_TEST_RTOL */            FLAG_TYPE_OPTION,
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_TYPE_FLAG,
   /* FLAG_NOEMIT */                       FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_GRID*/            FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_TYPE_OPTION,

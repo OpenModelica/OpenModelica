@@ -30,6 +30,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <float.h>  /* DBL_MAX */
 
 #include "../jacobian_util.h"
 #include "../../util/simulation_options.h"
@@ -1426,6 +1427,27 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+
+  /* -nlsEnforceMinMax: whatever solver path produced the solution, reject it if
+   * it violates the min/max attributes of the unknowns. The bounded Newton step
+   * keeps feasible solutions feasible; this guards against fallback solvers
+   * (Hybrd, homotopy continuation) returning an out-of-bounds solution. */
+  if (omc_flag[FLAG_NLS_ENFORCE_MIN_MAX] && nonlinsys->solved == NLS_SOLVED) {
+    int k;
+    for (k = 0; k < nonlinsys->size; k++) {
+      double xi = nonlinsys->nlsx[k];
+      double tol = 1e-6 * (1.0 + fabs(xi));
+      if ((nonlinsys->min[k] > -DBL_MAX && xi < nonlinsys->min[k] - tol) ||
+          (nonlinsys->max[k] <  DBL_MAX && xi > nonlinsys->max[k] + tol)) {
+        warningStreamPrint(OMC_LOG_NLS, 0,
+          "Nonlinear system %d: solution rejected, unknown %d = %g is outside its "
+          "[min, max] bounds [%g, %g] (-nlsEnforceMinMax).",
+          (int)nonlinsys->equationIndex, k, xi, nonlinsys->min[k], nonlinsys->max[k]);
+        nonlinsys->solved = NLS_FAILED;
+        break;
+      }
+    }
+  }
 
   messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   /* update value list database */
