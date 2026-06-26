@@ -1068,7 +1068,9 @@ algorithm
   e := inExp;
   (ops, (se, te, i)) := inTpl;
   // BackendDump.debugStrExpStrExpStr(("Repalce ", se, " with ", te, "\n"));
-  (e1, j) := Expression.replaceExp(e, se, te);
+  // use the noEvent-aware variant: a relation inside noEvent()/smooth() is
+  // continuous and must not be substituted by an event-based variable
+  (e1, j) := Expression.replaceExpNoEvent(e, se, te);
   ops := if j>0 then DAE.SUBSTITUTION({e1}, e)::ops else ops;
   // BackendDump.debugStrExpStrExpStr(("Old ", e, " new ", e1, "\n"));
   outTpl := (ops, (se, te, i+j));

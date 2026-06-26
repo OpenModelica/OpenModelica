@@ -4777,6 +4777,48 @@ algorithm
   end match;
 end replaceExpWork;
 
+public function replaceExpNoEvent
+"Like replaceExp, but does not descend into noEvent() or smooth() calls.
+ Relations inside such operators are evaluated continuously (without state
+ events), so replacing them by an (event-based, discrete) variable would
+ change the model semantics. Replacing a whole noEvent()/smooth() expression
+ is still possible, since the equality check happens before the descent stop."
+  input DAE.Exp inExp;
+  input DAE.Exp inSourceExp;
+  input DAE.Exp inTargetExp;
+  output DAE.Exp exp;
+  output Integer i;
+algorithm
+  (exp,(_,_,i)) := traverseExpTopDown(inExp,replaceExpWorkNoEvent,(inSourceExp,inTargetExp,0));
+end replaceExpNoEvent;
+
+protected function replaceExpWorkNoEvent
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,DAE.Exp,Integer> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
+algorithm
+  (outExp,cont,otpl) := match (inExp, inTpl)
+    local
+      DAE.Exp source,target;
+      Integer c;
+    case (_, (source,target,c))
+      guard ExpressionBasics.expEqual(inExp, source)
+      then (target,false,(source,target,c+1));
+
+    // do not replace inside noEvent()/smooth(): expressions there are
+    // continuous, substituting them by an event-based variable is unsound
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
+      then (inExp,false,inTpl);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
+      then (inExp,false,inTpl);
+
+    else (inExp,true,inTpl);
+  end match;
+end replaceExpWorkNoEvent;
+
 public function expressionCollector
    input DAE.Exp exp;
    input list<DAE.Exp> acc;
