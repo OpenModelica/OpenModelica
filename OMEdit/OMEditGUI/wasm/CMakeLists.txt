@@ -136,7 +136,8 @@ list(APPEND OMEDITLIB_SOURCES
   ${LIB}/Animation/AbstractAnimationWindow.cpp
   ${LIB}/Animation/AnimationWindow.cpp
   ${LIB}/Animation/Quick3D/Quick3DScene.cpp
-  ${LIB}/Animation/Quick3D/Quick3DViewerWidget.cpp)
+  ${LIB}/Animation/Quick3D/Quick3DViewerWidget.cpp
+  ${LIB}/Animation/Quick3D/Quick3DGeometry.cpp)
 set_source_files_properties(
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/om_format.c
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/d2s.c

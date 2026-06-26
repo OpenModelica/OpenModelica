@@ -324,9 +324,11 @@ if(OM_OMEDIT_ANIMATION_QUICK3D)
   list(REMOVE_ITEM OMEDITLIB_HEADERS
        Animation/ViewerWidget.h Animation/ExtraShapes.h Animation/OpenGLWidget.h)
   list(APPEND OMEDITLIB_SOURCES
-       Animation/Quick3D/Quick3DScene.cpp Animation/Quick3D/Quick3DViewerWidget.cpp)
+       Animation/Quick3D/Quick3DScene.cpp Animation/Quick3D/Quick3DViewerWidget.cpp
+       Animation/Quick3D/Quick3DGeometry.cpp)
   list(APPEND OMEDITLIB_HEADERS
-       Animation/Quick3D/Quick3DScene.h Animation/Quick3D/Quick3DViewerWidget.h)
+       Animation/Quick3D/Quick3DScene.h Animation/Quick3D/Quick3DViewerWidget.h
+       Animation/Quick3D/Quick3DGeometry.h)
 endif()
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})

@@ -38,13 +38,16 @@
 
 #include <QHash>
 #include <QObject>
+#include <QString>
 
 #include "Animation/AnimationScene.h"
 
 class QQmlEngine;
 class QQmlComponent;
 class QQuick3DObject;
+class Quick3DGeometry;
 class QVector3D;
+class VectorObject;
 struct Mat4;
 
 /*
@@ -75,13 +78,19 @@ public:
 private:
   struct Item
   {
-    QObject* node = nullptr;     // body transform Node (also stored as the visualizer's transform handle)
-    QObject* model = nullptr;    // Model carrying the mesh
-    QObject* material = nullptr; // PrincipledMaterial
+    QObject* node = nullptr;           // body transform Node (also stored as the visualizer's transform handle)
+    QObject* model = nullptr;          // Model carrying the mesh
+    QObject* material = nullptr;       // PrincipledMaterial
+    Quick3DGeometry* geometry = nullptr; // custom mesh (pipe/spring/arrow), reused across rebuilds
+    QString geomKey;                   // last geometry signature, to skip per-frame rebuilds
   };
 
   Item createItem(AbstractVisualizerObject* visualizer);
-  void applyShapeGeometry(const ShapeObject& shape, QObject* model);
+  void applyShapeGeometry(const ShapeObject& shape, Item& item);
+  void applyVectorGeometry(const VectorObject& vector, Item& item);
+  Quick3DGeometry* ensureGeometry(Item& item);
+  void useBuiltinMesh(const Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler);
+  void useCustomGeometry(const Item& item);
   void applyTransform(QObject* node, const Mat4& mat);
   void applyMaterial(AbstractVisualizerObject* visualizer, QObject* material);
 

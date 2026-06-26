@@ -34,6 +34,7 @@
  */
 
 #include "Quick3DScene.h"
+#include "Quick3DGeometry.h"
 
 #include <limits>
 
@@ -44,7 +45,9 @@
 #include <QQmlEngine>
 #include <QQuaternion>
 #include <QUrl>
+#include <QVariant>
 #include <QVector3D>
+#include <QtQuick3D/QQuick3DGeometry>
 #include <QtQuick3D/QQuick3DObject>
 
 #include "Animation/AbstractVisualizer.h"
@@ -70,12 +73,17 @@ import QtQuick3D
 Node {
   property var omModel: model
   property var omMaterial: mat
+  // Custom procedural meshes (pipe/spring/arrow) emit single-sided walls; render
+  // them double-sided so triangle winding need not be exact. Built-in primitives
+  // keep back-face culling.
+  property bool omDoubleSided: false
   Model {
     id: model
     pickable: true
     materials: [ PrincipledMaterial {
       id: mat
       metalness: 0.0
+      cullMode: omDoubleSided ? Material.NoCulling : Material.BackFaceCulling
       alphaMode: opacity < 0.999 ? PrincipledMaterial.Blend : PrincipledMaterial.Opaque
     } ]
   }
@@ -144,73 +152,112 @@ void Quick3DScene::setUpShapes(std::vector<ShapeObject>& shapes)
     if (!item.node) {
       continue;
     }
-    applyShapeGeometry(shape, item.model);
     mItems.insert(&shape, item);
-    updateVisualizer(&shape, true);
+    updateVisualizer(&shape, true); // geometry is (re)built here, after dims are evaluated
   }
 }
 
 void Quick3DScene::setUpVectors(std::vector<VectorObject>& vectors)
 {
-  // TODO Quick 3D vector (arrow) geometry; rendered as a thin box placeholder.
   for (VectorObject& vector : vectors) {
     Item item = createItem(&vector);
     if (!item.node) {
       continue;
-    }
-    if (item.model) {
-      item.model->setProperty("source", QUrl(QStringLiteral("#Cylinder")));
-      item.model->setProperty("scale", QVector3D(0.01f, 0.01f, 0.01f));
     }
     mItems.insert(&vector, item);
     updateVisualizer(&vector, true);
   }
 }
 
-void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, QObject* model)
+Quick3DGeometry* Quick3DScene::ensureGeometry(Item& item)
 {
-  if (!model) {
+  if (!item.geometry) {
+    item.geometry = new Quick3DGeometry(item.node); // parented → freed with the node
+  }
+  return item.geometry;
+}
+
+void Quick3DScene::useBuiltinMesh(const Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler)
+{
+  // Built-in primitive: centred, Y-axis; scale/rotate/offset onto the Modelica +Z box.
+  item.model->setProperty("geometry", QVariant::fromValue<QQuick3DGeometry*>(nullptr));
+  item.model->setProperty("source", QUrl(QString::fromLatin1(source)));
+  item.model->setProperty("scale", scale);
+  item.model->setProperty("position", position);
+  item.model->setProperty("eulerRotation", euler);
+  if (item.node) {
+    item.node->setProperty("omDoubleSided", false);
+  }
+}
+
+void Quick3DScene::useCustomGeometry(const Item& item)
+{
+  // Custom mesh already in Modelica units along +Z from 0: no local transform.
+  item.model->setProperty("source", QUrl());
+  item.model->setProperty("geometry", QVariant::fromValue<QQuick3DGeometry*>(item.geometry));
+  item.model->setProperty("scale", QVector3D(1, 1, 1));
+  item.model->setProperty("position", QVector3D(0, 0, 0));
+  item.model->setProperty("eulerRotation", QVector3D(0, 0, 0));
+  if (item.node) {
+    item.node->setProperty("omDoubleSided", true);
+  }
+}
+
+void Quick3DScene::applyShapeGeometry(const ShapeObject& shape, Item& item)
+{
+  if (!item.model) {
     return;
   }
   const float length = shape._length.exp;
   const float width = shape._width.exp;
   const float height = shape._height.exp;
-
-  QUrl source;
-  QVector3D scale(1, 1, 1);
-  QVector3D position(0, 0, length / 2.0f);
-  QVector3D euler(0, 0, 0);
-
-  if (shape._type == "box") {
-    source = QUrl(QString::fromLatin1(kCube));
-    scale = QVector3D(width / 100.0f, height / 100.0f, length / 100.0f);
-  } else if (shape._type == "sphere") {
-    source = QUrl(QString::fromLatin1(kSphere));
-    scale = QVector3D(length / 100.0f, length / 100.0f, length / 100.0f);
-  } else if (shape._type == "cylinder" || shape._type == "pipe" || shape._type == "pipecylinder") {
-    // #Cylinder axis is +Y; rotate it onto +Z. TODO hollow pipe via QQuick3DGeometry.
-    source = QUrl(QString::fromLatin1(kCylinder));
-    scale = QVector3D(width / 100.0f, length / 100.0f, width / 100.0f);
-    euler = QVector3D(90, 0, 0);
-  } else if (shape._type == "cone") {
-    source = QUrl(QString::fromLatin1(kCone));
-    scale = QVector3D(width / 100.0f, length / 100.0f, width / 100.0f);
-    euler = QVector3D(90, 0, 0);
-  } else if (shape._type == "spring") {
-    // TODO spring helix via QQuick3DGeometry; thin cylinder placeholder for now.
-    source = QUrl(QString::fromLatin1(kCylinder));
-    scale = QVector3D(width / 100.0f, length / 100.0f, width / 100.0f);
-    euler = QVector3D(90, 0, 0);
-  } else {
-    // CAD (dxf/stl/obj/3ds) and unknown: bounding-box placeholder. TODO mesh import.
-    source = QUrl(QString::fromLatin1(kCube));
-    scale = QVector3D(width / 100.0f, height / 100.0f, length / 100.0f);
+  const float extra = shape._extra.exp;
+  // Skip the rebuild when nothing the mesh depends on changed (every frame otherwise).
+  const QString key = QString::asprintf("%s|%.6g|%.6g|%.6g|%.6g", shape._type.c_str(), length, width, height, extra);
+  if (key == item.geomKey) {
+    return;
   }
+  item.geomKey = key;
 
-  model->setProperty("source", source);
-  model->setProperty("scale", scale);
-  model->setProperty("position", position);
-  model->setProperty("eulerRotation", euler);
+  const QVector3D pos(0, 0, length / 2.0f);
+  if (shape._type == "box") {
+    useBuiltinMesh(item, kCube, QVector3D(width / 100.f, height / 100.f, length / 100.f), pos, QVector3D(0, 0, 0));
+  } else if (shape._type == "sphere") {
+    useBuiltinMesh(item, kSphere, QVector3D(length / 100.f, length / 100.f, length / 100.f), pos, QVector3D(0, 0, 0));
+  } else if (shape._type == "cylinder") {
+    useBuiltinMesh(item, kCylinder, QVector3D(width / 100.f, length / 100.f, width / 100.f), pos, QVector3D(90, 0, 0));
+  } else if (shape._type == "cone") {
+    useBuiltinMesh(item, kCone, QVector3D(width / 100.f, length / 100.f, width / 100.f), pos, QVector3D(90, 0, 0));
+  } else if (shape._type == "pipe" || shape._type == "pipecylinder") {
+    // rO = width/2, rI = width*extra/2 (Visualization.cpp Pipecylinder args).
+    ensureGeometry(item)->buildPipe(width * extra / 2.0f, width / 2.0f, length);
+    useCustomGeometry(item);
+  } else if (shape._type == "spring") {
+    // Spring(coilRadius=width, wireRadius=height, windings=extra, length).
+    ensureGeometry(item)->buildSpring(width, height, extra, length);
+    useCustomGeometry(item);
+  } else {
+    // CAD (dxf/stl/obj/3ds) / unknown: bounding-box placeholder. TODO mesh import.
+    useBuiltinMesh(item, kCube, QVector3D(width / 100.f, height / 100.f, length / 100.f), pos, QVector3D(0, 0, 0));
+  }
+}
+
+void Quick3DScene::applyVectorGeometry(const VectorObject& vector, Item& item)
+{
+  if (!item.model) {
+    return;
+  }
+  const float length = vector.getLength();
+  const float radius = vector.getRadius();
+  const float headLength = vector.getHeadLength();
+  const float headRadius = vector.getHeadRadius();
+  const QString key = QString::asprintf("arrow|%.6g|%.6g|%.6g|%.6g", length, radius, headLength, headRadius);
+  if (key == item.geomKey) {
+    return;
+  }
+  item.geomKey = key;
+  ensureGeometry(item)->buildArrow(radius, length, headRadius, headLength);
+  useCustomGeometry(item);
 }
 
 void Quick3DScene::applyTransform(QObject* node, const Mat4& mat)
@@ -250,17 +297,20 @@ void Quick3DScene::applyMaterial(AbstractVisualizerObject* visualizer, QObject* 
 
 void Quick3DScene::updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties)
 {
-  auto it = mItems.constFind(visualizer);
-  if (it == mItems.constEnd()) {
+  auto it = mItems.find(visualizer);
+  if (it == mItems.end()) {
     return;
   }
-  const Item& item = it.value();
+  Item& item = it.value();
   // Shape dimensions (_length/_width/_height) are evaluated only in updateVisObjects,
   // which runs AFTER setUpShapes — so the geometry/scale set once at setUp would be
   // zero (→ invisible models). Re-apply it here (this method is called from the first
-  // attribute update and every frame), which also handles time-varying dimensions.
+  // attribute update and every frame); the geomKey check skips the rebuild unless a
+  // mesh-affecting dimension actually changed (handles time-varying dimensions).
   if (ShapeObject* shape = dynamic_cast<ShapeObject*>(visualizer)) {
-    applyShapeGeometry(*shape, item.model);
+    applyShapeGeometry(*shape, item);
+  } else if (VectorObject* vector = dynamic_cast<VectorObject*>(visualizer)) {
+    applyVectorGeometry(*vector, item);
   }
   applyTransform(item.node, visualizer->_mat);
   if (changeMaterialProperties) {
