@@ -472,6 +472,7 @@ public
 
             // jacobian blocks only from simulation jacobians
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0});
+            (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, simCodeIndices);
 
             // TODO: these should be collected prior, and are the linear systems of Jacobian (inner linear to compute pDers)
             // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
