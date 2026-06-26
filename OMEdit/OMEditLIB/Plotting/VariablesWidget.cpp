@@ -1573,8 +1573,14 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   }
   mOpenedResultFileName = "";
   initializeVisualization();
+#if defined(__EMSCRIPTEN__)
+  // FIXME: QSortFilterProxyModel::sort traps ("function signature mismatch") on
+  // the wasm/Quick3D build; leave sorting off so the visualization path can run.
+  mpVariablesTreeView->setSortingEnabled(false);
+#else
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
+#endif
   // since we cleared the filter above so we need to apply it back.
   findVariables();
   MainWindow::instance()->getStatusBar()->clearMessage();

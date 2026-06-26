@@ -286,6 +286,36 @@ QByteArray omcWorkerReadFile(const char *path) {
   return data;
 }
 
+// Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
+// Returns the immediate child names of dir; directories carry a trailing '/'.
+EM_JS(int, omedit_post_vfs_list, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsList", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_list, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const entries = (r && r.entries) || [];
+  const s = entries.map(e => e.name + (e.isDir ? "/" : "")).join("\n");
+  const len = lengthBytesUTF8(s) + 1;
+  const ptr = _malloc(len);
+  stringToUTF8(s, ptr, len);
+  return ptr;
+});
+
+QStringList omcWorkerListDir(const char *path) {
+  QStringList out;
+  if (!omedit_worker_ready()) return out;
+  int id = omedit_post_vfs_list(path);
+  omcWorkerWaitReply(id);
+  char *p = omedit_take_vfs_list(id);
+  if (!p) return out;
+  QString s = QString::fromUtf8(p);
+  free(p);
+  if (!s.isEmpty()) out = s.split('\n', Qt::SkipEmptyParts);
+  return out;
+}
+
 // Copy a worker-VFS file into the page MEMFS at the same path, for readers that
 // use raw C stdio (fopen) instead of QFile — e.g. OMPlot's .mat/.csv readers,
 // which the QAbstractFileEngine cannot intercept. Returns true if staged.

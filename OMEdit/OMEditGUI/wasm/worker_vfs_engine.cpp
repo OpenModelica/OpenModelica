@@ -11,21 +11,26 @@
 // (synchronously, via the same nested-QEventLoop bridge as every other omc call)
 // and serves them. So every QFile/QFileInfo read of a worker-owned file just works.
 //
-// Read-only: writes and directory enumeration fall through (return failure). Add a
-// worker "vfs list" op if QDir enumeration of worker paths is ever needed.
+// Read-only: writes fall through (return failure). Directory enumeration (QDir)
+// is served via the worker's WASI fd_readdir (omcWorkerListDir).
 #if defined(__EMSCRIPTEN__)
 
 #include <QtCore/private/qabstractfileengine_p.h>
 #include <QByteArray>
 #include <QString>
+#include <QStringList>
+#include <QDir>
+#include <QDirListing>
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <emscripten.h>
 #include <emscripten/em_js.h>
 
 // Defined in OMEditLIB/OMC/OMCProxy.cpp (shares the omc worker bridge).
 QByteArray omcWorkerReadFile(const char *path);
+QStringList omcWorkerListDir(const char *path);
 
 // True if the page MEMFS already has the path (then the default engine handles it).
 EM_JS(int, omedit_memfs_exists, (const char *path), {
@@ -34,6 +39,26 @@ EM_JS(int, omedit_memfs_exists, (const char *path), {
 });
 
 namespace {
+
+// Iterates the names omcWorkerListDir returned for a worker directory.
+class WorkerVfsIterator : public QAbstractFileEngineIterator
+{
+public:
+  WorkerVfsIterator(const QString &path, QDirListing::IteratorFlags filters,
+                    const QStringList &nameFilters, QStringList names)
+    : QAbstractFileEngineIterator(path, filters, nameFilters), mNames(std::move(names)) {}
+
+  bool advance() override
+  {
+    if (mIndex + 1 < mNames.size()) { ++mIndex; return true; }
+    return false;
+  }
+  QString currentFileName() const override { return mNames.value(mIndex); }
+
+private:
+  QStringList mNames;
+  int mIndex = -1;
+};
 
 class WorkerVfsFileEngine : public QAbstractFileEngine
 {
@@ -71,8 +96,22 @@ public:
     if (ensureFetched()) {
       f |= ExistsFlag | FileType;
       f |= ReadOwnerPerm | ReadUserPerm | ReadGroupPerm | ReadOtherPerm;
+    } else if (ensureDirListed()) {
+      f |= ExistsFlag | DirectoryType;
+      f |= ReadOwnerPerm | ReadUserPerm | ReadGroupPerm | ReadOtherPerm;
     }
     return f & type;
+  }
+
+  IteratorUniquePtr beginEntryList(const QString &path, QDirListing::IteratorFlags filters,
+                                   const QStringList &filterNames) override
+  {
+    ensureDirListed();
+    QStringList names;
+    for (const QString &e : std::as_const(mDirEntries)) {
+      names << (e.endsWith(QLatin1Char('/')) ? e.left(e.size() - 1) : e);
+    }
+    return std::make_unique<WorkerVfsIterator>(path, filters, filterNames, names);
   }
 
   bool caseSensitive() const override { return true; }
@@ -92,6 +131,7 @@ public:
   void setFileName(const QString &file) override
   {
     mName = file; mFetched = false; mExists = false; mData.clear(); mPos = 0;
+    mDirFetched = false; mDirEntries.clear();
   }
 
 private:
@@ -105,10 +145,22 @@ private:
     return mExists;
   }
 
+  // Lazily list the path as a directory (empty ⇒ not a worker directory).
+  bool ensureDirListed() const
+  {
+    if (!mDirFetched) {
+      mDirFetched = true;
+      mDirEntries = omcWorkerListDir(mName.toUtf8().constData());
+    }
+    return !mDirEntries.isEmpty();
+  }
+
   QString mName;
   mutable QByteArray mData;
   mutable bool mFetched = false;
   mutable bool mExists = false;
+  mutable QStringList mDirEntries;
+  mutable bool mDirFetched = false;
   qint64 mPos = 0;
 };
 

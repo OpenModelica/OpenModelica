@@ -2038,6 +2038,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
+    // Populate (and sort) the variables BEFORE opening the animation window. On wasm the
+    // Quick 3D viewer starts an async render loop the moment it is created, and running the
+    // variables' QSortFilterProxyModel sort while it is live traps; doing it first keeps the
+    // sort synchronous and intact (and is harmless ordering on every platform).
+    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
 #if !defined(WITHOUT_OSG)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
@@ -2053,7 +2058,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       }
     }
 #endif
-    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
     /* issue #11811
      * Make sure we always update the diagramWindow after simulation.
      */
