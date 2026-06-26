@@ -1083,8 +1083,6 @@ public
           local
             Option<SimJacobian> opt_jacobian;
             SimJacobian jacobian;
-            ComponentRef cref;
-            SimVar sim_var;
 
           case LINEAR() then (blck :: linearLoops, nonlinearLoops);
           case NONLINEAR() algorithm
@@ -1218,9 +1216,11 @@ public
       // this is more efficient as it builds the list directly
       // but it's equivalent to the above code
       oBlcks := list(match blck
+          local
+            Block b;
           case _ algorithm
-            (blck, indices) := fixIndex(blck, indices);
-          then blck;
+            (b, indices) := fixIndex(blck, indices);
+          then b;
         end match for blck in blcks);
     end fixIndices;
 
