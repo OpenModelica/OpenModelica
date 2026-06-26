@@ -142,6 +142,10 @@ Quick3DScene::Item Quick3DScene::createItem(AbstractVisualizerObject* visualizer
   item.node = obj;
   item.model = childObject(obj, "omModel");
   item.material = childObject(obj, "omMaterial");
+  if (item.model) {
+    // View3D.pick() returns the hit Model; tag it so the picker maps back to the id.
+    item.model->setObjectName(QString::fromStdString(visualizer->_id));
+  }
   visualizer->setTransformNode(obj);
   return item;
 }

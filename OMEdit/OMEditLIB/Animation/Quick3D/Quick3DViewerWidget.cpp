@@ -37,23 +37,38 @@
 
 #include <cmath>
 
+#include <QColorDialog>
+#include <QInputDialog>
 #include <QMatrix3x3>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QQuickItem>
 #include <QUrl>
+#include <QVariant>
 #include <QWheelEvent>
 #include <QtMath>
 #include <QtQuick3D/QQuick3DObject>
 
 #include "Quick3DScene.h"
+#include "Animation/AbstractAnimationWindow.h"
+#include "Animation/AbstractVisualizer.h"
+#include "Animation/Visualization.h"
 
 namespace {
 const char* kShellQml = R"QML(
 import QtQuick
 import QtQuick3D
 Item {
+  // Ray-pick at the given view pixel; returns the hit Model's objectName (the
+  // visualizer id) or "" — keeps the private QQuick3DPickResult type in QML.
+  function pickName(px, py) {
+    var r = view3d.pick(px, py);
+    return (r.objectHit !== null) ? r.objectHit.objectName : "";
+  }
   View3D {
+    id: view3d
     objectName: "view3d"
     anchors.fill: parent
     environment: SceneEnvironment {
@@ -82,6 +97,8 @@ Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
     mpScene(nullptr),
     mpSceneRoot(nullptr),
     mpCamera(nullptr),
+    mpAnimationWindow(qobject_cast<AbstractAnimationWindow*>(parent)),
+    mpSelectedVisualizer(nullptr),
     mCenter(0.0f, 0.0f, 0.0f),
     mDistance(5.0f)
 {
@@ -189,8 +206,91 @@ void Quick3DViewerWidget::orbitCamera(float deltaYawDeg, float deltaPitchDeg)
   applyCamera();
 }
 
+QString Quick3DViewerWidget::pickName(const QPointF& viewPos)
+{
+  QObject* root = rootObject();
+  if (!root) {
+    return QString();
+  }
+  // pick() takes logical view pixels, which is exactly the widget-local mouse
+  // position (no devicePixelRatio scaling, unlike the OSG window picker).
+  QVariant ret;
+  QMetaObject::invokeMethod(root, "pickName", Q_RETURN_ARG(QVariant, ret),
+                            Q_ARG(QVariant, viewPos.x()), Q_ARG(QVariant, viewPos.y()));
+  return ret.toString();
+}
+
+void Quick3DViewerWidget::pickVisualizer(const QPointF& viewPos)
+{
+  mpSelectedVisualizer = nullptr;
+  if (!mpAnimationWindow || !mpAnimationWindow->getVisualization()) {
+    return;
+  }
+  const QString name = pickName(viewPos);
+  if (!name.isEmpty()) {
+    mpSelectedVisualizer = mpAnimationWindow->getVisualization()->getBaseData()->getVisualizerObjectByID(name.toStdString());
+  }
+}
+
+void Quick3DViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
+{
+  if (!mpSelectedVisualizer || !mpAnimationWindow || !mpAnimationWindow->getVisualization()) {
+    return;
+  }
+  AbstractVisualizerObject* viz = mpSelectedVisualizer;
+  OMVisualBase* base = mpAnimationWindow->getVisualization()->getBaseData();
+  const auto refresh = [base, viz]() { base->modifyVisualizer(viz); };
+
+  QMenu menu(QString::fromStdString(viz->_id), this);
+
+  connect(menu.addAction(tr("Change Color")), &QAction::triggered, this, [this, viz, refresh]() {
+    const QColor color = QColorDialog::getColor(viz->getVisualProperties()->getColor().get(), this, tr("Change Color"));
+    if (color.isValid()) {
+      viz->getVisualProperties()->getColor().set(color);
+      refresh();
+    }
+  });
+  connect(menu.addAction(tr("Change Transparency")), &QAction::triggered, this, [this, viz, refresh]() {
+    bool ok = false;
+    const int cur = int(viz->getVisualProperties()->getTransparency().get() * 100.0f);
+    const int t = QInputDialog::getInt(this, tr("Change Transparency"), tr("Transparency [%]:"), cur, 0, 100, 1, &ok);
+    if (ok) {
+      viz->getVisualProperties()->getTransparency().set(t / 100.0f);
+      refresh();
+    }
+  });
+  connect(menu.addAction(tr("Make Invisible")), &QAction::triggered, this, [viz, refresh]() {
+    viz->getVisualProperties()->getTransparency().set(1.0f);
+    refresh();
+  });
+  connect(menu.addAction(tr("Change Specularity")), &QAction::triggered, this, [this, viz, refresh]() {
+    bool ok = false;
+    const int cur = int(viz->getVisualProperties()->getSpecular().get() * 100.0f);
+    const int s = QInputDialog::getInt(this, tr("Change Specularity"), tr("Specularity [%]:"), cur, 0, 100, 1, &ok);
+    if (ok) {
+      viz->getVisualProperties()->getSpecular().set(s / 100.0f);
+      refresh();
+    }
+  });
+  menu.addSeparator();
+  connect(menu.addAction(tr("Reset Visual Properties")), &QAction::triggered, this, [base]() {
+    for (AbstractVisualizerObject& v : base->getVisualizerObjects()) {
+      v.getVisualProperties()->resetVisualProperties();
+      base->modifyVisualizer(v);
+    }
+  });
+
+  menu.exec(mapToGlobal(pos));
+  mpSelectedVisualizer = nullptr;
+}
+
 void Quick3DViewerWidget::mousePressEvent(QMouseEvent* event)
 {
+  if (event->button() == Qt::RightButton && event->modifiers() == Qt::ShiftModifier) {
+    pickVisualizer(event->position());
+    showVisualizerPickContextMenu(event->pos());
+    return;
+  }
   mLastMousePos = event->pos();
   QQuickWidget::mousePressEvent(event);
 }

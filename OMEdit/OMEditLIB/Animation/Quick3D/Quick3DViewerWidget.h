@@ -38,11 +38,14 @@
 
 #include <QQuickWidget>
 #include <QQuaternion>
+#include <QString>
 #include <QVector3D>
 #include <QPoint>
 
 class Quick3DScene;
 class AnimationScene;
+class AbstractAnimationWindow;
+class AbstractVisualizerObject;
 class QQuick3DObject;
 
 /*
@@ -78,10 +81,19 @@ protected:
 
 private:
   void applyCamera();
+  // Ray-pick at a view pixel: returns the hit Model's objectName (visualizer id).
+  QString pickName(const QPointF& viewPos);
+  // Shift+right-click: pick the visualizer under the cursor and pop up the
+  // visual-property context menu (color/transparency/specular/reset), like the
+  // OSG ViewerWidget. Backend-agnostic — changes route through modifyVisualizer.
+  void pickVisualizer(const QPointF& viewPos);
+  void showVisualizerPickContextMenu(const QPoint& pos);
 
   Quick3DScene* mpScene;
   QQuick3DObject* mpSceneRoot;
   QObject* mpCamera;
+  AbstractAnimationWindow* mpAnimationWindow;
+  AbstractVisualizerObject* mpSelectedVisualizer;
 
   // Orbit-camera state: an orientation (camera local axes → world) plus the
   // look-at point and distance. The camera sits at mCenter + backward*mDistance.
