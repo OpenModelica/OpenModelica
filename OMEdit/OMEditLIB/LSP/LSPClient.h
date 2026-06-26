@@ -91,6 +91,7 @@ private:
   QHash<int, QString> mPendingRequests; // id -> method name
 
   void sendMessage(const QJsonObject &message);
+  int sendRequest(const QString &method, const QJsonObject &params);
   void processMessage(const QJsonObject &message);
   void handleResponse(int id, const QJsonValue &result);
   void handleNotification(const QString &method, const QJsonObject &params);

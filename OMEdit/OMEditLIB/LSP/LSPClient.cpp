@@ -243,23 +243,10 @@ void LSPClient::closeDocument(const QString &uri)
  */
 int LSPClient::requestHover(const QString &uri, int line, int character)
 {
-  if (!mInitialized) {
-    return -1;
-  }
-  int id = nextId();
-  mPendingRequests.insert(id, QStringLiteral("textDocument/hover"));
-
   QJsonObject params;
   params["textDocument"] = makeTextDocumentIdentifier(uri);
   params["position"] = makePosition(line, character);
-
-  QJsonObject request;
-  request["jsonrpc"] = QStringLiteral("2.0");
-  request["id"] = id;
-  request["method"] = QStringLiteral("textDocument/hover");
-  request["params"] = params;
-  sendMessage(request);
-  return id;
+  return sendRequest(QStringLiteral("textDocument/hover"), params);
 }
 
 /*!
@@ -271,23 +258,10 @@ int LSPClient::requestHover(const QString &uri, int line, int character)
  */
 int LSPClient::requestDefinition(const QString &uri, int line, int character)
 {
-  if (!mInitialized) {
-    return -1;
-  }
-  int id = nextId();
-  mPendingRequests.insert(id, QStringLiteral("textDocument/definition"));
-
   QJsonObject params;
   params["textDocument"] = makeTextDocumentIdentifier(uri);
   params["position"] = makePosition(line, character);
-
-  QJsonObject request;
-  request["jsonrpc"] = QStringLiteral("2.0");
-  request["id"] = id;
-  request["method"] = QStringLiteral("textDocument/definition");
-  request["params"] = params;
-  sendMessage(request);
-  return id;
+  return sendRequest(QStringLiteral("textDocument/definition"), params);
 }
 
 /*!
@@ -299,23 +273,10 @@ int LSPClient::requestDefinition(const QString &uri, int line, int character)
  */
 int LSPClient::requestDeclaration(const QString &uri, int line, int character)
 {
-  if (!mInitialized) {
-    return -1;
-  }
-  int id = nextId();
-  mPendingRequests.insert(id, QStringLiteral("textDocument/declaration"));
-
   QJsonObject params;
   params["textDocument"] = makeTextDocumentIdentifier(uri);
   params["position"] = makePosition(line, character);
-
-  QJsonObject request;
-  request["jsonrpc"] = QStringLiteral("2.0");
-  request["id"] = id;
-  request["method"] = QStringLiteral("textDocument/declaration");
-  request["params"] = params;
-  sendMessage(request);
-  return id;
+  return sendRequest(QStringLiteral("textDocument/declaration"), params);
 }
 
 /*!
@@ -325,22 +286,9 @@ int LSPClient::requestDeclaration(const QString &uri, int line, int character)
  */
 int LSPClient::requestDocumentSymbols(const QString &uri)
 {
-  if (!mInitialized) {
-    return -1;
-  }
-  int id = nextId();
-  mPendingRequests.insert(id, QStringLiteral("textDocument/documentSymbol"));
-
   QJsonObject params;
   params["textDocument"] = makeTextDocumentIdentifier(uri);
-
-  QJsonObject request;
-  request["jsonrpc"] = QStringLiteral("2.0");
-  request["id"] = id;
-  request["method"] = QStringLiteral("textDocument/documentSymbol");
-  request["params"] = params;
-  sendMessage(request);
-  return id;
+  return sendRequest(QStringLiteral("textDocument/documentSymbol"), params);
 }
 
 /*!
@@ -414,6 +362,28 @@ void LSPClient::sendMessage(const QJsonObject &message)
   QByteArray header = QStringLiteral("Content-Length: %1\r\n\r\n").arg(body.size()).toUtf8();
   mpProcess->write(header);
   mpProcess->write(body);
+}
+
+/*!
+ * \brief LSPClient::sendRequest
+ * Allocates an id, records the pending method, and sends a JSON-RPC request.
+ * \return request id, or -1 if not running
+ */
+int LSPClient::sendRequest(const QString &method, const QJsonObject &params)
+{
+  if (!mInitialized) {
+    return -1;
+  }
+  int id = nextId();
+  mPendingRequests.insert(id, method);
+
+  QJsonObject request;
+  request["jsonrpc"] = QStringLiteral("2.0");
+  request["id"] = id;
+  request["method"] = method;
+  request["params"] = params;
+  sendMessage(request);
+  return id;
 }
 
 /*!
