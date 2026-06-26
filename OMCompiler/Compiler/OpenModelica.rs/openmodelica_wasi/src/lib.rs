@@ -26,6 +26,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 pub mod wasi;
+pub mod fs;
 
 // ─────────────────────────── embedded builtins ───────────────────────────────
 
@@ -79,6 +80,11 @@ fn cwd_store() -> &'static Mutex<String> {
 pub fn set_cwd(dir: &str) {
     let n = normalize(dir);
     *cwd_store().lock().unwrap() = n;
+}
+
+/// The working directory relative path keys resolve against (default `/`).
+pub fn cwd() -> String {
+    cwd_store().lock().unwrap().clone()
 }
 
 /// Canonicalise a path key to an absolute, slash-normalised, dot-folded form:
