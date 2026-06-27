@@ -47,6 +47,7 @@ protected
   import StrongComponent = NBStrongComponent;
 
   // NF imports
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -526,6 +527,17 @@ public
     DAEType dae_type;
   algorithm
     (new_residuals, dae_type) := match comp
+      // #15882: a single equation that is implicit in its matched variable (the
+      // variable only occurs inside a non-invertible function call) must be solved
+      // by a nonlinear solver. Keep it INNER (torn nonlinear system, as in ODE mode)
+      // instead of promoting it to a global IDA algebraic residual. Promoting it
+      // exposes a loop that can be singular at the operating point (e.g. a fan/pump
+      // pressure characteristic solved inversely for the speed, whose derivative
+      // vanishes at zero speed) into IDA's global Jacobian, which then fails to
+      // factorize (IDA_LSETUP_FAIL, -6) at t = 0.
+      case SINGLE_COMPONENT() guard matchedVarIsImplicit(comp.eqn, comp.var)
+      then ({}, DAEType.INNER);
+
       // single equation fully solved for single variable (not neccessarily scalar)
       case SINGLE_COMPONENT() algorithm
         (new_residuals, dae_type) := singleDAEModeComponent(comp.eqn, variables, uniqueIndex);
@@ -564,6 +576,55 @@ public
       inners := comp :: inners;
     end if;
   end sortDAEModeComponent;
+
+  function matchedVarIsImplicit
+    "#15882: returns true if the matched variable occurs inside a function-call
+    argument of the equation, i.e. the equation cannot be solved explicitly for it
+    and must be handled by a (potentially singular) nonlinear solver. Such single
+    components are kept INNER in DAE mode instead of becoming global IDA residuals."
+    input Pointer<Equation> eqn_ptr;
+    input Pointer<Variable> var_ptr;
+    output Boolean implicit;
+  protected
+    ComponentRef var_cref = BVariable.getVarName(var_ptr);
+    Pointer<Boolean> found = Pointer.create(false);
+  algorithm
+    _ := Equation.map(Pointer.access(eqn_ptr), function flagVarInCall(var_cref = var_cref, found = found));
+    implicit := Pointer.access(found);
+  end matchedVarIsImplicit;
+
+  function flagVarInCall
+    "Sets found to true when var_cref appears in any argument of a call expression."
+    input output Expression exp;
+    input ComponentRef var_cref;
+    input Pointer<Boolean> found;
+  algorithm
+    if not Pointer.access(found) then
+      () := match exp
+        case Expression.CALL() algorithm
+          for arg in Call.arguments(exp.call) loop
+            if Expression.contains(arg, function isCref(var_cref = var_cref)) then
+              Pointer.update(found, true);
+              break;
+            end if;
+          end for;
+        then ();
+        else ();
+      end match;
+    end if;
+  end flagVarInCall;
+
+  function isCref
+    "Predicate: expression is exactly the component reference var_cref."
+    input Expression exp;
+    input ComponentRef var_cref;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then ComponentRef.isEqual(exp.cref, var_cref);
+      else false;
+    end match;
+  end isCref;
 
   function slicedDAEModeComponent
     input list<Slice<Pointer<Variable>>> var_slices;
