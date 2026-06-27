@@ -452,10 +452,13 @@ NLS_SOLVER_STATUS solveNlsIpopt(DATA *data, threadData_t *threadData, NONLINEAR_
   AddIpoptStrOption(nlp, "sb", "yes");                 /* suppress the IPOPT banner */
   AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
   AddIpoptIntOption(nlp, "print_level", OMC_ACTIVE_STREAM(OMC_LOG_NLS_V) ? 5 : 0);
-  AddIpoptNumOption(nlp, "tol", 1e-12);
-  AddIpoptNumOption(nlp, "constr_viol_tol", 1e-10);
-  AddIpoptNumOption(nlp, "acceptable_tol", 1e-8);
-  AddIpoptNumOption(nlp, "acceptable_constr_viol_tol", 1e-8);
+  /* Keep tolerances at IPOPT's standard level; an over-tight tol (e.g. 1e-12) on
+   * a barrier feasibility solve is a common cause of restoration failures that
+   * depend on the linear-solver (MUMPS) version. */
+  AddIpoptNumOption(nlp, "tol", 1e-8);
+  AddIpoptNumOption(nlp, "constr_viol_tol", 1e-9);
+  AddIpoptNumOption(nlp, "acceptable_tol", 1e-6);
+  AddIpoptNumOption(nlp, "acceptable_constr_viol_tol", 1e-7);
 
   /* Evaluate residuals in continuous mode. Let numerical/domain errors throw
    * (noThrowDivZero = 0) so they are caught in nlsIpoptResidual() and reported to

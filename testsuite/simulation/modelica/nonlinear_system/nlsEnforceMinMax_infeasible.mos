@@ -17,11 +17,14 @@ equation
 end MinMaxInfeasible;
 "); getErrorString();
 
-rDef := simulate(MinMaxInfeasible, stopTime = 0.0);
-print("default      solved = " + String(rDef.resultFile <> "") + ", x = " + String(val(x, 0.0)) + "\n");
+// default: the simulate record (echoed) reports success, and x is the
+// out-of-bounds root with only a min-violation warning.
+rDef := simulate(MinMaxInfeasible, stopTime = 0.0); getErrorString();
+print("default x = " + String(val(x, 0.0)) + "\n");
 
-rEnf := simulate(MinMaxInfeasible, stopTime = 0.0, simflags = "-nlsEnforceMinMax");
-print("enforceMinMax solved = " + String(rEnf.resultFile <> "") + "\n");
+// enforced: the simulate record (echoed) reports that initialization failed,
+// because there is no feasible root >= 1.
+rEnf := simulate(MinMaxInfeasible, stopTime = 0.0, simflags = "-nlsEnforceMinMax"); getErrorString();
 
 // Result:
 // true
@@ -36,6 +39,8 @@ print("enforceMinMax solved = " + String(rEnf.resultFile <> "") + "\n");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
+// default x = -0.5
 //
 // record SimulationResult
 //     resultFile = "",
@@ -46,5 +51,5 @@ print("enforceMinMax solved = " + String(rEnf.resultFile <> "") + "\n");
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
-//
+// ""
 // endResult

@@ -17,7 +17,6 @@ end IpoptFallback;
 "); getErrorString();
 
 rFb := simulate(IpoptFallback, stopTime = 0.0, simflags = "-nlsEnforceMinMax -nlsIpopt"); getErrorString();
-print("solved  = " + String(rFb.resultFile <> "") + "\n");
 print("x<=max  = " + String(val(x,0.0) <= 5.0) + "\n");
 print("res ~ 0 = " + String(abs((val(x,0.0) - 2.0)*(val(x,0.0) - 8.0)*(val(x,0.0) + 3.0)) < 1e-6) + "\n");
 
@@ -32,7 +31,6 @@ print("res ~ 0 = " + String(abs((val(x,0.0) - 2.0)*(val(x,0.0) - 8.0)*(val(x,0.0
 // "
 // end SimulationResult;
 // ""
-//
 // x<=max  = true
 //
 // res ~ 0 = true

@@ -13,9 +13,11 @@
 
 loadString("
 model IpoptSys3
+  // asymmetric start values keep the initial Jacobian non-singular (a symmetric
+  // start x=y=z makes all rows [1,1,1] at x=0.5, which is solver-version fragile)
   Real x(start = 0.5, min = 0);
-  Real y(start = 0.5);
-  Real z(start = 0.5);
+  Real y(start = 1.2);
+  Real z(start = 2.0);
 equation
   x^2 + y + z = 7;
   x + y^2 + z = 7;
@@ -24,7 +26,6 @@ end IpoptSys3;
 "); getErrorString();
 
 rIp := simulate(IpoptSys3, stopTime = 0.0, simflags = "-initNlsIpopt"); getErrorString();
-print("solved   = " + String(rIp.resultFile <> "") + "\n");
 print("x>=min   = " + String(val(x,0.0) >= 0.0) + "\n");
 print("res1 ~ 0 = " + String(abs(val(x,0.0)*val(x,0.0) + val(y,0.0) + val(z,0.0) - 7.0) < 1e-6) + "\n");
 print("res2 ~ 0 = " + String(abs(val(x,0.0) + val(y,0.0)*val(y,0.0) + val(z,0.0) - 7.0) < 1e-6) + "\n");
@@ -41,7 +42,6 @@ print("res3 ~ 0 = " + String(abs(val(x,0.0) + val(y,0.0) + val(z,0.0)*val(z,0.0)
 // "
 // end SimulationResult;
 // ""
-//
 // x>=min   = true
 //
 // res1 ~ 0 = true
