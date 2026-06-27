@@ -43,6 +43,7 @@
 #include "kinsol_b.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "nonlinearSolverIpopt.h"
 #include "newtonIteration.h"
 #include "newton_diagnostics.h"
 #endif
@@ -1448,6 +1449,31 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       }
     }
   }
+
+  /* IPOPT solver (ticket #14104): use it directly when -initNlsIpopt is set, or
+   * as a robust fallback (-nlsIpopt) when the standard solver did not find a
+   * solution. IPOPT solves the residuals as equality constraints subject to the
+   * min/max box constraints. Per the proposal, with homotopy IPOPT is only used
+   * at lambda = 0, i.e. not during the homotopy continuation. */
+#if !defined(OMC_MINIMAL_RUNTIME)
+  {
+    int useIpoptDirect   = omc_flag[FLAG_INIT_NLS_IPOPT];
+    int useIpoptFallback = omc_flag[FLAG_NLS_IPOPT] && nonlinsys->solved != NLS_SOLVED;
+    int inContinuation   = data->simulationInfo->initial && nonlinsys->homotopySupport
+                           && data->simulationInfo->lambda > 0.0;
+    if ((useIpoptDirect || useIpoptFallback) && !inContinuation) {
+      NLS_SOLVER_STATUS ipoptStatus = solveNlsIpopt(data, threadData, nonlinsys);
+      if (ipoptStatus == NLS_SOLVED) {
+        nonlinsys->solved = NLS_SOLVED;
+      } else if (useIpoptDirect) {
+        /* -initNlsIpopt: IPOPT is the authoritative solver, so its failure is
+         * the system's failure (do not keep an out-of-bounds standard solution).
+         * In pure fallback mode (-nlsIpopt) keep the standard solver's status. */
+        nonlinsys->solved = ipoptStatus;
+      }
+    }
+  }
+#endif
 
   messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   /* update value list database */
