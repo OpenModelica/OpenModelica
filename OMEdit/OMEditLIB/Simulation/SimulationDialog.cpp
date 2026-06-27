@@ -1807,12 +1807,8 @@ void SimulationDialog::runWasmJitSimulation(const SimulationOptions &simulationO
   MainWindow::instance()->getStatusBar()->showMessage(tr("Running simulation of %1.").arg(mClassName));
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
   MainWindow::instance()->showProgressBar();
-#if !defined(__EMSCRIPTEN__)
-  // performSimulation() reset omc's cwd to the general working directory; the
-  // in-process wasm-jit run writes its result to omc's cwd, so cd into the
-  // per-model directory that simulationProcessFinished() reads the result from.
+  // the in-process run writes its result to omc's cwd; cd to where the result is read from.
   MainWindow::instance()->getOMCProxy()->changeDirectory(simulationOptions.getWorkingDirectory());
-#endif
   QString params = simulationParameters + ", resimulateExecutable=\"" + simulationOptions.getOutputFileName() + "\"";
   MainWindow::instance()->getOMCProxy()->sendCommand("simulate(" + mClassName + ", " + params + ")");
   MainWindow::instance()->getOMCProxy()->printMessagesStringInternal();
