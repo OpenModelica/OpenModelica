@@ -262,11 +262,20 @@ fn write_output(path: &str, bytes: &[u8]) -> std::io::Result<()> {
 // Public entry points (called from the MetaModelica sources after regen)
 // ===========================================================================
 
+/// Buffer the reason as an `INTERNAL_ERROR` (so `getErrorString()` shows it, not
+/// just the panic hook's console) then panic to abort the translation.
+fn fatal(msg: String) -> ! {
+    let _ = openmodelica_util::Error::addInternalError(
+        ArcStr::from(msg.as_str()),
+        openmodelica_util::Error::dummyInfo.clone(),
+    );
+    panic!("{msg}");
+}
+
 /// `CodegenWasmJit.translateModel`: lower `simCode` to a model wasm module,
 /// write `<prefix>.wasm`, and stash the prepared [`SimModel`] for the later
 /// `runSimulation`. Counterpart of `CodegenC.translateModel` + the makefile/XML
-/// machinery for the C target. Errors are fatal (a panic naming the reason),
-/// matching `CodegenWasmJitFunctions.translateFunctions`.
+/// machinery for the C target. Errors are fatal (see [`fatal`]).
 pub fn translateModel(simCode: SimCode::SimCode) {
     // The runtime module is fixed and model-independent: start compiling it now,
     // on a background thread, so it overlaps the model-bytes generation in
@@ -280,11 +289,11 @@ pub fn translateModel(simCode: SimCode::SimCode) {
             // Write the module for inspection/debugging (mirrors the function
             // half writing `<name>.wasm`); the run itself uses the stashed bytes.
             if let Err(e) = write_output(&format!("{prefix}.wasm"), &model.wasm) {
-                panic!("CodegenWasmJit: cannot write {prefix}.wasm: {e:#}");
+                fatal(format!("CodegenWasmJit: cannot write {prefix}.wasm: {e:#}"));
             }
             sim_models().lock().unwrap().insert(prefix, Arc::new(model));
         }
-        Err(e) => panic!("CodegenWasmJit: cannot build simulation module for `{prefix}`: {e:#}"),
+        Err(e) => fatal(format!("CodegenWasmJit: cannot build simulation module for `{prefix}`: {e:#}")),
     }
 }
 
@@ -350,10 +359,10 @@ pub fn emitStandalone(simCode: SimCode::SimCode) {
     match emit_standalone_module(&simCode) {
         Ok(bytes) => {
             if let Err(e) = write_output(&format!("{prefix}.wasm"), &bytes) {
-                panic!("CodegenWasmJit: cannot write {prefix}.wasm: {e:#}");
+                fatal(format!("CodegenWasmJit: cannot write {prefix}.wasm: {e:#}"));
             }
         }
-        Err(e) => panic!("CodegenWasmJit: cannot build standalone module for `{prefix}`: {e:#}"),
+        Err(e) => fatal(format!("CodegenWasmJit: cannot build standalone module for `{prefix}`: {e:#}")),
     }
 }
 
@@ -933,6 +942,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     let vi = &mi.varInfo;
     let vars = &mi.vars;
 
+    // External objects need their (external "C") constructors, unsupported here.
+    if let Some(eo) = lst(&vars.extObjVars).next() {
+        bail!("CodegenWasmJit: external objects are not supported (e.g. `{}`)", cref_display(&eo.name)?);
+    }
+
     let n_states = vi.numStateVars.max(0) as u32;
     let n_real_alg = (count(&vars.algVars) + count(&vars.discreteAlgVars)) as u32;
     let n_real_param = count(&vars.paramVars) as u32;
@@ -1376,8 +1390,7 @@ fn lower_equation(
             lower_equation(ctx, &target, eq_index)
         }
         other => bail!(
-            "CodegenWasmJit: unsupported equation kind in simulation (only simple assignments and \
-             algorithms are handled so far): {} (index {})",
+            "CodegenWasmJit: unsupported equation kind {} (index {})",
             eq_kind_name(other),
             eq_index_of(other),
         ),
