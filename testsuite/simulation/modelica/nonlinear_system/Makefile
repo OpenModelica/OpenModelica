@@ -6,8 +6,6 @@ bug_3527.mos \
 nanTest.mos \
 nlsEnforceMinMax_steer.mos \
 nlsEnforceMinMax_infeasible.mos \
-nlsIpopt_analytic.mos \
-nlsIpopt_coloredFD.mos \
 nlsIpopt_fallback.mos \
 nonlinear.mos \
 nonlinear_kinsol.mos \
