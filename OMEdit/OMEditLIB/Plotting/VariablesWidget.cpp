@@ -790,11 +790,10 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   bool readingVariablesFromInitFile = false;
 #if defined(__EMSCRIPTEN__)
-  // omc's File runtime writes _init.xml under the bare prefix name into the worker
-  // VFS (there is no working directory on wasm-jit in the browser), so the absolute
-  // QFile path has no VFS key. Read the bytes from the worker directly by that name.
+  // _init.xml lives in omc's cwd (the working directory) in the worker VFS; read it
+  // from there (QFile can't reach the worker store).
   extern QByteArray omcWorkerReadFile(const char *path);
-  QByteArray initData = omcWorkerReadFile(initFileName.toUtf8().constData());
+  QByteArray initData = omcWorkerReadFile(QString("%1/%2").arg(filePath, initFileName).toUtf8().constData());
   if (!initData.isEmpty()) {
     QXmlStreamReader initXmlReader(initData);
     readingVariablesFromInitFile = variablesList.isEmpty();

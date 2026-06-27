@@ -1819,18 +1819,13 @@ void SimulationDialog::runWasmJitSimulation(const SimulationOptions &simulationO
   MainWindow::instance()->hideProgressBar();
   MainWindow::instance()->getStatusBar()->clearMessage();
 #if defined(__EMSCRIPTEN__)
-  // omc in the worker can't cd into OMEdit's working directory (it lives in the
-  // page MEMFS, not the worker VFS), so the sim writes its result at the VFS root.
-  // Stage it into MEMFS so OMPlot's raw-stdio .mat reader finds it, and load from there.
-  SimulationOptions opts = simulationOptions;
-  opts.setWorkingDirectory("");
+  // omc cd'd into the working directory, so the result lands there in the worker
+  // VFS. Stage it into the page MEMFS at the same path for OMPlot's raw-stdio .mat
+  // reader, then load from the working directory.
   extern bool omcWorkerStageFile(const char *path);
-  omcWorkerStageFile(QString("/").append(opts.getFullResultFileName()).toUtf8().constData());
-  simulationProcessFinished(opts, ts);
-#else
-  // Native in-process run: the result file is in OMEdit's working directory.
-  simulationProcessFinished(simulationOptions, ts);
+  omcWorkerStageFile(QString("%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()).toUtf8().constData());
 #endif
+  simulationProcessFinished(simulationOptions, ts);
 }
 
 /*!

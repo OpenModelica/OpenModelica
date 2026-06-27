@@ -886,19 +886,14 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
 }
 
 pub fn pwd() -> ArcStr {
-    match std::env::current_dir() {
-        // OMC uses forward slashes on Windows (mirrors the C `SystemImpl__pwd`,
-        // which runs `toWindowsSeperators`, i.e. `\` → `/`). Scripting `cd()`
-        // returns `pwd()`, and callers compare it against forward-slash paths
-        // (e.g. OMShell vs QDir::canonicalPath), so backslashes break them.
-        Ok(p) => {
-            let s = p.to_string_lossy();
-            if cfg!(windows) {
-                ArcStr::from(s.replace('\\', "/"))
-            } else {
-                ArcStr::from(s.as_ref())
-            }
-        }
+    // Via the fs facade so pwd and cd share one cwd: std::env on native/wasip1,
+    // the in-memory store on web (where std::env::current_dir always errors, which
+    // used to make pwd "" regardless of cd). OMC uses forward slashes on Windows
+    // (mirrors the C SystemImpl__pwd toWindowsSeperators); cd() returns pwd() and
+    // callers compare against forward-slash paths.
+    match openmodelica_wasi::fs::cwd() {
+        Ok(p) if cfg!(windows) => ArcStr::from(p.replace('\\', "/")),
+        Ok(p) => ArcStr::from(p),
         Err(_) => literal!(""),
     }
 }
