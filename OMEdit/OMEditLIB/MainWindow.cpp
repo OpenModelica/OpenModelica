@@ -648,25 +648,59 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
  * \param fileName
  * \param encoding
  */
-void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
+void MainWindow::addRecentFile(const QString &fileName, const QString &encoding, const QString &path)
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
+  // model:// (open model) and plain file entries are kept independent of each other: explicitly opening a
+  // file and having a model open in the model view are different intents, so both are remembered.
   foreach (QVariant file, files) {
     RecentFile recentFile = qvariant_cast<RecentFile>(file);
-    QFileInfo file1(recentFile.fileName);
-    QFileInfo file2(fileName);
-    if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0) {
-      files.removeOne(file);
+    // model:// entries point to a loaded Modelica class, compare them as plain strings.
+    if (fileName.startsWith(Helper::modelUriScheme) || recentFile.fileName.startsWith(Helper::modelUriScheme)) {
+      if (recentFile.fileName.compare(fileName) == 0) {
+        files.removeOne(file);
+      }
+    } else {
+      QFileInfo file1(recentFile.fileName);
+      QFileInfo file2(fileName);
+      if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0) {
+        files.removeOne(file);
+      }
     }
   }
   RecentFile recentFile;
   recentFile.fileName = fileName;
   recentFile.encoding = encoding;
+  recentFile.path = path;
   files.prepend(QVariant::fromValue(recentFile));
   pSettings->setValue("recentFilesList/files", files);
   updateRecentFileActionsAndList();
+}
+
+/*!
+ * \brief MainWindow::addRecentModel
+ * Adds the currently opened Modelica model to the recentFilesList settings as a
+ * model URI of the form model://Path.To.Model.
+ * \param nameStructure - the dotted Modelica class name e.g. Path.To.Model
+ */
+void MainWindow::addRecentModel(const QString &nameStructure)
+{
+  if (nameStructure.isEmpty()) {
+    return;
+  }
+  // Store the file of the top level class so that the library can be reloaded with loadFile()
+  // if the class is no longer loaded when the recent entry is opened again.
+  QString path;
+  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  if (pLibraryTreeItem) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevelLibraryTreeItem) {
+      path = pTopLevelLibraryTreeItem->getFileName();
+    }
+  }
+  addRecentFile(Helper::modelUriScheme + nameStructure, Helper::utf8, path);
 }
 
 /*!
@@ -708,7 +742,7 @@ void MainWindow::createRecentFileActions()
     QAction *pRecentFileAction = new QAction(this);
     pRecentFileAction->setText(recentFile.fileName);
     QStringList dataList;
-    dataList << recentFile.fileName << recentFile.encoding;
+    dataList << recentFile.fileName << recentFile.encoding << recentFile.path;
     pRecentFileAction->setData(dataList);
     connect(pRecentFileAction, SIGNAL(triggered()), this, SLOT(openRecentFile()));
     mpRecentFilesMenu->addAction(pRecentFileAction);
@@ -760,6 +794,17 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpAutoSaveTimer->stop();
+  // Add the models currently open in the model view to the recent files list as model://Path.To.Model
+  // so that they can be reopened from the recent files list in the next session.
+  if (mpModelWidgetContainer) {
+    // iterate in activation history order so that the most recently used model ends up on top of the list.
+    foreach (QMdiSubWindow *pSubWindow, mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder)) {
+      ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+      if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isModelica()) {
+        addRecentModel(pModelWidget->getLibraryTreeItem()->getNameStructure());
+      }
+    }
+  }
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
@@ -2184,7 +2229,42 @@ void MainWindow::openRecentFile()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     QStringList dataList = pAction->data().toStringList();
-    mpLibraryWidget->openFile(dataList.at(0), dataList.at(1), true, true);
+    const QString path = dataList.size() > 2 ? dataList.at(2) : QString();
+    openRecentFileOrModel(dataList.at(0), dataList.at(1), path);
+  }
+}
+
+/*!
+ * \brief MainWindow::openRecentFileOrModel
+ * Opens a recent files list entry. Entries of the form model://Path.To.Model refer to a Modelica
+ * class and are shown by locating their LibraryTreeItem. If the class is not loaded yet and a path
+ * was stored with the entry, the library file is loaded first and the class is looked up again.
+ * Everything else is treated as a file path and opened from disk.
+ * \param fileName
+ * \param encoding
+ * \param path - file to load when a model:// class is not loaded yet
+ */
+void MainWindow::openRecentFileOrModel(const QString &fileName, const QString &encoding, const QString &path)
+{
+  if (fileName.startsWith(Helper::modelUriScheme)) {
+    const QString nameStructure = fileName.mid(Helper::modelUriScheme.length());
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+    // if the class is not loaded yet, try to load the library file it belongs to.
+    // skipAddRecentFile is true so that loading the library does not add its file to the recent files list,
+    // the model:// entry already represents it.
+    if (!pLibraryTreeItem && !path.isEmpty() && QFile::exists(path)) {
+      mpLibraryWidget->openFile(path, encoding, true, true, false, true);
+      pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+    }
+    if (pLibraryTreeItem) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+  } else {
+    mpLibraryWidget->openFile(fileName, encoding, true, true);
   }
 }
 

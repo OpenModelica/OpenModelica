@@ -3927,7 +3927,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
  * \param checkFileExists
  * \param loadExternalModel
  */
-void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists, bool loadExternalModel)
+void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists, bool loadExternalModel, bool skipAddRecentFile)
 {
   /* if the file doesn't exist then remove it from the recent files list. */
   QFileInfo fileInfo(fileName);
@@ -3962,15 +3962,15 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   }
 
   if ((fileInfo.suffix().compare("mo") == 0 || fileInfo.suffix().compare("bmo") == 0) && !loadExternalModel) {
-    openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress);
+    openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress, false, -1, skipAddRecentFile);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
-    openEncryptedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
+    openEncryptedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress, skipAddRecentFile);
   } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
-    openOMSModelFile(fileInfo, showProgress);
+    openOMSModelFile(fileInfo, showProgress, skipAddRecentFile);
   } else if (fileInfo.isDir()) {
-    openDirectory(fileInfo, showProgress);
+    openDirectory(fileInfo, showProgress, skipAddRecentFile);
   } else {
-    openTextFile(fileInfo, showProgress);
+    openTextFile(fileInfo, showProgress, skipAddRecentFile);
   }
 }
 
@@ -3983,12 +3983,14 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  * \param row - insert position for the new LibraryTreeItem.
  */
-void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt, int row)
+void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt, int row, bool skipAddRecentFile)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
-  MainWindow::instance()->addRecentFile(fileName, encoding);
+  if (!skipAddRecentFile) {
+    MainWindow::instance()->addRecentFile(fileName, encoding);
+  }
   /* Call parseFile with printErrors = false to skip printing errors in the MessagesWidget
    * we will add the errors after loading the file as text file so the errors are linked properly.
    */
@@ -4040,7 +4042,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
                                                                   Helper::scriptingKind, Helper::errorLevel));
           } else {
             if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
-              openModelicaFile(fileName, encoding, showProgress, true);
+              openModelicaFile(fileName, encoding, showProgress, true, -1, skipAddRecentFile);
             }
           }
         } else {
@@ -4080,7 +4082,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
  * \param encoding
  * \param showProgress
  */
-void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encoding, bool showProgress)
+void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encoding, bool showProgress, bool skipAddRecentFile)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -4142,7 +4144,9 @@ void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encod
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
           }
         }
-        MainWindow::instance()->addRecentFile(fileName, encoding);
+        if (!skipAddRecentFile) {
+          MainWindow::instance()->addRecentFile(fileName, encoding);
+        }
         if (showProgress) {
           MainWindow::instance()->hideProgressBar();
         }
@@ -4214,7 +4218,7 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool ski
  * \param fileInfo
  * \param showProgress
  */
-void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4250,7 +4254,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     LibraryTreeItem *pLibraryTreeItem = 0;
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, modelName, fileInfo.absoluteFilePath(), true, mpLibraryTreeModel->getRootLibraryTreeItem());
     // add the item to recent files list
-    if (pLibraryTreeItem) {
+    if (pLibraryTreeItem && !skipAddRecentFile) {
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
     }
   }

@@ -103,6 +103,7 @@ QString Helper::documentationViewForSettings = "Documentation View";
 QString Helper::structuredOutput = "Structured";
 QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
+QString Helper::modelUriScheme = "model://";
 const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());

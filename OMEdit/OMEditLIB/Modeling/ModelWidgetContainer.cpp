@@ -5523,6 +5523,7 @@ void WelcomePageWidget::addRecentFilesListItems()
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
+    listItem->setData(Qt::UserRole + 1, recentFile.path);
   }
   if (numRecentFiles > 0) {
     mpNoRecentFileLabel->setVisible(false);
@@ -5622,7 +5623,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString(), true, true);
+  MainWindow::instance()->openRecentFileOrModel(pItem->text(), pItem->data(Qt::UserRole).toString(), pItem->data(Qt::UserRole + 1).toString());
 }
 
 void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)

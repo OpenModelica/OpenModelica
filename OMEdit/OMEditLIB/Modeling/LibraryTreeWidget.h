@@ -452,13 +452,13 @@ public:
   LibraryTreeModel* getLibraryTreeModel() {return mpLibraryTreeModel;}
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
-  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
-  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
-  void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false, bool skipAddRecentFile = false);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1, bool skipAddRecentFile = false);
+  void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool skipAddRecentFile = false);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
 
   void openDirectory(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
-  void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
+  void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate = false);

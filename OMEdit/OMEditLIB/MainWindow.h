@@ -226,7 +226,9 @@ public:
   QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToolbar;}
   void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
   void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
-  void addRecentFile(const QString &fileName, const QString &encoding);
+  void addRecentFile(const QString &fileName, const QString &encoding, const QString &path = QString());
+  void addRecentModel(const QString &nameStructure);
+  void openRecentFileOrModel(const QString &fileName, const QString &encoding, const QString &path = QString());
   void updateRecentFileActionsAndList();
   void createRecentFileActions();
   void closeEvent(QCloseEvent *event) override;
