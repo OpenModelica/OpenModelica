@@ -48,6 +48,7 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
 #include <QMessageBox>
 #include <QTextCodec>
 #include <QTimer>
@@ -134,8 +135,9 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // looks for QtWebEngine resources/locales under <install>/...
   // We install those under <install>/bin/... instead, so override the
   // search paths here before any QtWebEngine subprocess is launched.
-  qputenv("QTWEBENGINE_RESOURCES_PATH",  QByteArray(installationDirectoryPath) + "/bin/resources");
-  QString localesPath = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales";
+  // Chromium rejects a ".." segment in the resource path.
+  qputenv("QTWEBENGINE_RESOURCES_PATH", QDir::cleanPath(QString::fromLocal8Bit(installationDirectoryPath) + "/bin/resources").toLocal8Bit());
+  QString localesPath = QDir::cleanPath(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales");
   qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
 

@@ -168,18 +168,10 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     // `SettingsImpl__getInstallationDirectoryPath` + the `Settings_omc.cpp`
     // wrapper, which throws (here: returns `Err`) when no path can be found.
     //
-    // The C compiler (non-bootstrapping build) IGNORES `$OPENMODELICAHOME`
-    // on Linux/macOS: it dladdr's `libOpenModelicaCompiler.so`, which was
-    // loaded through the executable's RPATH as
-    // `<bindir>/../lib/<triple>/omc/libOpenModelicaCompiler.so`, and
-    // `stripbinpath` strips that back to `<bindir>/..` — note the literal
-    // `bin/..` suffix, which is visible in error messages the testsuite
-    // compares (e.g. `bin/../lib/<triple>/omc/Foo.so` candidate paths).
-    //
     // Resolution order here:
     //   1. the cached value (set previously or by `setInstallationDirectoryPath`);
-    //   2. `<bindir>/..` when the running executable lives in a `bin`/`lib`
-    //      directory (the installed layout the C dladdr lookup assumes);
+    //   2. the install root (the directory above the executable's `bin`/`lib`),
+    //      normalized — no literal `..` (strict consumers like Chromium reject it);
     //   3. `$OPENMODELICAHOME` — the dev-workflow fallback for running the
     //      port straight out of `target/debug` (also what the C
     //      OMC_BOOTSTRAPPING build reads);
@@ -212,7 +204,11 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
         && let Some((dir, _)) = exe.rsplit_once('/') {
             let parent_component = dir.rsplit('/').next().unwrap_or("");
             if parent_component == "bin" || parent_component == "lib" {
-                let path = ArcStr::from(format!("{dir}/.."));
+                let path = ArcStr::from(match dir.rsplit_once('/') {
+                    Some(("", _)) => "/",
+                    Some((root, _)) => root,
+                    None => dir,
+                });
                 let mut state = STATE.lock().unwrap();
                 set_env_var("OPENMODELICAHOME", &path);
                 state.installation_path = Some(path.clone());

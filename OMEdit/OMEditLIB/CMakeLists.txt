@@ -369,12 +369,7 @@ target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
 
-if (MSVC)
-  # Stock-Qt WebEngine crashes in Chromium/ANGLE init on the aqt msvc Qt kit
-  # (OMDev's patched MinGW Qt works); stub it via qtwebengine_compat.h instead of
-  # linking, so OMEdit runs on MSVC without the HTML documentation/traceability views.
-  target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_NO_WEBENGINE)
-elseif (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebEngineWidgets)
 else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
