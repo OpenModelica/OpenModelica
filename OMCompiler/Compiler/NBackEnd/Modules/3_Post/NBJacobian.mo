@@ -499,6 +499,19 @@ public
           for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
           for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
+          // daeMode: also mark each state derivative der(x) as relevant, so a residual
+          // that references only der(x) (e.g. der(x)=sin(time)) still contributes to its
+          // state's column. collectCrefs/prepareDependencies maps der(x) back to x.
+          if jacType == JacobianType.DAE then
+            for var in VariablePointers.toList(seedCandidates) loop
+              () := match BVariable.getVarDer(var)
+                local Pointer<Variable> der_ptr;
+                case SOME(der_ptr) algorithm UnorderedSet.add(BVariable.getVarName(der_ptr), set); then ();
+                else ();
+              end match;
+            end for;
+          end if;
+
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
             if not StrongComponent.isDiscrete(comps[i]) then
@@ -1034,7 +1047,14 @@ protected
 
       derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
-      seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+      // For daeMode the simulation jacobian is the residual Jacobian dF/dy over the
+      // full daeMode unknown set y = states + algebraic DAE unknowns. The columns
+      // (seed) are therefore the states PLUS the non-state-derivative daeUnknowns
+      // (the algebraic unknowns); the ODE path keeps just the states.
+      seedCandidates := if jacType == JacobianType.DAE then
+          VariablePointers.fromList(listAppend(state_vars, list(var for var guard(not BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns))), partialCandidates.scalarized)
+        else
+          VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
       jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, Partition.kindIsInitial(kind));
 

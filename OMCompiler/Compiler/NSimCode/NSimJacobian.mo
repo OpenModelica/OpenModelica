@@ -222,6 +222,12 @@ public
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input Option<UnorderedMap<ComponentRef, Integer>> rowIndexMap = NONE()
+        "daeMode: residual cref -> index in daeModeData->residualVars. The colored
+         FD indexes the residual vector (rr[i]=residualVars[i]) by the sparsity row
+         index, so the jacobian rows must use the residual-array index, not the
+         jacobian-local result order (which can diverge from the residual order due
+         to partition/component reordering between the backend and simcode).";
     algorithm
       simJacobian := match jacobian
         local
@@ -238,6 +244,8 @@ public
           list<SimVar> seedVars, resVars, tmpVars, loopVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> local_idx_map;
+          UnorderedMap<ComponentRef, Integer> rmap;
+          Integer row_idx;
           ComponentRef cref;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring, rowColoring;
@@ -301,7 +309,14 @@ public
               if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
                 cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
               end if;
-              UnorderedMap.add(cref, var.index, local_idx_map);
+              // daeMode: use the residual-array index so the sparsity rows line up
+              // with rr[i]=residualVars[i]; otherwise fall back to the local order.
+              row_idx := match rowIndexMap
+                case SOME(rmap) guard UnorderedMap.contains(cref, rmap)
+                  then UnorderedMap.getSafe(cref, rmap, sourceInfo());
+                else var.index;
+              end match;
+              UnorderedMap.add(cref, row_idx, local_idx_map);
             end for;
 
             (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, local_idx_map);
@@ -345,6 +360,8 @@ public
       output SimJacobian simJacAdjoint;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input Option<UnorderedMap<ComponentRef, Integer>> rowIndexMap = NONE()
+        "daeMode: residual cref -> residualVars array index, to align jacobian rows with the residual vector";
     protected
       list<BackendDAE> jacobians = {}, jacobiansAdjoint = {};
       BackendDAE simJacobian, simJacobianAdjoint;
@@ -369,7 +386,7 @@ public
         (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
       else
         simJacobian := Jacobian.combine(jacobians, "A");
-        (simJac_opt, simCodeIndices) := SimJacobian.create(simJacobian, simCodeIndices, simcode_map);
+        (simJac_opt, simCodeIndices) := SimJacobian.create(simJacobian, simCodeIndices, simcode_map, rowIndexMap);
         if isSome(simJac_opt) then
           simJac := Util.getOption(simJac_opt);
         else
@@ -382,7 +399,7 @@ public
         (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);
       else
         simJacobianAdjoint := Jacobian.combine(jacobiansAdjoint, "ADJ");
-        (simJacAdj_opt, simCodeIndices) := SimJacobian.create(simJacobianAdjoint, simCodeIndices, simcode_map);
+        (simJacAdj_opt, simCodeIndices) := SimJacobian.create(simJacobianAdjoint, simCodeIndices, simcode_map, rowIndexMap);
         if isSome(simJacAdj_opt) then
           simJacAdjoint := Util.getOption(simJacAdj_opt);
         else

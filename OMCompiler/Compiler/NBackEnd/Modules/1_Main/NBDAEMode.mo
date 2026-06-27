@@ -130,17 +130,36 @@ protected
               list<Pointer<Variable>> vars;
               UnorderedSet<Pointer<Equation>> new_eqns_set;
               UnorderedSet<Pointer<Variable>> new_vars_set;
+              list<Pointer<Equation>> new_eqns_lst = {};
+              list<Pointer<Variable>> new_vars_lst = {};
 
             case SOME(new_c) algorithm
+              // Collect equations and variables in strong-component (list) order.
+              // The sets only guard against duplicates: using UnorderedSet.toList
+              // would emit them in hash order, which scrambles the daeMode residual
+              // row order relative to the residual vector built by createDAEModeBlocks
+              // (also component order). That misalignment makes the daeMode jacobian
+              // rows reference the wrong residuals -> a structurally wrong/singular
+              // matrix and IDA's linear solver setup fails on torn loops.
               new_eqns_set := UnorderedSet.new(Equation.hash, Equation.equalName);
               new_vars_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
               for comp in new_c loop
                 eqns := StrongComponent.getEquations(comp);
                 vars := StrongComponent.getVariables(comp);
-                for eqn in eqns loop UnorderedSet.add(eqn, new_eqns_set); end for;
-                for var in vars loop UnorderedSet.add(var, new_vars_set); end for;
+                for eqn in eqns loop
+                  if not UnorderedSet.contains(eqn, new_eqns_set) then
+                    UnorderedSet.add(eqn, new_eqns_set);
+                    new_eqns_lst := eqn :: new_eqns_lst;
+                  end if;
+                end for;
+                for var in vars loop
+                  if not UnorderedSet.contains(var, new_vars_set) then
+                    UnorderedSet.add(var, new_vars_set);
+                    new_vars_lst := var :: new_vars_lst;
+                  end if;
+                end for;
               end for;
-            then (EquationPointers.fromList(UnorderedSet.toList(new_eqns_set)), VariablePointers.fromList(UnorderedSet.toList(new_vars_set)));
+            then (EquationPointers.fromList(listReverse(new_eqns_lst)), VariablePointers.fromList(listReverse(new_vars_lst)));
             else (part.equations, part.unknowns);
           end match;
 
