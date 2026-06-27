@@ -476,8 +476,10 @@ bool AbstractAnimationWindow::loadVisualization()
     //choose suitable scales for the vector visualizers so that they fit well in the scene
     mpVisualization->getBaseData()->chooseVectorScales(mpViewerWidget->getSceneView(), mpViewerWidget->getFrameMutex(), std::bind(&ViewerWidget::frame, mpViewerWidget));
 #else
+    // Choose suitable scales for the vector visualizers (data-only on Quick 3D).
+    mpVisualization->getBaseData()->chooseVectorScales();
     // Frame the camera on the now-populated scene (shapes have their real size/pose
-    // after initVisualization evaluated the dimensions).
+    // after initVisualization evaluated the dimensions; arrows now sized too).
     mpViewerWidget->fitToScene();
 #endif
   }

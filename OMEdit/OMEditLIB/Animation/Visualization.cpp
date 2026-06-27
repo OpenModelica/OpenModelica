@@ -1168,6 +1168,102 @@ AutoTransformVisualizer::AutoTransformVisualizer(AbstractVisualizerObject* visua
   : _visualizer(visualizer)
 {
 }
+#else // OMEDIT_ANIMATION_QUICK3D
+
+/*!
+ * \brief OMVisualBase::chooseVectorScales (Qt Quick 3D)
+ * Data-only counterpart of the OSG heuristic. There is no osgViewer::View and no
+ * osg::AutoTransform on the Quick 3D path, so the auto-scale-cancellation factors
+ * stay 1 and the iterative camera-fit refinement of the length scale is dropped
+ * (the viewer's fitToScene frames the arrows instead). What remains is exact and
+ * backend-independent: the adjustable-radius median heuristic and the per-quantity
+ * default length scale (so e.g. forces in newtons are not drawn kilometres long).
+ */
+void OMVisualBase::chooseVectorScales()
+{
+  if (_vectors.size() == 0) {
+    return;
+  }
+
+  /* Constant shared with the OSG heuristic */
+  constexpr int8_t factorRadius = -10; // Vector radius vs. median of fixed radii [%]
+
+  /* Adjustable-radius vectors: scale the default radius by the median of the
+     fixed-radius vectors and the relevant shapes (mirrors the OSG path). */
+  std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
+  std::vector<float> radii;
+  for (VectorObject& vector : _vectors) {
+    if (vector.isRadiusAdjustable()) {
+      adjustableRadiusVectors.push_back(vector);
+    } else {
+      const float radius = vector.getRadius();
+      if (radius > 0) {
+        radii.push_back(radius);
+      }
+    }
+  }
+  for (ShapeObject& shape : _shapes) {
+    if (isCADType(shape._type)) {
+      continue;
+    }
+    // For the world component, keep only the axis/gravity arrow lines
+    if (shape._id.rfind("world.", 0) == 0 &&
+        shape._id != "world.x_arrowLine" && shape._id != "world.y_arrowLine" &&
+        shape._id != "world.z_arrowLine" && shape._id != "world.gravityArrowLine") {
+      continue;
+    }
+    float radius = shape._width.exp / 2;
+    if (shape._type == "sphere") {
+      radius = shape._length.exp / 2;
+    } else if (shape._type == "spring") {
+      radius = shape._width.exp;
+    }
+    if (radius > 0) {
+      radii.push_back(radius);
+    }
+  }
+  if (!adjustableRadiusVectors.empty() && !radii.empty()) {
+    const size_t s = radii.size();
+    float median = radii[0];
+    if (s > 1) {
+      const auto beg = radii.begin();
+      const auto mid = beg + s / 2;
+      std::nth_element(beg, mid, radii.end());
+      if (s & 1) {
+        median = *mid;
+      } else {
+        const auto maxIt = std::max_element(beg, mid);
+        median = *maxIt + (*mid - *maxIt) * 0.5f;
+      }
+    }
+    const float scale = median / VectorObject::kRadius * (1.0f + factorRadius / 100.0f);
+    for (VectorObject& vector : adjustableRadiusVectors) {
+      vector.setRadiusScale(scale);
+    }
+  }
+
+  /* Adjustable-length vectors: only the per-quantity default magnitude (the OSG
+     binary search's initial guess); forces/torques are divided by their MSL
+     reference so they render at a comparable size. */
+  for (VectorObject& vector : _vectors) {
+    vector.setOnlyShaftLengthCounted(false);
+    if (vector.isLengthAdjustable()) {
+      float scale = 1.0f;
+      switch (vector.getQuantity()) {
+        case VectorQuantity::force:
+          scale /= VectorObject::kScaleForce;
+          break;
+        case VectorQuantity::torque:
+          scale /= VectorObject::kScaleTorque;
+          break;
+        default:
+          break;
+      }
+      vector.setLengthScale(scale);
+    }
+    updateVisualizer(vector); // rebuild the arrow at its new size
+  }
+}
 #endif // !OMEDIT_ANIMATION_QUICK3D
 
 

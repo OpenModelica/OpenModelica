@@ -233,6 +233,11 @@ public:
   void updateVectorCoords(VectorObject& vector, const double time);
 #if !defined(OMEDIT_ANIMATION_QUICK3D)
   void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
+#else
+  // Quick 3D has no OSG view/AutoTransform: pick the radius scale (median
+  // heuristic) and the per-quantity length scale from the data alone; the
+  // iterative camera-fit refinement is replaced by the viewer's fitToScene.
+  void chooseVectorScales();
 #endif
 private:
   std::string _modelFile;
