@@ -137,6 +137,7 @@ import ZeroCrossings;
 import ReduceDAE;
 import Settings;
 import UnorderedSet;
+import UnorderedMap;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -1528,6 +1529,7 @@ tuple<Integer /*uniqueEqIndex*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
 protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type FMIIndexList = list<Integer> "value type for the FMI dependency map (avoids nested >> in generic args)";
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -9734,6 +9736,27 @@ algorithm
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
 
+public function getFmiUnitDefinitionsFromSimVars
+  "Collects the FMI <UnitDefinitions> directly from a SimVars record (the FMI
+   order: real states, derivatives, algebraic, discrete and parameters). Used by
+   the new backend FMU export, which has the SimVars record rather than the
+   per-type array the old backend builds. Units are only emitted for real
+   variables. Without these definitions a variable that carries a unit attribute
+   references an undefined unit and the modelDescription.xml fails validation."
+  input SimCodeVar.SimVars vars;
+  output list<SimCode.UnitDefinition> unitDefinitions = {};
+protected
+  HashSetString.HashSet unitNameKeys = HashSetString.emptyHashSet();
+algorithm
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.stateVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.derivativeVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.algVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.discreteAlgVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.paramVars, unitDefinitions, unitNameKeys);
+  (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.aliasVars, unitDefinitions, unitNameKeys);
+  unitDefinitions := listReverse(unitDefinitions);
+end getFmiUnitDefinitionsFromSimVars;
+
 protected function getFmiUnitDefinitionsHelper
   "helper function which creates the list<UnitDefintions> to be exported in modelDescription.xml"
   input list<SimCodeVar.SimVar> inVars;
@@ -12444,13 +12467,22 @@ protected function getEnumerationTypesHelper
 algorithm
   for var in inVars loop
     () := match var
+      local
+        SimCodeVar.SimVar v;
+        DAE.Type elemTy;
       case SimCodeVar.SIMVAR()
         algorithm
           // Add the variable to the list if it's an enumeration variable which
-          // doesn't already exist in the list.
-          if Types.isEnumeration(var.type_) and not
-             List.exist1(outVars, enumerationTypeExists, var.type_) then
-            outVars := var :: outVars;
+          // doesn't already exist in the list. Unwrap array types so that array
+          // enumeration variables (type T_ARRAY(ty = T_ENUMERATION)) also get an
+          // EnumerationType definition; store the scalar enumeration type so the
+          // dedup check and the TypeDefinition3 template see a T_ENUMERATION.
+          elemTy := Types.arrayElementType(var.type_);
+          if Types.isEnumeration(elemTy) and not
+             List.exist1(outVars, enumerationTypeExists, elemTy) then
+            v := var;
+            v.type_ := elemTy;
+            outVars := v :: outVars;
           end if;
         then
           ();
@@ -15529,18 +15561,36 @@ public function createMinimalFMIModelStructure
    ContinuousStateDerivative entries an FMI 3.0 Model Exchange master cannot
    drive the integration; the InitialUnknowns are mandatory in FMI 2.0 and 3.0."
   input SimCode.ModelInfo modelInfo;
+  input list<tuple<Integer, list<Integer>>> fmiDependencies = {}
+    "maps an unknown FMI variable index to the FMI indices of the knowns
+     (states/inputs) it depends on; empty means no dependency information";
+  input list<tuple<Integer, list<Integer>>> fmiInitialDependencies = {}
+    "same as fmiDependencies but for the initialization (knowns also include
+     the parameters); used for the InitialUnknown dependency lists";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
   list<SimCodeVar.SimVar> iu;
+  UnorderedMap<Integer, FMIIndexList> depMap, initDepMap;
 algorithm
-  derivs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
-  outs   := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+  // index -> dependency indices, for O(1) lookup while building the unknowns
+  depMap := UnorderedMap.new<FMIIndexList>(Util.id, intEq, listLength(fmiDependencies) + 1);
+  for tpl in fmiDependencies loop
+    UnorderedMap.add(Util.tuple21(tpl), Util.tuple22(tpl), depMap);
+  end for;
+  initDepMap := UnorderedMap.new<FMIIndexList>(Util.id, intEq, listLength(fmiInitialDependencies) + 1);
+  for tpl in fmiInitialDependencies loop
+    UnorderedMap.add(Util.tuple21(tpl), Util.tuple22(tpl), initDepMap);
+  end for;
 
-  // InitialUnknowns according to the FMI specification, but without dependency
-  // information (the new backend FMU export does not compute the FMIDER
-  // Jacobian here). Omitting the dependencies is valid; the importer then
-  // assumes a dependency on all knowns. The list consists of:
+  derivs := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.derivativeVars);
+  outs   := list(makeFMIUnknownWithDeps(v, depMap) for v in modelInfo.vars.outputVars);
+
+  // InitialUnknowns according to the FMI specification. The dependencies (when
+  // available) are the initialization dependencies; for the entries without
+  // dependency information (e.g. approximated states, calculated parameters)
+  // omitting them is valid (the importer then assumes a dependency on all
+  // knowns). The list consists of:
   //  1. outputs with initial = approx or calculated
   //  2. calculatedParameters
   //  3. continuous-time states with initial = approx or calculated
@@ -15555,7 +15605,7 @@ algorithm
   iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
   iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
   iu := Dangerous.listReverseInPlace(iu);
-  initialUnknowns := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in iu);
+  initialUnknowns := list(makeFMIUnknownWithDeps(v, initDepMap) for v in iu);
 
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),
@@ -15565,6 +15615,20 @@ algorithm
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
 end createMinimalFMIModelStructure;
+
+protected function makeFMIUnknownWithDeps
+  "Builds an FMIUNKNOWN for the given SimVar, attaching the dependency indices
+   from depMap (if any) so the FMI ModelStructure carries correct dependency
+   lists. dependenciesKind is left empty (the importer then assumes 'dependent')."
+  input SimCodeVar.SimVar var;
+  input UnorderedMap<Integer, FMIIndexList> depMap;
+  output SimCode.FmiUnknown unknown;
+protected
+  Integer idx = getVariableFMIIndex(var);
+  list<Integer> deps = UnorderedMap.getOrDefault(idx, depMap, {});
+algorithm
+  unknown := SimCode.FMIUNKNOWN(idx, deps, {});
+end makeFMIUnknownWithDeps;
 
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its

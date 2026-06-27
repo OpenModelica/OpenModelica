@@ -167,6 +167,125 @@ public
     partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
   end applyToPartitions;
 
+  function createFMISparsity
+    "Builds the structural dependency information needed for the FMI
+     <ModelStructure>. The seed variables (matrix columns) are the continuous
+     states and the top level inputs; the rows are the state derivatives and the
+     output variables. The returned row-wise pattern maps each derivative/output
+     to the states and inputs it structurally depends on (transitively through
+     intermediate algebraic variables), which is exactly what the FMI <Output>
+     and <ContinuousStateDerivative> dependency lists require.
+
+     This is a dedicated FMI variant of NBJacobian.SparsityPattern.create: the
+     simulation Jacobian only tracks state dependencies (it filters non-state
+     dependencies away) and only emits derivative rows, whereas the FMI model
+     structure also needs input dependencies and output rows. We therefore reuse
+     the building blocks (StrongComponent.collectCrefs, resolveRowDependencies)
+     with our own seeds, rows and a non-ODE Jacobian type so that input (known)
+     dependencies are kept instead of being substituted away.
+     The crefs are scalarized; array variables are recombined by the caller.
+
+     With forInitialization = true the same machinery is run over the
+     initialization partitions with the parameters added to the seeds: at
+     initialization the derivatives and outputs additionally depend on the
+     (independent) parameters, which is what the FMI <InitialUnknown> dependency
+     lists require (continuous-time states keep being seeds; calculated
+     parameters and approximated states are reported without dependencies, which
+     is valid)."
+    input BackendDAE bdae;
+    input Boolean forInitialization = false;
+    output list<tuple<ComponentRef, list<ComponentRef>>> dependencies = {};
+  protected
+    VariablePointers seedCandidates, relevanceCandidates;
+    Mapping seed_mapping, partial_mapping;
+    list<Partition.Partition> partitions;
+    list<StrongComponent> comps = {};
+    list<ComponentRef> seed_vars, relevant_vars, seed_vars_array, relevant_vars_array, row_crefs;
+    list<Pointer<Variable>> seed_lst, output_vars;
+    UnorderedMap<ComponentRef, CrefLst> map;
+    UnorderedSet<ComponentRef> set, seed_set;
+  algorithm
+    () := match bdae
+      local
+        VarData varData;
+      case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM()) algorithm
+        // seeds (columns): for the continuous structure the continuous states and
+        // top level inputs; for the initialization additionally all knowns
+        // (parameters, constants and states) since outputs/derivatives depend on
+        // the parameters at initialization
+        seed_lst := listAppend(VariablePointers.toList(varData.states),
+                               VariablePointers.toList(varData.top_level_inputs));
+        if forInitialization then
+          // at initialization the knowns also include the parameters/constants
+          seed_lst := listAppend(VariablePointers.toList(varData.knowns), seed_lst);
+        end if;
+        seedCandidates := VariablePointers.fromList(seed_lst);
+        // relevance set so intermediate variables are tracked for the transitive
+        // closure down to the seeds: all unknowns for the continuous structure,
+        // all variables for the initialization (intermediate parameters included)
+        relevanceCandidates := if forInitialization then varData.variables else varData.unknowns;
+
+        // collect the strong components of the relevant partitions
+        if forInitialization then
+          partitions := bdae.init;
+          if isSome(bdae.init_0) then
+            partitions := listAppend(Util.getOption(bdae.init_0), partitions);
+          end if;
+        else
+          partitions := listAppend(listAppend(bdae.ode, bdae.ode_event),
+                                   listAppend(bdae.algebraic, bdae.alg_event));
+        end if;
+        for part in partitions loop
+          comps := match part.strongComponents
+            local array<StrongComponent> arr;
+            case SOME(arr) then listAppend(arrayList(arr), comps);
+            else comps;
+          end match;
+        end for;
+
+        // scalar and array cref name lists
+        seed_vars           := VariablePointers.getScalarVarNames(seedCandidates, false);
+        relevant_vars       := VariablePointers.getScalarVarNames(relevanceCandidates, false);
+        seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
+        relevant_vars_array := VariablePointers.getVarNames(relevanceCandidates);
+
+        // rows = state derivatives + outputs
+        output_vars := list(v for v guard(BVariable.isOutput(v)) in VariablePointers.toList(varData.variables));
+        row_crefs := listAppend(
+          VariablePointers.getScalarVarNames(varData.derivatives, false),
+          VariablePointers.getScalarVarNames(VariablePointers.fromList(output_vars), false));
+
+        // dependency map and relevance set
+        seed_mapping    := Mapping.create(EquationPointers.empty(), seedCandidates);
+        partial_mapping := Mapping.create(EquationPointers.empty(), relevanceCandidates);
+        map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(relevant_vars)));
+        set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array) + listLength(relevant_vars_array)));
+        seed_set := UnorderedSet.fromList(seed_vars, ComponentRef.hash, ComponentRef.isEqual);
+        for cref in seed_vars loop UnorderedMap.add(cref, {}, map); end for;
+        for cref in relevant_vars loop UnorderedMap.add(cref, {}, map); end for;
+        for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
+        for cref in relevant_vars_array loop UnorderedSet.add(cref, set); end for;
+
+        // collect dependencies for all components; the non-ODE Jacobian type keeps
+        // input (known) dependencies instead of substituting them away
+        for comp in comps loop
+          if not StrongComponent.isDiscrete(comp) then
+            StrongComponent.collectCrefs(comp, seedCandidates, relevanceCandidates, seed_mapping, partial_mapping, map, set, JacobianType.NLS);
+          end if;
+        end for;
+
+        // build the row-wise dependency list for derivatives and outputs,
+        // resolving each row transitively down to the seeds (states/inputs)
+        for cref in row_crefs loop
+          if UnorderedMap.contains(cref, map) then
+            dependencies := (cref, SparsityPattern.resolveRowDependencies(cref, map, seed_set)) :: dependencies;
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end createFMISparsity;
+
   function nonlinear
     input VariablePointers seedCandidates;
     input VariablePointers partialCandidates;

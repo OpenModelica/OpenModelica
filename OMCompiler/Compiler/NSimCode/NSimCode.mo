@@ -48,6 +48,7 @@ import HashTableCrefSimVar;
 import List;
 import Pointer;
 import UnorderedMap;
+import UnorderedSet;
 import Util;
 import ProgramUtil;
 
@@ -83,10 +84,13 @@ protected
   import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import NBJacobian;
   import Partition = NBPartition;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
+  import OldSimCodeUtil = SimCodeUtil;
+  import SimCodeVar;
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
   import SimPartition = NSimPartition;
@@ -105,11 +109,14 @@ protected
 
   // Util imports
   import Error;
+  import FMI;
   import StringUtil;
 
   // Script imports
 
 public
+  type IntSet = UnorderedSet<Integer> "value type for the FMI dependency set (avoids nested >> in generic args)";
+
   uniontype SimCodeIndices
     record SIM_CODE_INDICES
       "Unique simulation code indices"
@@ -348,6 +355,15 @@ public
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
             (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
             (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
+            // For FMI 3.0 make fmi_index globally unique so the ModelStructure
+            // dependency indices (used for both simcode_map and modelInfo below)
+            // resolve to the correct value references, including parameter
+            // dependencies. Only for FMI 3.0: FMI 2.0 references the ModelStructure
+            // unknowns by the per-base-type index, so renumbering would change its
+            // (still valid) output; normal simulation does not use fmi_index.
+            if FMI.isFMIVersion30() then
+              vars := SimVars.globalizeFMIIndex(vars);
+            end if;
             simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
             // create empty equation map and fill while creating the blocks
@@ -507,6 +523,74 @@ public
         then fail();
       end match;
     end create;
+
+    function createFMIDependencies
+      "Computes the FMI <ModelStructure> dependency lists for the new backend.
+       Builds the structural sparsity (states/inputs -> derivatives/outputs) and
+       translates the crefs into FMI variable indices via the sim code map, so the
+       result maps an unknown FMI index to the FMI indices of the knowns it depends
+       on. Array variables are exported as a single FMI variable; scalar element
+       crefs that are not variables of their own are looked up by their array cref
+       and the dependencies of all elements are merged per FMI index.
+       With forInitialization = true the initialization dependencies are computed
+       (derivatives/outputs additionally depend on the parameters)."
+      input BackendDAE bdae;
+      input SimCode simCode;
+      input Boolean forInitialization = false;
+      output list<tuple<Integer, list<Integer>>> fmiDependencies = {};
+    protected
+      UnorderedMap<ComponentRef, SimVar> simcode_map = simCode.simcode_map;
+      list<tuple<ComponentRef, list<ComponentRef>>> sparsity;
+      ComponentRef uCref;
+      list<ComponentRef> depCrefs;
+      Option<Integer> uIdxOpt, dIdxOpt;
+      Integer uIdx;
+      UnorderedMap<Integer, IntSet> dep_map;
+      IntSet depSet;
+    algorithm
+      sparsity := NBJacobian.createFMISparsity(bdae, forInitialization);
+      dep_map := UnorderedMap.new<IntSet>(Util.id, intEq);
+      for row in sparsity loop
+        (uCref, depCrefs) := row;
+        uIdxOpt := lookupFMIIndex(uCref, simcode_map);
+        if isSome(uIdxOpt) then
+          SOME(uIdx) := uIdxOpt;
+          depSet := UnorderedMap.getOrDefault(uIdx, dep_map, UnorderedSet.new(Util.id, intEq));
+          for d in depCrefs loop
+            dIdxOpt := lookupFMIIndex(d, simcode_map);
+            if isSome(dIdxOpt) then
+              UnorderedSet.add(Util.getOption(dIdxOpt), depSet);
+            end if;
+          end for;
+          UnorderedMap.add(uIdx, depSet, dep_map);
+        end if;
+      end for;
+      for uIdx in UnorderedMap.keyList(dep_map) loop
+        depSet := UnorderedMap.getOrFail(uIdx, dep_map);
+        fmiDependencies := (uIdx, List.sort(UnorderedSet.toList(depSet), intGt)) :: fmiDependencies;
+      end for;
+    end createFMIDependencies;
+
+    function lookupFMIIndex
+      "Looks up the FMI variable index of a (possibly scalarized) cref in the sim
+       code map, falling back to the array cref when the scalar element is not a
+       variable of its own (native array export)."
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output Option<Integer> index;
+    protected
+      Option<SimVar> svOpt;
+    algorithm
+      svOpt := UnorderedMap.get(cref, simcode_map);
+      if isNone(svOpt) then
+        svOpt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), simcode_map);
+      end if;
+      index := match svOpt
+        local Integer i;
+        case SOME(SimVar.SIMVAR(fmi_index = SOME(i))) then SOME(i);
+        else NONE();
+      end match;
+    end lookupFMIIndex;
 
     function convert
       input SimCode simCode;
@@ -727,8 +811,10 @@ public
       output OldSimCode.ModelInfo oldModelInfo;
     protected
       OldSimCode.VarInfo varInfo;
+      SimCodeVar.SimVars oldVars;
     algorithm
       varInfo := VarInfo.convert(modelInfo.varInfo);
+      oldVars := SimVar.SimVars.convert(modelInfo.vars);
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
         description                     = modelInfo.description,
@@ -739,7 +825,7 @@ public
         directory                       = modelInfo.directory,
         fileName                        = modelInfo.fileName,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
-        vars                            = SimVar.SimVars.convert(modelInfo.vars),
+        vars                            = oldVars,
         functions                       = modelInfo.functions,
         labels                          = modelInfo.labels,
         resourcePaths                   = modelInfo.resourcePaths,
@@ -751,7 +837,7 @@ public
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
-        unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
+        unitDefinitions                 = OldSimCodeUtil.getFmiUnitDefinitionsFromSimVars(oldVars)
       );
     end convert;
   end ModelInfo;
