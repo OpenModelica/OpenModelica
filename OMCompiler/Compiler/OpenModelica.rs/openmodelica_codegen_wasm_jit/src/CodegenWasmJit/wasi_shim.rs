@@ -69,6 +69,26 @@ mod wasmtime_impl {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
         }))?;
+        wt(linker.func_wrap(m, "path_create_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c);
+            ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }))?;
+        wt(linker.func_wrap(m, "path_unlink_file", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c);
+            ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }))?;
+        wt(linker.func_wrap(m, "path_remove_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c);
+            ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }))?;
+        wt(linker.func_wrap(m, "path_rename", |mut c: Caller<'_, WasiCtx>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c);
+            ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
+        }))?;
+        wt(linker.func_wrap(m, "fd_readdir", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c);
+            ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
+        }))?;
         wt(linker.func_wrap(m, "fd_fdstat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
@@ -225,6 +245,26 @@ mod wasmer_impl {
         def("fd_filestat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
             view_ctx!(env, mem, ctx);
             ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
+        }));
+        def("path_create_directory", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            view_ctx!(env, mem, ctx);
+            ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }));
+        def("path_unlink_file", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            view_ctx!(env, mem, ctx);
+            ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }));
+        def("path_remove_directory", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+            view_ctx!(env, mem, ctx);
+            ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+        }));
+        def("path_rename", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
+            view_ctx!(env, mem, ctx);
+            ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
+        }));
+        def("fd_readdir", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
+            view_ctx!(env, mem, ctx);
+            ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
         }));
         def("fd_fdstat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
             view_ctx!(env, mem, ctx);

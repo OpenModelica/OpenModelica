@@ -14,17 +14,11 @@
 #![allow(non_snake_case)]
 
 use std::cmp::Ordering;
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 
-// The result file is read lazily via `Read + Seek`. Natively that is an
-// `std::fs::File`; on wasm (no filesystem) the file is loaded from the in-memory
-// VFS into an `std::io::Cursor`, which offers the same `Read + Seek`.
-#[cfg(not(target_arch = "wasm32"))]
-type Src = File;
-#[cfg(target_arch = "wasm32")]
-type Src = std::io::Cursor<Vec<u8>>;
+// The result file is read lazily via the fs facade's `Read + Seek` handle: a real
+// `std::fs::File` natively, an in-memory `Cursor` on the web target.
+type Src = openmodelica_wasi::fs::Reader;
 
 /// One entry from the `name`/`description`/`dataInfo` metadata tables.
 #[derive(Clone)]
@@ -135,17 +129,10 @@ fn mat_element_length(ty: i32) -> Option<usize> {
     }
 }
 
-/// Duplicate the reader source: a second OS handle natively (`try_clone`), a
-/// copy of the in-memory bytes on wasm (`Cursor` has no `try_clone`). The caller
-/// parses metadata with one copy and keeps the other for lazy `seek`+read of the
-/// data payload.
-#[cfg(not(target_arch = "wasm32"))]
+/// A second reader handle: the caller parses metadata with one copy and keeps the
+/// other for lazy `seek`+read of the data payload.
 fn clone_src(f: &Src) -> Result<Src, String> {
     f.try_clone().map_err(|e| e.to_string())
-}
-#[cfg(target_arch = "wasm32")]
-fn clone_src(f: &Src) -> Result<Src, String> {
-    Ok(f.clone())
 }
 
 fn read_exact_vec(file: &mut Src, n: usize) -> Result<Vec<u8>, String> {
@@ -256,12 +243,7 @@ impl MatReader {
     /// Open and parse `filename`. Returns a textual error on the first problem,
     /// mirroring `omc_new_matlab4_reader`.
     pub fn open(filename: &str) -> Result<MatReader, String> {
-        #[cfg(not(target_arch = "wasm32"))]
-        let mut file = File::open(filename).map_err(|e| e.to_string())?;
-        #[cfg(target_arch = "wasm32")]
-        let mut file = std::io::Cursor::new(
-            openmodelica_wasi::read(filename).ok_or_else(|| format!("No such file: {filename}"))?,
-        );
+        let mut file = openmodelica_wasi::fs::open_read(filename).map_err(|e| e.to_string())?;
         const MATRIX_NAMES: [&str; 6] =
             ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
 

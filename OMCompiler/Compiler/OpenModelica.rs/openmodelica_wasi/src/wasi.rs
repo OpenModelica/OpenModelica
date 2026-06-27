@@ -24,6 +24,7 @@ pub const FILETYPE_REGULAR_FILE: u8 = 4;
 
 // oflags (`__wasi_oflags_t`) bits passed to `path_open`.
 pub const OFLAGS_CREAT: i32 = 1 << 0;
+pub const OFLAGS_DIRECTORY: i32 = 1 << 1;
 pub const OFLAGS_TRUNC: i32 = 1 << 3;
 
 // rights (`__wasi_rights_t`) bit for `fd_write`; used to tell a write-open from a
@@ -48,6 +49,8 @@ enum Fd {
     Stderr,
     /// The single preopened directory (fd 3), exposed under `name` (`"."`).
     PreopenDir { name: String },
+    /// A directory opened by name, enumerated by `fd_readdir` against `vfs_path`.
+    Dir { vfs_path: String },
     /// A regular file. Writable files buffer in `buf` and flush to the VFS on
     /// close; read files are loaded from the VFS at `path_open`.
     File {
@@ -248,6 +251,14 @@ impl WasiCtx {
         let name = String::from_utf8_lossy(&bytes).into_owned();
         let vfs_path = self.resolve(&name);
 
+        // Directory open (libc `opendir`); store directories are implicit.
+        if oflags & OFLAGS_DIRECTORY != 0 {
+            let fd = self.next_fd;
+            self.next_fd += 1;
+            self.fds.insert(fd, Fd::Dir { vfs_path });
+            return if Self::wr_u32(mem, opened_fd, fd) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+        }
+
         let writable = (fs_rights_base & RIGHTS_FD_WRITE) != 0
             || (oflags & (OFLAGS_CREAT | OFLAGS_TRUNC)) != 0;
         let file = if writable {
@@ -285,7 +296,7 @@ impl WasiCtx {
     pub fn fd_fdstat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
         let filetype = match self.fds.get(&fd) {
             Some(Fd::Stdout | Fd::Stderr) => FILETYPE_CHARACTER_DEVICE,
-            Some(Fd::PreopenDir { .. }) => FILETYPE_DIRECTORY,
+            Some(Fd::PreopenDir { .. } | Fd::Dir { .. }) => FILETYPE_DIRECTORY,
             Some(Fd::File { .. }) => FILETYPE_REGULAR_FILE,
             None => return ERRNO_BADF,
         };
@@ -304,7 +315,7 @@ impl WasiCtx {
     pub fn fd_filestat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
         let (filetype, size, mtime) = match self.fds.get(&fd) {
             Some(Fd::File { buf, vfs_path, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64, crate::mtime(vfs_path).map(|d| d.as_nanos() as u64).unwrap_or(0)),
-            Some(Fd::PreopenDir { .. }) => (FILETYPE_DIRECTORY, 0, 0),
+            Some(Fd::PreopenDir { .. } | Fd::Dir { .. }) => (FILETYPE_DIRECTORY, 0, 0),
             Some(Fd::Stdout | Fd::Stderr) => (FILETYPE_CHARACTER_DEVICE, 0, 0),
             None => return ERRNO_BADF,
         };
@@ -335,6 +346,41 @@ impl WasiCtx {
         let _ = Self::wr_u64(mem, buf + 48, mtime);
         let _ = Self::wr_u64(mem, buf + 56, mtime);
         ERRNO_SUCCESS
+    }
+
+    // ── path mutations ───────────────────────────────────────────────────────
+
+    /// `path_create_directory`: store directories are implicit, so a no-op success.
+    pub fn path_create_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+        if Self::rd_bytes(mem, path, path_len).is_none() {
+            return ERRNO_FAULT;
+        }
+        ERRNO_SUCCESS
+    }
+
+    /// `path_unlink_file`.
+    pub fn path_unlink_file<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
+        if crate::remove(&vfs_path) { ERRNO_SUCCESS } else { ERRNO_NOENT }
+    }
+
+    /// `path_remove_directory`: drop every store entry under the directory.
+    pub fn path_remove_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let dir = self.resolve(&String::from_utf8_lossy(&bytes));
+        remove_subtree(&dir);
+        ERRNO_SUCCESS
+    }
+
+    /// `path_rename`: move a file or a whole subtree.
+    #[allow(clippy::too_many_arguments)]
+    pub fn path_rename<M: GuestMem>(&mut self, mem: &mut M, _old_fd: u32, old_path: u32, old_len: u32, _new_fd: u32, new_path: u32, new_len: u32) -> i32 {
+        let Some(ob) = Self::rd_bytes(mem, old_path, old_len) else { return ERRNO_FAULT };
+        let Some(nb) = Self::rd_bytes(mem, new_path, new_len) else { return ERRNO_FAULT };
+        let from = self.resolve(&String::from_utf8_lossy(&ob));
+        let to = self.resolve(&String::from_utf8_lossy(&nb));
+        rename_path(&from, &to)
     }
 
     /// `fd_prestat_get`: report the single preopen dir; EBADF for everything else
@@ -450,6 +496,7 @@ impl WasiCtx {
     pub fn fd_readdir<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32, buf_len: u32, cookie: u64, bufused: u32) -> i32 {
         let dir_key = match self.fds.get(&fd) {
             Some(Fd::PreopenDir { .. }) => self.cwd.clone(),
+            Some(Fd::Dir { vfs_path }) => vfs_path.clone(),
             _ => return ERRNO_BADF,
         };
         let entries = readdir(&dir_key);
@@ -517,6 +564,44 @@ impl WasiCtx {
     }
 }
 
+/// Remove `dir` itself and every key beneath `dir/`.
+fn remove_subtree(dir: &str) {
+    let norm = crate::normalize(dir);
+    crate::remove(&norm);
+    let prefix = format!("{norm}/");
+    for key in crate::list() {
+        if key.starts_with(&prefix) {
+            crate::remove(&key);
+        }
+    }
+}
+
+/// Move a single file, or every key under a directory subtree.
+fn rename_path(from: &str, to: &str) -> i32 {
+    let from = crate::normalize(from);
+    let to = crate::normalize(to);
+    if let Some(bytes) = crate::read(&from) {
+        // Only a real store entry can move; `read` also resolves immutable builtins.
+        if crate::remove(&from) {
+            crate::write(&to, bytes);
+            return ERRNO_SUCCESS;
+        }
+    }
+    let from_prefix = format!("{from}/");
+    let moved: Vec<(String, Vec<u8>)> = crate::list()
+        .into_iter()
+        .filter_map(|k| k.strip_prefix(&from_prefix).map(|r| (r.to_string(), crate::read(&k).unwrap_or_default())))
+        .collect();
+    if moved.is_empty() {
+        return ERRNO_NOENT;
+    }
+    for (rest, bytes) in moved {
+        crate::remove(&format!("{from_prefix}{rest}"));
+        crate::write(&format!("{to}/{rest}"), bytes);
+    }
+    ERRNO_SUCCESS
+}
+
 /// One directory entry from [`readdir`].
 #[derive(Clone, Debug)]
 pub struct DirEntry {
@@ -552,4 +637,48 @@ pub fn readdir(dir: &str) -> Vec<DirEntry> {
 /// preview1 `path_filestat_get`'s `size` field, by path.
 pub fn stat_size(path: &str) -> Option<u64> {
     crate::read(path).map(|b| b.len() as u64)
+}
+
+#[cfg(test)]
+mod path_ops_tests {
+    use super::*;
+
+    fn put(mem: &mut [u8], at: usize, s: &str) -> (u32, u32) {
+        mem[at..at + s.len()].copy_from_slice(s.as_bytes());
+        (at as u32, s.len() as u32)
+    }
+
+    #[test]
+    fn path_mutations_and_dir_fd() {
+        crate::write("/wasi_pathops/a.txt", b"AAA".to_vec());
+        crate::write("/wasi_pathops/b.txt", b"BBB".to_vec());
+
+        let mut ctx = WasiCtx::new("", vec!["t".into()]);
+        let mut buf = vec![0u8; 4096];
+        let mut mem = SliceMem(&mut buf);
+
+        let (op, ol) = put(mem.0, 0, "wasi_pathops/a.txt");
+        let (np, nl) = put(mem.0, 64, "wasi_pathops/c.txt");
+        assert_eq!(ctx.path_rename(&mut mem, 3, op, ol, 3, np, nl), ERRNO_SUCCESS);
+        assert_eq!(crate::read("/wasi_pathops/c.txt").as_deref(), Some(&b"AAA"[..]));
+        assert!(crate::read("/wasi_pathops/a.txt").is_none());
+
+        let (p, l) = put(mem.0, 128, "wasi_pathops/b.txt");
+        assert_eq!(ctx.path_unlink_file(&mut mem, 3, p, l), ERRNO_SUCCESS);
+        assert_eq!(ctx.path_unlink_file(&mut mem, 3, p, l), ERRNO_NOENT);
+
+        let (dp, dl) = put(mem.0, 256, "wasi_pathops");
+        assert_eq!(ctx.path_open(&mut mem, 3, 0, dp, dl, OFLAGS_DIRECTORY, 0, 0, 0, 300), ERRNO_SUCCESS);
+        let dfd = WasiCtx::rd_u32(&mem, 300).unwrap();
+        assert_eq!(ctx.fd_readdir(&mut mem, dfd, 512, 512, 0, 320), ERRNO_SUCCESS);
+        let used = WasiCtx::rd_u32(&mem, 320).unwrap() as usize;
+        assert!(mem.0[512..512 + used].windows(5).any(|w| w == b"c.txt"));
+
+        let (rp, rl) = put(mem.0, 1100, "wasi_pathops");
+        assert_eq!(ctx.path_remove_directory(&mut mem, 3, rp, rl), ERRNO_SUCCESS);
+        assert!(crate::read("/wasi_pathops/c.txt").is_none());
+
+        let (cp, cl) = put(mem.0, 1200, "newdir");
+        assert_eq!(ctx.path_create_directory(&mut mem, 3, cp, cl), ERRNO_SUCCESS);
+    }
 }

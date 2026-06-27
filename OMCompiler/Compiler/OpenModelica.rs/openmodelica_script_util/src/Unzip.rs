@@ -54,20 +54,11 @@ pub fn unzipPath(fileName: ArcStr, pathToExtract: ArcStr, destinationPath: ArcSt
 }
 
 fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Result<(), ()> {
-    // Native reads the archive off disk; wasm has no OS filesystem, so it reads
-    // (and later writes) through the in-memory VFS instead.
-    #[cfg(not(target_arch = "wasm32"))]
-    let reader = match std::fs::File::open(zip_file_name) {
-        Ok(f) => f,
+    // The archive is read through the fs facade: off disk natively, from the
+    // in-memory store on the web target (entry writes route the same way).
+    let reader = match openmodelica_wasi::fs::open_read(zip_file_name) {
+        Ok(r) => r,
         Err(_) => {
-            add_error("Failed to open file: %s", &[zip_file_name]);
-            return Err(());
-        }
-    };
-    #[cfg(target_arch = "wasm32")]
-    let reader = match openmodelica_wasi::read(zip_file_name) {
-        Some(bytes) => std::io::Cursor::new(bytes),
-        None => {
             add_error("Failed to open file: %s", &[zip_file_name]);
             return Err(());
         }
