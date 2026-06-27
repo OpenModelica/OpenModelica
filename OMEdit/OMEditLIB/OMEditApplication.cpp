@@ -140,6 +140,14 @@ namespace {
     pErrorString->clear();
     return true;
   }
+
+  void appendStyleSheet(QString *pStyleSheet, const QString &styleSheet)
+  {
+    if (!pStyleSheet->isEmpty()) {
+      pStyleSheet->append("\n");
+    }
+    pStyleSheet->append(styleSheet);
+  }
 }
 
 /*!
@@ -182,12 +190,13 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // set the stylesheet
   QString applicationStyleSheet;
-  QString styleSheetLoadError;
-  if (readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &styleSheetLoadError)) {
+  QStringList styleSheetLoadErrors;
+  QString defaultStyleSheetLoadError;
+  const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
+  if (defaultStyleSheetLoaded) {
     setStyleSheet(applicationStyleSheet);
   } else {
-    setStyleSheet("file:///:/Resources/css/stylesheet.qss");
-    styleSheetLoadError.clear();
+    styleSheetLoadErrors.append(defaultStyleSheetLoadError);
   }
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
@@ -195,12 +204,15 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
         const QString absoluteStyleSheetFileName = absolutePath(styleSheetFileName);
         QString customStyleSheet;
-        if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &styleSheetLoadError)) {
-          if (!applicationStyleSheet.isEmpty()) {
-            applicationStyleSheet.append("\n");
+        QString customStyleSheetLoadError;
+        if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &customStyleSheetLoadError)) {
+          if (!defaultStyleSheetLoaded) {
+            continue;
           }
-          applicationStyleSheet.append(customStyleSheet);
+          appendStyleSheet(&applicationStyleSheet, customStyleSheet);
           setStyleSheet(applicationStyleSheet);
+        } else {
+          styleSheetLoadErrors.append(customStyleSheetLoadError);
         }
       }
     }
@@ -304,8 +316,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   // show stylesheet load error
-  if (!styleSheetLoadError.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, styleSheetLoadError, Helper::scriptingKind, Helper::errorLevel));
+  if (!styleSheetLoadErrors.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, styleSheetLoadErrors.join("\n"), Helper::scriptingKind, Helper::errorLevel));
   }
   // show qt translator load error
   if (!qtTranslatorLoadError.isEmpty()) {
