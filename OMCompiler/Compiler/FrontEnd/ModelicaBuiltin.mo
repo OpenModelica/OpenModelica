@@ -2893,6 +2893,96 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end translateResidualsDAE;
 
+function translateAcausalDAE
+  "Generates the combined DAE C code for a flowsheet model whose top-level
+   components are acausal DAE blocks, without building it. Each top-level component
+   is translated separately via translateResidualsDAE, the connections are
+   extracted, and the per-component code is stitched together by
+   combine_components.py. This is the acausal-DAE counterpart of translateModel()."
+  input TypeName className "the flowsheet class that should be translated";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method (accepted but the combined solver is always IDA)";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Generates the combined acausal-DAE C code (per-component residual code plus connection equations) without building it, the acausal-DAE counterpart of <a href=\"modelica://OpenModelica.Scripting.translateModel\">translateModel()</a>.</p>
+</html>"),
+  preferredView="text");
+end translateAcausalDAE;
+
+function buildAcausalDAE
+  "Generates and builds (but does not run) the combined DAE simulation executable
+   for a flowsheet model whose top-level components are acausal DAE blocks. This is
+   the acausal-DAE counterpart of buildModel()."
+  input TypeName className "the flowsheet class that should be built";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method (accepted but the combined solver is always IDA)";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+  output String[2] buildModelResults;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Note that unlike <a href=\"modelica://OpenModelica.Scripting.simulateAcausalDAE\">simulateAcausalDAE()</a> this function only builds the combined simulation executable, it does not run it. The acausal-DAE counterpart of <a href=\"modelica://OpenModelica.Scripting.buildModel\">buildModel()</a>.</p>
+<p>Returns the filenames for the generated simulation executable and the initialization file.</p>
+</html>"),
+  preferredView="text");
+end buildAcausalDAE;
+
+function simulateAcausalDAE
+  "Simulates a flowsheet model whose top-level components are acausal DAE blocks.
+   Each top-level component is translated separately via translateResidualsDAE,
+   the connections are extracted, the per-component code is stitched together by
+   combine_components.py, and the resulting combined DAE system is built, run and
+   returned just like simulate()."
+  input TypeName className "the flowsheet class that should be simulated";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method (accepted but the combined solver is always IDA)";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+  output SimulationResult simulationResults;
+  record SimulationResult
+    String resultFile;
+    String simulationOptions;
+    String messages;
+    Real timeFrontend;
+    Real timeBackend;
+    Real timeSimCode;
+    Real timeTemplates;
+    Real timeCompile;
+    Real timeSimulation;
+    Real timeTotal;
+  end SimulationResult;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Simulates a flowsheet model whose top-level components are acausal DAE blocks, by separately compiling each top-level component (see <code>translateResidualsDAE</code>), stitching them together with the connection equations, and building/running the combined DAE system. Returns the same <code>SimulationResult</code> record as <code>simulate</code>.</p>
+<p><code>simulateAcausalDAE(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])</code></p>
+</html>"),
+  preferredView="text");
+end simulateAcausalDAE;
+
 function createModel
   "Creates a new empty model."
   input TypeName className;

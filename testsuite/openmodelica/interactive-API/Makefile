@@ -38,6 +38,7 @@ CopyClass7.mos \
 CopyClass8.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
+daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
@@ -165,7 +166,9 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateAcausalDAE1.mos \
 translateResidualsDAE1.mos \
+translateResidualsDAE2.mos \
 UnpatchedModelicaServices.mos \
 updateEquation1.mos \
 UsesAnnotation1.mos \
