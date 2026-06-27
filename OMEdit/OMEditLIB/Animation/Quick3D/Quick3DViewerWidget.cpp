@@ -192,7 +192,8 @@ void Quick3DViewerWidget::setCameraView(CameraView view)
       mOrientation = orientationFromBasis(QVector3D(0, 0, -1), QVector3D(0, 1, 0), QVector3D(1, 0, 0));
       break;
   }
-  mCenter = QVector3D(0, 0, 0);
+  // Keep the framed centre (set by fitToScene / panning); presets only change the
+  // angle, so a model that is not at the origin stays centred.
   applyCamera();
 }
 
@@ -203,6 +204,18 @@ void Quick3DViewerWidget::orbitCamera(float deltaYawDeg, float deltaPitchDeg)
   const QVector3D right = mOrientation.rotatedVector(QVector3D(1, 0, 0));
   const QQuaternion pitch = QQuaternion::fromAxisAndAngle(right, deltaPitchDeg);
   mOrientation = (yaw * pitch * mOrientation).normalized();
+  applyCamera();
+}
+
+void Quick3DViewerWidget::panCamera(float dxPixels, float dyPixels)
+{
+  // World units per screen pixel at the focal plane (60° vertical FOV), so the
+  // scene tracks the cursor 1:1. Dragging right/down moves the centre left/up,
+  // i.e. the grabbed point follows the cursor.
+  const float perPixel = 2.0f * mDistance * std::tan(qDegreesToRadians(30.0f)) / float(qMax(height(), 1));
+  const QVector3D right = mOrientation.rotatedVector(QVector3D(1, 0, 0));
+  const QVector3D up = mOrientation.rotatedVector(QVector3D(0, 1, 0));
+  mCenter += (-dxPixels * right + dyPixels * up) * perPixel;
   applyCamera();
 }
 
@@ -297,10 +310,21 @@ void Quick3DViewerWidget::mousePressEvent(QMouseEvent* event)
 
 void Quick3DViewerWidget::mouseMoveEvent(QMouseEvent* event)
 {
-  if (event->buttons() & Qt::LeftButton) {
-    const QPoint delta = event->pos() - mLastMousePos;
+  const QPoint delta = event->pos() - mLastMousePos;
+  // OSG MultiTouchTrackballManipulator mapping: left = rotate, middle (or
+  // Ctrl+left) = pan, right = zoom.
+  const bool pan = (event->buttons() & Qt::MiddleButton) ||
+                   ((event->buttons() & Qt::LeftButton) && (event->modifiers() & Qt::ControlModifier));
+  if (pan) {
+    mLastMousePos = event->pos();
+    panCamera(delta.x(), delta.y());
+  } else if (event->buttons() & Qt::LeftButton) {
     mLastMousePos = event->pos();
     orbitCamera(-delta.x() * 0.4f, delta.y() * 0.4f);
+  } else if (event->buttons() & Qt::RightButton) {
+    mLastMousePos = event->pos();
+    mDistance = qMax(mDistance * std::pow(1.01f, float(delta.y())), 0.01f); // drag down = zoom out
+    applyCamera();
   }
   QQuickWidget::mouseMoveEvent(event);
 }

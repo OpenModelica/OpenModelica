@@ -95,6 +95,16 @@ QObject* childObject(QObject* owner, const char* property)
 {
   return owner ? owner->property(property).value<QObject*>() : nullptr;
 }
+
+// World-space reach: distance from the node origin to the farthest corner of an
+// axis-aligned box [mn,mx] scaled by s. Used to pad the camera-framing sphere.
+float reachFromOrigin(const QVector3D& mn, const QVector3D& mx, const QVector3D& s)
+{
+  return QVector3D(qMax(qAbs(mn.x()), qAbs(mx.x())) * s.x(),
+                   qMax(qAbs(mn.y()), qAbs(mx.y())) * s.y(),
+                   qMax(qAbs(mn.z()), qAbs(mx.z())) * s.z())
+    .length();
+}
 } // namespace
 
 Quick3DScene::Quick3DScene(QQmlEngine* engine, QQuick3DObject* sceneRoot)
@@ -182,7 +192,7 @@ Quick3DGeometry* Quick3DScene::ensureGeometry(Item& item)
   return item.geometry;
 }
 
-void Quick3DScene::useBuiltinMesh(const Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler)
+void Quick3DScene::useBuiltinMesh(Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler)
 {
   // Built-in primitive: centred, Y-axis; scale/rotate/offset onto the Modelica +Z box.
   item.model->setProperty("geometry", QVariant::fromValue<QQuick3DGeometry*>(nullptr));
@@ -193,9 +203,11 @@ void Quick3DScene::useBuiltinMesh(const Item& item, const char* source, const QV
   if (item.node) {
     item.node->setProperty("omDoubleSided", false);
   }
+  // The primitives span ±50 before scaling, offset by `position` from the node origin.
+  item.radius = position.length() + 50.0f * qMax(scale.x(), qMax(scale.y(), scale.z()));
 }
 
-void Quick3DScene::useCustomGeometry(const Item& item)
+void Quick3DScene::useCustomGeometry(Item& item)
 {
   // Custom mesh already in Modelica units along +Z from 0: no local transform.
   item.model->setProperty("source", QUrl());
@@ -205,6 +217,9 @@ void Quick3DScene::useCustomGeometry(const Item& item)
   item.model->setProperty("eulerRotation", QVector3D(0, 0, 0));
   if (item.node) {
     item.node->setProperty("omDoubleSided", true);
+  }
+  if (item.geometry) {
+    item.radius = reachFromOrigin(item.geometry->boundsMin(), item.geometry->boundsMax(), QVector3D(1, 1, 1));
   }
 }
 
@@ -282,6 +297,9 @@ void Quick3DScene::applyCadGeometry(const ShapeObject& shape, Item& item)
                               ? QVector3D(shape._length.exp, shape._width.exp, shape._height.exp)
                               : QVector3D(1, 1, 1);
     item.model->setProperty("scale", scale);
+    if (item.geometry) {
+      item.radius = reachFromOrigin(item.geometry->boundsMin(), item.geometry->boundsMax(), scale);
+    }
   }
 }
 
@@ -366,9 +384,11 @@ bool Quick3DScene::boundingSphere(QVector3D& center, float& radius) const
   if (mItems.isEmpty()) {
     return false;
   }
+  // Centre on the box of node origins, then grow the radius by each item's own
+  // world reach (mesh extent from its node origin) — works for shapes anywhere,
+  // not just near the origin, and for custom/CAD meshes in real units.
   QVector3D mn(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
   QVector3D mx = -mn;
-  float pad = 0.0f;
   for (const Item& item : mItems) {
     if (!item.node) {
       continue;
@@ -376,14 +396,16 @@ bool Quick3DScene::boundingSphere(QVector3D& center, float& radius) const
     const QVector3D p = item.node->property("position").value<QVector3D>();
     mn.setX(qMin(mn.x(), p.x())); mn.setY(qMin(mn.y(), p.y())); mn.setZ(qMin(mn.z(), p.z()));
     mx.setX(qMax(mx.x(), p.x())); mx.setY(qMax(mx.y(), p.y())); mx.setZ(qMax(mx.z(), p.z()));
-    if (item.model) {
-      // Built-in primitives span ~100 units before scaling; half-extent ≈ 50*scale.
-      const QVector3D s = item.model->property("scale").value<QVector3D>();
-      pad = qMax(pad, 50.0f * qMax(s.x(), qMax(s.y(), s.z())));
-    }
   }
   center = (mn + mx) * 0.5f;
-  radius = (mx - mn).length() * 0.5f + pad;
+  radius = 0.0f;
+  for (const Item& item : mItems) {
+    if (!item.node) {
+      continue;
+    }
+    const QVector3D p = item.node->property("position").value<QVector3D>();
+    radius = qMax(radius, (p - center).length() + item.radius);
+  }
   if (radius < 1.0e-3f) {
     radius = 1.0f;
   }

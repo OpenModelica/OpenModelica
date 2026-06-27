@@ -84,6 +84,7 @@ private:
     Quick3DGeometry* geometry = nullptr; // custom mesh (pipe/spring/arrow/CAD), reused across rebuilds
     QString geomKey;                   // last geometry signature, to skip per-frame rebuilds
     bool cadLoaded = false;            // a CAD file parsed successfully (scale via length/width/height)
+    float radius = 0.5f;               // world-space reach of the mesh from the node origin (camera framing)
   };
 
   Item createItem(AbstractVisualizerObject* visualizer);
@@ -91,8 +92,8 @@ private:
   void applyCadGeometry(const ShapeObject& shape, Item& item);
   void applyVectorGeometry(const VectorObject& vector, Item& item);
   Quick3DGeometry* ensureGeometry(Item& item);
-  void useBuiltinMesh(const Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler);
-  void useCustomGeometry(const Item& item);
+  void useBuiltinMesh(Item& item, const char* source, const QVector3D& scale, const QVector3D& position, const QVector3D& euler);
+  void useCustomGeometry(Item& item);
   void applyTransform(QObject* node, const Mat4& mat);
   void applyMaterial(AbstractVisualizerObject* visualizer, QObject* material);
 

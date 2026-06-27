@@ -73,6 +73,9 @@ public:
   void setCameraView(CameraView view);
   // Turntable orbit by the given yaw/pitch deltas (degrees).
   void orbitCamera(float deltaYawDeg, float deltaPitchDeg);
+  // Pan the look-at centre in the camera's screen plane by a pixel drag (matches
+  // the OSG trackball's middle-button pan: the point under the cursor stays put).
+  void panCamera(float dxPixels, float dyPixels);
 
 protected:
   void mousePressEvent(QMouseEvent* event) override;
