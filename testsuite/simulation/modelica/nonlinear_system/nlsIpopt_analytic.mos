@@ -1,0 +1,53 @@
+// name: nlsIpopt_analytic
+// status: correct
+// teardown_command: rm -f IpoptSys3* _IpoptSys3* output.log
+// cflags: -d=-newInst
+//
+// Tests the -initNlsIpopt flag (ticket #14104): solve a nonlinear system with the
+// IPOPT interior-point solver using the analytic sparse Jacobian. The coupled
+// 3x3 polynomial system is torn into a runtime nonlinear system that has a
+// symbolic Jacobian. Correctness is checked by tolerance (the exact root is
+// irrational and platform-sensitive in the last digits): the simulation must
+// succeed, respect x's min attribute, and drive all residuals to zero. val() is
+// inlined so the raw irrational root is not echoed into the result.
+
+loadString("
+model IpoptSys3
+  Real x(start = 0.5, min = 0);
+  Real y(start = 0.5);
+  Real z(start = 0.5);
+equation
+  x^2 + y + z = 7;
+  x + y^2 + z = 7;
+  x + y + z^2 = 7;
+end IpoptSys3;
+"); getErrorString();
+
+rIp := simulate(IpoptSys3, stopTime = 0.0, simflags = "-initNlsIpopt"); getErrorString();
+print("solved   = " + String(rIp.resultFile <> "") + "\n");
+print("x>=min   = " + String(val(x,0.0) >= 0.0) + "\n");
+print("res1 ~ 0 = " + String(abs(val(x,0.0)*val(x,0.0) + val(y,0.0) + val(z,0.0) - 7.0) < 1e-6) + "\n");
+print("res2 ~ 0 = " + String(abs(val(x,0.0) + val(y,0.0)*val(y,0.0) + val(z,0.0) - 7.0) < 1e-6) + "\n");
+print("res3 ~ 0 = " + String(abs(val(x,0.0) + val(y,0.0) + val(z,0.0)*val(z,0.0) - 7.0) < 1e-6) + "\n");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IpoptSys3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IpoptSys3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-initNlsIpopt'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+//
+// x>=min   = true
+//
+// res1 ~ 0 = true
+//
+// res2 ~ 0 = true
+//
+// res3 ~ 0 = true
+//
+// endResult

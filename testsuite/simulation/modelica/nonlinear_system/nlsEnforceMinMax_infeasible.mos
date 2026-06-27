@@ -1,0 +1,50 @@
+// name: nlsEnforceMinMax_infeasible
+// status: correct
+// teardown_command: rm -f MinMaxInfeasible* _MinMaxInfeasible* output.log
+// cflags: -d=-newInst
+//
+// Tests the -nlsEnforceMinMax flag (ticket #14104) on a system with no feasible
+// solution: the cubic has roots {-3, -0.5, -2}, all below min = 1. Without the
+// flag the solver returns an out-of-bounds root (-0.5) with only a warning; with
+// the flag the bounds are enforced, no feasible root exists, and the simulation
+// fails at initialization instead of returning an invalid value.
+
+loadString("
+model MinMaxInfeasible
+  Real x(min = 1);
+equation
+  (x + 3)*(x + 0.5)*(x + 2) = 0;
+end MinMaxInfeasible;
+"); getErrorString();
+
+rDef := simulate(MinMaxInfeasible, stopTime = 0.0);
+print("default      solved = " + String(rDef.resultFile <> "") + ", x = " + String(val(x, 0.0)) + "\n");
+
+rEnf := simulate(MinMaxInfeasible, stopTime = 0.0, simflags = "-nlsEnforceMinMax");
+print("enforceMinMax solved = " + String(rEnf.resultFile <> "") + "\n");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MinMaxInfeasible_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MinMaxInfeasible', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_ASSERT        | warning | [<interactive>:3:3-3:18:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((x >= 1.0)) --> \"Variable violating min constraint: 1.0 <= x, has value: -0.5\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+//
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MinMaxInfeasible', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlsEnforceMinMax'",
+//     messages = "Simulation execution failed for model: MinMaxInfeasible
+// LOG_ASSERT        | debug   | Solving non-linear system 2 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+//
+// endResult
