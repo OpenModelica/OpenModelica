@@ -55,8 +55,8 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, BUILTINS, ENV_EXTRA, FnCtx, FnInfo, RT_BUILTINS, SimCtx, SimSlot, WTy,
-    compile_function, compile_linear_system, external_known, function_signature, rt_index,
-    sim_cref_key,
+    compile_function, compile_linear_system, compile_nonlinear_system, external_known,
+    function_signature, rt_index, sim_cref_key,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -1365,6 +1365,7 @@ fn lower_equation(
         // through the whole-array scatter in `compile_sim_cref_assign`.
         E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => ctx.sim_assign(lhs, exp),
         E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index),
+        E::SES_NONLINEAR { nlSystem, .. } => lower_nonlinear_system(ctx, nlSystem, eq_index),
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
         // An alias equation re-runs another equation (by index): inline it.
         E::SES_ALIAS { aliasOf, .. } => {
@@ -1422,6 +1423,43 @@ fn lower_linear_system(
         Ok(())
     };
     compile_linear_system(ctx, &iter_vars, &res_exps, &mut lower_inner)
+}
+
+/// Lower a `SES_NONLINEAR` (torn) system. Like [`lower_linear_system`], partition
+/// `nlSystem.eqs` into the inner constraint equations (which compute the torn
+/// variables from the iteration unknowns) and the `SES_RESIDUAL` residual
+/// expressions; the iteration unknowns are `nlSystem.crefs`. The Newton solve is
+/// in [`compile_nonlinear_system`]. The optional symbolic Jacobian
+/// (`nlSystem.jacobianMatrix`) is not used — the solver computes the Jacobian
+/// numerically, like the linear system's residual probing.
+fn lower_nonlinear_system(
+    ctx: &mut FnCtx,
+    nlsystem: &SimCode::NonlinearSystem,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+) -> Result<()> {
+    use SimCode::SimEqSystem as E;
+    let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
+    let mut res_exps: Vec<&Arc<DAE::Exp>> = Vec::new();
+    for e in lst(&nlsystem.eqs) {
+        match &**e {
+            E::SES_RESIDUAL { exp, .. } => res_exps.push(exp),
+            _ => inner.push(e.clone()),
+        }
+    }
+    if res_exps.is_empty() {
+        bail!(
+            "CodegenWasmJit: SES_NONLINEAR (index {}) has no residual equations",
+            nlsystem.index
+        );
+    }
+    let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
+    let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
+        for eq in &inner {
+            lower_equation(c, eq, eq_index)?;
+        }
+        Ok(())
+    };
+    compile_nonlinear_system(ctx, &iter_vars, &res_exps, &mut lower_inner)
 }
 
 fn eq_kind_name(eq: &SimCode::SimEqSystem) -> &'static str {

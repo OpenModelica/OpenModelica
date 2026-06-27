@@ -2896,6 +2896,222 @@ pub(crate) fn compile_linear_system(
     Ok(())
 }
 
+/// Lower a nonlinear system `r(x) = 0` (the `SES_NONLINEAR` residual form) into
+/// the current simulation equation function, by Newton's method with a
+/// numerically-computed (forward-difference) Jacobian — the in-wasm counterpart
+/// of the C runtime's default Newton nonlinear solver (`_omc_newton`).
+///
+/// `iter_vars` are the `n` tearing unknowns `x`; `lower_inner` lowers the inner
+/// constraint equations (which compute the torn variables from the current `x`);
+/// `res_exps` are the `n` residual expressions `r_i(x)`. Each Newton iteration:
+///   * evaluates `r = r(x)` (run inner equations, store residuals); converges
+///     when `max_i |r_i| < TOL`;
+///   * builds `J[:,col] = (r(x + h_col e_col) - r(x)) / h_col` by probing each
+///     unknown, step `h_col = sqrt(eps)*(|x_col| + 1)`;
+///   * solves `J dx = -r` ([`rt_linsolve`]) and updates `x += dx`.
+/// The unknowns' current `SimData` slot values seed `x` (the previous step's
+/// solution — a warm start, as the C runtime does). A singular Jacobian or
+/// non-convergence within `MAX_ITER` traps, mirroring the linear solver's
+/// singular trap. Like [`compile_linear_system`], `lower_inner` runs once per
+/// residual probe; here that is `(n + 1)` times per Newton iteration (which is a
+/// runtime loop), plus once after to make the torn variables consistent.
+pub(crate) fn compile_nonlinear_system(
+    ctx: &mut FnCtx,
+    iter_vars: &[Arc<DAE::ComponentRef>],
+    res_exps: &[&Arc<DAE::Exp>],
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let n = iter_vars.len();
+    if n == 0 {
+        return Ok(());
+    }
+    if res_exps.len() != n {
+        bail!(
+            "CodegenWasmJit: nonlinear system has {n} unknowns but {} residuals",
+            res_exps.len()
+        );
+    }
+    // Resolve each unknown to its (real) SimData slot offset.
+    let mut slots: Vec<u32> = Vec::with_capacity(n);
+    for cr in iter_vars {
+        let key = sim_cref_key(cr)?;
+        let slot = ctx
+            .sim
+            .as_ref()
+            .unwrap()
+            .vars
+            .get(&key)
+            .copied()
+            .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: nonlinear-system unknown `{key}` has no slot"))?;
+        if slot.wty != WTy::F64 {
+            bail!("CodegenWasmJit: nonlinear-system unknown `{key}` is not a Real variable");
+        }
+        slots.push(slot.off);
+    }
+    let data = ctx.sim.as_ref().unwrap().data_local;
+
+    // Scratch block: J (n*n, column-major) | r0 (n) | rp (n) | b/dx (n) | x0 (n).
+    let j_off: u32 = 0;
+    let r0_off: u32 = (n * n * 8) as u32;
+    let rp_off: u32 = ((n * n + n) * 8) as u32;
+    let b_off: u32 = ((n * n + 2 * n) * 8) as u32;
+    let x0_off: u32 = ((n * n + 3 * n) * 8) as u32;
+    let scratch_bytes: u32 = ((n * n + 4 * n) * 8) as u32;
+
+    let base = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(scratch_bytes as i32));
+    ctx.emit(I::Call(rt_index("rt_alloc")));
+    ctx.emit(I::LocalSet(base));
+
+    let iter = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(iter));
+    let maxr = ctx.alloc_temp(WTy::F64);
+    let hcol = ctx.alloc_temp(WTy::F64);
+
+    // sqrt(DBL_EPSILON): the classic forward-difference relative step.
+    const SQRT_EPS: f64 = 1.4901161193847656e-08;
+    // Residual infinity-norm convergence tolerance.
+    const TOL: f64 = 1.0e-10;
+    const MAX_ITER: i32 = 100;
+
+    ctx.emit(I::Block(we::BlockType::Empty));
+    let block_level = ctx.ctrl_depth;
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    let loop_level = ctx.ctrl_depth;
+
+    // r0 = r(x): run the inner equations, then store each residual.
+    emit_residual_eval(ctx, base, res_exps, r0_off, lower_inner)?;
+
+    // maxr = max_i |r0[i]|.
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::F64Load(mem_arg(r0_off, 3)));
+    ctx.emit(I::F64Abs);
+    for i in 1..n as u32 {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(r0_off + i * 8, 3)));
+        ctx.emit(I::F64Abs);
+        ctx.emit(I::F64Max);
+    }
+    ctx.emit(I::LocalSet(maxr));
+
+    // Converged? maxr < TOL -> break out of the Newton loop (NaN never breaks,
+    // so a diverged/NaN residual falls through to the iteration-limit trap).
+    ctx.emit(I::LocalGet(maxr));
+    ctx.emit(I::F64Const(TOL.into()));
+    ctx.emit(I::F64Lt);
+    ctx.emit(I::BrIf(ctx.ctrl_depth - block_level));
+
+    // Iteration-limit guard: trap if exceeded (mirrors the singular trap).
+    ctx.emit(I::LocalGet(iter));
+    ctx.emit(I::I32Const(MAX_ITER));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::Unreachable);
+    ctx.emit(I::End);
+
+    // x0[j] = slot[j] (the current iterate).
+    for j in 0..n {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::F64Load(mem_arg(slots[j], 3)));
+        ctx.emit(I::F64Store(mem_arg(x0_off + (j as u32) * 8, 3)));
+    }
+
+    // Jacobian columns by forward differences: perturb one unknown, probe.
+    for col in 0..n {
+        let col_x0 = x0_off + (col as u32) * 8;
+        // hcol = sqrt(eps) * (|x0[col]| + 1).
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(col_x0, 3)));
+        ctx.emit(I::F64Abs);
+        ctx.emit(I::F64Const(1.0f64.into()));
+        ctx.emit(I::F64Add);
+        ctx.emit(I::F64Const(SQRT_EPS.into()));
+        ctx.emit(I::F64Mul);
+        ctx.emit(I::LocalSet(hcol));
+        // slot[col] = x0[col] + hcol.
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(col_x0, 3)));
+        ctx.emit(I::LocalGet(hcol));
+        ctx.emit(I::F64Add);
+        ctx.emit(I::F64Store(mem_arg(slots[col], 3)));
+        // rp = r(x + hcol*e_col).
+        emit_residual_eval(ctx, base, res_exps, rp_off, lower_inner)?;
+        // J[i][col] = (rp[i] - r0[i]) / hcol   (column-major: J[col*n + i]).
+        for i in 0..n {
+            let i_u = i as u32;
+            let elem_off = j_off + ((col * n + i) as u32) * 8;
+            ctx.emit(I::LocalGet(base));
+            ctx.emit(I::LocalGet(base));
+            ctx.emit(I::F64Load(mem_arg(rp_off + i_u * 8, 3)));
+            ctx.emit(I::LocalGet(base));
+            ctx.emit(I::F64Load(mem_arg(r0_off + i_u * 8, 3)));
+            ctx.emit(I::F64Sub);
+            ctx.emit(I::LocalGet(hcol));
+            ctx.emit(I::F64Div);
+            ctx.emit(I::F64Store(mem_arg(elem_off, 3)));
+        }
+        // Restore slot[col] = x0[col] (so the next column probes from x0).
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(col_x0, 3)));
+        ctx.emit(I::F64Store(mem_arg(slots[col], 3)));
+    }
+
+    // b = -r0.
+    for i in 0..n {
+        let i_u = i as u32;
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(r0_off + i_u * 8, 3)));
+        ctx.emit(I::F64Neg);
+        ctx.emit(I::F64Store(mem_arg(b_off + i_u * 8, 3)));
+    }
+
+    // Solve J dx = b in place (b <- dx); trap on a singular Jacobian.
+    ctx.emit(I::LocalGet(base)); // J at j_off == 0
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(b_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(n as i32));
+    ctx.emit(I::Call(rt_index("rt_linsolve")));
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::Unreachable);
+    ctx.emit(I::End);
+
+    // x = x0 + dx (the slots currently hold x0 again after the column probes).
+    for j in 0..n {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(x0_off + (j as u32) * 8, 3)));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
+        ctx.emit(I::F64Add);
+        ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+    }
+
+    // iter += 1; continue.
+    ctx.emit(I::LocalGet(iter));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(iter));
+    ctx.emit(I::Br(ctx.ctrl_depth - loop_level));
+
+    ctx.emit(I::End); // loop
+    ctx.emit(I::End); // block
+
+    // Recover the torn variables at the converged solution.
+    lower_inner(ctx)?;
+
+    // Free the scratch block.
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")));
+    Ok(())
+}
+
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
     use DAE::Exp as E;
     match exp {

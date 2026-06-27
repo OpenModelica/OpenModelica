@@ -19,7 +19,8 @@ to JIT-compile functions, or simply with `simulate()` to skip code generation
 and create a WASM-file that is loaded into memory to run the simulation.
 The JIT compilation is limited at the moment (no external "C" functions yet although
 that could possibly be done via FFI or Emscripten), and the simulation target
-has only 1 dense linear solver, Euler, and dassl (no non-linear solvers).
+has only 1 dense linear solver, a Newton non-linear solver (numerical
+Jacobian), Euler, and dassl.
 The web target only supports the `wasm-jit` target (and does not compile the other
 code generators into the image).
 
