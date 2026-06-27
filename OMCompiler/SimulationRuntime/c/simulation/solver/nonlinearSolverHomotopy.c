@@ -864,6 +864,7 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 */
 static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, double *fJac)
 {
+  threadData_t* threadData = solverData->userData->threadData;
   const double delta_h = sqrt(DBL_EPSILON*2e1);
   double delta_hh;
   double xsave;
@@ -882,21 +883,65 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
     f = solverData->casualTearingSet ? solverData->f_con : solverData->f;
   }
 
-  for(i = 0; i < N; i++) {
-    xsave = x[i];
-    delta_hh = delta_h * (fabs(xsave) + 1.0);
-    if ((xsave + delta_hh >= solverData->maxValue[i]))
-      delta_hh *= -1;
-    x[i] += delta_hh;
-    /* Calculate scaled difference quotient */
-    delta_hh = 1. / delta_hh * solverData->xScaling[i];
-    f(solverData, x, solverData->f2);
-
-    for(j = 0; j < solverData->n; j++) {
-      l = i * solverData->n + j;
-      fJac[l] = (solverData->f2[j] - f1[j]) * delta_hh;
+  if (!omc_flag[FLAG_NLS_SOFT_ASSERTS]) {
+    /* standard finite-difference Jacobian (unchanged behaviour) */
+    for(i = 0; i < N; i++) {
+      xsave = x[i];
+      delta_hh = delta_h * (fabs(xsave) + 1.0);
+      if ((xsave + delta_hh >= solverData->maxValue[i]))
+        delta_hh *= -1;
+      x[i] += delta_hh;
+      /* Calculate scaled difference quotient */
+      delta_hh = 1. / delta_hh * solverData->xScaling[i];
+      f(solverData, x, solverData->f2);
+      for(j = 0; j < solverData->n; j++) {
+        l = i * solverData->n + j;
+        fJac[l] = (solverData->f2[j] - f1[j]) * delta_hh;
+      }
+      x[i] = xsave;
     }
-    x[i] = xsave;
+    return 0;
+  }
+
+  /* -nlsSoftAsserts: out-of-domain recovery. A perturbation may push a (possibly
+   * derived) quantity outside a function's valid range (e.g. a medium temperature
+   * below its IF97 minimum), raising an assertion. Try the other direction, and
+   * if both fail leave the column at zero, so the whole solve does not abort. */
+  for(i = 0; i < N; i++) {
+    double base_hh = delta_h * (fabs(x[i]) + 1.0);
+    double firstSgn = (i < solverData->n && x[i] + base_hh >= solverData->maxValue[i]) ? -1.0 : 1.0;
+    int dir, done = 0;
+    xsave = x[i];
+
+    for (dir = 0; dir < 2 && !done; dir++) {
+      int assertFailed = 1;
+      delta_hh = (dir == 0 ? firstSgn : -firstSgn) * base_hh;
+      x[i] = xsave + delta_hh;
+#ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+      f(solverData, x, solverData->f2);
+      assertFailed = 0;
+#ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+      x[i] = xsave;
+      if (!assertFailed) {
+        double invScaled = solverData->xScaling[i] / delta_hh;
+        for(j = 0; j < solverData->n; j++) {
+          l = i * solverData->n + j;
+          fJac[l] = (solverData->f2[j] - f1[j]) * invScaled;
+        }
+        done = 1;
+      }
+    }
+    if (!done) {
+      debugInt(OMC_LOG_NLS_V, "Jacobian column left the valid domain in both directions, using zero column:", i);
+      for(j = 0; j < solverData->n; j++) {
+        l = i * solverData->n + j;
+        fJac[l] = 0.0;
+      }
+    }
   }
   return 0;
 }
@@ -1476,9 +1521,29 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
       if (lambda1 < lambdaMin)
       {
-        debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
-        solverData->info = -1;
-        break;
+        if (omc_flag[FLAG_NLS_SOFT_ASSERTS]) {
+          /* -nlsSoftAsserts: every damped step left a function's valid domain.
+           * Instead of aborting, take the minimal step projected into [min, max]
+           * and keep iterating; the residual is re-evaluated there (if it still
+           * asserts, the previous residual is kept and the next iteration retries). */
+          int softOk = 0;
+          lambda1 = lambdaMin;
+          vecAddScal(solverData->n, x, solverData->dy0, lambda1, solverData->x1);
+          clampToBounds(solverData->n, solverData->x1, solverData->minValue, solverData->maxValue);
+#ifndef OMC_EMCC
+          MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+          solverData->f(solverData, solverData->x1, solverData->f1);
+          softOk = 1;
+#ifndef OMC_EMCC
+          MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+          debugInt(OMC_LOG_NLS_V, "Soft-asserts: minimal clamped step taken, residual evaluable:", softOk);
+        } else {
+          debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+          solverData->info = -1;
+          break;
+        }
       }
 
       /* Damping (see Numerical Recipes) */

@@ -124,6 +124,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NLS_ENFORCE_MIN_MAX */          "nlsEnforceMinMax",
   /* FLAG_NLS_IPOPT */                    "nlsIpopt",
   /* FLAG_INIT_NLS_IPOPT */               "initNlsIpopt",
+  /* FLAG_NLS_SOFT_ASSERTS */             "nlsSoftAsserts",
   /* FLAG_NOEMIT */                       "noemit",
   /* FLAG_NOEQUIDISTANT_GRID */           "noEquidistantTimeGrid",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "noEquidistantOutputFrequency",
@@ -288,6 +289,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_ENFORCE_MIN_MAX */          "enforce min/max attributes as bounds while solving nonlinear systems",
   /* FLAG_NLS_IPOPT */                    "use the IPOPT solver as a fallback when the standard nonlinear solver fails",
   /* FLAG_INIT_NLS_IPOPT */               "use the IPOPT solver directly to solve nonlinear systems",
+  /* FLAG_NLS_SOFT_ASSERTS */             "treat assertions during nonlinear solving as recoverable instead of aborting",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */           "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "value controls the output frequency in noEquidistantTimeGrid mode",
@@ -599,6 +601,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_INIT_NLS_IPOPT */
   "  Use the IPOPT interior-point solver directly to solve nonlinear systems,\n"
   "  instead of the standard solver.",
+  /* FLAG_NLS_SOFT_ASSERTS */
+  "  Treat an assertion that fires while evaluating a nonlinear system (e.g. a\n"
+  "  medium property called outside its valid range) as a recoverable infeasible\n"
+  "  point: the solver backs off instead of aborting, and the assertion is only\n"
+  "  enforced on the accepted solution.",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
@@ -854,6 +861,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_IPOPT */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INIT_NLS_IPOPT */               FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NLS_SOFT_ASSERTS */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEMIT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_GRID */           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_REPEAT_POLICY_FORBID,
@@ -1017,6 +1025,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_TYPE_FLAG,
   /* FLAG_NLS_IPOPT */                    FLAG_TYPE_FLAG,
   /* FLAG_INIT_NLS_IPOPT */               FLAG_TYPE_FLAG,
+  /* FLAG_NLS_SOFT_ASSERTS */             FLAG_TYPE_FLAG,
   /* FLAG_NOEMIT */                       FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_GRID*/            FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_TYPE_OPTION,
