@@ -34,6 +34,11 @@
  * more robust to poor initial guesses than a plain Newton/Hybrid solver, so this
  * is offered as a fallback (and, via -initNlsIpopt, as a direct solver). See
  * ticket #14104.
+ *
+ * Experimental: a nonlinear system is square (#equations = #unknowns, no degrees
+ * of freedom), which is outside IPOPT's intended use. Convergence therefore
+ * depends on the IPOPT/linear-solver build and is not guaranteed, in particular
+ * for systems with more than one unknown.
  */
 
 #include <math.h>

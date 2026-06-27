@@ -287,8 +287,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_ENFORCE_MIN_MAX */          "enforce min/max attributes as bounds while solving nonlinear systems",
-  /* FLAG_NLS_IPOPT */                    "use the IPOPT solver as a fallback when the standard nonlinear solver fails",
-  /* FLAG_INIT_NLS_IPOPT */               "use the IPOPT solver directly to solve nonlinear systems",
+  /* FLAG_NLS_IPOPT */                    "experimental: use the IPOPT solver as a fallback when the standard nonlinear solver fails",
+  /* FLAG_INIT_NLS_IPOPT */               "experimental: use the IPOPT solver directly to solve nonlinear systems",
   /* FLAG_NLS_SOFT_ASSERTS */             "treat assertions during nonlinear solving as recoverable instead of aborting",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */           "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
@@ -595,12 +595,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  solving nonlinear systems. The Newton step is damped so that no unknown\n"
   "  leaves its [min, max] interval.",
   /* FLAG_NLS_IPOPT */
-  "  Use the IPOPT interior-point solver as a fallback when the standard\n"
-  "  nonlinear solver fails. IPOPT solves the residuals as equality constraints\n"
-  "  subject to the min/max attributes as box constraints.",
+  "  Experimental. Use the IPOPT interior-point solver as a fallback when the\n"
+  "  standard nonlinear solver fails. IPOPT solves the residuals as equality\n"
+  "  constraints subject to the min/max attributes as box constraints. Note that\n"
+  "  a nonlinear system is square (no degrees of freedom), which is outside\n"
+  "  IPOPT's intended use, so convergence depends on the IPOPT build and is not\n"
+  "  guaranteed, especially for systems with more than one unknown.",
   /* FLAG_INIT_NLS_IPOPT */
-  "  Use the IPOPT interior-point solver directly to solve nonlinear systems,\n"
-  "  instead of the standard solver.",
+  "  Experimental. Use the IPOPT interior-point solver directly to solve\n"
+  "  nonlinear systems instead of the standard solver. See -nlsIpopt for the\n"
+  "  caveats on solving square systems with IPOPT.",
   /* FLAG_NLS_SOFT_ASSERTS */
   "  Treat an assertion that fires while evaluating a nonlinear system (e.g. a\n"
   "  medium property called outside its valid range) as a recoverable infeasible\n"
