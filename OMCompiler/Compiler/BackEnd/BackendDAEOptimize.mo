@@ -318,14 +318,15 @@ algorithm
         e := inArg;
         e := match eMin case SOME(m) then Expression.makePureBuiltinCall("max", {e, m}, tp); else e; end match;
         e := match eMax case SOME(m) then Expression.makePureBuiltinCall("min", {e, m}, tp); else e; end match;
-        // wrap only if a bound was actually applied; noEvent avoids zero-crossings
-      then if referenceEq(e, inArg) then inArg else Expression.makePureBuiltinCall("noEvent", {e}, tp);
+        // wrap only if a bound was applied; noEvent (Real only) avoids zero-crossings
+      then maybeNoEvent(e, inArg, tp);
     else inArg;
   end match;
 end clampBoundedArg;
 
 protected function clampExpToBounds
-  "Wrap e in noEvent(min(max(e, emin), emax)) for whichever bound is given."
+  "Clamp e into [emin, emax] for whichever bound is given, for a Real, Integer or
+   enumeration expression; a Real clamp is wrapped in noEvent."
   input DAE.Exp inExp;
   input Option<DAE.Exp> emin;
   input Option<DAE.Exp> emax;
@@ -338,8 +339,23 @@ algorithm
   e := inExp;
   e := match emin case SOME(m) then Expression.makePureBuiltinCall("max", {e, m}, tp); else e; end match;
   e := match emax case SOME(m) then Expression.makePureBuiltinCall("min", {e, m}, tp); else e; end match;
-  outExp := if referenceEq(e, inExp) then inExp else Expression.makePureBuiltinCall("noEvent", {e}, tp);
+  outExp := maybeNoEvent(e, inExp, tp);
 end clampExpToBounds;
+
+protected function maybeNoEvent
+  "Wrap a continuous (Real) clamp in noEvent to avoid introducing zero-crossings;
+   leave a discrete (Integer / enumeration) clamp untouched."
+  input DAE.Exp clamped;
+  input DAE.Exp orig;
+  input DAE.Type tp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := if referenceEq(clamped, orig) then orig
+            else match tp
+              case DAE.T_REAL() then Expression.makePureBuiltinCall("noEvent", {clamped}, tp);
+              else clamped;
+            end match;
+end maybeNoEvent;
 
 // =============================================================================
 // infer function validity domains from asserts and clamp the call arguments
@@ -401,16 +417,33 @@ algorithm
 end inferBoundsFromAsserts;
 
 protected function harvestFunctionBounds
-  "Scan a function body for top-level asserts that bound an input parameter by a
-   constant, returning (argIndex, minOption, maxOption) entries (1-based index)."
+  "Collect the validity bounds of a function's inputs from two declared sources -
+   the min/max attribute on each input argument (also present on external
+   functions, which have no body) and top-level asserts of the form
+   assert(input >= c, ...) - keeping the tighter per side. Returns
+   (argIndex, minOption, maxOption) entries (1-based index)."
   input DAE.Function fn;
   output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds = {};
 protected
+  list<DAE.Element> inVars;
   list<String> inNames;
   DAE.Exp e1, e2;
   DAE.Operator op;
+  Integer idx;
+  Option<DAE.Exp> dmin, dmax;
 algorithm
-  inNames := list(DAEUtil.varName(v) for v in DAEUtil.getFunctionInputVars(fn));
+  inVars := DAEUtil.getFunctionInputVars(fn);
+  inNames := list(DAEUtil.varName(v) for v in inVars);
+  // bounds declared on the input arguments themselves (their type's min/max).
+  // This is the only available source for external functions, which have no body
+  // to scan for asserts.
+  idx := 1;
+  for v in inVars loop
+    (dmin, dmax) := DAEUtil.getMinMaxValues(DAEUtil.getVariableAttributes(v));
+    bounds := mergeTightInto(bounds, idx, dmin, dmax);
+    idx := idx + 1;
+  end for;
+  // tighter bounds asserted in the function body (regular functions only)
   for s in DAEUtil.getFunctionAlgorithmStmts(fn) loop
     bounds := match s
       case DAE.STMT_ASSERT(cond = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2))
@@ -498,25 +531,84 @@ protected function addInferredBound
   input Boolean isMin;
   input DAE.Exp c;
   input output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+algorithm
+  bounds := mergeTightInto(bounds, idx,
+                           if isMin then SOME(c) else NONE(),
+                           if isMin then NONE() else SOME(c));
+end addInferredBound;
+
+protected function mergeTightInto
+  "Merge (idx -> lo/hi) into the bound list keeping, per side, the tighter
+   constant bound (larger min, smaller max); creates the entry if absent."
+  input output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+  input Integer idx;
+  input Option<DAE.Exp> lo;
+  input Option<DAE.Exp> hi;
 protected
   list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> acc = {};
   Integer i;
-  Option<DAE.Exp> lo, hi;
-  Boolean found = false;
+  Option<DAE.Exp> clo, chi;
+  Boolean found = false, has;
 algorithm
-  for b in bounds loop
-    (i, lo, hi) := b;
-    if i == idx then
-      found := true;
-      if isMin then lo := SOME(c); else hi := SOME(c); end if;
+  has := match (lo, hi) case (NONE(), NONE()) then false; else true; end match;
+  if has then
+    for b in bounds loop
+      (i, clo, chi) := b;
+      if i == idx then
+        found := true;
+        clo := tighterMin(clo, lo);
+        chi := tighterMax(chi, hi);
+      end if;
+      acc := (i, clo, chi) :: acc;
+    end for;
+    if not found then
+      acc := (idx, lo, hi) :: acc;
     end if;
-    acc := (i, lo, hi) :: acc;
-  end for;
-  if not found then
-    acc := (idx, if isMin then SOME(c) else NONE(), if isMin then NONE() else SOME(c)) :: acc;
+    bounds := acc;
   end if;
-  bounds := acc;
-end addInferredBound;
+end mergeTightInto;
+
+protected function tighterMin
+  "Keep the larger (tighter) of two optional lower bounds, for Real, Integer and
+   enumeration constants (enums compared by literal index); non-constant keeps a."
+  input Option<DAE.Exp> a;
+  input Option<DAE.Exp> b;
+  output Option<DAE.Exp> r;
+protected
+  Real ra, rb;
+  Integer ia, ib;
+algorithm
+  r := match (a, b)
+    case (NONE(), _) then b;
+    case (_, NONE()) then a;
+    case (SOME(DAE.RCONST(ra)), SOME(DAE.RCONST(rb))) then if ra >= rb then a else b;
+    case (SOME(DAE.ICONST(ia)), SOME(DAE.ICONST(ib))) then if ia >= ib then a else b;
+    case (SOME(DAE.ENUM_LITERAL(index = ia)), SOME(DAE.ENUM_LITERAL(index = ib)))
+      then if ia >= ib then a else b;
+    else a;
+  end match;
+end tighterMin;
+
+protected function tighterMax
+  "Keep the smaller (tighter) of two optional upper bounds, for Real, Integer and
+   enumeration constants (enums compared by literal index); non-constant keeps a."
+  input Option<DAE.Exp> a;
+  input Option<DAE.Exp> b;
+  output Option<DAE.Exp> r;
+protected
+  Real ra, rb;
+  Integer ia, ib;
+algorithm
+  r := match (a, b)
+    case (NONE(), _) then b;
+    case (_, NONE()) then a;
+    case (SOME(DAE.RCONST(ra)), SOME(DAE.RCONST(rb))) then if ra <= rb then a else b;
+    case (SOME(DAE.ICONST(ia)), SOME(DAE.ICONST(ib))) then if ia <= ib then a else b;
+    case (SOME(DAE.ENUM_LITERAL(index = ia)), SOME(DAE.ENUM_LITERAL(index = ib)))
+      then if ia <= ib then a else b;
+    else a;
+  end match;
+end tighterMax;
 
 protected function inferBoundsWork
   input DAE.Exp inExp;
