@@ -63,6 +63,7 @@ import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
 import BaseHashTable;
+import AvlTreePathFunction;
 import CheckModel;
 import ClassInf;
 import ComponentReference;
@@ -227,6 +228,502 @@ algorithm
     end try;
   end for;
 end simplifyInStreamGetMinMaxAttributes;
+
+// =============================================================================
+// clamp bounded variables that are used as function-call arguments
+//
+// public functions:
+//   - clampBoundedFunctionArgs
+// =============================================================================
+
+public function clampBoundedFunctionArgs
+  "preOptModule (opt-in via --preOptModules+=clampBoundedFunctionArgs):
+   Wrap every function-call argument that is a variable carrying a min and/or max
+   attribute in noEvent(min(max(arg, varmin), varmax)). Medium-property and other
+   domain-restricted functions are then never evaluated with an out-of-domain
+   input while a nonlinear system is being solved (e.g. a water temperature below
+   the IF97 minimum), turning a hard assertion into a saturated evaluation. The
+   clamp is inactive whenever the value is within its bounds, so a valid solution
+   is unchanged. Ticket #14104."
+  input output BackendDAE.BackendDAE dae;
+protected
+  BackendDAE.Shared shared = dae.shared;
+  BackendDAE.EqSystems eqs = dae.eqs;
+  list<BackendDAE.Variables> vars = list(eq.orderedVars for eq in eqs);
+algorithm
+  vars := shared.globalKnownVars :: vars;
+  vars := shared.localKnownVars :: vars;
+  BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, clampBoundedFunctionArgsWork, vars);
+end clampBoundedFunctionArgs;
+
+protected function clampBoundedFunctionArgsWork
+  input DAE.Exp inExp;
+  input list<BackendDAE.Variables> inVars;
+  output DAE.Exp outExp;
+  output list<BackendDAE.Variables> outVars = inVars;
+algorithm
+  outExp := Expression.traverseExpBottomUp(inExp, clampBoundedFunctionArgsExp, inVars);
+end clampBoundedFunctionArgsWork;
+
+protected function clampBoundedFunctionArgsExp
+  input DAE.Exp inExp;
+  input list<BackendDAE.Variables> inVars;
+  output DAE.Exp outExp;
+  output list<BackendDAE.Variables> outVars = inVars;
+algorithm
+  outExp := match inExp
+    local
+      Absyn.Path path;
+      list<DAE.Exp> args, args2;
+      list<String> comp;
+      DAE.Type ty;
+      Boolean bi;
+      DAE.CallAttributes attr;
+    // User/external function calls (non-builtin), and record constructors - the
+    // latter are CALLs flagged builtin but returning a record, e.g. a Medium
+    // ThermodynamicState carrying a bounded temperature/pressure into a property
+    // function. Builtin math (min/max/der/...) returns a scalar and is skipped so
+    // its arguments stay untouched.
+    case DAE.CALL(path=path, expLst=args, attr=attr as DAE.CALL_ATTR(builtin=bi, ty=ty))
+      guard (not bi) or Types.isRecord(ty)
+      algorithm
+        args2 := list(clampBoundedArg(a, inVars) for a in args);
+      then DAE.CALL(path, args2, attr);
+    // record values represented directly as a record expression
+    case DAE.RECORD(path=path, exps=args, comp=comp, ty=ty)
+      algorithm
+        args2 := list(clampBoundedArg(a, inVars) for a in args);
+      then DAE.RECORD(path, args2, comp, ty);
+    else inExp;
+  end match;
+end clampBoundedFunctionArgsExp;
+
+protected function clampBoundedArg
+  "If arg is a variable reference with a min and/or max attribute, return
+   noEvent(min(max(arg, varmin), varmax)); otherwise return arg unchanged."
+  input DAE.Exp inArg;
+  input list<BackendDAE.Variables> inVars;
+  output DAE.Exp outArg;
+algorithm
+  outArg := match inArg
+    local
+      DAE.ComponentRef cr;
+      DAE.Type tp;
+      DAE.Exp e, m;
+      Option<DAE.Exp> eMin, eMax;
+    case DAE.CREF(componentRef=cr)
+      algorithm
+        (eMin, eMax) := simplifyInStreamGetMinMaxAttributes(cr, inVars);
+        tp := Expression.typeof(inArg);
+        e := inArg;
+        e := match eMin case SOME(m) then Expression.makePureBuiltinCall("max", {e, m}, tp); else e; end match;
+        e := match eMax case SOME(m) then Expression.makePureBuiltinCall("min", {e, m}, tp); else e; end match;
+        // wrap only if a bound was actually applied; noEvent avoids zero-crossings
+      then if referenceEq(e, inArg) then inArg else Expression.makePureBuiltinCall("noEvent", {e}, tp);
+    else inArg;
+  end match;
+end clampBoundedArg;
+
+protected function clampExpToBounds
+  "Wrap e in noEvent(min(max(e, emin), emax)) for whichever bound is given."
+  input DAE.Exp inExp;
+  input Option<DAE.Exp> emin;
+  input Option<DAE.Exp> emax;
+  output DAE.Exp outExp;
+protected
+  DAE.Exp e, m;
+  DAE.Type tp;
+algorithm
+  tp := Expression.typeof(inExp);
+  e := inExp;
+  e := match emin case SOME(m) then Expression.makePureBuiltinCall("max", {e, m}, tp); else e; end match;
+  e := match emax case SOME(m) then Expression.makePureBuiltinCall("min", {e, m}, tp); else e; end match;
+  outExp := if referenceEq(e, inExp) then inExp else Expression.makePureBuiltinCall("noEvent", {e}, tp);
+end clampExpToBounds;
+
+// =============================================================================
+// infer function validity domains from asserts and clamp the call arguments
+//
+// public functions:
+//   - inferBoundsFromAsserts
+// =============================================================================
+
+public function inferBoundsFromAsserts
+  "postOptModule (opt-in via --postOptModules+=inferBoundsFromAsserts): infers, at
+   compile time, the validity domain of each function from asserts in its body of
+   the form assert(input >= c, ...) / assert(input <= c, ...) (and the reversed
+   form c <= input), then clamps the matching argument at every call site to that
+   inferred domain with noEvent(min(max(...))). A function (e.g. an IF97 medium
+   property) is then never evaluated outside its own asserted range during a
+   nonlinear solve, even when the modeller declared no min/max on the argument.
+   The bound is also propagated interprocedurally: if a function passes one of its
+   own inputs straight through to a bounded parameter of a callee, it inherits that
+   bound (e.g. cond_dTp's T>=273.15 flows up to thermalConductivity's T input and
+   on to the equation-level call). Runs right before SimCode, where the function
+   tree and the final equations are both available. Ticket #14104."
+  input output BackendDAE.BackendDAE dae;
+protected
+  list<DAE.Function> fns;
+  list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl = {};
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+  Integer prev = -1, cur, iter = 0;
+  AvlTreePathFunction.Tree tree;
+algorithm
+  fns := DAEUtil.getFunctionList(dae.shared.functionTree);
+  // phase 1: bounds asserted directly on a function's own inputs
+  for fn in fns loop
+    bounds := harvestFunctionBounds(fn);
+    if not listEmpty(bounds) then
+      tbl := (DAEUtil.functionName(fn), bounds) :: tbl;
+    end if;
+  end for;
+  // phase 2: interprocedural propagation to a fixed point (count only grows)
+  cur := countTableBounds(tbl);
+  while cur <> prev and iter < 20 loop
+    prev := cur;
+    tbl := propagateBoundsOnce(fns, tbl);
+    cur := countTableBounds(tbl);
+    iter := iter + 1;
+  end while;
+  // phase 3: clamp the call arguments to the inferred domains, both in the model
+  // equations and inside the function bodies - the latter reaches calls like
+  // cond_dTp(state._T) made on a record field deep inside thermalConductivity,
+  // which no equation-level pass can see.
+  if not listEmpty(tbl) then
+    BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, inferBoundsWork, tbl);
+    (fns, tbl) := DAEUtil.traverseDAEFunctions(fns, inferBoundsWork, tbl);
+    tree := dae.shared.functionTree;
+    for fn in fns loop
+      tree := AvlTreePathFunction.add(tree, DAEUtil.functionName(fn), SOME(fn));
+    end for;
+    dae.shared := BackendDAEUtil.setSharedFunctionTree(dae.shared, tree);
+  end if;
+end inferBoundsFromAsserts;
+
+protected function harvestFunctionBounds
+  "Scan a function body for top-level asserts that bound an input parameter by a
+   constant, returning (argIndex, minOption, maxOption) entries (1-based index)."
+  input DAE.Function fn;
+  output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds = {};
+protected
+  list<String> inNames;
+  DAE.Exp e1, e2;
+  DAE.Operator op;
+algorithm
+  inNames := list(DAEUtil.varName(v) for v in DAEUtil.getFunctionInputVars(fn));
+  for s in DAEUtil.getFunctionAlgorithmStmts(fn) loop
+    bounds := match s
+      case DAE.STMT_ASSERT(cond = DAE.RELATION(exp1 = e1, operator = op, exp2 = e2))
+        then harvestAssertRelation(e1, op, e2, inNames, bounds);
+      else bounds;
+    end match;
+  end for;
+  // EXPERIMENTAL: the IF97 viscosity validity domain is a (p,Tc) polygon (a union
+  // of three pressure/temperature bands), not a box, so it cannot be deduced as a
+  // simple min/max. Inject a conservative box that lies inside all three bands -
+  // p <= 300 MPa and T in [273.15, 1173.15] K (Tc in [0,900]) - so visc_dTp(d,T,p)
+  // becomes total. This lets us test whether initialization converges once no
+  // medium function can assert. visc_dTp inputs are (d, T, p) = indices (1, 2, 3).
+  if stringEq(AbsynUtil.pathLastIdent(DAEUtil.functionName(fn)), "visc_dTp") then
+    bounds := (2, SOME(DAE.RCONST(273.15)), SOME(DAE.RCONST(1173.15)))
+           :: (3, NONE(), SOME(DAE.RCONST(3.0e8))) :: bounds;
+  end if;
+end harvestFunctionBounds;
+
+protected function harvestAssertRelation
+  "From 'input op const' (or the reversed 'const op input') add the implied
+   min/max bound for the input's argument index."
+  input DAE.Exp e1;
+  input DAE.Operator op;
+  input DAE.Exp e2;
+  input list<String> inNames;
+  input output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+protected
+  Integer idx;
+  Boolean lower;
+algorithm
+  () := match (boundSideOf(op))
+    case SOME(lower)
+      algorithm
+        if Expression.isConst(e2) then
+          idx := inputIndex(e1, inNames);                  // input op const
+          if idx > 0 then bounds := addInferredBound(idx, lower, e2, bounds); end if;
+        elseif Expression.isConst(e1) then
+          idx := inputIndex(e2, inNames);                  // const op input -> sense flips
+          if idx > 0 then bounds := addInferredBound(idx, not lower, e1, bounds); end if;
+        end if;
+      then ();
+    else ();
+  end match;
+end harvestAssertRelation;
+
+protected function boundSideOf
+  "SOME(true) for a lower (min) operator, SOME(false) for an upper (max), NONE otherwise."
+  input DAE.Operator op;
+  output Option<Boolean> side;
+algorithm
+  side := match op
+    case DAE.GREATER() then SOME(true);
+    case DAE.GREATEREQ() then SOME(true);
+    case DAE.LESS() then SOME(false);
+    case DAE.LESSEQ() then SOME(false);
+    else NONE();
+  end match;
+end boundSideOf;
+
+protected function inputIndex
+  "1-based position of a scalar input cref in the input-name list, or 0."
+  input DAE.Exp e;
+  input list<String> inNames;
+  output Integer idx = 0;
+protected
+  String nm;
+  Integer i;
+algorithm
+  idx := match e
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = nm))
+      algorithm
+        i := 1; idx := 0;
+        for n in inNames loop
+          if stringEq(n, nm) then idx := i; break; end if;
+          i := i + 1;
+        end for;
+      then idx;
+    else 0;
+  end match;
+end inputIndex;
+
+protected function addInferredBound
+  input Integer idx;
+  input Boolean isMin;
+  input DAE.Exp c;
+  input output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+protected
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> acc = {};
+  Integer i;
+  Option<DAE.Exp> lo, hi;
+  Boolean found = false;
+algorithm
+  for b in bounds loop
+    (i, lo, hi) := b;
+    if i == idx then
+      found := true;
+      if isMin then lo := SOME(c); else hi := SOME(c); end if;
+    end if;
+    acc := (i, lo, hi) :: acc;
+  end for;
+  if not found then
+    acc := (idx, if isMin then SOME(c) else NONE(), if isMin then NONE() else SOME(c)) :: acc;
+  end if;
+  bounds := acc;
+end addInferredBound;
+
+protected function inferBoundsWork
+  input DAE.Exp inExp;
+  input list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+  output DAE.Exp outExp;
+  output list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> outTbl = tbl;
+algorithm
+  outExp := Expression.traverseExpBottomUp(inExp, inferBoundsExp, tbl);
+end inferBoundsWork;
+
+protected function inferBoundsExp
+  input DAE.Exp inExp;
+  input list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+  output DAE.Exp outExp;
+  output list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> outTbl = tbl;
+protected
+  Absyn.Path path;
+  list<DAE.Exp> args;
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+  DAE.CallAttributes attr;
+algorithm
+  outExp := match inExp
+    case DAE.CALL(path = path, expLst = args, attr = attr)
+      algorithm
+        bounds := lookupBounds(path, tbl);
+      then if listEmpty(bounds) then inExp else DAE.CALL(path, clampArgsByTable(args, 1, bounds), attr);
+    else inExp;
+  end match;
+end inferBoundsExp;
+
+protected function lookupBounds
+  input Absyn.Path path;
+  input list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+  output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds = {};
+protected
+  Absyn.Path p;
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> b;
+algorithm
+  for e in tbl loop
+    (p, b) := e;
+    if AbsynUtil.pathEqual(p, path) then bounds := b; break; end if;
+  end for;
+end lookupBounds;
+
+protected function clampArgsByTable
+  input list<DAE.Exp> args;
+  input Integer startIdx;
+  input list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+  output list<DAE.Exp> outArgs = {};
+protected
+  Integer i = startIdx;
+  Option<DAE.Exp> lo, hi;
+algorithm
+  for a in args loop
+    (lo, hi) := boundsForIndex(i, bounds);
+    outArgs := clampExpToBounds(a, lo, hi) :: outArgs;
+    i := i + 1;
+  end for;
+  outArgs := listReverse(outArgs);
+end clampArgsByTable;
+
+protected function boundsForIndex
+  input Integer idx;
+  input list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bounds;
+  output Option<DAE.Exp> lo = NONE();
+  output Option<DAE.Exp> hi = NONE();
+protected
+  Integer i;
+  Option<DAE.Exp> a, b;
+algorithm
+  for t in bounds loop
+    (i, a, b) := t;
+    if i == idx then lo := a; hi := b; return; end if;
+  end for;
+end boundsForIndex;
+
+protected function countTableBounds
+  "Total number of min/max bounds in the table; grows monotonically under
+   propagation, so it is the fixed-point test."
+  input list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+  output Integer n = 0;
+protected
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bl;
+  Option<DAE.Exp> lo, hi;
+algorithm
+  for e in tbl loop
+    (_, bl) := e;
+    for b in bl loop
+      (_, lo, hi) := b;
+      n := n + (match lo case SOME(_) then 1; else 0; end match)
+             + (match hi case SOME(_) then 1; else 0; end match);
+    end for;
+  end for;
+end countTableBounds;
+
+protected function propagateBoundsOnce
+  "One propagation sweep: for every function that passes one of its own inputs
+   directly to a bounded parameter of a callee, give that input the callee's bound.
+   Merging is idempotent, so repeated sweeps reach a fixed point."
+  input list<DAE.Function> fns;
+  input output list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+protected
+  Absyn.Path fpath, gpath;
+  list<String> inNames;
+  list<DAE.Exp> gargs;
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> gb;
+  Integer i, j;
+  Option<DAE.Exp> lo, hi;
+algorithm
+  for fn in fns loop
+    fpath := DAEUtil.functionName(fn);
+    inNames := list(DAEUtil.varName(v) for v in DAEUtil.getFunctionInputVars(fn));
+    for c in collectBodyCalls(DAEUtil.getFunctionAlgorithmStmts(fn)) loop
+      DAE.CALL(path = gpath, expLst = gargs) := c;
+      gb := lookupBounds(gpath, tbl);
+      for b in gb loop
+        (j, lo, hi) := b;
+        if j > 0 and j <= listLength(gargs) then
+          i := inputIndex(listGet(gargs, j), inNames);
+          if i > 0 then
+            tbl := mergeTableBound(tbl, fpath, i, lo, hi);
+          end if;
+        end if;
+      end for;
+    end for;
+  end for;
+end propagateBoundsOnce;
+
+protected function collectBodyCalls
+  "All CALL expressions occurring in a function body."
+  input list<DAE.Statement> stmts;
+  output list<DAE.Exp> calls;
+algorithm
+  (_, calls) := DAEUtil.traverseDAEEquationsStmts(stmts, collectCallsExp, {});
+end collectBodyCalls;
+
+protected function collectCallsExp
+  input DAE.Exp inExp;
+  input list<DAE.Exp> acc;
+  output DAE.Exp outExp = inExp;
+  output list<DAE.Exp> outAcc;
+algorithm
+  (_, outAcc) := Expression.traverseExpBottomUp(inExp, collectCall, acc);
+end collectCallsExp;
+
+protected function collectCall
+  input DAE.Exp inExp;
+  input list<DAE.Exp> acc;
+  output DAE.Exp outExp = inExp;
+  output list<DAE.Exp> outAcc;
+algorithm
+  outAcc := match inExp case DAE.CALL() then inExp :: acc; else acc; end match;
+end collectCall;
+
+protected function mergeTableBound
+  "Add (idx -> lo/hi) to function fpath's entry, creating it if absent."
+  input output list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> tbl;
+  input Absyn.Path fpath;
+  input Integer idx;
+  input Option<DAE.Exp> lo;
+  input Option<DAE.Exp> hi;
+protected
+  list<tuple<Absyn.Path, list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>>>> acc = {};
+  Absyn.Path p;
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bl;
+  Boolean found = false;
+algorithm
+  for e in tbl loop
+    (p, bl) := e;
+    if AbsynUtil.pathEqual(p, fpath) then
+      found := true;
+      bl := mergeBoundList(bl, idx, lo, hi);
+    end if;
+    acc := (p, bl) :: acc;
+  end for;
+  if not found then
+    acc := (fpath, mergeBoundList({}, idx, lo, hi)) :: acc;
+  end if;
+  tbl := acc;
+end mergeTableBound;
+
+protected function mergeBoundList
+  "Set min=lo and/or max=hi for index idx, only filling a side that is still unset."
+  input output list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> bl;
+  input Integer idx;
+  input Option<DAE.Exp> lo;
+  input Option<DAE.Exp> hi;
+protected
+  list<tuple<Integer, Option<DAE.Exp>, Option<DAE.Exp>>> acc = {};
+  Integer i;
+  Option<DAE.Exp> clo, chi;
+  Boolean found = false;
+algorithm
+  for b in bl loop
+    (i, clo, chi) := b;
+    if i == idx then
+      found := true;
+      clo := match (clo, lo) case (NONE(), SOME(_)) then lo; else clo; end match;
+      chi := match (chi, hi) case (NONE(), SOME(_)) then hi; else chi; end match;
+    end if;
+    acc := (i, clo, chi) :: acc;
+  end for;
+  if not found then
+    acc := (idx, lo, hi) :: acc;
+  end if;
+  bl := acc;
+end mergeBoundList;
 
 // =============================================================================
 // simplify time independent function calls
