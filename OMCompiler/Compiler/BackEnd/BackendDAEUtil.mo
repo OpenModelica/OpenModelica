@@ -8383,6 +8383,7 @@ public function allPreOptimizationModules
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
     (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange"),
     (BackendDAEOptimize.clampBoundedFunctionArgs, "clampBoundedFunctionArgs"),
+    (BackendDAEOptimize.inferBoundsFromAsserts, "inferBoundsFromAsserts"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
     (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars"),
     (BackendDAEOptimize.removeEqualRHS, "removeEqualRHS"),

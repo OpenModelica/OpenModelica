@@ -3,7 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 clampAssertBound.mos \
 clampDeclaredBound.mos \
-clampIntegerBound.mos
+clampIntegerBound.mos \
+clampInitEquation.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

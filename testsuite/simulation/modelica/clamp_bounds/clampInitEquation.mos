@@ -1,0 +1,49 @@
+// name: clampInitEquation
+// status: correct
+// teardown_command: rm -f ClampInitEquation* _ClampInitEquation* output.log
+//
+// Run as a preOptModule the clamp also reaches the initialization equations (the
+// init system is built before the post-optimization phase). Here the state a
+// starts at 3, which violates fasrt's domain x >= 5 already at initialization;
+// with the clamp the init call becomes fasrt(max(a, 5)) and init succeeds with
+// z = 5 (without it the assert would stop initialization).
+
+setCommandLineOptions("--preOptModules+=inferBoundsFromAsserts"); getErrorString();
+
+loadString("
+function fasrt
+  input Real x;
+  output Real y;
+algorithm
+  assert(x >= 5.0, \"x below 5\");
+  y := x;
+  annotation(Inline = false);
+end fasrt;
+
+model ClampInitEquation
+  Real z;
+  Real a(start = 3.0, fixed = true);
+equation
+  z = fasrt(a);
+  der(a) = 0.0;
+end ClampInitEquation;
+"); getErrorString();
+
+simulate(ClampInitEquation, stopTime = 0.0); getErrorString();
+val(z, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ClampInitEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ClampInitEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// endResult
