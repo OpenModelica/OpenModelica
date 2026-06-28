@@ -50,13 +50,18 @@ protected
   import DAEUtil;
 
   // NF imports
+  import BackendExtension = NFBackendExtension;
+  import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
+  import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
+  import NFModifier.Modifier;
   import Operator = NFOperator;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -252,6 +257,11 @@ protected
       print(UnorderedMap.toString(func_map, function Function.signatureString(printTypes = false), InlineRating.toString) + "\n\n");
     end if;
 
+    // carry the attributes (min, max, nominal, unit, ...) declared on the
+    // function inputs/outputs onto the model variables bound to them before the
+    // call is replaced by the function body, so they are not lost (#15947).
+    eqData  := propagateAttributes(eqData, variables, replacements);
+
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
 
@@ -269,6 +279,325 @@ protected
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
   end inline;
+
+// =========================================================================
+//          ATTRIBUTE PROPAGATION (min/max/nominal/unit/... see #15947)
+// =========================================================================
+  function propagateAttributes
+    "Carries the attributes (min, max, nominal, unit, start, fixed, ...) declared
+     on the inputs and outputs of the functions that are about to be inlined onto
+     the model variables that are bound to them, so the information is not lost
+     when the call is replaced by the function body (#15947)."
+    input output EqData eqData;
+    input VariablePointers variables;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+  protected
+    UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  algorithm
+    if UnorderedMap.isEmpty(replacements) then return; end if;
+    // The frontend extracts function call outputs into auxiliary '$FUN_x'
+    // variables ('$FUN_x = fn(...)' plus 'realVar = $FUN_x'). Build a map from
+    // such auxiliary variables to the real variable they are bound to so the
+    // output attributes end up on the real variable.
+    alias_map := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    eqData := EqData.map(eqData, function collectFunctionAlias(variables = variables, alias_map = alias_map));
+    eqData := EqData.map(eqData, function propagateEquationAttributes(variables = variables, replacements = replacements, alias_map = alias_map));
+  end propagateAttributes;
+
+  function collectFunctionAlias
+    "Collects 'realVar = $FUN_x' (or the reverse) equations into a map from the
+     auxiliary function-alias variable to the real variable bound to it."
+    input output Equation eqn;
+    input VariablePointers variables;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  algorithm
+    () := match eqn
+      local
+        ComponentRef cr1, cr2;
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cr1), rhs = Expression.CREF(cref = cr2)) algorithm
+        addFunctionAlias(cr1, cr2, variables, alias_map);
+      then ();
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = cr1), rhs = Expression.CREF(cref = cr2)) algorithm
+        addFunctionAlias(cr1, cr2, variables, alias_map);
+      then ();
+      else ();
+    end match;
+  end collectFunctionAlias;
+
+  function addFunctionAlias
+    "Adds a mapping aux -> real if exactly one of the two crefs is a function
+     alias variable."
+    input ComponentRef cr1;
+    input ComponentRef cr2;
+    input VariablePointers variables;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    ComponentRef n1 = ComponentRef.stripSubscriptsAll(cr1);
+    ComponentRef n2 = ComponentRef.stripSubscriptsAll(cr2);
+    Boolean f1, f2;
+  algorithm
+    if not (VariablePointers.containsCref(n1, variables) and VariablePointers.containsCref(n2, variables)) then
+      return;
+    end if;
+    f1 := BVariable.isFunctionAlias(VariablePointers.getVarSafe(variables, n1));
+    f2 := BVariable.isFunctionAlias(VariablePointers.getVarSafe(variables, n2));
+    if f1 and not f2 then
+      UnorderedMap.add(n1, n2, alias_map);
+    elseif f2 and not f1 then
+      UnorderedMap.add(n2, n1, alias_map);
+    end if;
+  end addFunctionAlias;
+
+  function resolveAlias
+    "Follows the function-alias chain to the real variable bound to it."
+    input output ComponentRef name;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    Integer cnt = 0;
+  algorithm
+    while cnt < 100 loop
+      cnt := cnt + 1;
+      name := match UnorderedMap.get(name, alias_map)
+        case SOME(name) then name;
+        else algorithm return; then name;
+      end match;
+    end while;
+  end resolveAlias;
+
+  function propagateEquationAttributes
+    "Applied on each equation. Does not change the equation, it only mutates the
+     attributes of the variables bound to the inlined function inputs/outputs."
+    input output Equation eqn;
+    input VariablePointers variables;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  algorithm
+    // output side: carry the output attributes onto the result variable of a
+    // simple 'cref = fn(...)' (or 'fn(...) = cref') equation.
+    () := match eqn
+      case Equation.SCALAR_EQUATION() algorithm propagateOutput(eqn.lhs, eqn.rhs, variables, replacements, alias_map); then ();
+      case Equation.ARRAY_EQUATION()  algorithm propagateOutput(eqn.lhs, eqn.rhs, variables, replacements, alias_map); then ();
+      case Equation.RECORD_EQUATION() algorithm propagateOutput(eqn.lhs, eqn.rhs, variables, replacements, alias_map); then ();
+      else ();
+    end match;
+    // input side: carry the input attributes onto every cref argument of any
+    // inlinable call found anywhere in the equation.
+    eqn := Equation.map(eqn, function propagateInputExp(variables = variables, replacements = replacements, alias_map = alias_map));
+  end propagateEquationAttributes;
+
+  function propagateOutput
+    "Carries the (single) output's attributes onto the result variable of a
+     'cref = fn(...)' or 'fn(...) = cref' equation."
+    input Expression lhs;
+    input Expression rhs;
+    input VariablePointers variables;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    Expression cref_exp, call_exp;
+    Call call;
+    Function fn;
+  algorithm
+    // figure out which side is the result cref and which is the inlinable call
+    if Expression.isCref(lhs) and isInlinableCall(rhs, replacements) then
+      cref_exp := lhs;
+      call_exp := rhs;
+    elseif Expression.isCref(rhs) and isInlinableCall(lhs, replacements) then
+      cref_exp := rhs;
+      call_exp := lhs;
+    else
+      return;
+    end if;
+
+    Expression.CALL(call = call) := call_exp;
+    fn := Call.typedFunction(call);
+    fn := UnorderedMap.getOrFail(fn.path, replacements);
+    // only single-output functions have a well defined result variable
+    if listLength(fn.outputs) == 1 then
+      mergeNodeOntoArg(listHead(fn.outputs), cref_exp, variables, alias_map);
+    end if;
+  end propagateOutput;
+
+  function propagateInputExp
+    "Needs to be mapped with Expression.map(). Merges the declared input
+     attributes onto the cref arguments of every inlinable call."
+    input output Expression exp;
+    input VariablePointers variables;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    Call call;
+    Function fn;
+    list<Expression> args;
+  algorithm
+    () := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn, arguments = args))
+        guard UnorderedMap.contains(fn.path, replacements) algorithm
+        fn := UnorderedMap.getOrFail(fn.path, replacements);
+        if listLength(fn.inputs) == listLength(args) then
+          for tpl in List.zip(fn.inputs, args) loop
+            mergeNodeOntoArg(Util.tuple21(tpl), Util.tuple22(tpl), variables, alias_map);
+          end for;
+        end if;
+      then ();
+      else ();
+    end match;
+  end propagateInputExp;
+
+  function isInlinableCall
+    "True if the expression is a call to a function that will be inlined."
+    input Expression exp;
+    input UnorderedMap<Absyn.Path, Function> replacements;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then UnorderedMap.contains(fn.path, replacements);
+      else false;
+    end match;
+  end isInlinableCall;
+
+  function mergeNodeOntoArg
+    "Merges the attributes declared on an input/output node onto the model
+     variable bound to the given argument expression. Handles records both as
+     crefs and as record constructors/literals."
+    input InstNode node;
+    input Expression arg;
+    input VariablePointers variables;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    list<InstNode> node_children;
+    list<Expression> elems;
+  algorithm
+    () := match arg
+      case Expression.CREF() algorithm
+        mergeNodeOntoCref(node, arg.cref, variables, alias_map);
+      then ();
+
+      // record constructor / record literal argument: recurse element-wise
+      else algorithm
+        node_children := nodeRecordChildren(node);
+        if not listEmpty(node_children) then
+          try
+            elems := Expression.getRecordElements(arg);
+          else
+            elems := {};
+          end try;
+          if listLength(node_children) == listLength(elems) then
+            for tpl in List.zip(node_children, elems) loop
+              mergeNodeOntoArg(Util.tuple21(tpl), Util.tuple22(tpl), variables, alias_map);
+            end for;
+          end if;
+        end if;
+      then ();
+    end match;
+  end mergeNodeOntoArg;
+
+  function mergeNodeOntoCref
+    "Merges the attributes declared on an input/output node onto the variable
+     referenced by cref. For record variables it recurses onto the children."
+    input InstNode node;
+    input ComponentRef cref;
+    input VariablePointers variables;
+    input UnorderedMap<ComponentRef, ComponentRef> alias_map;
+  protected
+    ComponentRef name;
+    Pointer<Variable> var_ptr;
+    Variable var;
+    BackendExtension.BackendInfo binfo;
+    list<Pointer<Variable>> rec_children;
+    list<InstNode> node_children;
+    list<ComponentRef> cref_children;
+    BackendExtension.VariableAttributes src_attrs;
+  algorithm
+    name := ComponentRef.stripSubscriptsAll(cref);
+    // redirect auxiliary function-alias variables to the real variable
+    name := resolveAlias(name, alias_map);
+    if not VariablePointers.containsCref(name, variables) then
+      return;
+    end if;
+    var_ptr := VariablePointers.getVarSafe(variables, name);
+
+    // records: recurse onto the children variables
+    rec_children := BVariable.getRecordChildren(var_ptr);
+    if not listEmpty(rec_children) then
+      node_children := nodeRecordChildren(node);
+      cref_children := BVariable.getRecordChildrenCref(name);
+      if listLength(node_children) == listLength(cref_children) then
+        for tpl in List.zip(node_children, cref_children) loop
+          mergeNodeOntoCref(Util.tuple21(tpl), Util.tuple22(tpl), variables, alias_map);
+        end for;
+      end if;
+      return;
+    end if;
+
+    // scalar leaf: merge the declared attributes onto the variable
+    try
+      src_attrs := nodeVariableAttributes(node);
+      var := Pointer.access(var_ptr);
+      binfo := var.backendinfo;
+      binfo.attributes := BackendExtension.VariableAttributes.merge(binfo.attributes, src_attrs);
+      var.backendinfo := binfo;
+      Pointer.update(var_ptr, var);
+    else
+    end try;
+  end mergeNodeOntoCref;
+
+  function nodeRecordChildren
+    "Returns the record field nodes of a node, or {} if it is not a record."
+    input InstNode node;
+    output list<InstNode> children;
+  protected
+    InstNode cls_node;
+  algorithm
+    children := match Type.arrayElementType(InstNode.getType(node))
+      case Type.COMPLEX(cls = cls_node) then arrayList(Class.getComponents(InstNode.getClass(cls_node)));
+      else {};
+    end match;
+  end nodeRecordChildren;
+
+  function nodeVariableAttributes
+    "Builds the backend VariableAttributes declared on a (scalar) function
+     input/output node. Only constant attribute values are kept so that no
+     function-local references leak into the model variable's attributes."
+    input InstNode node;
+    output BackendExtension.VariableAttributes attrs;
+  protected
+    Component comp = InstNode.component(node);
+    list<tuple<String, Binding>> ty_attrs;
+  algorithm
+    ty_attrs := list((Modifier.name(m), Modifier.binding(m)) for m in
+      Class.getTypeAttributes(InstNode.getClass(Component.classInstance(comp))));
+    ty_attrs := List.filterOnTrue(ty_attrs, attrIsConst);
+    attrs := BackendExtension.VariableAttributes.create(ty_attrs, InstNode.getType(node),
+      Component.getAttributes(comp), {}, Component.comment(comp));
+  end nodeVariableAttributes;
+
+  function attrIsConst
+    "True if the attribute binding is typed and contains no component references."
+    input tuple<String, Binding> attr;
+    output Boolean b;
+  protected
+    Expression exp;
+  algorithm
+    try
+      exp := Binding.getTypedExp(Util.tuple22(attr));
+      b := not Expression.contains(exp, isCrefExp);
+    else
+      b := false;
+    end try;
+  end attrIsConst;
+
+  function isCrefExp
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then true;
+      else false;
+    end match;
+  end isCrefExp;
 
   function inlineRecordsTuplesArrays
     "does not inline simple record equalities"

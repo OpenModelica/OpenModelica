@@ -706,6 +706,116 @@ public
       end match;
     end setMax;
 
+    function merge
+      "Merges the attributes from src into dst. Used by inlining to carry the
+       attributes declared on a function input/output (src) onto the model
+       variable (dst) that is bound to it, so they are not lost when the call is
+       replaced by the function body (see #15947). The model variable wins for
+       any scalar attribute that is already set; for min/max the tightest bound
+       wins."
+      input output VariableAttributes dst;
+      input VariableAttributes src;
+    algorithm
+      dst := match (dst, src)
+        case (VAR_ATTR_REAL(), VAR_ATTR_REAL()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.unit        := mergeOpt(dst.unit, src.unit);
+          dst.displayUnit := mergeOpt(dst.displayUnit, src.displayUnit);
+          dst.min         := tightestBound(dst.min, src.min, true);
+          dst.max         := tightestBound(dst.max, src.max, false);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+          dst.nominal     := mergeOpt(dst.nominal, src.nominal);
+        then dst;
+
+        case (VAR_ATTR_INT(), VAR_ATTR_INT()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.min         := tightestBound(dst.min, src.min, true);
+          dst.max         := tightestBound(dst.max, src.max, false);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_BOOL(), VAR_ATTR_BOOL()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_STRING(), VAR_ATTR_STRING()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        case (VAR_ATTR_ENUMERATION(), VAR_ATTR_ENUMERATION()) algorithm
+          dst.quantity    := mergeOpt(dst.quantity, src.quantity);
+          dst.min         := mergeOpt(dst.min, src.min);
+          dst.max         := mergeOpt(dst.max, src.max);
+          dst.start       := mergeOpt(dst.start, src.start);
+          dst.fixed       := mergeOpt(dst.fixed, src.fixed);
+        then dst;
+
+        else dst;
+      end match;
+    end merge;
+
+    function mergeOpt
+      "Keeps dst if it is already set, otherwise takes src."
+      input output Option<Expression> dst;
+      input Option<Expression> src;
+    algorithm
+      dst := if isSome(dst) then dst else src;
+    end mergeOpt;
+
+    function tightestBound
+      "Picks the tighter of two bounds when both are constant numbers, otherwise
+       keeps the already present (dst) bound. isMin = true for lower bounds
+       (the larger value is tighter), false for upper bounds (the smaller value
+       is tighter)."
+      input Option<Expression> dst;
+      input Option<Expression> src;
+      input Boolean isMin;
+      output Option<Expression> res;
+    protected
+      Expression de, se;
+      Boolean dc, sc;
+      Real dv, sv;
+    algorithm
+      if isNone(dst) then
+        res := src;
+      elseif isNone(src) then
+        res := dst;
+      else
+        SOME(de) := dst;
+        SOME(se) := src;
+        (dc, dv) := constNumber(de);
+        (sc, sv) := constNumber(se);
+        if dc and sc then
+          if isMin then
+            res := if sv > dv then src else dst;
+          else
+            res := if sv < dv then src else dst;
+          end if;
+        else
+          res := dst;
+        end if;
+      end if;
+    end tightestBound;
+
+    function constNumber
+      "Returns the value of a constant Real/Integer literal expression."
+      input Expression exp;
+      output Boolean isConst;
+      output Real value;
+    algorithm
+      (isConst, value) := match exp
+        case Expression.REAL()    then (true, exp.value);
+        case Expression.INTEGER() then (true, intReal(exp.value));
+        else (false, 0.0);
+      end match;
+    end constNumber;
+
     function setStateSelect
       input output VariableAttributes attributes;
       input StateSelect stateSelect_val;
