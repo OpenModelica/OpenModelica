@@ -90,6 +90,7 @@ simulationjacobian.log \
 simulationjapaneselanguage.log \
 simualtionlinear_system.log \
 simualtionnewtonDiagnostics.log \
+simulationclamp_bounds.log \
 simulationnonlinear_system.log \
 simulationothers.log \
 simulationpackages.log \
@@ -144,6 +145,7 @@ simulationindexreduction.log \
 simulationinheritances.log \
 simulationjapaneselanguage.log \
 simualtionlinear_system.log \
+simulationclamp_bounds.log \
 simulationnonlinear_system.log \
 simulationothers.log \
 simulationpackages.log \
@@ -454,6 +456,9 @@ simualtionnewtonDiagnostics.log: omc-diff
 	@echo $@ done
 simulationnonlinear_system.log: omc-diff
 	$(MAKE) -C simulation/modelica/nonlinear_system -f Makefile test > $@
+	@echo $@ done
+simulationclamp_bounds.log: omc-diff
+	$(MAKE) -C simulation/modelica/clamp_bounds -f Makefile test > $@
 	@echo $@ done
 simulationothers.log: omc-diff
 	$(MAKE) -C simulation/modelica/others -f Makefile test > $@
@@ -831,6 +836,7 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile clean
 	$(MAKE) -C simulation/modelica/msl22 -f Makefile clean
 	$(MAKE) -C simulation/modelica/nonlinear_system -f Makefile clean
+	$(MAKE) -C simulation/modelica/clamp_bounds -f Makefile clean
 	$(MAKE) -C simulation/modelica/others -f Makefile clean
 	$(MAKE) -C simulation/modelica/packages -f Makefile clean
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
