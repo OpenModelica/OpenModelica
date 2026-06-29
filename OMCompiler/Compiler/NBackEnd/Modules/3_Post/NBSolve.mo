@@ -1491,7 +1491,7 @@ protected
             invargList := insertExp :: invargList;
           end if;
         end for;
-        then Expression.MULTARY(argList, invargList, instruction.operator);
+      then Expression.MULTARY(argList, invargList, instruction.operator);
       case Expression.BINARY() algorithm
         if Expression.isSubstitute(instruction.exp1) then
           instruction.exp1 := insertExp;
@@ -1499,12 +1499,12 @@ protected
         if Expression.isSubstitute(instruction.exp2) then
           instruction.exp2 := insertExp;
         end if;
-        then instruction;
+      then instruction;
       case Expression.UNARY() algorithm
         if Expression.isSubstitute(instruction.exp) then
           instruction.exp := insertExp;
         end if;
-        then instruction;
+      then instruction;
       case exp as Expression.CALL() algorithm
         () := match instruction.call
           local Call local_call;
@@ -1518,12 +1518,15 @@ protected
             end for;
             local_call.arguments := listReverse(argList);
             exp.call := local_call;
-            then ();
+          then ();
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
-            then fail();
+          then fail();
         end match;
-        then exp;
+      then exp;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for instruction: " + Expression.toString(instruction)});
+      then fail();
     end match;
   end applyInstruction;
 

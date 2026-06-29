@@ -1082,8 +1082,6 @@ public
           local
             Option<SimJacobian> opt_jacobian;
             SimJacobian jacobian;
-            ComponentRef cref;
-            SimVar sim_var;
 
           case LINEAR() then (blck :: linearLoops, nonlinearLoops);
           case NONLINEAR() algorithm
