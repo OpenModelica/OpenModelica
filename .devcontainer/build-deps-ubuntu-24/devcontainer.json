@@ -4,7 +4,7 @@
   "name": "build-deps:ubuntu-24.04",
 
   // Dockerfile
-  "image": "ghcr.io/openmodelica/build-deps:ubuntu-24.04-debug",
+  "image": "docker.openmodelica.org/build-deps:ubuntu-24.04-debug",
 
   // Additional VSCode extensions
   "customizations": {

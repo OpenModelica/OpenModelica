@@ -1,4 +1,4 @@
-FROM ghcr.io/openmodelica/build-deps:debian-13-debug
+FROM docker.openmodelica.org/build-deps:debian-13-debug
 
 ENV SHELL=/bin/bash
 

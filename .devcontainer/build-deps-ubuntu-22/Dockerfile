@@ -1,4 +1,4 @@
-FROM ghcr.io/openmodelica/build-deps:ubuntu-22.04-debug
+FROM docker.openmodelica.org/build-deps:ubuntu-22.04-debug
 
 ENV SHELL=/bin/bash
 
