@@ -10441,32 +10441,13 @@ protected function getMinMaxValues "extract min/max values from BackendDAE.Varia
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
 algorithm
-  (outMinValue, outMaxValue) := matchcontinue inDAELowVar
-    local
-      Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Exp minValue, maxValue;
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-      // true = Expression.isConstValue(maxValue);
-    then (SOME(minValue), SOME(maxValue));
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), NONE()) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-    then (SOME(minValue), NONE());
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (NONE(), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(maxValue);
-    then (NONE(), SOME(maxValue));
-
+  // Real, Integer and enumeration variables can all carry min/max (see #15947).
+  (outMinValue, outMaxValue) := match inDAELowVar.varType
+    case DAE.T_REAL()        then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_INTEGER()     then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_ENUMERATION() then DAEUtil.getMinMaxValues(inDAELowVar.values);
     else (NONE(), NONE());
-  end matchcontinue;
+  end match;
 end getMinMaxValues;
 
 protected function getStartValue "Extract initial value from BackendDAE.Var, if it has any"
