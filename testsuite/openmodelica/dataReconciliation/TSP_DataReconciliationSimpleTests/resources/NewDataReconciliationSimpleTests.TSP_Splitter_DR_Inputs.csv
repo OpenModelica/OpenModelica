@@ -1,0 +1,11 @@
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+splitter.pipe1.Q, 2.50, 0.196
+splitter.pipe2.Q, 1.15, 0.196
+splitter.pipe3.Q, 1.25, 0.196
+splitter.pipe1.Pm, 6.1e5, 0.392e5
+splitter.pipe2.Pm, 2.55e5, 0.392e5
+splitter.pipe3.Pm, 2.45e5, 0.392e5
+splitter.volume.T, 387, 1.96
+splitter.pipe1.T, 292, 1.96
+splitter.pipe2.T, 386, 1.91
+splitter.pipe3.T, 388, 1.91

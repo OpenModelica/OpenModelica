@@ -1,0 +1,229 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.DistillationTower
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.DistillationTower, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.DistillationTower, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.DistillationTower, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.DistillationTower
+// ==========================================================================
+//
+//
+// OrderedVariables (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.1 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (9, 9)
+// ========================================
+// 1/1 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 4/4 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 5/5 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+// 6/6 (1): F = 1095.47   [binding |0|0|0|0|]
+// 7/7 (1): B = 488.23   [binding |0|0|0|0|]
+// 8/8 (1): xB1 = 1.97   [binding |0|0|0|0|]
+// 9/9 (1): xD1 = 94.1   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 9
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 8
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 3
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 7
+// var 9 is solved in eqn 6
+//
+// Standard BLT of the original model:(9)
+// ============================================================
+//
+// 9: F: (6/6): (1): F = 1095.47
+// 8: B: (7/7): (1): B = 488.23
+// 7: D: (1/1): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
+// 6: xF1: (3/3): (1): xF1 + xF2 = 100.0
+// 5: xF2: (2/2): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// 4: xB1: (8/8): (1): xB1 = 1.97
+// 3: xB2: (4/4): (1): xB1 + xB2 = 100.0
+// 2: xD1: (9/9): (1): xD1 = 94.1
+// 1: xD2: (5/5): (1): xD1 + xD2 = 100.0
+//
+//
+// Variables of interest (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.1 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (0)
+// ========================================
+//
+//
+// Binding equations:(4)
+// ============================================================
+//
+// 2: xD1: (9/9): (1): xD1 = 94.1
+// 4: xB1: (8/8): (1): xB1 = 1.97
+// 8: B: (7/7): (1): B = 488.23
+// 9: F: (6/6): (1): F = 1095.47
+//
+//
+// E-BLT: equations that compute the variables of interest:(5)
+// ============================================================
+//
+// 1: xD2: (5/5): (1): xD1 + xD2 = 100.0
+// 3: xB2: (4/4): (1): xB1 + xB2 = 100.0
+// 5: xF2: (2/2): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// 6: xF1: (3/3): (1): xF1 + xF2 = 100.0
+// 7: D: (1/1): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: xD2: (5/5): (1): xD1 + xD2 = 100.0
+// Procedure success
+//
+// >>>3: xB2: (4/4): (1): xB1 + xB2 = 100.0
+// Procedure success
+//
+// >>>5: xF2: (2/2): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// Procedure success
+//
+// >>>6: xF1: (3/3): (1): xF1 + xF2 = 100.0
+// Procedure success
+//
+// >>>7: D: (1/1): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 1
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {5, 4, 2, 3, 1}
+// SET_S: {}
+//
+//
+// SET_C (5, 5)
+// ========================================
+// 1/1 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+// 2/2 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 3/3 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 5/5 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4, 5, 6, 7, 8, 9} (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.1 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{5, 4, 2, 3, 1}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{2, 4, 6, 7, 8, 9, 5, 1, 3} (9)
+// ========================================
+// 1: xD1:VARIABLE(start = 94.1 uncertain=Uncertainty.refine)  type: Real
+// 2: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 3: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 4: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 5: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 6: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+// 7: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 8: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 9: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:5 equations < 9 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.DistillationTower
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult
