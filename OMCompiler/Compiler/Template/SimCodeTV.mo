@@ -1443,6 +1443,14 @@ package SimCodeUtil
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
+  function getVarIndexHeadByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexHeadByMapping;
+
   function getVarIndexByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;

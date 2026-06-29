@@ -12117,6 +12117,21 @@ algorithm
   (oVarIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
 end getVarIndexListByMapping;
 
+public function getVarIndexHeadByMapping "author: phannebohm
+  Return the head of variable indices stored for the given variable in the mapping-table, similar to getVarIndexListByMapping. This function is used by susan."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  input Boolean iColumnMajor;
+  input String iIndexForUndefinedReferences;
+  output String oVarIndex;
+protected
+  list<String> varIndexList;
+algorithm
+  // TODO make this more efficient by not generating the whole varIndexList
+  (varIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
+  oVarIndex := listHead(varIndexList);
+end getVarIndexHeadByMapping;
+
 public function getVarIndexByMapping "author: marcusw
   Return the variable index stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;

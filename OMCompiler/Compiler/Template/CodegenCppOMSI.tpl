@@ -7782,7 +7782,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=name) then
       match(createDebugCode)
         case true then
-          let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+          let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
           let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(getSimVars()->init<%type%>Var(<%index%>))<%\n%>'
           ""
         else ""
@@ -7800,14 +7800,14 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
           case "0" then
             match(createDebugCode)
               case true then
-                let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 let& additionalConstructorVariables += ',<%arrayName%>(getSimVars()->init<%type%>Var(<%index%>))'
                 ""
               else ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
             if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
-              let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))
+              let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               <%arrayName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
@@ -7823,7 +7823,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name, dims)
       let typeString = expTypeShort(type_)
-      let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))
+      let arrayHeadIdx = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
        <<
        <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
        >>
@@ -7837,7 +7837,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
         case "0" then
           match createDebugCode
             case true then
-              let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               let& additionalConstructorVariables += ',<%varName%>(getSimVars()->init<%type%>Var(<%index%>))'
               ""
             else ""
@@ -8048,7 +8048,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           >>
         else
           if createRefVar then
-            let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+            let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
             <<
             #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
             >>
@@ -8070,7 +8070,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
             >>
           else
             if createRefVar then
-              let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+              let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
               <<
               #define <%arrayName%> _pointerTo<%type%>Vars[<%index%>]
               >>
@@ -8105,7 +8105,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
               '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
             else
               if createRefVar then
-                let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
+                let index = SimCodeUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
                 '#define <%varName%> _pointerTo<%type%>Vars[<%index%>]'
               else
                 '<%varType%> <%varName%>;'
