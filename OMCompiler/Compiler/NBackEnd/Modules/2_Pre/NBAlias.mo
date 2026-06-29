@@ -832,14 +832,6 @@ protected
     end for;
   end getSimpleSets;
 
-  /*function filter extends Slice.filterCref;
-    input Real x = 0;
-  algorithm
-    if x == 0 then
-      x := 1;
-    end if;
-  end filter;*/
-
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
