@@ -1135,11 +1135,9 @@ protected
   end compJacobian;
 
   function canRepresentLoopJacobian
-    "Returns false for torn loops with partial array slices.
-     TODO: Analytic loop Jacobians cannot yet represent sliced array unknowns correctly (@kabdelhak I have seen a similar comment from you
-     somewhere else here also). Example: generated for-loop code may need a seed array seed(T), but a loop that solves only T[2] ... T[6] must create
-     Jacobian columns only for T[2] ... T[6], not for all of T.
-     => Do not create analytic LS/NLS Jacobians for those cases until this mapping is working for slices."
+    "Returns false for torn loops with array-sized variables or equations.
+     TODO: This is a temporary fallback. The current analytic loop Jacobians cannot handle array loops correctly.
+     Disable them until the generic sparsity/Jacobian implementation can preserve and represent arrays properly."
     input Tearing tearing;
     output Boolean b = true;
   protected
@@ -1147,14 +1145,14 @@ protected
     Tearing strict;
   algorithm
     for slice in tearing.iteration_vars loop
-      if not Slice.isFull(slice) and BVariable.size(Slice.getT(slice), true) > 1 then
+      if BVariable.size(Slice.getT(slice), true) > 1 then
         b := false;
         return;
       end if;
     end for;
 
     for slice in tearing.residual_eqns loop
-      if not Slice.isFull(slice) and Equation.size(Slice.getT(slice), true) > 1 then
+      if Equation.size(Slice.getT(slice), true) > 1 then
         b := false;
         return;
       end if;
