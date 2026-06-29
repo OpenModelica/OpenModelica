@@ -116,12 +116,7 @@ namespace {
 
   bool styleSheetArgumentValue(const QString &argument, QString *pFileName)
   {
-    QString optionPrefix = "--StyleSheet=";
-    if (argument.startsWith(optionPrefix)) {
-      *pFileName = argument.mid(optionPrefix.length());
-      return true;
-    }
-    optionPrefix = "--stylesheet=";
+    const QString optionPrefix = "--StyleSheet=";
     if (argument.startsWith(optionPrefix)) {
       *pFileName = argument.mid(optionPrefix.length());
       return true;
@@ -196,7 +191,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (!defaultStyleSheetLoaded) {
     styleSheetLoadErrors.append(defaultStyleSheetLoadError);
   }
-  if (arguments().size() > 1 && !testsuiteRunning) {
+  if (defaultStyleSheetLoaded && arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       QString styleSheetFileName;
       if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
@@ -204,9 +199,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         QString customStyleSheet;
         QString customStyleSheetLoadError;
         if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &customStyleSheetLoadError)) {
-          if (!defaultStyleSheetLoaded) {
-            continue;
-          }
           appendStyleSheet(&applicationStyleSheet, customStyleSheet);
         } else {
           styleSheetLoadErrors.append(customStyleSheetLoadError);
@@ -270,6 +262,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
@@ -284,7 +277,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         }
       } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
         dumpQtPaths();
-      } else if (styleSheetArgumentValue(arguments().at(i), &fileName)) {
+      } else if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
         // The stylesheet option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
