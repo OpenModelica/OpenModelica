@@ -350,14 +350,6 @@ public
         EquationAttributes attr;
         Algorithm alg;
 
-        UnorderedMap<ComponentRef,ComponentRef> dm;
-        ComponentRef lhs_base = ComponentRef.EMPTY();
-        ComponentRef seed_base;
-        Integer n = 0, iel;
-        list<Type.Dimension> dims;
-        Expression grad_save, rhs_i, grad_i;
-        Boolean collect_save;
-
       // ToDo: Element source stuff (see old backend)
       case Equation.SCALAR_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
@@ -449,16 +441,10 @@ public
         Expression lhs;
         ComponentRef lhsCref, seedCref;
         UnorderedMap<ComponentRef, ComponentRef> dm;
-        Type vty;
-        Operator addOp;
         list<Statement> stmts;
 
         // For-equation locals
         list<Statement> bodyStmts, allStmts;
-        Equation bodyEqn, splitEq;
-        NBEquation.Iterator splitIter;
-        list<Equation> splitBody;
-        DAE.ElementSource splitSource;
 
         // If-equation locals
         list<tuple<Expression, list<Statement>>> ifBranches;
@@ -467,10 +453,7 @@ public
         // Array equation locals
         ComponentRef lhs_base;
         ComponentRef seed_base;
-        Integer n, iel;
-        list<Type.Dimension> dims;
-        Expression grad_save, rhs_i, grad_i, seed_subscripted;
-        Boolean collect_save;
+        Expression seed_subscripted;
 
         // For-equation iterator locals
         list<ComponentRef> iterNames;
@@ -612,8 +595,7 @@ public
     (diffArguments, adjointStatements) := match stmt
       local
         Expression lhs;
-        ComponentRef lhsCref, seedCref;
-        Type vty;
+        ComponentRef lhsCref;
         list<Statement> stmts, bodyStmts, allStmts;
         list<tuple<Expression, list<Statement>>> adjBranches;
         Expression cond;
@@ -737,7 +719,6 @@ public
     UnorderedMap<ComponentRef, list<Expression>> amap;
     list<ComponentRef> keys;
     list<Expression> taggedTerms;
-    list<Expression> terms;
     Expression accRhs;
     Type vty;
     NFOperator.SizeClassification sc;
@@ -1078,15 +1059,10 @@ public
 
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
-        Expression res, adjExpr;
+        Expression res;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
-        Integer iidx;
-        // locals for SLICE literal-range scalar adjoint emission
-        Integer loI, hiI, j;
-        Expression seedElem;
-        ComponentRef subscriptedDerCref;
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
       // -------------------------------------
@@ -2665,7 +2641,6 @@ public
     input output Algorithm alg;
     input output DifferentiationArguments diffArguments;
   protected
-    list<Statement> stmts;
     list<list<Statement>> statements;
     list<Statement> statements_flat;
     list<ComponentRef> inputs, outputs;
@@ -2700,12 +2675,10 @@ public
       local
         Statement diff_stmt;
         Expression exp, lhs, rhs;
-        Expression grad_save;
         list<Statement> branch_stmts_flat;
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
         Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
-        list<Statement> body_stmts;
 
       // 0. do not differentiate if it already exists differentiated due to previous differentiation
       case _ guard(UnorderedSet.contains(stmt, diffInfo)) then {stmt};
