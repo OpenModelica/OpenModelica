@@ -255,16 +255,6 @@ public
           indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
           for i in arrayLength(jacobian.comps):-1:1 loop
             (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, dummy_sim_map, dummy_eqn_map);
-            // tag nonlinear systems inside jacobians with their parent jacobian info
-            columnEqn := match columnEqn
-              local
-                SimStrongComponent.NonlinearSystem nls;
-              case SimStrongComponent.NONLINEAR(system = nls) algorithm
-                nls.jacobianInfo := SOME((jacobian.name, indices.jacobianIndex));
-                columnEqn.system := nls;
-              then columnEqn;
-              else columnEqn;
-            end match;
             columnEqns := columnEqn :: columnEqns;
           end for;
 
