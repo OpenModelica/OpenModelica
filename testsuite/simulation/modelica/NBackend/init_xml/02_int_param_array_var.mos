@@ -37,7 +37,7 @@ initFileContent := readFile("ParameterArrayVariable_init.tmp.xml");
 //     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"5\"/>
-//     <Integer start=\"1\" fixed=\"false\" />
+//     <Integer start=\"1\" fixed=\"true\" />
 //   </ArrayVariable>
 // "
 // endResult
