@@ -235,7 +235,7 @@ public
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
-          list<SimVar> seedVars, resVars, tmpVars, loopVars;
+          list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> local_idx_map;
           ComponentRef cref;

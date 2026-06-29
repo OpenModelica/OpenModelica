@@ -313,6 +313,9 @@ public
       case ENTWINED_COMPONENT() then sum(hash(sub_comp) for sub_comp in comp.entwined_slices);
       case ALGEBRAIC_LOOP()     then Tearing.hash(comp.strict);
       case ALIAS()              then AliasInfo.hash(comp.aliasInfo);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+      then fail();
     end match;
   end hash;
 
@@ -349,7 +352,7 @@ public
       case ALGEBRAIC_LOOP()       then Tearing.size(comp.strict, resize);
       case ALIAS()                then StrongComponent.size(comp.original, resize);
       else algorithm
-         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed. Cannot determine size of strong component:\n" + toString(comp) + "\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed. Cannot determine size of strong component:\n" + toString(comp) + "\n"});
       then fail();
     end match;
   end size;
