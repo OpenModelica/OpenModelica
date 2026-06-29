@@ -78,6 +78,6 @@ simulate(Test4); getErrorString();
 // 	(z, 20.0)
 // Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
 // Checking for consistency is not yet supported, following equations had to be removed:
-// 	[SCAL] (1) x = $START.x ($RES_SRT_7);
+// 	[SCAL] (1) x = $START.x ($RES_SRT_9);
 // "
 // endResult

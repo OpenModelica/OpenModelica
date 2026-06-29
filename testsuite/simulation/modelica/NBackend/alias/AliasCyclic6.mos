@@ -1,0 +1,88 @@
+// name: AliasCyclic
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model AliasCyclic6
+    Integer x0, x1, x2, x3, x4, x5, x6, x7, x8, x9;       // constant simple
+  equation
+    1 = 3*x0 + 7*x8;
+    2 = 5*x1 + 9*x7;
+    3 = 4*x2 + 6*x6;
+    4 = 8*x3 + x5;
+    5 = 2*x0 + 5*x4;
+    5 = 3*x2 + 2*x9;
+    4 = 7*x1 + 9*x5;
+    3 = 4*x4 + x7;
+    2 = 5*x3 + 8*x9;
+    1 = 3*x6 + 6*x8;
+  end AliasCyclic6;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(AliasCyclic6); getErrorString();
+diffSimulationResults("AliasCyclic6_res.mat", "ReferenceFiles/AliasCyclic6_res.mat", "AliasCyclic6_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) 1 = 3 * x6 + 6 * x8 ($RES_SIM_0)
+// 	[SCAL] (1) 2 = 5 * x3 + 8 * x9 ($RES_SIM_1)
+// 	[SCAL] (1) 5 = 3 * x2 + 2 * x9 ($RES_SIM_4)
+// 	[SCAL] (1) 3 = 4 * x2 + 6 * x6 ($RES_SIM_7)
+// 	[SCAL] (1) 3 = 4 * x4 + x7 ($RES_SIM_2)
+// 	[SCAL] (1) 5 = 2 * x0 + 5 * x4 ($RES_SIM_5)
+// 	[SCAL] (1) 1 = 3 * x0 + 7 * x8 ($RES_SIM_9)
+// 	[SCAL] (1) 4 = 7 * x1 + 9 * x5 ($RES_SIM_3)
+// 	[SCAL] (1) 4 = 8 * x3 + x5 ($RES_SIM_6)
+// 	[SCAL] (1) 2 = 5 * x1 + 9 * x7 ($RES_SIM_8)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// 	x2	 ==> 	1.8836558044806515
+// 	x6	 ==> 	-0.7557705363204343
+// 	x7	 ==> 	-2.499660556687033
+// 	x4	 ==> 	1.3749151391717582
+// 	x8	 ==> 	0.5445519348268838
+// 	x0	 ==> 	-0.9372878479293956
+// 	x9	 ==> 	-0.32548370672097704
+// 	x3	 ==> 	0.9207739307535633
+// 	x5	 ==> 	-3.3661914460285063
+// 	x1	 ==> 	4.89938900203665
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "AliasCyclic6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

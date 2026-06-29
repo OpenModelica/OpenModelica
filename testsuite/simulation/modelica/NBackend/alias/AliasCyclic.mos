@@ -1,26 +1,20 @@
-// name: Alias_pre
-// keywords: NewBackend, Alias
+// name: Alias
+// keywords: NewBackend
 // status: correct
-// tests, if the invalid alias b => -(3.0 - y) is correctly identified
-// otherwise pre(-(3.0 - y)) would result
 
 loadString("
-model Alias_pre
-  Real x, y, b, b_prev;
-initial equation
-  b_prev = 0;
-equation
-  b = x;
-  y = x + 3;
-  y = sin(time);
-  when time > 0.5 then
-    b_prev = pre(b);
-  end when;
-end Alias_pre;
+  model AliasCyclic
+    Integer a, b, c;       // constant simple
+  equation
+    a = b + 1;
+    a = -b - 1;
+    b = c;
+  end AliasCyclic;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=dumprepl");
-simulate(Alias_pre); getErrorString();
+simulate(AliasCyclic); getErrorString();
+diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat", "AliasCyclic_diff.csv", 1e-8);
 
 // Result:
 // true
@@ -34,22 +28,19 @@ simulate(Alias_pre); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) y = $FUN_1 ($RES_SIM_2)
-// 	[SCAL] (1) y = 3.0 + x ($RES_SIM_3)
-// 	[SCAL] (1) b = x ($RES_SIM_4)
+// 	[SCAL] (1) b = c ($RES_SIM_0)
+// 	[SCAL] (1) a = -(1 + b) ($RES_SIM_1)
+// 	[SCAL] (1) a = 1 + b ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
+// 	b	 ==> 	-1
+// 	c	 ==> 	-1
+// 	a	 ==> 	0
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
-// 	$FUN_1	 ==> 	y
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
-// 	x	 ==> 	(-3.0) + y
-//
-// [dumprepl] Found But Illegal Alias Replacements (added as equations):
-// ***********************************************************************
-// 	[SCAL] (1) b = (-3.0) + y ($RES_SIM_9)
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:
@@ -65,11 +56,12 @@ simulate(Alias_pre); getErrorString();
 // *******************************************
 //
 // record SimulationResult
-//     resultFile = "Alias_pre_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias_pre', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "AliasCyclic_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
+// (true, {})
 // endResult

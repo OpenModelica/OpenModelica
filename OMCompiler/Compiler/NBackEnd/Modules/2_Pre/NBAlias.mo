@@ -102,9 +102,11 @@ protected
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
+  import ASSC = NBASSC;
 
   // Util imports
   import MetaModelica.Dangerous;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
@@ -235,7 +237,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -433,7 +435,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -466,6 +468,7 @@ protected
     input VariablePointers variables;
     input EquationPointers equations;
     input Partition.Kind kind;
+    input Pointer<Integer> index;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -501,7 +504,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements, kind);
+      replacements := createReplacementRules(set, index, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -534,6 +537,7 @@ protected
         SetPtr set_ptr, set1_ptr, set2_ptr;
         AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
+        Pointer<Equation> new_eq_ptr;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
@@ -566,48 +570,58 @@ protected
           set1_ptr := UnorderedMap.getOrFail(cr1, map);
           set2_ptr := UnorderedMap.getOrFail(cr2, map);
           set1 := Pointer.access(set1_ptr);
-          set2 := Pointer.access(set2_ptr);
-          set := EMPTY_ALIAS_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because they would create a loop. This would create an underdetermined Set!:\n\n" +
+            // check if there is a constant binding
+            if isSome(set1.const_opt) then
+              set2 := Pointer.access(set2_ptr);
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because they would create a loop and both have a constant binding. This would create an underdetermined Set!:\n\n" +
                 "Trying to merge: " + Equation.toString(eq) + "\n\n" +
                 AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif isSome(set1.const_opt) then
-            set.const_opt := set1.const_opt;
-          elseif isSome(set2.const_opt) then
-            set.const_opt := set2.const_opt;
-          end if;
+            end if;
+            // add eq to set1
+            new_eq_ptr := Pointer.create(eq);
+            set1.simple_equations := new_eq_ptr :: set1.simple_equations;
+            // update pointer of set1 -> set1
+            Pointer.update(set1_ptr, set1);
 
-          // try to append the shorter to the longer lists
-          if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
-          end if;
+            set2 := Pointer.access(set2_ptr);
+            set := EMPTY_ALIAS_SET;
+            if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                  "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
+                  AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
+              fail();
+            elseif isSome(set1.const_opt) then
+              set.const_opt := set1.const_opt;
+            elseif isSome(set2.const_opt) then
+              set.const_opt := set2.const_opt;
+            end if;
 
-          // try to change as few pointer entries as possible
-          if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set1_ptr, set);
-            for cr in set2.simple_variables loop
-              UnorderedMap.add(cr, set1_ptr, map);
-            end for;
-          else
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set2_ptr, set);
-            for cr in set1.simple_variables loop
-              UnorderedMap.add(cr, set2_ptr, map);
-            end for;
-          end if;
+            // try to append the shorter to the longer lists
+            if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
+            else
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
+            end if;
 
+            // try to change as few pointer entries as possible
+            if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set1_ptr, set);
+              for cr in set2.simple_variables loop
+                UnorderedMap.add(cr, set1_ptr, map);
+              end for;
+            else
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set2_ptr, set);
+              for cr in set1.simple_variables loop
+                UnorderedMap.add(cr, set2_ptr, map);
+              end for;
+            end if;
+          end if;
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
           set_ptr := UnorderedMap.getOrFail(cr1, map);
@@ -821,6 +835,7 @@ protected
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
+    input Pointer<Integer> index;
     input output UnorderedMap<ComponentRef, Expression> replacements;
     input Partition.Kind kind;
   algorithm
@@ -835,14 +850,33 @@ protected
         VariablePointers vars;
         list<Pointer<Variable>> var_lst;
         EquationPointers eqs;
+        list<Pointer<Equation>> eqns;
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+        Status status;
+        Expression res, expr;
+        DifferentiationArguments args;
+        array<Real> lhs;
+        Integer idx_i = 1;
+        list<Integer>  lst_enum;
+        UnorderedMap<ComponentRef, Integer>  int_to_cref;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
+        // causalize the system
+        (_, comps) := Causalize.simple(vars, eqs, kind);
+        // create replacements from strong components
+        Replacements.simple(comps, replacements);
+      then replacements;
+
+      case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
+        // solve the equation system by performing analytical-to-structural singularity conversion
+        eqns := ASSC.main(set.simple_equations, set.simple_variables, index);
+        eqs := EquationPointers.fromList(eqns);
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
@@ -867,8 +901,8 @@ protected
         end if;
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
