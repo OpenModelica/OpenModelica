@@ -472,7 +472,7 @@ public
         ComponentRef seed_base;
         Integer n, iel;
         list<Type.Dimension> dims;
-        Expression grad_save, rhs_i, grad_i;
+        Expression grad_save, rhs_i, grad_i, seed_subscripted;
         Boolean collect_save;
 
         // For-equation iterator locals
@@ -516,55 +516,20 @@ public
 
         if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhs_base), dm) then
           seed_base := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhs_base), dm);
-
-          // Per-element reverse seeding for explicit array RHS
-          if Expression.isArray(eq.rhs) then
-            n := 0;
-            if Type.isArray(eq.ty) then
-              dims := Type.arrayDims(eq.ty);
-              if not listEmpty(dims) then
-                n := Dimension.size(listHead(dims));
-              end if;
-            end if;
-
-            if n > 0 then
-              grad_save := diffArguments.current_grad;
-              collect_save := diffArguments.collectAdjoints;
-              // Accumulate adjoints per element with scalar seeds seed_base[i] on rhs[i]
-              // Is this okay? Looks like scalarizing.
-              for iel in 1:n loop
-                grad_i := Expression.applySubscripts(
-                  {Subscript.INDEX(Expression.INTEGER(iel))},
-                  Expression.fromCref(seed_base),
-                  true);
-                rhs_i := Expression.applySubscripts(
-                  {Subscript.INDEX(Expression.INTEGER(iel))},
-                  eq.rhs,
-                  true);
-                diffArguments.current_grad := grad_i;
-                diffArguments.root_seed_cref := seed_base;
-                diffArguments.collectAdjoints := true;
-                (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
-              end for;
-              diffArguments.current_grad := grad_save;
-              diffArguments.collectAdjoints := collect_save;
-            else
-              // Fallback: use whole seed
-              diffArguments.current_grad := Expression.fromCref(seed_base);
-              diffArguments.root_seed_cref := seed_base;
-              diffArguments.collectAdjoints := true;
-              (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-            end if;
-          else
-            // Non-array RHS: regular reverse
-            diffArguments.current_grad := Expression.fromCref(seed_base);
-            diffArguments.root_seed_cref := seed_base;
-            diffArguments.collectAdjoints := true;
-            (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-          end if;
-
+          // print seed_base and subscripts for debugging
+          print("seed_base: " + ComponentRef.toString(seed_base) + "\n");
+          print("lhs_base: " + ComponentRef.toString(lhs_base) + "\n");
+          print("lhs subscripts: " + ComponentRef.toString(ComponentRef.stripSubscriptsAll(lhs_base)) + "\n");
+          seed_subscripted := Expression.applySubscripts(
+                ComponentRef.subscriptsAllFlat(lhs_base),
+                Expression.fromCref(seed_base),
+                true);
+          print("seed_subscripted: " + Expression.toString(seed_subscripted) + "\n");
+          diffArguments.current_grad := seed_subscripted;
+          diffArguments.root_seed_cref := seed_base;
+          diffArguments.collectAdjoints := true;
+          (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
-          // stmts := listReverse(stmts);
         else
           stmts := {};
         end if;
@@ -1127,6 +1092,10 @@ public
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
         Integer iidx;
+        // locals for SLICE literal-range scalar adjoint emission
+        Integer loI, hiI, j;
+        Expression seedElem;
+        ComponentRef subscriptedDerCref;
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
       // -------------------------------------
@@ -1282,45 +1251,11 @@ public
           res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, derCref));
           dbg("[dCREF:JAC] get variable for derivative cref: " + NBVariable.pointerToString(NBVariable.getVarPointer(derCref, sourceInfo())));
           if diffArguments.collectAdjoints then // if derCref is on the rhs then collect adjoint (collectAdjoints is false when differentiating lhs)
-            // Create adjoint expression from subscripts:
-            adjExpr := match expCrefSubscripts
-              local
-                Option<Expression> onehotOpt, multiOpt;
-              // Single literal index: use scalar current_grad directly; adjointKey will be subscripted.
-              case {Subscript.INDEX(Expression.INTEGER())}
-                then diffArguments.current_grad;
-
-              // Single slice/range -> multi-hot scatter
-              // Is this correct and needed or can also be simplified?
-              case {Subscript.SLICE()}
-                algorithm
-                  dbg("[dCREF:JAC] adjoint via SLICE " + Subscript.toString(listHead(expCrefSubscripts)));
-                  multiOpt := buildMultiHotVectorAdjoint(derCref, listHead(expCrefSubscripts), diffArguments.current_grad);
-                then (if isSome(multiOpt) then Util.getOption(multiOpt) else diffArguments.current_grad);
-
-              // Whole dimension -> pass upstream as-is
-              case {Subscript.WHOLE()}
-                then diffArguments.current_grad;
-
-              // Fallback: keep previous behavior
-              else diffArguments.current_grad;
-            end match;
-            // Determine map key: use subscripted cref for INDEX (literal or symbolic) and
-            // symbolic iterator subscripts, so the emitted accumulation is a scalar indexed
-            // assignment (c_adj[k] += a_adj) rather than a full-array operation.
-            adjointKey := match expCrefSubscripts
-              case {} then derCref;
-              case {Subscript.INDEX()} then ComponentRef.copySubscripts(exp.cref, derCref);
-              else if subscriptsHaveIterator(expCrefSubscripts)
-                then ComponentRef.copySubscripts(exp.cref, derCref)
-                else derCref;
-            end match;
-            dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(adjointKey)
-                + " expr=" + Expression.toString(adjExpr));
+            adjointKey := ComponentRef.copySubscripts(exp.cref, derCref);
             if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
               UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
             end if;
-            UnorderedMap.tryAddUpdate(adjointKey, function updateAdjointList(current_grad = adjExpr, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
+            UnorderedMap.tryAddUpdate(adjointKey, function updateAdjointList(current_grad = diffArguments.current_grad, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
           else
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
@@ -3829,153 +3764,6 @@ protected
       else {(root_seed_cref, current_grad)};
     end match;
   end updateAdjointList;
-
-  // Build a 1D one-hot array of the same type as derBaseCref:
-  // zeros(n) with value placed at index idx.
-  function buildOneHotVectorAdjoint
-    input ComponentRef derBaseCref;
-    input Integer idx;                // 1-based
-    input Expression value;           // scalar element to place
-    output Option<Expression> onehot; // NONE if sizes unknown or not vector
-  protected
-    Type arrTy;
-    list<Type.Dimension> dims;
-    list<Integer> sizes;
-    Integer n, i;
-    Type elTy;
-    list<Expression> elems = {};
-  algorithm
-    // Array type of the pDER base cref
-    arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-    if not Type.isArray(arrTy) then
-      onehot := NONE(); return;
-    end if;
-
-    dims := Type.arrayDims(arrTy);
-    if not List.hasOneElement(dims) then
-      // Only handle simple vectors here
-      onehot := NONE(); return;
-    end if;
-
-    sizes := NFDimension.sizes(dims);
-    if listEmpty(sizes) then
-      onehot := NONE(); return;
-    end if;
-
-    n := listHead(sizes);
-    elTy := Type.arrayElementType(arrTy);
-
-    // Build [0,0,...,value,...,0]
-    for i in 1:n loop
-      elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
-    end for;
-
-    onehot := SOME(Expression.ARRAY(
-      arrTy,
-      listArray(listReverse(elems)),
-      false
-    ));
-  end buildOneHotVectorAdjoint;
-
-  // Build a multi-hot scatter vector for a SLICE subscript:
-  // result = sum_t [onehot(idx_t) * seed_elem_t]
-  // Handles:
-  //   - WHOLE()                     -> returns seed
-  //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
-  //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
-  function buildMultiHotVectorAdjoint
-    input ComponentRef derBaseCref;
-    input Subscript sub;        // SLICE or WHOLE
-    input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
-    output Option<Expression> scatter; // NONE() if not handled
-  protected
-    Type arrTy;
-    Type elTy;
-    Operator addOp;
-    Boolean seedIsArray;
-    Integer m, j, loI, hiI;
-    Option<Expression> accOpt;
-    Option<Expression> ohOpt;
-    Expression acc, term;
-  algorithm
-    arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-    elTy  := Type.arrayElementType(arrTy);
-    addOp := Operator.fromClassification(
-      (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
-      elTy
-    );
-    seedIsArray := Type.isArray(Expression.typeOf(seed));
-
-    scatter := match sub
-      // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
-      //     algorithm
-      //       m := arrayLength(elems);
-      //       if m == 0 then
-      //         scatter := SOME(Expression.makeZero(arrTy)); return;
-      //       end if;
-
-      //       acc := Expression.makeZero(arrTy);
-
-      //       for j in 1:m loop
-      //         // slice index must be a literal integer
-      //         if match elems[j] case Expression.INTEGER() then true else false end match then
-      //           // pick element seed[j] if seed is a vector, else reuse scalar seed
-      //           seedElem := if seedIsArray
-      //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
-      //             else seed;
-
-      //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
-      //           if isSome(ohOpt) then
-      //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
-      //           else
-      //             scatter := NONE(); return;
-      //           end if;
-      //         else
-      //           scatter := NONE(); return;
-      //         end if;
-      //       end for;
-
-      //       scatter := SOME(acc);
-      //     then scatter;
-      // SLICE with range lo:hi (unit step)
-      case Subscript.SLICE(slice = Expression.RANGE(
-          start = Expression.INTEGER(loI),
-          step  = NONE(),
-          stop  = Expression.INTEGER(hiI)))
-        algorithm
-          if hiI < loI then
-            scatter := SOME(Expression.makeZero(arrTy)); return;
-          end if;
-
-          accOpt := NONE();
-          m := hiI - loI + 1;
-          for j in 0:(m-1) loop
-            ohOpt := buildOneHotVectorAdjoint(
-              derBaseCref,
-              loI + j,
-              if seedIsArray
-                then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
-                else seed
-            );
-            if isSome(ohOpt) then
-              if isSome(accOpt) then
-                acc := Util.getOption(accOpt);
-                term := Util.getOption(ohOpt);
-                accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
-              else
-                accOpt := ohOpt;
-              end if;
-            else
-              scatter := NONE(); return;
-            end if;
-          end for;
-
-          scatter := if isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
-        then scatter;
-
-      else NONE();
-    end match;
-  end buildMultiHotVectorAdjoint;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBDifferentiate;
