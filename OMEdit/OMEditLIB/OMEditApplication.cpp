@@ -193,9 +193,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QStringList styleSheetLoadErrors;
   QString defaultStyleSheetLoadError;
   const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
-  if (defaultStyleSheetLoaded) {
-    setStyleSheet(applicationStyleSheet);
-  } else {
+  if (!defaultStyleSheetLoaded) {
     styleSheetLoadErrors.append(defaultStyleSheetLoadError);
   }
   if (arguments().size() > 1 && !testsuiteRunning) {
@@ -210,12 +208,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
             continue;
           }
           appendStyleSheet(&applicationStyleSheet, customStyleSheet);
-          setStyleSheet(applicationStyleSheet);
         } else {
           styleSheetLoadErrors.append(customStyleSheetLoadError);
         }
       }
     }
+  }
+  if (defaultStyleSheetLoaded) {
+    setStyleSheet(applicationStyleSheet);
   }
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
