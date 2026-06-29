@@ -779,7 +779,6 @@ public
       output Option<Expression> res;
     protected
       Expression de, se;
-      Boolean dc, sc;
       Real dv, sv;
     algorithm
       if isNone(dst) then
@@ -789,9 +788,10 @@ public
       else
         SOME(de) := dst;
         SOME(se) := src;
-        (dc, dv) := constNumber(de);
-        (sc, sv) := constNumber(se);
-        if dc and sc then
+        // both bounds must be constant numbers to be able to compare them
+        if Expression.isConstNumber(de) and Expression.isConstNumber(se) then
+          dv := Expression.realValue(de);
+          sv := Expression.realValue(se);
           if isMin then
             res := if sv > dv then src else dst;
           else
@@ -802,19 +802,6 @@ public
         end if;
       end if;
     end tightestBound;
-
-    function constNumber
-      "Returns the value of a constant Real/Integer literal expression."
-      input Expression exp;
-      output Boolean isConst;
-      output Real value;
-    algorithm
-      (isConst, value) := match exp
-        case Expression.REAL()    then (true, exp.value);
-        case Expression.INTEGER() then (true, intReal(exp.value));
-        else (false, 0.0);
-      end match;
-    end constNumber;
 
     function setStateSelect
       input output VariableAttributes attributes;

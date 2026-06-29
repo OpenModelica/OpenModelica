@@ -349,18 +349,30 @@ protected
   end addFunctionAlias;
 
   function resolveAlias
-    "Follows the function-alias chain to the real variable bound to it."
+    "Follows the function-alias chain to the real variable bound to it. The chain
+     is expected to be acyclic; Floyd's tortoise-and-hare detects an (illegal)
+     cycle and reports an internal error instead of looping forever."
     input output ComponentRef name;
     input UnorderedMap<ComponentRef, ComponentRef> alias_map;
   protected
-    Integer cnt = 0;
+    ComponentRef tortoise = name;
+    Option<ComponentRef> next;
   algorithm
-    while cnt < 100 loop
-      cnt := cnt + 1;
-      name := match UnorderedMap.get(name, alias_map)
-        case SOME(name) then name;
-        else algorithm return; then name;
-      end match;
+    // 'name' is the hare and advances two steps per iteration, 'tortoise' one;
+    // the end of the chain (no successor) is the resolved real variable.
+    while true loop
+      next := UnorderedMap.get(name, alias_map);
+      if isNone(next) then return; end if;
+      SOME(name) := next;
+      next := UnorderedMap.get(name, alias_map);
+      if isNone(next) then return; end if;
+      SOME(name) := next;
+      // the tortoise trails the hare, so it is guaranteed to have a successor
+      tortoise := UnorderedMap.getOrFail(tortoise, alias_map);
+      if ComponentRef.isEqual(tortoise, name) then
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": detected a cycle in the function-alias map while resolving '" + ComponentRef.toString(name) + "'."});
+        fail();
+      end if;
     end while;
   end resolveAlias;
 
@@ -583,21 +595,11 @@ protected
   algorithm
     try
       exp := Binding.getTypedExp(Util.tuple22(attr));
-      b := not Expression.contains(exp, isCrefExp);
+      b := not Expression.contains(exp, Expression.isCref);
     else
       b := false;
     end try;
   end attrIsConst;
-
-  function isCrefExp
-    input Expression exp;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case Expression.CREF() then true;
-      else false;
-    end match;
-  end isCrefExp;
 
   function inlineRecordsTuplesArrays
     "does not inline simple record equalities"
