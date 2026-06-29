@@ -331,7 +331,6 @@ protected function addLabelToEquations
       BackendDAE.EquationAttributes eqAttr;
       Boolean partOfJac;
       Option<Integer> clockIndex;
-      Option<tuple<String, Integer>> jacobianInfo;
 
     // nothing
     case ({}, vars, idx) then ({},vars,idx,{});
@@ -403,7 +402,7 @@ protected function addLabelToEquations
         (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A2,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS, partOfJac),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
 
     // non-linear systems
-    case (((SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,clockIndex=clockIndex,jacobianInfo=jacobianInfo),NONE(), eqAttr)) :: es), vars, idx)
+    case (((SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,clockIndex=clockIndex),NONE(), eqAttr)) :: es), vars, idx)
       algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -415,7 +414,7 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3:=listAppend(labels,labels2);
       then
-        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false,clockIndex=clockIndex,jacobianInfo=jacobianInfo),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false,clockIndex=clockIndex),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
     // mixed systems
     case (((SimCode.SES_MIXED(i,cont,discVars,disc,indexSys, eqAttr)) :: es), vars, idx)
       algorithm
