@@ -1343,6 +1343,9 @@ algorithm
           Expression.BOOLEAN(value = tb_val) := tb;
           ifExp := if tb_val then cond else Expression.logicNegate(cond);
         else
+          ty := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, Expression.typeOf(tb), Expression.typeOf(fb)) else
+            Expression.typeOf(tb);
           ifExp := Expression.IF(ty, cond, tb, fb);
         end if;
       then
