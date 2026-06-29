@@ -1614,22 +1614,18 @@ public
         end match;
         if isReverse then
           current_grad := diffArguments.current_grad;
-          // sum is linear -> multiply upstream gradient with ones of the right size
-          diffArguments.current_grad := Expression.BINARY(
-            Expression.makeOne(Expression.typeOf(arg1)),
-            Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
-              Expression.typeOf(arg1)
-            ),
-            current_grad);
-        end if;
+          // sum is linear: propagate the scalar upstream adjoint to the array elements
+          // by differentiating the argument with the upstream gradient already set.
+          diffArguments.current_grad := current_grad;
 
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-        if isReverse then
           // restore upstream
           diffArguments.current_grad := current_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         end if;
+
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
