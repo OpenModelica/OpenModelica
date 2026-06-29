@@ -103,9 +103,8 @@ public
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
-      Option<UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>>> adjoint_map  "map for accumulating adjoint gradients for component refs; each entry tagged with root seed cref";
+      Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map  "map for accumulating adjoint gradients for component refs; each entry tagged with root seed cref";
       Expression current_grad                                   "current gradient expression, used in reverse mode";
-      ComponentRef root_seed_cref                               "root seed cref tagging current reverse sweep pass";
       Boolean collectAdjoints                                   "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
     end DIFFERENTIATION_ARGUMENTS;
 
@@ -121,7 +120,6 @@ public
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad= Expression.EMPTY(Type.REAL()),
-        root_seed_cref = ComponentRef.EMPTY(),
         collectAdjoints = false
       );
     end default;
@@ -138,7 +136,6 @@ public
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad = Expression.EMPTY(Type.REAL()),
-        root_seed_cref = ComponentRef.EMPTY(),
         collectAdjoints = false
       );
     end simpleCref;
@@ -497,7 +494,6 @@ public
 
           // Set seed in diffArguments and differentiate RHS
           diffArguments.current_grad := Expression.fromCref(seedCref);
-          diffArguments.root_seed_cref := seedCref;
           diffArguments.collectAdjoints := true;
           (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
 
@@ -516,17 +512,16 @@ public
 
         if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhs_base), dm) then
           seed_base := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhs_base), dm);
-          // print seed_base and subscripts for debugging
-          print("seed_base: " + ComponentRef.toString(seed_base) + "\n");
-          print("lhs_base: " + ComponentRef.toString(lhs_base) + "\n");
-          print("lhs subscripts: " + ComponentRef.toString(ComponentRef.stripSubscriptsAll(lhs_base)) + "\n");
           seed_subscripted := Expression.applySubscripts(
                 ComponentRef.subscriptsAllFlat(lhs_base),
                 Expression.fromCref(seed_base),
                 true);
+          // print seed_base and subscripts for debugging
+          print("seed_base: " + ComponentRef.toString(seed_base) + "\n");
+          print("lhs_base: " + ComponentRef.toString(lhs_base) + "\n");
+          print("lhs subscripts: " + ComponentRef.toString(ComponentRef.stripSubscriptsAll(lhs_base)) + "\n");
           print("seed_subscripted: " + Expression.toString(seed_subscripted) + "\n");
           diffArguments.current_grad := seed_subscripted;
-          diffArguments.root_seed_cref := seed_base;
           diffArguments.collectAdjoints := true;
           (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
@@ -547,7 +542,6 @@ public
           end if;
 
           diffArguments.current_grad := Expression.fromCref(seedCref);
-          diffArguments.root_seed_cref := seedCref;
           diffArguments.collectAdjoints := true;
           (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
 
@@ -636,7 +630,6 @@ public
         if not ComponentRef.isEmpty(lhsCref) then
           // Set seed to the differentiated LHS variable
           diffArguments.current_grad := lhs;
-          diffArguments.root_seed_cref := lhsCref;
           diffArguments.collectAdjoints := true;
 
           // Differentiate RHS to accumulate into adjoint_map
@@ -741,9 +734,9 @@ public
     input output DifferentiationArguments diffArguments;
     output list<Statement> stmts;
   protected
-    UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> amap;
+    UnorderedMap<ComponentRef, list<Expression>> amap;
     list<ComponentRef> keys;
-    list<tuple<ComponentRef, Expression>> taggedTerms;
+    list<Expression> taggedTerms;
     list<Expression> terms;
     Expression accRhs;
     Type vty;
@@ -762,8 +755,6 @@ public
         // TODO: and could probably/surely remove the original variable cref from the map entirely
         taggedTerms := UnorderedMap.getOrFail(key, amap);
         if not listEmpty(taggedTerms) then
-          terms := list(Util.tuple22(t) for t in taggedTerms);
-
           // Build RHS: key + sum(terms)
           // TODO: Turn this into a single multary construction
           // Use subscripted type so indexed crefs in FOR bodies become scalar assignments.
@@ -771,10 +762,10 @@ public
           sc := sizeClassificationFromType(vty);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
           // First sum the terms if there are more than one; if only one term, use it directly
-          if List.hasOneElement(terms) then
-            accRhs := listHead(terms);
+          if List.hasOneElement(taggedTerms) then
+            accRhs := listHead(taggedTerms);
           else
-            accRhs := SimplifyExp.simplify(Expression.MULTARY(terms, {}, addOp));
+            accRhs := SimplifyExp.simplify(Expression.MULTARY(taggedTerms, {}, addOp));
           end if;
 
           // Basic accumulation only: v := v + sum(terms)
@@ -1226,7 +1217,7 @@ public
 
           // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
           if diffArguments.collectAdjoints then
-            UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
+            UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
         else
           // Everything that is not in diff_map gets differentiated to zero
@@ -1255,7 +1246,7 @@ public
             if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
               UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
             end if;
-            UnorderedMap.tryAddUpdate(adjointKey, function updateAdjointList(current_grad = diffArguments.current_grad, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
+            UnorderedMap.tryAddUpdate(adjointKey, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           else
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
@@ -3750,18 +3741,17 @@ protected
   end subscriptsHaveIterator;
 
   function updateAdjointList
-    input Option<list<tuple<ComponentRef, Expression>>> oldOpt;
+    input Option<list<Expression>> oldOpt;
     input Expression current_grad;
-    input ComponentRef root_seed_cref;
-    output list<tuple<ComponentRef, Expression>> newList;
+    output list<Expression> newList;
   protected
-    list<tuple<ComponentRef, Expression>> oldList;
+    list<Expression> oldList;
   algorithm
     newList := match oldOpt
-      // each entry is (cref, grad) where grad is the current total adjoint for that cref; we prepend the new (cref, grad) pair to the list for the root seed cref
+      // each entry is grad where grad is the current total adjoint for that cref; we prepend the new grad to the list for the root seed cref
       // probably the only case since empty list is used to initialize
-      case SOME(oldList) then ((root_seed_cref, current_grad) :: oldList);
-      else {(root_seed_cref, current_grad)};
+      case SOME(oldList) then (current_grad :: oldList);
+      else {current_grad};
     end match;
   end updateAdjointList;
 

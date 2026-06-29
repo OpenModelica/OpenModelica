@@ -1383,7 +1383,6 @@ protected
       scalarized      = seedCandidates.scalarized,
       adjoint_map     = NONE(),
       current_grad    = Expression.EMPTY(Type.REAL()),
-      root_seed_cref  = ComponentRef.EMPTY(),
       collectAdjoints = false
     );
 
@@ -1498,7 +1497,6 @@ protected
       scalarized      = scalarized,
       adjoint_map     = SOME(adjoint_map_in),
       current_grad    = seed,
-      root_seed_cref  = ComponentRef.EMPTY(),
       collectAdjoints = true
     );
 
@@ -1565,24 +1563,6 @@ protected
       then fail();
     end match;
   end makeAdjointComponentFromRhs;
-
-  function makeAdjointComponent
-    input ComponentRef lhsKey;
-    input UnorderedMap<ComponentRef, AdjointTermList> adjoint_map;
-    input String contextName;
-    input Integer eqIndex;
-    output NBStrongComponent diffed_comp;
-  protected
-    AdjointTermList taggedTerms;
-    list<Expression> terms;
-    Expression rhsExpr;
-  algorithm
-    taggedTerms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
-    terms := list(Util.tuple22(t) for t in taggedTerms);
-    rhsExpr := buildAdjointRhs(lhsKey, terms);
-
-    diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
-  end makeAdjointComponent;
 
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
@@ -1666,7 +1646,7 @@ protected
     end match;
   end isSupportedAdjointStrongComponent;
 
-  type AdjointTermList = list<tuple<ComponentRef, Expression>>;
+  type AdjointTermList = list<Expression>;
   function generateAdjointComponent
     "Generate adjoint strong component(s) for a single primal strong component.
      Uses a fresh adjoint_map per component and returns the resulting adjoint
@@ -1789,7 +1769,7 @@ protected
           if isSome(o_ySeedCref) then
             ySeedCref := Util.getOption(o_ySeedCref);
             terms_j := UnorderedMap.getOrDefault(ySeedCref, loop_product_adjoint_map, {});
-            lhs_j := buildAdjointRhs(ySeedCref, list(Util.tuple22(t) for t in terms_j));
+            lhs_j := buildAdjointRhs(ySeedCref, terms_j);
             rhs_j := Expression.fromCref(ySeedCref);
             resid_j := Equation.makeAssignment(lhs_j, rhs_j, idx, contextName,
               NBEquation.Iterator.EMPTY(), NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
@@ -1812,7 +1792,7 @@ protected
             pDerX := Util.getOption(o_pDerX);
             terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
             if not listEmpty(terms_x) then
-              rhs_x := Expression.negate(buildAdjointRhs(pDerX, list(Util.tuple22(t) for t in terms_x)));
+              rhs_x := Expression.negate(buildAdjointRhs(pDerX, terms_x));
               vty := ComponentRef.getComponentType(pDerX);
               if Expression.containsCref(rhs_x, pDerX) then
                 accRhs := rhs_x;
@@ -1856,7 +1836,6 @@ protected
           scalarized      = scalarized,
           adjoint_map     = SOME(fresh_adjoint_map),
           current_grad    = Expression.EMPTY(Type.REAL()),
-          root_seed_cref  = ComponentRef.EMPTY(),
           collectAdjoints = true
         );
 
@@ -1918,7 +1897,6 @@ protected
           scalarized      = scalarized,
           adjoint_map     = SOME(fresh_adjoint_map),
           current_grad    = Expression.EMPTY(Type.REAL()),
-          root_seed_cref  = ComponentRef.EMPTY(),
           collectAdjoints = true
         );
 
@@ -2021,7 +1999,6 @@ protected
       scalarized      = scalarized,
       adjoint_map     = SOME(fresh_adjoint_map),
       current_grad    = Expression.EMPTY(Type.REAL()),
-      root_seed_cref  = ComponentRef.EMPTY(),
       collectAdjoints = true
     );
 
