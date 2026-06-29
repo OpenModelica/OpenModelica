@@ -106,7 +106,6 @@ public
 protected
   import Array;
   import DoubleEnded;
-  import Error;
   import GCExt;
   import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
   import MetaModelica.Dangerous;
@@ -4643,7 +4642,7 @@ algorithm
     case Style.NEWLINE_INDENT    then toStringCustom(inList, inPrintFunc, "", "  ", "\n  ", "", true, 0);
     case Style.NEWLINE_TAB       then toStringCustom(inList, inPrintFunc, "", "\t", "\n\t", "", true, 0);
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because of unknown list style."});
+      print(getInstanceName() + " failed because of unknown list style.\n");
     then fail();
   end match;
 end toString;
