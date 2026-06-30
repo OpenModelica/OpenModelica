@@ -190,7 +190,7 @@ omsi_real omsi_compute_next_event_time (omsi_real           time,
     }
 
     for (i=1; i<n_sample_events; i++) {
-        next_event_time = (omsi_real) __builtin_fmin(omsi_next_sample(time, &sample_events[i]), next_event_time);
+        next_event_time = (omsi_real) fmin(omsi_next_sample(time, &sample_events[i]), next_event_time);
     }
 
     return next_event_time;

@@ -28,3 +28,9 @@
 // This source file generates the precompiled headers
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+
+#if defined(_MSC_VER)
+// MSVC only generates an import library (.lib) when the DLL exports at least one symbol.
+// Without this, linking against OMCppModelica fails with LNK1104 on Windows.
+extern "C" __declspec(dllexport) void OMCppModelica_placeholder(void) {}
+#endif

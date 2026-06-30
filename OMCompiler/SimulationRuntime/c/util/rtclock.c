@@ -207,14 +207,7 @@ double rt_tock(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
-#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
-#if defined(__MINGW32__)
-#pragma GCC diagnostic pop
-#endif
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp[ix].QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -241,14 +234,7 @@ double rt_accumulate(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
-#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
-#if defined(__MINGW32__)
-#pragma GCC diagnostic pop
-#endif
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp[ix].QuadPart;
   acc_tp[ix].QuadPart += diff_tp.QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
@@ -291,14 +277,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
   rtclock_t diff_tp;
   rtclock_t tock_tp;
   QueryPerformanceCounter(&tock_tp);
-#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
-#if defined(__MINGW32__)
-#pragma GCC diagnostic pop
-#endif
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp->QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -309,14 +288,7 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
     rtclock_t diff_tp;
     rtclock_t tock_tp;
     tock_tp.QuadPart = RDTSC();
-#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-    diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
-#if defined(__MINGW32__)
-#pragma GCC diagnostic pop
-#endif
+    diff_tp.QuadPart = tock_tp.QuadPart - tick_tp->QuadPart;
     return rtclock_compensated_value(diff_tp);
   }
 }
