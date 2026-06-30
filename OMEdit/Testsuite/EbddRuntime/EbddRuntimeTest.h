@@ -80,6 +80,12 @@ private slots:
    * variable values.
    */
   void parsesEventIterations();
+  /*!
+   * \brief parsesChattering
+   * Tests that "chattering" records attach to the implicated equation, carrying
+   * the time window, the state-event count and the zero-crossing description.
+   */
+  void parsesChattering();
   void cleanupTestCase();
 };
 
