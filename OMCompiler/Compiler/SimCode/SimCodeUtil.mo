@@ -16071,12 +16071,12 @@ function getDirectoriesForDLLsFromLinkLibs
   output list<String> outLibs = {};
 algorithm
   for str in libsAndLinkDirs loop
+    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15714
+     * strip exactly the first 2 characters (e.g) -lexternalfuncl to externalfuncl and "-LC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
+    */
     if StringUtil.startsWith(str, "\"-L") then
-      outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
+      outLocations := listAppend({substring(str, 4, stringLength(str)-1)}, outLocations);
     elseif StringUtil.startsWith(str, "-l") then
-      /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15714
-       * strip exactly the first 2 characters (e.g) -lexternalfuncl to externalfuncl
-      */
       outLibs := listAppend({substring(str, 3, stringLength(str))}, outLibs);
     end if;
   end for;
