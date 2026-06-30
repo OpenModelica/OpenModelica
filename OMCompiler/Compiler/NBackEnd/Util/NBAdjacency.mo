@@ -2006,6 +2006,17 @@ public
         set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
         Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
+        // collect dependencies from subscript expressions (e.g. arr[i] depends on i)
+        // subscript variables are unsolvable (cannot determine i from arr[i] = c)
+        for sub in exp.subscripts loop
+          set2 := match sub
+            case Subscript.INDEX() then collectDependencies(sub.index, 0, map, dep_map, sol_map, rep_set);
+            case Subscript.SLICE() then collectDependencies(sub.slice, 0, map, dep_map, sol_map, rep_set);
+            else UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          end match;
+          Solvability.updateList(UnorderedSet.toList(set2), Solvability.UNSOLVABLE(), sol_map);
+          set := UnorderedSet.union(set, set2);
+        end for;
       then set;
 
       // should not change anything
