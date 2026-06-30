@@ -949,7 +949,18 @@ public
     var_crefs := match comp
       case SINGLE_COMPONENT()     then {BVariable.getVarName(comp.var)};
       case MULTI_COMPONENT()      then list(BVariable.getVarName(Slice.getT(v)) for v in comp.vars);
-      case SLICED_COMPONENT()     then {comp.var_cref};
+      case SLICED_COMPONENT() algorithm
+        // EMPTY var_cref (NLS FOR residuals): use residual var for pder classification in fullToSparsity
+        if ComponentRef.isEmpty(comp.var_cref) then
+          try
+            var_crefs := {BVariable.getVarName(Equation.getResidualVar(Slice.getT(comp.eqn)))};
+          else
+            var_crefs := {comp.var_cref};
+          end try;
+        else
+          var_crefs := {comp.var_cref};
+        end if;
+      then var_crefs;
       case RESIZABLE_COMPONENT()  then {comp.var_cref};
       case GENERIC_COMPONENT()    then {comp.var_cref};
       case ENTWINED_COMPONENT()   then List.flatten(list(list(BVariable.getVarName(var) for var in getVariables(slice)) for slice in comp.entwined_slices));
