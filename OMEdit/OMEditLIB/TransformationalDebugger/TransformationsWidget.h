@@ -241,10 +241,12 @@ public:
   void fetchEquationData(int equationIndex);
   void fetchDefines(OMEquation *equation);
   void fetchDepends(OMEquation *equation);
+  void fetchRuntimeValues(OMEquation *equation);
   void fetchOperations(OMEquation *equation, HtmlDiff htmlDiff);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
+  static void parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName);
 private:
-  QString mInfoJSONFullFileName, mProfilingJSONFullFileName;
+  QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mDebugJSONFullFileName;
   bool mProfilingEnabled = false;
   bool mCheckForProfilingFiles = false;
   int profilingNumSteps;
@@ -267,6 +269,7 @@ private:
   EquationTreeProxyModel *mpEquationProxyModel;
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
+  QTreeWidget *mpRuntimeValuesTreeWidget;
   QComboBox *mpEquationDiffFilterComboBox;
   QTreeWidget *mpEquationOperationsTreeWidget;
   Label *mpTSourceEditorFileLabel;

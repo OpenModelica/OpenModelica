@@ -44,6 +44,7 @@
 #include "newtonIteration.h"
 #include "newton_diagnostics.h"
 #include "nonlinearSolverHomotopy.h"
+#include "ebdd_runtime.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
 #include "../simulation_runtime.h"
@@ -1398,6 +1399,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   }
   printNonLinearFinishInfo(OMC_LOG_NLS, data, nonlinsys);
   messageClose(OMC_LOG_NLS);
+
+  /* export runtime info for the equation-based declarative debugger */
+  ebddRuntimeLogNonlinearSystem(data, nonlinsys);
 
 
   /* enable to avoid division by zero */
