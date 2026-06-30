@@ -16074,7 +16074,10 @@ algorithm
     if StringUtil.startsWith(str, "\"-L") then
       outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
     elseif StringUtil.startsWith(str, "-l") then
-      outLibs := listAppend({System.trim(str, "-l")}, outLibs);
+      /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15714
+       * strip exactly the first 2 characters (e.g) -lexternalfuncl to externalfuncl
+      */
+      outLibs := listAppend({substring(str, 3, stringLength(str))}, outLibs);
     end if;
   end for;
   outLocations := listReverse(outLocations);
