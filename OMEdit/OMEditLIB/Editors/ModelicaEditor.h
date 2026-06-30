@@ -54,6 +54,9 @@ class ModelWidget;
 class LibraryTreeItem;
 class LSPClient;
 class QAction;
+class QTimer;
+class QTextCursor;
+class QTextBlock;
 
 class ModelicaEditor : public BaseEditor
 {
@@ -84,21 +87,31 @@ public:
 private:
   QString mLastValidText;
   bool mTextChanged;
-  int mDocumentVersion;
   int mPendingHoverRequestId;
   int mPendingDefinitionRequestId;
   QPoint mLastToolTipGlobalPos;
   QPointer<LSPClient> mConnectedLSPClient;
   bool mLSPDocumentOpened;
-  QAction *mpLSPGoToDefinitionAction;
+  QString mLSPDocumentUri;
+  QString mDefinitionFallbackWord;
+  QTimer *mpContentChangeTimer;
+  QTimer *mpDefinitionFallbackTimer;
   QString documentUri() const;
+  QString documentText();
+  void lspPositionForCursor(const QTextCursor &cursor, int &line, int &character);
+  int leadingSpacesForBlock(const QTextBlock &block);
   bool ensureLanguageServerConnected();
   void notifyLanguageServerContentChanged();
+  void flushPendingContentChange();
+  void requestDefinitionAt(const QPoint &pos);
+  bool navigateToLSPLocation(const LSP::Location &location);
+  void navigateToClassFallback();
 private slots:
   virtual void showContextMenu(QPoint point) override;
   void onLSPHoverResult(int requestId, const QString &content);
   void onLSPDefinitionResult(int requestId, const LSP::Location &location);
-  void goToLSPDefinition();
+  void sendLanguageServerContentChange();
+  void onDefinitionFallbackTimeout();
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;

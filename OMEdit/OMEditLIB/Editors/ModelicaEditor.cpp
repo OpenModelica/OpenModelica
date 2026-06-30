@@ -50,6 +50,8 @@
 
 #include <QAction>
 #include <QCompleter>
+#include <QFile>
+#include <QFileInfo>
 #include <QEvent>
 #include <QHelpEvent>
 #include <QIcon>
@@ -60,6 +62,14 @@
 #include <QToolTip>
 #include <QUrl>
 
+namespace {
+  // Debounce window before pushing the full document to the language server.
+  const int kContentChangeDebounceMs = 300;
+  // How long to wait for a go-to-definition reply before falling back to class-tree navigation.
+  const int kDefinitionFallbackMs = 2000;
+  // URI scheme for fileless (in-memory) classes; built in documentUri() and stripped back in navigateToLSPLocation().
+  const QString kInMemoryUriScheme = QStringLiteral("modelica:///");
+}
 
 /*!
  * \class ModelicaEditor
@@ -71,9 +81,9 @@
  */
 ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false),
-    mDocumentVersion(1), mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1),
+    mPendingHoverRequestId(-1), mPendingDefinitionRequestId(-1),
     mConnectedLSPClient(nullptr), mLSPDocumentOpened(false),
-    mpLSPGoToDefinitionAction(nullptr)
+    mpContentChangeTimer(nullptr), mpDefinitionFallbackTimer(nullptr)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
@@ -85,18 +95,27 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   }
   // Install event filter for LSP hover support
   mpPlainTextEdit->viewport()->installEventFilter(this);
-  // LSP navigation action; added to the context menu only when the server is running
-  mpLSPGoToDefinitionAction = new QAction(QIcon(":/Resources/icons/language-server.svg"), tr("Go to Definition"), this);
-  connect(mpLSPGoToDefinitionAction, SIGNAL(triggered()), SLOT(goToLSPDefinition()));
+  // Coalesce rapid edits before pushing the full document to the language server.
+  mpContentChangeTimer = new QTimer(this);
+  mpContentChangeTimer->setSingleShot(true);
+  mpContentChangeTimer->setInterval(kContentChangeDebounceMs);
+  connect(mpContentChangeTimer, SIGNAL(timeout()), SLOT(sendLanguageServerContentChange()));
+  // Falls back to basic navigation when the server does not answer go-to-definition in time.
+  mpDefinitionFallbackTimer = new QTimer(this);
+  mpDefinitionFallbackTimer->setSingleShot(true);
+  mpDefinitionFallbackTimer->setInterval(kDefinitionFallbackMs);
+  connect(mpDefinitionFallbackTimer, SIGNAL(timeout()), SLOT(onDefinitionFallbackTimeout()));
 }
 
 ModelicaEditor::~ModelicaEditor()
 {
-  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (pLSPClient) {
-    pLSPClient->disconnect(this);
-    if (pLSPClient->isRunning()) {
-      pLSPClient->closeDocument(documentUri());
+  // Use the reference-tracked client handle (auto-nulled if the client was
+  // already destroyed) and a cached uri so teardown never touches a
+  // half-destroyed MainWindow or ModelWidget.
+  if (mConnectedLSPClient) {
+    mConnectedLSPClient->disconnect(this);
+    if (mLSPDocumentOpened && !mLSPDocumentUri.isEmpty() && mConnectedLSPClient->isRunning()) {
+      mConnectedLSPClient->closeDocument(mLSPDocumentUri);
     }
   }
 }
@@ -113,9 +132,92 @@ QString ModelicaEditor::documentUri() const
       return QUrl::fromLocalFile(fileName).toString();
     }
     // Synthetic URI for in-memory classes
-    return QStringLiteral("modelica:///") + mpModelWidget->getLibraryTreeItem()->getNameStructure();
+    return kInMemoryUriScheme + mpModelWidget->getLibraryTreeItem()->getNameStructure();
   }
   return QString();
+}
+
+/*!
+ * \brief ModelicaEditor::documentText
+ * Returns the full file content the language server should see. For a class
+ * stored inside a one-file package the editor only shows the (de-indented) class
+ * slice, so the surrounding file text is restored exactly as it is written back
+ * on save.
+ */
+QString ModelicaEditor::documentText()
+{
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget ? mpModelWidget->getLibraryTreeItem() : nullptr;
+  if (pLibraryTreeItem && pLibraryTreeItem->isInPackageOneFile()) {
+    // For an unmodified class send the exact on-disk file so the server's
+    // line/column numbers match the loaded class. Skip the disk read for
+    // encrypted (.moc) classes, which are not plain text on disk; and reconstruct
+    // from the slice (mirroring how OMEdit writes the class back) when there are
+    // unsaved edits.
+    const QString fileName = pLibraryTreeItem->getFileName();
+    if (!isTextChanged() && QFileInfo(fileName).suffix().compare(QStringLiteral("moc"), Qt::CaseInsensitive) != 0) {
+      QFile file(fileName);
+      if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        const QString contents = QString::fromUtf8(file.readAll());
+        file.close();
+        return contents;
+      }
+    }
+    return pLibraryTreeItem->getClassTextBefore() + StringHandler::trimmedEnd(getPlainText()) + "\n"
+           + pLibraryTreeItem->getClassTextAfter();
+  }
+  return mpPlainTextEdit->toPlainText();
+}
+
+/*!
+ * \brief ModelicaEditor::leadingSpacesForBlock
+ * Number of leading spaces stripped from this block when a one-file package
+ * class was de-indented for display (mirrors getPlainText()), so editor columns
+ * can be mapped back to file columns.
+ */
+int ModelicaEditor::leadingSpacesForBlock(const QTextBlock &block)
+{
+  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
+  if (!pTextBlockUserData) {
+    return 0;
+  }
+  int leadingSpaces = pTextBlockUserData->getLeadingSpaces();
+  if (leadingSpaces != -1) {
+    return leadingSpaces;
+  }
+  // Lines typed after load carry no stored value; fall back like getPlainText().
+  TextBlockUserData *pFirstBlockUserData = BaseEditorDocumentLayout::userData(mpPlainTextEdit->document()->firstBlock());
+  if (pFirstBlockUserData && pFirstBlockUserData->getLeadingSpaces() != -1) {
+    return pFirstBlockUserData->getLeadingSpaces();
+  }
+  return mpModelWidget->getLibraryTreeItem()->getNestedLevelInPackage();
+}
+
+/*!
+ * \brief ModelicaEditor::lspPositionForCursor
+ * Maps an editor cursor to a 0-based LSP (line, character) in file coordinates.
+ * For a one-file package class the editor shows a de-indented slice, so the
+ * class start line, the per-line leading spaces and (on the first line) the
+ * class start column are added back.
+ */
+void ModelicaEditor::lspPositionForCursor(const QTextCursor &cursor, int &line, int &character)
+{
+  line = cursor.blockNumber();
+  character = cursor.columnNumber();
+  if (!isModelicaModelInPackageOneFile()) {
+    return;
+  }
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+  line += pLibraryTreeItem->mClassInformation.lineNumberStart - 1;
+  character += leadingSpacesForBlock(cursor.block());
+  if (cursor.blockNumber() == 0) {
+    // The first slice line is trimmed at columnNumberStart only when the class
+    // shares its first line with preceding code (then the kept text before the
+    // class has no trailing newline).
+    const QString before = pLibraryTreeItem->getClassTextBefore();
+    if (!before.isEmpty() && !before.endsWith(QLatin1Char('\n'))) {
+      character += pLibraryTreeItem->mClassInformation.columnNumberStart - 1;
+    }
+  }
 }
 
 /*!
@@ -129,11 +231,14 @@ bool ModelicaEditor::eventFilter(QObject *pObject, QEvent *pEvent)
     LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
     if (pLSPClient && pLSPClient->isRunning()) {
       ensureLanguageServerConnected();
+      flushPendingContentChange();
       QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pHelpEvent->pos());
       mLastToolTipGlobalPos = pHelpEvent->globalPos();
       QString uri = documentUri();
       if (!uri.isEmpty()) {
-        mPendingHoverRequestId = pLSPClient->requestHover(uri, cursor.blockNumber(), cursor.columnNumber());
+        int line, character;
+        lspPositionForCursor(cursor, line, character);
+        mPendingHoverRequestId = pLSPClient->requestHover(uri, line, character);
       }
       return true;
     }
@@ -170,20 +275,51 @@ void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &l
     return;
   }
   mPendingDefinitionRequestId = -1;
-  if (!location.isValid()) {
+  mpDefinitionFallbackTimer->stop();
+  if (navigateToLSPLocation(location)) {
+    mDefinitionFallbackWord.clear();
     return;
   }
-  QString filePath = QUrl(location.uri).toLocalFile();
-  if (filePath.isEmpty()) {
-    return;
+  // The server could not resolve the symbol; fall back to class-tree navigation.
+  navigateToClassFallback();
+}
+
+/*!
+ * \brief ModelicaEditor::navigateToLSPLocation
+ * Opens the class/file the language server points at. Returns false when the
+ * location cannot be resolved so the caller can fall back to basic navigation.
+ */
+bool ModelicaEditor::navigateToLSPLocation(const LSP::Location &location)
+{
+  if (!location.isValid()) {
+    return false;
   }
   const int lineNumber = location.range.start.line + 1; // LSP positions are 0-based, OMEdit lines are 1-based
+  const QString filePath = QUrl(location.uri).toLocalFile();
+  if (filePath.isEmpty()) {
+    // In-memory document (modelica:///Name): this editor or another loaded class.
+    if (location.uri == documentUri()) {
+      mpPlainTextEdit->goToLineNumber(lineNumber);
+      return true;
+    }
+    QString name = location.uri;
+    name.remove(kInMemoryUriScheme);
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
+    if (pLibraryTreeItem) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+        pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
+      }
+      return true;
+    }
+    return false;
+  }
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Prefer the class already loaded for this file/line; reuse the shared open-at-line helper so navigation
   // does not re-run omc's grammar check on an isolated library file.
   if (pLibraryTreeModel->getLibraryTreeItemFromFile(filePath, lineNumber)) {
     MainWindow::instance()->findFileAndGoToLine(filePath, QString::number(lineNumber));
-    return;
+    return true;
   }
   // Not part of a loaded library: open as plain text (loadExternalModel = true) and go to the line in the text item.
   MainWindow::instance()->getLibraryWidget()->openFile(filePath, Helper::utf8, true, true, true);
@@ -194,7 +330,36 @@ void ModelicaEditor::onLSPDefinitionResult(int requestId, const LSP::Location &l
       pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
       pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
     }
+    return true;
   }
+  return false;
+}
+
+/*!
+ * \brief ModelicaEditor::navigateToClassFallback
+ * OMEdit class-tree navigation for the identifier the user invoked navigation on.
+ */
+void ModelicaEditor::navigateToClassFallback()
+{
+  const QString word = mDefinitionFallbackWord;
+  mDefinitionFallbackWord.clear();
+  if (!word.isEmpty() && mpModelWidget) {
+    mpModelWidget->navigateToClass(word);
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::onDefinitionFallbackTimeout
+ * The language server did not answer go-to-definition in time; navigate with the
+ * basic class-tree resolver instead.
+ */
+void ModelicaEditor::onDefinitionFallbackTimeout()
+{
+  if (mPendingDefinitionRequestId == -1) {
+    return; // already answered
+  }
+  mPendingDefinitionRequestId = -1;
+  navigateToClassFallback();
 }
 
 /*!
@@ -216,11 +381,11 @@ bool ModelicaEditor::ensureLanguageServerConnected()
     mLSPDocumentOpened = false;
   }
   if (!mLSPDocumentOpened) {
-    QString uri = documentUri();
+    const QString uri = documentUri();
     if (!uri.isEmpty()) {
-      pLSPClient->openDocument(uri, QStringLiteral("modelica"), mpPlainTextEdit->toPlainText());
+      pLSPClient->openDocument(uri, QStringLiteral("modelica"), documentText());
       mLSPDocumentOpened = true;
-      mDocumentVersion = 1;
+      mLSPDocumentUri = uri;
       return true;
     }
   }
@@ -229,39 +394,68 @@ bool ModelicaEditor::ensureLanguageServerConnected()
 
 /*!
  * \brief ModelicaEditor::notifyLanguageServerContentChanged
- * Sends the current document content to the language server as a change,
- * opening the document first if necessary.
+ * Schedules a (debounced) full-document sync to the language server.
  */
 void ModelicaEditor::notifyLanguageServerContentChanged()
 {
+  mpContentChangeTimer->start();
+}
+
+/*!
+ * \brief ModelicaEditor::sendLanguageServerContentChange
+ * Pushes the current full document to the language server once edits settle.
+ */
+void ModelicaEditor::sendLanguageServerContentChange()
+{
   if (ensureLanguageServerConnected()) {
-    return; // the open notification already carried the latest content
+    return; // the didOpen already carried the latest content
   }
   LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (pLSPClient && pLSPClient->isRunning()) {
-    QString uri = documentUri();
-    if (!uri.isEmpty()) {
-      pLSPClient->changeDocument(uri, ++mDocumentVersion, mpPlainTextEdit->toPlainText());
-    }
+  if (pLSPClient && pLSPClient->isRunning() && !mLSPDocumentUri.isEmpty()) {
+    pLSPClient->changeDocument(mLSPDocumentUri, documentText());
   }
 }
 
 /*!
- * \brief ModelicaEditor::goToLSPDefinition
- * Requests textDocument/definition at the context-menu position.
+ * \brief ModelicaEditor::flushPendingContentChange
+ * Sends any debounced content change immediately so the server's document
+ * matches the coordinates of a hover/definition request issued right after a typing burst.
  */
-void ModelicaEditor::goToLSPDefinition()
+void ModelicaEditor::flushPendingContentChange()
+{
+  if (mpContentChangeTimer->isActive()) {
+    mpContentChangeTimer->stop();
+    sendLanguageServerContentChange();
+  }
+}
+
+/*!
+ * \brief ModelicaEditor::requestDefinitionAt
+ * Sends a go-to-definition request for the symbol at pos and arms the fallback
+ * timer. Assumes the language server is running.
+ */
+void ModelicaEditor::requestDefinitionAt(const QPoint &pos)
 {
   LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (!pLSPClient || !pLSPClient->isRunning() || !mContextMenuStartPositionValid) {
+  if (!pLSPClient || !pLSPClient->isRunning()) {
     return;
   }
   ensureLanguageServerConnected();
-  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(mContextMenuStartPosition);
-  QString uri = documentUri();
-  if (!uri.isEmpty()) {
-    mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, cursor.blockNumber(), cursor.columnNumber());
+  flushPendingContentChange();
+  const QString uri = documentUri();
+  if (uri.isEmpty()) {
+    navigateToClassFallback();
+    return;
   }
+  QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
+  int line, character;
+  lspPositionForCursor(cursor, line, character);
+  mPendingDefinitionRequestId = pLSPClient->requestDefinition(uri, line, character);
+  if (mPendingDefinitionRequestId < 0) {
+    navigateToClassFallback();
+    return;
+  }
+  mpDefinitionFallbackTimer->start();
 }
 
 /*!
@@ -391,7 +585,8 @@ void ModelicaEditor::symbolAtPosition(const QPoint &pos)
   if (!mpModelWidget) {
     return;
   }
-  // OMEdit class tree navigation. LSP navigation is exposed via the context menu.
+  // The dotted identifier under pos. It is the basic-navigation target and also
+  // the fallback when the language server cannot resolve the position.
   QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
   cursor.select(QTextCursor::WordUnderCursor);
 
@@ -414,7 +609,16 @@ void ModelicaEditor::symbolAtPosition(const QPoint &pos)
   }
   begin++;
 
-  mpModelWidget->navigateToClass(mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin));
+  mDefinitionFallbackWord = mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin);
+
+  // Prefer the language server; fall back to class-tree navigation when it is not
+  // running (or, asynchronously, when it cannot resolve the symbol).
+  LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
+  if (pLSPClient && pLSPClient->isRunning()) {
+    requestDefinitionAt(pos);
+    return;
+  }
+  navigateToClassFallback();
 }
 
 /*!
@@ -786,12 +990,16 @@ void ModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
-  pMenu->addAction(mpOpenClassAction);
+  // Single navigation entry (reuses the base "Open Class" action). The language
+  // server icon marks when navigation is backed by the server; otherwise it falls
+  // back to class-tree navigation. The action triggers BaseEditor::openClass(),
+  // which routes to ModelicaEditor::symbolAtPosition() (LSP-first with fallback).
   LSPClient *pLSPClient = MainWindow::instance()->getLSPClient();
-  if (pLSPClient && pLSPClient->isRunning()) {
-    pMenu->addSeparator();
-    pMenu->addAction(mpLSPGoToDefinitionAction);
-  }
+  mpOpenClassAction->setText(tr("Go to Definition"));
+  mpOpenClassAction->setStatusTip(tr("Go to the definition of the class under the cursor"));
+  mpOpenClassAction->setIcon(pLSPClient && pLSPClient->isRunning()
+                             ? QIcon(QStringLiteral(":/Resources/icons/language-server.svg")) : QIcon());
+  pMenu->addAction(mpOpenClassAction);
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->addSeparator();

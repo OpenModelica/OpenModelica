@@ -38,7 +38,6 @@
  */
 
 #include "MCP/MCPServer.h"
-#include "LSP/LSPClient.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -51,8 +50,6 @@
 #include <locale.h>
 #include <QDir>
 #include <QMessageBox>
-#include <QStandardPaths>
-#include <QUrl>
 #include <QTextCodec>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QStyleHints>

@@ -1977,7 +1977,7 @@ Sensitivity Optimization Options
 
   -  *python* - sets the Python executable to run OMSens scripts.
 
-.. _omedit-options-language-server :
+.. _omedit-options-language-server:
 
 Language Server Options
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1989,17 +1989,16 @@ over stdin/stdout. When enabled, the language server provides:
 -  **Hover** - hover the mouse over a symbol in the text editor to see its
    documentation in a tooltip.
 
--  **Go to definition** - Ctrl+Click a symbol to navigate to where it is
-   defined (including across files).
-
--  **Document symbols** - the language server tracks every open document and
-   can supply a symbol outline (used internally).
+-  **Go to definition** - Ctrl+Click a symbol, or use *Go to Definition* from
+   the right-click menu, to navigate to where it is defined (including across
+   files).  When the language server cannot resolve the symbol, OMEdit falls
+   back to its built-in class navigation.
 
 The feature is opt-in and disabled by default.
 
 -  Language Server Protocol (LSP)
 
-  -  *Enable Language Server Protocol (LSP)* - when checked, OMEdit starts
+  -  *Enable Language Server* - when checked, OMEdit starts
      the language server process on launch and connects to it.
 
   -  *Server Executable* - path to the language server executable.
@@ -2017,22 +2016,18 @@ The feature is opt-in and disabled by default.
      messages from the language server are shown in the Messages Browser,
      prefixed with ``LSP``.
 
-Hover information is shown as a tooltip.  *Go to Definition* is available from
-the editor right-click menu (marked with the language server icon) when the
-server is running.  Enabling or disabling the language server takes effect
-immediately; a restart is not required.
+Hover information is shown as a tooltip.  Navigation works both with Ctrl+Click
+and from the editor right-click menu (*Go to Definition*, marked with the
+language server icon while the server is running).  Enabling or disabling the
+language server takes effect immediately; a restart is not required.
 
 **Runtime requirement: Node.js**
 
-If a standalone server binary is bundled with OMEdit, no external runtime is
-required.  Otherwise the bundled JavaScript server is used and the only external
-dependency is Node.js, as described below.
-
-OMEdit ships with a pre-built Modelica language server.  The only
-external dependency is `Node.js <https://nodejs.org>`_ (version 16 or later),
-which is used to run the bundled server.  If Node.js is not installed when you
-enable the language server, OMEdit shows a one-time setup dialog with
-platform-specific installation instructions.
+OMEdit ships with a pre-built Modelica language server that runs on
+`Node.js <https://nodejs.org>`_ (version 16 or later), which is therefore the
+only external dependency.  If Node.js is not installed when you enable the
+language server, OMEdit shows a one-time setup dialog with platform-specific
+installation instructions.
 
 .. list-table::
    :header-rows: 1
@@ -2050,8 +2045,8 @@ platform-specific installation instructions.
      - ``sudo dnf install nodejs``
 
 After installing Node.js, open *Tools > Options > Language Server*, check
-*Enable Language Server Protocol (LSP)*, leave *Server Executable* blank,
-click *OK*, and restart OMEdit.
+*Enable Language Server*, leave *Server Executable* blank, and
+click *OK*.  The language server starts immediately.
 
 **Configuration via omedit.ini**
 

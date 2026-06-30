@@ -45,36 +45,40 @@
 
 /*!
  * \class LSPClient
- * \brief Manages a language server process using the LSP JSON-RPC protocol (stdin/stdout).
+ * \brief Abstract language server client driving a server process over the LSP
+ * JSON-RPC protocol (stdin/stdout). Server-specific behaviour (which executable
+ * is bundled, initialization options) is provided by concrete subclasses such
+ * as ModelicaLSPClient.
  */
 class LSPClient : public QObject
 {
   Q_OBJECT
 public:
   explicit LSPClient(QObject *pParent = nullptr);
-  ~LSPClient();
+  ~LSPClient() override;
 
   bool start(const QString &executable, const QString &rootUri, const QStringList &libraries = QStringList());
   void stop();
   bool isRunning() const;
 
   static QString findNodeExecutable();
-  static QString findBundledServer();
 
   void openDocument(const QString &uri, const QString &languageId, const QString &text);
-  void changeDocument(const QString &uri, int version, const QString &text);
+  void changeDocument(const QString &uri, const QString &text);
   void closeDocument(const QString &uri);
   int requestHover(const QString &uri, int line, int character);
   int requestDefinition(const QString &uri, int line, int character);
-  int requestDocumentSymbols(const QString &uri);
 
 signals:
   void initialized();
   void hoverResult(int requestId, QString content);
   void definitionResult(int requestId, LSP::Location location);
-  void documentSymbolsResult(int requestId, QList<LSP::DocumentSymbol> symbols);
   void serverError(QString message);
   void logMessage(QString message, int type);
+
+protected:
+  // Server-specific LSP "initializationOptions". Empty object means none are sent.
+  virtual QJsonObject initializationOptions(const QStringList &libraries) const = 0;
 
 private slots:
   void onReadyRead();
@@ -82,11 +86,19 @@ private slots:
   void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
+  // Tracks documents opened on the server so a file shared by several editors
+  // is opened once and only closed when the last editor releases it.
+  struct DocumentState {
+    int version = 0;
+    int refCount = 0;
+  };
+
   QProcess *mpProcess;
   QByteArray mReadBuffer;
   int mNextId;
   bool mInitialized;
   QHash<int, QString> mPendingRequests; // id -> method name
+  QHash<QString, DocumentState> mOpenDocuments; // uri -> open state
 
   void sendMessage(const QJsonObject &message);
   int sendRequest(const QString &method, const QJsonObject &params);
@@ -97,4 +109,5 @@ private:
 
   static QJsonObject makePosition(int line, int character);
   static QJsonObject makeTextDocumentIdentifier(const QString &uri);
+  static LSP::Range parseRange(const QJsonObject &rangeObj);
 };

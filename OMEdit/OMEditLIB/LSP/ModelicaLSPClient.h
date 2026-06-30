@@ -35,27 +35,24 @@
 
 #pragma once
 
-#include <QMetaType>
-#include <QString>
+#include "LSP/LSPClient.h"
 
-namespace LSP {
+/*!
+ * \class ModelicaLSPClient
+ * \brief LSPClient specialised for the Modelica language server
+ * (https://github.com/OpenModelica/modelica-language-server).
+ */
+class ModelicaLSPClient : public LSPClient
+{
+  Q_OBJECT
+public:
+  explicit ModelicaLSPClient(QObject *pParent = nullptr);
 
-struct Position {
-  int line = 0;       // 0-based
-  int character = 0;  // 0-based
+  // Name of the standalone Modelica language server executable on PATH.
+  static QString defaultServerName();
+  // Locates the Modelica language server shipped alongside OMEdit, if any.
+  static QString findBundledServer();
+
+protected:
+  QJsonObject initializationOptions(const QStringList &libraries) const override;
 };
-
-struct Range {
-  Position start;
-  Position end;
-};
-
-struct Location {
-  QString uri;
-  Range range;
-  bool isValid() const { return !uri.isEmpty(); }
-};
-
-} // namespace LSP
-
-Q_DECLARE_METATYPE(LSP::Location)

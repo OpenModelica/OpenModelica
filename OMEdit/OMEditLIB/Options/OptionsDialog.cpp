@@ -51,7 +51,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
-#include "LSP/LSPClient.h"
+#include "LSP/ModelicaLSPClient.h"
 #include "LSP/LSPSetupDialog.h"
 #include <limits>
 
@@ -3191,7 +3191,7 @@ void OptionsDialog::saveLanguageServerSettings()
 
   // When enabling, check that Node.js is present for .js-based servers
   if (enabled) {
-    QString resolved = executable.isEmpty() ? LSPClient::findBundledServer() : executable;
+    QString resolved = executable.isEmpty() ? ModelicaLSPClient::findBundledServer() : executable;
     if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
       LSPSetupDialog setupDialog(this);
       setupDialog.exec();
@@ -7063,7 +7063,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
   // Enable LSP checkbox
   mpEnableLSPCheckBox = new QCheckBox(tr("Enable Language Server"));
-  mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information, go-to-definition, and document symbols."));
+  mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
   // Enable logging checkbox
   mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
   mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
@@ -7119,7 +7119,7 @@ void LanguageServerPage::browseServerExecutable()
 void LanguageServerPage::autoDetectServerExecutable()
 {
   // Bundled server.js shipped alongside OMEdit
-  QString found = LSPClient::findBundledServer();
+  QString found = ModelicaLSPClient::findBundledServer();
   if (!found.isEmpty()) {
     mpServerExecutableTextBox->setText(found);
     if (LSPClient::findNodeExecutable().isEmpty()) {
@@ -7132,7 +7132,7 @@ void LanguageServerPage::autoDetectServerExecutable()
     return;
   }
   // Standalone binary on PATH
-  found = QStandardPaths::findExecutable(QStringLiteral("modelica-language-server"));
+  found = QStandardPaths::findExecutable(ModelicaLSPClient::defaultServerName());
   if (!found.isEmpty()) {
     mpServerExecutableTextBox->setText(found);
     return;

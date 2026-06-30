@@ -36,12 +36,9 @@
 #include "LSP/LSPClient.h"
 
 #include <QCoreApplication>
-#include <QDir>
-#include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QStandardPaths>
-#include <QUrl>
 
 /*!
  * \brief LSPClient::LSPClient
@@ -54,7 +51,6 @@ LSPClient::LSPClient(QObject *pParent)
     mInitialized(false)
 {
   qRegisterMetaType<LSP::Location>("LSP::Location");
-  qRegisterMetaType<QList<LSP::DocumentSymbol>>("QList<LSP::DocumentSymbol>");
   connect(mpProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadyRead()));
   connect(mpProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(onProcessError(QProcess::ProcessError)));
   connect(mpProcess, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProcessFinished(int,QProcess::ExitStatus)));
@@ -106,14 +102,9 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
   QJsonObject initializeParams;
   initializeParams["processId"] = static_cast<int>(QCoreApplication::applicationPid());
   initializeParams["rootUri"] = rootUri;
-  if (!libraries.isEmpty()) {
-    QJsonArray modelicaPath;
-    for (const QString &lib : libraries) {
-      modelicaPath.append(lib);
-    }
-    QJsonObject initializationOptions;
-    initializationOptions["modelicaPath"] = modelicaPath;
-    initializeParams["initializationOptions"] = initializationOptions;
+  const QJsonObject initOptions = initializationOptions(libraries);
+  if (!initOptions.isEmpty()) {
+    initializeParams["initializationOptions"] = initOptions;
   }
   QJsonObject capabilities;
   QJsonObject textDocumentCapabilities;
@@ -156,6 +147,8 @@ void LSPClient::stop()
   mpProcess->waitForFinished(2000);
   mpProcess->kill();
   mInitialized = false;
+  mPendingRequests.clear();
+  mOpenDocuments.clear();
 }
 
 bool LSPClient::isRunning() const
@@ -165,17 +158,26 @@ bool LSPClient::isRunning() const
 
 /*!
  * \brief LSPClient::openDocument
- * Sends textDocument/didOpen notification.
+ * Sends textDocument/didOpen the first time a uri is opened. Several editors can
+ * share the same file (e.g. classes stored in one package file); the document is
+ * reference counted so only the first open notifies the server.
  */
 void LSPClient::openDocument(const QString &uri, const QString &languageId, const QString &text)
 {
   if (!mInitialized) {
     return;
   }
+  DocumentState &state = mOpenDocuments[uri];
+  state.refCount++;
+  if (state.refCount > 1) {
+    return; // already open; keep the existing server-side document
+  }
+  state.version = 1;
+
   QJsonObject textDocument;
   textDocument["uri"] = uri;
   textDocument["languageId"] = languageId;
-  textDocument["version"] = 1;
+  textDocument["version"] = state.version;
   textDocument["text"] = text;
 
   QJsonObject params;
@@ -190,16 +192,23 @@ void LSPClient::openDocument(const QString &uri, const QString &languageId, cons
 
 /*!
  * \brief LSPClient::changeDocument
- * Sends textDocument/didChange notification with a full-text sync.
+ * Sends textDocument/didChange notification with a full-text sync. The document
+ * version is tracked per uri so versions stay monotonic across editors.
  */
-void LSPClient::changeDocument(const QString &uri, int version, const QString &text)
+void LSPClient::changeDocument(const QString &uri, const QString &text)
 {
   if (!mInitialized) {
     return;
   }
+  auto it = mOpenDocuments.find(uri);
+  if (it == mOpenDocuments.end()) {
+    return; // not opened on the server yet
+  }
+  it->version++;
+
   QJsonObject textDocument;
   textDocument["uri"] = uri;
-  textDocument["version"] = version;
+  textDocument["version"] = it->version;
 
   QJsonObject change;
   change["text"] = text;
@@ -217,13 +226,23 @@ void LSPClient::changeDocument(const QString &uri, int version, const QString &t
 
 /*!
  * \brief LSPClient::closeDocument
- * Sends textDocument/didClose notification.
+ * Releases one reference to a document and sends textDocument/didClose once the
+ * last editor on that uri is gone.
  */
 void LSPClient::closeDocument(const QString &uri)
 {
   if (!mInitialized) {
     return;
   }
+  auto it = mOpenDocuments.find(uri);
+  if (it == mOpenDocuments.end()) {
+    return;
+  }
+  if (--(it->refCount) > 0) {
+    return; // still open in another editor
+  }
+  mOpenDocuments.erase(it);
+
   QJsonObject params;
   params["textDocument"] = makeTextDocumentIdentifier(uri);
 
@@ -262,18 +281,6 @@ int LSPClient::requestDefinition(const QString &uri, int line, int character)
   params["textDocument"] = makeTextDocumentIdentifier(uri);
   params["position"] = makePosition(line, character);
   return sendRequest(QStringLiteral("textDocument/definition"), params);
-}
-
-/*!
- * \brief LSPClient::requestDocumentSymbols
- * Sends textDocument/documentSymbol request. Result arrives via documentSymbolsResult(id, ...) signal.
- * \return request id, or -1 if not running
- */
-int LSPClient::requestDocumentSymbols(const QString &uri)
-{
-  QJsonObject params;
-  params["textDocument"] = makeTextDocumentIdentifier(uri);
-  return sendRequest(QStringLiteral("textDocument/documentSymbol"), params);
 }
 
 /*!
@@ -335,6 +342,8 @@ void LSPClient::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
   Q_UNUSED(exitCode)
   Q_UNUSED(exitStatus)
   mInitialized = false;
+  mPendingRequests.clear();
+  mOpenDocuments.clear();
 }
 
 /*!
@@ -457,36 +466,9 @@ void LSPClient::handleResponse(int id, const QJsonValue &result)
                                                            : locObj["targetRange"].toObject();
       }
       location.uri = uri;
-      QJsonObject startObj = rangeObj["start"].toObject();
-      location.range.start.line = startObj["line"].toInt();
-      location.range.start.character = startObj["character"].toInt();
-      QJsonObject endObj = rangeObj["end"].toObject();
-      location.range.end.line = endObj["line"].toInt();
-      location.range.end.character = endObj["character"].toInt();
+      location.range = parseRange(rangeObj);
     }
     emit definitionResult(id, location);
-    return;
-  }
-
-  if (method == QStringLiteral("textDocument/documentSymbol")) {
-    QList<LSP::DocumentSymbol> symbols;
-    if (result.isArray()) {
-      for (const QJsonValue &v : result.toArray()) {
-        QJsonObject symObj = v.toObject();
-        LSP::DocumentSymbol sym;
-        sym.name = symObj["name"].toString();
-        sym.kind = symObj["kind"].toInt(5);
-        QJsonObject rangeObj = symObj["range"].toObject();
-        QJsonObject startObj = rangeObj["start"].toObject();
-        sym.range.start.line = startObj["line"].toInt();
-        sym.range.start.character = startObj["character"].toInt();
-        QJsonObject endObj = rangeObj["end"].toObject();
-        sym.range.end.line = endObj["line"].toInt();
-        sym.range.end.character = endObj["character"].toInt();
-        symbols.append(sym);
-      }
-    }
-    emit documentSymbolsResult(id, symbols);
     return;
   }
 }
@@ -514,43 +496,19 @@ QString LSPClient::findNodeExecutable()
 }
 
 /*!
- * \brief LSPClient::findBundledServer
- * Looks for the language server shipped alongside OMEdit.
- * Prefers a standalone binary (no Node.js required) over server.js.
- * Checks next to the executable first (Windows / dev builds), then the
- * installed share directory (Linux / macOS).
+ * \brief LSPClient::parseRange
+ * Parses an LSP Range object into LSP::Range.
  */
-QString LSPClient::findBundledServer()
+LSP::Range LSPClient::parseRange(const QJsonObject &rangeObj)
 {
-  QDir appDir(QCoreApplication::applicationDirPath());
-
-#ifdef Q_OS_WIN
-  const QString binaryName = QStringLiteral("languageserver/modelica-language-server.exe");
-#else
-  const QString binaryName = QStringLiteral("languageserver/modelica-language-server");
-#endif
-  const QString jsName = QStringLiteral("languageserver/server.js");
-
-  // Prefer standalone binary — no Node.js required.
-  QString candidate = appDir.filePath(binaryName);
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + binaryName));
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-
-  // Fall back to server.js (requires Node.js on PATH).
-  candidate = appDir.filePath(jsName);
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + jsName));
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-  return QString();
+  LSP::Range range;
+  const QJsonObject startObj = rangeObj["start"].toObject();
+  range.start.line = startObj["line"].toInt();
+  range.start.character = startObj["character"].toInt();
+  const QJsonObject endObj = rangeObj["end"].toObject();
+  range.end.line = endObj["line"].toInt();
+  range.end.character = endObj["character"].toInt();
+  return range;
 }
 
 QJsonObject LSPClient::makePosition(int line, int character)
