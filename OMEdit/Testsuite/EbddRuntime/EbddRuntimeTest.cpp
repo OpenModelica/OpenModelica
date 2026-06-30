@@ -256,6 +256,33 @@ void EbddRuntimeTest::parsesNullSpace()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesConvergenceDiagnostics()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq6 = new OMEquation();   eq6->index = 6;
+  equations << dummy << eq6;
+
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"convergenceDiagnostics\",\"eqIndex\":6,\"section\":\"initial\",\"time\":0,\"size\":3,\"nonlinearEquations\":1,\"nonlinearVars\":[\"x\",\"y\"]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq6->runtimeSolves.size(), 1);
+  const OMRuntimeSolve &solve = eq6->runtimeSolves.at(0);
+  QCOMPARE(solve.kind, QStringLiteral("convergenceDiagnostics"));
+  QCOMPARE(solve.nonlinearEquations, 1);
+  QCOMPARE(solve.nonlinearVars.size(), 2);
+  QCOMPARE(solve.nonlinearVars.at(0), QStringLiteral("x"));
+  QCOMPARE(solve.nonlinearVars.at(1), QStringLiteral("y"));
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();
