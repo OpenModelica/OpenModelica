@@ -267,6 +267,7 @@ struct OMEquation {
   QList<OMOperation*> ops;
   QList<int> eqs;
   int unknowns;
+  int aliasOf = -1;   // for tag=="alias": index of the original equation (#10995)
   QList<OMRuntimeSolve> runtimeSolves;   // runtime values from <model>_dbg.json
   OMEquation();
   ~OMEquation();

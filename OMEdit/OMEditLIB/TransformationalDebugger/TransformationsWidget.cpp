@@ -1269,6 +1269,63 @@ static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
   return NULL;
 }
 
+OMEquation* TransformationsWidget::resolveAliasEquation(QList<OMEquation*> &equations, OMEquation *equation)
+{
+  if (equation && equation->tag.compare(QStringLiteral("alias")) == 0 && equation->aliasOf >= 0) {
+    OMEquation *original = getOMEquation(equations, equation->aliasOf);
+    if (original) {
+      return original;
+    }
+  }
+  return equation;
+}
+
+/*!
+ * \brief TransformationsWidget::enrichAliasEquations
+ * Once all equations are parsed, copies the aliased original equation's text and
+ * defines/depends onto each alias equation so the debugger shows the full
+ * equation formula next to the alias indicator instead of just a reference, and
+ * registers the alias in the defined-in / used-in lists of the variables so that
+ * selecting a variable also lists the alias equations (e.g. the initial and
+ * initial-lambda0 ones) it is defined by (#10995). Operations and source are
+ * resolved on demand via resolveAliasEquation().
+ */
+void TransformationsWidget::enrichAliasEquations(QList<OMEquation*> &equations, QHash<QString, OMVariable> &variables)
+{
+  for (int i = 1; i < equations.size(); i++) {
+    OMEquation *eq = equations[i];
+    if (eq->tag.compare(QStringLiteral("alias")) != 0 || eq->aliasOf < 0) {
+      continue;
+    }
+    OMEquation *original = getOMEquation(equations, eq->aliasOf);
+    if (!original) {
+      continue;
+    }
+    if (eq->text.isEmpty()) {
+      eq->text = original->text;
+    }
+    // propagate defines: the alias defines the same variable(s) as its original,
+    // so register it in each variable's "defined in" list.
+    if (eq->defines.isEmpty()) {
+      foreach (const QString &vname, original->defines) {
+        eq->defines << vname;
+        if (variables.contains(vname)) {
+          variables[vname].definedIn << eq->index;
+        }
+      }
+    }
+    // likewise propagate depends so the alias appears in each variable's "used in".
+    if (eq->depends.isEmpty()) {
+      foreach (const QString &vname, original->depends) {
+        eq->depends << vname;
+        if (variables.contains(vname)) {
+          variables[vname].usedIn << eq->index;
+        }
+      }
+    }
+  }
+}
+
 /*!
  * \brief TransformationsWidget::loadTransformations
  * \param profiling - is profiling enabled
@@ -1527,10 +1584,19 @@ void TransformationsWidget::loadTransformations()
           } else {
             eq->display = eq->tag;
           }
-          // equation text
+          // equation text. For an alias equation (tag=="alias") "equation" is an
+          // integer array [aliasOf] referencing the original equation rather than
+          // text; record the target so its text/defines/depends/source can be
+          // resolved for display (#10995). Otherwise it is an array of text lines.
+          const bool isAliasEq = (eq->tag.compare(QStringLiteral("alias")) == 0);
           if (!veq["equation"].get(arr)) {
             for (simdjson::ondemand::value v : arr) {
-              if (!v.get(sv)) {
+              if (isAliasEq) {
+                int64_t aliasIdx;
+                if (!v.get(aliasIdx)) {
+                  eq->aliasOf = (int)aliasIdx;
+                }
+              } else if (!v.get(sv)) {
                 eq->text << QString::fromUtf8(sv.data(), sv.size());
               }
             }
@@ -1548,6 +1614,7 @@ void TransformationsWidget::loadTransformations()
       }
     }
 
+    enrichAliasEquations(mEquations, mVariables);
     parseProfiling(mProfilingJSONFullFileName);
     parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
@@ -1556,6 +1623,7 @@ void TransformationsWidget::loadTransformations()
     mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
     /* load equations */
+    enrichAliasEquations(mEquations, mVariables);
     parseProfiling(mProfilingJSONFullFileName);
     parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
@@ -1595,14 +1663,17 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     return;
   }
   mCurrentEquationIndex = equationIndex;
+  /* For an alias equation, show the original equation's defines/depends/operations
+   * and source so the user does not have to bounce between sections (#10995). */
+  OMEquation *displayEquation = resolveAliasEquation(mEquations, equation);
   /* fetch defines */
-  fetchDefines(equation);
+  fetchDefines(displayEquation);
   /* fetch depends */
-  fetchDepends(equation);
-  /* fetch runtime values */
+  fetchDepends(displayEquation);
+  /* fetch runtime values (keyed to the selected equation itself) */
   fetchRuntimeValues(equation);
   /* fetch operations */
-  fetchOperations(equation, (HtmlDiff)mpEquationDiffFilterComboBox->itemData(mpEquationDiffFilterComboBox->currentIndex()).toInt());
+  fetchOperations(displayEquation, (HtmlDiff)mpEquationDiffFilterComboBox->itemData(mpEquationDiffFilterComboBox->currentIndex()).toInt());
 
   /* TODO: This data is correct. Add this to some widget thingy somewhere.
    * Maybe a small one that you can click to enlarge.
@@ -1637,11 +1708,11 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
   }
 #endif
 
-  if (!equation->info.isValid) {
+  if (!displayEquation->info.isValid) {
     return;
   }
-  /* open the model with and go to the equation line */
-  QString fileName = equation->info.file;
+  /* open the model with and go to the equation line (the original's, for an alias) */
+  QString fileName = displayEquation->info.file;
   QFileInfo fileInfo(fileName);
   if (fileInfo.isRelative()) {
     // find the class
@@ -1658,7 +1729,7 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(equation->info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(displayEquation->info.lineStart);
     mpTransformationsEditor->getPlainTextEdit()->foldAll();
   }
 }

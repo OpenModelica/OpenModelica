@@ -283,6 +283,43 @@ void EbddRuntimeTest::parsesConvergenceDiagnostics()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::resolvesAliasEquations()
+{
+  // Mirrors the issue #10995 TestHomotopy case: a regular assign defines z, and
+  // an initial-lambda0 alias equation aliases it.
+  QList<OMEquation*> equations;
+  QHash<QString, OMVariable> variables;
+  OMVariable z; z.name = QStringLiteral("z"); variables.insert(QStringLiteral("z"), z);
+
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *orig = new OMEquation();
+  orig->index = 12; orig->tag = QStringLiteral("assign"); orig->defines << QStringLiteral("z");
+  orig->text << QStringLiteral("x - 3.0");
+  OMEquation *alias = new OMEquation();
+  alias->index = 9; alias->tag = QStringLiteral("alias"); alias->section = QStringLiteral("initial-lambda0");
+  alias->aliasOf = 12;
+  equations << dummy << orig << alias;
+
+  // an alias resolves to its original; a non-alias resolves to itself.
+  QCOMPARE(TransformationsWidget::resolveAliasEquation(equations, alias), orig);
+  QCOMPARE(TransformationsWidget::resolveAliasEquation(equations, orig), orig);
+
+  TransformationsWidget::enrichAliasEquations(equations, variables);
+
+  // direction 1: the alias now carries the original's text/defines and toString
+  // shows the full assignment next to the alias indicator.
+  QCOMPARE(alias->text, orig->text);
+  QCOMPARE(alias->defines, QStringList() << QStringLiteral("z"));
+  QVERIFY(alias->toString().contains(QStringLiteral("alias of equation 12")));
+  QVERIFY(alias->toString().contains(QStringLiteral("z := x - 3.0")));
+
+  // direction 2 (#10995 comment): selecting z must list the alias equation among
+  // the equations it is defined in, not just the regular one.
+  QVERIFY(variables[QStringLiteral("z")].definedIn.contains(9));
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

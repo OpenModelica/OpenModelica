@@ -239,6 +239,14 @@ public:
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
   static void parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName,
                                    QList<OMRuntimeSolve> *modelSolves = nullptr);
+  // For an alias equation (tag=="alias") returns the original equation it aliases
+  // so its text/defines/depends/operations/source can be displayed (#10995);
+  // returns the equation itself when it is not an alias or the target is missing.
+  static OMEquation* resolveAliasEquation(QList<OMEquation*> &equations, OMEquation *equation);
+  // Fills each alias equation's text/defines/depends from its aliased original and
+  // registers the alias in the variables' defined-in / used-in lists, so a variable
+  // also lists the alias equations (initial / initial-lambda0) it is defined by (#10995).
+  static void enrichAliasEquations(QList<OMEquation*> &equations, QHash<QString, OMVariable> &variables);
 private:
   QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mDebugJSONFullFileName;
   // model-level runtime records (eqIndex < 0), e.g. event-iteration discrete state

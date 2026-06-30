@@ -98,6 +98,12 @@ private slots:
    * carrying the non-linear equation count and the non-linear variables.
    */
   void parsesConvergenceDiagnostics();
+  /*!
+   * \brief resolvesAliasEquations
+   * Tests TransformationsWidget::resolveAliasEquation and the alias toString:
+   * an alias equation resolves to its original and shows the original formula.
+   */
+  void resolvesAliasEquations();
   void cleanupTestCase();
 };
 
