@@ -73,6 +73,13 @@ private slots:
    * continuation parameter lambda and the path point per variable.
    */
   void parsesHomotopy();
+  /*!
+   * \brief parsesEventIterations
+   * Tests that model-level "eventIteration" records (eqIndex < 0) are routed to
+   * the model-level list, not attached to an equation, carrying the discrete
+   * variable values.
+   */
+  void parsesEventIterations();
   void cleanupTestCase();
 };
 

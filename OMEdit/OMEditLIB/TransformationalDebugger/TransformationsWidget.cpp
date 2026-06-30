@@ -1549,7 +1549,7 @@ void TransformationsWidget::loadTransformations()
     }
 
     parseProfiling(mProfilingJSONFullFileName);
-    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName);
+    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
   } else {
     QFile file(mInfoJSONFullFileName);
@@ -1557,7 +1557,7 @@ void TransformationsWidget::loadTransformations()
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
     /* load equations */
     parseProfiling(mProfilingJSONFullFileName);
-    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName);
+    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
     hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
   }
@@ -2004,7 +2004,8 @@ void TransformationsWidget::parseProfiling(QString fileName)
  * \param equations the equations to attach runtime records to (matched by index)
  * \param fileName the <model>_dbg.json file
  */
-void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName)
+void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName,
+                                                 QList<OMRuntimeSolve> *modelSolves)
 {
   if (fileName.isEmpty()) {
     return;
@@ -2032,15 +2033,6 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
       continue;
     }
     int id = obj.value(QStringLiteral("eqIndex")).toInt(-1);
-    OMEquation *equation = getOMEquation(equations, id);
-    if (!equation) {
-      if (!index_error) {
-        index_error = true;
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-          QStringLiteral("EBDD runtime info refers to unknown equation index %1").arg(id), Helper::scriptingKind, Helper::errorLevel));
-      }
-      continue;
-    }
     OMRuntimeSolve solve;
     solve.kind = obj.value(QStringLiteral("kind")).toString();
     solve.section = obj.value(QStringLiteral("section")).toString();
@@ -2074,6 +2066,23 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
         rv.nominal = vo.value(QStringLiteral("nominal")).toDouble();
         solve.variables.append(rv);
       }
+    }
+    // route by index: model-level records (eqIndex < 0, e.g. event iterations)
+    // are not tied to a single equation.
+    if (id < 0) {
+      if (modelSolves) {
+        modelSolves->append(solve);
+      }
+      continue;
+    }
+    OMEquation *equation = getOMEquation(equations, id);
+    if (!equation) {
+      if (!index_error) {
+        index_error = true;
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+          QStringLiteral("EBDD runtime info refers to unknown equation index %1").arg(id), Helper::scriptingKind, Helper::errorLevel));
+      }
+      continue;
     }
     equation->runtimeSolves.append(solve);
   }

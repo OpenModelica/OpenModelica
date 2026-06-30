@@ -172,6 +172,37 @@ void EbddRuntimeTest::parsesHomotopy()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesEventIterations()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq6 = new OMEquation();   eq6->index = 6;
+  equations << dummy << eq6;
+
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"eventIteration\",\"eqIndex\":-1,\"time\":0.5,\"iteration\":0,\"vars\":[{\"name\":\"b\",\"value\":1},{\"name\":\"c\",\"value\":2}]}\n");
+  file.write("{\"kind\":\"eventIteration\",\"eqIndex\":-1,\"time\":0.5,\"iteration\":1,\"vars\":[{\"name\":\"b\",\"value\":1},{\"name\":\"c\",\"value\":2}]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  QList<OMRuntimeSolve> modelSolves;
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName, &modelSolves);
+
+  // model-level records land in the model list, not on any equation.
+  QCOMPARE(eq6->runtimeSolves.size(), 0);
+  QCOMPARE(modelSolves.size(), 2);
+  QCOMPARE(modelSolves.at(0).kind, QStringLiteral("eventIteration"));
+  QCOMPARE(modelSolves.at(0).iteration, 0);
+  QCOMPARE(modelSolves.at(0).variables.size(), 2);
+  QCOMPARE(modelSolves.at(0).variables.at(0).name, QStringLiteral("b"));
+  QCOMPARE(modelSolves.at(0).variables.at(1).value, 2.0);
+  QCOMPARE(modelSolves.at(1).iteration, 1);
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

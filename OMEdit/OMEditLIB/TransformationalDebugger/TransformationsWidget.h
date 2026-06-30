@@ -237,9 +237,12 @@ public:
   void fetchRuntimeValues(OMEquation *equation);
   void fetchOperations(OMEquation *equation, HtmlDiff htmlDiff);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
-  static void parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName);
+  static void parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName,
+                                   QList<OMRuntimeSolve> *modelSolves = nullptr);
 private:
   QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mDebugJSONFullFileName;
+  // model-level runtime records (eqIndex < 0), e.g. event-iteration discrete state
+  QList<OMRuntimeSolve> mRuntimeModelSolves;
   bool mProfilingEnabled = false;
   bool mCheckForProfilingFiles = false;
   int profilingNumSteps;

@@ -41,11 +41,6 @@
 #include "../../util/omc_error.h"
 #include "../simulation_info_json.h"
 
-/* For a model without nonlinear systems NONLINEAR_SYSTEM_DATA is an opaque
- * void* (see simulation_data.h), so the logger's body cannot be compiled. Guard
- * it with the same macro the typedef uses and fall back to a no-op stub. */
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-
 /* Single output file for the whole process. A model simulation executable runs
  * as its own process, so a static handle plus atexit() is enough and avoids
  * wiring an explicit lifecycle into the runtime. */
@@ -142,6 +137,54 @@ static FILE *ebddRuntimeEnsureOpen(DATA *data)
 
   return ebddFile;
 }
+
+void ebddRuntimeLogEventIteration(DATA *data, int iteration)
+{
+  FILE *f;
+  long i;
+  int first = 1;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  fprintf(f, "{\"kind\":\"eventIteration\",\"eqIndex\":-1,\"time\":");
+  ebddWriteDouble(f, data->localData[0]->timeValue);
+  fprintf(f, ",\"iteration\":%d,\"vars\":[", iteration);
+
+  /* the discrete state of the model: boolean then integer variables */
+  for (i = 0; i < data->modelData->nVariablesBoolean; ++i) {
+    if (!first) { fputc(',', f); }
+    first = 0;
+    fputs("{\"name\":\"", f);
+    ebddWriteEscaped(f, data->modelData->booleanVarsData[i].info.name);
+    fprintf(f, "\",\"value\":%d}", data->localData[0]->booleanVars[i] ? 1 : 0);
+  }
+  for (i = 0; i < data->modelData->nVariablesInteger; ++i) {
+    if (!first) { fputc(',', f); }
+    first = 0;
+    fputs("{\"name\":\"", f);
+    ebddWriteEscaped(f, data->modelData->integerVarsData[i].info.name);
+    fputs("\",\"value\":", f);
+    ebddWriteDouble(f, (double) data->localData[0]->integerVars[i]);
+    fputc('}', f);
+  }
+
+  fputs("]}\n", f);
+  fflush(f);
+}
+
+/* For a model without nonlinear systems NONLINEAR_SYSTEM_DATA is an opaque
+ * void* (see simulation_data.h), so the NLS loggers' bodies cannot be compiled.
+ * Guard them with the same macro the typedef uses and fall back to no-op stubs.
+ * The helpers above and the event-iteration logger only use DATA and are always
+ * compiled. */
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 
 static const char *ebddNlsStatusString(NLS_SOLVER_STATUS status)
 {
