@@ -47,7 +47,6 @@ public import SimCode;
 public import SimCodeVar;
 
 protected
-import Adjacency = NBAdjacency;
 import AdjacencyMatrix;
 import Array;
 import BackendVarTransform;
