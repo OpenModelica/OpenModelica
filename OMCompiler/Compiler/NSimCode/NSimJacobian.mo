@@ -170,7 +170,7 @@ public
       output String str = StringUtil.headline_3("Resizable Sparsity Pattern");
     algorithm
       str := match sparsity
-        case SPARSITY() then str + List.toString(sparsity.rows, SparsityRow.toString, "", "", "\n", "\n");
+        case SPARSITY() then str + List.toString(sparsity.rows, SparsityRow.toString, List.Style.NEWLINE) + "\n";
         else str + " -- EMPTY -- \n";
       end match;
     end toString;
