@@ -217,6 +217,25 @@ struct OMVariable {
   ~OMVariable();
 };
 
+/* One iteration variable of a runtime solve record (see OMRuntimeSolve). */
+struct OMRuntimeVariable {
+  QString name;
+  double value = 0.0;
+  double residual = 0.0;
+  double nominal = 0.0;
+};
+
+/* A single runtime solve of an equation system, exported by the runtime to
+ * <model>_dbg.json when the LOG_EBDD stream is active. */
+struct OMRuntimeSolve {
+  QString kind;       // e.g. "nonlinear"
+  QString section;    // "initial" or "regular"
+  QString status;     // "solved", "solved_less_accuracy" or "failed"
+  double time = 0.0;
+  int iterations = 0;
+  QList<OMRuntimeVariable> variables;
+};
+
 struct OMEquation {
   QString section;
   int index,profileBlock,parent,ncall = 0;
@@ -230,6 +249,7 @@ struct OMEquation {
   QList<OMOperation*> ops;
   QList<int> eqs;
   int unknowns;
+  QList<OMRuntimeSolve> runtimeSolves;   // runtime values from <model>_dbg.json
   OMEquation();
   ~OMEquation();
   QString toString() const;

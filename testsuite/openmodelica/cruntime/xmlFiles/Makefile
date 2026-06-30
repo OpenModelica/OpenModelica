@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+testEbddRuntimeInfo.mos \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \
