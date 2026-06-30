@@ -112,6 +112,7 @@ simulation/solver/mixedSystem.h \
 simulation/solver/model_help.h \
 simulation/solver/nonlinearSolverHomotopy.h \
 simulation/solver/nonlinearSolverHybrd.h \
+simulation/solver/nonlinearSolverIpopt.h \
 simulation/solver/nonlinearSystem.h \
 simulation/solver/nonlinearValuesList.h \
 simulation/solver/omc_math.h \

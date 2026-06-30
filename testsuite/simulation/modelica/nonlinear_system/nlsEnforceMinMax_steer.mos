@@ -1,0 +1,50 @@
+// name: nlsEnforceMinMax_steer
+// status: correct
+// teardown_command: rm -f SteerNls* _SteerNls* output.log
+// cflags: -d=-newInst
+//
+// Tests the -nlsEnforceMinMax flag (ticket #14104): the min/max attributes steer
+// the nonlinear solver to the feasible solution. The cubic has roots {2, 8, -3};
+// the start value 7 is in the basin of root 8, but max = 5 forbids it. Without
+// the flag the solver returns 8 (out of bounds, warning only); with the flag it
+// is steered to a feasible root (<= 5).
+
+loadString("
+model SteerNls
+  Real x(start = 7, max = 5);
+equation
+  (x - 2)*(x - 8)*(x + 3) = 0;
+end SteerNls;
+"); getErrorString();
+
+rDef := simulate(SteerNls, stopTime = 0.0);
+print("default      x = " + String(val(x, 0.0)) + "\n");
+
+rEnf := simulate(SteerNls, stopTime = 0.0, simflags = "-nlsEnforceMinMax");
+print("enforceMinMax x = " + String(val(x, 0.0)) + "\n");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SteerNls_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SteerNls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_ASSERT        | warning | [<interactive>:3:3-3:29:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((x <= 5.0)) --> \"Variable violating max constraint: x <= 5.0, has value: 8\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// default      x = 8
+//
+// record SimulationResult
+//     resultFile = "SteerNls_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SteerNls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlsEnforceMinMax'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// enforceMinMax x = -3
+//
+// endResult

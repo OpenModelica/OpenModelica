@@ -30,6 +30,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <float.h>  /* DBL_MAX */
 
 #include "../jacobian_util.h"
 #include "../../util/simulation_options.h"
@@ -42,6 +43,7 @@
 #include "kinsol_b.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "nonlinearSolverIpopt.h"
 #include "newtonIteration.h"
 #include "newton_diagnostics.h"
 #endif
@@ -1425,6 +1427,52 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /*catch */
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  /* -nlsEnforceMinMax: whatever solver path produced the solution, reject it if
+   * it violates the min/max attributes of the unknowns. The bounded Newton step
+   * keeps feasible solutions feasible; this guards against fallback solvers
+   * (Hybrd, homotopy continuation) returning an out-of-bounds solution. */
+  if (omc_flag[FLAG_NLS_ENFORCE_MIN_MAX] && nonlinsys->solved == NLS_SOLVED) {
+    int k;
+    for (k = 0; k < nonlinsys->size; k++) {
+      double xi = nonlinsys->nlsx[k];
+      double tol = 1e-6 * (1.0 + fabs(xi));
+      if ((nonlinsys->min[k] > -DBL_MAX && xi < nonlinsys->min[k] - tol) ||
+          (nonlinsys->max[k] <  DBL_MAX && xi > nonlinsys->max[k] + tol)) {
+        warningStreamPrint(OMC_LOG_NLS, 0,
+          "Nonlinear system %d: solution rejected, unknown %d = %g is outside its "
+          "[min, max] bounds [%g, %g] (-nlsEnforceMinMax).",
+          (int)nonlinsys->equationIndex, k, xi, nonlinsys->min[k], nonlinsys->max[k]);
+        nonlinsys->solved = NLS_FAILED;
+        break;
+      }
+    }
+  }
+
+  /* IPOPT solver (ticket #14104): use it directly when -initNlsIpopt is set, or
+   * as a robust fallback (-nlsIpopt) when the standard solver did not find a
+   * solution. IPOPT solves the residuals as equality constraints subject to the
+   * min/max box constraints. Per the proposal, with homotopy IPOPT is only used
+   * at lambda = 0, i.e. not during the homotopy continuation. */
+#if !defined(OMC_MINIMAL_RUNTIME)
+  {
+    int useIpoptDirect   = omc_flag[FLAG_INIT_NLS_IPOPT];
+    int useIpoptFallback = omc_flag[FLAG_NLS_IPOPT] && nonlinsys->solved != NLS_SOLVED;
+    int inContinuation   = data->simulationInfo->initial && nonlinsys->homotopySupport
+                           && data->simulationInfo->lambda > 0.0;
+    if ((useIpoptDirect || useIpoptFallback) && !inContinuation) {
+      NLS_SOLVER_STATUS ipoptStatus = solveNlsIpopt(data, threadData, nonlinsys);
+      if (ipoptStatus == NLS_SOLVED) {
+        nonlinsys->solved = NLS_SOLVED;
+      } else if (useIpoptDirect) {
+        /* -initNlsIpopt: IPOPT is the authoritative solver, so its failure is
+         * the system's failure (do not keep an out-of-bounds standard solution).
+         * In pure fallback mode (-nlsIpopt) keep the standard solver's status. */
+        nonlinsys->solved = ipoptStatus;
+      }
+    }
+  }
 #endif
 
   messageClose(OMC_LOG_NLS_EXTRAPOLATE);

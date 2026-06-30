@@ -121,6 +121,10 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NLSS_MIN_SIZE */                "nlssMinSize",
   /* FLAG_NLS_JAC_TEST_ATOL */            "nlsJacTestATol",
   /* FLAG_NLS_JAC_TEST_RTOL */            "nlsJacTestRTol",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          "nlsEnforceMinMax",
+  /* FLAG_NLS_IPOPT */                    "nlsIpopt",
+  /* FLAG_INIT_NLS_IPOPT */               "initNlsIpopt",
+  /* FLAG_NLS_SOFT_ASSERTS */             "nlsSoftAsserts",
   /* FLAG_NOEMIT */                       "noemit",
   /* FLAG_NOEQUIDISTANT_GRID */           "noEquidistantTimeGrid",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "noEquidistantOutputFrequency",
@@ -282,6 +286,10 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLSS_MIN_SIZE */                "[int (default " EXPANDSTRING(DEFAULT_FLAG_NLSS_MIN_SIZE) ")] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NLS_JAC_TEST_ATOL */            "[double] value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */            "[double] value specifies the relative tolerance for the Jacobian derivative test.",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          "enforce min/max attributes as bounds while solving nonlinear systems",
+  /* FLAG_NLS_IPOPT */                    "experimental: use the IPOPT solver as a fallback when the standard nonlinear solver fails",
+  /* FLAG_INIT_NLS_IPOPT */               "experimental: use the IPOPT solver directly to solve nonlinear systems",
+  /* FLAG_NLS_SOFT_ASSERTS */             "treat assertions during nonlinear solving as recoverable instead of aborting",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */           "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        "value controls the output frequency in noEquidistantTimeGrid mode",
@@ -582,6 +590,26 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the absolute tolerance for the Jacobian derivative test.",
   /* FLAG_NLS_JAC_TEST_RTOL */
   "  Value specifies the relative tolerance for the Jacobian derivative test.",
+  /* FLAG_NLS_ENFORCE_MIN_MAX */
+  "  Enforce the min/max attributes of the iteration variables as bounds while\n"
+  "  solving nonlinear systems. The Newton step is damped so that no unknown\n"
+  "  leaves its [min, max] interval.",
+  /* FLAG_NLS_IPOPT */
+  "  Experimental. Use the IPOPT interior-point solver as a fallback when the\n"
+  "  standard nonlinear solver fails. IPOPT solves the residuals as equality\n"
+  "  constraints subject to the min/max attributes as box constraints. Note that\n"
+  "  a nonlinear system is square (no degrees of freedom), which is outside\n"
+  "  IPOPT's intended use, so convergence depends on the IPOPT build and is not\n"
+  "  guaranteed, especially for systems with more than one unknown.",
+  /* FLAG_INIT_NLS_IPOPT */
+  "  Experimental. Use the IPOPT interior-point solver directly to solve\n"
+  "  nonlinear systems instead of the standard solver. See -nlsIpopt for the\n"
+  "  caveats on solving square systems with IPOPT.",
+  /* FLAG_NLS_SOFT_ASSERTS */
+  "  Treat an assertion that fires while evaluating a nonlinear system (e.g. a\n"
+  "  medium property called outside its valid range) as a recoverable infeasible\n"
+  "  point: the solver backs off instead of aborting, and the assertion is only\n"
+  "  enforced on the accepted solution.",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
@@ -834,6 +862,10 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_NLSS_MIN_SIZE */                FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_JAC_TEST_ATOL */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_JAC_TEST_RTOL */            FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NLS_IPOPT */                    FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_INIT_NLS_IPOPT */               FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NLS_SOFT_ASSERTS */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEMIT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_GRID */           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_REPEAT_POLICY_FORBID,
@@ -994,6 +1026,10 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NLSS_MIN_SIZE */                FLAG_TYPE_OPTION,
   /* FLAG_NLS_JAC_TEST_ATOL */            FLAG_TYPE_OPTION,
   /* FLAG_NLS_JAC_TEST_RTOL */            FLAG_TYPE_OPTION,
+  /* FLAG_NLS_ENFORCE_MIN_MAX */          FLAG_TYPE_FLAG,
+  /* FLAG_NLS_IPOPT */                    FLAG_TYPE_FLAG,
+  /* FLAG_INIT_NLS_IPOPT */               FLAG_TYPE_FLAG,
+  /* FLAG_NLS_SOFT_ASSERTS */             FLAG_TYPE_FLAG,
   /* FLAG_NOEMIT */                       FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_GRID*/            FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/        FLAG_TYPE_OPTION,
