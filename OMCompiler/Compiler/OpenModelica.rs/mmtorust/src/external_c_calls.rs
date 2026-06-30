@@ -647,6 +647,11 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
 
         m.insert("OMGraphics_graphicalRepresentationXMLFromHandle", Infallible);
         m.insert("OMGraphics_iconSVGFromHandle", Infallible);
+        m.insert("OMGraphics_placedConnectorCount", Infallible);
+        m.insert("OMGraphics_placedConnectorIconSVG", Infallible);
+        m.insert("OMGraphics_placedConnectorInfo", Infallible);
+        m.insert("OMGraphics_writeIconPNGFromHandle", Infallible);
+        m.insert("OMGraphics_writePlacedConnectorIconPNG", Infallible);
 
         m
     })
