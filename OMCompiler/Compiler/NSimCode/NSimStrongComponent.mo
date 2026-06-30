@@ -655,10 +655,13 @@ public
       (blck, index) := match comp
         local
           Tearing strict;
-          NonlinearSystem system;
+          NonlinearSystem nls;
+          LinearSystem ls;
           list<Block> eqns = {};
+          list<SimVar> simvars = {};
           list<ComponentRef> crefs = {};
           Block tmp;
+          Integer tmp_idx;
           Variable var;
           Option<SimJacobian> jacobian;
           EquationPointer eqn_ptr;
@@ -753,26 +756,52 @@ public
             end if;
           end for;
 
-          // TODO: reactivate this once nonlinear loops actually work
-          if false and isSome(strict.jac) then
+          if isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
-          system := NONLINEAR_SYSTEM(
-            index         = simCodeIndices.equationIndex,
-            blcks         = listReverse(eqns),
-            crefs         = listReverse(crefs),
-            indexSystem   = simCodeIndices.nonlinearSystemIndex,
-            size          = listLength(crefs),
-            jacobian      = Pointer.create(jacobian),
-            homotopy      = comp.homotopy,
-            mixed         = comp.mixed,
-            torn          = true
-          );
-          simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
-          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then (NONLINEAR(system, NONE()), system.index);
+
+          if comp.linear then
+            simvars := {};
+
+            for cref in crefs loop
+              simvars := UnorderedMap.getOrFail(cref, simcode_map) :: simvars;
+            end for;
+
+            ls := LINEAR_SYSTEM(
+              index       = simCodeIndices.equationIndex,
+              mixed       = comp.mixed,
+              torn        = true,
+              simvars     = simvars,
+              beqs        = {},
+              residual    = listReverse(eqns),
+              jacobian    = Pointer.create(jacobian),
+              sources     = {},
+              indexSystem = simCodeIndices.linearSystemIndex,
+              size        = listLength(crefs),
+              partOfJac   = kind == NBPartition.Kind.JAC
+            );
+            simCodeIndices.linearSystemIndex := simCodeIndices.linearSystemIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            (tmp, tmp_idx) := (LINEAR(ls, NONE()), ls.index);
+          else
+            nls := NONLINEAR_SYSTEM(
+              index         = simCodeIndices.equationIndex,
+              blcks         = listReverse(eqns),
+              crefs         = listReverse(crefs),
+              indexSystem   = simCodeIndices.nonlinearSystemIndex,
+              size          = listLength(crefs),
+              jacobian      = Pointer.create(jacobian),
+              homotopy      = comp.homotopy,
+              mixed         = comp.mixed,
+              torn          = true
+            );
+            simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            (tmp, tmp_idx) := (NONLINEAR(nls, NONE()), nls.index);
+          end if;
+        then (tmp, tmp_idx);
 
         case StrongComponent.ALIAS() algorithm
           aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
@@ -1083,7 +1112,15 @@ public
             Option<SimJacobian> opt_jacobian;
             SimJacobian jacobian;
 
-          case LINEAR() then (blck :: linearLoops, nonlinearLoops);
+          case LINEAR() algorithm
+            opt_jacobian := LinearSystem.getJacobian(blck.system);
+            if isSome(opt_jacobian) then
+              jacobian := Util.getOption(opt_jacobian);
+              jacobians := jacobian :: jacobians;
+            end if;
+            blck.system := LinearSystem.setJacobian(blck.system, opt_jacobian);
+          then (blck :: linearLoops, nonlinearLoops);
+
           case NONLINEAR() algorithm
             opt_jacobian := NonlinearSystem.getJacobian(blck.system);
             if isSome(opt_jacobian) then
@@ -1171,9 +1208,23 @@ public
           eqAttr      = EquationAttributes.convert(blck.attr)
         );
 
-        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
+        case LINEAR() then OldSimCode.SES_LINEAR(
+          LinearSystem.convert(blck.system),
+          NONE(),
+          EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */
+        );
 
-        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
+        case NONLINEAR() then OldSimCode.SES_NONLINEAR(
+          NonlinearSystem.convert(blck.system),
+          NONE(),
+          EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */
+        );
+
+        case ALGORITHM() then OldSimCode.SES_ALGORITHM(
+          blck.index,
+          ConvertDAE.convertStatements(blck.stmts),
+          EquationAttributes.convert(blck.attr)
+        );
 
         case ALIAS() guard(blck.aliasOf > 0) then OldSimCode.SES_ALIAS(blck.index, blck.aliasOf);
 
@@ -1364,17 +1415,28 @@ public
       Integer index;
       Boolean mixed;
       Boolean torn;
-      list<SimVar> vars;
+      list<SimVar> simvars;
       list<Expression> beqs; //ToDo what is this? binding expressions?
-      list<tuple<Integer, Integer, Block>> simJac; // ToDo: is this the old jacobian structure?
       /* solver linear tearing system */
       list<Block> residual;
-      Option<SimJacobian> jacobian;
+      Pointer<Option<SimJacobian>> jacobian;
       list<DAE.ElementSource> sources;
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
       Boolean partOfJac "if TRUE then this system is part of a jacobian matrix";
     end LINEAR_SYSTEM;
+
+    function getJacobian
+      input LinearSystem syst;
+      output Option<SimJacobian> jacobian = Pointer.access(syst.jacobian);
+    end getJacobian;
+
+    function setJacobian
+      input output LinearSystem syst;
+      input Option<SimJacobian> jacobian;
+    algorithm
+      Pointer.update(syst.jacobian, jacobian);
+    end setJacobian;
 
     function toString
       input LinearSystem system;
@@ -1383,30 +1445,63 @@ public
       str := "Linear System (size = " + intString(system.size) + ", jacobian = " + boolString(system.partOfJac) + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n" + Block.listToString(system.residual, str + "--");
     end toString;
 
-/* ToDo: fix this
     function convert
       input LinearSystem system;
       output OldSimCode.LinearSystem oldSystem;
     protected
       list<DAE.Exp> beqs = {};
+      list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac = {};
+      Option<SimJacobian> jacobian;
     algorithm
       for beq in system.beqs loop
         beqs := Expression.toDAE(beq) :: beqs;
       end for;
+      jacobian := Pointer.access(system.jacobian);
+      if isSome(jacobian) then
+        simJac := createOldSimJac(Util.getOption(jacobian));
+      end if;
       oldSystem := OldSimCode.LINEARSYSTEM(
         index                 = system.index,
         partOfMixed           = system.mixed,
         tornSystem            = system.torn,
-        vars                  = SimVar.convertList(system.vars),
+        vars                  = SimVar.convertList(system.simvars),
         beqs                  = listReverse(beqs),
-        indexNonLinearSystem  = system.indexSystem,
+        simJac                = simJac,
+        residual              = Block.convertList(system.residual),
+        jacobianMatrix        = Util.applyOption(jacobian, SimJacobian.convert), // ToDo update this?
+        sources               = system.sources,
+        indexLinearSystem     = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = NONE(), // ToDo update this!
-        homotopySupport       = system.homotopy,
-        clockIndex            = NONE() // ToDo update this
-        );
+        partOfJac             = system.partOfJac
+      );
     end convert;
-*/
+
+    function createOldSimJac
+      "Convert the zero-based NB sparsity pattern to the old simJac structure.
+       This is only valid together with jacobianMatrix = SOME(), as the codegen
+       uses simJac only for the nnz's but the matrix entries through the analytic Jacobian callback.
+       If it would be NONE(), then we would have to provide old style setA, i.e. elementwise matrix."
+      input SimJacobian jacobian;
+      output list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac = {};
+    protected
+      Integer col;
+      list<Integer> rows;
+      OldSimCode.SimEqSystem dummyEq;
+    algorithm
+      () := match jacobian
+        case SimJacobian.SIM_JAC() algorithm
+          dummyEq := OldSimCode.SES_RESIDUAL(0, 0, DAE.RCONST(0.0), DAE.emptyElementSource, EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)));
+          for tpl in jacobian.sparsity loop
+            (col, rows) := tpl;
+            for row in rows loop
+              simJac := (row, col, dummyEq) :: simJac;
+            end for;
+          end for;
+        then ();
+        else ();
+      end match;
+      simJac := listReverse(simJac);
+    end createOldSimJac;
   end LinearSystem;
 
   uniontype NonlinearSystem

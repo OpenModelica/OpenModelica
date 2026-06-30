@@ -4,11 +4,13 @@
 
 loadString("
 model basic_IR
-  Real x(start=1.0), y(start=2.0);
-  Real a,b;
+  Real x(start = 1.0, fixed=true);
+  Real y(start = 1.0);
+  Real a;
+  Real b;
 equation
-  der(x) = a * time;
-  der(y) = b * time;
+  der(x) = a * (1 + time);
+  der(y) = b * (1 + time);
   x = a + b;
   y = x^2;
 end basic_IR;
@@ -35,8 +37,8 @@ val(y, 1.0);
 // "
 // end SimulationResult;
 // ""
-// 1.4142135623730951
-// 1.6019073872598533
-// 2.0
-// 2.56610727735769
+// 1.0
+// 1.535560465083454
+// 1.0
+// 2.357945941927314
 // endResult

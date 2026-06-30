@@ -41,7 +41,7 @@ initFileContent := readFile("StateArrayVariable_init.tmp.xml");
 //     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"5\"/>
-//     <Real start=\"1.0 2.0 3.0 4.0 5.0\" fixed=\"false\" useNominal=\"true\" nominal=\"1.0 1.0 2.0 1.0 1.0\" />
+//     <Real start=\"1.0 2.0 3.0 4.0 5.0\" fixed=\"true\" useNominal=\"true\" nominal=\"1.0 1.0 2.0 1.0 1.0\" />
 //   </ArrayVariable>
 //   <ArrayVariable
 //     name = \"der(x)\"

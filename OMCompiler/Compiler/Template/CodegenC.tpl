@@ -2509,9 +2509,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                 functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
               ;separator="\n")
             end match)
-          let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
-            case SES_FOR_RESIDUAL(__) then "case 1"
+          let body = (ls.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
+            case SES_FOR_RESIDUAL(__) then equationForResidual(exp, iterators, varDeclsRes, auxFunction, index, res_index)
           ;separator="\n")
           let eqnbody =
           <<
@@ -2592,9 +2592,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
-         let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
-            case SES_FOR_RESIDUAL(__) then "case 3"
+         let body = (ls.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
+            case SES_FOR_RESIDUAL(__) then equationForResidual(exp, iterators, varDeclsRes, auxFunction, index, res_index)
            ;separator="\n")
          // for casual tearing set
          let &varDeclsRes2 = buffer "" /*BUFD*/
@@ -2604,9 +2604,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
-         let body2 = (at.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, i0)
-            case SES_FOR_RESIDUAL(__) then "case 4"
+         let body2 = (at.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, res_index)
+            case SES_FOR_RESIDUAL(__) then equationForResidual(exp, iterators, varDeclsRes2, auxFunction2, index, res_index)
            ;separator="\n")
        <<
        <%auxFunction%>
@@ -3158,30 +3158,7 @@ match system
         (nls.eqs |> eq2 hasindex i0 => match eq2
           case SES_RESIDUAL(__) then equationResidual(exp, varDecls, innerEqns, index, res_index)
           case SES_FOR_RESIDUAL(__) then
-            let &preExp = buffer ""
-            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-            let forPart = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
-                  let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
-                  <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
-                ;separator="\n")
-            let endForPart = (iterators |> iterator => "}")
-            let indexShift = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
-                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
-                ;separator="+")
-            let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
-              else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
-            <<
-            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
-            <%forPart%>
-            <%assignment%>
-            <%endForPart%>
-            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
-            >>
+            equationForResidual(exp, iterators, varDecls, innerEqns, index, res_index)
           case SES_GENERIC_RESIDUAL(__) then
             let &preExp = buffer ""
             let idx_len = listLength(scal_indices)
@@ -6386,6 +6363,34 @@ let assignment = (if isArrayType(typeof(exp))
   else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
 equation_withProfile(eq_index, assignment)
 end equationResidual;
+
+template equationForResidual(Exp exp, list<tuple<ComponentRef, Exp>> iterators, Text &varDecls, Text &auxFunction, Integer eq_index, Integer res_index)
+::=
+let &preExp = buffer ""
+let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+let forPart = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
+      let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction) else "1"
+      <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
+    ;separator="\n")
+let endForPart = (iterators |> iterator => "}")
+let indexShift = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
+      let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)%>-<%start%>'
+    ;separator="+")
+let assignment = (if isArrayType(typeof(exp))
+  then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
+  else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
+<<
+<% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq_index%>);' %>
+<%forPart%>
+<%assignment%>
+<%endForPart%>
+<% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq_index%>);' %>
+>>
+end equationForResidual;
 
 template equationGenericAssign(SimEqSystem eq, Context context,
                                  Text &varDecls, Text &auxFunction, String modelNamePrefix)

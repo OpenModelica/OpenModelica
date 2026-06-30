@@ -42,7 +42,7 @@ initFileContent := readFile("MatrixArrayVariable_init.tmp.xml");
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"3\"/>
 //     <Dimension start=\"2\"/>
-//     <Real start=\"0.0 0.1 1.0 1.1 2.0 2.1\" fixed=\"false\" useNominal=\"false\" />
+//     <Real start=\"0.0 0.1 1.0 1.1 2.0 2.1\" fixed=\"true\" useNominal=\"false\" />
 //   </ArrayVariable>
 // "
 // endResult

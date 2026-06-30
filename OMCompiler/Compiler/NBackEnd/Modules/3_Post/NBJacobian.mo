@@ -63,6 +63,7 @@ protected
   // Backend imports
   import Adjacency = NBAdjacency;
   import NBAdjacency.Mapping;
+  import NBAdjacency.MatrixStrictness;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
@@ -175,6 +176,7 @@ public
     input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input String name;
+    input JacobianType jacType;
     input Boolean staticAsContinuous;
     output Option<Jacobian> jacobian;
   protected
@@ -184,7 +186,7 @@ public
   algorithm
     jacobian := func(
         name                = name,
-        jacType             = JacobianType.NLS,
+        jacType             = jacType,
         seedCandidates      = seedCandidates,
         partialCandidates   = partialCandidates,
         equations           = equations,
@@ -324,6 +326,22 @@ public
                                 else "[ERR]";
     end match;
   end jacobianTypeString;
+
+  function jacobianTypeName
+    input JacobianType jacType;
+    output String str;
+  algorithm
+    str := match jacType
+      case JacobianType.ODE     then "ODE";
+      case JacobianType.DAE     then "DAE";
+      case JacobianType.LS      then "LS";
+      case JacobianType.NLS     then "NLS";
+      case JacobianType.OPT_LFG then "OPT_LFG";
+      case JacobianType.OPT_MRF then "OPT_MRF";
+      case JacobianType.OPT_R0  then "OPT_R0";
+                                else "ERR";
+    end match;
+  end jacobianTypeName;
 
   // necessary as wrapping value type for UnorderedMap
   type CrefLst = list<ComponentRef>;
@@ -1068,16 +1086,31 @@ protected
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
+    JacobianType jacType;
   algorithm
     (comp, updated) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(not canRepresentLoopJacobian(strict)) algorithm
+        // TODO: this is simply a fallback as e.g. slices currently can not be handled correctly, see doc of canRepresentLoopJacobian()
+        strict.jac := NONE();
+        if comp.linear then
+          comp.linear := false;
+        end if;
+        comp.strict := strict;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
+      then (comp, true);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
-        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
-        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        seed_candidates := listReverse(list(Slice.getT(var) for var in strict.iteration_vars));
+        residual_vars   := listReverse(list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns));
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+        jacType         := if comp.linear then JacobianType.LS else JacobianType.NLS;
 
         // update jacobian to take slices (just to have correct inner variables and such)
         strict.jac := nonlinear(
@@ -1087,7 +1120,8 @@ protected
           comps              = Array.appendList(strict.innerEquations, residual_comps),
           full               = full,
           funcMap            = funcMap,
-          name               = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          name               = Partition.Partition.kindToString(kind) + "_" + jacobianTypeName(jacType) + "_JAC_" + intString(comp.idx) + "_" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq)),
+          jacType            = jacType,
           staticAsContinuous = staticAsContinuous);
         comp.strict := strict;
 
@@ -1099,6 +1133,41 @@ protected
     end match;
   end compJacobian;
 
+  function canRepresentLoopJacobian
+    "Returns false for torn loops with array-sized variables or equations.
+     TODO: This is a temporary fallback. The current analytic loop Jacobians cannot handle array loops correctly.
+     Disable them until the generic sparsity/Jacobian implementation can preserve and represent arrays properly."
+    input Tearing tearing;
+    output Boolean b = true;
+  protected
+    StrongComponent comp;
+    Tearing strict;
+  algorithm
+    for slice in tearing.iteration_vars loop
+      if BVariable.size(Slice.getT(slice), true) > 1 then
+        b := false;
+        return;
+      end if;
+    end for;
+
+    for slice in tearing.residual_eqns loop
+      if Equation.size(Slice.getT(slice), true) > 1 then
+        b := false;
+        return;
+      end if;
+    end for;
+
+    for i in 1:arrayLength(tearing.innerEquations) loop
+      comp := tearing.innerEquations[i];
+      b := match comp
+        case StrongComponent.ALGEBRAIC_LOOP() then canRepresentLoopJacobian(comp.strict);
+        case StrongComponent.ALIAS(original = StrongComponent.ALGEBRAIC_LOOP(strict = strict)) then canRepresentLoopJacobian(strict);
+        else true;
+      end match;
+      if not b then return; end if;
+    end for;
+  end canRepresentLoopJacobian;
+
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1107,6 +1176,7 @@ protected
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
+    Pointer<Integer> lsJacIdx = Pointer.create(0);
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
     BVariable.VarData varDataJac;
@@ -1159,6 +1229,7 @@ protected
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
+    diffed_comps := list(addLinearLoopJacobian(comp, funcMap, name, jacType, staticAsContinuous, lsJacIdx) for comp in diffed_comps);
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
@@ -1201,6 +1272,50 @@ protected
       isAdjoint         = false
     ));
   end jacobianSymbolic;
+
+  function addLinearLoopJacobian
+    input output StrongComponent comp;
+    input UnorderedMap<Path, Function> funcMap;
+    input String parentName;
+    input JacobianType parentJacType;
+    input Boolean staticAsContinuous;
+    input Pointer<Integer> lsJacIdx;
+  protected
+    Tearing strict;
+    list<StrongComponent> residual_comps;
+    list<VariablePointer> seed_candidates, residual_vars;
+    String name;
+    Integer idx;
+  algorithm
+    comp := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac) and not canRepresentLoopJacobian(strict)) algorithm
+        comp.linear := false;
+      then comp;
+
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac)) algorithm
+        residual_comps := list(StrongComponent.SINGLE_COMPONENT(Equation.getResidualVar(Slice.getT(eqn)), Slice.getT(eqn), NBSolve.Status.EXPLICIT) for eqn in strict.residual_eqns);
+        seed_candidates := listReverse(Tearing.getIterationVars(strict));
+        residual_vars := listReverse(Tearing.getResidualVars(strict));
+        idx := Pointer.access(lsJacIdx);
+        Pointer.update(lsJacIdx, idx + 1);
+        name := parentName + "_" + jacobianTypeName(parentJacType) + "_LS_JAC_" + intString(idx);
+        strict.jac := nonlinear(
+          seedCandidates     = VariablePointers.fromList(seed_candidates),
+          partialCandidates  = VariablePointers.fromList(residual_vars),
+          equations          = EquationPointers.fromList(Tearing.getResidualEqns(strict)),
+          comps              = listArray(residual_comps),
+          full               = SOME(Adjacency.Matrix.EMPTY(MatrixStrictness.LINEAR)),
+          funcMap            = funcMap,
+          name               = name,
+          jacType            = JacobianType.LS,
+          staticAsContinuous = staticAsContinuous
+        );
+        comp.strict := strict;
+      then comp;
+
+      else comp;
+    end match;
+  end addLinearLoopJacobian;
 
   function sizeClassificationFromType
     input Type ty;
