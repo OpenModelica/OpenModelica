@@ -103,6 +103,25 @@ void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
                             int iteration, int size,
                             const double *jacColMajorScaled, const double *colScaling);
 
+/**
+ * @brief Append one accepted homotopy-continuation step during initialization.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. For the given lambda step
+ * emits, per system variable, its value on the path and the homotopy residual,
+ * so the lambda-vs-variable path can be reconstructed in the EBDD.
+ *
+ * @param data        Runtime data struct.
+ * @param nonlinsys   The nonlinear system being initialized by homotopy.
+ * @param step        1-based accepted-step counter.
+ * @param size        Number of system variables.
+ * @param lambda      Homotopy parameter at this step.
+ * @param y           Variable values on the path, length size.
+ * @param residual    Homotopy residual at y, length size (NULL => omitted).
+ */
+void ebddRuntimeLogHomotopyStep(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                int step, int size, double lambda,
+                                const double *y, const double *residual);
+
 #ifdef __cplusplus
 }
 #endif

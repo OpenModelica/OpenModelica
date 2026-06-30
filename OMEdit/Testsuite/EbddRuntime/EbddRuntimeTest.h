@@ -67,6 +67,12 @@ private slots:
    * dense matrix rows.
    */
   void parsesJacobian();
+  /*!
+   * \brief parsesHomotopy
+   * Tests that "homotopy" records are parsed, carrying the step index, the
+   * continuation parameter lambda and the path point per variable.
+   */
+  void parsesHomotopy();
   void cleanupTestCase();
 };
 

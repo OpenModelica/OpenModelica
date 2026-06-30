@@ -5,6 +5,7 @@ TESTFILES = \
 testEbddRuntimeInfo.mos \
 testEbddNewtonIterations.mos \
 testEbddJacobian.mos \
+testEbddHomotopy.mos \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \
