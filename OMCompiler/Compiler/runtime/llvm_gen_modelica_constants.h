@@ -42,7 +42,7 @@
 //Comment out for debug messages.
 #define DBG(...) //fprintf(stderr, __VA_ARGS__)
 
-//Specifies how many bits we have for our integers in the enviroment.
+//Specifies how many bits we have for our integers in the environment.
 //A macro (not a file-scope `const`) so this header can be included in more
 //than one translation unit without colliding at link time, and so it is
 //evaluated where modelica_integer is in scope rather than here.
