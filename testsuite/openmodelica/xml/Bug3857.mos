@@ -1865,7 +1865,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.nout\" description=\"Number of outputs\" valueReference=\"141\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Integer start=\"1\" fixed=\"true\"  />
+//       <Integer start=\"1\" fixed=\"true\" min=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"nout\"/>

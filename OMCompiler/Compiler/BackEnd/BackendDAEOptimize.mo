@@ -757,7 +757,7 @@ protected function traverseExpVisitorWrapper "help function to replaceFinalVarTr
   output DAE.Exp exp;
   output BackendVarTransform.VariableReplacements repl;
 algorithm
-  (exp,repl) := matchcontinue(inExp,inRepl)
+  (exp,repl) := match(inExp,inRepl)
     local
 
     case (exp as DAE.CREF(_,_),repl) algorithm
@@ -765,7 +765,7 @@ algorithm
     then (exp,repl);
 
     else (inExp,inRepl);
-  end matchcontinue;
+  end match;
 end traverseExpVisitorWrapper;
 
 
@@ -1068,7 +1068,9 @@ algorithm
   e := inExp;
   (ops, (se, te, i)) := inTpl;
   // BackendDump.debugStrExpStrExpStr(("Repalce ", se, " with ", te, "\n"));
-  (e1, j) := Expression.replaceExp(e, se, te);
+  // use the noEvent-aware variant: a relation inside noEvent()/smooth() is
+  // continuous and must not be substituted by an event-based variable
+  (e1, j) := Expression.replaceExpNoEvent(e, se, te);
   ops := if j>0 then DAE.SUBSTITUTION({e1}, e)::ops else ops;
   // BackendDump.debugStrExpStrExpStr(("Old ", e, " new ", e1, "\n"));
   outTpl := (ops, (se, te, i+j));
@@ -3559,13 +3561,13 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name = "change"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), -1, NONE()), true);
+      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), -1, NONE()), true);
 
     // edge(b) = b and not pre(b)
     case DAE.CALL(path=Absyn.IDENT(name = "edge"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())))), true);
+      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)))), true);
 
     else (inExp,inB);
   end matchcontinue;
@@ -3851,20 +3853,25 @@ protected function expandDerExp "
 protected
   Boolean failed = false;
 algorithm
-  (exp,vars) := matchcontinue exp
+  () := match exp
     local
-      DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       String str;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Var v;
-      BackendDAE.Shared shared;
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       algorithm
         str := ComponentReference.crefStr(cr);
         str := stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Adding 'Real d", str, " = der(", str, ");' *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
+    else ();
+  end match;
+  (exp,vars) := matchcontinue exp
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Var v;
+      BackendDAE.Shared shared;
     // case for arrays
     case e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())})
       algorithm
@@ -3884,18 +3891,15 @@ algorithm
           (vars, e1) := updateStatesVar(vars, v, e1);
         else
           failed := true;
-          fail();
         end try;
       then (e1, vars);
     case e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})
       algorithm
-        false := failed;
         (varlst, _) := BackendVariable.getVar(cr, vars);
         vars := updateStatesVars(vars, varlst, false);
       then (e1, vars);
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1})
       algorithm
-        false := failed;
         (e2, shared) := Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));
         false := Expression.isZero(e2);
         Mutable.update(inShared, shared);
@@ -4249,7 +4253,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   Integer n, size, idx = 1, m, j;
-  BackendDAE.Equation eqn, eqn1;
+  BackendDAE.Equation eqn = BackendDAE.DUMMY_EQUATION(), eqn1;
   DAE.Exp left, right, e1, e2, e, e3;
   list<DAE.Exp> left_lst, right_lst;
   list<Integer> indRemove;

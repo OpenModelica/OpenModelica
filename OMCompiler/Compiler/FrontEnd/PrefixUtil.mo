@@ -241,7 +241,7 @@ public function prefixLast "Returns the last NONPRE Prefix of a prefix"
   input DAE.Prefix inPrefix;
   output DAE.Prefix outPrefix;
 algorithm
-  outPrefix := matchcontinue inPrefix
+  outPrefix := match inPrefix
     local
       DAE.ComponentPrefix p;
       DAE.Prefix res;
@@ -254,7 +254,7 @@ algorithm
         res := prefixLast(DAE.PREFIX(p,cp));
       then
         res;
-  end matchcontinue;
+  end match;
 end prefixLast;
 
 public function prefixStripLast
@@ -478,7 +478,7 @@ public function makeCrefFromPrefixNoFail
   input DAE.Prefix pre;
   output DAE.ComponentRef cref;
 algorithm
-  cref := matchcontinue pre
+  cref := match pre
     local
       DAE.ComponentRef c;
 
@@ -499,7 +499,7 @@ algorithm
         c := prefixToCref(pre);
       then
         c;
-  end matchcontinue;
+  end match;
 end makeCrefFromPrefixNoFail;
 
 protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
@@ -1228,13 +1228,13 @@ public function makePrefixString "helper function for Mod.verifySingleMod, prett
   input DAE.Prefix pre;
   output String str;
 algorithm
-  str := matchcontinue pre
+  str := match pre
     case DAE.NOPRE() then "from top scope";
     case _
       algorithm
         str := "from calling scope: " + printPrefixStr(pre);
       then str;
-  end matchcontinue;
+  end match;
 end makePrefixString;
 
 public function prefixExpressionsInType

@@ -121,6 +121,14 @@ if(APPLE)
   set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
 
+if(MSVC)
+
+else()
+  # Enable extra compilation warnings, but disable missing-field-initializers
+  # which causes false positives for MMC_TRY_TOP.
+  target_compile_options(OMNotebook PRIVATE -Wall -Wextra -Wno-missing-field-initializers -Wsuggest-override)
+endif()
+
 if(MINGW)
   # Find windeployqt6
   find_program(WINDEPLOYQT_EXECUTABLE
@@ -137,6 +145,7 @@ if(MINGW)
         --no-system-d3d-compiler
         --no-quick-import
         --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
         \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMNotebook.exe\"
       RESULT_VARIABLE WINDEPLOYQT_RESULT
       OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT

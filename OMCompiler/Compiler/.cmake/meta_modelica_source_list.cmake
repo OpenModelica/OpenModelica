@@ -118,6 +118,7 @@ set(OMC_MM_ALWAYS_SOURCES
 # "Template";
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/DAEDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/ExpressionDumpTpl.mo
@@ -164,7 +165,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Flags.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FlagsUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSet.mo
@@ -459,6 +459,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCpp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppOMSI.mo
@@ -471,6 +472,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphMLDumpTpl.mo

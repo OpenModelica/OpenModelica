@@ -80,7 +80,8 @@ if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
   ./M
   set +x # echo off
   test -f OMCppM.cpp || { echo "Error: Expected file OMCppM.cpp not found"; exit 1; }
-  test -f M.fmu || { echo "Error: Expected file M.fmu not found"; exit 1; }
+  test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }
+  test -f M_fmi3.fmu || { echo "Error: Expected file M_fmi3.fmu (FMI 3.0) not found"; exit 1; }
 else
   set -x # echo on
   "$OMC" --linearizationDumpLanguage=matlab testSanity.mos
@@ -88,7 +89,8 @@ else
   ./M -l=1.0
   set +x # echo off
   test -f linearized_model.m || { echo "Error: Expected file linearized_model.m not found"; exit 1; }
-  test -f M.fmu || { echo "Error: Expected file M.fmu not found"; exit 1; }
+  test -f M.fmu || { echo "Error: Expected file M.fmu (FMI 2.0) not found"; exit 1; }
+  test -f M_fmi3.fmu || { echo "Error: Expected file M_fmi3.fmu (FMI 3.0) not found"; exit 1; }
 fi
 
 # Clean

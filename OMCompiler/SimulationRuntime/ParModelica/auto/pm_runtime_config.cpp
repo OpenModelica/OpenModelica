@@ -61,7 +61,7 @@ const ParmodConfig& parmod_config() {
         clusters_per_level = std::getenv("PARMOD_CLUSTERS_PER_LEVEL");
     cfg.clusters_per_level = clusters_per_level ? std::atoi(clusters_per_level) : 0;
 
-    cfg.dump_taskgraph = flag_value_or_null(FLAG_PARMOD_DUMP_TASKGRAPH);
+    cfg.export_taskgraph = flag_value_or_null(FLAG_PARMOD_EXPORT_TASKGRAPH);
     cfg.import_clustering = flag_value_or_null(FLAG_PARMOD_IMPORT_CLUSTERING);
     cfg.dump_stages = flag_value_or_null(FLAG_PARMOD_DUMP_STAGES);
 

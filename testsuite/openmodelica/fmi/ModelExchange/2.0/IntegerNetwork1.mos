@@ -10,6 +10,7 @@ loadFile("IntegerNetwork1.mo"); getErrorString();
 buildModelFMU(IntegerNetwork1, version="2.0"); getErrorString();
 
 importFMU("IntegerNetwork1.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 loadFile("IntegerNetwork1_me_FMU.mo"); getErrorString();
 simulate(IntegerNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|y5"); getErrorString();
 
@@ -30,6 +31,8 @@ val(y5, 7.5);
 // "IntegerNetwork1.fmu"
 // ""
 // "IntegerNetwork1_me_FMU.mo"
+// ""
+// true
 // ""
 // true
 // ""

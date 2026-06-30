@@ -1334,5 +1334,5 @@ template dumpOutputsJL(list<ElementItem> elements)
   '<%outputStr%>'
 end dumpOutputsJL;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end AbsynToJulia;

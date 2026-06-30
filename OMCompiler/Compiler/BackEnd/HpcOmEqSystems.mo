@@ -222,7 +222,7 @@ algorithm
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs := listLength(compsNew)-listLength(tvarIdcs);
-        compsTmp := List.replaceAtWithList(listAppend(compsNew, otherComps),compIdx-1,compsIn);
+        compsTmp := List.replaceAtWithList(listAppend(compsNew, otherComps),compIdx,compsIn);
         (ass1All,ass2All) := List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));
         syst.matching := BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
 
@@ -273,7 +273,7 @@ algorithm
         compsNew := listAppend(otherComps,compsNew);
 
         // insert the new components into the BLT, update matching for the new equations
-        compsTmp := List.replaceAtWithList(compsNew,compIdx-1,compsIn);
+        compsTmp := List.replaceAtWithList(compsNew,compIdx,compsIn);
           //print("compsTmp\n");
           //BackendDump.dumpComponents(compsTmp);
 
@@ -859,7 +859,7 @@ protected function updateIndicesInComp "author: Waurich TUD 2013-09
   input Integer eqOffset;
   output BackendDAE.StrongComponent compOut;
 algorithm
-  compOut := matchcontinue compIn
+  compOut := match compIn
     local
       Integer varIdx;
       Integer eqIdx;
@@ -876,7 +876,7 @@ algorithm
         print("updateVarEqIndices failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end updateIndicesInComp;
 
 protected function buildNewResidualEquation "author: Waurich TUD 2013-09
@@ -1282,7 +1282,7 @@ protected function varInFrontList "author: Waurich TUD 2013-08
   input list<list<BackendDAE.Var>> lstLstIn;
   output list<list<BackendDAE.Var>> lstLstOut;
 algorithm
-  lstLstOut := matchcontinue lstLstIn
+  lstLstOut := match lstLstIn
     local
       list<BackendDAE.Var> varLst;
     case {}
@@ -1295,7 +1295,7 @@ algorithm
         lstLstOut := List.replaceAt(varLst, 1, lstLstIn);
       then
         lstLstOut;
-  end matchcontinue;
+  end match;
 end varInFrontList;
 
 
@@ -1305,7 +1305,7 @@ protected function eqInFrontList "author: Waurich TUD 2013-08
   input list<list<BackendDAE.Equation>> lstLstIn;
   output list<list<BackendDAE.Equation>> lstLstOut;
 algorithm
-  lstLstOut := matchcontinue lstLstIn
+  lstLstOut := match lstLstIn
     local
       list<BackendDAE.Equation> eqLst;
     case {}
@@ -1318,7 +1318,7 @@ algorithm
         lstLstOut := List.replaceAt(eqLst, 1, lstLstIn);
       then
         lstLstOut;
-  end matchcontinue;
+  end match;
 end eqInFrontList;
 
 
@@ -1558,14 +1558,14 @@ protected function getCallExpLst "author: Waurich TUD 2015-08
   output DAE.Exp eOut;
   output list<DAE.Exp> eLstOut;
 algorithm
-  (eOut,eLstOut) := matchcontinue eIn
+  (eOut,eLstOut) := match eIn
     local
       list<DAE.Exp> expLst;
     case DAE.CALL(expLst=expLst)
       then (eIn,listAppend(expLst,eLstIn));
     else
       then (eIn,eLstIn);
-  end matchcontinue;
+  end match;
 end getCallExpLst;
 
 protected function getSummands "gets all sum-terms in the equation.

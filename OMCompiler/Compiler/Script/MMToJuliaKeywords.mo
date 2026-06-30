@@ -69,5 +69,5 @@ encapsulated package MMToJuliaKeywords
 //                                               CALL,
 //                                               CATCH,
 //                                               CONST) "List of Julia keywords";
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end MMToJuliaKeywords;

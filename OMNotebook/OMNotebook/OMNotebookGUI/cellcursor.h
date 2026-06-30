@@ -46,9 +46,8 @@
 
 //IAEX Headers
 #include "cell.h"
+#include <QPaintEvent>
 
-// forward declaration
-class QPaintEvent;
 
 namespace IAEX
 {
@@ -69,33 +68,33 @@ namespace IAEX
     Cell *currentCell();
 
     //Movment
-    bool moveUp();                  // Changed 2006-08-24 AF
-    bool moveDown();                // Changed 2006-08-24 AF
+    bool moveUp();
+    bool moveDown();
 
     void moveToFirstChild(Cell *parent);
     void moveToLastChild(Cell *parent);
     void moveBefore(Cell *current);
     void moveAfter(Cell *current);
 
-    virtual void accept(Visitor &v);
-    virtual QString text(){return QString();}
+    virtual void accept(Visitor &v) override;
+    virtual QString text() override;
 
     //Flag
-    bool isEditable();                // Added 2005-10-28 AF
-    bool isClickedOn();                // Added 2006-04-27 AF
+    bool isEditable() const override;
+    bool isClickedOn();
 
   public slots:
-    virtual void setFocus(const bool){}
+    virtual void setFocus(bool) override;
 
   signals:
     void changedPosition();
     void positionChanged(int x, int y, int xm, int ym);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);    // Added 2006-04-27 AF
+    void mousePressEvent(QMouseEvent *event) override;
 
   private:
-    void cursorIsMoved();              // Added 2006-04-27 AF
+    void cursorIsMoved();
     void removeFromCurrentPosition();
 
   private:
@@ -112,7 +111,7 @@ namespace IAEX
       virtual ~CursorWidget(){}
 
   protected:
-    void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event) override;
   };
 }
 #endif

@@ -291,7 +291,7 @@ match elt
   case SCode.CLASS(__) then classExternalHeaderJuliaWork(&buf1,&buf2,elt,pack)
 end elementExternalHeaderJulia;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end Unparsing;
 
 // vim: filetype=susan sw=2 sts=2

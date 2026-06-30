@@ -4034,7 +4034,7 @@ protected
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
 end expMaxScalar;
 
 public function expOptMaxScalar
@@ -4061,7 +4061,7 @@ protected
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS));
 end expMinScalar;
 
 public function expOptMinScalar
@@ -4777,6 +4777,48 @@ algorithm
   end match;
 end replaceExpWork;
 
+public function replaceExpNoEvent
+"Like replaceExp, but does not descend into noEvent() or smooth() calls.
+ Relations inside such operators are evaluated continuously (without state
+ events), so replacing them by an (event-based, discrete) variable would
+ change the model semantics. Replacing a whole noEvent()/smooth() expression
+ is still possible, since the equality check happens before the descent stop."
+  input DAE.Exp inExp;
+  input DAE.Exp inSourceExp;
+  input DAE.Exp inTargetExp;
+  output DAE.Exp exp;
+  output Integer i;
+algorithm
+  (exp,(_,_,i)) := traverseExpTopDown(inExp,replaceExpWorkNoEvent,(inSourceExp,inTargetExp,0));
+end replaceExpNoEvent;
+
+protected function replaceExpWorkNoEvent
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,DAE.Exp,Integer> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
+algorithm
+  (outExp,cont,otpl) := match (inExp, inTpl)
+    local
+      DAE.Exp source,target;
+      Integer c;
+    case (_, (source,target,c))
+      guard ExpressionBasics.expEqual(inExp, source)
+      then (target,false,(source,target,c+1));
+
+    // do not replace inside noEvent()/smooth(): expressions there are
+    // continuous, substituting them by an event-based variable is unsound
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
+      then (inExp,false,inTpl);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
+      then (inExp,false,inTpl);
+
+    else (inExp,true,inTpl);
+  end match;
+end replaceExpWorkNoEvent;
+
 public function expressionCollector
    input DAE.Exp exp;
    input list<DAE.Exp> acc;
@@ -5307,15 +5349,16 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
   end FuncExpType;
 protected
   DAE.Exp e1;
-  Boolean allEq=true;
   DoubleEnded.MutableList<DAE.Exp> delst;
+  list<DAE.Exp> rest = inExpl;
   Integer nEq=0;
 algorithm
-  for e in inExpl loop
-    (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
-      allEq:=false;
+  // Preserve reference equality without any allocation if nothing changed.
+  expl := inExpl;
+  while not listEmpty(rest) loop
+    (e1, ext_arg) := traverseExpBottomUp(listHead(rest), rel, ext_arg);
+    if not referenceEq(listHead(rest), e1) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(e1);
       for elt in inExpl loop
         if nEq < 1 then
@@ -5324,14 +5367,17 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, e1);
+      for e in listRest(rest) loop
+        (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
+        DoubleEnded.push_back(delst, e1);
+      end for;
+      expl := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  expl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -6789,15 +6835,16 @@ public function traverseExpListBidir<ArgT>
   end FuncType;
 protected
   DAE.Exp e1;
-  Boolean allEq=true;
   DoubleEnded.MutableList<DAE.Exp> delst;
+  list<DAE.Exp> rest = inExpl;
   Integer nEq=0;
 algorithm
-  for e in inExpl loop
-    (e1, outArg) := traverseExpBidir(e, inEnterFunc, inExitFunc, outArg);
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
-      allEq:=false;
+  // Preserve reference equality without any allocation if nothing changed.
+  outExpl := inExpl;
+  while not listEmpty(rest) loop
+    (e1, outArg) := traverseExpBidir(listHead(rest), inEnterFunc, inExitFunc, outArg);
+    if not referenceEq(listHead(rest), e1) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(e1);
       for elt in inExpl loop
         if nEq < 1 then
@@ -6806,14 +6853,17 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, e1);
+      for e in listRest(rest) loop
+        (e1, outArg) := traverseExpBidir(e, inEnterFunc, inExitFunc, outArg);
+        DoubleEnded.push_back(delst, e1);
+      end for;
+      outExpl := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  outExpl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpListBidir;
 
 public function traverseExpBidir<ArgT>
@@ -7393,12 +7443,15 @@ public function traverseExpTopDownSubs
   replaceable type Argument subtypeof Any;
 protected
   DAE.Exp exp;
-  DAE.Subscript nsub;
-  Boolean allEq=true;
+  DAE.Subscript sub, nsub;
   DoubleEnded.MutableList<DAE.Subscript> delst;
+  list<DAE.Subscript> rest = inSubscript;
   Integer nEq=0;
 algorithm
-  for sub in inSubscript loop
+  // Preserve reference equality without any allocation if nothing changed.
+  outSubscript := inSubscript;
+  while not listEmpty(rest) loop
+    sub := listHead(rest);
     nsub := match sub
       case DAE.WHOLEDIM() then sub;
       case DAE.SLICE()
@@ -7414,9 +7467,8 @@ algorithm
           (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
         then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
     end match;
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(nsub, sub) else false) then
-      allEq:=false;
+    if not referenceEq(nsub, sub) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(nsub);
       for elt in inSubscript loop
         if nEq < 1 then
@@ -7425,14 +7477,32 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, nsub);
+      for sub2 in listRest(rest) loop
+        sub := sub2;
+        nsub := match sub
+          case DAE.WHOLEDIM() then sub;
+          case DAE.SLICE()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.SLICE(exp);
+          case DAE.INDEX()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.INDEX(exp);
+          case DAE.WHOLE_NONEXP()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
+        end match;
+        DoubleEnded.push_back(delst, nsub);
+      end for;
+      outSubscript := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  outSubscript := if allEq then inSubscript else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpTopDownSubs;
 
 /***************************************************/
@@ -10004,7 +10074,7 @@ public function makeBuiltinCall
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,isImpure,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,isImpure,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
 end makeBuiltinCall;
 
 public function makePureBuiltinCall

@@ -240,7 +240,7 @@ protected
 
         else
           algorithm
-            Error.assertion(false, getInstanceName() + " got unknown equation " +
+            Error.terminate(getInstanceName() + " got unknown equation " +
                                    Equation.toString(eq) + "\n", sourceInfo());
           then
             fail();
@@ -747,7 +747,7 @@ protected
         outExpl := e :: outExpl;
         flowRange := true;
       else
-        Error.assertion(false, getInstanceName() + " got invalid intervals.", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid intervals.", sourceInfo());
       end if;
     end for;
 

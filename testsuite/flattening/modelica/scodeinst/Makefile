@@ -93,6 +93,7 @@ BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
+BuiltinAttribute27.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -384,6 +385,7 @@ DimUnknown15.mo \
 DimUnknown16.mo \
 DimUnknown17.mo \
 DimUnknown18.mo \
+DimUnknown19.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \

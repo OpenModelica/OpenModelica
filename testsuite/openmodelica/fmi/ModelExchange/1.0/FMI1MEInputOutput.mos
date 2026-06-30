@@ -1,0 +1,37 @@
+// name:     FMI1MEInputOutput
+// keywords: fmu export fmi 1.0 model exchange input output
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_info.json test_fmu_me_1_0*
+// cflags: -d=-newInst
+//
+// Regression test for #15838: exporting an FMI 1.0 Model-Exchange FMU for a
+// model with a Real input and Real output (a Modelica.Blocks gain). This is the
+// original reproducer from the issue and makes sure an FMU with causal
+// connectors builds as FMI 1.0 ME.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+loadString("
+model test_fmu_me_1_0
+  Modelica.Blocks.Interfaces.RealInput u;
+  Modelica.Blocks.Interfaces.RealOutput y;
+  Modelica.Blocks.Math.Gain gain(k = 2);
+equation
+  connect(gain.u, u);
+  connect(gain.y, y);
+  annotation(uses(Modelica(version = \"4.1.0\")));
+end test_fmu_me_1_0;
+"); getErrorString();
+
+// Export must succeed (FMU compiles).
+buildModelFMU(test_fmu_me_1_0, version="1.0", fmuType="me"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "test_fmu_me_1_0.fmu"
+// ""
+// endResult

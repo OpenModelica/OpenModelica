@@ -1775,6 +1775,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedVariableNumber;
 
 
@@ -1792,6 +1793,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedEquationNumber;
 
 public function dumpMatching
@@ -1901,7 +1903,7 @@ protected function unknowsMatchingToMathematicaGrid2
   input list<String> eqns;
   output list<String> out;
 algorithm
-out:=matchcontinue(vars,eqns)
+out:=match(vars,eqns)
   local
     String var,eqn,s;
     list<String> var_t,eqn_t,r;
@@ -1919,7 +1921,7 @@ out:=matchcontinue(vars,eqns)
         s := var+","+eqn;
         r := unknowsMatchingToMathematicaGrid2(var_t,eqn_t);
       then s::r;
-  end matchcontinue;
+  end match;
 end unknowsMatchingToMathematicaGrid2;
 
 protected function getEquationStringOrNothing
@@ -2205,7 +2207,7 @@ protected function getEquationsForUnknownsSystem
   output list<Integer> eqnsOut;
   output list<Integer> varsOut;
 algorithm
-(eqnsOut,varsOut):=matchcontinue unknowns
+(eqnsOut,varsOut):=match unknowns
   local
     ExtAdjacencyMatrix unknownsSystem;
     list<Integer> yEqMap,yVarMap,setS;
@@ -2236,7 +2238,7 @@ algorithm
         vars := yVarMap;
         setS := restoreIndicesEquivalence(List.filter1OnTrue(arrayList(ass2),intGt,-1),yEqMap);
     then (setS,vars);
-end matchcontinue;
+end match;
 end getEquationsForUnknownsSystem;
 
 protected function getEquationsForKnownsSystem
@@ -4516,5 +4518,5 @@ algorithm
   end match;
 end dumpAliasSets3;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end Uncertainties;

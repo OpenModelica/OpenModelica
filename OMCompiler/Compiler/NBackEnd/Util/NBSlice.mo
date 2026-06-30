@@ -110,16 +110,17 @@ public
   algorithm
     str := func(slice.t);
     if maxLength > 0 and not listEmpty(slice.indices) then
-      str := str + "\n\tslice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = maxLength);
+      str := str + "\n\tslice: " + List.toStringCustom(inList = slice.indices, inPrintFunc = intString, maxLength = maxLength);
     end if;
   end toString;
 
   function lstToString
     input list<Slice<T>> lst;
     input toStringT_ func;
+    input String indent = "";
     input Integer maxLength = 10;
     partial function toStringT_ = toStringT "ugly hack to make type T known to subfunction";
-    output String str = List.toString(lst, function toString(func = func, maxLength = maxLength), "", "\t", ";\n\t", ";", false);
+    output String str = List.toStringCustom(lst, function toString(func = func, maxLength = maxLength), "", indent, "\n" + indent, "", false);
   end lstToString;
 
   function isFull
@@ -496,6 +497,7 @@ public
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
         + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
+      fail();
     end if;
 
     // create unique array for each equation
@@ -562,6 +564,7 @@ public
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
         + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
+      fail();
     end if;
 
     // get row cref lst
@@ -1599,18 +1602,16 @@ protected
       UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map, true), map3);
     end for;
 
-    // if its repeated, use the same cref always
+    // if its repeated, use the same cref always; otherwise use local cref
     if repeated then
       mode := Mode.create(eqn_name, {original_cref}, false);
+    else
+      mode := Mode.create(eqn_name, {original_cref}, true);
     end if;
 
     for i in skip_idx:iter_size:skip_idx+size-iter_size loop
       shift := 0;
       for scal in scalarized loop
-        // if its not repeated use local cref
-        if not repeated then
-          mode := Mode.create(eqn_name, {original_cref}, true);
-        end if;
         for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
           if intMod(shift, iter_size) == 0 then shift := 0; end if;
           addMatrixEntry(m, modes, i + shift, scal_idx, mode);

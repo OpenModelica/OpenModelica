@@ -293,7 +293,7 @@ protected
       // translating Absyn to SCode, and redeclare isn't allowed by the syntax.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid modifier", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid modifier", sourceInfo());
         then
           fail();
 

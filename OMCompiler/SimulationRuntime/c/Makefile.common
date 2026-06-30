@@ -291,7 +291,7 @@ $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) 
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) $(FMILIB_STATIC_LIB_ONLY) -o $@ $<
 
 $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
@@ -361,6 +361,8 @@ endif
 	      ../fmi/export/openmodelica/fmu1_model_interface.h  $(builddir_inc)/c/fmi-export
 	cp -p ../fmi/export/openmodelica/fmu2_model_interface.c \
 	      ../fmi/export/openmodelica/fmu2_model_interface.h \
+	      ../fmi/export/openmodelica/fmu3_model_interface.c \
+	      ../fmi/export/openmodelica/fmu3_model_interface.h \
 	      ../fmi/export/openmodelica/fmu_read_flags.c \
 	      ../fmi/export/openmodelica/fmu_read_flags.h  $(builddir_inc)/c/fmi-export
 

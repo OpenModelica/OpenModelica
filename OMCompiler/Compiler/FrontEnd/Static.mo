@@ -2765,7 +2765,7 @@ algorithm
         Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
         pre_str := PrefixUtil.printPrefixStr(inPrefix);
         exp_str := ExpressionBasics.printExpStr(exp2);
-        expl_str := List.toString(inExpl, ExpressionBasics.printExpStr, "", "[", ",", "]", true);
+        expl_str := List.toStringCustom(inExpl, ExpressionBasics.printExpStr, "", "[", ",", "]", true);
         Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_ARRAY_EXP,
           {pre_str, exp_str, ty1_str, expl_str, ty2_str}, inInfo);
       end try;
@@ -2879,6 +2879,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Static.elabMatrixCatTwoExp failed");
+    fail();
   end try;
 end elabMatrixCatTwoExp;
 
@@ -2988,6 +2989,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Static.promoteExp failed");
+    fail();
   end try;
 end promoteExp;
 
@@ -3039,7 +3041,7 @@ algorithm
       dim1_str := ExpressionBasics.dimensionString(dim1);
       dim2_str := ExpressionBasics.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
         {pre_str, el_str, dim1_str, dim2_str}, inInfo);
     end if;
@@ -3052,7 +3054,7 @@ algorithm
       ty2_str := TypesDump.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
         {pre_str, el_str, ty1_str, ty2_str}, inInfo);
     end try;
@@ -5819,7 +5821,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
     case (cache, env, {aexp1,aexp2,_}, {}, pre)
@@ -5832,7 +5834,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
     case (cache, env, {aexp1,aexp2}, {Absyn.NAMEDARG("message", _)}, pre)
@@ -5845,7 +5847,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
   end match;
@@ -7045,7 +7047,7 @@ algorithm
 
         tp := complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
       then
-        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
+        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
     // Record constructors, user defined or implicit, try the hard stuff first
     case (cache,env,fn,args,nargs,impl,pre)
@@ -7071,7 +7073,7 @@ algorithm
         tyconst := elabConsts(outtype, const);
         prop := getProperties(outtype, tyconst);
 
-        callExp := DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        callExp := DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
 
         (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         expProps := SOME((call_exp,prop_1));
@@ -7259,6 +7261,7 @@ protected
   DAE.FunctionBuiltin isBuiltin;
   DAE.FunctionParallelism funcParal;
   Boolean tuple_,builtin,isImpure;
+  DAE.NoReturn noReturn;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
   DAE.Properties prop,prop_1;
@@ -7281,7 +7284,8 @@ algorithm
    functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(purity=purity,
                                                                          inline=inlineType,
                                                                          isFunctionPointer=isFunctionPointer,
-                                                                         functionParallelism=funcParal)),
+                                                                         functionParallelism=funcParal,
+                                                                         noReturn=noReturn)),
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typeVars, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
@@ -7305,7 +7309,7 @@ algorithm
   (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL(),noReturn));
   // ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding
@@ -8382,13 +8386,13 @@ protected function elabTypes
   input Boolean inImplicit;
   input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output list<DAE.Exp> outArgs;
-  output list<DAE.Const> outConsts;
-  output DAE.Type outResultType;
-  output DAE.Type outFunctionType;
-  output DAE.Dimensions outDimensions;
-  output list<Slot> outSlots;
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outArgs = {};
+  output list<DAE.Const> outConsts = {};
+  output DAE.Type outResultType = DAE.T_UNKNOWN_DEFAULT;
+  output DAE.Type outFunctionType = DAE.T_UNKNOWN_DEFAULT;
+  output DAE.Dimensions outDimensions = {};
+  output list<Slot> outSlots = {};
 protected
   list<DAE.FuncArg> params;
   DAE.Type res_ty, func_ty;
@@ -10236,7 +10240,7 @@ protected function lookupFunctionsInEnvNoError
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache, outTypesTypeLst) := matchcontinue inInfo
+  (outCache, outTypesTypeLst) := match inInfo
 
     case _
       algorithm
@@ -10253,7 +10257,7 @@ algorithm
         ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
       then
         fail();
-  end matchcontinue;
+  end match;
 end lookupFunctionsInEnvNoError;
 
 
@@ -10316,7 +10320,7 @@ public function fixEnumerationType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue inType
+  outType := match inType
     local
       Absyn.Path p;
       list<String> n;
@@ -10326,7 +10330,7 @@ algorithm
       then DAE.T_ENUMERATION(NONE(), p, n, v, al);
 
     else inType;
-  end matchcontinue;
+  end match;
 end fixEnumerationType;
 
 public function applySubscriptsVariability
@@ -10376,7 +10380,7 @@ protected function fillCrefSubscripts
   input DAE.Type inType;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef,inType/*,slicedExp*/)
+  outComponentRef := match (inComponentRef,inType/*,slicedExp*/)
     local
       DAE.ComponentRef e,cref_1,cref;
       DAE.Type t;
@@ -10400,7 +10404,7 @@ algorithm
         cref_1 := fillCrefSubscripts(cref, t);
       then
         ComponentReferenceBasics.makeCrefQual(id,ty2,subs,cref_1);
-  end matchcontinue;
+  end match;
 end fillCrefSubscripts;
 
 protected function stripPrefixType

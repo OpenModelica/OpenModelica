@@ -96,7 +96,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call: " +
+          Error.terminate(getInstanceName() + " got unknown call: " +
             Call.toString(call), sourceInfo());
         then
           fail();
@@ -141,6 +141,7 @@ public
       case "min" then typeMinMaxCall("min", call, next_context, info);
       case "ndims" then typeNdimsCall(call, next_context, info);
       case "noEvent" then typeNoEventCall(call, next_context, info);
+      case "nthRoot" then typeNthRootCall(call, next_context, info);
       case "ones" then typeZerosOnesCall("ones", call, next_context, info);
       case "potentialRoot" then typePotentialRootCall(call, next_context, info);
       case "pre" then typePreCall(call, next_context, info);
@@ -167,7 +168,7 @@ public
       case "zeros" then typeZerosOnesCall("zeros", call, next_context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
+          Error.terminate(getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
         then
           fail();
     end match;
@@ -189,7 +190,7 @@ public
       else
         algorithm
           Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {"size" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+            {"size" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
              "size(Any[:, ...]) => Integer[:]\n  size(Any[:, ...], Integer) => Integer"}, info);
         then
           fail();
@@ -208,7 +209,7 @@ public
     // array can take any number of arguments, but needs at least one.
     if listEmpty(posArgs) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {"array" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+        {"array" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
          "array(Any, Any, ...) => Any[:]"}, info);
       fail();
     end if;
@@ -953,7 +954,7 @@ protected
         if arg_var > Variability.PARAMETER and not (InstContext.inInstanceAPI(context) or Expression.contains(arg, Expression.isResizableCref)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
-             List.toString(fillArg :: dimensionArgs, Expression.toString,
+             List.toStringCustom(fillArg :: dimensionArgs, Expression.toString,
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 
@@ -1058,7 +1059,7 @@ protected
       args := Expression.arrayScalarElements(arg);
 
       if listLength(args) <> 1 then
-        Error.assertion(false, getInstanceName() + " failed to expand scalar(" +
+        Error.terminate(getInstanceName() + " failed to expand scalar(" +
           Expression.toString(arg) + ") correctly", info);
       end if;
 
@@ -1827,6 +1828,35 @@ protected
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
   end typeNoEventCall;
 
+  function typeNthRootCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity;
+  protected
+    Expression v, n;
+    Call c;
+  algorithm
+    c := Call.typeMatchNormalCall(call, context, info);
+    Call.TYPED_CALL(arguments = {v, n}, ty = ty, var = var, purity = purity) := c;
+    callExp := Expression.CALL(c);
+
+    if Expression.isNonPositive(n) then
+      Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+
+    if Expression.isEven(n) and Expression.isNegative(v) then
+      Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+  end typeNthRootCall;
+
   function typeGetInstanceName
     input Call call;
     input InstContext.Type context;
@@ -2229,7 +2259,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
-            {"pure", Gettext.translateContent(Error.FUNCTION_CALL_EXPRESSION)}, info);
+            {"pure", Error.FUNCTION_CALL_EXPRESSION}, info);
         then
           fail();
     end match;

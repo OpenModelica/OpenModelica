@@ -356,7 +356,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
   infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
-  infoStreamPrint(stream, 0, "%u non-zero elements", sparsePattern->numberOfNonZeros);
+  infoStreamPrint(stream, 0, "%u non-zero elements", sparsePattern->nnz);
 
   infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;
@@ -402,8 +402,8 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  if (sparsePattern->numberOfNonZeros < nlsSize) {
-    warningStreamPrint(stream, 0, "Sparsity pattern of %dx%d has ony %d non-zero elements.", nlsSize,nlsSize, sparsePattern->numberOfNonZeros);
+  if (sparsePattern->nnz < nlsSize) {
+    warningStreamPrint(stream, 0, "Sparsity pattern of %dx%d has ony %d non-zero elements.", nlsSize,nlsSize, sparsePattern->nnz);
     return FALSE;
   }
 

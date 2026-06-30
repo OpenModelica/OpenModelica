@@ -1,0 +1,172 @@
+// name:     FMI1MEfmpy
+// keywords: fmu export fmi 1.0 model exchange fmpy
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent* DirectFeedthrough*
+// cflags: -d=-newInst
+//
+// Exports a few FMI 1.0 Model-Exchange FMUs and validates them with an
+// *independent* FMI importer (FMPy): each model is simulated both by
+// OpenModelica itself and, as an exported FMU, by FMPy, and the two result
+// sets are compared with diffSimulationResults(). This exercises the exported
+// FMU through a foreign FMI 1.0 ME master (OMSimulator no longer supports FMI
+// 1.0), independent of OpenModelica's own importFMU. See #15838.
+//
+
+loadString("
+model ExpDecay
+  Real x(start=1);
+equation
+  der(x) = -x;
+end ExpDecay;
+
+model SampleCount
+  Real x(start=0);
+  Integer n(start=0);
+equation
+  der(x) = 1;
+algorithm
+  when sample(0.2, 0.2) then
+    n := pre(n) + 1;
+  end when;
+end SampleCount;
+
+model Oscillator
+  Real x(start=1);
+  Real v(start=0);
+equation
+  der(x) = v;
+  der(v) = -x;
+end Oscillator;
+
+model StateEvent
+  Real x(start=1);
+  Real y;
+  parameter Real a = 2;
+  Boolean b;
+equation
+  der(x) = -a*x + y;
+  y = sin(time);
+  b = x > 0.5;
+end StateEvent;
+
+model DirectFeedthrough
+  Real y;
+equation
+  y = 2*time;
+end DirectFeedthrough;
+"); getErrorString();
+
+// ExpDecay: a single continuous state.
+buildModelFMU(ExpDecay, version="1.0", fmuType="me"); getErrorString();
+simulate(ExpDecay, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py ExpDecay.fmu ExpDecay_fmpy.csv 1.0 x"); getErrorString();
+diffSimulationResults("ExpDecay_fmpy.csv", "ExpDecay_res.mat", "ExpDecay_diff", vars={"x"}); getErrorString();
+
+// SampleCount: a continuous state plus a time event (sample) driving a counter.
+buildModelFMU(SampleCount, version="1.0", fmuType="me"); getErrorString();
+simulate(SampleCount, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py SampleCount.fmu SampleCount_fmpy.csv 1.0 x n"); getErrorString();
+diffSimulationResults("SampleCount_fmpy.csv", "SampleCount_res.mat", "SampleCount_diff", vars={"x","n"}); getErrorString();
+
+// Oscillator: two coupled continuous states.
+buildModelFMU(Oscillator, version="1.0", fmuType="me"); getErrorString();
+simulate(Oscillator, stopTime=3.141592653589793); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py Oscillator.fmu Oscillator_fmpy.csv 3.141592653589793 x v"); getErrorString();
+diffSimulationResults("Oscillator_fmpy.csv", "Oscillator_res.mat", "Oscillator_diff", vars={"x","v"}); getErrorString();
+
+// StateEvent: a continuous state with a state event (the b = x > 0.5 crossing).
+buildModelFMU(StateEvent, version="1.0", fmuType="me"); getErrorString();
+simulate(StateEvent, stopTime=2.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py StateEvent.fmu StateEvent_fmpy.csv 2.0 x y"); getErrorString();
+diffSimulationResults("StateEvent_fmpy.csv", "StateEvent_res.mat", "StateEvent_diff", vars={"x","y"}); getErrorString();
+
+// DirectFeedthrough: a stateless algebraic output y = 2*time. With no continuous states an FMI 1.0
+// ME importer never calls fmiGetDerivatives, so the output is only correct if fmiGetReal
+// re-evaluates the model after fmiSetTime (the _need_update mechanism). Without it FMPy would read
+// y = 0 for all time. See #15838.
+buildModelFMU(DirectFeedthrough, version="1.0", fmuType="me"); getErrorString();
+simulate(DirectFeedthrough, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py DirectFeedthrough.fmu DirectFeedthrough_fmpy.csv 1.0 y"); getErrorString();
+diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat", "DirectFeedthrough_diff", vars={"y"}); getErrorString();
+// Result:
+// true
+// ""
+// "ExpDecay.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "ExpDecay_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExpDecay', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// "SampleCount.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "SampleCount_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SampleCount', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// "Oscillator.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "Oscillator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.141592653589793, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// "StateEvent.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "StateEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
+// ""
+// "DirectFeedthrough.fmu"
+// ""
+// record SimulationResult
+//     resultFile = "DirectFeedthrough_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DirectFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// (true, {})
+// ""
+// endResult

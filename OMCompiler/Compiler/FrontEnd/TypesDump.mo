@@ -394,22 +394,22 @@ algorithm
       Absyn.Path path;
 
     case DAE.T_INTEGER(varLst = vars)
-      then List.toString(vars, printVarStr, "Integer", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Integer", "(", ", ", ")", false);
 
     case DAE.T_REAL(varLst = vars)
-      then List.toString(vars, printVarStr, "Real", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Real", "(", ", ", ")", false);
 
     case DAE.T_STRING(varLst = vars)
-      then List.toString(vars, printVarStr, "String", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "String", "(", ", ", ")", false);
 
     case DAE.T_BOOL(varLst = vars)
-      then List.toString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Boolean", "(", ", ", ")", false);
 
     case DAE.T_CLOCK(varLst = vars)
-      then List.toString(vars, printVarStr, "Clock", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Clock", "(", ", ", ")", false);
 
     case DAE.T_ENUMERATION(literalVarLst = vars)
-      then List.toString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
 
     case DAE.T_SUBTYPE_BASIC(complexClassType = st, complexType = t, varLst = vars)
       algorithm
@@ -604,7 +604,7 @@ public function printParamsStr "Prints function arguments to a string."
   input list<DAE.FuncArg> inFuncArgLst;
   output String str;
 algorithm
-  str := matchcontinue inFuncArgLst
+  str := match inFuncArgLst
     local
       String n;
       DAE.Type t;
@@ -624,7 +624,7 @@ algorithm
         str := stringAppendList({n," :: ",s1, " * ",s2});
       then
        str;
-  end matchcontinue;
+  end match;
 end printParamsStr;
 
 public function unparseVarAttr "
@@ -680,12 +680,12 @@ public function connectorTypeStr
   input DAE.ConnectorType ct;
   output String str;
 algorithm
-  str := matchcontinue ct
+  str := match ct
     local    case DAE.POTENTIAL() then "";
     case DAE.FLOW() then "flow ";
     case DAE.STREAM(_) then "stream ";
     else "";
-  end matchcontinue;
+  end match;
 end connectorTypeStr;
 
 protected function unparseParam "Prints a function argument to a string."

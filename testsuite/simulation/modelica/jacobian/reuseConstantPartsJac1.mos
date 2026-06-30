@@ -18,14 +18,14 @@ buildModel(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler); getErrorString();
 system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=symbolical", "out.log"); getErrorString();
 readFile("out.log"); remove("out.log");
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
 system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=coloredSymbolical", "out.log"); getErrorString();
 readFile("out.log"); remove("out.log");
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
@@ -33,14 +33,14 @@ getErrorString();
 system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=symbolical", "out.log"); getErrorString();
 readFile("out.log"); remove("out.log");
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
 system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=coloredSymbolical", "out.log"); getErrorString();
 readFile("out.log"); remove("out.log");
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 

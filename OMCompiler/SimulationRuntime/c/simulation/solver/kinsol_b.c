@@ -362,7 +362,7 @@ static void initKinsolMemory(B_NLS_KINSOL_DATA *kinsolData) {
     if (!sparsePattern) {
       kinsolData->nnz = size*size;
     } else {
-      kinsolData->nnz = sparsePattern->numberOfNonZeros;
+      kinsolData->nnz = sparsePattern->nnz;
     }
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
     kinsolData->scaledJ = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
@@ -900,7 +900,7 @@ static int B_nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   setSundialsSparsePattern(jacobian, Jac);
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, sp->numberOfNonZeros);
+  finishSparseColPtr(Jac, sp->nnz);
 
   if (kinsolData->useScaling) {
     nlsKinsolInplaceScaleX(kinsolData, vecX);
@@ -1051,7 +1051,7 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     }
   }
   /* Finish sparse matrix */
-  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
+  finishSparseColPtr(Jac, sparsePattern->nnz);
 
   kinsolData->useScaling = stored_nominal_jac;
   if (kinsolData->useScaling) {

@@ -77,6 +77,7 @@ import ClassInf;
 import ClassLoader;
 import CodegenCFunctions;
 import CodegenMidToC;
+import CodegenWasmJitFunctions;
 import ComponentReference;
 import Config;
 import Corba;
@@ -1669,7 +1670,7 @@ algorithm
       Absyn.Path msgpath;
       Values.Value tyVal,severityVal,infoVal;
       list<Values.Value> values;
-      Gettext.TranslatableContent message;
+      String message;
       String msg_str;
       Integer id;
       ErrorTypes.Severity severity;
@@ -1677,7 +1678,7 @@ algorithm
       SourceInfo info;
     case ErrorTypes.TOTALMESSAGE(ErrorTypes.MESSAGE(id,ty,severity,message),info)
       algorithm
-        msg_str := Gettext.translateContent(message);
+        msg_str := message;
         msgpath := Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("ErrorMessage"))));
         tyVal := errorTypeToValue(ty);
         severityVal := errorLevelToValue(severity);
@@ -1838,7 +1839,11 @@ algorithm
         pathstr  := generateFunctionName(path);
         fileName := generateFunctionFileName(path);
         translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
-        compileModel(fileName, {});
+        // The wasm-jit target produces a WebAssembly module that is JIT-compiled
+        // in-process; there is no C source to compile into a shared object.
+        if Config.simCodeTarget() <> "wasm-jit" then
+          compileModel(fileName, {});
+        end if;
       then
         (cache, pathstr, fileName);
     // Cheat if we want to generate code for Main.main
@@ -2334,13 +2339,18 @@ algorithm
         // now is safe to generate code
         (cache, funcstr, fileName) := cevalGenerateFunction(cache, env, p, funcpath);
         print_debug := Flags.isSet(Flags.DYN_LOAD);
-        libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
-        funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         execStatReset();
-        newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        if Config.simCodeTarget() == "wasm-jit" then
+          // JIT and run the generated WebAssembly module in-process; no shared
+          // object to load or free.
+          newval := CodegenWasmJitFunctions.loadAndExecute(fileName, funcstr, vallst);
+        else
+          libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
+          funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+          newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+          System.freeLibrary(libHandle, print_debug);
+        end if;
         execStat("executeFunction("+AbsynUtil.pathString(funcpath)+")");
-
-        System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
         Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=info) := ProgramUtil.getPathedClassInProgram(funcpath, p);
 
@@ -2903,7 +2913,9 @@ algorithm
         makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode := SimCodeFunction.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
 
-        if Config.simCodeTarget() == "MidC" then
+        if Config.simCodeTarget() == "wasm-jit" then
+          CodegenWasmJitFunctions.translateFunctions(fnCode);
+        elseif Config.simCodeTarget() == "MidC" then
           Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
           midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
@@ -3001,14 +3013,6 @@ algorithm
 
   end match;
 end removeThreadDataFunction;
-
-
-
-
-
-
-
-
 
 protected function unZipEncryptedPackageAndCheckFile
   input String inWorkdir;
@@ -3385,7 +3389,7 @@ function generateSeparateCode
   input FCore.Cache cache;
   input FCore.Graph env;
   output Values.Value res;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = cache;
 protected
   Values.Value v;
   Boolean b;

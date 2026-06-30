@@ -252,10 +252,9 @@ namespace IAEX
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -292,12 +291,7 @@ namespace IAEX
    * the document to insert images to the output part if ploting.
    */
   InputCell::InputCell(Document *doc, QWidget *parent)
-    : Cell(parent),
-    evaluated_(false),
-    closed_(true),
-    delegate_(0),
-    oldHeight_( 0 ),
-    document_(doc)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -315,17 +309,6 @@ namespace IAEX
     createOutputCell();
 
     //setBackgroundColor(QColor(200,200,255));
-  }
-
-  /*!
-   * \author Ingemar Axelsson and Anders Fernström
-   *
-   * \brief The class destructor
-   */
-  InputCell::~InputCell()
-  {
-    delete input_;
-    delete output_;
   }
 
   /*!
@@ -900,7 +883,7 @@ namespace IAEX
    *
    * 2006-03-02 AF, clear text selection in chapter counter
    */
-  void InputCell::setReadOnly(const bool readonly)
+  void InputCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -929,7 +912,7 @@ namespace IAEX
    *
    * \param evaluated The boolean value of evaluated property
    */
-  void InputCell::setEvaluated(const bool evaluated)
+  void InputCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -945,14 +928,15 @@ namespace IAEX
    * calculate the new height, to reflect the changes made when
    * porting from Q3TextEdit to QTextEdit.
    */
-  void InputCell::setClosed(const bool closed, bool update)
+  void InputCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
-      output_->hide();
-    else
     {
-      if( evaluated_ )
-        output_->show();
+      output_->hide();
+    }
+    else if( evaluated_ )
+    {
+      output_->show();
     }
 
     closed_ = closed;
@@ -962,7 +946,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson and Anders Fernström
    */
-  void InputCell::setFocus(const bool focus)
+  void InputCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -971,7 +955,7 @@ namespace IAEX
   /*!
    * \author Anders Fernström
    */
-  void InputCell::setFocusOutput(const bool focus)
+  void InputCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -1045,7 +1029,7 @@ namespace IAEX
    *
    * \return State of inputcell (closed or not)
    */
-  bool InputCell::isClosed()
+  bool InputCell::isClosed() const
   {
     return closed_;
   }
@@ -1061,7 +1045,7 @@ namespace IAEX
    *
    * \return False
    */
-  bool InputCell::isEditable()
+  bool InputCell::isEditable() const
   {
     return false;
   }
@@ -1351,6 +1335,9 @@ namespace IAEX
 
     if(hasNext())
       next()->accept(v);
+  }
+
+  void InputCell::viewExpression(bool) {
   }
 
 }

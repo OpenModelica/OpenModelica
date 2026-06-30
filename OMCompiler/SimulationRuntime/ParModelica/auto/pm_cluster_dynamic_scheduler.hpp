@@ -145,7 +145,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
 
         /*! Optionally export the fine-grained task graph (before clustering). */
         nlohmann::json graph_dump;
-        if (cfg.dump_taskgraph)
+        if (cfg.export_taskgraph)
             collect_task_graph_json(task_system, graph_dump);
 
         /*! Optionally export a before/after snapshot of the clustering for each
@@ -184,9 +184,9 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
         task_system.update_node_levels();
 
         /*! Optionally export the resulting clustering alongside the task graph. */
-        if (cfg.dump_taskgraph) {
+        if (cfg.export_taskgraph) {
             collect_clusters_json(task_system, graph_dump);
-            write_json_file(cfg.dump_taskgraph, graph_dump);
+            write_json_file(cfg.export_taskgraph, graph_dump);
         }
 
         construct_flow_graph();

@@ -38,7 +38,6 @@
 
 // QT Headers
 #include <QtGlobal>
-#include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QTextCodec>
@@ -53,6 +52,9 @@
 #include "commandcenter.h"
 #include "documentview.h"
 #include "xmlnodename.h"
+
+#include <vector>
+#include <memory>
 
 extern "C" {
 #include "meta/meta_modelica.h"
@@ -70,38 +72,35 @@ namespace IAEX
     CellApplication(int &argc, char *argv[], threadData_t *threadData);
     virtual ~CellApplication();
 
-    virtual CommandCenter *commandCenter();
-    virtual void setCommandCenter(CommandCenter *c);
+    virtual CommandCenter& commandCenter() override;
 
-    virtual void addToPasteboard(Cell *c);
-    virtual void clearPasteboard();
-    std::vector<Cell *> pasteboard();
+    virtual void addToPasteboard(Cell *c) override;
+    virtual void clearPasteboard() override;
+    std::vector<Cell *> pasteboard() override;
 
     int exec();
-    void add(Document *doc);
     void add(DocumentView *view);
 
-    void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0);
-    void removeTempFiles(QString filename);      // Added 2006-01-16 AF
-    std::vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
-    void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
+    void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0) override;
+    void removeTempFiles(QString filename) override;
+    std::vector<DocumentView *> documentViewList() override;
+    void removeDocumentView( DocumentView *view ) override;
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
     bool FileOpenEventTriggered = false;  // for startup only
 
   private:
-    void convertDrModelica();            // Added 2006-03-21 AF
+    void convertDrModelica();
     QTranslator translator;
     QTranslator qtTranslator;
 
   private:
     QApplication *app_;
     QWidget* mainWindow;
-    std::vector<Document *> documents_;
-    std::vector<DocumentView *> views_;
-    CommandCenter *cmdCenter_;
+    std::vector<DocumentView*> views_;
+    std::unique_ptr<CommandCenter> cmdCenter_;
     std::vector<Cell *> pasteboard_;
-    QStringList removeList_;    // Added 2006-01-16 AF
+    QStringList removeList_;
   };
 }
 

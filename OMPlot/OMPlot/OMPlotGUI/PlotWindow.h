@@ -220,7 +220,7 @@ public:
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event) override;
   void setTime(double time) {mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();

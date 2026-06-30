@@ -1,0 +1,32 @@
+// name: fmi3_fmustate.mos
+// keywords: FMI 3.0 export FMUState serialization
+// status: correct
+// teardown_command: rm -rf Mst.fmu Mst.fmutmp/ Mst_md.xml Mst.log Mst_info.json index.html
+//
+// FMI 3.0 FMU state: the runtime implements fmi3GetFMUState / fmi3SetFMUState /
+// fmi3FreeFMUState and fmi3SerializedFMUStateSize / fmi3SerializeFMUState /
+// fmi3DeserializeFMUState (snapshotting time + the variable arrays). The
+// ModelExchange element therefore advertises canGetAndSetFMUState="true" and
+// canSerializeFMUState="true". (The get/set/serialize round-trip is exercised
+// at runtime via the FMI 3.0 C API.)
+
+loadString("model Mst Real x(start = 1.0); equation der(x) = -x; end Mst;"); getErrorString();
+
+buildModelFMU(Mst, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq Mst.fmu modelDescription.xml > Mst_md.xml"); getErrorString();
+system("grep -E 'canGetAndSetFMUState|canSerializeFMUState' Mst_md.xml | sed 's/^ *//'"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Mst.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// canGetAndSetFMUState="true"
+// canSerializeFMUState="true"
+// 0
+// ""
+// endResult

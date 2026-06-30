@@ -46,18 +46,15 @@ namespace IAEX
    {
    public:
       CellCommandCenter(CellApplication *a);
-      virtual ~CellCommandCenter();
+      virtual ~CellCommandCenter() {};
 
-      virtual void executeCommand(Command *cmd);
-      virtual CellApplication *application();
+      virtual void executeCommand(std::unique_ptr<Command> cmd) override;
+      virtual CellApplication *application() override;
 
-      virtual void setApplication(CellApplication *app);
+      virtual void setApplication(CellApplication *app) override;
 
    private:
-      void storeCommands();
-
       CellApplication *app_;
-      std::vector<Command *> storage_;
    };
 }
 

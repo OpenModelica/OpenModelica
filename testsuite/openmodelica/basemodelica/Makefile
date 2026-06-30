@@ -26,6 +26,9 @@ TESTFILES = \
 	FlowAlias7.mos \
 	FlowAlias8.mos \
 	FlowAlias9.mos \
+	FlowAlias10.mos \
+	FlowAlias11.mos \
+	FlowAlias12.mos \
 	Functional1.mo \
 	If1.mo \
 	If2.mo \

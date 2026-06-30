@@ -56,7 +56,7 @@ int mmc_hasStacktraceMessages(threadData_t *threadData)
   return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
 }
 
-#if defined(__linux__) || defined(__APPLE_CC__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -176,7 +176,8 @@ static void handler(int signo, siginfo_t *si, void *ptr)
   sigaction(SIGSEGV, &default_segv_action, 0);
 }
 
-#if defined(__APPLE_CC__)
+#if defined(__APPLE__)
+#include <AvailabilityMacros.h>
 #include <sys/sysctl.h>
 #endif
 
@@ -188,7 +189,7 @@ static void* getStackBase(void) {
    */
   void* stackBottom;
   pthread_t self = pthread_self();
-#if !defined(__APPLE_CC__)
+#if !defined(__APPLE__)
   size_t size = 0;
   pthread_attr_t sattr;
   pthread_attr_init(&sattr);
@@ -215,15 +216,18 @@ static void* getStackBase(void) {
   void* stack_addr = pthread_get_stackaddr_np(self);
   size_t size = pthread_get_stacksize_np(self);
   stackBottom = (void*) (((long)stack_addr) - size);
+  /* This workaround is only built if compiling for/on legacy OS X 10.9 (Mavericks) or older */
+#if defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED <= 1090
   if (pthread_main_np()) {
     char str[256];
-    size_t size = sizeof(str);
-    int ret = sysctlbyname("kern.osrelease", str, &size, NULL, 0);
+    size_t size_str = sizeof(str);
+    int ret = sysctlbyname("kern.osrelease", str, &size_str, NULL, 0);
     if (0==ret && str[0]=='1' && str[1]=='3' && str[2]=='.') {
       /* OSX Mavericks returns a wrong stack size... Assume default 8MB */
       stackBottom = (void*) (((long)stack_addr) - 8 * 1024 * 1024);
     }
   }
+#endif
 #endif
   assert(size > 128*1024);
   return (char*)stackBottom + 64*1024;

@@ -99,12 +99,16 @@ encapsulated package List
   (element, extra arg 1, extra arg 2, fold arg) -> fold arg
 "
 
+public
+  // these styles can be used with List.toString() to get predefined behaviour. Use List.toStringCustom for full control.
+  type Style = enumeration(NONE, FLAT, FLAT_BRACKETS, FLAT_CURLY, FLAT_CURLY_SHORT, NEWLINE, NEWLINE_INDENT, NEWLINE_TAB);
+
 protected
-import Array;
-import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
-import MetaModelica.Dangerous;
-import DoubleEnded;
-import GCExt;
+  import Array;
+  import DoubleEnded;
+  import GCExt;
+  import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+  import MetaModelica.Dangerous;
 
 public function create<T>
   "Creates a list from an element."
@@ -4592,8 +4596,8 @@ end replaceAtIndexFirst;
 public function replaceAtWithList<T>
   "Takes an list, a position and a list, and replaces the element at the given
   position with the first list in the second list. Position is an integer
-  between 0 and n - 1 for a list of n elements.
-     Example: replaceAt({'A', 'B'}, 1, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
+  between 1 and n for a list of n elements.
+     Example: replaceAt({'A', 'B'}, 2, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
   input list<T> inReplacementList;
   input Integer inPosition;
   input list<T> inList;
@@ -4602,10 +4606,10 @@ protected
   T e;
   list<T> rest = inList;
 algorithm
-  true := inPosition >= 0;
+  true := inPosition > 0;
 
   // Shuffle elements from inList to outList until the position is reached.
-  for i in 0:inPosition-1 loop
+  for i in 1:inPosition-1 loop
     e :: rest := rest;
     outList := e :: outList;
   end for;
@@ -4616,7 +4620,34 @@ algorithm
   outList := append_reverse(outList, rest);
 end replaceAtWithList;
 
+
 public function toString<T>
+  input list<T> inList;
+  input FuncType inPrintFunc;
+  input Style style = Style.FLAT_CURLY;
+  output String s;
+
+  partial function FuncType
+    input T t;
+    output String s;
+  end FuncType;
+algorithm
+  s := match style
+    case Style.NONE              then toStringCustom(inList, inPrintFunc, "", "", "", "", true, 0);
+    case Style.FLAT              then toStringCustom(inList, inPrintFunc, "", "", ", ", "", true, 0);
+    case Style.FLAT_BRACKETS     then toStringCustom(inList, inPrintFunc, "", "(", ", ", ")", true, 0);
+    case Style.FLAT_CURLY        then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 0);
+    case Style.FLAT_CURLY_SHORT  then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 10);
+    case Style.NEWLINE           then toStringCustom(inList, inPrintFunc, "", "", "\n", "", true, 0);
+    case Style.NEWLINE_INDENT    then toStringCustom(inList, inPrintFunc, "", "  ", "\n  ", "", true, 0);
+    case Style.NEWLINE_TAB       then toStringCustom(inList, inPrintFunc, "", "\t", "\n\t", "", true, 0);
+    else algorithm
+      print(getInstanceName() + " failed because of unknown list style.\n");
+    then fail();
+  end match;
+end toString;
+
+public function toStringCustom<T>
   "Creates a string from a list and a function that maps a list element to a
    string. It also takes several parameters that determine the formatting of
    the string. Ex:
@@ -4634,8 +4665,8 @@ public function toString<T>
   output String outString;
 
   partial function FuncType
-    input T inElement;
-    output String outString;
+    input T t;
+    output String s;
   end FuncType;
 protected
   list<T> lst = inList;
@@ -4667,7 +4698,7 @@ algorithm
         str;
 
   end match;
-end toString;
+end toStringCustom;
 
 public function hasOneElement<T>
   "@author:adrpo

@@ -504,7 +504,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
       then
         ();
 
@@ -567,7 +567,7 @@ algorithm
 
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+              Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
             then
               fail();
         end match;
@@ -583,7 +583,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
       then
         fail();
 
@@ -909,7 +909,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-record binding " +
+        Error.terminate(getInstanceName() + " got non-record binding " +
           Expression.toString(binding_exp), sourceInfo());
       then
         fail();
@@ -1597,7 +1597,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding.", sourceInfo());
       then
         fail();
 
@@ -2431,7 +2431,7 @@ function resolveConnections
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, ec_eql, tlio_eql;
+  list<Equation> conn_eql, stream_eql, ec_eql, tlio_eql;
   list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
@@ -2441,6 +2441,8 @@ protected
   UnorderedMap<ComponentRef, Variable> vars;
   UnorderedSet<ComponentRef> connectedLocalIOs;
   Integer exposeLocalIOs;
+  StreamFlowAlias.Replacements flow_alias_repl;
+  Option<StreamFlowAlias.Replacements> flow_alias_repl_opt = NONE();
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2491,8 +2493,13 @@ algorithm
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
+  // do flow alias elimination if it's enabled
   if not listEmpty(unhandled_stream_sets) then
-    flatModel := StreamFlowAlias.eliminateAliases(flatModel);
+    (flatModel, flow_alias_repl) := StreamFlowAlias.eliminateAliases(flatModel, vars);
+    conn_eql := ConnectEquations.generateStreamEquationsList(unhandled_stream_sets, vars, flow_alias_repl);
+    conn_eql := StreamFlowAlias.applyReplacementsInEql(flow_alias_repl, conn_eql);
+    flatModel.equations := listAppend(conn_eql, flatModel.equations);
+    flow_alias_repl_opt := SOME(flow_alias_repl);
   end if;
 
   // add top-level IOs for unconnected local IOs
@@ -2505,7 +2512,17 @@ algorithm
 
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then
-    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable, flow_alias_repl_opt);
+  end if;
+
+  // FMI 3.0 flange causalization: expose unconnected acausal connectors as a
+  // causal FMU boundary (flow -> input, potential -> output) so the FMU can be
+  // reconnected into a physical circuit (issue #15686). Restricted to the old
+  // backend: the new backend's initialization (NBResolveSingularities) cannot yet
+  // balance the model once the zero-flow equations are replaced by boundary inputs.
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0")
+     and not settings.newBackend then
+    flatModel := causalizeAcausalConnectors(flatModel);
   end if;
 
   execStat(getInstanceName());
@@ -2561,16 +2578,96 @@ algorithm
   end for;
 end generateTopLevelIOs;
 
+function causalizeAcausalConnectors
+  "FMI 3.0 flange causalization (issue #15686). Turn the model's unconnected
+   acausal (physical) connectors into a causal FMU boundary so the exported FMU can
+   be reconnected into a Modelica physical circuit. An unconnected flow variable
+   normally gets a `flow = 0` equation; instead expose the flow as an input and the
+   connector's potential variable(s) as outputs (the convention Dymola uses for
+   FMI terminal export) and drop the zero-flow equation. The backend then
+   causalizes the model in the natural 'component driven by its boundary flows'
+   form. Only triggered for FMI 3.0 export."
+  input output FlatModel flatModel;
+protected
+  list<ComponentRef> flowCrefs;
+  list<ComponentRef> unconnectedFlows = {};
+  list<ComponentRef> boundaryConnectors = {};
+  list<Equation> kept = {};
+  Boolean isZeroFlowEq;
+  ComponentRef fc;
+algorithm
+  // crefs of all flow connector members (to tell a generated zero-flow equation
+  // apart from a genuine `x = 0` model equation)
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
+  if listEmpty(flowCrefs) then return; end if;
+
+  // collect and drop the `flow = 0` equations of unconnected flows.
+  // Only the exported model's OWN top-level connectors form the FMU boundary, so
+  // restrict to flows whose connector is a direct child of the model root
+  // (ComponentRef.rest(fc) is simple, e.g. flange_a.tau -> flange_a). Internal
+  // unconnected sub-connector flows (e.g. cylinder.fixed.flange.f) legitimately
+  // keep their `flow = 0` equation; causalizing them would drop equations the
+  // model needs and leave it under-determined (issue #15686).
+  for eq in flatModel.equations loop
+    isZeroFlowEq := false;
+    () := match eq
+      local Real rv;
+      case Equation.EQUALITY(lhs = Expression.CREF(cref = fc), rhs = Expression.REAL(value = rv))
+        guard rv == 0.0 and List.isMemberOnTrue(fc, flowCrefs, ComponentRef.isEqual)
+              and ComponentRef.isSimple(ComponentRef.rest(fc))
+        algorithm
+          unconnectedFlows := fc :: unconnectedFlows;
+          boundaryConnectors := ComponentRef.rest(fc) :: boundaryConnectors;
+          isZeroFlowEq := true;
+        then ();
+      else ();
+    end match;
+    if not isZeroFlowEq then
+      kept := eq :: kept;
+    end if;
+  end for;
+
+  if listEmpty(unconnectedFlows) then
+    return;
+  end if;
+
+  flatModel.equations := listReverseInPlace(kept);
+  flatModel.variables := list(causalizeAcausalVar(v, unconnectedFlows, boundaryConnectors)
+                              for v in flatModel.variables);
+end causalizeAcausalConnectors;
+
+function causalizeAcausalVar
+  "Reclassify a boundary connector member: an unconnected flow becomes an input,
+   a potential of such a connector becomes an output."
+  input output Variable var;
+  input list<ComponentRef> unconnectedFlows;
+  input list<ComponentRef> boundaryConnectors;
+protected
+  Attributes attr;
+algorithm
+  if Variable.isFlow(var) and List.isMemberOnTrue(var.name, unconnectedFlows, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.INPUT;
+    var.attributes := attr;
+  elseif Variable.isPotential(var) and
+         List.isMemberOnTrue(ComponentRef.rest(var.name), boundaryConnectors, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.OUTPUT;
+    var.attributes := attr;
+  end if;
+end causalizeAcausalVar;
+
 function evaluateConnectionOperators
   input output FlatModel flatModel;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable) for c in flatModel.variables);
-  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable);
-  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable);
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable, replacements);
   // TODO: Implement evaluation for algorithm sections.
 end evaluateConnectionOperators;
 
@@ -2580,6 +2677,7 @@ function evaluateBindingConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 protected
   Expression exp, eval_exp;
 algorithm
@@ -2588,7 +2686,7 @@ algorithm
       guard Binding.hasExp(var.binding)
       algorithm
         exp := Binding.getExp(var.binding);
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
 
         if not referenceEq(exp, eval_exp) then
           var.binding := Binding.setExp(eval_exp, var.binding);
@@ -2606,8 +2704,9 @@ function evaluateEquationsConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable) for eq in equations);
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable, replacements) for eq in equations);
 end evaluateEquationsConnOp;
 
 function evaluateEquationConnOp
@@ -2616,10 +2715,11 @@ function evaluateEquationConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
   eq := Equation.mapExp(eq,
     function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
-      variables = variables, ctable = ctable));
+      variables = variables, ctable = ctable, replacements = replacements));
 
   () := match eq
     case Equation.IF()

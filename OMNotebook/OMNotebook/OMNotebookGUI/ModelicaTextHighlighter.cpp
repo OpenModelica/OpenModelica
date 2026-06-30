@@ -37,8 +37,9 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-//QT Headers
+// Qt headers
 #include <QtCore/QFile>
+#include <QtCore/QRegularExpression>
 #include <QtGui/QTextBlock>
 #include <QtGui/QTextDocument>
 #include <QtGui/QTextLayout>
@@ -50,199 +51,191 @@
 
 namespace IAEX
 {
-  ModelicaTextHighlighter::ModelicaTextHighlighter(QTextDocument *pTextDocument)
-    : QSyntaxHighlighter(pTextDocument)
-  {
-    initializeSettings();
-  }
 
-  //! Initialized the syntax highlighter with default values.
-  void ModelicaTextHighlighter::initializeSettings()
-  {
+enum BlockState
+{
+  DefaultState,
+  SingleLineComment,
+  MultiLineComment,
+  QuotedString
+};
+
+//  ModelicaTextHighlighter implementation
+ModelicaTextHighlighter::ModelicaTextHighlighter(QTextDocument *pTextDocument)
+    : QSyntaxHighlighter(pTextDocument)
+{
+    initializeSettings();
+}
+
+//  Highlighting rule container – stores a QRegularExpression
+struct HighlightingRule
+{
+    QRegularExpression mPattern;
+    QTextCharFormat   mFormat;
+};
+
+//  Initialise default colours and regular‑expression based rules
+void ModelicaTextHighlighter::initializeSettings()
+{
     mHighlightingRules.clear();
-    // set color highlighting
-    mTextFormat.setForeground(QColor(0, 0, 0)); // black
-    mKeywordFormat.setForeground(QColor(180, 0, 0)); // dark red
-    mTypeFormat.setForeground(QColor(255, 10, 10)); // red
+
+    // colour definitions
+    mTextFormat.setForeground(QColor(0, 0, 0));          // black
+    mKeywordFormat.setForeground(QColor(180, 0, 0));    // dark red
+    mTypeFormat.setForeground(QColor(255, 10, 10));     // red
     mSingleLineCommentFormat.setForeground(QColor(0, 120, 0)); // green
     mMultiLineCommentFormat.setForeground(QColor(0, 120, 0)); // green
-    mFunctionFormat.setForeground(QColor(180, 0, 0)); // dark red
+    mFunctionFormat.setForeground(QColor(180, 0, 0));   // dark red
     mQuotationFormat.setForeground(QColor(120, 120, 120)); // gray
-    mNumberFormat.setForeground(QColor(139, 0, 139)); // purple
+    mNumberFormat.setForeground(QColor(139, 0, 139));   // purple
 
     HighlightingRule rule;
-    rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
-    rule.mFormat = mNumberFormat;
+
+    // numbers
+    rule.mPattern = QRegularExpression(R"([0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?)");
+    rule.mFormat  = mNumberFormat;
     mHighlightingRules.append(rule);
-    rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
-    rule.mFormat = mTextFormat;
+
+    // identifiers
+    rule.mPattern = QRegularExpression(R"(\b[A-Za-z_][A-Za-z0-9_]*\b)");
+    rule.mFormat  = mTextFormat;
     mHighlightingRules.append(rule);
-    // functions
-    rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
-    rule.mFormat = mFunctionFormat;
+
+    // functions (look‑ahead for '(')
+    rule.mPattern = QRegularExpression(R"(\b[A-Za-z0-9_]+(?=\())");
+    rule.mFormat  = mFunctionFormat;
     mHighlightingRules.append(rule);
+
     // keywords
-    QStringList keywordPatterns;
-    keywordPatterns << "\\balgorithm\\b"
-                    << "\\band\\b"
-                    << "\\bannotation\\b"
-                    << "\\bassert\\b"
-                    << "\\bblock\\b"
-                    << "\\bbreak\\b"
-                    << "\\bBoolean\\b"
-                    << "\\bclass\\b"
-                    << "\\bconnect\\b"
-                    << "\\bconnector\\b"
-                    << "\\bconstant\\b"
-                    << "\\bconstrainedby\\b"
-                    << "\\bder\\b"
-                    << "\\bdiscrete\\b"
-                    << "\\beach\\b"
-                    << "\\belse\\b"
-                    << "\\belseif\\b"
-                    << "\\belsewhen\\b"
-                    << "\\bencapsulated\\b"
-                    << "\\bend\\b"
-                    << "\\benumeration\\b"
-                    << "\\bequation\\b"
-                    << "\\bexpandable\\b"
-                    << "\\bextends\\b"
-                    << "\\bexternal\\b"
-                    << "\\bfalse\\b"
-                    << "\\bfinal\\b"
-                    << "\\bflow\\b"
-                    << "\\bfor\\b"
-                    << "\\bfunction\\b"
-                    << "\\bif\\b"
-                    << "\\bimport\\b"
-                    << "\\bimpure\\b"
-                    << "\\bin\\b"
-                    << "\\binitial\\b"
-                    << "\\binner\\b"
-                    << "\\binput\\b"
-                    << "\\bloop\\b"
-                    << "\\bmodel\\b"
-                    << "\\bnot\\b"
-                    << "\\boperator\\b"
-                    << "\\bor\\b"
-                    << "\\bouter\\b"
-                    << "\\boutput\\b"
-                    << "\\boptimization\\b"
-                    << "\\bpackage\\b"
-                    << "\\bparameter\\b"
-                    << "\\bpartial\\b"
-                    << "\\bprotected\\b"
-                    << "\\bpublic\\b"
-                    << "\\bpure\\b"
-                    << "\\brecord\\b"
-                    << "\\bredeclare\\b"
-                    << "\\breplaceable\\b"
-                    << "\\breturn\\b"
-                    << "\\bstream\\b"
-                    << "\\bthen\\b"
-                    << "\\btrue\\b"
-                    << "\\btype\\b"
-                    << "\\bwhen\\b"
-                    << "\\bwhile\\b"
-                    << "\\bwithin\\b";
-    foreach (const QString &pattern, keywordPatterns) {
-      rule.mPattern = QRegExp(pattern);
-      rule.mFormat = mKeywordFormat;
-      mHighlightingRules.append(rule);
+    const QStringList keywordPatterns = {
+        R"(\balgorithm\b)", R"(\band\b)",            R"(\bannotation\b)",
+        R"(\bassert\b)",    R"(\bblock\b)",          R"(\bbreak\b)",
+        R"(\bBoolean\b)",   R"(\bclass\b)",          R"(\bconnect\b)",
+        R"(\bconnector\b)", R"(\bconstant\b)",       R"(\bconstrainedby\b)",
+        R"(\bder\b)",       R"(\bdiscrete\b)",       R"(\beach\b)",
+        R"(\belse\b)",      R"(\belseif\b)",         R"(\belsewhen\b)",
+        R"(\bencapsulated\b)", R"(\bend\b)",         R"(\benumeration\b)",
+        R"(\bequation\b)",  R"(\bexpandable\b)",     R"(\bextends\b)",
+        R"(\bexternal\b)",  R"(\bfalse\b)",          R"(\bfinal\b)",
+        R"(\bflow\b)",      R"(\bfor\b)",            R"(\bfunction\b)",
+        R"(\bif\b)",        R"(\bimport\b)",         R"(\bimpure\b)",
+        R"(\bin\b)",        R"(\binitial\b)",        R"(\binner\b)",
+        R"(\binput\b)",     R"(\bloop\b)",           R"(\bmodel\b)",
+        R"(\bnot\b)",       R"(\boperator\b)",       R"(\bor\b)",
+        R"(\bouter\b)",     R"(\boutput\b)",         R"(\boptimization\b)",
+        R"(\bpackage\b)",   R"(\bparameter\b)",      R"(\bpartial\b)",
+        R"(\bprotected\b)", R"(\bpublic\b)",         R"(\bpure\b)",
+        R"(\brecord\b)",    R"(\bredeclare\b)",      R"(\breplaceable\b)",
+        R"(\breturn\b)",    R"(\bstream\b)",         R"(\bthen\b)",
+        R"(\btrue\b)",      R"(\btype\b)",           R"(\bwhen\b)",
+        R"(\bwhile\b)",     R"(\bwithin\b)"
+    };
+
+    for (const QString &pattern : keywordPatterns) {
+        rule.mPattern = QRegularExpression(pattern);
+        rule.mFormat  = mKeywordFormat;
+        mHighlightingRules.append(rule);
     }
+
     // Modelica types
-    QStringList typePatterns;
-    typePatterns << "\\bString\\b"
-                 << "\\bInteger\\b"
-                 << "\\bBoolean\\b"
-                 << "\\bReal\\b";
-    foreach (const QString &pattern, typePatterns) {
-      rule.mPattern = QRegExp(pattern);
-      rule.mFormat = mTypeFormat;
-      mHighlightingRules.append(rule);
+    const QStringList typePatterns = {
+        R"(\bString\b)", R"(\bInteger\b)", R"(\bBoolean\b)", R"(\bReal\b)"
+    };
+
+    for (const QString &pattern : typePatterns) {
+        rule.mPattern = QRegularExpression(pattern);
+        rule.mFormat  = mTypeFormat;
+        mHighlightingRules.append(rule);
     }
-  }
+}
 
   /*!
    * \brief ModelicaTextHighlighter::highlightMultiLine
    * Highlights the multilines text.
    * Quoted text or multiline comments.
    * \param text
-   * \param text
    */
-  void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
-  {
-    /* Hand-written recognizer beats the crap known as QRegEx ;) */
+void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
+{
+    /* Hand‑written recogniser beats the crap known as QRegEx ;) */
     int index = 0, startIndex = 0;
-    int blockState = previousBlockState();
+    BlockState blockState = static_cast<BlockState>(previousBlockState());
+
     while (index < text.length()) {
-      switch (blockState) {
-        /* if the block already has single line comment then don't check for multi line comment and quotes. */
-        case 1:
-          if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
-            index++;
-            blockState = 1; /* don't change the blockstate. */
-          }
-          break;
-        case 2:
-          if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
-            index++;
-            setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
-            blockState = 0;
-          }
-          break;
-        case 3:
-          if (text[index] == '\\') {
-            index++;
-          } else if (text[index] == '"') {
-            setFormat(startIndex, index-startIndex+1, mQuotationFormat);
-            blockState = 0;
-          }
-          break;
-        default:
-          /* check if single line comment then set the blockstate to 1. */
-          if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
-            startIndex = index++;
-            setFormat(startIndex, text.length(), mSingleLineCommentFormat);
-            blockState = 1;
-          } else if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
-            startIndex = index++;
-            blockState = 2;
-          } else if (text[index] == '"') {
-            startIndex = index;
-            blockState = 3;
-          }
-      }
-      index++;
+        switch (blockState) {
+        case BlockState::SingleLineComment:
+            if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '/') {
+                ++index;
+                blockState = BlockState::SingleLineComment; // stay in the comment state
+            }
+            break;
+
+        case BlockState::MultiLineComment:
+            if (text[index] == '*' && index + 1 < text.length() && text[index + 1] == '/') {
+                ++index;
+                setFormat(startIndex, index - startIndex + 1, mMultiLineCommentFormat);
+                blockState = BlockState::DefaultState;
+            }
+            break;
+
+        case BlockState::QuotedString:
+            if (text[index] == '\\') {
+                ++index;               // escape sequence – skip next char
+            } else if (text[index] == '"') {
+                setFormat(startIndex, index - startIndex + 1, mQuotationFormat);
+                blockState = BlockState::DefaultState;
+            }
+            break;
+
+        default: // not inside any special construct
+            if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '/') {
+                startIndex = index++;
+                setFormat(startIndex, text.length() - startIndex, mSingleLineCommentFormat);
+                blockState = BlockState::SingleLineComment;
+            } else if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '*') {
+                startIndex = index++;
+                blockState = BlockState::MultiLineComment;
+            } else if (text[index] == '"') {
+                startIndex = index;
+                blockState = BlockState::QuotedString;
+            }
+            break;
+        }
+        ++index;
     }
 
     switch (blockState) {
-      case 2:
-        setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
-        setCurrentBlockState(2);
+      case BlockState::MultiLineComment:
+        setFormat(startIndex, text.length() - startIndex, mMultiLineCommentFormat);
+        setCurrentBlockState(BlockState::MultiLineComment);
         break;
-      case 3:
-        setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
-        setCurrentBlockState(3);
+      case BlockState::QuotedString:
+        setFormat(startIndex, text.length() - startIndex, mQuotationFormat);
+        setCurrentBlockState(BlockState::QuotedString);
+        break;
+      default:
         break;
     }
-  }
+}
 
-  //! Reimplementation of QSyntaxHighlighter::highlightBlock
-  void ModelicaTextHighlighter::highlightBlock(const QString &text)
-  {
-    // set text block state
+//  Highlight a single text block
+void ModelicaTextHighlighter::highlightBlock(const QString &text)
+{
+    // default state & base formatting
     setCurrentBlockState(0);
     setFormat(0, text.length(), mTextFormat);
-    foreach (const HighlightingRule &rule, mHighlightingRules) {
-      QRegExp expression(rule.mPattern);
-      int index = expression.indexIn(text);
-      while (index >= 0) {
-        int length = expression.matchedLength();
-        setFormat(index, length, rule.mFormat);
-        index = expression.indexIn(text, index + length);
-      }
+
+    // apply all regular‑expression based rules
+    for (const HighlightingRule &rule : std::as_const(mHighlightingRules)) {
+        QRegularExpressionMatchIterator it = rule.mPattern.globalMatch(text);
+        while (it.hasNext()) {
+            QRegularExpressionMatch match = it.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule.mFormat);
+        }
     }
+
+    // handle comments and strings that may span several blocks
     highlightMultiLine(text);
-  }
 }
+
+} // namespace IAEX

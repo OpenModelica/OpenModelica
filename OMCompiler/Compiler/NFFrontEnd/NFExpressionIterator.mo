@@ -75,7 +75,7 @@ public
   algorithm
     str := match iter
       case ARRAY_ITERATOR()
-      then List.toString(iter.arrays, function Array.toString(
+      then List.toStringCustom(iter.arrays, function Array.toString(
         inPrintFunc   = Expression.toString,
         inNameStr     = "",
         inBeginStr    = "{",
@@ -108,7 +108,7 @@ public
           (e, expanded) := ExpandExp.expand(exp, backend, resize);
 
           if not expanded then
-            Error.assertion(false, getInstanceName() + " got unexpandable expression `" +
+            Error.terminate(getInstanceName() + " got unexpandable expression `" +
               Expression.toString(exp) + "`", sourceInfo());
           end if;
         then

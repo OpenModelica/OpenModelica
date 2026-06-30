@@ -496,7 +496,7 @@ static void* get_message_alloc(errorext_members *members)
     case ErrorType_scripting:   ty=ErrorTypes__SCRIPTING;   break;
   }
 
-  void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str()));
+  void *message = mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str());
   void *msg = ErrorTypes__MESSAGE(id,ty,severity,message);
   void *sl = mmc_mk_icon(members->errorMessageQueue->back()->getStartLineNo());
   void *sc = mmc_mk_icon(members->errorMessageQueue->back()->getStartColumnNo());

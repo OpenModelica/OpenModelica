@@ -49,10 +49,6 @@ extern "C" {
 
 #include "util/ModelicaUtilitiesExtra.h"
 
-#if !defined(Util__notrans)
-#define Util__notrans Gettext__notrans
-#endif
-
 }
 
 #include "errorext.cpp"

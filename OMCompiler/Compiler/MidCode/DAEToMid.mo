@@ -1071,7 +1071,7 @@ protected
   Integer labelFin, labelMux, labelInit, labelFail, labelFin2, labelOut, caseLabel;
   list<Integer> caseLabels;
   MidCode.Var muxState, one, midvar,midvar2;
-  MidCode.VarBufPtr muxOldBuf;
+  MidCode.VarBufPtr muxOldBuf = MidCode.VARBUFPTR("");
   MidCode.VarBuf muxNewBuf;
   MidCode.OutVar outvar;
   Boolean matchContinue;
@@ -1619,6 +1619,6 @@ algorithm
   end match;
 end patternToMidCode2;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 end DAEToMid;

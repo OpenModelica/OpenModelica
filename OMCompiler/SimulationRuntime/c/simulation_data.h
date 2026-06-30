@@ -154,12 +154,11 @@ typedef enum
 typedef struct SPARSE_PATTERN
 {
   /* Primary CSC/CSR representation */
+  unsigned int nnz;               /* Number of non-zero elements in matrix, length of array index */
   unsigned int* leadindex;        /* Array with column/row indices, size nCols+1/nRows+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
-  unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
   unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
                                    * Length of array is nCols/nRows */
-  unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
 
@@ -648,6 +647,7 @@ typedef struct MODEL_DATA
   /* Number of un-scalrarized variables (arrays count as one variable) */
   long nStatesArray;            /* Number of array + scalar state variables */
   long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nDiscreteRealArray;      /* Number of array + scalar real discrete variables */
   long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
   long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
   long nVariablesStringArray;   /* Number of array + scalar string variables */
@@ -666,7 +666,6 @@ typedef struct MODEL_DATA
   /* Number of scalarized variables (arrays are flatten to scalar elements.) */
   long nStates;                 /* Number of state variables*/
   long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
-  long nDiscreteReal;           /* Number of all discrete real variables */
   long nVariablesInteger;       /* Number of integer variables */
   long nVariablesBoolean;       /* Number of boolean variables */
   long nVariablesString;        /* Number of string variables */

@@ -385,7 +385,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -412,7 +412,7 @@ protected
     input SourceInfo info;
     input output ConversionRules rules;
   algorithm
-    Error.assertion(false, getInstanceName() + ": not implemented", info);
+    Error.terminate(getInstanceName() + ": not implemented", info);
   end parseConvertClassIf;
 
   function parseConvertElement
@@ -441,7 +441,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -475,7 +475,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -566,7 +566,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -620,7 +620,7 @@ protected
     "Looks up a node in the conversion rules structure."
     input Absyn.Path path;
     input ConversionRules rules;
-    output Option<ConversionRules> outNode;
+    output Option<ConversionRules> outNode = NONE();
   protected
     ConversionRules node = rules;
   algorithm
@@ -852,9 +852,9 @@ protected
       case ConversionRule.MODIFIERS()
         algorithm
           print("convertModifiers: ");
-          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
           print(" => ");
-          print(List.toString(rule.newMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.newMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
         then
           ();
 
@@ -2819,5 +2819,5 @@ protected
     end match;
   end addComponentTypesToEnv2;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end Conversion;

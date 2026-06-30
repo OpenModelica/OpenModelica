@@ -1251,6 +1251,7 @@ protected
       chosen_val := SOME(sval);
       chosen_cref := SOME(compref);
     else
+      (compref, state_select) := listHead(lst_values);
       for tpl in lst_values loop
         (cref,sval) := tpl;
         if sval > state_select then

@@ -56,16 +56,16 @@ namespace IAEX
 
   public:
     LatexCell(Document *doc, QWidget *parent=0);
-    virtual ~LatexCell();
-    QString text();
-    QString textHtml();
+    virtual ~LatexCell() {};
+    QString text() override;
+    QString textHtml() override;
     QTextDocument* document() override;
     virtual QString textOutput();
     virtual QString textOutputHtml();
-    virtual QTextCursor textCursor();
-    virtual QTextEdit* textEdit();
+    virtual QTextCursor textCursor() override;
+    virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    virtual void viewExpression(const bool){}
+    void viewExpression(bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -74,11 +74,11 @@ namespace IAEX
     void clearSelection() override;
     void moveCursor(QTextCursor::MoveOperation operation) override;
 
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
-    virtual void accept(Visitor &v);
-    virtual bool isClosed();
-    virtual bool isEditable();
+    virtual void addCellWidgets() override;
+    virtual void removeCellWidgets() override;
+    virtual void accept(Visitor &v) override;
+    virtual bool isClosed() const override;
+    virtual bool isEditable() const override;
     virtual bool isEvaluated();
 
   signals:
@@ -95,26 +95,26 @@ namespace IAEX
     void clickEvent();
     void clickEventOutput();
     void contentChanged();
-    void setText(QString text);
-    void setTextHtml(QString html);
+    void setText(QString text) override;
+    void setTextHtml(QString html) override;
     virtual void setTextOutput(QString output);
     virtual void setTextOutputHtml(QString html);
-    void setStyle(const QString &stylename);
-    void setStyle(CellStyle style);
+    void setStyle(const QString &stylename) override;
+    void setStyle(CellStyle style) override;
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly);
-    void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true);
-    virtual void setFocus(const bool focus);
-    virtual void setFocusOutput(const bool focus);
+    void setReadOnly(bool readonly) override;
+    void setEvaluated(bool evaluated);
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
+    virtual void setFocusOutput(bool focus);
     void setExpr(QString);
     void setState(int state);
 
   protected:
-    void resizeEvent(QResizeEvent *event);
-    void mouseDoubleClickEvent(QMouseEvent *);
+    void resizeEvent(QResizeEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *) override;
     void clear();
 
   private slots:
@@ -135,18 +135,11 @@ namespace IAEX
   public:
     MyTextEdit3* input_;
     MyTextEdit3* output_;
-    //QTextBrowser *output_;
+
   private:
     QTextBrowser *chaptercounter_;
-    //InputCellDelegate *delegate_;
     QGridLayout *layout_;
     Document *document_;
-
-  public:
-    //QPushButton* variableButton;
-    //QPushButton* hideButton;
-    //QPushButton* latexButton;
-    QTemporaryFile* imageFile;
   };
 
 
@@ -176,11 +169,11 @@ namespace IAEX
     //void showVariableButton(bool);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void keyPressEvent(QKeyEvent *event );
-    void insertFromMimeData(const QMimeData *source);
-    void focusInEvent(QFocusEvent* event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event ) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent* event) override;
 
   private:
   };

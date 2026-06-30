@@ -1045,6 +1045,6 @@ algorithm
   end match;
 end addNodeUnique_dispatch;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end AvlTree;
 

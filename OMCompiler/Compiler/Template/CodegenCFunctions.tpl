@@ -2087,7 +2087,7 @@ case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     <<
     <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
-    <%tmpVar%>._<%compname%> = <%unboxStr%>;
+    <%tmpVar%>._<%System.unquoteIdentifier(compname)%> = <%unboxStr%>;
     >>
     ;separator="\n")
   tmpVar
@@ -5506,15 +5506,29 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     slicedArray
 
   case ecr as CREF(componentRef=cr, ty=ty) then
-    if crefIsScalarWithAllConstSubs(cr) then
-      // let cast = typeCastContextInt(context, ty)
-      let &sub = buffer ""
-      '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
-    else if crefIsScalarWithVariableSubs(cr) then
+    if crefIsScalarWithVariableSubs(cr) then
       let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
       let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
       // let cast = typeCastContextInt(context, ty)
       '<%nosubname%>'
+    else if boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))) then
+      // Without sim code scalarization array elements like arr[2] are not
+      // standalone simvars and have to be addressed relative to the first
+      // element of the array using a flattened index. $START crefs address the
+      // (array valued) start attribute and the flattened index selects the
+      // matching start element (see varArrayNameValues).
+      match crefSubs(crefArrayGetFirstCref(cr))
+      case {} then
+        let &sub = buffer ""
+        '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+      else
+        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+        '<%nosubname%>'
+    else if crefIsScalarWithAllConstSubs(cr) then
+      // let cast = typeCastContextInt(context, ty)
+      let &sub = buffer ""
+      '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
     else
       error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;
@@ -6324,7 +6338,7 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Te
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path), &varDecls)
-  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
+  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%System.unquoteIdentifier(compn)%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
   let &preExp += ass
   name
 end daeExpRecord;
@@ -6489,6 +6503,22 @@ let &sub = buffer ""
           <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
           >>
        'sqrt(<%tmp%>)')
+
+  case CALL(path=IDENT(name="nthRoot"), expLst={e1, e2}, attr=attr as CALL_ATTR(__)) then
+    let v = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let n = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let vtmp = tempDecl(expTypeFromExpModelica(e1), &varDecls)
+    let ntmp = tempDecl(expTypeFromExpModelica(e2), &varDecls)
+    let vstr = ExpressionDumpTpl.dumpExp(e1,"\"")
+    let nstr = ExpressionDumpTpl.dumpExp(e2,"\"")
+    let &preExp +=
+      <<
+      <%vtmp%> = <%v%>;
+      <%ntmp%> = <%n%>;
+      <%assertCommonVar('<%ntmp%> > 0.0', '"Model error: Second argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be > 0, got %d", <%ntmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('modelica_integer_mod(<%ntmp%>, 2) != 0 || <%vtmp%> >= 0.0', '"Model error: First argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be >= 0 if the second is even, got %g", <%vtmp%>', context, &varDecls, dummyInfo)%>
+      >>
+    'pow(<%vtmp%>, 1.0/<%ntmp%>)'
 
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
@@ -7953,10 +7983,25 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           let ty = crefShortType(name)
           if isStart then
-            // TODO: How to handle array case?
+            // The start attribute of a (non-scalarized) array variable can be
+            // either an array (start = {1,2,3}: one start.data element per array
+            // element, selected by the flattened index in &sub) or a single
+            // broadcast value (each start = 1: start.data has exactly one
+            // element). A scalar start variable has no subscript at all. Use the
+            // flattened index only when the start attribute actually holds one
+            // value per element, otherwise broadcast element [0] (issue #15686).
+            // Select the element via the address of the chosen lvalue so the
+            // whole expression stays an lvalue: $START crefs may appear in
+            // array-building contexts (real_array_create(&tmp, &<expr>, ...)),
+            // and a plain ?: ternary is an rvalue whose address cannot be taken.
             match ty
               case "real" then
-                '((modelica_real *)(<%varAttributes(var, &sub)%>.start.data))[0]'
+                let &nosub = buffer ""
+                let attr = varAttributes(var, &nosub)
+                if stringEq(&sub, "") then
+                  '((modelica_real *)(<%attr%>.start.data))[0]'
+                else
+                  '(*(real_array_nr_of_elements(<%attr%>.start) == 1 ? &((modelica_real *)(<%attr%>.start.data))[0] : &((modelica_real *)(<%attr%>.start.data))<%&sub%>))'
               else
                 '<%varAttributes(var, &sub)%>.start'
           else if isPre then

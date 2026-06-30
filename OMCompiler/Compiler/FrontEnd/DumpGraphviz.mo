@@ -429,7 +429,7 @@ protected function printAlgorithmitem "Create a Node from an AlgorithmItem."
   input Absyn.AlgorithmItem inAlgorithmItem;
   output Graphviz.Node outNode;
 algorithm
-  outNode := matchcontinue inAlgorithmItem
+  outNode := match inAlgorithmItem
     local
       Graphviz.Node node;
       Absyn.Algorithm alg;
@@ -440,19 +440,19 @@ algorithm
       then
         node;
     else Graphviz.NODE("ALG_ERROR",{},{});
-  end matchcontinue;
+  end match;
 end printAlgorithmitem;
 
 protected function printAlgorithm "Create a Node from an Algorithm."
   input Absyn.Algorithm inAlgorithm;
   output Graphviz.Node outNode;
 algorithm
-  outNode := matchcontinue inAlgorithm
+  outNode := match inAlgorithm
     local
 
     case Absyn.ALG_ASSIGN() then Graphviz.NODE("ALG_ASSIGN",{},{});
     else Graphviz.NODE(" DumpGraphviz.printAlgorithm ALG_ERROR",{},{});
-  end matchcontinue;
+  end match;
 end printAlgorithm;
 
 protected function variabilitySymbol "Return Variability as a string."

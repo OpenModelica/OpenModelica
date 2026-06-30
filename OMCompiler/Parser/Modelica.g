@@ -392,6 +392,7 @@ class_specifier2 returns [void* ast, const char *s2]
     }
 | (lp = LPAR na=named_arguments rp=RPAR) cmtStr=string_comment c=composition id=END_IDENT
     {
+      $s2 = (char*)$id.text->chars;
       modelicaParserAssert(optimica_enabled(),"Class attributes are currently allowed only for Optimica. Use -g=Optimica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
       $ast = Absyn__PARTS(mmc_mk_nil(), na, $c.ast, listReverse($c.ann), mmc_mk_some_or_none(cmtStr));
     }
@@ -2007,19 +2008,30 @@ component_reference2 returns [void* ast, int isNone]
   finally{ OM_POP(2); }
 
 function_call returns [void* ast]
-@init { OM_PUSHZ1(fa); } :
-  LPAR fa=function_arguments RPAR { ast = fa; }
+@init { OM_PUSHZ1(fa.ast); } :
+  LPAR fa=function_arguments RPAR { $ast = fa.ast; }
   ;
   finally{ OM_POP(1); }
 
 function_arguments returns [void* ast]
 @init{ OM_PUSHZ2(for_or_el.ast, namel); for_or_el.isFor = 0; } :
-  for_or_el=for_or_expression_list (namel=named_arguments)?
+  for_or_el=for_or_expression_list (COMMA namel=named_arguments)?
     {
-      if (for_or_el.isFor)
-        ast = for_or_el.ast;
-      else
-        ast = Absyn__FUNCTIONARGS(for_or_el.ast, or_nil(namel));
+      if (for_or_el.isFor) {
+        if (namel) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Named arguments cannot be combined with for-indices.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        }
+        $ast = for_or_el.ast;
+      } else {
+        $ast = Absyn__FUNCTIONARGS(for_or_el.ast, or_nil(namel));
+      }
+    }
+  | namel=named_arguments
+    {
+      $ast = Absyn__FUNCTIONARGS(mmc_mk_nil(), namel);
     }
   ;
   finally{ OM_POP(2); }
@@ -2028,9 +2040,9 @@ for_or_expression_list returns [void* ast, int isFor]
 @init{ OM_PUSHZ3(e.ast, el, forind); } :
   ( {LA(1)==IDENT || (LA(1)==OPERATOR && LA(2) == EQUALS) || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mmc_mk_nil(); $isFor = 0; }
   | ( e=expression[1]
-      ( ({LA(1)==COMMA}? el=for_or_expression_list2)
+      ( el=for_or_expression_list2
       | (threaded=THREADED? FOR forind=for_indices)
-      )?
+      )
     )
     {
       if (el != NULL) {

@@ -849,7 +849,7 @@ public
         local
           DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcMap);
           Pointer<Equation> eqn_ptr;
-          Expression residual, exp;
+          Expression residual = Expression.EMPTY(Type.REAL()), exp;
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
@@ -1083,14 +1083,14 @@ public
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurrences[i]), adj.solvabilities[i]);
-            xx := List.toString(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
-            ii := List.toString(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
-            nm := List.toString(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
-            np := List.toString(NP, ComponentRef.toString, "N+ ", "{", ",", "}", false) :: np;
-            lv := List.toString(LV, ComponentRef.toString, "LV ", "{", ",", "}", false) :: lv;
-            lp := List.toString(LP, ComponentRef.toString, "LP ", "{", ",", "}", false) :: lp;
-            lc := List.toString(LC, ComponentRef.toString, "LC ", "{", ",", "}", false) :: lc;
-            qq := List.toString(QQ, ComponentRef.toString, "|| ", "{", ",", "}", false) :: qq;
+            xx := List.toStringCustom(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
+            ii := List.toStringCustom(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
+            nm := List.toStringCustom(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
+            np := List.toStringCustom(NP, ComponentRef.toString, "N+ ", "{", ",", "}", false) :: np;
+            lv := List.toStringCustom(LV, ComponentRef.toString, "LV ", "{", ",", "}", false) :: lv;
+            lp := List.toStringCustom(LP, ComponentRef.toString, "LP ", "{", ",", "}", false) :: lp;
+            lc := List.toStringCustom(LC, ComponentRef.toString, "LC ", "{", ",", "}", false) :: lc;
+            qq := List.toStringCustom(QQ, ComponentRef.toString, "|| ", "{", ",", "}", false) :: qq;
           end for;
           XX_ := listArray(xx);
           II_ := listArray(ii);
@@ -1144,12 +1144,12 @@ public
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurrences[i]), adj.dependencies[i], adj.repetitions[i]);
-            f := List.toString(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
-            r := List.toString(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
-            e := List.toString(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
-            a := List.toString(A, ComponentRef.toString, "[:]", "{", ",", "}", false) :: a;
-            s := List.toString(S, ComponentRef.toString, "[.]", "{", ",", "}", false) :: s;
-            k := List.toString(K, ComponentRef.toString, "[o]", "{", ",", "}", false) :: k;
+            f := List.toStringCustom(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
+            r := List.toStringCustom(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
+            e := List.toStringCustom(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
+            a := List.toStringCustom(A, ComponentRef.toString, "[:]", "{", ",", "}", false) :: a;
+            s := List.toStringCustom(S, ComponentRef.toString, "[.]", "{", ",", "}", false) :: s;
+            k := List.toStringCustom(K, ComponentRef.toString, "[o]", "{", ",", "}", false) :: k;
           end for;
           F_ := listArray(f);
           R_ := listArray(r);
@@ -1419,14 +1419,8 @@ public
       String str1, str2;
     algorithm
       str1 := Array.toString(dep.skips, function List.toString(
-        inPrintFunc   = intString,
-        inNameStr     = "",
-        inBeginStr    = "{",
-        inDelimitStr  = ", ",
-        inEndStr      = "}",
-        inPrintEmpty  = false,
-        maxLength     = 0), "", "", ", ", "");
-      str2 := List.toString(dep.kinds, kindString, "", "", ", ", "");
+        inPrintFunc = intString, style = List.Style.FLAT_CURLY), "", "", ", ", "");
+      str2 := List.toString(dep.kinds, kindString, List.Style.FLAT);
       str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
       str := "{" + str + "}";
     end toString;
@@ -1848,8 +1842,8 @@ public
         // filter inputs for solvable (not occuring only in conditions)
         inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
-        outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
+        inputs  := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, kind, map, dep_map, sol_map, rep_set)) for c in inputs));
+        outputs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, kind, map, dep_map, sol_map, rep_set)) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
@@ -1903,7 +1897,7 @@ public
         Boolean isTuple;
 
       // add a cref dependency
-      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+      case Expression.CREF() then collectDependenciesCref(exp.cref, depth, kind, map, dep_map, sol_map, rep_set);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -1928,7 +1922,8 @@ public
 
       // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
-        set := collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+        set := collectDependenciesSubs(exp.subscripts, depth, kind, map, dep_map, sol_map, rep_set);
+        set := UnorderedSet.union(set, collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set));
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
         Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
@@ -2095,40 +2090,73 @@ public
     end match;
   end collectDependencies;
 
-  function collectDependenciesCref
-    input ComponentRef cref;
+  function collectDependenciesSubs
+    input list<Subscript> subs;
     input Integer depth;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
-    output list<ComponentRef> crefs;
+    input UnorderedSet<ComponentRef> rep_set;
+    output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for sub in subs loop
+      try
+        set := UnorderedSet.union(set, collectDependencies(Subscript.toExp(sub), depth, kind, map, dep_map, sol_map, rep_set));
+      else
+        // no expression, no problem
+      end try;
+    end for;
+
+    // mark as unsolvable
+    UnorderedSet.apply(set, function Solvability.update(sol = Solvability.UNSOLVABLE(), map = sol_map));
+  end collectDependenciesSubs;
+
+  function collectDependenciesCref
+    input ComponentRef cref;
+    input Integer depth;
+    input Partition.Kind kind;
+    input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    input UnorderedSet<ComponentRef> rep_set;
+    input Boolean doSubscripts = true;
+    output UnorderedSet<ComponentRef> set;
   protected
     Pointer<Variable> var;
+    list<ComponentRef> crefs;
     Integer sk = 1;
-    list<Subscript> subs;
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
   algorithm
+    if doSubscripts then
+      set := collectDependenciesSubs(subs, depth, kind, map, dep_map, sol_map, rep_set);
+    else
+      set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    end if;
+
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      crefs := {cref};
+      UnorderedSet.add(cref, set);
+      // i do not understand this, but a model in the testsuite (modelica/NBackend/index_reduction/aux_state.mos) does not run without this
+      // converts a set to a list and back to a set. the model in question only has one-element sets here
+      set := UnorderedSet.fromList(UnorderedSet.toList(set), ComponentRef.hash, ComponentRef.isEqual);
     else
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAllFlat(cref);
         // get all Record children
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
         // add original subscripts
         crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
+        crefs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(child, depth + 1, kind, map, dep_map, sol_map, rep_set, false)) for child in crefs));
         for cref in crefs loop
+          UnorderedSet.add(cref, set);
           Dependency.skip(cref, depth + 1, sk, dep_map);
           sk := sk + 1;
         end for;
-      else
-        crefs := {};
       end if;
     end if;
   end collectDependenciesCref;
@@ -2166,7 +2194,7 @@ public
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
-    output UnorderedSet<ComponentRef> set;
+    output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   protected
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;

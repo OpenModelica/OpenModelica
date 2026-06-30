@@ -478,7 +478,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 #if !defined(OMC_MINIMAL_RUNTIME)
   if (nonlinsys->isPatternAvailable && !(data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B))
   {
-    nnz = nonlinsys->sparsePattern->numberOfNonZeros;
+    nnz = nonlinsys->sparsePattern->nnz;
 
     if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
       nonlinsys->nlsMethod = NLS_KINSOL;
@@ -1523,7 +1523,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
     if(data->simulationInfo->initial)
     {
-      warningStreamPrint(OMC_LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
+      warningStreamPrint(OMC_LOG_INIT, 1, "The system might not be able to initialize because the iteration variables listed below have no suitable start values. The model was probably developed with another tool that selects different iteration (tearing) variables, so its start values may apply to other variables than the ones OpenModelica iterates on here. Try providing start values for the iteration variables below, or a different tearing method (e.g. --tearingMethod=omcTearing).");
     }
 
     start_buffer = (char*) malloc(buff_size * sizeof(char));

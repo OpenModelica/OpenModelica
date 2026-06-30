@@ -1,0 +1,63 @@
+// name: fmi3_array_nonscalarized
+// keywords: FMI 3.0 export array non-scalarized NewBackend
+// status: correct
+// teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html
+//
+// #15926, FMI 3.0, new backend, non-scalarized arrays (--simCodeScalarize=false),
+// C runtime. The array is exported as one native FMI 3.0 Float64 with a
+// <Dimension> and IS dimensioned in the FMU init (numberOfDimensions = 1).
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi3_array_nonscalarized
+  Real x[3](start = {1.0, 2.0, 3.0}, each fixed = true, each nominal = 5.0);
+  parameter Real a = 2.0;
+  output Real y = sum(x);
+equation
+  der(x) = -a*x;
+end fmi3_array_nonscalarized;
+"); getErrorString();
+
+buildModelFMU(fmi3_array_nonscalarized, version="3.0", fmuType="me"); getErrorString();
+
+// genuine array is dimensioned in the FMU init (non-empty count)
+system("unzip -cqq fmi3_array_nonscalarized.fmu sources/fmi3_array_nonscalarized_init_fmu.c | grep -c 'numberOfDimensions = [1-9]' > fmi3_array_nonscalarized.dims || true"); getErrorString();
+readFile("fmi3_array_nonscalarized.dims"); getErrorString();
+
+// native FMI 3.0 array variable with a Dimension child
+system("unzip -cqq fmi3_array_nonscalarized.fmu modelDescription.xml > fmi3_array_nonscalarized_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_array_nonscalarized_tmp.xml > fmi3_array_nonscalarized.xml"); getErrorString();
+readFile("fmi3_array_nonscalarized.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_array_nonscalarized.fmu"
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
+// "
+// 0
+// ""
+// "2
+// "
+// ""
+// 0
+// ""
+// 0
+// ""
+// " <ModelVariables>
+// <Float64 name=\"time\" valueReference=\"9\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+// <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
+// <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
+// <Float64 name=\"y\" valueReference=\"6\" causality=\"output\" >
+// <Alias name=\"_D_FUN_1\"/>
+// </Float64>
+// <Float64 name=\"a\" valueReference=\"7\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+// </ModelVariables>
+// "
+// ""
+// endResult

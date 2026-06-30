@@ -66,31 +66,31 @@ namespace IAEX{
     CellGroup(QWidget *parent=0);
     virtual ~CellGroup();
 
-    virtual void viewExpression(const bool){};
+    void viewExpression(bool) override;
 
     //Traversals implementation
-    virtual void accept(Visitor &v);
+    virtual void accept(Visitor &v) override;
 
     //Datastructure implementation.
-    virtual void addChild(Cell *newCell);
-    virtual void removeChild(Cell *aCell);
+    virtual void addChild(Cell *newCell) override;
+    virtual void removeChild(Cell *aCell) override;
 
-    virtual void addCellWidget(Cell *newCell);
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
+    virtual void addCellWidget(Cell *newCell) override;
+    virtual void addCellWidgets() override;
+    virtual void removeCellWidgets() override;
 
     int height();
-    CellStyle *style();                // Changed 2005-10-28
-    virtual QString text(){return QString();}
+    CellStyle *style() override;
+    QString text() override;
 
-    void closeChildCells();              // Added 2005-11-30 AF
+    void closeChildCells();
 
     //Flag
-    bool isClosed() const;
-    bool isEditable();                // Added 2005-10-28 AF
+    bool isClosed() const override;
+    bool isEditable() const override;
 
     QTextDocument* document() override;
-    QTextEdit* textEdit();              // Added 2006-08-24 AF
+    QTextEdit* textEdit() override;
 
     void cutText() override;
     void copyText() override;
@@ -102,12 +102,12 @@ namespace IAEX{
     void moveCursor(QTextCursor::MoveOperation operation) override;
 
   public slots:
-    virtual void setStyle( CellStyle style );    // Changed 2005-10-28 AF
-    void setClosed(const bool closed, bool update = true);
-    virtual void setFocus(const bool focus);
+    virtual void setStyle( CellStyle style ) override;
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
 
   protected:
-    void mouseDoubleClickEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
   protected slots:
     void adjustHeight();
@@ -115,7 +115,6 @@ namespace IAEX{
   private:
     bool closed_;
 
-    QWidget *main_;
     QGridLayout *layout_;
     unsigned long newIndex_;
   };

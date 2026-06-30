@@ -1,0 +1,67 @@
+// name: fmi2_array_attributes
+// keywords: FMI 2.0 export array nominal scalarized
+// status: correct
+// teardown_command: rm -rf fmi2_array_attributes.fmu fmi2_array_attributes.fmutmp/ fmi2_array_attributes.dims fmi2_array_attributes.log fmi2_array_attributes_info.json fmi2_array_attributes_me_FMU* fmi2_array_attributes_res.mat index.html
+//
+// Regression test for #15926. A scalarized array variable whose nominal/min
+// attribute is bound to a parameter must not be marked as a runtime array in
+// the exported FMU (numberOfDimensions stays 0). Otherwise the start/min/max/
+// nominal bound-attribute update throws "Not yet implemented for array nominal"
+// during FMU initialization (fmi2ExitInitializationMode fails). The exported
+// FMU must initialize and simulate. Old backend, scalarized (default), C runtime.
+
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+
+loadString("
+model fmi2_array_attributes
+  parameter Real x_nom[3] = {10.0, 20.0, 30.0};
+  parameter Real x_min[3] = {-100.0, -100.0, -100.0};
+  Real x[3](nominal = x_nom, min = x_min, start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y = sum(x);
+equation
+  der(x) = -x;
+end fmi2_array_attributes;
+"); getErrorString();
+
+buildModelFMU(fmi2_array_attributes, version="2.0", fmuType="me"); getErrorString();
+
+// Scalarized elements must not be dimensioned in the generated FMU init
+// (empty result = no scalar element wrongly marked as an array).
+system("unzip -cqq fmi2_array_attributes.fmu sources/fmi2_array_attributes_init_fmu.c | grep -n 'numberOfDimensions = [1-9]' > fmi2_array_attributes.dims || true"); getErrorString();
+readFile("fmi2_array_attributes.dims"); getErrorString();
+
+// The exported FMU must initialize and simulate without the array-attribute throw.
+importFMU("fmi2_array_attributes.fmu"); getErrorString();
+loadFile("fmi2_array_attributes_me_FMU.mo"); getErrorString();
+simulate(fmi2_array_attributes_me_FMU, stopTime=1.0); getErrorString();
+val(y, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_array_attributes.fmu"
+// ""
+// 0
+// ""
+// ""
+// ""
+// "fmi2_array_attributes_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "fmi2_array_attributes_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi2_array_attributes_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// 6.0
+// ""
+// endResult

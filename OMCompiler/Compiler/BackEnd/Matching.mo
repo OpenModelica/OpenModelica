@@ -5847,8 +5847,8 @@ algorithm
             "----------------------------------------------------------------\n\n");
     end if;
 
-    msg := System.gettext(BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
-    "Please use -d=bltdump for more information.\n");
+    msg := BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
+    "Please use -d=bltdump for more information.\n";
     Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
   end if;
 end sanityCheckArtificialStates;
@@ -6614,7 +6614,7 @@ protected function testMatchingAlgorithm
   input BackendDAE.MatchingOptions inMatchingOptions;
 algorithm
   () :=
-  matchcontinue index
+  match index
     local
       BackendDAE.StructurallySingularSystemHandlerArg arg;
     case 0
@@ -6626,7 +6626,7 @@ algorithm
         testMatchingAlgorithm(index-1,matchingAlgorithm,isyst,ishared,inMatchingOptions);
       then
         ();
-  end matchcontinue;
+  end match;
 end testMatchingAlgorithm;
 
 public function testExternMatchingAlgorithms1
@@ -6664,7 +6664,7 @@ public function testExternMatchingAlgorithm
   input Integer ne;
 algorithm
   () :=
-  matchcontinue index
+  match index
     case 0
       then ();
     else
@@ -6673,7 +6673,7 @@ algorithm
         testExternMatchingAlgorithm(index-1,matchingAlgorithm,cheapId,nv,ne);
       then
         ();
-  end matchcontinue;
+  end match;
 end testExternMatchingAlgorithm;
 
 protected function randSortSystem

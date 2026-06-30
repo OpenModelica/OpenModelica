@@ -153,7 +153,7 @@ public
       case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call type", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call type", sourceInfo());
         then
           fail();
     end match;
@@ -236,7 +236,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
+          Error.terminate(getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
         then fail();
     end match;
   end typeCall;
@@ -299,7 +299,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -455,7 +455,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -486,7 +486,7 @@ public
 
   function variability
     input NFCall call;
-    output Variability var;
+    output Variability var = Variability.CONTINUOUS;
   algorithm
     var := match call
       local
@@ -505,6 +505,8 @@ public
               case "cardinality" then Variability.PARAMETER;
               else algorithm var_set := false; then Variability.CONTINUOUS;
             end match;
+          else
+            var_set := false;
           end if;
 
           if not var_set then
@@ -523,7 +525,7 @@ public
       case TYPED_ARRAY_CONSTRUCTOR() then call.var;
       case TYPED_REDUCTION() then call.var;
       else algorithm
-        Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then fail();
     end match;
   end variability;
@@ -678,6 +680,78 @@ public
     end match;
   end isReduction;
 
+  function isPositive
+    "True if the return value of the function is known to be > 0, otherwise false."
+    input Call call;
+    output Boolean positive;
+  algorithm
+    positive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "max" then List.any(call.arguments, Expression.isPositive);
+          case "min" then List.all(call.arguments, Expression.isPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isPositive;
+
+  function isNegative
+    "True if the return value of the function is known to be < 0, otherwise false."
+    input Call call;
+    output Boolean negative;
+  algorithm
+    negative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then false;
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "max" then List.all(call.arguments, Expression.isNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNegative;
+
+  function isNonPositive
+    "True if the return value of the function is known to be <= 0, otherwise false."
+    input Call call;
+    output Boolean nonPositive;
+  algorithm
+    nonPositive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isZero(listHead(call.arguments));
+          case "max" then List.all(call.arguments, Expression.isNonPositive);
+          case "min" then List.any(call.arguments, Expression.isNonPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonPositive;
+
+  function isNonNegative
+    "True if the return value of the function is known to be >= 0, otherwise false."
+    input Call call;
+    output Boolean nonNegative;
+  algorithm
+    nonNegative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then true;
+          case "max" then List.any(call.arguments, Expression.isNonNegative);
+          case "min" then List.all(call.arguments, Expression.isNonNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonNegative;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;
@@ -699,7 +773,7 @@ public
       case TYPED_REDUCTION() then call.fn;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped function", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped function", sourceInfo());
         then
           fail();
     end match;
@@ -793,7 +867,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
 
@@ -1159,7 +1233,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
     end match;
@@ -1241,7 +1315,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then
           fail();
     end match;
@@ -2416,7 +2490,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown function args", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown function args", sourceInfo());
         then
           fail();
     end match;
@@ -2586,7 +2660,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -2640,7 +2714,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid reduction call", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid reduction call", sourceInfo());
         then
           fail();
     end match;

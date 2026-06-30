@@ -99,5 +99,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,MidCode.varString));
 end emptyHashTableSized;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end HashTableMidVar;

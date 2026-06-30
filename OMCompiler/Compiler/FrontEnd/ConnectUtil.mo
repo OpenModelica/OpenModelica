@@ -1309,7 +1309,7 @@ algorithm
   SetTrieNode.SET_TRIE_NODE(nodes = nodes) := trie;
 
   id_nosubs := ComponentReferenceBasics.crefFirstIdent(cref);
-  subs_str := List.toString(ComponentReference.crefFirstSubs(cref),
+  subs_str := List.toStringCustom(ComponentReference.crefFirstSubs(cref),
     ExpressionBasics.printSubscriptStr, "", "[", ",", "]", false);
   id_subs := id_nosubs + subs_str;
 
@@ -2326,7 +2326,8 @@ algorithm
         false,
         false,
         DAE.NO_INLINE(),
-        DAE.NO_TAIL()));
+        DAE.NO_TAIL(),
+        DAE.NoReturn.RETURNS));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
@@ -2461,6 +2462,7 @@ algorithm
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
       ComponentReference.crefStr(streamCref) + "\n");
+    fail();
   end try;
 end evaluateInStream;
 

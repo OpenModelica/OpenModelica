@@ -71,6 +71,7 @@ import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
+import CodegenWasmJit;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -1053,7 +1054,7 @@ algorithm
           // Debugging code. Make sure the scanner works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.assertion(false, "Lexed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1065,7 +1066,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1082,7 +1083,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s2);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1469,7 +1470,13 @@ algorithm
            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-           resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           // The wasm-jit target runs the JIT-compiled model in-process and
+           // writes the result file directly, instead of spawning an executable.
+           if Config.simCodeTarget() == "wasm-jit" then
+             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           else
+             resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           end if;
 
            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -1477,6 +1484,7 @@ algorithm
            result_file := "";
            resI := 1;
            timeSimulation := 0.0;
+           logFile := "";
          end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1641,6 +1649,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1692,6 +1701,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1949,6 +1959,7 @@ algorithm
           s1 := getTotalModel(classpath, b1, b2, b3);
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          s1 := "";
         end if;
       then
         Values.STRING(s1);
@@ -3633,6 +3644,7 @@ algorithm
     SymbolTable.setAbsyn(p);
     // Always update the SCode structure; otherwise the cache plays tricks on us
     SymbolTable.clearSCode();
+    success := true;
   end try;
 end loadProgram;
 
@@ -3718,7 +3730,7 @@ public function runFrontEndWorkNF
   output String flatString;
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
-  Boolean nf_api, inst_failed;
+  Boolean nf_api;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
   String obfuscate_mode;
@@ -3747,21 +3759,17 @@ algorithm
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
   nf_api := FlagsUtil.set(Flags.NF_API, false);
-  inst_failed := false;
 
   try
     (flatModel, functions, flatString) :=
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
-    inst_failed := true;
     NFInst.clearCaches();
+    FlagsUtil.set(Flags.NF_API, nf_api);
+    fail();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
-
-  if inst_failed then
-    fail();
-  end if;
 end runFrontEndWorkNF;
 
 public function translateModel
@@ -4248,28 +4256,22 @@ protected function translateModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
-  output Boolean success;
+  output Boolean success = false;
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
   Flags.Flag flags;
 algorithm
-  if isProtectedContentAccess(className) then
-    // if AST contains encrypted class show nothing
-    cache := inCache;
-    outValue := Values.STRING("");
-  else
-    flags := loadCommandLineOptionsFromModel(className);
+  flags := loadCommandLineOptionsFromModel(className);
 
-    try
-      (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
-      // reset to the original flags
-      FlagsUtil.saveFlags(flags);
-    else
-      FlagsUtil.saveFlags(flags);
-      fail();
-    end try;
-  end if;
+  try
+    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+    // reset to the original flags
+    FlagsUtil.saveFlags(flags);
+  else
+    FlagsUtil.saveFlags(flags);
+    fail();
+  end try;
 end translateModelFMU;
 
 protected function callTranslateModelFMU
@@ -4346,6 +4348,250 @@ algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 end callTranslateModelFMU;
+
+protected function generateFMI3GraphicalRepresentation
+  "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
+   model instance (issue #15219) for the *graphical* side only, this renders the
+   model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
+   <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
+   connector component renders its port icon to terminalsAndIcons/<iconBaseName>.png
+   (+ .svg) and adds a <TerminalGraphicalRepresentation> (placement box +
+   iconBaseName). All icon files live in terminalsAndIcons/ because FMI 3.0
+   resolves iconBaseName relative to terminalsAndIcons/terminalsAndIcons.xml and
+   requires a PNG (the SVG is an optional companion). The set of
+   ports and their input/output direction are NOT taken from the model instance:
+   structured connectors already have a <Terminal> from SimCode (we only add the
+   graphics), and a simple signal port gets a terminal whose variableKind is the
+   flat-model causality read from modelDescription.xml. Best-effort: any failure
+   (e.g. a model without an icon) is silently ignored so it never blocks the build."
+  input Absyn.Path className;
+  input String fmutmp;
+  input String modelIdentifier;
+protected
+  Integer handle, nConn, i, pngOk;
+  String svg, grepr, modelName, taiDir, taiFile, content;
+  String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
+  list<String> parts;
+algorithm
+  try
+    // Full in-memory model instance: the model Icon plus the connector components
+    // (placement + connector-type icons). Graphics only.
+    Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
+    if handle > 0 then
+      // Inner try so the model-instance handle is released on EVERY exit path
+      // (a failure in the graphics work below must not leak the reference).
+      try
+      modelName := AbsynUtil.pathLastIdent(className);
+      // FMI 3.0 (section "Distribution of FMUs"): icon image files referenced
+      // from terminalsAndIcons.xml live in the terminalsAndIcons/ directory, and
+      // iconBaseName is resolved relative to terminalsAndIcons/terminalsAndIcons.xml.
+      taiDir := fmutmp + "/terminalsAndIcons/";
+      taiFile := taiDir + "terminalsAndIcons.xml";
+
+      svg := OMGraphics_iconSVGFromHandle(handle, modelName);
+      grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
+      nConn := OMGraphics_placedConnectorCount(handle);
+
+      // model icon -> terminalsAndIcons/icon.png (mandatory) + icon.svg (optional
+      // companion). The fixed name "icon" is the FMI 3.0 convention for the FMU
+      // icon "without terminals".
+      if svg <> "" then
+        Util.createDirectoryTree(taiDir);
+        pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
+        if pngOk == 1 then
+          System.writeFile(taiDir + "icon.svg", svg);
+        else
+          // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
+          // drop the block rather than reference a file we failed to write.
+          grepr := "";
+        end if;
+      else
+        grepr := "";
+      end if;
+
+      if grepr <> "" or nConn > 0 then
+        // start from the SimCode-written terminals file, or a fresh skeleton
+        if System.regularFileExists(taiFile) then
+          content := System.readFile(taiFile);
+        else
+          Util.createDirectoryTree(taiDir);
+          content := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<fmiTerminalsAndIcons fmiVersion=\"3.0\">\n</fmiTerminalsAndIcons>\n";
+        end if;
+
+        // For each placed connector add its TerminalGraphicalRepresentation and
+        // render its port icon. The terminal itself (name + member + input/output
+        // direction) is produced by SimCode from the flat model; here we only add
+        // the graphics, matched to the existing <Terminal> by the connector name.
+        for i in 0:nConn-1 loop
+          info := OMGraphics_placedConnectorInfo(handle, i);
+          parts := System.strtok(info, "\t"); // name, iconBaseName, x1, y1, x2, y2
+          if listLength(parts) == 6 then
+            cname := listGet(parts, 1);
+            ibase := listGet(parts, 2);
+            sx1 := listGet(parts, 3);
+            sy1 := listGet(parts, 4);
+            sx2 := listGet(parts, 5);
+            sy2 := listGet(parts, 6);
+
+            if System.stringFind(content, "<Terminal name=\"" + cname + "\"") >= 0 then
+              // the connector's own port icon -> terminalsAndIcons/<ibase>.png
+              // (mandatory) + <ibase>.svg (optional). iconBaseName is mandatory on
+              // TerminalGraphicalRepresentation, so only emit the element when the
+              // PNG was actually written (a dangling iconBaseName is invalid).
+              pngOk := OMGraphics_writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png");
+              if pngOk == 1 then
+                csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+                if csvg <> "" then
+                  System.writeFile(taiDir + ibase + ".svg", csvg);
+                end if;
+                tgr := "      <TerminalGraphicalRepresentation x1=\"" + sx1 + "\" y1=\"" + sy1 +
+                       "\" x2=\"" + sx2 + "\" y2=\"" + sy2 + "\" iconBaseName=\"" + ibase + ".png\"/>\n";
+                content := insertBeforeTerminalClose(content, cname, tgr);
+              end if;
+            end if;
+          end if;
+        end for;
+
+        // GraphicalRepresentation first (FMI 3.0 schema order: before Terminals)
+        if grepr <> "" then
+          content := spliceGraphicalRepresentation(content, grepr);
+        end if;
+
+        System.writeFile(taiFile, content);
+      end if;
+      else
+        // release the handle on the failure path, then re-raise so the outer
+        // try treats it as "no graphics" (best-effort)
+        Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+        fail();
+      end try;
+
+      Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+    end if;
+  else
+    // no model instance / no graphics: skip graphical representation
+  end try;
+end generateFMI3GraphicalRepresentation;
+
+protected function spliceGraphicalRepresentation
+  "Insert a <GraphicalRepresentation> block in FMI 3.0 schema order: right before
+   the <Terminals> open tag when present, otherwise before the closing root tag."
+  input String content;
+  input String graphicalRepresentation;
+  output String result;
+algorithm
+  // FMI 3.0 schema requires GraphicalRepresentation before Terminals. Insert it
+  // before the <Terminals> open tag, tolerating any indentation (don't depend on
+  // a two-space prefix); fall back to before the closing root tag when there is
+  // no Terminals element.
+  if System.stringFind(content, "  <Terminals>") >= 0 then
+    result := System.stringReplace(content, "  <Terminals>", graphicalRepresentation + "  <Terminals>");
+  elseif System.stringFind(content, "<Terminals>") >= 0 then
+    result := System.stringReplace(content, "<Terminals>", graphicalRepresentation + "<Terminals>");
+  else
+    result := System.stringReplace(content, "</fmiTerminalsAndIcons>", graphicalRepresentation + "</fmiTerminalsAndIcons>");
+  end if;
+end spliceGraphicalRepresentation;
+
+protected function insertBeforeTerminalClose
+  "Insert `insertion` (a TerminalGraphicalRepresentation line) on its own line just
+   before the </Terminal> that closes the <Terminal name=\"name\" ...> element
+   emitted by SimCode. The closing tag's own indentation is preserved by inserting
+   after the newline that precedes it."
+  input String content;
+  input String name;
+  input String insertion;
+  output String result;
+protected
+  String marker, tail;
+  Integer p, r, k, len;
+algorithm
+  marker := "<Terminal name=\"" + name + "\"";
+  p := System.stringFind(content, marker);
+  len := stringLength(content);
+  if p < 0 then
+    result := content;
+  else
+    tail := substring(content, p + 1, len);   // from the opening tag onward
+    r := System.stringFind(tail, "</Terminal>");
+    if r < 0 then
+      result := content;
+    else
+      // p + r is the 0-based index of '<' of </Terminal>; back up over the close
+      // tag's leading spaces so the insertion lands after the preceding newline
+      k := p + r;                              // 1-based position of the char before '<'
+      while k >= 1 and stringEq(substring(content, k, k), " ") loop
+        k := k - 1;
+      end while;
+      result := substring(content, 1, k) + insertion + substring(content, k + 1, len);
+    end if;
+  end if;
+end insertBeforeTerminalClose;
+
+protected function OMGraphics_iconSVGFromHandle
+  "Render the model Icon (issue #15219 model-instance reference handle) to an SVG
+   document via the OMGraphics runtime library. Empty string if there is no icon."
+  input Integer handle;
+  input String modelName;
+  output String svg;
+  external "C" svg = OMGraphics_iconSVGFromHandle(handle, modelName) annotation(Library = "omcruntime");
+end OMGraphics_iconSVGFromHandle;
+
+protected function OMGraphics_graphicalRepresentationXMLFromHandle
+  "Build the FMI 3.0 <GraphicalRepresentation> element for the model Icon (issue
+   #15219 model-instance reference handle). Empty string if there is no icon."
+  input Integer handle;
+  input Real scaleToMm;
+  output String xml;
+  external "C" xml = OMGraphics_graphicalRepresentationXMLFromHandle(handle, scaleToMm) annotation(Library = "omcruntime");
+end OMGraphics_graphicalRepresentationXMLFromHandle;
+
+protected function OMGraphics_placedConnectorCount
+  "Number of top-level connector components that have a graphical placement (the
+   graphical ports of the model)."
+  input Integer handle;
+  output Integer n;
+  external "C" n = OMGraphics_placedConnectorCount(handle) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorCount;
+
+protected function OMGraphics_placedConnectorInfo
+  "Tab-separated graphical info for placed connector `index`:
+   name, iconBaseName, x1, y1, x2, y2 (placement bounding box in icon coordinates)."
+  input Integer handle;
+  input Integer index;
+  output String info;
+  external "C" info = OMGraphics_placedConnectorInfo(handle, index) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorInfo;
+
+protected function OMGraphics_placedConnectorIconSVG
+  "Render the connector-type icon (the port symbol) of placed connector `index`
+   to SVG. Empty string if it has no icon."
+  input Integer handle;
+  input Integer index;
+  output String svg;
+  external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorIconSVG;
+
+protected function OMGraphics_writeIconPNGFromHandle
+  "Rasterise the model Icon to a PNG and write it to `path` (FMI 3.0 requires a
+   PNG icon file). Returns 1 on success, 0 otherwise. PNG bytes are binary, so
+   the C side writes the file rather than returning it as a String."
+  input Integer handle;
+  input String modelName;
+  input String path;
+  output Integer ok;
+  external "C" ok = OMGraphics_writeIconPNGFromHandle(handle, modelName, path) annotation(Library = "omcruntime");
+end OMGraphics_writeIconPNGFromHandle;
+
+protected function OMGraphics_writePlacedConnectorIconPNG
+  "Rasterise placed connector `index`'s port icon to a PNG and write it to
+   `path`. Returns 1 on success, 0 otherwise."
+  input Integer handle;
+  input Integer index;
+  input String path;
+  output Integer ok;
+  external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
+end OMGraphics_writePlacedConnectorIconPNG;
 
 protected function buildModelFMU
   input FCore.Cache inCache;
@@ -4464,12 +4710,16 @@ algorithm
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
+  // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
+  // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to
+  // terminalsAndIcons.xml. Done here (after translateModel, before the FMU is
+  // packed) for the C target; the OMGraphics renderer consumes the in-memory
+  // model-instance annotation reference (issue #15219).
+  if FMUVersion == "3.0" and Config.simCodeTarget() == "C" then
+    generateFMI3GraphicalRepresentation(className, fmutmp, filenameprefix);
+  end if;
+
   if Config.simCodeTarget() == "Cpp" then
-    // dump modelInstance.json so the FMU makefile can filter out the
-    // requested extra annotations (see flag --fmiExtraAnnotations)
-    if Flags.getConfigString(Flags.FMI_EXTRA_ANNOTATIONS) <> "" then
-      System.writeFile(filenameprefix + "_modelInstance.json", ValuesUtil.extractValueString(NFApi.getModelInstance(className, className, "", true)));
-    end if;
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then
@@ -4547,7 +4797,7 @@ protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
   input Boolean encrypt;
   input Absyn.Program inProgram;
-  output Boolean success;
+  output Boolean success = false;
 protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
@@ -4572,8 +4822,8 @@ algorithm
         command := stringAppendList({"\"",packageTool,"\""," ",packageToolArgs});
       else
         Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
-        success := false;
         runCommand := false;
+        command := "";
       end if;
     else
       molName := AbsynUtil.pathString(className) + ".mol";
@@ -4607,7 +4857,6 @@ algorithm
     end if;
   else
     Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
-    success := false;
   end if;
 end buildEncryptedPackage;
 
@@ -5185,7 +5434,7 @@ algorithm
   // Insert the class again if it was moved within this class part. Otherwise it needs
   // to be moved into another class part, which is handled by moveClassInClassParts.
   if outRemainingOffset == 0 then
-    elements := e :: elements;
+    elements := Util.getOption(outClass) :: elements;
   end if;
 
   outElements := List.append_reverse(acc, elements);
@@ -6014,7 +6263,17 @@ algorithm
         end if;
         if success then
           try
-            CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            // The wasm-jit target produced the model WebAssembly module during
+            // translateModel and runs it in-process at simulate time, so there
+            // is no C executable to compile/link here. Instead, force the JIT
+            // compile of the model's wasm modules now so its cost is attributed
+            // to timeCompile (this clock) rather than leaking into
+            // timeSimulation at runSimulation.
+            if Config.simCodeTarget() <> "wasm-jit" then
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            else
+              CodegenWasmJit.finishCompile(filenameprefix);
+            end if;
           else
             success := false;
           end try;
@@ -6047,7 +6306,7 @@ algorithm
       list<Absyn.ElementArg> args;
 
     case SOME(Absyn.CLASSMOD(elementArgLst = args))
-      then List.toString(args, formatSimulationFlagString, "", "-", " -", "", false);
+      then List.toStringCustom(args, formatSimulationFlagString, "", "-", " -", "", false);
 
     else "";
   end match;
@@ -6154,6 +6413,7 @@ algorithm
     // handle normal models
     case ()
       algorithm
+        ExecStat.execStatReset();
         flags := loadCommandLineOptionsFromModel(className);
 
         try
@@ -6674,7 +6934,7 @@ protected function getAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6690,7 +6950,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getAlgorithmsInClassParts;
 
 protected function getNthAlgorithm
@@ -6750,7 +7010,7 @@ protected function getInitialAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6766,7 +7026,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmsInClassParts;
 
 protected function getNthInitialAlgorithm
@@ -6826,7 +7086,7 @@ protected function getAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6843,7 +7103,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInClassParts;
 
 protected function getAlgorithmItemsCountInAlgorithmItems
@@ -6851,7 +7111,7 @@ protected function getAlgorithmItemsCountInAlgorithmItems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynAlgorithmItemLst
+  outInteger := match inAbsynAlgorithmItemLst
     local
       list<Absyn.AlgorithmItem> xs;
       Integer c1, res;
@@ -6866,7 +7126,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInAlgorithmItems;
 
 protected function getNthAlgorithmItem
@@ -6979,7 +7239,7 @@ protected function getInitialAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6996,7 +7256,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmItemsCountInClassParts;
 
 protected function getNthInitialAlgorithmItem
@@ -7085,7 +7345,7 @@ protected function getEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7101,7 +7361,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getEquationsInClassParts;
 
 protected function getNthEquation
@@ -7161,7 +7421,7 @@ protected function getInitialEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7177,7 +7437,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialEquationsInClassParts;
 
 protected function getNthInitialEquation
@@ -7237,7 +7497,7 @@ protected function getEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7254,7 +7514,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInClassParts;
 
 protected function getEquationItemsCountInEquationItems
@@ -7262,7 +7522,7 @@ protected function getEquationItemsCountInEquationItems
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynEquationItemLst
+  outInteger := match inAbsynEquationItemLst
     local
       list<Absyn.EquationItem> xs;
       Integer c1, res;
@@ -7277,7 +7537,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInEquationItems;
 
 protected function getNthEquationItem
@@ -7398,7 +7658,7 @@ protected function getInitialEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7415,7 +7675,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialEquationItemsCountInClassParts;
 
 protected function getNthInitialEquationItem
@@ -7577,7 +7837,7 @@ protected function unparseGroupImport
   input list<Absyn.GroupImport> inAbsynGroupImportLst;
   output list<String> outList;
 algorithm
-  outList := matchcontinue inAbsynGroupImportLst
+  outList := match inAbsynGroupImportLst
   local
     list<Absyn.GroupImport> rest;
     list<String> lst;
@@ -7593,7 +7853,7 @@ algorithm
         lst := unparseGroupImport(rest);
       then
         lst;
-  end matchcontinue;
+  end match;
 end unparseGroupImport;
 
 public function isShortDefinition
@@ -7741,7 +8001,7 @@ protected function getTotalModel
   input Boolean stripComments;
   input Boolean obfuscate;
   output String result;
-  output String obfuscate_map;
+  output String obfuscate_map = "";
 protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
@@ -8324,7 +8584,7 @@ protected function addInitialStateWithAnnotation
   input Absyn.Annotation inAnnotation;
   input Absyn.Program inProgram;
   output Boolean b;
-  output Absyn.Program outProgram;
+  output Absyn.Program outProgram = inProgram;
 protected
   Absyn.Path package_;
   Absyn.Class cdef, newcdef;

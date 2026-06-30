@@ -1074,16 +1074,21 @@ partial function EvaluateSingletonTypeFunction
   output Type ty;
 end EvaluateSingletonTypeFunction;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),false,Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),false,Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL(),NoReturn.RETURNS);
 
 public type Purity = enumeration(
   PURE,      // Function with pure prefix
   IMPURE,    // Function with impure prefix
   UNDEFINED, // Function with neither pure nor impure prefix
   OM_IMPURE  // Function with __OpenModelica_Impure=true annotation (only used by the OF)
+);
+
+public type NoReturn = enumeration(
+  RETURNS,  // The function may return normally to its caller
+  NORETURN  // The function never returns normally (always fails, e.g. via fail(), assert(false) or terminate)
 );
 
 public
@@ -1095,6 +1100,7 @@ uniontype FunctionAttributes
     Boolean isFunctionPointer "if the function is a local variable";
     FunctionBuiltin isBuiltin;
     FunctionParallelism functionParallelism;
+    NoReturn noReturn "whether the function ever returns normally";
   end FUNCTION_ATTRIBUTES;
 end FunctionAttributes;
 
@@ -1558,16 +1564,16 @@ public uniontype TailCall
   end TAIL;
 end TailCall;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(T_REAL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureString = CALL_ATTR(T_STRING_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,false,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(T_REAL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureString = CALL_ATTR(T_STRING_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,false,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
 
 public
 uniontype CallAttributes
@@ -1579,6 +1585,7 @@ uniontype CallAttributes
     Boolean isFunctionPointerCall;
     InlineType inlineType;
     TailCall tailCall "Input variables of the function if the call is tail-recursive";
+    NoReturn noReturn "whether the called function ever returns normally";
   end CALL_ATTR;
 end CallAttributes;
 

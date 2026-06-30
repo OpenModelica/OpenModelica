@@ -1378,7 +1378,7 @@ public function sortLoop "author:Waurich TUD 2014-01
   input list<Integer> sortLoopIn;
   output list<Integer> sortLoopOut;
 algorithm
-  sortLoopOut := matchcontinue(loopIn, sortLoopIn)
+  sortLoopOut := match(loopIn, sortLoopIn)
     local
       Integer start, next;
       list<Integer> rest, vars, eqs;
@@ -1401,7 +1401,7 @@ algorithm
         end if;
         rest := List.deleteMemberOnTrue(next,loopIn,intEq);
       then sortLoop(rest,m,mT,next::sortLoopIn);
-  end matchcontinue;
+  end match;
 end sortLoop;
 
 protected function closePathDirectly "author:Waurich TUD 2014-01
@@ -2049,10 +2049,12 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp exp,exp1,exp2;
       DAE.ComponentRef cref;
-    case (DAE.CREF(),(true,vars))
+    case (DAE.CREF(componentRef=cref),(true,vars))
       algorithm
-        //x
-      then (inExp,(true,vars));
+        //x, but reject array elements with non-constant indices since
+        //resolveLoops cannot map them to a single scalar variable
+        b := Expression.subscriptConstants(ComponentReferenceBasics.crefSubs(cref));
+      then (inExp,(b,vars));
 
     case (DAE.UNARY(exp=exp1),(true,vars))
       algorithm

@@ -128,7 +128,7 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(std::exception &e)
+    catch(const std::exception &e)
     {
       // 2006-01-30 AF, add exception
       std::string str = std::string("AddCellCommand(), Exception: \n") + e.what();
@@ -144,52 +144,52 @@ namespace IAEX
     */
    void CreateNewCellCommand::execute()
    {
-      try
-      {
-   CellCursor *cursor = document()->getCursor();
+     try
+     {
+       CellCursor *cursor = document()->getCursor();
 
-   Factory *fac = document()->cellFactory();
+       Factory *fac = document()->cellFactory();
 
-   //This does not work.
-   if(cursor->currentCell()->isClosed())
-   {
-      if(cursor->currentCell()->hasChilds())
-      {
-         cursor->currentCell()->child()->setReadOnly(true);
-         cursor->currentCell()->child()->setFocus(false);
-      }
-   }
-   else
-   {
-      cursor->currentCell()->setReadOnly(true);
-      cursor->currentCell()->setFocus(false);
-   }
+       //This does not work.
+       if(cursor->currentCell()->isClosed())
+       {
+         if(cursor->currentCell()->hasChilds())
+         {
+           cursor->currentCell()->child()->setReadOnly(true);
+           cursor->currentCell()->child()->setFocus(false);
+         }
+       }
+       else
+       {
+         cursor->currentCell()->setReadOnly(true);
+         cursor->currentCell()->setFocus(false);
+       }
 
-   cursor->addBefore(fac->createCell(style_));
+       cursor->addBefore(fac->createCell(style_));
 
-   if(cursor->currentCell()->isClosed())
-   {
-      if(cursor->currentCell()->hasChilds())
-      {
-         cursor->currentCell()->child()->setReadOnly(false);
-         cursor->currentCell()->child()->setFocus(true);
-      }
-   }
-   else
-   {
-      cursor->currentCell()->setReadOnly(false);
-      cursor->currentCell()->setFocus(true);
-   }
+       if(cursor->currentCell()->isClosed())
+       {
+         if(cursor->currentCell()->hasChilds())
+         {
+           cursor->currentCell()->child()->setReadOnly(false);
+           cursor->currentCell()->child()->setFocus(true);
+         }
+       }
+       else
+       {
+         cursor->currentCell()->setReadOnly(false);
+         cursor->currentCell()->setFocus(true);
+       }
 
-    //2006-01-18 AF, set docuement changed
-    document()->setChanged( true );
-      }
-      catch(std::exception &e)
-      {
-      // 2006-01-30 AF, add exception
-      std::string str = std::string("CreateNewCommand(), Exception: \n") + e.what();
-      throw std::runtime_error( str.c_str() );
-      }
+       //2006-01-18 AF, set docuement changed
+       document()->setChanged( true );
+     }
+     catch(const std::exception &e)
+     {
+       // 2006-01-30 AF, add exception
+       std::string str = std::string("CreateNewCommand(), Exception: \n") + e.what();
+       throw std::runtime_error( str.c_str() );
+     }
    }
 
 
@@ -209,7 +209,7 @@ namespace IAEX
     */
    void CopySelectedCellsCommand::execute()
    {
-      CellCursor *c = document()->getCursor();
+      //CellCursor *c = document()->getCursor();
       std::vector<Cell *> cells = document()->getSelection();
 
       if(cells.empty())
@@ -236,42 +236,42 @@ namespace IAEX
     */
    void DeleteCurrentCellCommand::execute()
    {
-      try
-      {
-   CellCursor *c = document()->getCursor();
-   std::vector<Cell *> cells = document()->getSelection();
+     try
+     {
+       CellCursor *c = document()->getCursor();
+       std::vector<Cell *> cells = document()->getSelection();
 
-   if(cells.empty())
-   {
-     return;
-   }
-   else
-   {
-      document()->clearSelection(); //Notice
-      application()->clearPasteboard();
+       if(cells.empty())
+       {
+         return;
+       }
+       else
+       {
+         document()->clearSelection(); //Notice
+         application()->clearPasteboard();
 
-      std::vector<Cell *>::iterator i = cells.begin();
-      for(;i != cells.end();++i)
-      {
-         c->moveAfter((*i));
+         std::vector<Cell *>::iterator i = cells.begin();
+         for(;i != cells.end();++i)
+         {
+           c->moveAfter((*i));
 
-         //1. Copy cell to pasteboard.
-         application()->addToPasteboard(c->currentCell());
+           //1. Copy cell to pasteboard.
+           application()->addToPasteboard(c->currentCell());
 
-         //2. Delete Cell.
-         c->removeCurrentCell();
-      }
-   }
+           //2. Delete Cell.
+           c->removeCurrentCell();
+         }
+       }
 
-   //2006-01-18 AF, set docuement changed
-      document()->setChanged( true );
-      }
-      catch(std::exception &e)
-      {
-      // 2006-01-30 AF, add message box
-      std::string str = std::string("DeleteCurrentCellsCommand(), Exception: \n") + e.what();
-    throw std::runtime_error( str.c_str() );
-      }
+       //2006-01-18 AF, set docuement changed
+       document()->setChanged( true );
+     }
+     catch(const std::exception &e)
+     {
+       // 2006-01-30 AF, add message box
+       std::string str = std::string("DeleteCurrentCellsCommand(), Exception: \n") + e.what();
+       throw std::runtime_error( str.c_str() );
+     }
    }
 
    //Det borde vara möjligt att titta på stylen för att avgöra om en
@@ -285,7 +285,7 @@ namespace IAEX
   void PasteCellsCommand::execute()
   {
     try
-      {
+    {
       std::vector<Cell *> cells = application()->pasteboard();
 
       // Insert new cells before this position.
@@ -298,14 +298,7 @@ namespace IAEX
         std::vector<Cell *>::iterator i = cells.begin();
         for(;i != cells.end();++i)
         {
-          try
-          {
-            pasteCell( (*i) );
-          }
-          catch(std::exception &e)
-          {
-            throw e;
-          }
+          pasteCell( (*i) );
         }
       }
       else
@@ -316,7 +309,7 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(std::exception &e)
+    catch(const std::exception &e)
     {
       // 2006-01-30 AF, add exception
       std::string str = std::string("PasteCellsCommand(), Exception: \n") + e.what();
@@ -365,12 +358,8 @@ namespace IAEX
     newCell->setCellTag( cell->cellTag() );
 
     // rules
-    rules_t rules = cell->rules();
-    rules_t::iterator current = rules.begin();
-    while( current != rules.end() )
-    {
-      newCell->addRule( (*current) );
-      ++current;
+    for (const auto &rule: cell->rules()) {
+      newCell->addRule(rule);
     }
 
     // COPY - SPECIFIC FOR CELL TYPE
@@ -499,36 +488,36 @@ namespace IAEX
     */
    void DeleteSelectedCellsCommand::execute()
    {
-      try
-      {
-   std::vector<Cell *> cells = document()->getSelection();
-   if(cells.empty())
-   {
-      application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
-      document()->getCursor()->deleteCurrentCell();
-   }
-   else
-   {
-      document()->clearSelection(); //Notice
-      application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
+     try
+     {
+       std::vector<Cell *> cells = document()->getSelection();
+       if(cells.empty())
+       {
+         application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
+         document()->getCursor()->deleteCurrentCell();
+       }
+       else
+       {
+         document()->clearSelection(); //Notice
+         application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
 
-      std::vector<Cell *>::iterator i = cells.begin();
-      for(;i != cells.end();++i)
-      {
-         (document()->getCursor())->moveAfter((*i));
-         (document()->getCursor())->deleteCurrentCell();
-      }
-   }
+         std::vector<Cell *>::iterator i = cells.begin();
+         for(;i != cells.end();++i)
+         {
+           (document()->getCursor())->moveAfter((*i));
+           (document()->getCursor())->deleteCurrentCell();
+         }
+       }
 
-   //2006-01-18 AF, set docuement changed
-      document()->setChanged( true );
-      }
-      catch(std::exception &e)
-      {
-      // 2006-01-30 AF, add exception
-      std::string str = std::string("DeleteSelectedCellsCommand(), Exception: \n") + e.what();
-    throw std::runtime_error( str.c_str() );
-      }
+       //2006-01-18 AF, set docuement changed
+       document()->setChanged( true );
+     }
+     catch(const std::exception &e)
+     {
+       // 2006-01-30 AF, add exception
+       std::string str = std::string("DeleteSelectedCellsCommand(), Exception: \n") + e.what();
+       throw std::runtime_error( str.c_str() );
+     }
    }
 
 
@@ -559,7 +548,7 @@ namespace IAEX
         document()->getCursor()->currentCell()->setStyle(style_);
       }
       else
-      {;
+      {
         std::vector<Cell *>::iterator i = cells.begin();
 
         for(;i != cells.end() ;++i)
@@ -573,7 +562,7 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(std::exception &e)
+    catch(const std::exception &e)
     {
       // 2006-01-30 AF, add exception
       std::string str = std::string("ChangeStyleOnSelectedCellsCommand(), Exception: \n") + e.what();
@@ -584,48 +573,48 @@ namespace IAEX
 
    void ChangeStyleOnCurrentCellCommand::execute()
    {
-      try
-      {
-   document()->getCursor()->currentCell()->setStyle(style_);
+     try
+     {
+       document()->getCursor()->currentCell()->setStyle(style_);
 
-   //2006-01-18 AF, set docuement changed
-      document()->setChanged( true );
-      }
-      catch(std::exception &e)
-      {
-      // 2006-01-30 AF, add exception
-      std::string str = std::string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
-    throw std::runtime_error( str.c_str() );
-      }
+       //2006-01-18 AF, set docuement changed
+       document()->setChanged( true );
+     }
+     catch(const std::exception &e)
+     {
+       // 2006-01-30 AF, add exception
+       std::string str = std::string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
+       throw std::runtime_error( str.c_str() );
+     }
    }
 
 
    void MakeGroupCellCommand::execute()
    {
-      try
-      {
-   Factory *fac = document()->cellFactory();
-   CellCursor *cursor = document()->getCursor();
+     try
+     {
+       Factory *fac = document()->cellFactory();
+       CellCursor *cursor = document()->getCursor();
 
-   Cell *prev = cursor->currentCell();
-   cursor->currentCell()->parentCell()->removeChild(prev);
+       Cell *prev = cursor->currentCell();
+       cursor->currentCell()->parentCell()->removeChild(prev);
 
-   Cell *group = fac->createCell("cellgroup", cursor->parentCell());
+       Cell *group = fac->createCell("cellgroup", cursor->parentCell());
 
-   group->addChild(prev);
-   cursor->addBefore(group);
-   cursor->moveToLastChild(group);
+       group->addChild(prev);
+       cursor->addBefore(group);
+       cursor->moveToLastChild(group);
 
-   //2006-01-18 AF, set docuement changed
-      document()->setChanged( true );
-      }
-      catch(std::exception &e)
-      {
-      // 2006-01-30 AF, add exception
-      std::string str = std::string("MakeGroupCellCommand(), Exception: \n") + e.what();
-    throw std::runtime_error( str.c_str() );
+       //2006-01-18 AF, set docuement changed
+       document()->setChanged( true );
+     }
+     catch(const std::exception &e)
+     {
+       // 2006-01-30 AF, add exception
+       std::string str = std::string("MakeGroupCellCommand(), Exception: \n") + e.what();
+       throw std::runtime_error( str.c_str() );
 
-      }
+     }
    }
 
    /*!
@@ -713,7 +702,7 @@ namespace IAEX
         }
       }
     }
-    catch( std::exception &e )
+    catch( const std::exception &e )
     {
       std::string str = std::string("UngroupCellCommand(), Exception: ") + e.what();
       throw std::runtime_error( str.c_str() );
@@ -772,7 +761,7 @@ namespace IAEX
         }
       }
     }
-    catch( std::exception &e )
+    catch( const std::exception &e )
     {
       std::string str = std::string("SplitCellCommand(), Exception: ") + e.what();
       throw std::runtime_error( str.c_str() );

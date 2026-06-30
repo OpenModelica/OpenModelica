@@ -61,6 +61,10 @@ mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
 
+## OMOptim is the legacy optimization GUI. It is disabled by default; enable it
+## with -DOM_OMOPTIM_ENABLE=ON (requires OM_ENABLE_GUI_CLIENTS). See issue #14506.
+omc_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF)
+
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
 ## This is usefull, for example, in cases where you change branches often or need to clean
@@ -167,6 +171,44 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 # issues after it.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
 
+## BLAS/LAPACK detection ###################################################################################
+## Detect BLAS and LAPACK once, here at the top level, before descending into the subprojects.
+##
+## When no BLA_VENDOR is pinned, CMake's stock FindBLAS/FindLAPACK modules sweep *every* known vendor
+## (Intel MKL, ACML, ARMPL, Apple, OpenBLAS, BLIS, ATLAS, Goto, Generic, ...), issuing hundreds of
+## find_library() calls. On a machine without a vendor BLAS this all-vendor sweep dominates the configure
+## (see issue #15904: ~200s of a ~285s configure). There are 18+ find_package(BLAS|LAPACK) call sites across
+## the tree (SimulationRuntime/c, Compiler/runtime, sundials, primme, CMinpack, Ipopt/MUMPS, OMSI, OMSICpp,
+## ...), and each one can re-trigger the full sweep, compounding the cost.
+##
+## FindBLAS/FindLAPACK clear the *normal* variables BLAS_LIBRARIES/LAPACK_LIBRARIES at entry, then guard
+## their all-vendor sweep with `if(NOT BLAS_LIBRARIES)` / `if(NOT LAPACK_LIBRARIES)`. A plain normal variable
+## inherited by a child scope is therefore wiped before the guard runs, so propagation alone does NOT prevent
+## a re-sweep. A *cache* entry of the same name, however, shows through `set(<var>)` (which only unsets the
+## normal variable) and trips the guard -- skipping the sweep entirely.
+##
+## So: detect once here, and (when found) publish the results as cache entries. Every subsequent
+## find_package(BLAS|LAPACK) anywhere in the tree -- including inside the OMCompiler/3rdParty and OMSimulator
+## submodules, which we cannot edit from this repository -- then short-circuits to the cached libraries. The
+## expensive vendor sweep runs at most once per configure instead of once per call site. Autodetection is
+## preserved (we don't pin BLA_VENDOR); if nothing is found here, the cache stays empty and a REQUIRED child
+## call still re-runs and errors exactly as before.
+## Detect and cache BLAS first: find_package(LAPACK) internally re-runs find_package(BLAS), so publishing
+## the BLAS cache up front lets LAPACK's own BLAS lookup short-circuit too -- otherwise the vendor sweep
+## would still run twice here.
+find_package(BLAS)
+if(BLAS_FOUND AND BLAS_LIBRARIES)
+  set(BLAS_LIBRARIES "${BLAS_LIBRARIES}" CACHE STRING "BLAS libraries (detected once at the top level)" FORCE)
+  set(BLAS_LINKER_FLAGS "${BLAS_LINKER_FLAGS}" CACHE STRING "BLAS linker flags (detected once at the top level)" FORCE)
+  mark_as_advanced(BLAS_LIBRARIES BLAS_LINKER_FLAGS)
+endif()
+find_package(LAPACK)
+if(LAPACK_FOUND AND LAPACK_LIBRARIES)
+  set(LAPACK_LIBRARIES "${LAPACK_LIBRARIES}" CACHE STRING "LAPACK libraries (detected once at the top level)" FORCE)
+  set(LAPACK_LINKER_FLAGS "${LAPACK_LINKER_FLAGS}" CACHE STRING "LAPACK linker flags (detected once at the top level)" FORCE)
+  mark_as_advanced(LAPACK_LIBRARIES LAPACK_LINKER_FLAGS)
+endif()
+
 ## Subdirectories ##########################################################################################
 # If asked for encryption support, add and configure the OMEncryption directory.
 if(OM_ENABLE_ENCRYPTION)
@@ -191,6 +233,10 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMSimulator)
   omc_add_subdirectory(OMEdit)
   omc_add_subdirectory(OMSens_Qt)
+
+  if(OM_OMOPTIM_ENABLE)
+    omc_add_subdirectory(OMOptim)
+  endif()
 endif()
 
 omc_add_subdirectory(libraries)

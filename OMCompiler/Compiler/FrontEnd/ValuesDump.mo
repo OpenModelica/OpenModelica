@@ -570,7 +570,7 @@ protected function unparseDimSizes "
   output String outString;
 algorithm
   outString:=
-  matchcontinue inValueLst
+  match inValueLst
     local
       Integer i1,len;
       String s1,s2,s3,res;
@@ -590,7 +590,7 @@ algorithm
         res := intString(len);
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseDimSizes;
 
 annotation(__OpenModelica_Interface="frontend_dump");

@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     CellApplication a(argc, argv, threadData);
     return a.exec();
   }
-  catch(std::exception &e)
+  catch(const std::exception &e)
   {
     // 2006-01-30 AF, add message box
     QString msg = QString("In main(), exception: \n") + e.what();

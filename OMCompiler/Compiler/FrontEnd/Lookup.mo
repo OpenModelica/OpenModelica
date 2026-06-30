@@ -387,26 +387,14 @@ starts to traverse."
   input list<Absyn.Path> inUniontypePaths;
   input HashTableStringToPath.HashTable inHt;
   input list<DAE.Type> inAcc;
-  output FCore.Cache outCache;
-  output HashTableStringToPath.HashTable outHt;
-  output list<DAE.Type> outMetarecordTypes;
+  output FCore.Cache outCache = inCache;
+  output HashTableStringToPath.HashTable outHt = inHt;
+  output list<DAE.Type> outMetarecordTypes = inAcc;
 algorithm
-  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, inUniontypePaths, inHt, inAcc)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      Absyn.Path first;
-      list<Absyn.Path>  rest;
-      HashTableStringToPath.HashTable ht;
-      list<DAE.Type> acc;
-
-    case (cache, _, {}, ht, acc) then (cache, ht, acc);
-    case (cache, env, first::rest, ht, acc)
-      algorithm
-        (cache,ht,acc) := lookupMetarecordsRecursive3(cache, env, first, AbsynUtil.pathString(first), ht, acc);
-        (cache,ht,acc) := lookupMetarecordsRecursive2(cache, env, rest, ht, acc);
-      then (cache, ht, acc);
-  end match;
+  for first in inUniontypePaths loop
+    (outCache, outHt, outMetarecordTypes) :=
+      lookupMetarecordsRecursive3(outCache, inEnv, first, AbsynUtil.pathString(first), outHt, outMetarecordTypes);
+  end for;
 end lookupMetarecordsRecursive2;
 
 protected function lookupMetarecordsRecursive3
@@ -1365,7 +1353,7 @@ if variable is not constant."
   input DAE.Type tp;
   input DAE.ComponentRef cref;
 algorithm
-  () := matchcontinue attr
+  () := match attr
     local
       String s1,s2;
 
@@ -1390,7 +1378,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Lookup.checkPackageVariableConstant failed: " + s1 + " in " + s2);
       then fail();
-  end matchcontinue;
+  end match;
 end checkPackageVariableConstant;
 
 public function lookupVarInternal "Helper function to lookupVar. Searches the frames for variables."
@@ -2545,10 +2533,10 @@ protected function selectModifier
   input DAE.Mod inModNoID;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inModID
+  outMod := match inModID
     case DAE.NOMOD() then inModNoID;
     else inModID;
-  end matchcontinue;
+  end match;
 end selectModifier;
 
 protected function buildRecordConstructorElts
@@ -3598,7 +3586,7 @@ public function isArrayType
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output Boolean outIsArray;
 protected
   SCode.Element el;

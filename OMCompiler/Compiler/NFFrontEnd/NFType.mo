@@ -1011,7 +1011,7 @@ public
       case Type.CLOCK() then "Clock";
       case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else "enumeration " + AbsynUtil.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
-      case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
+      case Type.ARRAY() then List.toStringCustom(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
@@ -1027,7 +1027,7 @@ public
       case Type.UNTYPED() then Array.toString(ty.dimensions, Dimension.toString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;
@@ -1061,7 +1061,7 @@ public
       case Type.UNTYPED() then Array.toString(ty.dimensions, function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;
@@ -1076,7 +1076,7 @@ public
       case Type.ARRAY() then stringDelimitList(List.map(ty.dimensions, function Dimension.toFlatString(format = format)), ", ");
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown or not array type: " + anyString(ty), sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown or not array type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;
@@ -1179,7 +1179,7 @@ public
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;
@@ -1215,7 +1215,7 @@ public
               case Subscript.WHOLE() then dim :: subbed_dims;
               case Subscript.SPLIT_INDEX() then subbed_dims;
               else algorithm
-                Error.assertion(false, getInstanceName() + " got wrong subscript " + Subscript.toString(sub) + "\n", sourceInfo());
+                Error.terminate(getInstanceName() + " got wrong subscript " + Subscript.toString(sub) + "\n", sourceInfo());
               then fail();
             end match;
           end for;
@@ -1238,7 +1238,7 @@ public
       else
         algorithm
           if failOnError then
-            Error.assertion(false, getInstanceName() +
+            Error.terminate(getInstanceName() +
               " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
             fail();
           end if;

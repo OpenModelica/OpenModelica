@@ -43,28 +43,28 @@
 #define NOTEBOOK_WINDOW_H
 
 
-//STD Headers
+// STD Headers
 #include <map>
+#include <memory>
 
-//QT Headers
+// Qt headers
 #include <QtCore/QHash>
 
-//IAEX Headers
+#include <QAction>
+#include <QActionGroup>
+#include <QKeyEvent>
+#include <QMenu>
+#include <QMenuBar>
+#include <QWidget>
+#include <QLabel>
+
+// IAEX headers
 #include "application.h"
 #include "document.h"
 #include "documentview.h"
 #if USE_OMSKETCH
 #include "Tools.h"
 #endif
-//Forward declaration
-class QAction;
-class QActionGroup;
-class QKeyEvent;
-class QMenu;
-class QMenuBar;
-class QStatusbar;
-class QWidget;
-class QLabel;
 
 
 namespace IAEX
@@ -77,12 +77,12 @@ class NotebookWindow : public DocumentView
   Q_OBJECT
 
 public:
-  NotebookWindow(Document *subject, const QString filename=0, int isDrModelica=0,
+  NotebookWindow(std::unique_ptr<Document> subject, const QString filename=0, int isDrModelica=0,
                  QWidget *parent=0);
   virtual ~NotebookWindow();
 
-  virtual void update();
-  virtual Document* document();
+  virtual void update() override;
+  virtual Document* document() override;
   CellApplication *application();
 
 public slots:
@@ -100,7 +100,7 @@ public slots:
   void updateBorderMenu();
   void updateMarginMenu();
   void updatePaddingMenu();
-  void updateWindowMenu();
+  void updateWindowMenu() override;
   void updateWindowTitle();
   void updateChapterCounters();
   void setStatusMessage( QString msg );
@@ -109,18 +109,18 @@ public slots:
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
   void recentTriggered();
-  QVector<Cell*> SearchCells(Cell* current);  // Added 2015-07-14 To search the cells in a document and return the number of cells
+  QVector<Cell*> SearchCells(Cell* current);  // search the cells in a document and return the number of cells
 
 protected:
-  void keyPressEvent(QKeyEvent *event);
-  void keyReleaseEvent(QKeyEvent *event);
+  void keyPressEvent(QKeyEvent *event) override;
+  void keyReleaseEvent(QKeyEvent *event) override;
   void SearchCells(Cell* current, QVector<Cell*> * total);
 
 private slots:
   void newFile();
   void openFile(const QString filename="");
   void closeFile();
-  void closeEvent( QCloseEvent *event );
+  void closeEvent(QCloseEvent *event) override;
   void aboutQTNotebook();
   void aboutQT();
   void helpText();
@@ -207,7 +207,7 @@ private:
   QMenu *formatMenu;
   QMenu *windowMenu;
 
-  // 2005-11-03/04/07 AF, Added some more for text setting changes
+  // Added some more for text setting changes
   QMenu *styleMenu;
   QMenu *fontMenu;
   QMenu *faceMenu;
@@ -272,7 +272,7 @@ private:
 
   //Change to Document.
   CellApplication *app_;
-  Document *subject_;
+  std::unique_ptr<Document> subject_;
 
   //list<Document *> opendocs_;
   QString filename_;

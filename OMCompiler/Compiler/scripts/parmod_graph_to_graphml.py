@@ -39,7 +39,7 @@ The OpenModelica automatic parallelization (``omc --parmodauto``) can export the
 simulation task graph together with its clustering as JSON:
 
     # single snapshot of the final task graph + clustering
-    ./<model> -parmodDumpTaskGraph=taskgraph.json
+    ./<model> -parmodExportTaskGraph=taskgraph.json
 
     # one before/after snapshot per clustering optimization:
     #   stages.00.initial.json, stages.01.<opt>.json, stages.02.<opt>.json, ...
@@ -727,7 +727,7 @@ def main(argv=None):
         epilog=__doc__,
     )
     p.add_argument("inputs", nargs="+", metavar="JSON",
-                   help="parmodauto JSON export(s) (-parmodDumpTaskGraph / -parmodDumpStages output)")
+                   help="parmodauto JSON export(s) (-parmodExportTaskGraph / -parmodDumpStages output)")
     p.add_argument("--mode", choices=["tasks", "clusters", "lanes", "both"], default="tasks",
                    help="which view to emit (default: tasks). 'lanes' groups each cluster "
                         "into a yEd swimlane (group node) with its tasks nested inside")

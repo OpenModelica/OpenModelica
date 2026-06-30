@@ -54,6 +54,7 @@ protected
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -264,16 +265,16 @@ public
         case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") For-Loop-Residual:\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
-        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toString(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
+        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toStringCustom(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case RESIZABLE_ASSIGN()   then str + "(" + intString(blck.index) + ") " + "resizable call [index  " + intString(blck.call_index) + "]\n";
-        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
-        case ENTWINED_ASSIGN()    then str + List.toString(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
+        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toStringCustom(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
+        case ENTWINED_ASSIGN()    then str + List.toStringCustom(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
         case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str);
         case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
-        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toString(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
+        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toStringCustom(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
         case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when, str);
         case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
         case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
@@ -302,7 +303,7 @@ public
     algorithm
       (condition, blcks) := tpl;
       str := "if " + Expression.toString(condition) + " then\n  "
-         + List.toString(blcks, function toString(str = str + "  "), "", "", "\n", "");
+         + List.toString(blcks, function toString(str = str + "  "), List.Style.NEWLINE);
     end ifTplStr;
 
     function getIndex
@@ -803,6 +804,8 @@ public
       blck := match (eqn, slice.indices)
         local
           Block tmp;
+          Integer i;
+          list<Subscript> subs;
           list<ComponentRef> names;
           list<Expression> ranges;
 
@@ -812,14 +815,32 @@ public
           res_idx := res_idx + 1;
         then tmp;
 
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        then tmp;
+
+        // unsliced array equation
         case (BEquation.ARRAY_EQUATION(), {}) algorithm
           tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
-        case (BEquation.IF_EQUATION(), _) algorithm
-          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        // single slice array equation
+        case (BEquation.ARRAY_EQUATION(), {i}) algorithm
+          // get subscripts and apply them to rhs
+          subs := list(Subscript.fromExp(Expression.INTEGER(s)) for s in Slice.indexToLocation(i, Equation.sizes(Slice.getT(slice))));
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, Expression.applySubscripts(subs, eqn.rhs), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + listLength(slice.indices);
+        then tmp;
+
+        // handle large slice array equation as full slice
+        // Note: could be improved -> scalarize? find good pattern?
+        case (BEquation.ARRAY_EQUATION(), _) algorithm
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized
@@ -1061,8 +1082,6 @@ public
           local
             Option<SimJacobian> opt_jacobian;
             SimJacobian jacobian;
-            ComponentRef cref;
-            SimVar sim_var;
 
           case LINEAR() then (blck :: linearLoops, nonlinearLoops);
           case NONLINEAR() algorithm
@@ -1306,7 +1325,7 @@ public
       String indent = str;
     algorithm
       str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
-             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), "", "", "\n", "") + "\n";
+             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), List.Style.NEWLINE) + "\n";
       if isSome(else_when) then
         str := str + indent + "else" + toString(Util.getOption(else_when));
       else
@@ -1421,7 +1440,7 @@ public
     algorithm
       str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy)
               + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n"
-              + str + "--" + List.toString(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
+              + str + "--" + List.toStringCustom(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
               + Block.listToString(system.blcks, str + "--");
     end toString;
 

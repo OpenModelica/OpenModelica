@@ -25,13 +25,13 @@ simulate(solveCallTan); getErrorString();
 // ### Variable:
 // 	$FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = 0.5 + 2.0 * time ($RES_SIM_0)
+// 	[SCAL] (1) $FUN_1 = 0.5 + 2.0 * time; ($RES_SIM_0)
 //
 // Solve Output:
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = 0.5 + 2.0 * time ($RES_SIM_0)
+// 	[SCAL] (1) $FUN_1 = 0.5 + 2.0 * time; ($RES_SIM_0)
 //
 // END - Solve
 // ##########################################
@@ -44,7 +44,7 @@ simulate(solveCallTan); getErrorString();
 // ### Variable:
 // 	x
 // ### Equation:
-// 	[SCAL] (1) 0.5 + 2.0 * time = tanh(x) ($RES_AUX_1)
+// 	[SCAL] (1) 0.5 + 2.0 * time = tanh(x); ($RES_AUX_1)
 //
 // SolveUnique Instructions (substitute from top to bottom):
 // 	0 (is initial)
@@ -57,7 +57,7 @@ simulate(solveCallTan); getErrorString();
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) x = atanh(0.5 + 2.0 * time) ($RES_AUX_1)
+// 	[SCAL] (1) x = atanh(0.5 + 2.0 * time); ($RES_AUX_1)
 //
 // END - Solve
 // ##########################################

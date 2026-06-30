@@ -66,7 +66,7 @@ bootstrap-from-tarball2:
 	#$(PATCH_SOURCES)
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc OMC_EXTRA_FLAGS= BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)"

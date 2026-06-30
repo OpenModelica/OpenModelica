@@ -89,6 +89,7 @@ import CodegenCFunctions.*;
 import CodegenFMUCommon.*;
 import CodegenFMU1;
 import CodegenFMU2;
+import CodegenFMU3;
 
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
@@ -122,6 +123,12 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   */
 
   let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.xml')
+
+  // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
+
+  // Generate sources/buildDescription.xml (FMI 3.0 source-FMU build instructions)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiBuildDescriptionFile(simCode, sourceFiles, fileNamePrefixHash)
 
   // Generate optional <fmiPrefix>_flags.json
   let _ = match sc.fmiSimulationFlags
@@ -236,7 +243,8 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%
-  if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  if isFMIVersion30(FMUVersion) then CodegenFMU3.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  else if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
   else CodegenFMU1.fmiModelDescription(simCode,guid,FMUType)
   %>
   >>
@@ -291,7 +299,12 @@ case SIMCODE(__) then
   #endif
 
   extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-  <%if isFMIVersion20(FMUVersion) then
+  <%if isFMIVersion30(FMUVersion) then
+    <<
+    #define fmu3_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu3_model_interface.h"
+    >>
+  else if isFMIVersion20(FMUVersion) then
     <<
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmi-export/fmu2_model_interface.h"
@@ -299,27 +312,52 @@ case SIMCODE(__) then
     >>
   else
     <<
+    // fmu1_model_interface.h pulls in fmiModelFunctions.h (the FMI 1.0 types) and defines the
+    // ModelInstance struct used by the declarations below and by fmu1_model_interface.c.inc.
+    // The FMI 2.0 fmi2Functions.h header is not needed for FMI 1.0. The implementation
+    // (fmu1_model_interface.c.inc) is inlined further down, after the forward declarations
+    // that it calls (setStartValues, getReal, ...). See #15838.
+    #include "fmi-export/fmu1_model_interface.h"
     #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu1_model_interface.c.inc"
     >>
   %>
 
-  <%if isFMIVersion20(FMUVersion) then
+  <%if isFMIVersion30(FMUVersion) then
+  <<
+  // FMI 3.0 export. fmu3_model_interface.c is self-contained (its own model
+  // engine) and is built independently of the FMI 2.0 files. The generated
+  // per-base-type get/set helper functions below (getReal/setReal/...) are
+  // shared model code. FMI 3.0 requires globally unique value references, so the
+  // per-base-type value references are shifted by the offsets below to recover
+  // the per-type index used by the engine. fmi2Functions.h is included only for
+  // the FMI 2.0 scalar/utility types used by the engine and the generated helpers.
+  #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #include "fmi2Functions.h"
+  #define FMI3_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #include "fmi3Functions.h"
+
+  #define FMI3_REAL_VR_OFFSET    0
+  #define FMI3_INTEGER_VR_OFFSET (NUMBER_OF_REALS)
+  #define FMI3_BOOLEAN_VR_OFFSET (NUMBER_OF_REALS + NUMBER_OF_INTEGERS)
+  #define FMI3_STRING_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS)
+  // external objects are exported as FMI 3.0 Binary, then the model clocks, after the string block
+  #define FMI3_BINARY_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
+  #define FMI3_CLOCK_VR_OFFSET   (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
+  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
+  #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+  >>
+  else if isFMIVersion20(FMUVersion) then
   <<
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
   #include "fmi-export/fmu2_model_interface.h"
   #include "fmi-export/fmu_read_flags.h"
   >>
-  else
-  <<
-  #include "fmi2Functions.h"
-  #include "fmi-export/fmu1_model_interface.h"
-  >>%>
+  %>
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
-  <%if isFMIVersion20(FMUVersion) then
+  <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
   fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr);
@@ -350,6 +388,15 @@ case SIMCODE(__) then
   fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, fmiString value);
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
   >>
+  %>
+
+  <%if isFMIVersion10(FMUVersion) then
+  <<
+  // FMI 1.0 inlines the model interface implementation here, after the forward declarations
+  // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
+  #include "fmi-export/fmu1_model_interface.c.inc"
+  >>
+  else ""
   %>
 
   #ifdef __cplusplus
@@ -383,7 +430,7 @@ case SIMCODE(__) then
   <%setStartValues(modelInfo)%>
 
   // implementation of the Model Exchange functions
-  <%if isFMIVersion20(FMUVersion) then
+  <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   <%eventUpdateFunction2(simCode)%>
   <%getRealFunction2(simCode, modelInfo)%>
@@ -422,26 +469,32 @@ template ModelDefineData(SimCode simCode, ModelInfo modelInfo)
  "Generates global data in simulation file."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
-let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numDiscreteReal, intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars))))
-let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
-let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
-let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
+case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates), nClocks=numberOfClocks) then
+// Per-scalar sizes (sum getNumElems): equals the per-variable varInfo counts for
+// scalarized variables, but counts each element for non-scalarized arrays.
+// (numScalarElems is inlined because a Susan `let` binds a Text, not an Integer.)
+let numberOfReals = intAdd(intMul(SimCodeUtil.numScalarElems(vars.stateVars),2),intAdd(SimCodeUtil.numScalarElems(vars.discreteAlgVars), intAdd(SimCodeUtil.numScalarElems(vars.algVars),intAdd(SimCodeUtil.numScalarElems(vars.paramVars),SimCodeUtil.numScalarElems(vars.aliasVars)))))
+let numberOfIntegers = intAdd(SimCodeUtil.numScalarElems(vars.intAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.intParamVars),SimCodeUtil.numScalarElems(vars.intAliasVars)))
+let numberOfStrings = intAdd(SimCodeUtil.numScalarElems(vars.stringAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.stringParamVars),SimCodeUtil.numScalarElems(vars.stringAliasVars)))
+let numberOfBooleans = intAdd(SimCodeUtil.numScalarElems(vars.boolAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars),SimCodeUtil.numScalarElems(vars.boolAliasVars)))
 let numberOfRealInputs = varInfo.numRealInputVars
   <<
   // define model size
-  #define NUMBER_OF_STATES <%if intEq(varInfo.numStateVars,1) then statesnumwithDummy(listStates) else  varInfo.numStateVars%>
+  #define NUMBER_OF_STATES <%if intEq(SimCodeUtil.numScalarElems(vars.stateVars),1) then statesnumwithDummy(listStates) else  SimCodeUtil.numScalarElems(vars.stateVars)%>
   #define NUMBER_OF_EVENT_INDICATORS <%varInfo.numZeroCrossings%>
   #define NUMBER_OF_REALS <%numberOfReals%>
   #define NUMBER_OF_REAL_INPUTS <%numberOfRealInputs%>
   #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
+  #define NUMBER_OF_EXTERNALOBJECTS <%listLength(vars.extObjVars)%>
+  #define NUMBER_OF_CLOCKS <%numberOfClocks%>
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
 
-  // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else lookupVR(name, simCode)  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else lookupVR(name, simCode)  ;separator=", "%> }
+  // define initial state vector as vector of value references (arrays expanded to
+  // their scalar element value references)
+  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else SimCodeUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else SimCodeUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
 
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -549,7 +602,10 @@ template initVals(SimVar var, String arrayName) ::=
         ''
       else
         match type_
-          case T_REAL() then
+          // For a non-scalarized real array the start attribute is a single
+          // (broadcast) scalar element, so it is set like a scalar real.
+          case T_REAL()
+          case T_ARRAY(ty=T_REAL()) then
             <<
             put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
             >>
@@ -573,7 +629,9 @@ end initParams;
 
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(index=index, type_=T_REAL()) then
+    // a non-scalarized real array's start attribute is a single broadcast scalar.
+    case SIMVAR(index=index, type_=T_REAL())
+    case SIMVAR(index=index, type_=T_ARRAY(ty=T_REAL())) then
       <<
       put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
@@ -607,14 +665,23 @@ template initValDefault(SimVar var) ::=
       case SOME(v as RCONST(__))
       case SOME(v as SCONST(__))
       case SOME(v as BCONST(__))
-      case SOME(v as ENUM_LITERAL(__)) then initVal(v)
+      case SOME(v as ENUM_LITERAL(__))
+      // non-scalarized array start (broadcast scalar) given as an array
+      // constructor / reduction:
+      case SOME(v as ARRAY(__))
+      case SOME(v as REDUCTION(__)) then initVal(v)
       else
         match var.type_
           case T_INTEGER(__)
           case T_REAL(__)
           case T_ENUMERATION(__)
-          case T_BOOL(__) then '0'
-          case T_STRING(__) then 'mmc_mk_scon("")'
+          case T_BOOL(__)
+          case T_ARRAY(ty=T_INTEGER())
+          case T_ARRAY(ty=T_REAL())
+          case T_ARRAY(ty=T_ENUMERATION())
+          case T_ARRAY(ty=T_BOOL()) then '0'
+          case T_STRING(__)
+          case T_ARRAY(ty=T_STRING()) then 'mmc_mk_scon("")'
           else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
 end initValDefault;
 
@@ -626,6 +693,9 @@ template initVal(Exp initialValue)
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
   case ENUM_LITERAL(__) then '<%index%>'
+  // non-scalarized array start (broadcast scalar): extract the element value.
+  case ARRAY(array = first :: _) then initVal(first)
+  case REDUCTION(expr = first) then initVal(first)
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
@@ -839,9 +909,12 @@ template getRealFunction2(SimCode simCode, ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
-  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
-  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
-  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
+  // per-scalar block boundaries (sum getNumElems), so non-scalarized array
+  // variables index the correct contiguous realVars range. (numScalarElems is
+  // inlined because a Susan `let` binds a Text, not an Integer.)
+  let ixFirstParam = intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars))))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))))
   <<
   <%if numAlgAliasVars then
   <<
@@ -877,9 +950,10 @@ template setRealFunction2(SimCode simCode, ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
-  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
-  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
-  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
+  // per-scalar block boundaries (sum getNumElems) for non-scalarized arrays.
+  let ixFirstParam = intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars))))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))))
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
@@ -1303,6 +1377,13 @@ case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIAL
         }
     }
     >>
+else
+    <<
+    /* no model structure / initial unknowns available */
+    fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr) {
+        return -1;
+    }
+    >>
 end match
 end mapInitialUnknownsdependentCrefs;
 
@@ -1320,6 +1401,13 @@ case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIAL
           default:
             return -1;
         }
+    }
+    >>
+else
+    <<
+    /* no model structure / initial unknowns available */
+    fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr) {
+        return -1;
     }
     >>
 end match
@@ -1447,7 +1535,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       # /I - Include Directories
       # /DNOMINMAX - Define NOMINMAX (does what it says)
       # /TP - Use C++ Compiler
-      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
+      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion30(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi3" /I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
 
       # /ZI enable Edit and Continue debug info
       CDFLAGS=/ZI
@@ -1520,7 +1608,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
       CPPFLAGS=@CPPFLAGS@
-      override CPPFLAGS += -DFMI2_OVERRIDE_FUNCTION_PREFIX
+      override CPPFLAGS += <%if isFMIVersion30(FMUVersion) then "-DFMI3_OVERRIDE_FUNCTION_PREFIX -DFMI2_OVERRIDE_FUNCTION_PREFIX" else "-DFMI2_OVERRIDE_FUNCTION_PREFIX"%>
 
       override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
 
@@ -1568,7 +1656,98 @@ template fmudeffile(SimCode simCode, String FMUVersion)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  if isFMIVersion20(FMUVersion) then
+  if isFMIVersion30(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3GetVersion
+    <%fileNamePrefix%>_fmi3SetDebugLogging
+    <%fileNamePrefix%>_fmi3InstantiateModelExchange
+    <%fileNamePrefix%>_fmi3InstantiateCoSimulation
+    <%fileNamePrefix%>_fmi3InstantiateScheduledExecution
+    <%fileNamePrefix%>_fmi3FreeInstance
+    <%fileNamePrefix%>_fmi3EnterInitializationMode
+    <%fileNamePrefix%>_fmi3ExitInitializationMode
+    <%fileNamePrefix%>_fmi3EnterEventMode
+    <%fileNamePrefix%>_fmi3Terminate
+    <%fileNamePrefix%>_fmi3Reset
+    <%fileNamePrefix%>_fmi3GetFloat32
+    <%fileNamePrefix%>_fmi3GetFloat64
+    <%fileNamePrefix%>_fmi3GetInt8
+    <%fileNamePrefix%>_fmi3GetUInt8
+    <%fileNamePrefix%>_fmi3GetInt16
+    <%fileNamePrefix%>_fmi3GetUInt16
+    <%fileNamePrefix%>_fmi3GetInt32
+    <%fileNamePrefix%>_fmi3GetUInt32
+    <%fileNamePrefix%>_fmi3GetInt64
+    <%fileNamePrefix%>_fmi3GetUInt64
+    <%fileNamePrefix%>_fmi3GetBoolean
+    <%fileNamePrefix%>_fmi3GetString
+    <%fileNamePrefix%>_fmi3GetBinary
+    <%fileNamePrefix%>_fmi3GetClock
+    <%fileNamePrefix%>_fmi3SetFloat32
+    <%fileNamePrefix%>_fmi3SetFloat64
+    <%fileNamePrefix%>_fmi3SetInt8
+    <%fileNamePrefix%>_fmi3SetUInt8
+    <%fileNamePrefix%>_fmi3SetInt16
+    <%fileNamePrefix%>_fmi3SetUInt16
+    <%fileNamePrefix%>_fmi3SetInt32
+    <%fileNamePrefix%>_fmi3SetUInt32
+    <%fileNamePrefix%>_fmi3SetInt64
+    <%fileNamePrefix%>_fmi3SetUInt64
+    <%fileNamePrefix%>_fmi3SetBoolean
+    <%fileNamePrefix%>_fmi3SetString
+    <%fileNamePrefix%>_fmi3SetBinary
+    <%fileNamePrefix%>_fmi3SetClock
+    <%fileNamePrefix%>_fmi3GetNumberOfVariableDependencies
+    <%fileNamePrefix%>_fmi3GetVariableDependencies
+    <%fileNamePrefix%>_fmi3GetFMUState
+    <%fileNamePrefix%>_fmi3SetFMUState
+    <%fileNamePrefix%>_fmi3FreeFMUState
+    <%fileNamePrefix%>_fmi3SerializedFMUStateSize
+    <%fileNamePrefix%>_fmi3SerializeFMUState
+    <%fileNamePrefix%>_fmi3DeserializeFMUState
+    <%fileNamePrefix%>_fmi3GetDirectionalDerivative
+    <%fileNamePrefix%>_fmi3GetAdjointDerivative
+    <%fileNamePrefix%>_fmi3EnterConfigurationMode
+    <%fileNamePrefix%>_fmi3ExitConfigurationMode
+    <%fileNamePrefix%>_fmi3GetIntervalDecimal
+    <%fileNamePrefix%>_fmi3GetIntervalFraction
+    <%fileNamePrefix%>_fmi3GetShiftDecimal
+    <%fileNamePrefix%>_fmi3GetShiftFraction
+    <%fileNamePrefix%>_fmi3SetIntervalDecimal
+    <%fileNamePrefix%>_fmi3SetIntervalFraction
+    <%fileNamePrefix%>_fmi3SetShiftDecimal
+    <%fileNamePrefix%>_fmi3SetShiftFraction
+    <%fileNamePrefix%>_fmi3EvaluateDiscreteStates
+    <%fileNamePrefix%>_fmi3UpdateDiscreteStates
+    ;***************************************************
+    ;Functions for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterContinuousTimeMode
+    <%fileNamePrefix%>_fmi3CompletedIntegratorStep
+    <%fileNamePrefix%>_fmi3SetTime
+    <%fileNamePrefix%>_fmi3SetContinuousStates
+    <%fileNamePrefix%>_fmi3GetContinuousStateDerivatives
+    <%fileNamePrefix%>_fmi3GetEventIndicators
+    <%fileNamePrefix%>_fmi3GetContinuousStates
+    <%fileNamePrefix%>_fmi3GetNominalsOfContinuousStates
+    <%fileNamePrefix%>_fmi3GetNumberOfEventIndicators
+    <%fileNamePrefix%>_fmi3GetNumberOfContinuousStates
+    ;***************************************************
+    ;Functions for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterStepMode
+    <%fileNamePrefix%>_fmi3GetOutputDerivatives
+    <%fileNamePrefix%>_fmi3DoStep
+    ;***************************************************
+    ;Functions for Scheduled Execution
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3ActivateModelPartition
+  >>
+  else if isFMIVersion20(FMUVersion) then
   <<
   EXPORTS
     ;***************************************************
@@ -3354,23 +3533,52 @@ template ScalarVariableFMU(SimVar simVar, String classType)
       <%infostr%>.name = "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>";
       <%infostr%>.comment = "<%description%>";
       <%getInfoArgsFMU(infostr+".info", info)%>
+      <%DimensionsFMU(simVar, classType, ci)%>
       <%ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
       >>
 end ScalarVariableFMU;
 
-template optInitValFMU(Option<Exp> exp, String default)
+template DimensionsFMU(SimVar simVar, String classType, String ci)
+ "Sets the runtime array dimensions of a non-scalarized array variable so that
+  calculateAllScalarLength / computeVarIndices size the value vectors correctly.
+  Emits nothing for scalars (numberOfDimensions defaults to 0). Only genuine
+  array variables (type_ = T_ARRAY) are dimensioned: a scalarized array element
+  still carries the parent numArrayElement but is a scalar and must keep
+  numberOfDimensions 0, otherwise the start/min/max/nominal bound-attribute
+  update treats it as an array."
 ::=
-  match exp
-  case SOME(e) then
-  (
+match simVar
+case SIMVAR(type_ = T_ARRAY(), numArrayElement = dims) then
+  if listEmpty(dims) then '' else
+  <<
+  modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
+  modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
+  <%dims |> d hasindex k0 =>
+    'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
+   ;separator="\n"%>
+  >>
+end DimensionsFMU;
+
+template scalarValFMU(Exp e, String default)
+ "Returns a C literal for a scalar constant expression. For a non-scalarized
+  array start (a uniform array constructor / reduction) the single broadcast
+  element value is extracted."
+::=
   match e
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then 'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
   case BCONST(__) then if bool then 1 else 0
   case ENUM_LITERAL(__) then '<%index%>'
+  case ARRAY(array = first :: _) then scalarValFMU(first, default)
+  case REDUCTION(expr = first) then scalarValFMU(first, default)
   else default // error(sourceInfo(), 'initial value of unknown type: <%printExpStr(e)%>')
-  )
+end scalarValFMU;
+
+template optInitValFMU(Option<Exp> exp, String default)
+::=
+  match exp
+  case SOME(e) then scalarValFMU(e, default)
   else default
 end optInitValFMU;
 
@@ -3412,6 +3620,9 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
+    case T_ARRAY(ty=ty) then
+      // non-scalarized array variable: emit the attributes using the element type
+      ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
     else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
 end ScalarVariableTypeFMU;
 

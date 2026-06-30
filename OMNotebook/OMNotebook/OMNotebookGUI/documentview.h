@@ -63,12 +63,13 @@ namespace IAEX
       Q_OBJECT
    public:
       DocumentView(QWidget *parent=0)
-   : QMainWindow(parent){ setAttribute(Qt::WA_DeleteOnClose); }
+        : QMainWindow(parent){ setAttribute(Qt::WA_DeleteOnClose); }
       virtual ~DocumentView(){}
 
       virtual void update() = 0;
-    virtual Document* document() = 0;
+      virtual Document* document() = 0;
 
+      virtual void updateWindowMenu() = 0;
    };
 };
 

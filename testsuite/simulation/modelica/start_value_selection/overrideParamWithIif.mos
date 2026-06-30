@@ -1,0 +1,50 @@
+// name:     overrideParamWithIif.mos [BUG: #15807]
+// keywords: start value selection, -iif, -override
+// status:   correct
+// teardown_command: rm -rf *overrideParamWithIif_model* ref_overrideParamWithIif.mat res_overrideParamWithIif.mat
+// cflags:
+
+// A parameter explicitly set with -override must win over the value imported
+// from an initialization file given with -iif (ticket #15807). Before the fix
+// the imported value (J=2) silently clobbered the override (J=10).
+
+loadString("
+model overrideParamWithIif_model
+  parameter Real J = 2.0;
+  Real x(start = 1.0, fixed = true);
+equation
+  der(x) = -J*x;
+  annotation(experiment(StopTime = 1));
+end overrideParamWithIif_model;
+");getErrorString();
+
+// first run with J = 2 to create an initialization file
+simulate(overrideParamWithIif_model, simflags="-r=ref_overrideParamWithIif.mat");getErrorString();
+
+// second run: initialize from the file but override J = 10. The override must
+// win, so J must be 10 (not 2 from the file).
+simulate(overrideParamWithIif_model, simflags="-iif=ref_overrideParamWithIif.mat -override=J=10 -r=res_overrideParamWithIif.mat");getErrorString();
+val(J, 0.0);getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ref_overrideParamWithIif.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=ref_overrideParamWithIif.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "res_overrideParamWithIif.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideParamWithIif_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=ref_overrideParamWithIif.mat -override=J=10 -r=res_overrideParamWithIif.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 10.0
+// ""
+// endResult

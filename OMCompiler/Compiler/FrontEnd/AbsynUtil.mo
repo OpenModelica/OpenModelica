@@ -4328,7 +4328,7 @@ public function typeSpecStringNoQualNoDimsLst
   input list<Absyn.TypeSpec> inTypeSpecLst;
   output String outString;
 algorithm
-  outString := List.toString(inTypeSpecLst, typeSpecStringNoQualNoDims,
+  outString := List.toStringCustom(inTypeSpecLst, typeSpecStringNoQualNoDims,
     "", "", ", ", "", false);
 end typeSpecStringNoQualNoDimsLst;
 
@@ -5754,14 +5754,14 @@ protected function eltsHasLocalClass
   input list<Absyn.ElementItem> inElts;
   output Boolean res;
 algorithm
-  res := matchcontinue inElts
+  res := match inElts
     local
       list<Absyn.ElementItem> elts;
 
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
     else false;
-  end matchcontinue;
+  end match;
 end eltsHasLocalClass;
 
 protected function traverseInnerClass<Arg>
@@ -7137,7 +7137,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown element.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown element.", sourceInfo());
       then
         fail();
 
@@ -7277,7 +7277,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation.", sourceInfo());
       then
         fail();
 

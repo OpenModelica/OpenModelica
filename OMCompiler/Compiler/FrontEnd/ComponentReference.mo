@@ -1107,7 +1107,7 @@ Function for extracting the name and type out of the first cref of a componentRe
   output DAE.Type res;
 algorithm
   (id,res) :=
-  matchcontinue inRef
+  match inRef
     local
       DAE.Type t2;
       DAE.Ident name;
@@ -1125,7 +1125,7 @@ algorithm
         Debug.traceln(s);
       then
         fail();
-  end matchcontinue;
+  end match;
 end crefNameType;
 
 public function getArrayCref
@@ -1253,10 +1253,19 @@ algorithm
 end crefPrefixAux;
 
 public function crefRemovePrePrefix
+  "Strips a leading $PRE or $START qualifier from a cref. Used by the code
+   generation templates before looking up a SimVar (cref2simvar) to obtain
+   index/nominal/min/max info: $PRE.x and $START.x are not SimVars of their
+   own, they share the storage of x, so they must resolve to x's SimVar.
+   Without stripping $START the lookup fails and emits the -2
+   ERROR_simVarFromHT_failed sentinel, which crashes at runtime when used as
+   a scalar index (ticket #15433, nested initialization nonlinear systems
+   iterating over $START.<var>)."
   input output DAE.ComponentRef cref;
 algorithm
   cref := match cref
     case DAE.CREF_QUAL(ident=DAE.preNamePrefix) then cref.componentRef;
+    case DAE.CREF_QUAL(ident=DAE.startNamePrefix) then cref.componentRef;
     else cref;
   end match;
 end crefRemovePrePrefix;
@@ -1763,7 +1772,7 @@ A function for replacing any occurance of DAE.SLICE or DAE.WHOLEDIM with new sub
   input list<DAE.Subscript> inSub;
   output list<DAE.Subscript> osubs;
 algorithm
-  osubs := matchcontinue inSubs
+  osubs := match inSubs
     local
       list<DAE.Subscript> subs;
       DAE.Subscript sub;
@@ -1789,7 +1798,7 @@ algorithm
         subs := replaceSliceSub(subs,inSub);
       then
         (sub::subs);
-  end matchcontinue;
+  end match;
 end replaceSliceSub;
 
 public function stripCrefIdentSliceSubs "
@@ -1975,7 +1984,7 @@ public function crefStripLastIdent
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
 algorithm
-  outCr := matchcontinue inCr
+  outCr := match inCr
     local
       DAE.Ident id;
       list<DAE.Subscript> subs;
@@ -1991,7 +2000,7 @@ algorithm
         cr1 := crefStripLastIdent(cr);
       then
         ComponentReferenceBasics.makeCrefQual(id,t2,subs,cr1);
-  end matchcontinue;
+  end match;
 end crefStripLastIdent;
 
 public function crefStripIterSub
@@ -2264,7 +2273,7 @@ public function firstNCrefs
   output DAE.ComponentRef outFirstCrefs;
 
 algorithm
-  outFirstCrefs := matchcontinue(inCref,nIn)
+  outFirstCrefs := match(inCref,nIn)
     local
       DAE.Ident id;
       DAE.Type ty;
@@ -2288,7 +2297,7 @@ algorithm
       else
         then (inCref);
 
-  end matchcontinue;
+  end match;
 end firstNCrefs;
 
 public function splitCrefFirst
@@ -2380,7 +2389,7 @@ public function expandCref
   input Boolean expandRecord;
   output list<DAE.ComponentRef> outCref;
 algorithm
-  outCref := matchcontinue expandRecord
+  outCref := match expandRecord
     case _ then expandCref_impl(inCref,expandRecord);
 
     else
@@ -2391,7 +2400,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end expandCref;
 
 public function expandCref_impl

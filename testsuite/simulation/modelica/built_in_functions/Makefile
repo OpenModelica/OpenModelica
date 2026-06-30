@@ -13,6 +13,9 @@ HydrogenIodide.mos \
 Identity.mos \
 LotkaVolterra.mos \
 MeasureTime.mos \
+NthRoot1.mos \
+NthRoot2.mos \
+NthRoot3.mos \
 SampledPrints.mos \
 SampleElseWhen.mos \
 SemiLinear.mos \

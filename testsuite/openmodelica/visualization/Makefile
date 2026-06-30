@@ -2,6 +2,8 @@ TEST=../../rtest -v
 
 TESTFILES= \
 ForceAndTorque.mos \
+ModelicaServicesShapeAnimation.mos \
+ModelicaServicesShapeExtends.mos \
 Surfaces.mos \
 
 

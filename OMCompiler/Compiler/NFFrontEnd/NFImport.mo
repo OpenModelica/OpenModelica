@@ -182,7 +182,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid class tree", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid class tree", sourceInfo());
         then
           ();
 

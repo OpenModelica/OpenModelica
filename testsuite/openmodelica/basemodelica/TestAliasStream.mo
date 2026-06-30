@@ -42,6 +42,16 @@ package TestAliasStream
     port.p = p_atm + rho*g*y;
   end Tank;
 
+  model Pipe
+    FluidPort inlet;
+    FluidPort outlet;
+  equation
+    inlet.p = outlet.p;
+    inlet.w + outlet.w = 0;
+    inlet.h = inStream(outlet.h);
+    outlet.h = inStream(inlet.h);
+  end Pipe;
+
   model TemperatureSensor
     FluidPort port(w(min = 0));
     Real h;
@@ -127,7 +137,7 @@ package TestAliasStream
   end Test8;
 
   model Test9
-    Pump pump1(w(min = 0) = max(1 - time, 0));
+    Pump pump1(w(min = 0) = max(1 - time, 0.1));
     Pump pump2(w = sin(time));
     Tank tank;
   equation

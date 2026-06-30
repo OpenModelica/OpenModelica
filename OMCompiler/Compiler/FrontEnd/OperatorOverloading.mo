@@ -1948,7 +1948,7 @@ function replaceOperatorWithFcall "Replaces a userdefined operator expression wi
   input DAE.Const inConst;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (AbExp, inExp1, inOper, inExp2)
+  outExp := match (AbExp, inExp1, inOper, inExp2)
     local
       DAE.Exp e1,e2;
       Absyn.Path funcname;
@@ -1983,7 +1983,7 @@ algorithm
     case (Absyn.RELATION(_,_,_), e1, _, SOME(e2))
       then DAE.RELATION(e1, inOper, e2, -1, NONE());
 
-  end matchcontinue;
+  end match;
 end replaceOperatorWithFcall;
 
 function warnUnsafeRelations "Check if we have Real == Real or Real != Real, if so give a warning."

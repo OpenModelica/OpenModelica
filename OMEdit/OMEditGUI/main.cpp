@@ -47,9 +47,16 @@
 #define GC_THREADS
 #endif
 
+#ifdef OMC_RUST_ABI
+// Drive the Rust omc port (libOpenModelicaCompiler.so) in-process: a
+// self-contained replacement for the MMC value/runtime ABI (no Boehm GC). See
+// omc_rust_embedding.h; provides MMC_INIT/MMC_TRY_TOP/threadData.
+#include "omc_rust_embedding.h"
+#else
 extern "C" {
 #include "meta/meta_modelica_data.h"
 }
+#endif
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -218,6 +225,13 @@ int main(int argc, char *argv[])
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
+#ifdef Q_OS_WIN
+  // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
+  qputenv("QSG_RHI_BACKEND", "opengl");
+#endif // #ifdef Q_OS_WIN
+#ifdef Q_OS_LINUX
+  qputenv("EGL_LOG_LEVEL", "fatal");
+#endif // #ifdef Q_OS_LINUX
   OMEditApplication a(argc, argv, threadData);
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.

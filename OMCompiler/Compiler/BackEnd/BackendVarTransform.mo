@@ -470,7 +470,7 @@ protected function makeTransitive2 "
   output DAE.Exp outDst;
 algorithm
   (outRepl,outSrc,outDst):=
-  matchcontinue inFuncTypeExpExpToBooleanOption
+  match inFuncTypeExpExpToBooleanOption
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
@@ -481,7 +481,7 @@ algorithm
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
     case _ then (repl,src,dst);  /* dst has no own replacement, return */
-  end matchcontinue;
+  end match;
 end makeTransitive2;
 
 protected function addExtendReplacement
@@ -491,103 +491,91 @@ protected function addExtendReplacement
   input CrefSet extendrepl;
   input DAE.ComponentRef cr;
   input Option<DAE.ComponentRef> preCr;
-  output CrefSet outExtendrepl;
+  output CrefSet outExtendrepl = extendrepl;
+protected
+  list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>>> worklist = {(cr, preCr)};
+  DAE.ComponentRef wcr;
+  Option<DAE.ComponentRef> wpre;
 algorithm
-  outExtendrepl:=
-  matchcontinue (cr, preCr)
-    local
-      CrefSet erepl;
-      DAE.ComponentRef subcr,precr,precr1,pcr,precrn,precrn1;
-      DAE.Ident ident;
-      DAE.Type ty;
-      list<DAE.Subscript> subscriptLst;
-      list<DAE.Var> varLst;
-      list<DAE.ComponentRef> crefs;
-      String s;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()), NONE())
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        // update Replacements
-        UnorderedSet.addUnique(precr, extendrepl);
-      then extendrepl;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()), SOME(pcr))
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        precr1 := ComponentReference.joinCrefs(pcr,precr);
-        // update Replacements
-        UnorderedSet.addUnique(precr1, extendrepl);
-      then extendrepl;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)), NONE())
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        // update Replacements
-        UnorderedSet.addUnique(precr, extendrepl);
-        // Create a list of crefs from names
-        crefs :=  List.map(varLst,ComponentReference.creffromVar);
-        erepl := List.fold1r(crefs,addExtendReplacement,SOME(precr), extendrepl);
-      then erepl;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)), SOME(pcr))
-      algorithm
-        precr1 := ComponentReference.joinCrefs(pcr,cr);
-        // update Replacements
-        UnorderedSet.addUnique(precr1, extendrepl);
-        // Create a list of crefs from names
-        crefs :=  List.map(varLst,ComponentReference.creffromVar);
-        erepl := List.fold1r(crefs,addExtendReplacement,SOME(precr1), extendrepl);
-      then erepl;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_), NONE())
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        // update Replacements
-        UnorderedSet.addUnique(precr, extendrepl);
-      then extendrepl;
-    case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_), SOME(pcr))
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        precr1 := ComponentReference.joinCrefs(pcr,precr);
-        // update Replacements
-        UnorderedSet.addUnique(precr1, extendrepl);
-      then extendrepl;
-    case (DAE.CREF_IDENT(), _)
-      then
-        extendrepl;
-    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), NONE())
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        // update Replacements
-        UnorderedSet.addUnique(precr, extendrepl);
-        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
-        erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
-      then erepl;
-    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), SOME(pcr))
-      algorithm
-        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
-        precr1 := ComponentReference.joinCrefs(pcr,precr);
-        // update Replacements
-        UnorderedSet.addUnique(precr1, extendrepl);
-        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
-        precrn1 := ComponentReference.joinCrefs(pcr,precrn);
-        erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
-      then erepl;
-    // all other
-    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), NONE())
-      algorithm
-        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
-        erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
-      then erepl;
-    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), SOME(pcr))
-      algorithm
-        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
-        precrn1 := ComponentReference.joinCrefs(pcr,precrn);
-        erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
-      then erepl;
-    case (_, _)
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
-        s := ComponentReferenceBasics.printComponentRefStr(cr);
-        Debug.trace("- BackendVarTransform.addExtendReplacement failed for " + s);
-      then extendrepl;
-  end matchcontinue;
+  // The replacement set is mutated in-place, so visiting order does not matter
+  while not listEmpty(worklist) loop
+    (wcr, wpre) := listHead(worklist);
+    worklist := listRest(worklist);
+    _ := match (wcr, wpre)
+      local
+        DAE.ComponentRef subcr,precr,precr1,pcr,precrn,precrn1;
+        DAE.Ident ident;
+        DAE.Type ty;
+        list<DAE.Subscript> subscriptLst;
+        list<DAE.Var> varLst;
+        list<DAE.ComponentRef> crefs;
+        String s;
+      case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()), NONE())
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          UnorderedSet.add(precr, extendrepl);
+        then ();
+      case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()), SOME(pcr))
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          precr1 := ComponentReference.joinCrefs(pcr,precr);
+          UnorderedSet.add(precr1, extendrepl);
+        then ();
+      case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)), NONE())
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          if not UnorderedSet.contains(precr, extendrepl) then
+            UnorderedSet.add(precr, extendrepl);
+            // queue the record members, parented by precr
+            crefs := List.map(varLst,ComponentReference.creffromVar);
+            for c in crefs loop
+              worklist := (c, SOME(precr)) :: worklist;
+            end for;
+          end if;
+        then ();
+      case (DAE.CREF_IDENT(identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)), SOME(pcr))
+        algorithm
+          precr1 := ComponentReference.joinCrefs(pcr,wcr);
+          if not UnorderedSet.contains(precr1, extendrepl) then
+            UnorderedSet.add(precr1, extendrepl);
+            // queue the record members, parented by precr1
+            crefs := List.map(varLst,ComponentReference.creffromVar);
+            for c in crefs loop
+              worklist := (c, SOME(precr1)) :: worklist;
+            end for;
+          end if;
+        then ();
+      case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_), NONE())
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          UnorderedSet.add(precr, extendrepl);
+        then ();
+      case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_), SOME(pcr))
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          precr1 := ComponentReference.joinCrefs(pcr,precr);
+          UnorderedSet.add(precr1, extendrepl);
+        then ();
+      case (DAE.CREF_IDENT(), _)
+        then ();
+      case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), NONE())
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          UnorderedSet.add(precr, extendrepl);
+          precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
+          worklist := (subcr, SOME(precrn)) :: worklist;
+        then ();
+      case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr), SOME(pcr))
+        algorithm
+          precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
+          precr1 := ComponentReference.joinCrefs(pcr,precr);
+          UnorderedSet.add(precr1, extendrepl);
+          precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
+          precrn1 := ComponentReference.joinCrefs(pcr,precrn);
+          worklist := (subcr, SOME(precrn1)) :: worklist;
+        then ();
+    end match;
+  end while;
 end addExtendReplacement;
 
 protected function addIterationVar
@@ -2386,7 +2374,7 @@ protected function replaceTimeEvents
   output BackendDAE.TimeEvent teOut;
 
 algorithm
-  teOut := matchcontinue teIn
+  teOut := match teIn
     local
       Integer index;
       DAE.Exp startExp, intervalExp;
@@ -2397,7 +2385,7 @@ algorithm
     then BackendDAE.SAMPLE_TIME_EVENT(index, startExp, intervalExp, teIn.iter);
   else
     then teIn;
-  end matchcontinue;
+  end match;
 end replaceTimeEvents;
 
 protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCrossing"
@@ -2407,7 +2395,7 @@ protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCr
   output BackendDAE.ZeroCrossing zcOut;
 
 algorithm
-  zcOut := matchcontinue zcIn
+  zcOut := match zcIn
     local
       DAE.Exp relation_;
   case BackendDAE.ZERO_CROSSING(relation_ = relation_)
@@ -2416,7 +2404,7 @@ algorithm
     then BackendDAE.ZERO_CROSSING(zcIn.index, relation_, zcIn.occurEquLst, zcIn.iter);
   else
     then zcIn;
-  end matchcontinue;
+  end match;
 end replaceZeroCrossing;
 
 

@@ -109,7 +109,7 @@ public function getExtendsElementspecInClass
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
   outAbsynElementSpecLst:=
-  matchcontinue inClass
+  match inClass
     local
       list<Absyn.ElementSpec> ext;
       list<Absyn.ClassPart> parts;
@@ -134,7 +134,7 @@ algorithm
         // Note: the array dimensions of DERIVED are lost. They must be
         // queried by another api-function
     else {};
-  end matchcontinue;
+  end match;
 end getExtendsElementspecInClass;
 
 protected function getExtendsElementspecInClassparts
@@ -143,7 +143,7 @@ protected function getExtendsElementspecInClassparts
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
   outAbsynElementSpecLst:=
-  matchcontinue inAbsynClassPartLst
+  match inAbsynClassPartLst
     local
       list<Absyn.ElementSpec> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
@@ -173,7 +173,7 @@ algorithm
       then
         res;
 
-  end matchcontinue;
+  end match;
 end getExtendsElementspecInClassparts;
 
 protected function getExtendsElementspecInElementitems
@@ -1748,8 +1748,8 @@ protected function buildEnvForGraphicProgramFull
    instantiating the currently used class."
   input Absyn.Program inProgram;
   input Absyn.Path inModelPath;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
+  output FCore.Cache outCache = FCore.emptyCache();
+  output FCore.Graph outEnv = FGraph.empty();
   output Absyn.Program outProgram;
 protected
   Boolean check_model, eval_param, failed = false, graphics_mode;
@@ -3532,7 +3532,7 @@ protected function transformPathedElementInClassDef
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassDef def;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -3572,7 +3572,7 @@ protected function transformPathedElementInClassPart
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassPart part;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -3612,7 +3612,7 @@ protected function transformPathedElementInElementItem
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementItem item;
-        output Option<Absyn.Element> outElement;
+        output Option<Absyn.Element> outElement = NONE();
         output Boolean success;
 
   partial function Func
@@ -3647,7 +3647,7 @@ protected function transformPathedElementInElement
   input Absyn.Path path;
   input Func func;
   input output Absyn.Element element;
-        output Option<Absyn.Element> outElement;
+        output Option<Absyn.Element> outElement = NONE();
         output Boolean success;
 
   partial function Func
@@ -3675,7 +3675,7 @@ protected function transformPathedElementInElementSpec
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementSpec spec;
-        output Option<Absyn.Element> element;
+        output Option<Absyn.Element> element = NONE();
         output Boolean success;
 
   partial function Func
@@ -3741,7 +3741,7 @@ algorithm
 
     if isSome(ann) then
       SOME(Absyn.Annotation.ANNOTATION(elementArgs = eargs)) := ann;
-      annotationString := List.toString(eargs, Dump.unparseElementArgStr, "", "(", ", ", ")");
+      annotationString := List.toString(eargs, Dump.unparseElementArgStr, List.Style.FLAT_BRACKETS);
     else
       annotationString := "()";
     end if;
@@ -4878,7 +4878,7 @@ public function accessClass
   end Fn;
 protected
   Access access;
-  Boolean silent, eval_params, graphics_exp_mode;
+  Boolean silent = false, eval_params, graphics_exp_mode;
 algorithm
   eval_params := Config.getEvaluateParametersInAnnotations();
   graphics_exp_mode := Config.getGraphicsExpMode();

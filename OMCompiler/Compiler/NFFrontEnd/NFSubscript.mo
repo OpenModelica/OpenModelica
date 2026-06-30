@@ -176,7 +176,7 @@ public
       then List.intRange2(start, stop);
 
       else algorithm
-        Error.assertion(false, getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
+        Error.terminate(getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
       then fail();
     end match;
   end toIndexList;
@@ -197,7 +197,7 @@ public
     if isValidIndexType(ty) then
       subscript := INDEX(exp);
     else
-      Error.assertion(false, getInstanceName() + " got a non integer type exp to make an index sub", sourceInfo());
+      Error.terminate(getInstanceName() + " got a non integer type exp to make an index sub", sourceInfo());
       fail();
     end if;
   end makeIndex;
@@ -208,7 +208,7 @@ public
     output Subscript subscript = SPLIT_INDEX(node, dimIndex);
   algorithm
     if dimIndex < 1 then
-      Error.assertion(false, getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
+      Error.terminate(getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
     end if;
   end makeSplitIndex;
 
@@ -754,7 +754,7 @@ public
       case WHOLE() then Absyn.Subscript.NOSUB();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
+          Error.terminate(getInstanceName() + " failed on unknown subscript", sourceInfo());
         then
           fail();
     end match;
@@ -770,7 +770,7 @@ public
       case WHOLE() then DAE.WHOLEDIM();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript " + toString(subscript), sourceInfo());
+          Error.terminate(getInstanceName() + " failed on unknown subscript " + toString(subscript), sourceInfo());
         then
           fail();
     end match;
@@ -786,7 +786,7 @@ public
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toString(subscript.indices, toString, List.Style.FLAT_CURLY);
       case WHOLE() then ":";
       case SPLIT_PROXY()
         then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
@@ -799,7 +799,7 @@ public
     input list<Subscript> subscripts;
     output String string;
   algorithm
-    string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
+    string := List.toStringCustom(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
   function toFlatString
@@ -813,7 +813,7 @@ public
       case INDEX() then Expression.toFlatString(subscript.index, format);
       case SLICE() then Expression.toFlatString(subscript.slice, format);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toStringCustom(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
       case SPLIT_INDEX()
         then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
@@ -826,7 +826,7 @@ public
     input Boolean escapeQuotes;
     output String string;
   algorithm
-    string := List.toString(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
+    string := List.toStringCustom(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
 
     if escapeQuotes then
       string := Util.escapeQuotes(string);
@@ -938,7 +938,7 @@ public
       case WHOLE() then Dimension.UNKNOWN();
       case SPLIT_INDEX() then Dimension.fromInteger(1);
       else algorithm
-        Error.assertion(false, getInstanceName() + " got wrong subscript " + toString(subscript) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " got wrong subscript " + toString(subscript) + "\n", sourceInfo());
       then fail();
     end match;
   end toDimension;
@@ -1250,7 +1250,7 @@ public
       case Dimension.ENUM()                   then INDEX(Expression.nthEnumLiteral(dim.enumType, i));
       case Dimension.RESIZABLE()              then INDEX(Expression.INTEGER(i));
       else algorithm
-        Error.assertion(false, getInstanceName() + " got an incorrect dimension type " + Dimension.toString(dim) + ".", sourceInfo());
+        Error.terminate(getInstanceName() + " got an incorrect dimension type " + Dimension.toString(dim) + ".", sourceInfo());
       then fail();
     end match;
   end nth;

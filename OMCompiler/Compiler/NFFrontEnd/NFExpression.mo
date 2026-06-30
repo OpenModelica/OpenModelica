@@ -1011,7 +1011,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
 
@@ -1470,7 +1470,6 @@ public
     output Integer stop;
   algorithm
     (start, step, stop) := match range
-      local
       case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
@@ -1481,12 +1480,12 @@ public
             step := if start > stop then -1 else 1;
           end if;
         else
-          Error.assertion(false, getInstanceName() + " range could not be parsed to integer values: " + toString(range), sourceInfo());
+          Error.terminate(getInstanceName() + " range could not be parsed to integer values: " + toString(range), sourceInfo());
           fail();
         end try;
       then (start, step, stop);
       else algorithm
-        Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
+        Error.terminate(getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
       then fail();
     end match;
   end getIntegerRange;
@@ -1506,7 +1505,7 @@ public
     i := match SimplifyExp.simplify(e)
       case INTEGER(i) then i;
       else algorithm
-        Error.assertion(false, getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
+        Error.terminate(getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
       then fail();
     end match;
   end getInteger;
@@ -1810,7 +1809,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
         then
           fail();
 
@@ -2002,7 +2001,7 @@ public
 
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then
-      Error.assertion(false, getInstanceName() + ": too few dimensions in " +
+      Error.terminate(getInstanceName() + ": too few dimensions in " +
         toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
     end if;
 
@@ -2212,7 +2211,7 @@ public
                         ) + ":" + operandString(exp.stop, exp, false);
 
       case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
+      case RECORD() then List.toStringCustom(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
       case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
@@ -2316,7 +2315,7 @@ public
                         ) + ":" + operandFlatString(exp.stop, exp, false, format);
 
       case TUPLE() then "(" + stringDelimitList(list(toFlatString(e, format) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, function toFlatString(format = format), Type.toFlatString(exp.ty, format), "(", ", ", ")", true);
+      case RECORD() then List.toStringCustom(exp.elements, function toFlatString(format = format), Type.toFlatString(exp.ty, format), "(", ", ", ")", true);
       case CALL() then Call.toFlatString(exp.call, format);
       case SIZE() then "size(" + toFlatString(exp.exp, format) +
                         (
@@ -2633,7 +2632,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
         then
           fail();
 
@@ -2754,7 +2753,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
         then
           fail();
 
@@ -2826,7 +2825,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled expression " + toString(exp), sourceInfo());
+          Error.terminate(getInstanceName() + " got unhandled expression " + toString(exp), sourceInfo());
         then
           fail();
     end match;
@@ -4809,6 +4808,7 @@ public
       case CAST() then isPositive(exp.exp);
       case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      case CALL() then Call.isPositive(exp.call);
       else false;
     end match;
   end isPositive;
@@ -4823,6 +4823,7 @@ public
       case CAST() then isNegative(exp.exp);
       case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
+      case CALL() then Call.isNegative(exp.call);
       else false;
     end match;
   end isNegative;
@@ -4837,13 +4838,14 @@ public
       case CAST() then isNonPositive(exp.exp);
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
+      case CALL() then Call.isNonPositive(exp.call);
       else false;
     end match;
   end isNonPositive;
 
   function isNonNegative
     input Expression exp;
-    output Boolean res "true if exp is known to be <= 0, otherwise false";
+    output Boolean res "true if exp is known to be >= 0, otherwise false";
   algorithm
     res := match exp
       case INTEGER() then exp.value >= 0;
@@ -4851,9 +4853,22 @@ public
       case CAST() then isNonNegative(exp.exp);
       case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
+      case CALL() then Call.isNonNegative(exp.call);
       else false;
     end match;
   end isNonNegative;
+
+  function isEven
+    input Expression exp;
+    output Boolean even;
+  algorithm
+    even := match exp
+      case INTEGER() then intMod(exp.value, 2) == 0;
+      case REAL() then realMod(exp.value, 2.0) == 0.0;
+      case CAST() then isEven(exp.exp);
+      else false;
+    end match;
+  end isEven;
 
   function isGreaterOrEqual
     input Expression lhs;
@@ -5580,7 +5595,7 @@ public
     input Boolean isArray;
     input Integer dims;
     input list<Type> types;
-    output Expression outExp;
+    output Expression outExp = exp;
   algorithm
     outExp := match (exp, types)
       local
@@ -5699,7 +5714,7 @@ public
       case INSTANCE_NAME() then Variability.CONSTANT;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
     end match;
@@ -5780,7 +5795,7 @@ public
       case INSTANCE_NAME() then Purity.PURE;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
     end match;

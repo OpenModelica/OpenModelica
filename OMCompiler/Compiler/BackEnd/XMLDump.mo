@@ -690,14 +690,14 @@ The output is something like:
   input Integer eoffset;
 algorithm
   ():=
-  matchcontinue l
+  match l
     case {}
         then();
     case _
       algorithm
         dumpComponents2(l,1+voffset,eoffset);
       then();
-  end matchcontinue;
+  end match;
 end dumpComponents1;
 
 
@@ -821,7 +821,7 @@ content of the list. The output could be something like:
   input DAE.InstDims arry_Dim;
   input String Content;
 algorithm
-    () := matchcontinue arry_Dim
+    () := match arry_Dim
    local    case {}
       then ();
     else
@@ -830,7 +830,7 @@ algorithm
         dumpDAEInstDims2(arry_Dim);
         dumpStrCloseTag(Content);
       then();
-  end matchcontinue;
+  end match;
 end dumpDAEInstDims;
 
 
@@ -2140,7 +2140,7 @@ This function dumps a list of functions
 "
   input list<DAE.Function> funcelems;
 algorithm
-  () := matchcontinue funcelems
+  () := match funcelems
     local
     case {} then();
     case _
@@ -2149,7 +2149,7 @@ algorithm
         dumpFunctions2(funcelems);
         dumpStrCloseTag(FUNCTIONS);
       then();
-  end matchcontinue;
+  end match;
 end dumpFunctions;
 
 
@@ -2415,7 +2415,7 @@ the XML delimiters tag of the list.
   input String inContent;
   input String inElementContent;
 algorithm
-  ():= matchcontinue (lst,inContent,inElementContent)
+  ():= match (lst,inContent,inElementContent)
   local
     list<Integer> l;
     String inLst,inEl;
@@ -2426,7 +2426,7 @@ algorithm
         dumpLstInt(l,inEl);
         dumpStrCloseTag(inLst);
       then();
-  end matchcontinue;
+  end match;
 end dumpLstIntAttr;
 
 protected function dumpMatching
@@ -2679,7 +2679,7 @@ protected function dumpStrCloseTag "
   input String inContent;
 algorithm
   ():=
-  matchcontinue inContent
+  match inContent
       local String inString;
   case ""
     algorithm
@@ -2688,7 +2688,7 @@ algorithm
     algorithm
       Print.printBuf("\n</");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(">");
     then ();
-  end matchcontinue;
+  end match;
 end dumpStrCloseTag;
 
 protected function dumpStreamStr "
@@ -2850,7 +2850,7 @@ protected function dumpStrTagContent "
   input String inContent;
 algorithm
   ():=
-  matchcontinue (inElementName,inContent)
+  match (inElementName,inContent)
       local String inTagString,inTagContent;
   case ("",_)  then ();
   case (_,"")  then ();
@@ -2860,7 +2860,7 @@ algorithm
       Print.printBuf("\n");Print.printBuf(inTagContent);
       dumpStrCloseTag(inTagString);
     then ();
-  end matchcontinue;
+  end match;
 end dumpStrTagContent;
 
 
@@ -2873,7 +2873,7 @@ print on a new line an XML code like:
 "
   input String inElementName;
 algorithm
-  ():=matchcontinue inElementName
+  ():=match inElementName
   local String ElementName;
     case "" then();
     case ElementName
@@ -2882,7 +2882,7 @@ algorithm
          Print.printBuf(transformModelicaIdentifierToXMLElementTag(ElementName));
          Print.printBuf("/>");
       then();
-  end matchcontinue;
+  end match;
 end dumpStrVoidTag;
 
 protected function dumpDimension "
@@ -3960,7 +3960,7 @@ function: unparseCommentOptionNoAnnotation
   output String outString;
 algorithm
   outString:=
-  matchcontinue inAbsynCommentOption
+  match inAbsynCommentOption
     local String str,cmt;
     case SOME(SCode.COMMENT(_,SOME(cmt)))
       algorithm
@@ -3969,7 +3969,7 @@ algorithm
       then
         str;
     case _ then "";
-  end matchcontinue;
+  end match;
 end unparseCommentOptionNoAnnotation;
 
 annotation(__OpenModelica_Interface="backend");

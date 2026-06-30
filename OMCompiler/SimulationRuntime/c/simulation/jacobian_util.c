@@ -370,17 +370,16 @@ void vjp(DATA* data, threadData_t *threadData,
  *
  * @param n_leadIndex         Number of rows or columns of Matrix.
  *                            Depending on compression type CSR (-->rows) or CSC (-->columns).
- * @param numberOfNonZeros    Number of non-zero elements in Matrix.
+ * @param nnz                 Number of non-zero elements in Matrix.
  * @param maxColors           Maximum number of colors of Matrix.
  * @return SPARSE_PATTERN*    Pointer to allocated sparsity pattern of Matrix.
  */
-SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors)
+SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors)
 {
   SPARSE_PATTERN* sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePattern->nnz = nnz;
   sparsePattern->leadindex = (unsigned int*) malloc((n_leadIndex+1)*sizeof(unsigned int));
-  sparsePattern->index = (unsigned int*) malloc(numberOfNonZeros*sizeof(unsigned int));
-  sparsePattern->sizeofIndex = numberOfNonZeros;
-  sparsePattern->numberOfNonZeros = numberOfNonZeros;
+  sparsePattern->index = (unsigned int*) malloc(nnz*sizeof(unsigned int));
   sparsePattern->colorCols = (unsigned int*) malloc(n_leadIndex*sizeof(unsigned int));
   sparsePattern->maxColors = maxColors;
 
@@ -407,7 +406,7 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
 {
   if (!csc) return NULL;
 
-  const unsigned int nnz = csc->sizeofIndex; /* == csc->numberOfNonZeros */
+  const unsigned int nnz = csc->nnz;
 
   /* Allocate CSR pattern: leadindex size = nRows+1, index size = nnz */
   SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, /*maxColors*/ 0);
@@ -473,7 +472,7 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
 
   /* We don't have row coloring here; keep defaults (zeros). */
   csr->maxColors = 0;
-  /* numberOfNonZeros/sizeofIndex were set by allocSparsePattern */
+  /* nnz was set by allocSparsePattern */
 
   return csr;
 }

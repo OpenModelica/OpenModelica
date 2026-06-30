@@ -371,6 +371,12 @@ algorithm
 
         ty1 := InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
+        // Mark functions whose body always fails as no-return before adding the
+        // type to the environment, so that calls to them get an isNoReturn call
+        // attribute and the def-use analysis treats those calls as terminating.
+        if InstUtil.functionAlwaysFails(daeElts) then
+          ty1 := Types.setFunctionNoReturn(ty1);
+        end if;
         env_1 := FGraph.mkTypeNode(env_1, n, ty1);
 
         // set the source of this element
@@ -379,7 +385,7 @@ algorithm
         partialPrefixBool := SCodeUtil.partialBool(partialPrefix);
 
         daeElts := InstUtil.optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
-        InstUtil.checkFunctionDefUse(daeElts,info);
+        InstUtil.checkFunctionDefUse(daeElts, info);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
         if false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly then
           InstUtil.checkFunctionInputUsed(daeElts,NONE(),AbsynUtil.pathString(fpath));

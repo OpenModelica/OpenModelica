@@ -97,7 +97,7 @@ public
         EquationPointers.map(equations, function findOptimalResizableValues(parameters = parameters, min_parameters = min_parameters, optimal_values = optimal_values, c2pi = c2pi, c2pe = c2pe));
 
         // initialize the optimal values for parameters with their min or max attribute (or 0 if none available)
-        UnorderedSet.apply(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
+        parameters := UnorderedSet.selfMap(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
 
         if debug then
           print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
@@ -105,13 +105,13 @@ public
           if UnorderedMap.isEmpty(c2pi) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
           end if;
           print(StringUtil.headline_2("[debug] Final Equality Constraints:"));
           if UnorderedMap.isEmpty(c2pe) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
           end if;
         end if;
 
@@ -148,7 +148,7 @@ public
     "this function detects if an equation is resizable"
     input Equation eqn;
     input ComponentRef cref_to_solve;
-    output UnorderedMap<ComponentRef, EvalOrder> order;
+    output UnorderedMap<ComponentRef, EvalOrder> order = UnorderedMap.new<EvalOrder>(ComponentRef.hash, ComponentRef.isEqual);
   protected
     Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve, sourceInfo());
     UnorderedSet<ComponentRef> var_occurences = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -432,7 +432,7 @@ protected
     Subscript.mapExp(sub, function collectOccurencesSubscriptExp(occs = occs, acc = acc));
     if not UnorderedSet.isEmpty(acc) then
       subExp := Subscript.toExp(sub);
-      UnorderedSet.apply(acc, function addOccurence(subExp = subExp, occs = occs));
+      acc := UnorderedSet.selfMap(acc, function addOccurence(subExp = subExp, occs = occs));
     end if;
   end collectOccurencesSubscript;
 
@@ -502,7 +502,7 @@ protected
 
           // differentiate the target by all contained parameters to determine initial values
           args := DifferentiationArguments.simpleCref(cref);
-          UnorderedSet.apply(local_parameters, function getInitialValues(target = target, args = args, min_parameters = min_parameters, optimal_values = optimal_values));
+          local_parameters := UnorderedSet.selfMap(local_parameters, function getInitialValues(target = target, args = args, min_parameters = min_parameters, optimal_values = optimal_values));
 
           getRangeConstraint(range.start, range.step, range.stop, local_parameters, c2pi, "equation");
         then ();
@@ -851,6 +851,7 @@ protected
     // traversing constraints
     for tpl in UnorderedMap.toList(c2p) loop
       (constraint, crefs) := tpl;
+      failed := false;
       () := match checkConstraint(constraint, optimal_values)
         // this constraint is not violated
         case SOME(value) guard(func(value)) algorithm

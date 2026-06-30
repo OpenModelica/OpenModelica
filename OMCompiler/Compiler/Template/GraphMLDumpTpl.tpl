@@ -393,5 +393,5 @@ template dumpShapeType(GraphML.ShapeType shape)
     end match
 end dumpShapeType;
 
-annotation(__OpenModelica_Interface="susan");
+annotation(__OpenModelica_Interface="codegen_graphml");
 end GraphMLDumpTpl;

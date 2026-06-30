@@ -206,6 +206,7 @@ algorithm
       enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
       disabledModules := {};
     else
+      initsyst0 := initsyst;
       enabledModules := {};
       disabledModules := {"inlineHomotopy", "generateHomotopyComponents"};
     end if;
@@ -333,7 +334,7 @@ algorithm
   // warn about selected default initial conditions
   b1 := not listEmpty(dumpVars);
   b2 := not listEmpty(removedEqns);
-  msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
+  msg := "For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")";
   if Flags.isSet(Flags.INITIALIZATION) then
     if b1 then
       Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
@@ -980,27 +981,16 @@ protected function selectSecondaryParameters
   input BackendDAE.Variables inParameters;
   input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> inSecondaryParams;
-  output array<Integer> outSecondaryParams;
+  output array<Integer> outSecondaryParams = inSecondaryParams;
+protected
+  BackendDAE.Var param;
 algorithm
-  outSecondaryParams := match inOrdering
-    local
-      Integer i;
-      array<Integer> secondaryParams;
-      list<Integer> rest;
-      BackendDAE.Var param;
-
-    case {}
-    then inSecondaryParams;
-
+  for i in inOrdering loop
+    param := BackendVariable.getVarAt(inParameters, i);
     // fixed=false
-    case i::rest algorithm
-      param := BackendVariable.getVarAt(inParameters, i);
-      secondaryParams := if (if BackendVariable.isVarAlg(param) then false else not BackendVariable.varFixed(param)) or 1 == inSecondaryParams[i]
-                        then List.fold(inM[i], markIndex, inSecondaryParams) else inSecondaryParams;
-      secondaryParams := selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
-    then secondaryParams;
-
-  end match;
+    outSecondaryParams := if (if BackendVariable.isVarAlg(param) then false else not BackendVariable.varFixed(param)) or 1 == outSecondaryParams[i]
+                      then List.fold(inM[i], markIndex, outSecondaryParams) else outSecondaryParams;
+  end for;
 end selectSecondaryParameters;
 
 public function flattenParamComp
@@ -1446,17 +1436,17 @@ protected
   Integer nVars, nEqns, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, redundantEqns;
   list<BackendDAE.Var> initVarList;
-  array<Integer> ass1, ass2;
+  array<Integer> ass1 = listArray({}), ass2 = listArray({});
   BackendDAE.AdjacencyMatrix m "adjacency matrix of modified system";
   BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
-  BackendDAE.EqSystem syst;
+  BackendDAE.EqSystem syst = BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
   AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
-  array<Integer> mapIncRowEqn;
+  array<Integer> mapIncRowEqn = listArray({});
   Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
 
-  array<Boolean> eMarks, vMarks;
+  array<Boolean> eMarks = arrayCreate(0, false), vMarks = arrayCreate(0, false);
   list<Integer> singular_eqns_idx, singular_vars_idx;
   Integer overDetIndex, underDetIndex, scalarEqnSize;
   BackendDAE.Equation eq;

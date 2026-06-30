@@ -825,7 +825,7 @@ protected function potentialRootArguments
   output Absyn.ComponentRef outCref;
   output Integer outPriority;
 algorithm
-  (outCref, outPriority) := matchcontinue inFunctionArgs
+  (outCref, outPriority) := match inFunctionArgs
     local
       Absyn.ComponentRef cr;
       Integer p;
@@ -841,7 +841,7 @@ algorithm
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1, s2}, info);
       then
         fail();
-  end matchcontinue;
+  end match;
 end potentialRootArguments;
 
 protected function uniqueRootArguments
@@ -852,7 +852,7 @@ protected function uniqueRootArguments
   output Absyn.ComponentRef outCref;
   output Absyn.Exp outMessage;
 algorithm
-  (outCref, outMessage) := matchcontinue inFunctionArgs
+  (outCref, outMessage) := match inFunctionArgs
     local
       Absyn.ComponentRef cr;
       Absyn.Exp msg;
@@ -868,7 +868,7 @@ algorithm
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s1, s2}, info);
       then
         fail();
-  end matchcontinue;
+  end match;
 end uniqueRootArguments;
 
 protected function checkReinitType
@@ -1061,7 +1061,7 @@ The expand adds the elements at the end and they are containing Absyn.WILD() exp
   output Absyn.Exp outExp;
   output DAE.Properties oprop;
 algorithm
-  (outExp,oprop) := matchcontinue(inExp,propCall,propTuple)
+  (outExp,oprop) := match(inExp,propCall,propTuple)
   local
     list<Absyn.Exp> aexpl,aexpl2;
     list<DAE.Type> typeList;
@@ -1109,7 +1109,7 @@ algorithm
     then
       fail();
 
-  end matchcontinue;
+  end match;
 end expandTupleEquationWithWild;
 
 protected function instEquationCommonCiTrans
@@ -2781,7 +2781,7 @@ protected function instWhenEqBranch
   input Boolean inUnrollLoops;
   input ConnectionGraph.ConnectionGraph inGraph;
   input SourceInfo info;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Exp outCondition;
@@ -4248,7 +4248,7 @@ algorithm
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
                                  DAE.CALL_ATTR(
                                    equalityConstraintFunctionReturnType,
-                                   false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                                   false, false, false, false, inlineType1, DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), // use the inline type
                         source // set the origin of the element
                         )};
         graph := ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);
@@ -4291,7 +4291,7 @@ algorithm
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
                                  DAE.CALL_ATTR(
                                    equalityConstraintFunctionReturnType,
-                                   false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                                   false, false, false, false, inlineType1, DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), // use the inline type
                         source // set the origin of the element
                         )};
         graph := ConnectionGraph.addConnection(graph, ComponentReferenceBasics.crefStripLastSubs(c1_1), ComponentReferenceBasics.crefStripLastSubs(c2_1), breakDAEElements);

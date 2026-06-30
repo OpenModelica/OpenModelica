@@ -48,6 +48,7 @@ protected
   import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
@@ -77,6 +78,7 @@ protected
   import NSimCode.SimCodeIndices;
 
   // Util imports
+  import Config;
   import Error;
   import Pointer;
   import StringUtil;
@@ -104,7 +106,7 @@ public
       Option<Causality> causality;
       Option<Integer> variable_index "valueReference";
       Option<Integer> fmi_index "index of variable in modelDescription.xml";
-      list<String> numArrayElement;
+      list<Expression> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
@@ -114,6 +116,7 @@ public
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
       Option<ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
+      Boolean isConnectorFlow "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
     end SIMVAR;
 
     function toString
@@ -190,7 +193,8 @@ public
             causality           = SOME(causality),
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
-            numArrayElement     = {},
+            // dimension sizes (row-major); empty for scalars. Used for FMI array variables.
+            numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
@@ -199,7 +203,8 @@ public
             matrixName          = NONE(),
             variability         = NONE(),
             initial_            = NONE(),
-            exportVar           = NONE()
+            exportVar           = SOME(var.name),
+            isConnectorFlow     = Variable.isFlow(var)
           );
         then result;
 
@@ -330,10 +335,10 @@ public
         arrayCref           = Util.applyOption(simVar.arrayCref, ComponentRef.toDAE),
         aliasvar            = Alias.convert(simVar.aliasvar),
         source              = DAE.emptyElementSource, //ToDo update this!
-        causality           = NONE(),  //ToDo update this!
+        causality           = Util.applyOption(simVar.causality, convertCausality),
         variable_index      = simVar.variable_index,
         fmi_index           = simVar.fmi_index,
-        numArrayElement     = simVar.numArrayElement,
+        numArrayElement     = list(Expression.toString(e) for e in simVar.numArrayElement),
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
@@ -341,11 +346,60 @@ public
         inputIndex          = simVar.inputIndex,
         initNonlinear       = false,  // TODO: Check what to add here!
         matrixName          = simVar.matrixName,
-        variability         = NONE(),  //ToDo update this!
-        initial_            = NONE(),  //ToDo update this!
+        variability         = SOME(convertVariability(simVar.varKind)),
+        initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
-        relativeQuantity    = false);
+        relativeQuantity    = false,
+        isConnectorFlow     = simVar.isConnectorFlow);
     end convert;
+
+    function convertCausality
+      "Convert the new-backend Causality enum to the old SimCodeVar.Causality used
+       by the FMI model-description templates."
+      input Causality c;
+      output OldSimCodeVar.Causality oc;
+    algorithm
+      oc := match c
+        case Causality.NONE                 then OldSimCodeVar.NONECAUS();
+        case Causality.OUTPUT               then OldSimCodeVar.OUTPUT();
+        case Causality.INPUT                then OldSimCodeVar.INPUT();
+        case Causality.LOCAL                then OldSimCodeVar.LOCAL();
+        case Causality.PARAMETER            then OldSimCodeVar.PARAMETER();
+        case Causality.CALCULATED_PARAMETER then OldSimCodeVar.CALCULATED_PARAMETER();
+      end match;
+    end convertCausality;
+
+    function convertVariability
+      "Derive the FMI variability attribute from the variable kind."
+      input VariableKind vk;
+      output OldSimCodeVar.Variability v;
+    algorithm
+      v := match vk
+        case VariableKind.CONSTANT()       then OldSimCodeVar.CONSTANT();
+        case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
+        case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
+        case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
+        case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
+        else OldSimCodeVar.CONTINUOUS();
+      end match;
+    end convertVariability;
+
+    function convertInitial
+      "Default FMI initial attribute from variability + causality (mirrors
+       SimCodeUtil.getDefaultFmiInitialAttribute). Only the EXACT cases matter
+       for now: they make the start value be emitted to modelDescription.xml."
+      input OldSimCodeVar.Variability v;
+      input Option<OldSimCodeVar.Causality> c;
+      output Option<OldSimCodeVar.Initial> initial_;
+    algorithm
+      initial_ := match (v, c)
+        case (OldSimCodeVar.CONSTANT(), _)                                  then SOME(OldSimCodeVar.EXACT());
+        case (OldSimCodeVar.FIXED(),   SOME(OldSimCodeVar.PARAMETER()))     then SOME(OldSimCodeVar.EXACT());
+        case (OldSimCodeVar.TUNABLE(), SOME(OldSimCodeVar.PARAMETER()))     then SOME(OldSimCodeVar.EXACT());
+        else NONE();
+      end match;
+    end convertInitial;
 
     function convertList
       input list<SimVar> simVar_lst;
@@ -390,7 +444,7 @@ public
             start := varAttr.start;
             nominal := varAttr.nominal;
             // FIXME parameters have default fixed = true
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
@@ -408,7 +462,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -416,7 +470,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -430,7 +484,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_STRING())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -440,7 +494,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -489,6 +543,12 @@ public
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
         then (start, false, Causality.CALCULATED_PARAMETER);
 
+        // 4. top level input / output variables -> FMI input/output causality (the
+        //    flat-model direction; mirrors the old backend so modelDescription.xml
+        //    gets causality="input"/"output" and FMI 3.0 terminals get a direction)
+        case _ guard Variable.isInput(var)  then (start, true,  Causality.INPUT);
+        case _ guard Variable.isOutput(var) then (start, false, Causality.OUTPUT);
+
         // 0. other variables -> regular start value and it can be changed after simulation
         else (start, false, Causality.LOCAL);
 
@@ -497,6 +557,18 @@ public
         // FIXME: variables that are fixed and are not CALCULATED should have isValueChangeable=true
       end match;
     end parseBinding;
+
+    function isOutputSimVar
+      "True if the SimVar is an FMI output (causality OUTPUT), used to collect the
+       output interface variables (the new backend has no top-level-output list)."
+      input SimVar v;
+      output Boolean b;
+    algorithm
+      b := match v.causality
+        case SOME(Causality.OUTPUT) then true;
+        else false;
+      end match;
+    end isOutputSimVar;
 
     function convertVarKind
       "Usually this function would belong to NFBackendExtension, but we want to
@@ -827,6 +899,19 @@ public
           ({paramVarsR, intParamVarsR, boolParamVarsR, stringParamVarsR, enumParamVarsR}, simCodeIndices) := createSimVarLists(varData.resizables, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
           ({constVars, intConstVars, boolConstVars, stringConstVars, enumConstVars}, simCodeIndices)      := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({residualVars}, simCodeIndices)                                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+          // The new backend has no separate top-level-output partition; outputs are
+          // algebraic/state/discrete variables flagged OUTPUT by parseBinding. Collect
+          // them across ALL base types (real, integer, boolean, string, enum) for the
+          // FMI inputVars/outputVars interface (used e.g. by the FMI 3.0 terminal
+          // export and ModelStructure). The variables stay in their original lists too.
+          outputVars := List.filterOnTrue(
+            List.flatten({stateVars, algVars,
+                          discreteAlgVars, discreteAlgVars2, discreteAlgVars3,
+                          intAlgVars, intAlgVars2, intAlgVars3,
+                          boolAlgVars, boolAlgVars2, boolAlgVars3,
+                          stringAlgVars, stringAlgVars2, stringAlgVars3,
+                          enumAlgVars, enumAlgVars2, enumAlgVars3}),
+            SimVar.isOutputSimVar);
         then ();
         case BVariable.VAR_DATA_JAC() then ();
         case BVariable.VAR_DATA_HES() then ();
@@ -1261,6 +1346,21 @@ public
       Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
+    function listScalarSize
+      "Var-vector size for a simvar list. The C++ target keeps arrays un-expanded
+       but sizes its var vectors and value references per scalar element, so the
+       array sizes are summed. Every other target (notably the C runtime, which
+       also supports simCodeScalarize=false) keeps one slot per simvar."
+      input list<SimVar> vars;
+      output Integer sz;
+    algorithm
+      if stringEqual(Config.simCodeTarget(), "Cpp") then
+        sz := sum(product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) for v in vars);
+      else
+        sz := listLength(vars);
+      end if;
+    end listScalarSize;
+
     function create
       input SimVars vars;
       input EventInfo eventInfo;
@@ -1272,23 +1372,23 @@ public
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
-        numStateVars                 = listLength(vars.stateVars),
-        numAlgVars                   = listLength(vars.algVars),
-        numDiscreteReal              = listLength(vars.discreteAlgVars),
-        numIntAlgVars                = listLength(vars.intAlgVars),
-        numBoolAlgVars               = listLength(vars.boolAlgVars),
-        numAlgAliasVars              = listLength(vars.aliasVars),
-        numIntAliasVars              = listLength(vars.intAliasVars),
-        numBoolAliasVars             = listLength(vars.boolAliasVars),
-        numParams                    = listLength(vars.paramVars),
-        numIntParams                 = listLength(vars.intParamVars),
-        numBoolParams                = listLength(vars.boolParamVars),
+        numStateVars                 = listScalarSize(vars.stateVars),
+        numAlgVars                   = listScalarSize(vars.algVars),
+        numDiscreteReal              = listScalarSize(vars.discreteAlgVars),
+        numIntAlgVars                = listScalarSize(vars.intAlgVars),
+        numBoolAlgVars               = listScalarSize(vars.boolAlgVars),
+        numAlgAliasVars              = listScalarSize(vars.aliasVars),
+        numIntAliasVars              = listScalarSize(vars.intAliasVars),
+        numBoolAliasVars             = listScalarSize(vars.boolAliasVars),
+        numParams                    = listScalarSize(vars.paramVars),
+        numIntParams                 = listScalarSize(vars.intParamVars),
+        numBoolParams                = listScalarSize(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
         numInVars                    = listLength(vars.inputVars),
         numExternalObjects           = listLength(vars.extObjVars),
-        numStringAlgVars             = listLength(vars.stringAlgVars),
-        numStringParamVars           = listLength(vars.stringParamVars),
-        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numStringAlgVars             = listScalarSize(vars.stringAlgVars),
+        numStringParamVars           = listScalarSize(vars.stringParamVars),
+        numStringAliasVars           = listScalarSize(vars.stringAliasVars),
         numEquations                 = simCodeIndices.equationIndex,
         numLinearSystems             = simCodeIndices.linearSystemIndex,
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,

@@ -33,37 +33,34 @@
  *
  */
 
-encapsulated package Gettext
-" file:        Gettext.mo
-  package:     Gettext
-  description: Utilities for translation of strings
-"
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
 
-protected
+#ifndef LOADCOMPILEDMODELDIALOG_H
+#define LOADCOMPILEDMODELDIALOG_H
 
-import System;
+#include <QDialog>
+#include <QLineEdit>
+#include <QComboBox>
 
-public uniontype TranslatableContent
-  record gettext "Used to mark messages as targets for translation"
-    String msgid;
-  end gettext;
-  record notrans "String cannot be translated; used for too generic messages"
-    String str;
-  end notrans;
-end TranslatableContent;
+class LoadCompiledModelDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  explicit LoadCompiledModelDialog(QWidget *pParent = nullptr);
+private:
+  QLineEdit *mpExecutableTextBox;
+  QComboBox *mpModelInitFileComboBox;
+  QComboBox *mpResultFileComboBox;
 
-public function translateContent "Translate content to a string"
-  input TranslatableContent msg;
-  output String str;
-algorithm
-  str := match msg
-    case gettext(str)
-      algorithm
-        str := System.gettext(str);
-      then str;
-    case notrans(str) then str;
-  end match;
-end translateContent;
+  void fetchModelInitFiles();
+  void fetchResultFiles();
+private slots:
+  void browseExecutable();
+  void browseModelInitFile();
+  void browseResultFile();
+  void loadCompiledModel();
+};
 
-annotation(__OpenModelica_Interface="util");
-end Gettext;
+#endif // LOADCOMPILEDMODELDIALOG_H
