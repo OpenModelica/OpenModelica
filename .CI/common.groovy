@@ -470,12 +470,11 @@ def getVersion() {
   }
 }
 
-void compliance() {
+void compliance(stash) {
   if (isWindows()) {
     // do nothing for now
   } else {
   standardSetup()
-  unstash 'omc-resolute-clang'
   makeLibsAndCache()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
