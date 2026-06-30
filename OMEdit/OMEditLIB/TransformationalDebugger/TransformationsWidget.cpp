@@ -1729,6 +1729,15 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
     const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
     const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
     const bool isHomotopy = (solve.kind == QStringLiteral("homotopy"));
+    if (solve.kind == QStringLiteral("chattering")) {
+      QStringList chatValues;
+      chatValues << tr("chattering: %1 state events in [%2, %3]")
+                    .arg(QString::number(solve.stateEvents), QString::number(solve.timeStart, 'g', 8), QString::number(solve.timeEnd, 'g', 8));
+      QTreeWidgetItem *pChatTreeItem = new QTreeWidgetItem(chatValues);
+      pChatTreeItem->setToolTip(0, tr("this equation is involved in chattering; zero-crossing: %1").arg(solve.zeroCrossing));
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pChatTreeItem);
+      continue;
+    }
     if (isHomotopy) {
       /* one row per accepted homotopy step: lambda and the path point */
       QStringList homValues;
@@ -2042,6 +2051,10 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.iteration = obj.value(QStringLiteral("iteration")).toInt();
     solve.step = obj.value(QStringLiteral("step")).toInt();
     solve.lambda = obj.value(QStringLiteral("lambda")).toDouble();
+    solve.timeStart = obj.value(QStringLiteral("timeStart")).toDouble();
+    solve.timeEnd = obj.value(QStringLiteral("timeEnd")).toDouble();
+    solve.stateEvents = obj.value(QStringLiteral("stateEvents")).toInt();
+    solve.zeroCrossing = obj.value(QStringLiteral("zeroCrossing")).toString();
     if (solve.kind == QStringLiteral("jacobian")) {
       // jacobian record: "vars" is a list of column labels, "rows" the matrix.
       foreach (const QJsonValue &v, obj.value(QStringLiteral("vars")).toArray()) {

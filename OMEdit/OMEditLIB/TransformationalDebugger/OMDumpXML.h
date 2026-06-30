@@ -238,6 +238,11 @@ struct OMRuntimeSolve {
   int iteration = 0;  // ... or this iteration's 1-based index (newtonIteration/jacobian)
   int step = 0;       // homotopy: 1-based accepted-step index
   double lambda = 0.0;// homotopy: continuation parameter at this step
+  // chattering records
+  double timeStart = 0.0;
+  double timeEnd = 0.0;
+  int stateEvents = 0;
+  QString zeroCrossing;
   QList<OMRuntimeVariable> variables;
   // jacobian records: column labels and the dense matrix rows (d f_row / d x_col)
   QStringList jacobianVars;

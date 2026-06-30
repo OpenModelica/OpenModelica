@@ -203,6 +203,33 @@ void EbddRuntimeTest::parsesEventIterations()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesChattering()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq3 = new OMEquation();   eq3->index = 3;
+  equations << dummy << eq3;
+
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"chattering\",\"eqIndex\":3,\"timeStart\":1.0,\"timeEnd\":1.02,\"stateEvents\":100,\"zeroCrossing\":\"x > 0.0\"}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq3->runtimeSolves.size(), 1);
+  const OMRuntimeSolve &solve = eq3->runtimeSolves.at(0);
+  QCOMPARE(solve.kind, QStringLiteral("chattering"));
+  QCOMPARE(solve.stateEvents, 100);
+  QCOMPARE(solve.timeStart, 1.0);
+  QCOMPARE(solve.timeEnd, 1.02);
+  QCOMPARE(solve.zeroCrossing, QStringLiteral("x > 0.0"));
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

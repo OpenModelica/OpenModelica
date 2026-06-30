@@ -7,6 +7,7 @@ testEbddNewtonIterations.mos \
 testEbddJacobian.mos \
 testEbddHomotopy.mos \
 testEbddEventIterations.mos \
+testEbddChattering.mos \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \

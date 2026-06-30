@@ -136,6 +136,27 @@ void ebddRuntimeLogHomotopyStep(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
  */
 void ebddRuntimeLogEventIteration(DATA *data, int iteration);
 
+/**
+ * @brief Append a chattering record for each equation involved in the chatter.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. When the runtime detects
+ * chattering (many state events in a short time window), this emits one record
+ * per implicated equation (keyed by eqIndex), carrying the time window, the
+ * number of state events and the offending zero-crossing description — so the
+ * EBDD can mark the discontinuous equations that are the root of the chatter.
+ *
+ * @param data           Runtime data struct.
+ * @param eqIndexes      Equation-index array, eqIndexes[0] is the count,
+ *                       eqIndexes[1..count] the equation ids (may be NULL).
+ * @param timeStart      Start of the chattering time window.
+ * @param timeEnd        End of the chattering time window.
+ * @param stateEvents    Number of state events in the window.
+ * @param zeroCrossing   Human-readable zero-crossing description (may be NULL).
+ */
+void ebddRuntimeLogChattering(DATA *data, const int *eqIndexes,
+                              double timeStart, double timeEnd,
+                              int stateEvents, const char *zeroCrossing);
+
 #ifdef __cplusplus
 }
 #endif

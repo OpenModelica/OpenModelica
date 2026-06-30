@@ -179,6 +179,37 @@ void ebddRuntimeLogEventIteration(DATA *data, int iteration)
   fflush(f);
 }
 
+void ebddRuntimeLogChattering(DATA *data, const int *eqIndexes,
+                              double timeStart, double timeEnd,
+                              int stateEvents, const char *zeroCrossing)
+{
+  FILE *f;
+  int count, k;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  /* eqIndexes[0] is the count, eqIndexes[1..count] the equation ids. Emit one
+   * record per implicated equation so each is marked in the EBDD. */
+  count = (eqIndexes != NULL) ? eqIndexes[0] : 0;
+  for (k = 1; k <= count; ++k) {
+    fprintf(f, "{\"kind\":\"chattering\",\"eqIndex\":%d,\"timeStart\":", eqIndexes[k]);
+    ebddWriteDouble(f, timeStart);
+    fputs(",\"timeEnd\":", f);
+    ebddWriteDouble(f, timeEnd);
+    fprintf(f, ",\"stateEvents\":%d,\"zeroCrossing\":\"", stateEvents);
+    ebddWriteEscaped(f, zeroCrossing);
+    fputs("\"}\n", f);
+  }
+  fflush(f);
+}
+
 /* For a model without nonlinear systems NONLINEAR_SYSTEM_DATA is an opaque
  * void* (see simulation_data.h), so the NLS loggers' bodies cannot be compiled.
  * Guard them with the same macro the typedef uses and fall back to no-op stubs.
