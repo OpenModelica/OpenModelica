@@ -61,6 +61,28 @@ extern "C" {
  */
 void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys);
 
+/**
+ * @brief Append one Newton-iteration record for a nonlinear system.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. For the given iteration emits,
+ * per iteration variable, its name, the current iterate value (the initial guess
+ * entering this iteration), the residual and the scaled residual (residual /
+ * resScaling), plus the nominal. Both scaled and unscaled values are recoverable.
+ *
+ * @param data        Runtime data struct.
+ * @param nonlinsys   The nonlinear system being solved.
+ * @param iteration   1-based Newton iteration counter.
+ * @param size        Number of iteration variables (== nonlinsys->size).
+ * @param x           Current iterate (initial guess of this iteration), length size.
+ * @param residual    Residual values at x, length size.
+ * @param resScaling  Residual scaling factors, length size (NULL => scale 1.0).
+ * @param nominal     Variable nominal values, length size (NULL => omitted).
+ */
+void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                   int iteration, int size, const double *x,
+                                   const double *residual, const double *resScaling,
+                                   const double *nominal);
+
 #ifdef __cplusplus
 }
 #endif

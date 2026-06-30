@@ -202,12 +202,71 @@ void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys)
   fflush(f);
 }
 
+void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                   int iteration, int size, const double *x,
+                                   const double *residual, const double *resScaling,
+                                   const double *nominal)
+{
+  FILE *f;
+  EQUATION_INFO eqInfo;
+  int i;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
+
+  fprintf(f, "{\"kind\":\"newtonIteration\",\"eqIndex\":%ld,\"section\":\"%s\",\"time\":",
+          (long) nonlinsys->equationIndex,
+          eqInfo.section == EQUATION_SECTION_INITIAL ? "initial" : "regular");
+  ebddWriteDouble(f, data->localData[0]->timeValue);
+  fprintf(f, ",\"iteration\":%d,\"size\":%d,\"vars\":[", iteration, size);
+
+  for (i = 0; i < size; ++i) {
+    double scale = (resScaling != NULL && resScaling[i] != 0.0) ? resScaling[i] : 1.0;
+    if (i > 0) {
+      fputc(',', f);
+    }
+    fputs("{\"name\":\"", f);
+    if (i < eqInfo.numVar) {
+      ebddWriteEscaped(f, eqInfo.vars[i]);
+    }
+    fputs("\",\"value\":", f);
+    ebddWriteDouble(f, x != NULL ? x[i] : 0.0);
+    fputs(",\"residual\":", f);
+    ebddWriteDouble(f, residual != NULL ? residual[i] : 0.0);
+    fputs(",\"residualScaled\":", f);
+    ebddWriteDouble(f, residual != NULL ? residual[i] / scale : 0.0);
+    fputs(",\"nominal\":", f);
+    ebddWriteDouble(f, nominal != NULL ? nominal[i] : 0.0);
+    fputc('}', f);
+  }
+
+  fputs("]}\n", f);
+  fflush(f);
+}
+
 #else /* OMC_NUM_NONLINEAR_SYSTEMS == 0: NONLINEAR_SYSTEM_DATA is opaque */
 
 void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys)
 {
   (void)data;
   (void)nonlinsys;
+}
+
+void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                   int iteration, int size, const double *x,
+                                   const double *residual, const double *resScaling,
+                                   const double *nominal)
+{
+  (void)data; (void)nonlinsys; (void)iteration; (void)size;
+  (void)x; (void)residual; (void)resScaling; (void)nominal;
 }
 
 #endif /* OMC_NUM_NONLINEAR_SYSTEMS */

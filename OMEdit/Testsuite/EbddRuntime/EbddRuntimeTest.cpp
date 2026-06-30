@@ -85,6 +85,35 @@ void EbddRuntimeTest::parsesRuntimeInfo()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesNewtonIterations()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq6 = new OMEquation();   eq6->index = 6;
+  equations << dummy << eq6;
+
+  // Two Newton-iteration records for the same system (eqIndex 6).
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"newtonIteration\",\"eqIndex\":6,\"section\":\"initial\",\"time\":0,\"iteration\":1,\"size\":1,\"vars\":[{\"name\":\"y\",\"value\":1,\"residual\":2,\"residualScaled\":0.5,\"nominal\":4}]}\n");
+  file.write("{\"kind\":\"newtonIteration\",\"eqIndex\":6,\"section\":\"initial\",\"time\":0,\"iteration\":2,\"size\":1,\"vars\":[{\"name\":\"y\",\"value\":0.25,\"residual\":0.1,\"residualScaled\":0.025,\"nominal\":4}]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq6->runtimeSolves.size(), 2);
+  QCOMPARE(eq6->runtimeSolves.at(0).kind, QStringLiteral("newtonIteration"));
+  QCOMPARE(eq6->runtimeSolves.at(0).iteration, 1);
+  QCOMPARE(eq6->runtimeSolves.at(0).variables.at(0).residualScaled, 0.5);
+  QCOMPARE(eq6->runtimeSolves.at(1).iteration, 2);
+  QCOMPARE(eq6->runtimeSolves.at(1).variables.at(0).value, 0.25);
+  QCOMPARE(eq6->runtimeSolves.at(1).variables.at(0).residualScaled, 0.025);
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

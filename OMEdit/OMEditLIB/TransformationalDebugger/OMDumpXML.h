@@ -222,17 +222,20 @@ struct OMRuntimeVariable {
   QString name;
   double value = 0.0;
   double residual = 0.0;
+  double residualScaled = 0.0;   // residual / resScaling (newtonIteration records)
   double nominal = 0.0;
 };
 
 /* A single runtime solve of an equation system, exported by the runtime to
- * <model>_dbg.json when the LOG_EBDD stream is active. */
+ * <model>_dbg.json when the LOG_EBDD stream is active. A record is either a
+ * final solve ("nonlinear") or one Newton iteration ("newtonIteration"). */
 struct OMRuntimeSolve {
-  QString kind;       // e.g. "nonlinear"
+  QString kind;       // "nonlinear" or "newtonIteration"
   QString section;    // "initial" or "regular"
   QString status;     // "solved", "solved_less_accuracy" or "failed"
   double time = 0.0;
-  int iterations = 0;
+  int iterations = 0; // total iterations (nonlinear) ...
+  int iteration = 0;  // ... or this iteration's 1-based index (newtonIteration)
   QList<OMRuntimeVariable> variables;
 };
 

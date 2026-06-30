@@ -1726,16 +1726,30 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
    * iteration count) with one child row per iteration variable. */
   foreach (const OMRuntimeSolve &solve, equation->runtimeSolves) {
     QStringList solveValues;
-    solveValues << tr("t = %1   [%2, %3 iter]").arg(QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations));
+    const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
+    if (isNewtonIter) {
+      /* one row per Newton iteration: the initial guess and (scaled) residual */
+      solveValues << tr("t = %1   [Newton iteration %2]").arg(QString::number(solve.time, 'g', 6), QString::number(solve.iteration));
+    } else {
+      solveValues << tr("t = %1   [%2, %3 iter]").arg(QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations));
+    }
     QTreeWidgetItem *pSolveTreeItem = new QTreeWidgetItem(solveValues);
-    pSolveTreeItem->setToolTip(0, tr("%1 system solved at time %2 (%3, %4 iterations)")
-                               .arg(solve.kind, QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations)));
+    pSolveTreeItem->setToolTip(0, isNewtonIter
+                               ? tr("Newton iteration %1 at time %2").arg(QString::number(solve.iteration), QString::number(solve.time, 'g', 6))
+                               : tr("%1 system solved at time %2 (%3, %4 iterations)")
+                                 .arg(solve.kind, QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations)));
     foreach (const OMRuntimeVariable &var, solve.variables) {
       QStringList varValues;
       varValues << var.name << QString::number(var.value, 'g', 6) << QString::number(var.residual, 'g', 3);
       QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(varValues);
       pVarTreeItem->setToolTip(0, var.name);
-      pVarTreeItem->setToolTip(1, tr("value = %1, nominal = %2").arg(QString::number(var.value), QString::number(var.nominal)));
+      if (isNewtonIter) {
+        pVarTreeItem->setToolTip(1, tr("value = %1, residual = %2 (scaled %3), nominal = %4")
+                                 .arg(QString::number(var.value), QString::number(var.residual),
+                                      QString::number(var.residualScaled), QString::number(var.nominal)));
+      } else {
+        pVarTreeItem->setToolTip(1, tr("value = %1, nominal = %2").arg(QString::number(var.value), QString::number(var.nominal)));
+      }
       pSolveTreeItem->addChild(pVarTreeItem);
     }
     mpRuntimeValuesTreeWidget->addTopLevelItem(pSolveTreeItem);
@@ -1993,6 +2007,7 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.status = obj.value(QStringLiteral("status")).toString();
     solve.time = obj.value(QStringLiteral("time")).toDouble();
     solve.iterations = obj.value(QStringLiteral("iterations")).toInt();
+    solve.iteration = obj.value(QStringLiteral("iteration")).toInt();
     QJsonArray vars = obj.value(QStringLiteral("vars")).toArray();
     foreach (const QJsonValue &v, vars) {
       QJsonObject vo = v.toObject();
@@ -2000,6 +2015,7 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
       rv.name = vo.value(QStringLiteral("name")).toString();
       rv.value = vo.value(QStringLiteral("value")).toDouble();
       rv.residual = vo.value(QStringLiteral("residual")).toDouble();
+      rv.residualScaled = vo.value(QStringLiteral("residualScaled")).toDouble();
       rv.nominal = vo.value(QStringLiteral("nominal")).toDouble();
       solve.variables.append(rv);
     }

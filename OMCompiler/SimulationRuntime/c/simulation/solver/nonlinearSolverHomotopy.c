@@ -54,6 +54,7 @@
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
 #include "nonlinearSolverHybrd.h"
+#include "ebdd_runtime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1347,6 +1348,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     numberOfIterations++;
     /* debug information */
     debugInt(OMC_LOG_NLS_V, "Iteration:", numberOfIterations);
+
+    /* EBDD: per-iteration initial guess + (scaled) residuals, keyed by eqIndex.
+     * x is the iterate entering this iteration, f1 its residual; xScaling holds
+     * the variable nominals (first n entries). No-op unless -lv=LOG_EBDD. */
+    ebddRuntimeLogNewtonIteration(data, nlsData, numberOfIterations, solverData->n,
+                                  x, solverData->f1, solverData->resScaling,
+                                  solverData->xScaling);
 
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
     if (numberOfIterations>1)
