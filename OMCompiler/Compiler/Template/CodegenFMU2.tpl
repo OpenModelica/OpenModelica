@@ -184,7 +184,7 @@ case SIMCODE(__) then
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="true"
     maxOutputDerivativeOrder="1"
-    canRunAsynchronuously = "false"
+    canRunAsynchronously="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
     canGetAndSetFMUstate="true"
