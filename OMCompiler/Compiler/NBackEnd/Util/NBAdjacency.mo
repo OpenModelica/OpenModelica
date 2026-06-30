@@ -2419,5 +2419,5 @@ public
     Solvability.updateList(crefs, Solvability.UNSOLVABLE(), sol_map);
   end updateConditionCrefs;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBAdjacency;
