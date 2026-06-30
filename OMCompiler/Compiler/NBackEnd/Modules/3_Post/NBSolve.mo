@@ -95,24 +95,26 @@ public
   protected
     Pointer<Integer> implicit_index_ptr = Pointer.create(1);
     type StrongComponentLst = list<StrongComponent>;
-    UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
+    // Separate init and sim maps so homotopy-simplified INI_0 equations are not aliased into ODE partitions.
+    UnorderedMap<StrongComponent, list<StrongComponent>> init_duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
+    UnorderedMap<StrongComponent, list<StrongComponent>> sim_duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
   algorithm
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
         // The order here is important. Whatever comes first is declared the "original", same components afterwards will be alias
         // Has to be the same order as in SimCode!
-        bdae.init       := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.init);
+        bdae.init       := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, init_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.init);
         if isSome(bdae.init_0) then
-          bdae.init_0   := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.init_0)));
+          bdae.init_0   := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, init_duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.init_0)));
         end if;
         if isSome(bdae.dae) then
-          bdae.dae      := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.dae)));
+          bdae.dae      := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.dae)));
         end if;
-        bdae.ode        := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode);
-        bdae.algebraic  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.algebraic);
-        bdae.ode_event  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode_event);
-        bdae.alg_event  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.alg_event);
-        bdae.clocked    := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.clocked);
+        bdae.ode        := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode);
+        bdae.algebraic  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.algebraic);
+        bdae.ode_event  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode_event);
+        bdae.alg_event  := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.alg_event);
+        bdae.clocked    := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, sim_duplicate_map, bdae.varData, bdae.eqData) for par in bdae.clocked);
       then bdae;
 
       else algorithm
@@ -142,7 +144,8 @@ public
       for comp in Util.getOption(partition.strongComponents) loop
         solved_comps := match UnorderedMap.get(comp, duplicate_map)
           local list<StrongComponent> alias_comps;
-          case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
+          case SOME(alias_comps)
+          then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
           else algorithm
             // solve strong component -> create alias comps
             (alias_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);

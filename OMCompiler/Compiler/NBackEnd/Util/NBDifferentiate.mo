@@ -840,6 +840,7 @@ public
         Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
+        list<Expression> new_elements;
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -887,8 +888,6 @@ public
       case (Expression.CREF(), _, _)
         guard(BVariable.isStart(var_ptr))
       then (Expression.makeZero(exp.ty), diffArguments);
-
-      // ToDo: Records, Arrays, WILD (?)
 
       // Types: (SIMPLE)
       //  D(x)/dx => 1
@@ -941,6 +940,20 @@ public
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isState(var_ptr))
       then (Expression.fromCref(BVariable.getPartnerCref(exp.cref, BVariable.getVarDer)), diffArguments);
+
+      // Types: (TIME)
+      // RECORD with mixed continuous/discrete fields (e.g. ThermodynamicState with Integer phase)
+      // D(record)/dt = RECORD(D(field1)/dt, D(field2)/dt, ...)
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isRecord(var_ptr) and not BVariable.isContinuous(var_ptr, false))
+        algorithm
+          new_elements := {};
+          for child_cref in BVariable.getRecordChildrenCref(exp.cref) loop
+            (res, diffArguments) := differentiateExpression(Expression.fromCref(child_cref), diffArguments);
+            new_elements := res :: new_elements;
+          end for;
+          res := Expression.RECORD(InstNode.scopePath(Type.complexNode(exp.ty)), exp.ty, listReverse(new_elements));
+      then (res, diffArguments);
 
       // Types: (TIME)
       // D(y)/dtime --> der(y) --> $DER.y
@@ -1072,6 +1085,8 @@ public
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(crefExp.cref, sourceInfo());
+      // discrete/non-continuous variables (e.g. Integer phase in ThermodynamicState) have zero derivative
+      case _ guard(Expression.isZero(crefExp)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
           + " because the result is expected to be a variable but turned out to be " + Expression.toString(crefExp) + "."});
@@ -2087,6 +2102,7 @@ public
         String der_func_name;
         list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
+        UnorderedSet<InstNode> existingLocals;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
         new_cls := match Pointer.access(cls)
@@ -2117,6 +2133,14 @@ public
 
             // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
+            // Build a set of already-present local names to avoid duplicates when differentiating
+            // a function that was itself already differentiated (2nd+ order): derivative locals
+            // from the prior pass (e.g. $fDER_a1) appear both in der_func.locals and as new
+            // entries in `locals` (derivatives of the original vars), causing C redeclaration errors.
+            existingLocals := UnorderedSet.fromList(der_func.locals, InstNode.hash, InstNode.nameEqual);
+            locals        := list(n for n guard not UnorderedSet.contains(n, existingLocals) in locals);
+            for n in locals loop UnorderedSet.add(n, existingLocals); end for;
+            local_outputs := list(n for n guard not UnorderedSet.contains(n, existingLocals) in local_outputs);
             der_func.locals   := List.flatten({der_func.locals, locals, local_outputs});
             der_func.outputs  := outputs;
             // also add the new locals to the class
