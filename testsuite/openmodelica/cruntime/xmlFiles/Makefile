@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 testEbddRuntimeInfo.mos \
+testEbddNewtonIterations.mos \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \

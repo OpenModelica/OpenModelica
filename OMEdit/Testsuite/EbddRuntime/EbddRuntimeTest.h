@@ -55,6 +55,12 @@ private slots:
    * each iteration variable's value/residual is read.
    */
   void parsesRuntimeInfo();
+  /*!
+   * \brief parsesNewtonIterations
+   * Tests that "newtonIteration" records are parsed, carrying the 1-based
+   * iteration index and each variable's scaled residual.
+   */
+  void parsesNewtonIterations();
   void cleanupTestCase();
 };
 
