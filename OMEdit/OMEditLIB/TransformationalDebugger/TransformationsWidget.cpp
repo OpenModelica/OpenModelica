@@ -1728,6 +1728,24 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
     QStringList solveValues;
     const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
     const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
+    const bool isHomotopy = (solve.kind == QStringLiteral("homotopy"));
+    if (isHomotopy) {
+      /* one row per accepted homotopy step: lambda and the path point */
+      QStringList homValues;
+      homValues << tr("t = %1   [homotopy step %2, lambda = %3]")
+                   .arg(QString::number(solve.time, 'g', 6), QString::number(solve.step), QString::number(solve.lambda, 'g', 4));
+      QTreeWidgetItem *pHomTreeItem = new QTreeWidgetItem(homValues);
+      pHomTreeItem->setToolTip(0, tr("homotopy continuation step %1 (lambda = %2)").arg(QString::number(solve.step), QString::number(solve.lambda)));
+      foreach (const OMRuntimeVariable &var, solve.variables) {
+        QStringList varValues;
+        varValues << var.name << QString::number(var.value, 'g', 6) << QString::number(var.residual, 'g', 3);
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(varValues);
+        pHomTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pHomTreeItem);
+      pHomTreeItem->setExpanded(true);
+      continue;
+    }
     if (isJacobian) {
       /* one top-level row per Jacobian, with a child row per matrix row */
       QStringList jacValues;
@@ -2030,6 +2048,8 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.time = obj.value(QStringLiteral("time")).toDouble();
     solve.iterations = obj.value(QStringLiteral("iterations")).toInt();
     solve.iteration = obj.value(QStringLiteral("iteration")).toInt();
+    solve.step = obj.value(QStringLiteral("step")).toInt();
+    solve.lambda = obj.value(QStringLiteral("lambda")).toDouble();
     if (solve.kind == QStringLiteral("jacobian")) {
       // jacobian record: "vars" is a list of column labels, "rows" the matrix.
       foreach (const QJsonValue &v, obj.value(QStringLiteral("vars")).toArray()) {

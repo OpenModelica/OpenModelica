@@ -144,6 +144,34 @@ void EbddRuntimeTest::parsesJacobian()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesHomotopy()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq3 = new OMEquation();   eq3->index = 3;
+  equations << dummy << eq3;
+
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"homotopy\",\"eqIndex\":3,\"section\":\"initial\",\"time\":0,\"step\":1,\"lambda\":0.2,\"size\":1,\"vars\":[{\"name\":\"x\",\"value\":1.15,\"residual\":7e-07}]}\n");
+  file.write("{\"kind\":\"homotopy\",\"eqIndex\":3,\"section\":\"initial\",\"time\":0,\"step\":2,\"lambda\":1,\"size\":1,\"vars\":[{\"name\":\"x\",\"value\":1.3247,\"residual\":0}]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq3->runtimeSolves.size(), 2);
+  QCOMPARE(eq3->runtimeSolves.at(0).kind, QStringLiteral("homotopy"));
+  QCOMPARE(eq3->runtimeSolves.at(0).step, 1);
+  QCOMPARE(eq3->runtimeSolves.at(0).lambda, 0.2);
+  QCOMPARE(eq3->runtimeSolves.at(0).variables.at(0).name, QStringLiteral("x"));
+  QCOMPARE(eq3->runtimeSolves.at(1).lambda, 1.0);
+  QCOMPARE(eq3->runtimeSolves.at(1).variables.at(0).value, 1.3247);
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

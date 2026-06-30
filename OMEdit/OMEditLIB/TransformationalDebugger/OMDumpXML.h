@@ -230,12 +230,14 @@ struct OMRuntimeVariable {
  * <model>_dbg.json when the LOG_EBDD stream is active. A record is either a
  * final solve ("nonlinear") or one Newton iteration ("newtonIteration"). */
 struct OMRuntimeSolve {
-  QString kind;       // "nonlinear", "newtonIteration" or "jacobian"
+  QString kind;       // "nonlinear", "newtonIteration", "jacobian" or "homotopy"
   QString section;    // "initial" or "regular"
   QString status;     // "solved", "solved_less_accuracy" or "failed"
   double time = 0.0;
   int iterations = 0; // total iterations (nonlinear) ...
   int iteration = 0;  // ... or this iteration's 1-based index (newtonIteration/jacobian)
+  int step = 0;       // homotopy: 1-based accepted-step index
+  double lambda = 0.0;// homotopy: continuation parameter at this step
   QList<OMRuntimeVariable> variables;
   // jacobian records: column labels and the dense matrix rows (d f_row / d x_col)
   QStringList jacobianVars;

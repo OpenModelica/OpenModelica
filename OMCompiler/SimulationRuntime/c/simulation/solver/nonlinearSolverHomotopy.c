@@ -2105,6 +2105,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         fprintf(pFile, "\n");
       }
 #endif
+      /* EBDD: same accepted homotopy step (lambda = y0[n], path point y0[0..n-1],
+       * residual hvec), keyed by eqIndex. No-op unless -lv=LOG_EBDD. */
+      if (solverData->initHomotopy) {
+        ebddRuntimeLogHomotopyStep(data, solverData->userData->nlsData, numSteps,
+                                   n, solverData->y0[n], solverData->y0, solverData->hvec);
+      }
     }
   }
   if (solverData->initHomotopy)

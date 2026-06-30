@@ -311,6 +311,52 @@ void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
   fflush(f);
 }
 
+void ebddRuntimeLogHomotopyStep(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                int step, int size, double lambda,
+                                const double *y, const double *residual)
+{
+  FILE *f;
+  EQUATION_INFO eqInfo;
+  int i;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
+
+  fprintf(f, "{\"kind\":\"homotopy\",\"eqIndex\":%ld,\"section\":\"%s\",\"time\":",
+          (long) nonlinsys->equationIndex,
+          eqInfo.section == EQUATION_SECTION_INITIAL ? "initial" : "regular");
+  ebddWriteDouble(f, data->localData[0]->timeValue);
+  fprintf(f, ",\"step\":%d,\"lambda\":", step);
+  ebddWriteDouble(f, lambda);
+  fprintf(f, ",\"size\":%d,\"vars\":[", size);
+
+  for (i = 0; i < size; ++i) {
+    if (i > 0) {
+      fputc(',', f);
+    }
+    fputs("{\"name\":\"", f);
+    if (i < eqInfo.numVar) {
+      ebddWriteEscaped(f, eqInfo.vars[i]);
+    }
+    fputs("\",\"value\":", f);
+    ebddWriteDouble(f, y != NULL ? y[i] : 0.0);
+    fputs(",\"residual\":", f);
+    ebddWriteDouble(f, residual != NULL ? residual[i] : 0.0);
+    fputc('}', f);
+  }
+
+  fputs("]}\n", f);
+  fflush(f);
+}
+
 #else /* OMC_NUM_NONLINEAR_SYSTEMS == 0: NONLINEAR_SYSTEM_DATA is opaque */
 
 void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys)
@@ -334,6 +380,14 @@ void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
 {
   (void)data; (void)nonlinsys; (void)iteration; (void)size;
   (void)jacColMajorScaled; (void)colScaling;
+}
+
+void ebddRuntimeLogHomotopyStep(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                int step, int size, double lambda,
+                                const double *y, const double *residual)
+{
+  (void)data; (void)nonlinsys; (void)step; (void)size;
+  (void)lambda; (void)y; (void)residual;
 }
 
 #endif /* OMC_NUM_NONLINEAR_SYSTEMS */

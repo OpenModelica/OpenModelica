@@ -1,0 +1,52 @@
+// name:     testEbddHomotopy
+// keywords: EBDD runtime info dbg.json LOG_EBDD homotopy
+// status: correct
+// teardown_command: rm -rf EbddHomotopy* ebddhomcheck.txt
+//
+// Item 7 of the EBDD runtime-information work package: when a model is
+// initialized with the homotopy() operator, simulating with -lv=LOG_EBDD must
+// emit one record per accepted homotopy-continuation step into <model>_dbg.json,
+// keyed by eqIndex, carrying the step index, the continuation parameter lambda
+// and the path point per variable. The adaptive homotopy approach is selected so
+// the per-system homotopy solver runs.
+// See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+setCommandLineOptions("--homotopyApproach=adaptiveGlobal"); getErrorString();
+
+loadString("
+model EbddHomotopy \"uses the homotopy() operator at initialization\"
+  Real x(start = 5.0);
+equation
+  0 = homotopy(x^3 - x - 1, x - 1);
+end EbddHomotopy;
+"); getErrorString();
+
+simulate(EbddHomotopy, stopTime = 0.0, simflags = "-lv=LOG_EBDD -homotopyOnFirstTry"); getErrorString();
+
+// Structural checks (no dependence on step count or solver values):
+//  - the file has at least one homotopy record
+//  - that record carries a "lambda" and a "step"
+//  - it carries the path variable 'x'
+system("f=EbddHomotopy_dbg.json; if [ -f \"$f\" ] && [ $(grep -c '\"kind\":\"homotopy\"' \"$f\") -ge 1 ] && grep -q '\"lambda\":' \"$f\" && grep -q '\"step\":' \"$f\" && grep -q '\"name\":\"x\"' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddhomcheck.txt"); getErrorString();
+readFile("ebddhomcheck.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EbddHomotopy_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EbddHomotopy', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EBDD -homotopyOnFirstTry'",
+//     messages = "LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 5 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "OK
+// "
+// endResult
