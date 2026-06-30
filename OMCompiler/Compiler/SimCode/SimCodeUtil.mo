@@ -16183,9 +16183,10 @@ public function make2CMakeInclude
   input list<String> includes;
   output String cmakecode = "";
 algorithm
+  //strip exactly the first 3 characters (e.g) "-IC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
   for include in includes loop
     cmakecode := cmakecode + "\n                                               " +
-                 "\"" + System.trim(include, "\"-I") + "\"";
+                 "\"" + substring(include, 4, stringLength(include)-1) + "\"";
   end for;
 end make2CMakeInclude;
 
