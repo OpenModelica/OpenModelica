@@ -52,158 +52,7 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        stage('gcc (Ubuntu Jammy)') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
-          }
-          steps {
-            script { common.buildOMC('gcc', 'g++', '', true, false) }
-            stash name: 'omc-jammy-gcc', includes: 'build/**, **/config.status'
-          }
-        }
-        stage('clang (Ubuntu Jammy)') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          steps {
-            script {
-              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
-              common.getVersion()
-            }
-            // Resolve symbolic links to make Jenkins happy
-            sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-            stash name: 'omc-jammy-clang', includes: 'build/**, **/config.status'
-          }
-        }
-        stage('gcc (Win/UCRT64)') {
-          agent {
-            node {
-              label 'windows-no-release'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildUCRT }
-          }
-          environment {
-            RUNTESTDB = '/c/dev/'
-            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
-          }
-          steps {
-            script {
-              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-                bat "echo PATH: %PATH%"
-                common.cloneOMDev()
-                common.buildOMC('cc', 'c++', '', true, false)
-                common.makeLibsAndCache()
-                common.buildGUI('', 'qt6')
-                common.buildAndRunOMEditTestsuite('', 'qt6')
-              }
-            }
-          }
-        }
-        stage('cmake gcc (Ubuntu Jammy)') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value }
-          }
-          steps {
-            script {
-              echo "Running on: ${env.NODE_NAME}"
-              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build")
-              sh "build/bin/omc --version"
-            }
-            //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
-          }
-        }
-        stage('cmake gcc (macOS ARM64)') {
-          agent {
-            node {
-              label 'M1'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
-          }
-          steps {
-            script {
-              echo "Running on: ${env.NODE_NAME}"
-              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
-                sh "echo PATH: $PATH"
-                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                          + " -DOM_USE_CCACHE=OFF"
-                                          + " -DCMAKE_INSTALL_PREFIX=build"
-                                          // Look in /opt/local first to prefer the macports libraries
-                                          // over others in the system.
-                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
-                                          // Always specify the compilers explicilty for macOS
-                                          + " -DCMAKE_C_COMPILER=gcc"
-                                          + " -DCMAKE_CXX_COMPILER=g++"
-                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
-                                      )
-                sh "build/bin/omc --version"
-              }
-            }
-          }
-        }
-        stage('cmake gcc (Win/UCRT64)') {
-          agent {
-            node {
-              label 'windows-no-release'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
-          }
-          steps {
-            script {
-              echo "Running on: ${env.NODE_NAME}"
-              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-                bat "echo PATH: %PATH%"
-                common.cloneOMDev()
-                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
-                                        + ' -DCMAKE_INSTALL_PREFIX=build'
-                                        + ' -G "MSYS Makefiles"'
-                                      )
-              }
-            }
-          }
-        }
-        stage('checks (Ubuntu Jammy)') {
+        stage('checks Ubuntu Jammy') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -229,11 +78,164 @@ pipeline {
             stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
           }
         }
+        stage('autoconf-gcc (Ubuntu/Jammy)') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            QTDIR = "/usr/lib/qt4"
+          }
+          steps {
+            script { common.buildOMC('gcc', 'g++', '', true, false) }
+            stash name: 'omc-jammy-gcc', includes: 'build/**, **/config.status'
+          }
+        }
+        stage('autoconf-clang (Ubuntu/Jammy)') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          steps {
+            script {
+              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
+              common.getVersion()
+            }
+            // Resolve symbolic links to make Jenkins happy
+            sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
+            stash name: 'omc-jammy-clang', includes: 'build/**, **/config.status'
+          }
+        }
+        stage('cmake-gcc (Ubuntu/Jammy)') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value }
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                  + " -DOM_USE_CCACHE=OFF"
+                                  + " -DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
+            //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+          }
+        }
+        stage('autoconf-gcc (Win11/UCRT64)') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildUCRT }
+          }
+          environment {
+            RUNTESTDB = '/c/dev/'
+            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          steps {
+            script {
+              def omdev = 'C:\\OMDevUCRT'
+              withEnv (["OMDEV=${omdev}","PATH=${omdev}\\tools\\msys\\usr\\bin;${omdev}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.cloneOMDev()
+                common.buildOMC('cc', 'c++', '', true, false)
+                common.makeLibsAndCache()
+                common.buildGUI('', 'qt6')
+                common.buildAndRunOMEditTestsuite('', 'qt6')
+              }
+            }
+          }
+        }
+        stage('cmake-gcc (Win11/UCRT64)') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              def omdev = 'C:\\OMDevUCRT'
+              withEnv (["OMDEV=${omdev}","PATH=${omdev}\\tools\\msys\\usr\\bin;${omdev}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.cloneOMDev()
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
+                                    + ' -DCMAKE_INSTALL_PREFIX=build'
+                                    + ' -G "MSYS Makefiles"'
+                                      )
+              }
+            }
+          }
+        }
+        stage('cmake-gcc (macOS/ARM64)') {
+          agent {
+            node {
+              label 'M1'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+                sh "echo PATH: $PATH"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                    + " -DOM_USE_CCACHE=OFF"
+                                    + " -DCMAKE_INSTALL_PREFIX=build"
+                                    // Look in /opt/local first to prefer the macports libraries
+                                    // over others in the system.
+                                    + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                    // Always specify the compilers explicilty for macOS
+                                    + " -DCMAKE_C_COMPILER=gcc"
+                                    + " -DCMAKE_CXX_COMPILER=g++"
+                                    + " -DCMAKE_Fortran_COMPILER=gfortran"
+                                      )
+                sh "build/bin/omc --version"
+              }
+            }
+          }
+        }
       }
     }
     stage('tests') {
       parallel {
-        stage('01 testsuite-gcc 1/3 (Ubuntu Jammy)') {
+        stage('01 testsuite-gcc 1/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -270,7 +272,7 @@ pipeline {
           }
         }
 
-        stage('02 testsuite-gcc 2/3 (Ubuntu Jammy)') {
+        stage('02 testsuite-gcc 2/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -301,7 +303,7 @@ pipeline {
           }
         }
 
-        stage('03 testsuite-gcc 3/3 (Ubuntu Jammy)') {
+        stage('03 testsuite-gcc 3/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -332,7 +334,7 @@ pipeline {
           }
         }
 
-        stage('04 testsuite-clang 1/3 (Ubuntu Jammy)') {
+        stage('04 testsuite-clang 1/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -363,7 +365,7 @@ pipeline {
           }
         }
 
-        stage('05 testsuite-clang 2/3 (Ubuntu Jammy)') {
+        stage('05 testsuite-clang 2/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -394,7 +396,7 @@ pipeline {
           }
         }
 
-        stage('06 testsuite-clang 3/3 (Ubuntu Jammy)') {
+        stage('06 testsuite-clang 3/3 (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -425,7 +427,7 @@ pipeline {
           }
         }
 
-        stage('07 cross-build-fmu (Ubuntu Jammy)') {
+        stage('07 cross-build-fmu (Ubuntu/Jammy)') {
           agent {
             label 'linux'
           }
@@ -462,7 +464,7 @@ pipeline {
           }
         }
 
-        stage('08 testsuite-compliance (Ubuntu Jammy)') {
+        stage('08 testsuite-compliance (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -488,7 +490,7 @@ pipeline {
           }
         }
 
-        stage('09 build-usersguide (Ubuntu Jammy)') {
+        stage('09 build-usersguide (Ubuntu/Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -534,7 +536,7 @@ pipeline {
           }
         }
 
-        stage('10 build-gui clang qt5 (Ubuntu Jammy)') {
+        stage('10 build-gui clang qt5 (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -545,13 +547,13 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-jammy-gcc', 'qt5')
+              common.buildGUI('omc-jammy-clang', 'qt5')
             }
             stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
-        stage('11 build-gui clang qt6 (Ubuntu Jammy)') {
+        stage('11 build-gui clang qt6 (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -568,7 +570,7 @@ pipeline {
           }
         }
 
-        stage('12 testsuite-clang-parmod (Ubuntu Jammy)') {
+        stage('12 testsuite-clang-parmod (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -590,7 +592,7 @@ pipeline {
           }
         }
 
-        stage('13 testsuite-clang-metamodelica (Ubuntu Jammy)') {
+        stage('13 testsuite-clang-metamodelica (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -608,7 +610,7 @@ pipeline {
           }
         }
 
-        stage('14 testsuite-matlab-translator (Ubuntu Jammy)') {
+        stage('14 testsuite-matlab-translator (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -630,7 +632,7 @@ pipeline {
           }
         }
 
-        stage('15 test-clang-icon-generator (Ubuntu Jammy)') {
+        stage('15 test-clang-icon-generator (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -660,7 +662,7 @@ pipeline {
           }
         }
 
-        stage('16 testsuite-unit-test-C (Ubuntu Jammy)') {
+        stage('16 testsuite-unit-test-C (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -777,7 +779,7 @@ pipeline {
             stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
-        stage('OMEdit testsuite clang qt5 (Ubuntu Jammy)') {
+        stage('OMEdit testsuite clang qt5 (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -796,7 +798,7 @@ pipeline {
             }
           }
         }
-        stage('OMEdit testsuite clang qt6 (Ubuntu Jammy)') {
+        stage('OMEdit testsuite clang qt6 (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -819,7 +821,7 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
-        stage('fmuchecker-results (Ubuntu Jammy)') {
+        stage('fmuchecker-results (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -846,7 +848,7 @@ pipeline {
             archiveArtifacts 'Test_FMUs.tar.gz'
           }
         }
-        stage('upload-compliance (Ubuntu Jammy)') {
+        stage('upload-compliance (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -864,7 +866,7 @@ pipeline {
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
         }
-        stage('upload-doc (Ubuntu Jammy)') {
+        stage('upload-doc (Ubuntu/Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
