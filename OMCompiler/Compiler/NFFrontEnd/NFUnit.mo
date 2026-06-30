@@ -329,7 +329,7 @@ algorithm
       str := str + (if b then "" else "1");
     then str;
 
-    case MASTER()   then List.toString(unit.varList, ComponentRef.toString, "MASTER", "(", ", ", ")");
+    case MASTER()   then List.toStringCustom(unit.varList, ComponentRef.toString, "MASTER", "(", ", ", ")");
     case UNKNOWN()  then "UNKOWN(" + unit.unit + ")";
   end match;
 end unit2string;

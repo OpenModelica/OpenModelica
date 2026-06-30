@@ -386,7 +386,7 @@ protected
       else
         str_lst := list((func2(Util.tuple22(tpl)), func1(Util.tuple21(tpl))) for tpl in aux_lst);
         max_length := max(stringLength(Util.tuple21(tpl)) for tpl in str_lst) + 3;
-        str := str + List.toString(str_lst, function functionAliasTplString(max_length = max_length), "", "  ", "\n  ", "\n\n");
+        str := str + List.toStringCustom(str_lst, function functionAliasTplString(max_length = max_length), "", "  ", "\n  ", "\n\n");
       end if;
   end aliasListToString;
 

@@ -5665,7 +5665,7 @@ public function typeSpecStringNoQualNoDimsLst
   input list<TypeSpec> inTypeSpecLst;
   output String outString;
 algorithm
-  outString := List.toString(inTypeSpecLst, typeSpecStringNoQualNoDims,
+  outString := List.toStringCustom(inTypeSpecLst, typeSpecStringNoQualNoDims,
     "", "", ", ", "", false);
 end typeSpecStringNoQualNoDimsLst;
 
