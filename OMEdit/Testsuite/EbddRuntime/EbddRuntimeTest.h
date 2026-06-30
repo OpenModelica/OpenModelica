@@ -86,6 +86,12 @@ private slots:
    * the time window, the state-event count and the zero-crossing description.
    */
   void parsesChattering();
+  /*!
+   * \brief parsesNullSpace
+   * Tests that "nullSpace" records attach to the equation system, carrying the
+   * linearly-dependent variables involved in the singularity.
+   */
+  void parsesNullSpace();
   void cleanupTestCase();
 };
 

@@ -157,6 +157,22 @@ void ebddRuntimeLogChattering(DATA *data, const int *eqIndexes,
                               double timeStart, double timeEnd,
                               int stateEvents, const char *zeroCrossing);
 
+/**
+ * @brief Append the null-space (singularity) analysis of a nonlinear system.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. Emits, keyed by eqIndex, the
+ * set of variables that the Newton diagnostics found to be linearly dependent
+ * (their Jacobian columns form the singular / null-space part of the system) —
+ * i.e. the variables involved in the singularity.
+ *
+ * @param data        Runtime data struct.
+ * @param nonlinsys   The nonlinear system being diagnosed.
+ * @param numVars     Number of linearly-dependent variables.
+ * @param varIndexes  Local variable indices into the system (length numVars).
+ */
+void ebddRuntimeLogNullSpace(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                             int numVars, const unsigned *varIndexes);
+
 #ifdef __cplusplus
 }
 #endif
