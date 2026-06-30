@@ -80,6 +80,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(GEN_DEBUG_SYMBOLS "-d=gendebugsymbols")
 endif()
 
+# Compile the compiler against itself with the def-use static analysis enabled so that
+# conditionally-assigned variables are caught at build time. -d= is additive and survives
+# the setCommandLineOptions("-d=rml") in mm_compile.in.mos.
+set(CHECK_DEF_USE "-d=checkDefUse")
+
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
 # enable_language(MODELICA)
 
@@ -157,7 +162,7 @@ macro(add_compile_step mo_source_file)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CHECK_DEF_USE} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c
@@ -403,6 +408,17 @@ if(WIN32)
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
   install(TARGETS omc
           COMPONENT omc)
+
+  # libopenblas.dll is linked dynamically (-lopenblas) by the *generated*
+  # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
+  # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
+  # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
+  # The autotools/OMDev build copies it explicitly (Makefile.omdev.mingw); do the
+  # same here so e.g. buildModelFMU() can bundle it into the exported FMU.
+  install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
+          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          COMPONENT omc
+          OPTIONAL)
 else(WIN32)
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)
@@ -443,6 +459,6 @@ install(DIRECTORY scripts
 # or 'cmake --build <b_dir> --target install_omc' in the general case.
 add_custom_target(install_omc
                   DEPENDS omc
-                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=compiler -P cmake_install.cmake
+                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=omc -P cmake_install.cmake
                   COMMENT "Installing omc."
                   )

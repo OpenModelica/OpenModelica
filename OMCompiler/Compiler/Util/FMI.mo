@@ -232,6 +232,7 @@ algorithm
   success := match inFMIVersion
     case "1.0" then true;
     case "2.0" then true;
+    case "3.0" then true;
     else false;
   end match;
 end checkFMIVersion;
@@ -256,6 +257,16 @@ algorithm
   end match;
 end isFMIVersion20;
 
+public function isFMIVersion30 "Checks if the FMI version is 3.0."
+  input String inFMUVersion = getFMIVersionString();
+  output Boolean success;
+algorithm
+  success := match inFMUVersion
+    case "3.0" then true;
+    else false;
+  end match;
+end isFMIVersion30;
+
 public function getFMIVersionString "Returns the FMI version string."
   output String version = Flags.getConfigString(Flags.FMI_VERSION);
 end getFMIVersionString;
@@ -268,6 +279,7 @@ algorithm
     case "me" then true;
     case "cs" then true;
     case "me_cs" then true;
+    case "se" then true;
     else false;
   end match;
 end checkFMIType;
@@ -282,6 +294,10 @@ algorithm
     case ("2.0", "me") then true;
     case ("2.0", "cs") then true;
     case ("2.0", "me_cs") then true;
+    case ("3.0", "me") then true;
+    case ("3.0", "cs") then true;
+    case ("3.0", "me_cs") then true;
+    case ("3.0", "se") then true;
     else false;
   end match;
 end canExportFMU;
@@ -307,6 +323,16 @@ algorithm
     else false;
   end match;
 end isFMICSType;
+
+public function isFMISEType "Checks if FMU type is scheduled execution (FMI 3.0 only)"
+  input String inFMIType;
+  output Boolean success;
+algorithm
+  success := match inFMIType
+    case "se" then true;
+    else false;
+  end match;
+end isFMISEType;
 
 public function getEnumerationTypeFromTypes
   input list<TypeDefinitions> inTypeDefinitionsList;

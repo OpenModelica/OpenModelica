@@ -42,12 +42,11 @@
 
 // IAEX headers
 #include "cell.h"
+#include "indent.h"
 #include "inputcelldelegate.h"
 #include "document.h"
 #include "PlotWindow.h"
 #include "ModelicaTextHighlighter.h"
-
-class IndentationState;
 
 namespace IAEX {
 
@@ -64,7 +63,6 @@ class GraphCell : public Cell
     Q_OBJECT
 public:
     explicit GraphCell(Document *doc, QWidget *parent = nullptr);
-    ~GraphCell() override;
 
     /* ----- Cell‑interface (override virtuals from Cell) ----- */
     QString          text()               override;
@@ -81,8 +79,8 @@ public:
     void             addCellWidgets()    override;
     void             removeCellWidgets() override;
     void             accept(Visitor &v)  override;
-    bool             isClosed();                 // not virtual in Cell
-    bool             isEditable() override;      // not virtual in Cell
+    bool             isClosed() const override;
+    bool             isEditable() const override;
     bool             isEvaluated();              // not virtual in Cell
 
     /* ----- GraphCell‑specific members (non‑virtual) ----- */
@@ -170,7 +168,6 @@ private:
 public:
     OMPlot::PlotWindow*      mpPlotWindow    = nullptr;
     QPushButton*             variableButton  = nullptr;
-    QTemporaryFile*          imageFile       = nullptr;
 
     /* ----- Plot callback (static) ----- */
     static void PlotCallbackFunction(void *p,
@@ -237,7 +234,6 @@ class MyTextEdit2a : public QPlainTextEdit
     Q_OBJECT
 public:
     explicit MyTextEdit2a(QWidget *parent = nullptr);
-    ~MyTextEdit2a() override;
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     int  lineNumberAreaWidth();
@@ -280,7 +276,7 @@ protected:
 private:
     bool                     inCommand      = false;
     bool                     autoIndent     = true;
-    QMap<int, IndentationState*> indentationStates;
+    QMap<int, IndentationState> indentationStates;
     QWidget*                 lineNumberArea = nullptr;
 
     int indentationLevel(const QString &, bool = true);

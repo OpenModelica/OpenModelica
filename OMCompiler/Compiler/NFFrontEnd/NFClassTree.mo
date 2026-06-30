@@ -402,7 +402,7 @@ public
 
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+              Error.terminate(getInstanceName() + " got invalid component", sourceInfo());
             then
               fail();
         end match;
@@ -598,12 +598,12 @@ public
 
             // Sanity check.
             if comp_idx <> compCount + 1 then
-              Error.assertion(false, getInstanceName() + " miscounted components in " +
+              Error.terminate(getInstanceName() + " miscounted components in " +
                 InstNode.name(clsNode), sourceInfo());
             end if;
 
             if cls_idx <> classCount + 1 then
-              Error.assertion(false, getInstanceName() + " miscounted classes in " +
+              Error.terminate(getInstanceName() + " miscounted classes in " +
                 InstNode.name(clsNode), sourceInfo());
             end if;
 
@@ -651,7 +651,7 @@ public
 
         else
           algorithm
-            Error.assertion(false, getInstanceName() + " got invalid class", sourceInfo());
+            Error.terminate(getInstanceName() + " got invalid class", sourceInfo());
           then
             fail();
 
@@ -769,7 +769,7 @@ public
               ();
 
           else algorithm
-            Error.assertion(false, getInstanceName() + " failed for non-instantiated tree.", sourceInfo());
+            Error.terminate(getInstanceName() + " failed for non-instantiated tree.", sourceInfo());
           then fail();
         end match;
       end if;
@@ -792,7 +792,7 @@ public
               ();
 
           else algorithm
-            Error.assertion(false, getInstanceName() + " failed for non-flat tree.", sourceInfo());
+            Error.terminate(getInstanceName() + " failed for non-flat tree.", sourceInfo());
           then fail();
         end match;
       end if;
@@ -1403,7 +1403,7 @@ public
           node := resolveEntry(entry.entry, tree);
         end if;
       else
-        Error.assertion(false, getInstanceName() + " failed on " + name, sourceInfo());
+        Error.terminate(getInstanceName() + " failed on " + name, sourceInfo());
       end try;
     end getRedeclaredNode;
 
@@ -1722,7 +1722,7 @@ public
 
         else
           algorithm
-            Error.assertion(false, getInstanceName() + " got invalid entry", sourceInfo());
+            Error.terminate(getInstanceName() + " got invalid entry", sourceInfo());
           then
             fail();
 

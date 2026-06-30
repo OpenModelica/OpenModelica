@@ -93,6 +93,7 @@ BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
+BuiltinAttribute27.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \

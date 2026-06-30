@@ -116,7 +116,7 @@ public
             case Type.ENUMERATION() then ENUM(ty);
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got invalid typename", sourceInfo());
+                Error.terminate(getInstanceName() + " got invalid typename", sourceInfo());
               then
                 fail();
           end match;
@@ -170,7 +170,7 @@ public
                             stop  = Expression.INTEGER(stop))
       then (start, step, stop);
       else algorithm
-        Error.assertion(false, getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
+        Error.terminate(getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
       then fail();
     end match;
 

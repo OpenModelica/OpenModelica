@@ -72,8 +72,8 @@ val(evaporator_qm_S, 100);
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
 //     canNotUseMemoryManagementFunctions=\"false\"
-//     canGetAndSetFMUstate=\"false\"
-//     canSerializeFMUstate=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>
@@ -307,7 +307,7 @@ val(evaporator_qm_S, 100);
 //     name=\"K2degC.Kelvin\"
 //     valueReference=\"125\"
 //     >
-//     <Real min=\"0.0\" unit=\"K\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"16\" -->
 //   <ScalarVariable
@@ -1040,7 +1040,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"98\" -->
 //   <ScalarVariable
@@ -1530,7 +1530,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"155\"
 //     description=\"Specific enthalpy of medium\"
 //     >
-//     <Real unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"156\" -->
 //   <ScalarVariable
@@ -1538,7 +1538,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Absolute pressure of medium\"
 //     >
-//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"157\" -->
 //   <ScalarVariable
@@ -1610,7 +1610,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"Specific enthalpy of medium\"
 //     >
-//     <Real unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"166\" -->
 //   <ScalarVariable
@@ -1650,7 +1650,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"125\"
 //     description=\"Temperature in port medium\"
 //     >
-//     <Real min=\"0.0\" unit=\"K\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"171\" -->
 //   <ScalarVariable
@@ -1667,7 +1667,7 @@ val(evaporator_qm_S, 100);
 //     description=\"2 for two-phase, 1 for one-phase, 0 if not known\"
 //     variability=\"discrete\"
 //     >
-//     <Integer/>
+//     <Integer min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"173\" -->
 //   <ScalarVariable
@@ -1676,7 +1676,7 @@ val(evaporator_qm_S, 100);
 //     description=\"2 for two-phase, 1 for one-phase, 0 if not known\"
 //     variability=\"discrete\"
 //     initial=\"exact\">
-//     <Integer start=\"1\"/>
+//     <Integer start=\"1\" min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"174\" -->
 //   <ScalarVariable
@@ -1686,7 +1686,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Blocks.Types.Init\"/>
+//     <Enumeration declaredType=\"Modelica.Blocks.Types.Init\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"175\" -->
 //   <ScalarVariable
@@ -1696,7 +1696,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"176\" -->
 //   <ScalarVariable
@@ -1706,7 +1706,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"177\" -->
 //   <ScalarVariable
@@ -1736,7 +1736,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"180\" -->
 //   <ScalarVariable
@@ -1746,7 +1746,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"181\" -->
 //   <ScalarVariable
@@ -1756,7 +1756,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"182\" -->
 //   <ScalarVariable
@@ -1766,7 +1766,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"183\" -->
 //   <ScalarVariable
@@ -1776,7 +1776,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\"/>
+//     <Enumeration declaredType=\"Modelica.Fluid.Types.Dynamics\" min=\"1\" max=\"4\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"184\" -->
 //   <ScalarVariable
@@ -1785,7 +1785,7 @@ val(evaporator_qm_S, 100);
 //     description=\"Phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g., interactive use\"
 //     variability=\"discrete\"
 //     >
-//     <Integer/>
+//     <Integer min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"185\" -->
 //   <ScalarVariable
@@ -1794,7 +1794,7 @@ val(evaporator_qm_S, 100);
 //     description=\"Phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g., interactive use\"
 //     variability=\"discrete\"
 //     >
-//     <Integer/>
+//     <Integer min=\"0\" max=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"186\" -->
 //   <ScalarVariable

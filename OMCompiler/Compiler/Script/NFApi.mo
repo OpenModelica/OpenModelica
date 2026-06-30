@@ -1044,7 +1044,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class tree", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown class tree", sourceInfo());
       then
         fail();
   end match;
@@ -1195,7 +1195,7 @@ algorithm
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
 
-  json := JSON.addPair("name", dumpJSONNodePath(node, not isExtends), json);
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
@@ -1495,7 +1495,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component " +
+        Error.terminate(getInstanceName() + " got unknown component " +
           InstNode.name(node), sourceInfo());
       then
         fail();

@@ -1593,7 +1593,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
       then
         fail();
 
@@ -1695,7 +1695,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
       then
         fail();
 
@@ -2968,7 +2968,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding " + Binding.toString(binding), sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding " + Binding.toString(binding), sourceInfo());
       then
         fail();
   end match;

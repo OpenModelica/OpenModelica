@@ -144,7 +144,7 @@ public:
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   QDockWidget* getFindUsageDockWidget() {return mpFindUsageDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-  SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
+  SimulationDialog* getSimulationDialog();
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
@@ -233,6 +233,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
+  void loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath);
   void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);
@@ -336,6 +337,7 @@ private:
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpLoadEncryptedLibraryAction;
+  QAction *mpLoadCompiledModelAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
@@ -502,6 +504,7 @@ public slots:
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
   void loadEncryptedLibrary();
+  void loadCompiledModel();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);

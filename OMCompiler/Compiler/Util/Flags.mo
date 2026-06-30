@@ -564,6 +564,8 @@ constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasEliminatio
   "Enables simple alias elimination of flow variables in stream connectors.");
 constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
+constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
+  "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
 
 public
 // CONFIGURATION FLAGS

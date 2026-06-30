@@ -1068,7 +1068,9 @@ algorithm
   e := inExp;
   (ops, (se, te, i)) := inTpl;
   // BackendDump.debugStrExpStrExpStr(("Repalce ", se, " with ", te, "\n"));
-  (e1, j) := Expression.replaceExp(e, se, te);
+  // use the noEvent-aware variant: a relation inside noEvent()/smooth() is
+  // continuous and must not be substituted by an event-based variable
+  (e1, j) := Expression.replaceExpNoEvent(e, se, te);
   ops := if j>0 then DAE.SUBSTITUTION({e1}, e)::ops else ops;
   // BackendDump.debugStrExpStrExpStr(("Old ", e, " new ", e1, "\n"));
   outTpl := (ops, (se, te, i+j));
@@ -3559,13 +3561,13 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name = "change"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), -1, NONE()), true);
+      then (DAE.RELATION(e, DAE.NEQUAL(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)), -1, NONE()), true);
 
     // edge(b) = b and not pre(b)
     case DAE.CALL(path=Absyn.IDENT(name = "edge"), expLst={e})
       algorithm
         ty := Expression.typeof(e);
-      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())))), true);
+      then (DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS)))), true);
 
     else (inExp,inB);
   end matchcontinue;

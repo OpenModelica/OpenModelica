@@ -190,7 +190,7 @@ public
         // list of binding expression until they match.
         if expl_len < crefs_len then
           if intMod(crefs_len, expl_len) <> 0 then
-            Error.assertion(false, getInstanceName() + " failed to expand " +
+            Error.terminate(getInstanceName() + " failed to expand " +
               ComponentRef.toString(var.name), sourceInfo());
           end if;
 
@@ -323,6 +323,11 @@ public
     input Variable variable;
     output Boolean b = variable.attributes.direction == Direction.INPUT;
   end isInput;
+
+  function isOutput
+    input Variable variable;
+    output Boolean b = variable.attributes.direction == Direction.OUTPUT;
+  end isOutput;
 
   function isTopLevelInput
     input Variable variable;

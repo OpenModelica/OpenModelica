@@ -7901,6 +7901,16 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
           let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(getSimVars()->init<%type%>Var(<%index%>))<%\n%>'
           ""
         else ""
+    /* newInst with arrays: a non-scalarized whole-array var (T_ARRAY) has no
+       subscripts on its cref, so the arrayCref=SOME path below would see dims="0"
+       and skip the init. Handle it here first (mirrors memberVariableDefine2). */
+    case v as SIMVAR(type_ = T_ARRAY()) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name, dims)
+      let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))
+       <<
+       <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -7933,15 +7943,6 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
               getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
               <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
               >>
-    /* newInst with arrays */
-    case v as SIMVAR(type_ = T_ARRAY()) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name, dims)
-      let typeString = expTypeShort(type_)
-      let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))
-       <<
-       <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
-       >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
 
@@ -8170,8 +8171,16 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           else
             '<%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;'
 
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
+    /* newInst with arrays */
+    case v as SIMVAR(type_ = T_ARRAY()) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name, dims)
+      let typeString = expTypeShort(type_)
+      <<
+      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%v.numArrayElement;separator=","%>, <%createRefVar%>> <%varName%>;
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_))
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_)) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
@@ -8200,14 +8209,6 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           <<
           RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
           >>
-    /* newInst with arrays */
-    case v as SIMVAR(type_ = T_ARRAY()) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name, dims)
-      let typeString = expTypeShort(type_)
-      <<
-      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%List.lastN(v.numArrayElement, listLength(v.numArrayElement));separator=","%>, <%createRefVar%>> <%varName%>;
-      >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
@@ -9558,6 +9559,8 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
     then equationWhen(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+  case e as SES_RESIZABLE_ASSIGN(__)
+    then equationResizableAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
       let i = ls.index
@@ -9858,6 +9861,9 @@ template equation_function_create_single_body(SimEqSystem eq, Context context, S
     case e as SES_ARRAY_CALL_ASSIGN(__)
       then
       equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+    case e as SES_RESIZABLE_ASSIGN(__)
+      then
+      equationResizableAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     case e as SES_LINEAR(__)
     case e as SES_NONLINEAR(__)
       then
@@ -10929,6 +10935,108 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     <%lhsStr%>.assign(<%expPart%>);
     >>
 end equationArrayCallAssign;
+
+template equationResizableAssign(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,
+                                 Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates a non-scalarized resizable array assignment (NewBackend) as an inline,
+  possibly nested, C++ for-loop. The actual lhs:=rhs body lives in a SINGLE_GENERIC_CALL
+  referenced by call_index; we look it up in simCode.generic_loop_calls and inline it.
+  The C runtime emits a separate genericCall_<n>() function for this; in the C++ runtime
+  equations are model-class members operating on _<var> fields, so inlining fits better."
+::=
+match eq
+case SES_RESIZABLE_ASSIGN(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let header = (iters |> it => cppForIterHeader(it, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n")
+  let tail   = (iters |> it => "}" ; separator="\n")
+  let body   = resizableGenericCallBody(call_index, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  <<
+  <%preExp%>
+  <%header%>
+  <%body%>
+  <%tail%>
+  >>
+end equationResizableAssign;
+
+template cppForIterHeader(SimIterator iter, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
+                          Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "One C++ for-loop header for a resizable iterator, including any derived sub-iterators."
+::=
+match iter
+case SIM_ITERATOR_RANGE(__) then
+  let iterName = localCref(name, useFlatArrayNotation)
+  let startVal = daeExp(start, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let stepVal  = daeExp(step, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let stopVal  = daeExp(stop, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let subIts   = (sub_iter |> si => cppSubIter(si, iterName, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n")
+  <<
+  for (modelica_integer <%iterName%> = <%startVal%>; ((<%stepVal%>) >= 0 ? <%iterName%> <= (<%stopVal%>) : <%iterName%> >= (<%stopVal%>)); <%iterName%> += (<%stepVal%>)) {
+    <%subIts%>
+  >>
+case SIM_ITERATOR_LIST(__) then
+  let iterName = localCref(name, useFlatArrayNotation)
+  let arr      = (lst |> e => '<%e%>' ; separator=", ")
+  let subIts   = (sub_iter |> si => cppSubIter(si, iterName, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n")
+  <<
+  static const modelica_integer <%iterName%>_lst[<%size%>] = {<%arr%>};
+  for (int <%iterName%>_i = 0; <%iterName%>_i < <%size%>; <%iterName%>_i++) {
+    modelica_integer <%iterName%> = <%iterName%>_lst[<%iterName%>_i];
+    <%subIts%>
+  >>
+end cppForIterHeader;
+
+template cppSubIter(tuple<DAE.ComponentRef, array<DAE.Exp>> sit, Text parentIter, Context context, Text &preExp, Text &varDecls,
+                    SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "A derived (sub) iterator, used when a multi-dimensional array loop is flattened: the
+  derived index is a constant table indexed by the (1-based) parent iterator value."
+::=
+match sit
+case (sname, srange) then
+  let snm   = localCref(sname, useFlatArrayNotation)
+  let svals = (arrayList(srange) |> se => daeExp(se, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator=", ")
+  let ssize = listLength(arrayList(srange))
+  <<
+  static const modelica_integer <%snm%>_arr[<%ssize%>] = {<%svals%>};
+  modelica_integer <%snm%> = <%snm%>_arr[<%parentIter%>-1];
+  >>
+end cppSubIter;
+
+template resizableGenericCallBody(Integer callIndex, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,
+                                  Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Find the SINGLE_GENERIC_CALL whose index == callIndex in simCode.generic_loop_calls and inline its lhs:=rhs."
+::=
+match simCode
+case SIMCODE(__) then
+  (generic_loop_calls |> call =>
+    match call
+    case SINGLE_GENERIC_CALL(index=ci) then
+      if intEq(ci, callIndex) then resizableLhsRhs(call, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+   ; separator="")
+end resizableGenericCallBody;
+
+template resizableLhsRhs(SimGenericCall call, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,
+                         Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Inline body of a single generic call: lhs := rhs, with the iterator crefs rendered as the loop variables."
+::=
+match call
+case SINGLE_GENERIC_CALL(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let rhsPart = daeExp(rhs, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let assign = match lhs
+    case CREF(ty = T_ARRAY(__)) then
+      let lhsPart = daeExpCref(true, lhs, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%lhsPart%>.assign(<%rhsPart%>);'
+    case CREF(__) then
+      let lhsPart = daeExpCref(true, lhs, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%lhsPart%> = <%rhsPart%>;'
+    else
+      let lhsPart = daeExp(lhs, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%lhsPart%> = <%rhsPart%>;'
+  <<
+  <%preExp%>
+  <%assign%>
+  >>
+end resizableLhsRhs;
 
 template assignDerArray(Context context, String arr, Exp lhs_ecr, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Assign array considering special treatment of states and Jacobian vars"

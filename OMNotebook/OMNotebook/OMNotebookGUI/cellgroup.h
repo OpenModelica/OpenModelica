@@ -66,7 +66,7 @@ namespace IAEX{
     CellGroup(QWidget *parent=0);
     virtual ~CellGroup();
 
-    void viewExpression(const bool) override;
+    void viewExpression(bool) override;
 
     //Traversals implementation
     virtual void accept(Visitor &v) override;
@@ -87,7 +87,7 @@ namespace IAEX{
 
     //Flag
     bool isClosed() const override;
-    bool isEditable() override;
+    bool isEditable() const override;
 
     QTextDocument* document() override;
     QTextEdit* textEdit() override;
@@ -103,8 +103,8 @@ namespace IAEX{
 
   public slots:
     virtual void setStyle( CellStyle style ) override;
-    void setClosed(const bool closed, bool update = true) override;
-    virtual void setFocus(const bool focus) override;
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
 
   protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
@@ -115,7 +115,6 @@ namespace IAEX{
   private:
     bool closed_;
 
-    QWidget *main_;
     QGridLayout *layout_;
     unsigned long newIndex_;
   };

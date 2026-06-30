@@ -117,7 +117,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression " +
+          Error.terminate(getInstanceName() + " got unknown expression " +
             Expression.toString(exp), sourceInfo());
         then
           fail();

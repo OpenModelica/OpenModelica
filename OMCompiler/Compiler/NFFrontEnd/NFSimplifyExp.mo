@@ -860,7 +860,7 @@ algorithm
       elseif mcl == NFOperator.MathClassification.MULTIPLICATION then
         (new_const, neutralConst) := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
       else
-        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+        Error.terminate(getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
           "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
           "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const_args), ", "),
           sourceInfo());
@@ -1344,6 +1344,9 @@ algorithm
           Expression.BOOLEAN(value = tb_val) := tb;
           ifExp := if tb_val then cond else Expression.logicNegate(cond);
         else
+          ty := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, Expression.typeOf(tb), Expression.typeOf(fb)) else
+            Expression.typeOf(tb);
           ifExp := Expression.IF(ty, cond, tb, fb);
         end if;
       then
@@ -1491,7 +1494,7 @@ algorithm
     then res;
 
     else algorithm
-      Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+      Error.terminate(getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
        "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const), ", ") +
        "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const), ", "),
        sourceInfo());

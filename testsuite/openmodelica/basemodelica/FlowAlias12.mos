@@ -1,0 +1,84 @@
+// name: FlowAlias12
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+
+loadString("
+  model Test12
+    import TestAliasStream.*;
+    Pump pump1(w = sin(time));
+    Pump pump2(w = min(sin(2*time), 0));
+    Pipe pipe(inlet.w(max = 0));
+    Tank tank;
+  equation
+    connect(pump1.outlet, tank.port);
+    connect(pump2.outlet, pipe.inlet);
+    connect(pipe.outlet, tank.port);
+  end Test12;
+");
+
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(Test12); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test12'
+//   function '$OMC$PositiveMax'
+//     input Real 'flowValue';
+//     input Real 'eps';
+//     output Real 'positiveMax';
+//   algorithm
+//     'positiveMax' := max('flowValue', 'eps');
+//   end '$OMC$PositiveMax';
+//
+//   model 'Test12'
+//     Real 'pump1.outlet.p';
+//     Real 'pump1.outlet.h';
+//     parameter Real 'pump1.T' = 20.0;
+//     Real 'pump1.P';
+//     Real 'pump2.outlet.p';
+//     Real 'pump2.outlet.h';
+//     parameter Real 'pump2.T' = 20.0;
+//     Real 'pump2.P';
+//     Real 'pipe.inlet.p';
+//     Real 'pipe.inlet.h';
+//     Real 'pipe.outlet.p';
+//     Real 'pipe.outlet.h';
+//     Real 'tank.port.p';
+//     Real 'tank.port.w';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'pump1.w' = sin(time);
+//     Real 'pump1.outlet.w' = -'pump1.w' \"Alias variable\";
+//     Real 'pump2.w'(max = 0.0) = min(sin(2.0 * time), 0.0);
+//     Real 'pipe.inlet.w'(max = 0.0) = 'pump2.w' \"Alias variable\";
+//     Real 'pump2.outlet.w' = -'pump2.w' \"Alias variable\";
+//     Real 'pipe.outlet.w' = -'pump2.w' \"Alias variable\";
+//   equation
+//     'pipe.outlet.p' = 'tank.port.p';
+//     'pipe.outlet.p' = 'pump1.outlet.p';
+//     'pump2.outlet.p' = 'pipe.inlet.p';
+//     'tank.port.w' - 'pump2.w' - 'pump1.w' = 0.0;
+//     'pump1.outlet.h' = 4200.0 * 'pump1.T';
+//     'pump1.P' = if 'pump1.w' > 0.0 then 'pump1.w' * ('pump1.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     'pump2.outlet.h' = 4200.0 * 'pump2.T';
+//     'pump2.P' = if 'pump2.w' > 0.0 then 'pump2.w' * ('pump2.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     'pipe.inlet.p' = 'pipe.outlet.p';
+//     'pipe.inlet.h' = ('$OMC$PositiveMax'('pump1.w', 1e-7) * 'pump1.outlet.h' + '$OMC$PositiveMax'(-'tank.port.w', 1e-7) * 'tank.port.h') / ('$OMC$PositiveMax'('pump1.w', 1e-7) + '$OMC$PositiveMax'(-'tank.port.w', 1e-7));
+//     'pipe.outlet.h' = 'pipe.inlet.h';
+//     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then 'pump1.outlet.h' else 'tank.port.h'));
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//   end 'Test12';
+// end 'Test12';
+// "
+// ""
+// endResult

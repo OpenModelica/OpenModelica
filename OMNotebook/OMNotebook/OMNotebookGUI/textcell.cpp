@@ -142,10 +142,9 @@ namespace IAEX
   {
     if( source->hasText() && !source->hasImage() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -214,7 +213,7 @@ namespace IAEX
    * \param name
    * \param type
    */
-  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType type)
+  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType /*type*/)
   {
     emit openLink( &name );
   }
@@ -255,13 +254,6 @@ namespace IAEX
     createTextWidget();
   }
 
-  TextCell::TextCell(TextCell &t)
-    : Cell(t)
-  {
-    setText(t.text());
-    setStyle(*t.style());
-  }
-
   /*!
    * \author Ingemar Axelsson
    *
@@ -269,8 +261,6 @@ namespace IAEX
    */
   TextCell::~TextCell()
   {
-    setMainWidget(0);
-    delete text_;
   }
 
   /*!
@@ -414,6 +404,21 @@ namespace IAEX
   QTextEdit* TextCell::textEdit()
   {
     return text_;
+  }
+
+  void TextCell::cutText()
+  {
+    text_->cut();
+  }
+
+  void TextCell::copyText()
+  {
+    text_->copy();
+  }
+
+  void TextCell::pasteText()
+  {
+    text_->paste();
   }
 
   /*!
@@ -677,7 +682,7 @@ namespace IAEX
    *
    * \param readonly The boolean value of readonly property
    */
-  void TextCell::setReadOnly(const bool readonly)
+  void TextCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -704,7 +709,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    */
-  void TextCell::setFocus(const bool focus)
+  void TextCell::setFocus(bool focus)
   {
     if(focus)
       text_->setFocus();
@@ -838,7 +843,7 @@ namespace IAEX
    *
    * \return True
    */
-  bool TextCell::isEditable()
+  bool TextCell::isEditable() const
   {
     return true;
   }
@@ -853,7 +858,7 @@ namespace IAEX
    * 2005-11-01 AF, Remade the function to reflect the new
    * QTextEdit
    */
-  void TextCell::viewExpression(const bool expr)
+  void TextCell::viewExpression(bool expr)
   {
     if( expr != isViewExpression() )
     {

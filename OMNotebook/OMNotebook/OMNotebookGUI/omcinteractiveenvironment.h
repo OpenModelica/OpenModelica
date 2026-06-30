@@ -59,10 +59,6 @@ namespace IAEX
     threadData_t *threadData_;
 
     static OmcInteractiveEnvironment* getInstance(threadData_t *threadData = 0);
-    virtual QString getResult();
-    virtual QString getError();
-    virtual int getErrorLevel();
-    virtual void evalExpression(const QString expr);
 #if defined(__EMSCRIPTEN__)
     // Queue a command on the omc worker without blocking the caller (used for the
     // startup MSL install; result/diagnostics are not returned).
@@ -76,6 +72,10 @@ namespace IAEX
     // Returns and clears the list.
     QList<QStringList> takePlotCommands();
 #endif
+    virtual QString getResult() override;
+    virtual QString getError() override;
+    virtual int getErrorLevel() override;
+    virtual void evalExpression(const QString expr) override;
     static QString OMCVersion();
     static QString OpenModelicaHome();
     static QString TmpPath();

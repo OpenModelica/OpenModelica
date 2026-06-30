@@ -1546,7 +1546,7 @@ algorithm
         // We have something like v[i].re and v is in the inputs... So we fail to inline.
       then (inExp,(argmap,checkcr,false));
 
-    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,_,true))
+    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc,_)),ty),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
         e as DAE.CREF(componentRef=cref,ty=ty2) := getExpFromArgMap(argmap,cref);
@@ -1554,7 +1554,7 @@ algorithm
         expLst := List.map(expLst,Expression.unboxExp);
         b := Expression.isBuiltinFunctionReference(e);
         isFunctionPointerCall := Types.isFunctionReferenceVar(ty2);
-        e := DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
+        e := DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc,DAE.NoReturn.RETURNS));
         (e,_) := ExpressionSimplify.simplify(e);
       then (e,inTuple);
 
@@ -1565,7 +1565,7 @@ algorithm
       then (e,(argmap,checkcr,false));
 
     // TODO: Use the inlineType of the function reference!
-    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc)),(argmap,_,true))
+    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc,_)),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
         e as DAE.CREF(componentRef=cref,ty=ty) := getExpFromArgMap(argmap,cref);
@@ -1574,7 +1574,7 @@ algorithm
         b := Expression.isBuiltinFunctionReference(e);
         (ty2,inlineType) := functionReferenceType(ty);
         isFunctionPointerCall := Types.isFunctionReferenceVar(ty2);
-        e := DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
+        e := DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc,DAE.NoReturn.RETURNS));
         e := boxIfUnboxedFunRef(e,ty);
         (e,_) := ExpressionSimplify.simplify(e);
       then (e,inTuple);
@@ -1799,7 +1799,7 @@ algorithm
       algorithm
         crs := List.map1(List.map(vars,TypesDump.getVarName),ComponentReference.appendStringCref,cr);
         exps := List.map1r(crs, VarTransform.getReplacement, repl);
-      then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
   end matchcontinue;
 
 end getReplacementCheckComplex;

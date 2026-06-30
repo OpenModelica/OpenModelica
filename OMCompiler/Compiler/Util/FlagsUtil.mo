@@ -259,7 +259,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.FORCE_SCALARIZE,
   Flags.DEBUG_ADJOINT,
   Flags.FLOW_ALIAS_ELIMINATION,
-  Flags.DUMP_CHECK_MODEL
+  Flags.DUMP_CHECK_MODEL,
+  Flags.CHECK_DEF_USE
 };
 
 protected

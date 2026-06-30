@@ -699,6 +699,10 @@ pipeline {
             }
             sh '''
             export OPENMODELICAHOME=$PWD/build
+            # omc invoked while building the docs needs a writable HOME holding the
+            # libraries, otherwise it tries to write to //.openmodelica and fails to
+            # load Modelica (same as the compliance stage).
+            export HOME=$PWD/libraries
             test ! -d $PWD/build/lib/omlibrary
             cp -a libraries/.openmodelica/libraries $PWD/build/lib/omlibrary
             for target in html pdf epub; do

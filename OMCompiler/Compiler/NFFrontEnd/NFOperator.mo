@@ -185,7 +185,7 @@ public
       case ((TypeRestriction.MATRIX, _), (TypeRestriction.MATRIX, ty))  then (SizeClassification.ELEMENT_WISE, ty);
       case ((TypeRestriction.ARRAY,  _), (TypeRestriction.ARRAY,  ty))  then (SizeClassification.ELEMENT_WISE, ty);
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
+        Error.terminate(getInstanceName() + " failed because the multary arguments have incompatible sizes: "
         + List.toString(types, Type.toString), sourceInfo());
       then fail();
     end match;
@@ -211,7 +211,7 @@ public
       case (TypeRestriction.MATRIX, TypeRestriction.VECTOR)               then (SizeClassification.MATRIX_VECTOR, ty2);
       case (r1, r2) guard(r1 == r2)                                       then (getSizeClassification(operator), ty1);
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
+        Error.terminate(getInstanceName() + " failed because the binary arguments have incompatible sizes: "
           + Type.toString(ty1) + ", " + Type.toString(ty2), sourceInfo());
       then fail();
     end match;
@@ -331,7 +331,7 @@ public
       case Op.NEQUAL            then Absyn.Operator.NEQUAL();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
@@ -384,7 +384,7 @@ public
       case Op.NEQUAL            then DAE.NEQUAL(ty);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type: " + opToString(op.op), sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type: " + opToString(op.op), sourceInfo());
         then
           fail();
     end match;
@@ -458,7 +458,7 @@ public
       //case Op.USERDEFINED      then "Userdefined:" + AbsynUtil.pathString(op.fqName);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;

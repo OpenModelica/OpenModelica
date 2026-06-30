@@ -336,7 +336,7 @@ Create RHS expression of merging equation.
   input DAE.Type ty "type of inner cref (inner cref type expected to the same as outer crefs type)";
   output DAE.Exp res;
 protected
-  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 algorithm
   res := match inOuterCrefs
     local
@@ -421,7 +421,7 @@ Create RHS expression of merging equation.
   input DAE.Type ty "type of inner cref (inner cref type expected to the same as outer crefs type)";
   output DAE.Exp res;
 protected
-  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 algorithm
   res := match inOuterCrefs
     local

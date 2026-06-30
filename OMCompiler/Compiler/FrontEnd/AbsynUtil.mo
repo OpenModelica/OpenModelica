@@ -7137,7 +7137,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown element.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown element.", sourceInfo());
       then
         fail();
 
@@ -7277,7 +7277,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation.", sourceInfo());
       then
         fail();
 

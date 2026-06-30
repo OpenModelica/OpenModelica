@@ -134,7 +134,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() +
+          Error.terminate(getInstanceName() +
             " got invalid Sections to prepend equation to", sourceInfo());
         then
           fail();
@@ -163,7 +163,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() +
+          Error.terminate(getInstanceName() +
             " got invalid Sections to prepend algorithm to", sourceInfo());
         then
           fail();

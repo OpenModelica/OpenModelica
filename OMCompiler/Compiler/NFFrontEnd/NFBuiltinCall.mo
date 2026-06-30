@@ -96,7 +96,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call: " +
+          Error.terminate(getInstanceName() + " got unknown call: " +
             Call.toString(call), sourceInfo());
         then
           fail();
@@ -168,7 +168,7 @@ public
       case "zeros" then typeZerosOnesCall("zeros", call, next_context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
+          Error.terminate(getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
         then
           fail();
     end match;
@@ -1059,7 +1059,7 @@ protected
       args := Expression.arrayScalarElements(arg);
 
       if listLength(args) <> 1 then
-        Error.assertion(false, getInstanceName() + " failed to expand scalar(" +
+        Error.terminate(getInstanceName() + " failed to expand scalar(" +
           Expression.toString(arg) + ") correctly", info);
       end if;
 

@@ -122,7 +122,7 @@ sudo apt-get install ccache flex
 ```bash
 cd OpenModelica
 # Configure CMake, create Makefiles in build_cmake
-cmake -S . -B build_cmake
+cmake -S . -B build_cmake -DCMAKE_INSTALL_PREFIX=build
 # Compile with generated Makefiles
 cmake --build build_cmake --parallel <Nr. of cores> --target install
 ```

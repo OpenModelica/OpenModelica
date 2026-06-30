@@ -397,9 +397,71 @@ protected
 algorithm
   FCore.N(n, id, p, c, FCore.FT(tys)) := fromRef(ref);
   tys := List.unique(listAppend(inTys, tys));
+  // A type-only instantiation cannot run the body analysis that marks a
+  // function no-return, so it yields a returning variant, while a full
+  // instantiation yields the no-return variant. Both would otherwise be kept
+  // here (they differ only in the NoReturn marker), leaving two types for a
+  // single function and breaking single-type function lookups. Drop the
+  // returning variant when a no-return variant of the same function is present.
+  tys := list(t for t guard not isReturningFunctionWithNoReturnVariant(t, tys) in tys);
   // update the child
   r := updateRef(ref, FCore.N(n, id, p, c, FCore.FT(tys)));
 end addTypesToRef;
+
+protected function isReturningFunctionWithNoReturnVariant
+  "True if ty is a returning function type for which the list also holds an
+   otherwise identical no-return function type."
+  input DAE.Type ty;
+  input list<DAE.Type> tys;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(noReturn = DAE.NoReturn.RETURNS))
+      then List.isMemberOnTrue(ty, tys, isNoReturnVariantOf);
+    else false;
+  end match;
+end isReturningFunctionWithNoReturnVariant;
+
+protected function isNoReturnVariantOf
+  "True if cand is a no-return function type equal to the given returning
+   function type apart from the NoReturn marker."
+  input DAE.Type returning;
+  input DAE.Type cand;
+  output Boolean b;
+algorithm
+  b := match (returning, cand)
+    local
+      list<DAE.FuncArg> fargs1, fargs2;
+      DAE.Type ret1, ret2;
+      Absyn.Path path1, path2;
+      DAE.FunctionAttributes attr1, attr2;
+    case (DAE.T_FUNCTION(fargs1, ret1, attr1, path1),
+          DAE.T_FUNCTION(fargs2, ret2, attr2 as DAE.FUNCTION_ATTRIBUTES(noReturn = DAE.NoReturn.NORETURN), path2))
+      then AbsynUtil.pathEqual(path1, path2) and valueEq(ret1, ret2)
+       and valueEq(fargs1, fargs2) and functionAttributesEqualModNoReturn(attr1, attr2);
+    else false;
+  end match;
+end isNoReturnVariantOf;
+
+protected function functionAttributesEqualModNoReturn
+  "Compares two function attribute records ignoring their NoReturn marker."
+  input DAE.FunctionAttributes a1;
+  input DAE.FunctionAttributes a2;
+  output Boolean equal;
+algorithm
+  equal := match (a1, a2)
+    local
+      DAE.InlineType inl1, inl2;
+      Boolean omp1, omp2, fp1, fp2;
+      DAE.Purity pu1, pu2;
+      DAE.FunctionBuiltin bi1, bi2;
+      DAE.FunctionParallelism par1, par2;
+    case (DAE.FUNCTION_ATTRIBUTES(inl1, omp1, pu1, fp1, bi1, par1, _),
+          DAE.FUNCTION_ATTRIBUTES(inl2, omp2, pu2, fp2, bi2, par2, _))
+      then valueEq(inl1, inl2) and valueEq(omp1, omp2) and valueEq(pu1, pu2)
+       and valueEq(fp1, fp2) and valueEq(bi1, bi2) and valueEq(par1, par2);
+  end match;
+end functionAttributesEqualModNoReturn;
 
 public function addIteratorsToRef
   input Ref ref;

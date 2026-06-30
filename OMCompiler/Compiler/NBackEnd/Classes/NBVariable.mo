@@ -748,7 +748,7 @@ function isJacobianResultVar
     "Returns true if the variable is a state or an optimizable parameter/input."
     extends checkVar;
   algorithm
-    b := (isState(var_ptr) or isOptimizable(var_ptr));
+    b := isState(var_ptr) or isOptimizable(var_ptr);
   end isStateOrOptimizable;
 
   function isInitialTime
@@ -759,7 +759,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.INITIAL_TIME);
+        then optExp == OptimizerExpression.INITIAL_TIME;
       else false;
     end match;
   end isInitialTime;
@@ -772,7 +772,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.FINAL_TIME);
+        then optExp == OptimizerExpression.FINAL_TIME;
       else false;
     end match;
   end isFinalTime;
@@ -785,7 +785,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.LAGRANGE);
+        then optExp == OptimizerExpression.LAGRANGE;
       else false;
     end match;
   end isLagrange;
@@ -798,7 +798,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.MAYER);
+        then optExp == OptimizerExpression.MAYER;
       else false;
     end match;
   end isMayer;
@@ -809,9 +809,9 @@ function isJacobianResultVar
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.PATH_CONSTRAINT);
+        then optExp == OptimizerExpression.PATH_CONSTRAINT;
       else false;
     end match;
   end isPathConstraint;
@@ -822,9 +822,9 @@ function isJacobianResultVar
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.FINAL_CONSTRAINT);
+        then optExp == OptimizerExpression.FINAL_CONSTRAINT;
       else false;
     end match;
   end isFinalConstraint;
@@ -837,7 +837,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.INITIAL_CONSTRAINT);
+        then optExp == OptimizerExpression.INITIAL_CONSTRAINT;
       else false;
     end match;
   end isInitialConstraint;
@@ -852,9 +852,9 @@ function isJacobianResultVar
       b := true;
       return;
     end if;
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT);
+        then optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT;
       else false;
     end match;
   end isLfgFunction;
@@ -865,9 +865,9 @@ function isJacobianResultVar
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
-        then (optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT);
+        then optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT;
       else false;
     end match;
   end isMrfFunction;
@@ -935,7 +935,7 @@ function isJacobianResultVar
   protected
     Variable var = Pointer.access(var_ptr);
   algorithm
-    _ := match var.backendinfo
+    val := match var.backendinfo
       case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(val))) then val;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because following variable is not a resizable parameter: " + toString(var)});
@@ -1014,15 +1014,11 @@ function isJacobianResultVar
   function setVariableAttributes
     input output Variable var;
     input VariableAttributes variableAttributes;
+  protected
+    BackendInfo backendinfo = var.backendinfo;
   algorithm
-    var := match var
-      local
-        BackendInfo backendinfo;
-      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
-        backendinfo.attributes := variableAttributes;
-        var.backendinfo := backendinfo;
-      then var;
-    end match;
+    backendinfo.attributes := variableAttributes;
+    var.backendinfo := backendinfo;
   end setVariableAttributes;
 
   function setMin

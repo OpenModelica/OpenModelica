@@ -202,13 +202,6 @@ namespace IAEX {
     }
   }
 
-  MyTextEdit2a::~MyTextEdit2a()
-  {
-    for(QMap<int, IndentationState*>::iterator i = indentationStates.begin(); i != indentationStates.end(); ++i) {
-      delete i.value();
-    }
-  }
-
   void MyTextEdit2a::mousePressEvent(QMouseEvent *event)
   {
     inCommand = false;
@@ -440,19 +433,10 @@ namespace IAEX {
           k = b.userState();
         }
         Indent i(tmp);
-        if(indentationStates.contains(k))
+        auto s = indentationStates.find(k);
+        if (s != indentationStates.end())
         {
-          IndentationState* s = indentationStates[k];
-          i.ism.level = s->level;
-          i.ism.equation = s->equation;
-          i.ism.equationSection = s->equationSection;
-          i.ism.lMod = s->lMod;
-          i.ism.loopBlock = s->loopBlock;
-          i.ism.nextMod = s->nextMod;
-          i.ism.skipNext = s->skipNext;
-          i.ism.state = s->state;
-          i.current = s->current;
-          i.next = s->next;
+          i.setState(*s);
         }
 
         i.indentedText();
@@ -522,10 +506,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QPlainTextEdit::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QPlainTextEdit::insertFromMimeData( &newSource );
     }
     else
       QPlainTextEdit::insertFromMimeData( source );
@@ -627,7 +610,7 @@ namespace IAEX {
     updatePosition();
   }
 
-  void MyTextEdit2::setAutoIndent(bool b)
+  void MyTextEdit2::setAutoIndent(bool)
   {
   }
 
@@ -648,18 +631,17 @@ namespace IAEX {
   * \author Anders Fernström
   * \date 2006-01-23
   *
-  * \brief If the mimedata that should be insertet contain text,
+  * \brief If the mimedata that should be inserted contains text,
   * create a new mimedata object that only contains text, otherwise
-  * text format is insertet also - don't want that for GraphCells.
+  * text format is inserted also - don't want that for GraphCells.
   */
   void MyTextEdit2::insertFromMimeData(const QMimeData *source)
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -707,9 +689,8 @@ namespace IAEX {
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent) :
-   Cell(parent), evaluated_(false), closed_(true), delegate_(0),
-    oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
+  GraphCell::GraphCell(Document *doc, QWidget *parent)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -729,22 +710,6 @@ namespace IAEX {
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
     connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
-
-    imageFile=0;
-  }
-
-  /*!
-  * \author Ingemar Axelsson and Anders Fernström
-  *
-  * \brief The class destructor
-  */
-  GraphCell::~GraphCell()
-  {
-    delete mpPlotWindow;
-    delete input_;
-    delete output_;
-    if(imageFile)
-      delete imageFile;
   }
 
   /*!
@@ -1291,7 +1256,7 @@ namespace IAEX {
   *
   * 2006-03-02 AF, clear text selection in chapter counter
   */
-  void GraphCell::setReadOnly(const bool readonly)
+  void GraphCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -1327,7 +1292,7 @@ namespace IAEX {
   *
   * \param evaluated The boolean value of evaluated property
   */
-  void GraphCell::setEvaluated(const bool evaluated)
+  void GraphCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -1343,18 +1308,15 @@ namespace IAEX {
   * calculate the new height, to reflect the changes made when
   * porting from Q3TextEdit to QTextEdit.
   */
-  void GraphCell::setClosed(const bool closed, bool update)
+  void GraphCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -1364,7 +1326,7 @@ namespace IAEX {
   /*!
   * \author Ingemar Axelsson and Anders Fernström
   */
-  void GraphCell::setFocus(const bool focus)
+  void GraphCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -1373,7 +1335,7 @@ namespace IAEX {
   /*!
   * \author Anders Fernström
   */
-  void GraphCell::setFocusOutput(const bool focus)
+  void GraphCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -1447,7 +1409,7 @@ namespace IAEX {
   *
   * \return State of GraphCell (closed or not)
   */
-  bool GraphCell::isClosed()
+  bool GraphCell::isClosed() const
   {
     return closed_;
   }
@@ -1463,7 +1425,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool GraphCell::isEditable()
+  bool GraphCell::isEditable() const
   {
     return false;
   }
@@ -1487,7 +1449,7 @@ namespace IAEX {
     input_->setPlainText(expr);
   }
 
-  void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+  void GraphCell::PlotCallbackFunction(void *p, int /*externalWindow*/, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                        const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
@@ -1601,9 +1563,9 @@ namespace IAEX {
   *
   */
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  QRecursiveMutex* guard = new QRecursiveMutex();
+  QRecursiveMutex guard;
 #else // QT_VERSION_CHECK
-  QMutex* guard = new QMutex(QMutex::Recursive);
+  QMutex guard(QMutex::Recursive);
 #endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
@@ -1649,7 +1611,7 @@ namespace IAEX {
       }
 
       {
-        guard->lock();
+        guard.lock();
         // adrpo:FIXME! WRONG! TODO! this is wrong!
         //       the commands should be sent to OMC in the same sequence
         //       they appear in the notebook, otherwise a simulate command
@@ -1693,7 +1655,7 @@ namespace IAEX {
     int errorLevel= delegate->getErrorLevel();
 
     //delete sender();
-    guard->unlock();
+    guard.unlock();
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) ) {
       res = "[done]";
@@ -1960,7 +1922,7 @@ namespace IAEX {
       next()->accept(v);
   }
 
-  void GraphCell::viewExpression(const bool flag) {
+  void GraphCell::viewExpression(bool) {
   }
 
 }

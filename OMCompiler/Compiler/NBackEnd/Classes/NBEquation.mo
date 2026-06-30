@@ -303,6 +303,10 @@ public
             iter.names[i] := replacor;
           end for;
         then iter;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+        then fail();
       end match;
     end rename;
 
