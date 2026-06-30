@@ -88,7 +88,6 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
-  OMS/OMSModel.cpp \
   Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
@@ -191,6 +190,7 @@ SOURCES += Util/Helper.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
   OMS/ModelDialog.cpp \
+  OMS/OMSModel.cpp \
   OMS/ElementPropertiesDialog.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
@@ -208,7 +208,6 @@ SOURCES += Util/Helper.cpp \
   Search/FindUsageWidget.cpp
 
 HEADERS  += Util/Helper.h \
-  OMS/OMSModel.h \
   Search/FindUsageWidget.h \
   Util/Utilities.h \
   Util/StringHandler.h \
@@ -314,6 +313,7 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
   OMS/ModelDialog.h \
+  OMS/OMSModel.h \
   OMS/ElementPropertiesDialog.h \
   OMS/SystemSimulationInformationDialog.h \
   OMS/OMSSimulationDialog.h \
