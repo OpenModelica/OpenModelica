@@ -83,6 +83,7 @@
 #include "CrashReport/CrashReportDialog.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "PlotCurve.h"
+#include "LoadCompiledModelDialog.h"
 #include <QtSvg/QSvgGenerator>
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
@@ -497,6 +498,19 @@ void MainWindow::setNewApiProfiling(bool newApiProfiling)
 }
 
 /*!
+ * \brief MainWindow::getSimulationDialog
+ * Returns the SimulationDialog instance.
+ * \return
+ */
+SimulationDialog* MainWindow::getSimulationDialog()
+{
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
+  return mpSimulationDialog;
+}
+
+/*!
  * \brief MainWindow::isModelingPerspectiveActive
  * Returns true if the Modeling perspective is active.
  * \return
@@ -890,6 +904,116 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
     }
   }
   hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::loadCompiledModel
+ * Loads the compiled model and switches to plotting perspective.
+ * \param executableFilePath
+ * \param modelInitFilePath
+ * \param resultFilePath
+ */
+void MainWindow::loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath)
+{
+  // check if all files belong to the same directory
+  const QString executableDir = QFileInfo(executableFilePath).absolutePath();
+  const QString modelInitDir = QFileInfo(modelInitFilePath).absolutePath();
+  const QString resultDir = QFileInfo(resultFilePath).absolutePath();
+  if (executableDir != modelInitDir || executableDir != resultDir) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          tr("All files must be in the same directory."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  // check if files exists
+  auto checkFileExists = [](const QString &fileName) -> bool {
+    if (QFileInfo::exists(fileName)) {
+      return true;
+    }
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return false;
+  };
+
+  // check if the executable file exists
+  if (!checkFileExists(executableFilePath)) {
+    return;
+  }
+  // check if the model init file exists
+  if (!checkFileExists(modelInitFilePath)) {
+    return;
+  }
+  // check if the result file exists
+  if (!checkFileExists(resultFilePath)) {
+    return;
+  }
+
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, resultFilePath));
+  QFileInfo resultFileInfo(resultFilePath);
+  QStringList list = mpOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+  // if result file contains variables then switch to plotting perspective and add the variables to the variables tree.
+  if (list.size() > 0) {
+    // build SimulationOptions object from the model init file.
+    // Parse model_init.xml to extract DefaultExperiment values
+    SimulationOptions simulationOptions;
+    QFile initFile(modelInitFilePath);
+    if (initFile.open(QIODevice::ReadOnly)) {
+      QXmlStreamReader xml(&initFile);
+      while (!xml.atEnd() && !xml.hasError()) {
+        if (xml.readNext() == QXmlStreamReader::StartElement) {
+          if (xml.name() == QStringLiteral("fmiModelDescription")) {
+            simulationOptions.setClassName(xml.attributes().value("modelIdentifier").toString());
+          }
+          if (xml.name() == QStringLiteral("DefaultExperiment")) {
+            auto a = xml.attributes();
+            if (!a.value("startTime").isEmpty()) {
+              simulationOptions.setStartTime(a.value("startTime").toString());
+            }
+            if (!a.value("stopTime").isEmpty()) {
+              simulationOptions.setStopTime(a.value("stopTime").toString());
+            }
+            if (!a.value("stepSize").isEmpty()) {
+              simulationOptions.setStepSize(a.value("stepSize").toDouble());
+            }
+            if (!a.value("tolerance").isEmpty()) {
+              simulationOptions.setTolerance(a.value("tolerance").toString());
+            }
+            if (!a.value("solver").isEmpty()) {
+              simulationOptions.setMethod(a.value("solver").toString());
+            }
+            if (!a.value("outputFormat").isEmpty()) {
+              simulationOptions.setOutputFormat(a.value("outputFormat").toString());
+            }
+            if (!a.value("variableFilter").isEmpty()) {
+              simulationOptions.setVariableFilter(a.value("variableFilter").toString());
+            }
+          }
+        }
+      }
+    }
+    simulationOptions.setWorkingDirectory(resultFileInfo.absoluteDir().absolutePath());
+    simulationOptions.setResultFileName(resultFileInfo.fileName());
+
+    QStringList simulationFlags;
+    simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+    simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+    simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+    simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+    simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+    simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+    simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
+    simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
+    simulationFlags.append(QString("-inputPath=%1").arg(simulationOptions.getWorkingDirectory()));
+    simulationFlags.append(QString("-outputPath=%1").arg(simulationOptions.getWorkingDirectory()));
+
+    simulationOptions.setSimulationFlags(simulationFlags);
+    simulationOptions.setIsValid(true);
+
+    switchToPlottingPerspectiveSlot();
+    mpVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, simulationOptions);
+  }
+  mpStatusBar->clearMessage();
 }
 
 /*!
@@ -2074,6 +2198,16 @@ void MainWindow::loadEncryptedLibrary()
 #else // OM_ENABLE_ENCRYPTION
   showEncryptionSupportMessage();
 #endif // OM_ENABLE_ENCRYPTION
+}
+
+/*!
+ * \brief MainWindow::loadCompiledModel
+ * Opens the LoadCompiledModelDialog.
+ */
+void MainWindow::loadCompiledModel()
+{
+  LoadCompiledModelDialog *pLoadCompiledModelDialog = new LoadCompiledModelDialog(this);
+  pLoadCompiledModelDialog->exec();
 }
 
 /*!
@@ -3796,6 +3930,10 @@ void MainWindow::createActions()
   mpLoadEncryptedLibraryAction = new QAction(tr("Load Encrypted Library"), this);
   mpLoadEncryptedLibraryAction->setStatusTip(tr("Loads the encrypted Modelica library"));
   connect(mpLoadEncryptedLibraryAction, SIGNAL(triggered()), SLOT(loadEncryptedLibrary()));
+  // open compiled model action
+  mpLoadCompiledModelAction = new QAction(Helper::loadCompiledModel, this);
+  mpLoadCompiledModelAction->setStatusTip(tr("Loads the compiled model"));
+  connect(mpLoadCompiledModelAction, SIGNAL(triggered()), SLOT(loadCompiledModel()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
@@ -4284,6 +4422,7 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   mpFileMenu->addAction(mpLoadModelicaLibraryAction);
   mpFileMenu->addAction(mpLoadEncryptedLibraryAction);
+  mpFileMenu->addAction(mpLoadCompiledModelAction);
   mpFileMenu->addAction(mpOpenResultFileAction);
   mpFileMenu->addAction(mpOpenTransformationFileAction);
   mpFileMenu->addSeparator();

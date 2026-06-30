@@ -18,12 +18,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES Util/Helper.cpp
-                      Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
                       Util/DirectoryOrFileSelector.cpp
                       MainWindow.cpp
+                      LoadCompiledModelDialog.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
                       Modeling/MessagesWidget.cpp
@@ -77,9 +77,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
-                      MCP/MCPServer.cpp
-                      MCP/MCPToolsSimulation.cpp
-                      MCP/MCPToolsDiagram.cpp
                       Simulation/TranslationFlagsWidget.cpp
                       Simulation/SimulationDialog.cpp
                       Simulation/SimulationOutputWidget.cpp
@@ -133,6 +130,10 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       FlatModelica/Expression.cpp
                       FlatModelica/ExpressionFuncs.cpp
                       FlatModelica/Parser.cpp
+                      MCP/MCPServer.cpp
+                      MCP/MCPToolsSimulation.cpp
+                      MCP/MCPToolsDiagram.cpp
+                      Search/FindUsageWidget.cpp
                       Animation/OpenGLWidget.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
@@ -149,14 +150,13 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
 
-set(OMEDITLIB_HEADERS MCP/MCPServer.h
-                      Util/Helper.h
-                      Search/FindUsageWidget.h
+set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
                       Util/DirectoryOrFileSelector.h
                       MainWindow.h
+                      LoadCompiledModelDialog.h
                       OMC/OMCProxy.h
                       Modeling/Model.h
                       Modeling/MessagesWidget.h
@@ -268,6 +268,9 @@ set(OMEDITLIB_HEADERS MCP/MCPServer.h
                       FlatModelica/Expression.h
                       FlatModelica/ExpressionFuncs.h
                       FlatModelica/Parser.h
+                      MCP/MCPServer.h
+                      MCP/MCPServerPrivate.h
+                      Search/FindUsageWidget.h
                       Animation/OpenGLWidget.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h
