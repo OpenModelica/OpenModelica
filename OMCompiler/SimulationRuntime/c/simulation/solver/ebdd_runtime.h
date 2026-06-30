@@ -122,6 +122,20 @@ void ebddRuntimeLogHomotopyStep(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
                                 int step, int size, double lambda,
                                 const double *y, const double *residual);
 
+/**
+ * @brief Append the model's discrete state for one event iteration.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. A model-level record (eqIndex
+ * -1) carrying, for the given event iteration, the value of every boolean and
+ * integer variable, so the discrete state can be traced across the iterations
+ * that an event triggers. Unlike the NLS loggers this only uses DATA, so it is
+ * available even for models without nonlinear systems.
+ *
+ * @param data        Runtime data struct.
+ * @param iteration   1-based event-iteration counter.
+ */
+void ebddRuntimeLogEventIteration(DATA *data, int iteration);
+
 #ifdef __cplusplus
 }
 #endif
