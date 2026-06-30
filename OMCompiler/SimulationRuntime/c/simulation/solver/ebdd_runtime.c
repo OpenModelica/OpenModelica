@@ -471,6 +471,47 @@ void ebddRuntimeLogNullSpace(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
   fflush(f);
 }
 
+void ebddRuntimeLogConvergenceDiagnostics(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                          int size, int nonlinearEqs,
+                                          int numVars, const unsigned *varIndexes)
+{
+  FILE *f;
+  EQUATION_INFO eqInfo;
+  int k;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
+
+  fprintf(f, "{\"kind\":\"convergenceDiagnostics\",\"eqIndex\":%ld,\"section\":\"%s\",\"time\":",
+          (long) nonlinsys->equationIndex,
+          eqInfo.section == EQUATION_SECTION_INITIAL ? "initial" : "regular");
+  ebddWriteDouble(f, data->localData[0]->timeValue);
+  fprintf(f, ",\"size\":%d,\"nonlinearEquations\":%d,\"nonlinearVars\":[", size, nonlinearEqs);
+
+  for (k = 0; k < numVars; ++k) {
+    unsigned idx = (varIndexes != NULL) ? varIndexes[k] : 0;
+    if (k > 0) {
+      fputc(',', f);
+    }
+    fputc('\"', f);
+    if ((int) idx < eqInfo.numVar) {
+      ebddWriteEscaped(f, eqInfo.vars[idx]);
+    }
+    fputc('\"', f);
+  }
+
+  fputs("]}\n", f);
+  fflush(f);
+}
+
 #else /* OMC_NUM_NONLINEAR_SYSTEMS == 0: NONLINEAR_SYSTEM_DATA is opaque */
 
 void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys)
@@ -508,6 +549,14 @@ void ebddRuntimeLogNullSpace(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
                              int numVars, const unsigned *varIndexes)
 {
   (void)data; (void)nonlinsys; (void)numVars; (void)varIndexes;
+}
+
+void ebddRuntimeLogConvergenceDiagnostics(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                          int size, int nonlinearEqs,
+                                          int numVars, const unsigned *varIndexes)
+{
+  (void)data; (void)nonlinsys; (void)size; (void)nonlinearEqs;
+  (void)numVars; (void)varIndexes;
 }
 
 #endif /* OMC_NUM_NONLINEAR_SYSTEMS */

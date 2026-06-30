@@ -1729,6 +1729,19 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
     const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
     const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
     const bool isHomotopy = (solve.kind == QStringLiteral("homotopy"));
+    if (solve.kind == QStringLiteral("convergenceDiagnostics")) {
+      QStringList cdValues;
+      cdValues << tr("convergence diagnostics: %1 non-linear equation(s)").arg(solve.nonlinearEquations);
+      QTreeWidgetItem *pCdTreeItem = new QTreeWidgetItem(cdValues);
+      pCdTreeItem->setToolTip(0, tr("variables the non-linear equations depend on non-linearly"));
+      foreach (const QString &vname, solve.nonlinearVars) {
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(QStringList() << vname);
+        pCdTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pCdTreeItem);
+      pCdTreeItem->setExpanded(true);
+      continue;
+    }
     if (solve.kind == QStringLiteral("nullSpace")) {
       QStringList nsValues;
       nsValues << tr("null space: %1 linearly-dependent variable(s)").arg(solve.linearlyDependentVars.size());
@@ -2070,6 +2083,10 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.zeroCrossing = obj.value(QStringLiteral("zeroCrossing")).toString();
     foreach (const QJsonValue &v, obj.value(QStringLiteral("linearlyDependentVars")).toArray()) {
       solve.linearlyDependentVars.append(v.toString());
+    }
+    solve.nonlinearEquations = obj.value(QStringLiteral("nonlinearEquations")).toInt();
+    foreach (const QJsonValue &v, obj.value(QStringLiteral("nonlinearVars")).toArray()) {
+      solve.nonlinearVars.append(v.toString());
     }
     if (solve.kind == QStringLiteral("jacobian")) {
       // jacobian record: "vars" is a list of column labels, "rows" the matrix.

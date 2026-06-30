@@ -173,6 +173,25 @@ void ebddRuntimeLogChattering(DATA *data, const int *eqIndexes,
 void ebddRuntimeLogNullSpace(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
                              int numVars, const unsigned *varIndexes);
 
+/**
+ * @brief Append the Newton convergence-failure diagnostics of a nonlinear system.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. Routes the result of the Newton
+ * diagnostics analysis to the channel, keyed by eqIndex: the system size, the
+ * number of genuinely non-linear equations and the variables those equations
+ * depend on non-linearly — the structure that makes the system hard to converge.
+ *
+ * @param data            Runtime data struct.
+ * @param nonlinsys       The nonlinear system being diagnosed.
+ * @param size            System size.
+ * @param nonlinearEqs    Number of non-linear equations in the system.
+ * @param numVars         Number of non-linear variables.
+ * @param varIndexes      Local variable indices into the system (length numVars).
+ */
+void ebddRuntimeLogConvergenceDiagnostics(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                          int size, int nonlinearEqs,
+                                          int numVars, const unsigned *varIndexes);
+
 #ifdef __cplusplus
 }
 #endif

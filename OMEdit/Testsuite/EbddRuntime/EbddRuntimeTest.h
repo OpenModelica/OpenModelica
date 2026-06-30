@@ -92,6 +92,12 @@ private slots:
    * linearly-dependent variables involved in the singularity.
    */
   void parsesNullSpace();
+  /*!
+   * \brief parsesConvergenceDiagnostics
+   * Tests that "convergenceDiagnostics" records attach to the equation system,
+   * carrying the non-linear equation count and the non-linear variables.
+   */
+  void parsesConvergenceDiagnostics();
   void cleanupTestCase();
 };
 

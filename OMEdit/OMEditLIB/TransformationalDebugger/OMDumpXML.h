@@ -245,6 +245,9 @@ struct OMRuntimeSolve {
   QString zeroCrossing;
   // nullSpace records: variables forming the singular / null-space part
   QStringList linearlyDependentVars;
+  // convergenceDiagnostics records
+  int nonlinearEquations = 0;
+  QStringList nonlinearVars;
   QList<OMRuntimeVariable> variables;
   // jacobian records: column labels and the dense matrix rows (d f_row / d x_col)
   QStringList jacobianVars;

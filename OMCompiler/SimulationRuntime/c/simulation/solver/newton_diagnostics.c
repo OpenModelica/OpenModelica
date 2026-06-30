@@ -1220,6 +1220,11 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   // Obtain vector "w0": initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
   unsigned* w_idx = getNonlinearVars( m, fxx, &q);
 
+  /* EBDD: route the convergence diagnostics (nonlinear-pattern structure) to the
+   * channel keyed by eqIndex: how many equations are non-linear and the variables
+   * they depend on non-linearly. No-op unless -lv=LOG_EBDD. */
+  ebddRuntimeLogConvergenceDiagnostics(data, systemData, (int)m, (int)p, (int)q, w_idx);
+
   // Obtain vector "z": linear dependents
   unsigned* z_idx = getLinearVars( m, q, w_idx);
 
