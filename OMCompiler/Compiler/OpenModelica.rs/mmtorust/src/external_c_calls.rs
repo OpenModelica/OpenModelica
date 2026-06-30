@@ -645,6 +645,8 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("ModelInstanceReference_store", Infallible);
         m.insert("ModelInstanceReference_release", Infallible);
 
+        m.insert("OMGraphics_graphicalRepresentationXMLFromHandle", Infallible);
+
         m
     })
 }
