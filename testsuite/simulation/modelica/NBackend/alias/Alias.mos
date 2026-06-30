@@ -32,16 +32,16 @@ simulate(Alias); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = z ($RES_SIM_3)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = z; ($RES_SIM_3)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
+// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0; ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_1)
-// 	[SCAL] (1) b = c ($RES_SIM_4)
-// 	[SCAL] (1) a = b ($RES_SIM_5)
+// 	[SCAL] (1) y = time + c; ($RES_SIM_1)
+// 	[SCAL] (1) b = c; ($RES_SIM_4)
+// 	[SCAL] (1) a = b; ($RES_SIM_5)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -70,10 +70,10 @@ simulate(Alias); getErrorString();
 // *******************************************
 //
 // record SimulationResult
-//     resultFile = "Alias_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+//     messages = "Simulation execution failed for model: Alias
+// /bin/sh: 1: /home/kab/workspace/2_OM_Build/testsuite/simulation/modelica/NBackend/alias/Alias: Text file busy
 // "
 // end SimulationResult;
 // ""
