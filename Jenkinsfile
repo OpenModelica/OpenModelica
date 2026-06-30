@@ -52,7 +52,7 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        stage('gcc-jammy') {
+        stage('gcc (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -72,10 +72,10 @@ pipeline {
             stash name: 'omc-jammy-gcc', includes: 'build/**, **/config.status'
           }
         }
-        stage('clang-resolute') {
+        stage('clang (Ubuntu Jammy)') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -91,10 +91,10 @@ pipeline {
             }
             // Resolve symbolic links to make Jenkins happy
             sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-            stash name: 'omc-resolute-clang', includes: 'build/**, **/config.status'
+            stash name: 'omc-jammy-clang', includes: 'build/**, **/config.status'
           }
         }
-        stage('Win/UCRT64') {
+        stage('gcc (Win/UCRT64)') {
           agent {
             node {
               label 'windows-no-release'
@@ -121,7 +121,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('cmake gcc (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -148,36 +148,7 @@ pipeline {
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
         }
-        stage('cmake4-resolute-clang') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-cmake-4'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value }
-          }
-          steps {
-            script {
-              echo "Running on: ${env.NODE_NAME}"
-              common.buildOMC_CMake("-DCMAKE_C_COMPILER=clang"
-                                        + " -DCMAKE_CXX_COMPILER=clang++"
-                                        + " -DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build")
-              sh "build/bin/omc --version"
-            }
-            //stash name: 'omc-cmake-clang', includes: 'build_cmake/**, build/**'
-          }
-        }
-        stage('cmake-macos-arm64-gcc') {
+        stage('cmake gcc (macOS ARM64)') {
           agent {
             node {
               label 'M1'
@@ -208,7 +179,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-OMDev-gcc') {
+        stage('cmake gcc (Win/UCRT64)') {
           agent {
             node {
               label 'windows-no-release'
@@ -221,7 +192,7 @@ pipeline {
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
-              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}}tools\\msys\\usr\\bin;${env.OMDEV}}tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
                 common.cloneOMDev()
                 common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
@@ -232,7 +203,7 @@ pipeline {
             }
           }
         }
-        stage('checks') {
+        stage('checks (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -262,7 +233,7 @@ pipeline {
     }
     stage('tests') {
       parallel {
-        stage('01 testsuite-gcc 1/3') {
+        stage('01 testsuite-gcc 1/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -299,7 +270,7 @@ pipeline {
           }
         }
 
-        stage('02 testsuite-gcc 2/3') {
+        stage('02 testsuite-gcc 2/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -330,7 +301,7 @@ pipeline {
           }
         }
 
-        stage('03 testsuite-gcc 3/3') {
+        stage('03 testsuite-gcc 3/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -361,11 +332,11 @@ pipeline {
           }
         }
 
-        stage('04 testsuite-clang 1/3') {
+        stage('04 testsuite-clang 1/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-resolute'
+              dir '.CI/cache'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -385,18 +356,18 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.makeLibsAndCache()
               common.partest(1,3)
             }
           }
         }
 
-        stage('05 testsuite-clang 2/3') {
+        stage('05 testsuite-clang 2/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-resolute'
+              dir '.CI/cache'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -416,18 +387,18 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.makeLibsAndCache()
               common.partest(2,3)
             }
           }
         }
 
-        stage('06 testsuite-clang 3/3') {
+        stage('06 testsuite-clang 3/3 (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-resolute'
+              dir '.CI/cache'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
@@ -447,14 +418,14 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.makeLibsAndCache()
               common.partest(3,3)
             }
           }
         }
 
-        stage('07 cross-build-fmu') {
+        stage('07 cross-build-fmu (Ubuntu Jammy)') {
           agent {
             label 'linux'
           }
@@ -476,7 +447,7 @@ pipeline {
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                           "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
                 common.standardSetup()
-                unstash 'omc-resolute-clang'
+                unstash 'omc-jammy-clang'
                 common.makeLibsAndCache()
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
@@ -491,7 +462,7 @@ pipeline {
           }
         }
 
-        stage('08 testsuite-compliance') {
+        stage('08 testsuite-compliance (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -513,11 +484,11 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
-            script { common.compliance() }
+            script { common.compliance('omc-jammy-clang') }
           }
         }
 
-        stage('09 build-usersguide') {
+        stage('09 build-usersguide (Ubuntu Jammy)') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -537,7 +508,7 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.makeLibsAndCache()
             }
             sh '''
@@ -563,7 +534,7 @@ pipeline {
           }
         }
 
-        stage('10 build-gui-clang-qt5') {
+        stage('10 build-gui clang qt5 (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -574,13 +545,13 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-resolute-clang', 'qt5')
+              common.buildGUI('omc-jammy-gcc', 'qt5')
             }
             stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
-        stage('11 build-gui-clang-qt6') {
+        stage('11 build-gui clang qt6 (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -591,13 +562,13 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-resolute-clang', 'qt6')
+              common.buildGUI('omc-jammy-clang', 'qt6')
             }
             stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
-        stage('12 testsuite-clang-parmod') {
+        stage('12 testsuite-clang-parmod (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -613,13 +584,13 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.partest(1, 1, false, '-j1 -parmodexp')
             }
           }
         }
 
-        stage('13 testsuite-clang-metamodelica') {
+        stage('13 testsuite-clang-metamodelica (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -632,12 +603,12 @@ pipeline {
           }
           steps {
             script { common.standardSetup() }
-            unstash 'omc-resolute-clang'
+            unstash 'omc-jammy-clang'
             sh 'make -C testsuite/metamodelica/MetaModelicaDev test-error'
           }
         }
 
-        stage('14 testsuite-matlab-translator') {
+        stage('14 testsuite-matlab-translator (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -652,14 +623,14 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.generateTemplates()
             }
             sh 'make -C testsuite/special/MatlabTranslator/ test'
           }
         }
 
-        stage('15 test-clang-icon-generator') {
+        stage('15 test-clang-icon-generator (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -682,14 +653,14 @@ pipeline {
           steps {
             script {
               common.standardSetup()
-              unstash 'omc-resolute-clang'
+              unstash 'omc-jammy-clang'
               common.makeLibsAndCache()
             }
             sh 'make -C testsuite/openmodelica/icon-generator test'
           }
         }
 
-        stage('16 testsuite-unit-test-C') {
+        stage('16 testsuite-unit-test-C (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -725,7 +696,7 @@ pipeline {
     }
     stage('fmuchecker + FMPy + OMEdit testsuite') {
       parallel {
-        stage('linux-wine-fmuchecker') {
+        stage('wine-fmuchecker (linux64)') {
           agent {
             docker {
               label 'linux'
@@ -755,7 +726,7 @@ pipeline {
             stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
-        stage('linux-FMPy') {
+        stage('FMPy (linux64)') {
           agent {
             docker {
               label 'linux'
@@ -780,7 +751,7 @@ pipeline {
             '''
           }
         }
-        stage('arm-fmuchecker') {
+        stage('fmuchecker (ARM32)') {
           agent {
             docker {
               label 'linux-arm32'
@@ -806,7 +777,7 @@ pipeline {
             stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
-        stage('clang-qt5-omedit-testsuite') {
+        stage('OMEdit testsuite clang qt5 (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -825,7 +796,7 @@ pipeline {
             }
           }
         }
-        stage('clang-qt6-omedit-testsuite') {
+        stage('OMEdit testsuite clang qt6 (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -848,7 +819,7 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
-        stage('fmuchecker-results') {
+        stage('fmuchecker-results (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -866,7 +837,7 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             sh 'rm -rf build/ testsuite/'
-            unstash 'omc-resolute-clang'
+            unstash 'omc-jammy-clang'
             unstash 'cross-fmu-extras'
             unstash 'cross-fmu-results-linux-wine'
             unstash 'cross-fmu-results-armhf'
@@ -875,7 +846,7 @@ pipeline {
             archiveArtifacts 'Test_FMUs.tar.gz'
           }
         }
-        stage('upload-compliance') {
+        stage('upload-compliance (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -893,7 +864,7 @@ pipeline {
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
         }
-        stage('upload-doc') {
+        stage('upload-doc (Ubuntu Jammy)') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
