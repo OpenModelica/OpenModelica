@@ -617,7 +617,9 @@ public
         then fail();
       end match;
 
-      print(toString(sparsity) + "\n");
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(sparsity) + "\n");
+      end if;
     end fullToSparsity;
 
     function upgrade
