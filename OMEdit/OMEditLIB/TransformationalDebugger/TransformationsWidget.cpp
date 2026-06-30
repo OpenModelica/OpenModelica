@@ -1726,7 +1726,29 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
    * iteration count) with one child row per iteration variable. */
   foreach (const OMRuntimeSolve &solve, equation->runtimeSolves) {
     QStringList solveValues;
+    const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
     const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
+    if (isJacobian) {
+      /* one top-level row per Jacobian, with a child row per matrix row */
+      QStringList jacValues;
+      jacValues << tr("t = %1   [Jacobian, iteration %2]").arg(QString::number(solve.time, 'g', 6), QString::number(solve.iteration));
+      QTreeWidgetItem *pJacTreeItem = new QTreeWidgetItem(jacValues);
+      pJacTreeItem->setToolTip(0, tr("d f_row / d x_col, columns: %1").arg(solve.jacobianVars.join(", ")));
+      for (int r = 0; r < solve.jacobianRows.size(); ++r) {
+        QStringList rowStrings;
+        foreach (double c, solve.jacobianRows.at(r)) {
+          rowStrings << QString::number(c, 'g', 4);
+        }
+        const QString rowLabel = r < solve.jacobianVars.size() ? solve.jacobianVars.at(r) : QString::number(r);
+        QStringList rowValues;
+        rowValues << rowLabel << rowStrings.join(", ");
+        QTreeWidgetItem *pRowTreeItem = new QTreeWidgetItem(rowValues);
+        pJacTreeItem->addChild(pRowTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pJacTreeItem);
+      pJacTreeItem->setExpanded(true);
+      continue;
+    }
     if (isNewtonIter) {
       /* one row per Newton iteration: the initial guess and (scaled) residual */
       solveValues << tr("t = %1   [Newton iteration %2]").arg(QString::number(solve.time, 'g', 6), QString::number(solve.iteration));
@@ -2008,16 +2030,30 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.time = obj.value(QStringLiteral("time")).toDouble();
     solve.iterations = obj.value(QStringLiteral("iterations")).toInt();
     solve.iteration = obj.value(QStringLiteral("iteration")).toInt();
-    QJsonArray vars = obj.value(QStringLiteral("vars")).toArray();
-    foreach (const QJsonValue &v, vars) {
-      QJsonObject vo = v.toObject();
-      OMRuntimeVariable rv;
-      rv.name = vo.value(QStringLiteral("name")).toString();
-      rv.value = vo.value(QStringLiteral("value")).toDouble();
-      rv.residual = vo.value(QStringLiteral("residual")).toDouble();
-      rv.residualScaled = vo.value(QStringLiteral("residualScaled")).toDouble();
-      rv.nominal = vo.value(QStringLiteral("nominal")).toDouble();
-      solve.variables.append(rv);
+    if (solve.kind == QStringLiteral("jacobian")) {
+      // jacobian record: "vars" is a list of column labels, "rows" the matrix.
+      foreach (const QJsonValue &v, obj.value(QStringLiteral("vars")).toArray()) {
+        solve.jacobianVars.append(v.toString());
+      }
+      foreach (const QJsonValue &r, obj.value(QStringLiteral("rows")).toArray()) {
+        QList<double> rowValues;
+        foreach (const QJsonValue &c, r.toArray()) {
+          rowValues.append(c.toDouble());
+        }
+        solve.jacobianRows.append(rowValues);
+      }
+    } else {
+      QJsonArray vars = obj.value(QStringLiteral("vars")).toArray();
+      foreach (const QJsonValue &v, vars) {
+        QJsonObject vo = v.toObject();
+        OMRuntimeVariable rv;
+        rv.name = vo.value(QStringLiteral("name")).toString();
+        rv.value = vo.value(QStringLiteral("value")).toDouble();
+        rv.residual = vo.value(QStringLiteral("residual")).toDouble();
+        rv.residualScaled = vo.value(QStringLiteral("residualScaled")).toDouble();
+        rv.nominal = vo.value(QStringLiteral("nominal")).toDouble();
+        solve.variables.append(rv);
+      }
     }
     equation->runtimeSolves.append(solve);
   }

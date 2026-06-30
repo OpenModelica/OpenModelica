@@ -61,6 +61,12 @@ private slots:
    * iteration index and each variable's scaled residual.
    */
   void parsesNewtonIterations();
+  /*!
+   * \brief parsesJacobian
+   * Tests that "jacobian" records are parsed into the column labels and the
+   * dense matrix rows.
+   */
+  void parsesJacobian();
   void cleanupTestCase();
 };
 

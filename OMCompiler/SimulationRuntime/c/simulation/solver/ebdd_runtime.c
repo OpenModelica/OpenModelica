@@ -252,6 +252,65 @@ void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
   fflush(f);
 }
 
+void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                            int iteration, int size,
+                            const double *jacColMajorScaled, const double *colScaling)
+{
+  FILE *f;
+  EQUATION_INFO eqInfo;
+  int row, col;
+
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_EBDD)) {
+    return;
+  }
+  if (jacColMajorScaled == NULL) {
+    return;
+  }
+
+  f = ebddRuntimeEnsureOpen(data);
+  if (f == NULL) {
+    return;
+  }
+
+  eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
+
+  fprintf(f, "{\"kind\":\"jacobian\",\"eqIndex\":%ld,\"section\":\"%s\",\"time\":",
+          (long) nonlinsys->equationIndex,
+          eqInfo.section == EQUATION_SECTION_INITIAL ? "initial" : "regular");
+  ebddWriteDouble(f, data->localData[0]->timeValue);
+  fprintf(f, ",\"iteration\":%d,\"size\":%d,\"vars\":[", iteration, size);
+
+  for (col = 0; col < size; ++col) {
+    if (col > 0) {
+      fputc(',', f);
+    }
+    fputc('\"', f);
+    if (col < eqInfo.numVar) {
+      ebddWriteEscaped(f, eqInfo.vars[col]);
+    }
+    fputc('\"', f);
+  }
+  /* dense matrix, row-major: rows[row][col] = d f_row / d x_col (unscaled) */
+  fputs("],\"rows\":[", f);
+  for (row = 0; row < size; ++row) {
+    if (row > 0) {
+      fputc(',', f);
+    }
+    fputc('[', f);
+    for (col = 0; col < size; ++col) {
+      double scale = (colScaling != NULL && colScaling[col] != 0.0) ? colScaling[col] : 1.0;
+      if (col > 0) {
+        fputc(',', f);
+      }
+      ebddWriteDouble(f, jacColMajorScaled[col * size + row] / scale);
+    }
+    fputc(']', f);
+  }
+
+  fputs("]}\n", f);
+  fflush(f);
+}
+
 #else /* OMC_NUM_NONLINEAR_SYSTEMS == 0: NONLINEAR_SYSTEM_DATA is opaque */
 
 void ebddRuntimeLogNonlinearSystem(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys)
@@ -267,6 +326,14 @@ void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
 {
   (void)data; (void)nonlinsys; (void)iteration; (void)size;
   (void)x; (void)residual; (void)resScaling; (void)nominal;
+}
+
+void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                            int iteration, int size,
+                            const double *jacColMajorScaled, const double *colScaling)
+{
+  (void)data; (void)nonlinsys; (void)iteration; (void)size;
+  (void)jacColMajorScaled; (void)colScaling;
 }
 
 #endif /* OMC_NUM_NONLINEAR_SYSTEMS */

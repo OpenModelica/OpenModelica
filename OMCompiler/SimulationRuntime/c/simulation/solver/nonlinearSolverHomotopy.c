@@ -1661,6 +1661,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugString(OMC_LOG_NLS_V,"UPS! assert when calculating Jacobian!!!");
       break;
     }
+    /* EBDD: the Jacobian at the new iterate, before row scaling. It is stored
+     * column-major and column-scaled by xScaling; the emitter unscales it back
+     * to d f_row / d x_col. It is evaluated at the iterate that enters the NEXT
+     * iteration, so tag it numberOfIterations+1 to align with that iteration's
+     * newtonIteration record (same iterate). No-op unless -lv=LOG_EBDD. */
+    ebddRuntimeLogJacobian(data, nlsData, numberOfIterations + 1, solverData->n,
+                           solverData->fJac, solverData->xScaling);
     vecCopy(n, solverData->f1, solverData->fJac + n*n);
     /* calculate scaling factor of residuals */
     matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);

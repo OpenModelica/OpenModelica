@@ -114,6 +114,36 @@ void EbddRuntimeTest::parsesNewtonIterations()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesJacobian()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq6 = new OMEquation();   eq6->index = 6;
+  equations << dummy << eq6;
+
+  // A 2x2 Jacobian record for system eqIndex 6.
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"jacobian\",\"eqIndex\":6,\"section\":\"initial\",\"time\":0,\"iteration\":2,\"size\":2,\"vars\":[\"x\",\"y\"],\"rows\":[[1.5,2],[3,4.25]]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq6->runtimeSolves.size(), 1);
+  const OMRuntimeSolve &solve = eq6->runtimeSolves.at(0);
+  QCOMPARE(solve.kind, QStringLiteral("jacobian"));
+  QCOMPARE(solve.iteration, 2);
+  QCOMPARE(solve.jacobianVars.size(), 2);
+  QCOMPARE(solve.jacobianVars.at(1), QStringLiteral("y"));
+  QCOMPARE(solve.jacobianRows.size(), 2);
+  QCOMPARE(solve.jacobianRows.at(0).at(1), 2.0);
+  QCOMPARE(solve.jacobianRows.at(1).at(1), 4.25);
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();
