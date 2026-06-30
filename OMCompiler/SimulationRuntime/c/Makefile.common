@@ -375,7 +375,8 @@ sourcedist: sourcedist1 sourcedist2
 sourcedist1:
 	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
 sourcedist2:
-	$(MAKE) -C ../fmi/export/buildproject -f $(defaultMakefileTarget)
+	mkdir -p $(OMBUILDDIR)/share/omc/runtime/c/fmi/buildproject
+	cp -a ../fmi/export/buildproject/CMakeLists.txt.in $(OMBUILDDIR)/share/omc/runtime/c/fmi/buildproject/
 
 # Copied files need to preserve the time-stamp or the external solvers builds
 # over and over again

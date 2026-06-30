@@ -1275,7 +1275,7 @@ constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(138, "fmiFlags", NONE(), EXTERNAL(),
   "Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json.");
 constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(139, "fmuCMakeBuild",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  "Configured and build FMU with CMake if true.");
+  "Deprecated and ignored. Source-code FMUs are always built with CMake.");
 constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(140, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]");
@@ -1344,12 +1344,12 @@ constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(150, "fmuRuntimeDepends",
     ("none",     "No runtime library dependencies are copied into the FMU."),
     ("modelica", "All modelica runtime library dependencies are copied into the FMU." +
                                  "System librarys located in '/lib*', '/usr/lib*' and '/usr/local/lib*' are excluded." +
-                                 "Needs --fmuCMakeBuild=true and CMake version >= 3.21."),
+                                 "Needs CMake version >= 3.21."),
     ("all",      "All runtime library dependencies are copied into the FMU." +
                                  "System librarys are copied as well." +
-                                 "Needs --fmuCMakeBuild=true and CMake version >= 3.21.")
+                                 "Needs CMake version >= 3.21.")
     })),
-  "Defines if runtime library dependencies are included in the FMU. Only used when compiler flag fmuCMakeBuild=true.");
+  "Defines if runtime library dependencies are included in the FMU.");
 constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(151, "frontendInline",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Enables inlining of functions in the frontend.");
