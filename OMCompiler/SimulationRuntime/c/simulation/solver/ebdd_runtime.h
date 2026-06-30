@@ -83,6 +83,26 @@ void ebddRuntimeLogNewtonIteration(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
                                    const double *residual, const double *resScaling,
                                    const double *nominal);
 
+/**
+ * @brief Append the Newton-iteration Jacobian of a nonlinear system.
+ *
+ * No-op unless the OMC_LOG_EBDD stream is active. The homotopy solver stores the
+ * Jacobian column-major and column-scaled by the variable nominal, i.e.
+ * jacColMajorScaled[col*size + row] == (d f_row / d x_col) * colScaling[col].
+ * This emits the unscaled partial derivatives d f_row / d x_col as a dense
+ * size x size matrix (row-major "rows"), labelled by the system's variables.
+ *
+ * @param data                Runtime data struct.
+ * @param nonlinsys           The nonlinear system being solved.
+ * @param iteration           1-based Newton iteration counter.
+ * @param size                Dimension of the (square) system.
+ * @param jacColMajorScaled   Column-major, column-scaled Jacobian, length size*size.
+ * @param colScaling          Column scaling (variable nominal), length >= size.
+ */
+void ebddRuntimeLogJacobian(DATA *data, NONLINEAR_SYSTEM_DATA *nonlinsys,
+                            int iteration, int size,
+                            const double *jacColMajorScaled, const double *colScaling);
+
 #ifdef __cplusplus
 }
 #endif
