@@ -52,6 +52,7 @@
  */
 
 #include "newton_diagnostics.h"
+#include "ebdd_runtime.h"
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 
@@ -1221,6 +1222,12 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // Obtain vector "z": linear dependents
   unsigned* z_idx = getLinearVars( m, q, w_idx);
+
+  /* EBDD: the linearly-dependent variables form the singular / null-space part
+   * of the system; emit them keyed by eqIndex. No-op unless -lv=LOG_EBDD. */
+  if (z_idx != NULL && m > q) {
+    ebddRuntimeLogNullSpace(data, systemData, (int)(m - q), z_idx);
+  }
 
   // --------------------------------------------------------------------------------------------------------------------------------
 

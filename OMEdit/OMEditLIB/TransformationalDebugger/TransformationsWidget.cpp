@@ -1729,6 +1729,19 @@ void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
     const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
     const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
     const bool isHomotopy = (solve.kind == QStringLiteral("homotopy"));
+    if (solve.kind == QStringLiteral("nullSpace")) {
+      QStringList nsValues;
+      nsValues << tr("null space: %1 linearly-dependent variable(s)").arg(solve.linearlyDependentVars.size());
+      QTreeWidgetItem *pNsTreeItem = new QTreeWidgetItem(nsValues);
+      pNsTreeItem->setToolTip(0, tr("variables involved in the (near-)singular part of the Jacobian"));
+      foreach (const QString &vname, solve.linearlyDependentVars) {
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(QStringList() << vname);
+        pNsTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pNsTreeItem);
+      pNsTreeItem->setExpanded(true);
+      continue;
+    }
     if (solve.kind == QStringLiteral("chattering")) {
       QStringList chatValues;
       chatValues << tr("chattering: %1 state events in [%2, %3]")
@@ -2055,6 +2068,9 @@ void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, 
     solve.timeEnd = obj.value(QStringLiteral("timeEnd")).toDouble();
     solve.stateEvents = obj.value(QStringLiteral("stateEvents")).toInt();
     solve.zeroCrossing = obj.value(QStringLiteral("zeroCrossing")).toString();
+    foreach (const QJsonValue &v, obj.value(QStringLiteral("linearlyDependentVars")).toArray()) {
+      solve.linearlyDependentVars.append(v.toString());
+    }
     if (solve.kind == QStringLiteral("jacobian")) {
       // jacobian record: "vars" is a list of column labels, "rows" the matrix.
       foreach (const QJsonValue &v, obj.value(QStringLiteral("vars")).toArray()) {

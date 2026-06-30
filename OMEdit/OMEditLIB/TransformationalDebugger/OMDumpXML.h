@@ -243,6 +243,8 @@ struct OMRuntimeSolve {
   double timeEnd = 0.0;
   int stateEvents = 0;
   QString zeroCrossing;
+  // nullSpace records: variables forming the singular / null-space part
+  QStringList linearlyDependentVars;
   QList<OMRuntimeVariable> variables;
   // jacobian records: column labels and the dense matrix rows (d f_row / d x_col)
   QStringList jacobianVars;

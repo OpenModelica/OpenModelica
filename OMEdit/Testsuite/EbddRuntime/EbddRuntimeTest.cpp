@@ -230,6 +230,32 @@ void EbddRuntimeTest::parsesChattering()
   qDeleteAll(equations);
 }
 
+void EbddRuntimeTest::parsesNullSpace()
+{
+  QList<OMEquation*> equations;
+  OMEquation *dummy = new OMEquation(); dummy->index = 0;
+  OMEquation *eq6 = new OMEquation();   eq6->index = 6;
+  equations << dummy << eq6;
+
+  QTemporaryFile file;
+  QVERIFY(file.open());
+  file.write("{\"format\":\"EBDD runtime info\",\"version\":1,\"model\":\"M\"}\n");
+  file.write("{\"kind\":\"nullSpace\",\"eqIndex\":6,\"section\":\"initial\",\"time\":0,\"size\":2,\"linearlyDependentVars\":[\"w\",\"v\"]}\n");
+  const QString fileName = file.fileName();
+  file.close();
+
+  TransformationsWidget::parseRuntimeInfoFile(equations, fileName);
+
+  QCOMPARE(eq6->runtimeSolves.size(), 1);
+  const OMRuntimeSolve &solve = eq6->runtimeSolves.at(0);
+  QCOMPARE(solve.kind, QStringLiteral("nullSpace"));
+  QCOMPARE(solve.linearlyDependentVars.size(), 2);
+  QCOMPARE(solve.linearlyDependentVars.at(0), QStringLiteral("w"));
+  QCOMPARE(solve.linearlyDependentVars.at(1), QStringLiteral("v"));
+
+  qDeleteAll(equations);
+}
+
 void EbddRuntimeTest::cleanupTestCase()
 {
   MainWindow::instance()->close();
