@@ -475,6 +475,7 @@ void compliance(stash) {
     // do nothing for now
   } else {
   standardSetup()
+  unstash stash
   makeLibsAndCache()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
