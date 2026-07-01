@@ -210,8 +210,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
-  // create an object of OMSProxy
-  OMSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -4399,9 +4397,6 @@ void MainWindow::createActions()
   // Add connector action
   mpAddConnectorAction = new QAction(QIcon(":/Resources/icons/add-connector.svg"), Helper::addConnector, this);
   mpAddConnectorAction->setStatusTip(Helper::addConnectorTip);
-  // Add bus action
-  mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
-  mpAddBusAction->setStatusTip(Helper::addBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4565,7 +4560,6 @@ void MainWindow::createMenus()
   pSSPMenu->addAction(mpDeleteIconAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
-  pSSPMenu->addAction(mpAddBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -5076,7 +5070,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addAction(mpDeleteIconAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
-  mpOMSimulatorToolbar->addAction(mpAddBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
@@ -5218,10 +5211,14 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setWindowTitle(tr("About %1").arg(Helper::applicationName));
   setAttribute(Qt::WA_DeleteOnClose);
 
+  const QString omsVersionLine = OMSProxy::isCreated()
+      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      : QString();
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3 %4 encryption support</b><br />"
-     "<b>Connected to %5</b><br /><br />"
+     "%5"
+     "<br />"
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
@@ -5238,7 +5235,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 #else
           "without",
 #endif
-          oms_getVersion(),
+          omsVersionLine,
           Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
           QString::fromLatin1(qVersion()));

@@ -233,16 +233,16 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
   setLayout(pMainLayout);
   // save the model start time
-  OMSProxy::instance()->getStartTime(mCref, &mStartTime);
+  OMSProxy::instance()->getStartTime(mCref, mStartTime);
   // save the model stop time
-  OMSProxy::instance()->getStopTime(mCref, &mStopTime);
+  OMSProxy::instance()->getStopTime(mCref, mStopTime);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mCref, mStartTime, mStopTime, this);
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // save the last modified datetime of result file.
-  char *resultFileName = (char*)"";
+  QString resultFileName;
   int bufferSize;
-  OMSProxy::instance()->getResultFile(mCref, &resultFileName, &bufferSize);
+  OMSProxy::instance()->getResultFile(mCref, resultFileName, bufferSize);
   mResultFilePath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), QString(resultFileName));
   // save the current datetime as last modified datetime for result file.
   mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
@@ -287,7 +287,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
 #endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-    QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
+    QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorSimulationServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--model=%1").arg(fileName);
     args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
     if (interactive) {
@@ -297,6 +297,12 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
     args << QString("--logLevel=%1").arg(logLevel);
+    args << QString("--temp=%1").arg(Utilities::tempDirectory());
+    args << QString("--log-file=%1").arg(Utilities::tempDirectory() + "/omslog.txt");
+    QString workingDir = OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory();
+    if (!workingDir.isEmpty()) {
+      args << QString("--working-directory=%1").arg(workingDir);
+    }
     QStringList options = StringHandler::splitStringWithSpaces(pOMSimulatorPage->getCommandLineOptionsTextBox()->text(), false);
     if (!options.isEmpty()) {
       args << QString("--option");

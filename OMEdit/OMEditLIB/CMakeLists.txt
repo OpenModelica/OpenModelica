@@ -117,8 +117,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Traceability/TraceabilityGraphViewWidget.cpp
                       Traceability/TraceabilityInformationURI.cpp
                       OMS/OMSProxy.cpp
+                      OMS/OMSModel.cpp
                       OMS/ModelDialog.cpp
-                      OMS/BusDialog.cpp
                       OMS/ElementPropertiesDialog.cpp
                       OMS/SystemSimulationInformationDialog.cpp
                       OMS/OMSSimulationDialog.cpp
@@ -253,8 +253,8 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Traceability/TraceabilityGraphViewWidget.h
                       Traceability/TraceabilityInformationURI.h
                       OMS/OMSProxy.h
+                      OMS/OMSModel.h
                       OMS/ModelDialog.h
-                      OMS/BusDialog.h
                       OMS/ElementPropertiesDialog.h
                       OMS/SystemSimulationInformationDialog.h
                       OMS/OMSSimulationDialog.h
@@ -334,7 +334,6 @@ if(OM_ENABLE_ENCRYPTION)
 endif()
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
-target_link_libraries(OMEditLib PUBLIC OMSimulatorLib)
 target_link_libraries(OMEditLib PUBLIC OMParser)
 target_link_libraries(OMEditLib PUBLIC omedit::debugger::parser)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Xml)

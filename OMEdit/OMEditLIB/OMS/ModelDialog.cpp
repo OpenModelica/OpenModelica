@@ -41,6 +41,7 @@
 #include <Modeling/LibraryTreeWidget.h>
 #include <Modeling/ModelWidgetContainer.h>
 #include <Modeling/Commands.h>
+#include <OMS/OMSModel.h>
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -51,35 +52,20 @@
  */
 /*!
  * \brief SystemWidget::SystemWidget
- * \param pLibraryTreeItem
  * \param pParent
  */
-SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+SystemWidget::SystemWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   // name
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
-  // type
-  mpTypeLabel = new Label(Helper::type);
-  mpTypeComboBox = new QComboBox;
-  if (!pLibraryTreeItem || pLibraryTreeItem->isTopLevel()) {
-    mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-    mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
-    mpTypeComboBox->setCurrentIndex(1);
-  } else if (pLibraryTreeItem->isSystemElement()) {
-    if (pLibraryTreeItem->isWCSystem()) {
-      mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
-    }
-  }
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
   pMainLayout->addWidget(mpNameTextBox, 0, 1);
-  pMainLayout->addWidget(mpTypeLabel, 1, 0);
-  pMainLayout->addWidget(mpTypeComboBox, 1, 1);
   setLayout(pMainLayout);
 }
 
@@ -107,7 +93,7 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
   // Root system groupbox
   mpRootSystemGroupBox = new QGroupBox(tr("Root System"));
   // system widget
-  mpSystemWidget = new SystemWidget(0, this);
+  mpSystemWidget = new SystemWidget(this);
   mpSystemWidget->getNameTextBox()->setText("Root");
   QHBoxLayout *pSystemGroupBoxLayout = new QHBoxLayout;
   pSystemGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -152,31 +138,37 @@ void CreateModelDialog::createNewModel()
     return;
   }
 
-  // create new model
-  if (OMSProxy::instance()->newModel(mpNameTextBox->text())) {
-    QString systemNameStructure = QString("%1.%2").arg(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text());
-    if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
-      LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
-      if (pLibraryTreeItem) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-        // expand the ssp model
-        QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
-        QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
-        // open the root system inside it
-        if (pLibraryTreeItem->childrenSize() > 0) {
-          LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
-          if (pRootSystemLibraryTreeItem) {
-            pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
-          }
+  // Check if model already exists in scope
+  LibraryTreeItem *pParentLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                              GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
+                                  .arg(tr("Model"), mpNameTextBox->text(), "in scope"), QMessageBox::Ok);
+        return;
+    }
+  }
+
+  // create new model, also internally create a root system
+  if (OMSProxy::instance()->newModel(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text())) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+      // expand the ssp model
+      QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+      QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+      // open the root system inside it
+      if (pLibraryTreeItem->childrenSize() > 0) {
+        LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
+        if (pRootSystemLibraryTreeItem) {
+          pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
         }
       }
-      accept();
-    } else {
-      // if creating the root system failed then delete the model created.
-      OMSProxy::instance()->omsDelete(mpNameTextBox->text());
     }
+    accept();
   }
 }
 
@@ -200,7 +192,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // system widget
-  mpSystemWidget = new SystemWidget(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this);
+  mpSystemWidget = new SystemWidget(this);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -251,9 +243,8 @@ void AddSystemDialog::addSystem()
     }
   }
   // add the system
-  oms_system_enu_t systemType = (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpSystemWidget->getNameTextBox()->text());
-  if (OMSProxy::instance()->addSystem(nameStructure, systemType)) {
+  if (OMSProxy::instance()->addSystem(nameStructure)) {
     if (mpGraphicsView->mContextMenuStartPositionValid) {
       OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
     }
@@ -532,15 +523,21 @@ void ReplaceSubModelDialog::replaceSubModel()
   bool failed = false;
   int warningCount;
 
-  if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, &warningCount)) {
-    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
-    mpGraphicsView->getModelWidget()->updateModelText();
+  if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, warningCount)) {
+    if (warningCount > 0) {
+      QString msg = dryRun
+        ? tr("The submodel was not replaced (dryRun = true). The following changes were detected in the replacing submodel. See the Messages Browser for details.")
+        : tr("The submodel was replaced (dryRun =false). The following changes were detected and applied. See the Messages Browser for details.");
+      QMessageBox::warning(this, QString("%1 - %2").arg(Helper::applicationName, tr("Warning")), msg);
+    }
+    if (!dryRun) {
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
+      mpGraphicsView->getModelWidget()->updateModelText();
+    }
     accept();
-  }  else {
+  } else {
     failed = true;
   }
-
-  // TODO remove the dryRun combo box check and always make the first run dryRun = true and warn users in case warnings exist
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -664,18 +661,18 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
   // causality
   mpCausalityLabel = new Label("Causality:");
   mpCausalityComboBox = new QComboBox;
-  mpCausalityComboBox->addItem("Input", oms_causality_input);
-  mpCausalityComboBox->addItem("Output", oms_causality_output);
-  mpCausalityComboBox->addItem("Parameter", oms_causality_parameter);
+  mpCausalityComboBox->addItem("Input", static_cast<int>(OMSModel::Causality::oms_causality_input));
+  mpCausalityComboBox->addItem("Output", static_cast<int>(OMSModel::Causality::oms_causality_output));
+  mpCausalityComboBox->addItem("Parameter", static_cast<int>(OMSModel::Causality::oms_causality_parameter));
 
   // type
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
-  mpTypeComboBox->addItem("Real", oms_signal_type_real);
-  mpTypeComboBox->addItem("Integer", oms_signal_type_integer);
-  mpTypeComboBox->addItem("Boolean", oms_signal_type_boolean);
-  mpTypeComboBox->addItem("String", oms_signal_type_string);
-  mpTypeComboBox->addItem("Bus", oms_signal_type_bus);
+  mpTypeComboBox->addItem("Real", static_cast<int>(OMSModel::SignalType::oms_signal_type_real));
+  mpTypeComboBox->addItem("Integer", static_cast<int>(OMSModel::SignalType::oms_signal_type_integer));
+  mpTypeComboBox->addItem("Boolean", static_cast<int>(OMSModel::SignalType::oms_signal_type_boolean));
+  mpTypeComboBox->addItem("String", static_cast<int>(OMSModel::SignalType::oms_signal_type_string));
+
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -725,14 +722,14 @@ void AddConnectorDialog::addConnector()
   }
   // add the connector
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
-  oms_causality_enu_t causality = (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt();
-  oms_signal_type_enu_t signalType = (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt();
+  OMSModel::Causality causality = static_cast<OMSModel::Causality>(mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt());
+  OMSModel::SignalType signalType = static_cast<OMSModel::SignalType>(mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
   if (OMSProxy::instance()->addConnector(nameStructure, causality, signalType)) {
     if (mpGraphicsView->mContextMenuStartPositionValid) {
-      ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
-      OMSProxy::instance()->setConnectorGeometry(nameStructure, &connectorGeometry);
+      OMSModel::ConnectorGeometry connectorGeometry;
+      connectorGeometry.setX(Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1));
+      connectorGeometry.setY(Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1));
+      OMSProxy::instance()->setConnectorGeometry(nameStructure, connectorGeometry);
     }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add connector %1").arg(nameStructure));
     mpGraphicsView->getModelWidget()->updateModelText();

@@ -210,7 +210,6 @@ public:
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
-  QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -461,7 +460,6 @@ private:
   QAction *mpAddOrEditIconAction;
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
-  QAction *mpAddBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars

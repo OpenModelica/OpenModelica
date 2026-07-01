@@ -422,18 +422,8 @@ public:
   static QString addSubModel;
   static QString addExternalTLMModel;
   static QString addSubModelTip;
-  static QString addBus;
-  static QString addBusTip;
-  static QString editBus;
-  static QString addTLMBus;
-  static QString addTLMBusTip;
-  static QString editTLMBus;
   static QString addConnector;
   static QString addConnectorTip;
-  static QString addBusConnection;
-  static QString editBusConnection;
-  static QString addTLMConnection;
-  static QString editTLMConnection;
   static QString running;
   static QString finished;
   static QString newVariable;

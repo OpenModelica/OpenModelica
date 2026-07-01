@@ -45,6 +45,7 @@
 
 #include <QDateTime>
 #include <QDialog>
+#include <QTabWidget>
 #include <QTreeWidget>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -67,8 +68,8 @@ private:
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
+  QTabWidget *mpTabWidget;
   SystemSimulationInformationWidget *mpSystemSimulationInformationWidget;
-  QGroupBox *mpSystemSimulationInformationGroupBox;
   Label *mpStartTimeLabel;
   QLineEdit *mpStartTimeTextBox;
   Label *mpStopTimeLabel;

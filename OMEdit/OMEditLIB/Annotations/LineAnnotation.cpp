@@ -41,7 +41,6 @@
 #include "LineAnnotation.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
-#include "OMS/BusDialog.h"
 #include "Util/ResourceCache.h"
 
 #include <QMessageBox>
@@ -68,7 +67,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -102,7 +101,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, Graph
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -135,7 +134,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -166,7 +165,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setReset(true);
   setSynchronize(false);
   setPriority(1);
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
     setZValue(3000);
@@ -225,7 +224,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -269,7 +268,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -312,7 +311,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -356,7 +355,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -404,7 +403,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -448,7 +447,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -484,7 +483,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -525,7 +524,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -1324,27 +1323,24 @@ void LineAnnotation::setAligned(bool aligned)
  */
 void LineAnnotation::updateOMSConnection()
 {
-  // connection geometry
-  ssd_connection_geometry_t connectionGeometry;
   QVector<QPointF> points = mPoints;
   if (points.size() >= 2) {
     points.removeFirst();
     points.removeLast();
   }
-  connectionGeometry.n = points.size();
-  if (points.size() == 0) {
-    connectionGeometry.pointsX = NULL;
-    connectionGeometry.pointsY = NULL;
-  } else {
-    connectionGeometry.pointsX = new double[points.size()];
-    connectionGeometry.pointsY = new double[points.size()];
-  }
-  for (int i = 0 ; i < points.size() ; i++) {
-    connectionGeometry.pointsX[i] = points.at(i).x();
-    connectionGeometry.pointsY[i] = points.at(i).y();
+
+  QVector<double> pointsX;
+  QVector<double> pointsY;
+
+  for (const QPointF &point : points) {
+    pointsX.append(point.x());
+    pointsY.append(point.y());
   }
 
-  OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), &connectionGeometry);
+  OMSModel::ConnectionGeometry connectionGeometry;
+  connectionGeometry.setPoints(pointsX, pointsY);
+
+  OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), connectionGeometry);
 }
 
 void LineAnnotation::updateToolTip()
@@ -1365,14 +1361,6 @@ void LineAnnotation::updateToolTip()
   }
 }
 
-void LineAnnotation::showOMSConnection()
-{
-  if ((mpStartElement && mpStartElement->getLibraryTreeItem()->getOMSBusConnector())
-      && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSBusConnector())) {
-    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
-    pBusConnectionDialog->exec();
-  }
-}
 
 /*!
  * \brief LineAnnotation::findLineColorForConnection
@@ -1415,7 +1403,7 @@ void LineAnnotation::handleCollidingConnections()
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
       if (pElement->isConnector()
-          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
+          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSModelConnector())) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {

@@ -44,6 +44,7 @@
 #include "Util/StringHandler.h"
 #include "Simulation/SimulationOptions.h"
 #include "OMS/OMSProxy.h"
+#include "OMS/OMSModel.h"
 
 #include <QTreeView>
 #include <QRegExp>
@@ -144,26 +145,19 @@ public:
   void setInternal(bool internal) {mInternal = internal;}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
-  void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
-  oms_element_t* getOMSElement() const {return mpOMSElement;}
-  bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
-  bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
-  bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
-  bool isExternalTLMModelComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_external));}
-  bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
-  void setSystemType(oms_system_enu_t type) {mSystemType = type;}
-  oms_system_enu_t getSystemType() {return mSystemType;}
-  bool isWCSystem() const {return mSystemType == oms_system_wc;}
-  bool isSCSystem() const {return mSystemType == oms_system_sc;}
-  void setComponentType(oms_component_enu_t type) {mComponentType = type;}
-  oms_component_enu_t getComponentType() {return mComponentType;}
-  ssd_element_geometry_t getOMSElementGeometry();
-  void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
-  oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
-  void setOMSBusConnector(oms_busconnector_t *pOMSBusConnector) {mpOMSBusConnector = pOMSBusConnector;}
-  oms_busconnector_t* getOMSBusConnector() const {return mpOMSBusConnector;}
-  void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
-  const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
+  bool isSystemElement() const {return (mpOMSModelElement && mpOMSModelElement->isSystem());}
+  bool isComponentElement() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
+  bool isFMUComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponent() && mpOMSModelElement->hasFMUInfo());}
+  bool isTableComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponentTable());}
+
+  void setOMSModel(OMSModel::Model *pOMSModel) {mpOMSModel = pOMSModel;}
+  void setOMSModelElement(OMSModel::Element *pElement) {mpOMSModelElement = pElement;}
+  OMSModel::Element* getOMSModelElement() const {return mpOMSModelElement;}
+
+  void setOMSModelConnector(OMSModel::Connector *pConnector) {mpOMSModelConnector = pConnector;}
+  OMSModel::Connector* getOMSModelConnector() const {return mpOMSModelConnector;}
+  void setFMUInfo(const OMSModel::FMUInfo &pFMUInfo) {mpFMUInfo = pFMUInfo;}
+  const OMSModel::FMUInfo& getFMUInfo() const {return mpFMUInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
   QString getTooltip() const;
@@ -223,13 +217,12 @@ private:
   bool mExpanded = false;
   bool mInternal = false;
   bool mAccessAnnotations = false;
-  oms_element_t *mpOMSElement = 0;
-  oms_system_enu_t mSystemType = oms_system_none;
-  oms_component_enu_t mComponentType = oms_component_none;
-  oms_connector_t *mpOMSConnector = 0;
-  oms_busconnector_t *mpOMSBusConnector = 0;
-  const oms_fmu_info_t *mpFMUInfo = 0;
   QString mSubModelPath;
+  // new OMSModel instance structure for OMS-3.0
+  OMSModel::FMUInfo mpFMUInfo;
+  OMSModel::Model * mpOMSModel = 0;
+  OMSModel::Element *mpOMSModelElement = 0;
+  OMSModel::Connector *mpOMSModelConnector = 0;
 signals:
   void iconUpdated();
 public slots:
@@ -275,8 +268,8 @@ public:
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
-  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
-                                         oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
+  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
+                                         OMSModel::Element *pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0, int row = -1);
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
@@ -319,10 +312,11 @@ private:
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-                                                LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
-                                                oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0);
-  void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+                                                LibraryTreeItem *pParentLibraryTreeItem, OMSModel::Element* pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0);
+
+  void createLibraryTreeItemsFromOMSModel(const QVector<OMSModel::Element*> &elements, LibraryTreeItem *pParent);
+  LibraryTreeItem* createLibraryTreeItemFromOMSModelElement(OMSModel::Element *pElement, LibraryTreeItem *pParent);
+  LibraryTreeItem* createLibraryTreeItemFromOMSModelConnector(OMSModel::Connector *pConnector, LibraryTreeItem *pParent);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
 protected:

@@ -42,7 +42,6 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "OMS/BusDialog.h"
 #include "OMPlot.h"
 
 #include <QPainter>
@@ -346,19 +345,6 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       connect(pComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
       return pComboBox;
     }
-  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent())) {
-    if (index.column() == 1) { // TLM type column
-      ConnectorsTreeView *pConnectorsTreeView = qobject_cast<ConnectorsTreeView*>(parent());
-      ConnectorsModel *pConnectorsModel = qobject_cast<ConnectorsModel*>(pConnectorsTreeView->model());
-      // create the TLM types combobox
-      QComboBox *pComboBox = new QComboBox(pParent);
-      pComboBox->addItems(pConnectorsModel->getTLMTypes());
-      QStringList tlmTypesDescriptions = pConnectorsModel->getTLMTypesDescriptions();
-      for (int i = 0 ; i < tlmTypesDescriptions.size() ; i++) {
-        pComboBox->setItemData(i, tlmTypesDescriptions.at(i), Qt::ToolTipRole);
-      }
-      return pComboBox;
-    }
   }
   return QItemDelegate::createEditor(pParent, option, index);
 }
@@ -382,15 +368,6 @@ void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) cons
     if (currentIndex > -1) {
       comboBox->setCurrentIndex(currentIndex);
     }
-  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent()) && index.column() == 1) {
-    ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
-    QString value = index.model()->data(index, Qt::DisplayRole).toString();
-    QComboBox* comboBox = static_cast<QComboBox*>(editor);
-    //set the index of the combo box
-    int currentIndex = comboBox->findText(value, Qt::MatchExactly);
-    // only set the description here. The actual value is set in ConnectorsModel::setData().
-    pConnectorItem->setTLMTypeDescription(comboBox->itemData(currentIndex, Qt::ToolTipRole).toString());
-    comboBox->setCurrentIndex(currentIndex);
   } else {
     QItemDelegate::setEditorData(editor, index);
   }
