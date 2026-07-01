@@ -638,7 +638,10 @@ void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *s
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
   for (array_idx = 0; array_idx < modelData->nVariablesString; ++array_idx)
   {
-    simulationData->stringVars[array_idx] = mmc_mk_scon_persist(modelData->stringVarsData[array_idx].attribute.start);
+    /* A string variable without an explicit start attribute defaults to the
+     * empty string; guard against a NULL start to avoid dereferencing it. */
+    const char *stringStart = modelData->stringVarsData[array_idx].attribute.start;
+    simulationData->stringVars[array_idx] = mmc_mk_scon_persist(stringStart ? stringStart : "");
   }
 #endif
 }
