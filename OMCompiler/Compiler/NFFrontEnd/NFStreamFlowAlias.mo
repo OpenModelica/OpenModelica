@@ -108,7 +108,7 @@ public
     list<tuple<FlowAlias, list<FlowAlias>>> aliases;
   algorithm
     (flatModel, sets) := fromModel(flatModel);
-    (flatModel, aliases) := createAliases(sets, flatModel);
+    (flatModel, aliases) := createAliases(sets, vars, flatModel);
     replacements := buildReplacements(aliases);
     flatModel := applyReplacements(replacements, flatModel);
     findConstantBindings(flatModel, vars);
@@ -417,6 +417,7 @@ public
   function createAliases
     "Extracts the alias sets and defines the representatives and their aliases."
     input Sets sets;
+    input UnorderedMap<ComponentRef, Variable> vars;
     input output FlatModel flatModel;
           output list<tuple<FlowAlias, list<FlowAlias>>> aliases = {};
   protected
@@ -436,6 +437,7 @@ public
       (representative, rest_aliases) := defineRepresentative(set);
       SOME(repr_var) := representative.variable;
       alias_vars := repr_var :: alias_vars;
+      true := UnorderedMap.tryUpdate(repr_var.name, repr_var, vars);
 
       // Create a '= representative' binding for the aliases, to show which
       // variable they're aliases of.

@@ -278,7 +278,7 @@ algorithm
       DAE.ExtArg retty;
     case DAE.EXTERNALDECL(name = id,args = extargs,returnArg = retty,language = lang)
       algorithm
-        extargsstr := List.toString(extargs, dumpExtArgStr, "", "", ", ", "");
+        extargsstr := List.toStringCustom(extargs, dumpExtArgStr, "", "", ", ", "");
         rettystr := dumpExtArgStr(retty);
         rettystr := if stringEq(rettystr, "") then rettystr else (rettystr + " = ");
         str := stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
@@ -2438,7 +2438,7 @@ algorithm
           Types.arrayElementType(ty);
         dims := TypesDump.getDimensions(tp);
         name := AbsynUtil.pathStringNoQual(path);
-        dim_str := List.toString(dims, ExpressionBasics.dimensionString, "", "[",
+        dim_str := List.toStringCustom(dims, ExpressionBasics.dimensionString, "", "[",
             ", ", "]", false);
       then
         name + dim_str;
@@ -3242,7 +3242,7 @@ protected
 algorithm
   (ty, ty_vars) := TypesDump.stripTypeVars(inType);
   outTypeStr := unparseType(ty);
-  outTypeAttrStr := List.toString(ty_vars, TypesDump.unparseVarAttr, "", "(", ", ", ")", false);
+  outTypeAttrStr := List.toStringCustom(ty_vars, TypesDump.unparseVarAttr, "", "(", ", ", ")", false);
 end printTypeStr;
 
 public function dumpCallAttr

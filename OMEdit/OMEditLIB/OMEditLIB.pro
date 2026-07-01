@@ -88,12 +88,12 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
-  Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
   MainWindow.cpp \
+  LoadCompiledModelDialog.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/Model.cpp \
@@ -206,15 +206,16 @@ SOURCES += Util/Helper.cpp \
   MCP/MCPToolsSimulation.cpp \
   LSP/LSPClient.cpp \
   LSP/ModelicaLSPClient.cpp \
-  LSP/LSPSetupDialog.cpp
+  LSP/LSPSetupDialog.cpp \
+  Search/FindUsageWidget.cpp
 
 HEADERS  += Util/Helper.h \
-  Search/FindUsageWidget.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
   MainWindow.h \
+  LoadCompiledModelDialog.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Modeling/Model.h \
@@ -332,7 +333,8 @@ HEADERS  += Util/Helper.h \
   LSP/LSPClient.h \
   LSP/ModelicaLSPClient.h \
   LSP/LSPProtocol.h \
-  LSP/LSPSetupDialog.h
+  LSP/LSPSetupDialog.h \
+  Search/FindUsageWidget.h
 
 CONFIG(osg) {
 

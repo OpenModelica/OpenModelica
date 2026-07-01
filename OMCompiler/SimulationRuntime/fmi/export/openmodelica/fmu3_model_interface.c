@@ -1451,17 +1451,53 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
 fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
+  fmi3Status status = fmi3OK;
 
   int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
   int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
-  if (invalidState(comp, "omcGetFMUstate", meStates, csStates))
+  if (invalidState(comp, "omcSetFMUstate", meStates, csStates))
     return fmi3Error;
 
   INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
   DATA* fmudata = (DATA *) comp->fmuData;
 
   //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
+
+  // Preserve current parameter values (set by user during initialization)
+  // so they survive the state restoration below.
+  //
+  // OpenModelica only maps the four Modelica base types (Real, Integer,
+  // Boolean, String) to FMI 3.0 (Float64, Int32, Boolean, String).
+  // Other FMI 3.0 numeric types (Float32, Int64, Int8, UInt8, UInt16,
+  // UInt32, UInt64, Int16) are unsupported -- their setter functions
+  // return fmi3Error immediately, and there is no corresponding storage
+  // in MODEL_DATA or SIMULATION_INFO, so nothing to preserve.
+  modelica_real* savedRealParam = NULL;
+  modelica_integer* savedIntParam = NULL;
+  modelica_boolean* savedBoolParam = NULL;
+  modelica_string* savedStringParam = NULL;
+
+  if (fmudata->modelData->nParametersReal > 0) {
+    savedRealParam = (modelica_real*) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
+    if (!savedRealParam) { status = fmi3Error; goto cleanup; }
+    memcpy(savedRealParam, fmudata->simulationInfo->realParameter, fmudata->modelData->nParametersReal * sizeof(modelica_real));
+  }
+  if (fmudata->modelData->nParametersInteger > 0) {
+    savedIntParam = (modelica_integer*) calloc(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
+    if (!savedIntParam) { status = fmi3Error; goto cleanup; }
+    memcpy(savedIntParam, fmudata->simulationInfo->integerParameter, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
+  }
+  if (fmudata->modelData->nParametersBoolean > 0) {
+    savedBoolParam = (modelica_boolean*) calloc(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
+    if (!savedBoolParam) { status = fmi3Error; goto cleanup; }
+    memcpy(savedBoolParam, fmudata->simulationInfo->booleanParameter, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
+  }
+  if (fmudata->modelData->nParametersString > 0) {
+    savedStringParam = (modelica_string*) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
+    if (!savedStringParam) { status = fmi3Error; goto cleanup; }
+    memcpy(savedStringParam, fmudata->simulationInfo->stringParameter, fmudata->modelData->nParametersString * sizeof(modelica_string));
+  }
 
   // override the SIMULATION_DATA with INTERNAL_FMU_STATE
   for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
@@ -1474,28 +1510,47 @@ fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
     memcpy(fmudata->localData[i]->stringVars, sdata->stringVars, sizeof(modelica_string)*fmudata->modelData->nVariablesString);
   }
 
-  // override realParameter data
+  // Re-apply the preserved parameter values.
   for (int i = 0; i < fmudata->modelData->nParametersReal; i++)
   {
-    fmudata->simulationInfo->realParameter[i] = internal_state->realParameter[i];
+    fmudata->simulationInfo->realParameter[i] = savedRealParam[i];
+    fmi3ValueReference vr = fmudata->modelData->realParameterData[i].info.id;
+    if (setReal(comp, vr, savedRealParam[i]) != fmi3OK) {
+      status = fmi3Error; goto cleanup;
+    }
   }
-  // override integerParameter data
   for (int i = 0; i < fmudata->modelData->nParametersInteger; i++)
   {
-    fmudata->simulationInfo->integerParameter[i] = internal_state->integerParameter[i];
+    fmudata->simulationInfo->integerParameter[i] = savedIntParam[i];
+    fmi3ValueReference vr = fmudata->modelData->integerParameterData[i].info.id;
+    if (setInteger(comp, vr, savedIntParam[i]) != fmi3OK) {
+      status = fmi3Error; goto cleanup;
+    }
   }
-  // override booleanParameter data
   for (int i = 0; i < fmudata->modelData->nParametersBoolean; i++)
   {
-    fmudata->simulationInfo->booleanParameter[i] = internal_state->booleanParameter[i];
+    fmudata->simulationInfo->booleanParameter[i] = savedBoolParam[i];
+    fmi3ValueReference vr = fmudata->modelData->booleanParameterData[i].info.id;
+    if (setBoolean(comp, vr, savedBoolParam[i]) != fmi3OK) {
+      status = fmi3Error; goto cleanup;
+    }
   }
-  // override stringParameter data
   for (int i = 0; i < fmudata->modelData->nParametersString; i++)
   {
-    fmudata->simulationInfo->stringParameter[i] = internal_state->stringParameter[i];
+    fmudata->simulationInfo->stringParameter[i] = savedStringParam[i];
+    fmi3ValueReference vr = fmudata->modelData->stringParameterData[i].info.id;
+    if (setString(comp, vr, savedStringParam[i]) != fmi3OK) {
+      status = fmi3Error; goto cleanup;
+    }
   }
 
-  return fmi3OK;
+cleanup:
+  free(savedRealParam);
+  free(savedIntParam);
+  free(savedBoolParam);
+  free(savedStringParam);
+
+  return status;
 }
 
 fmi3Status omcFreeFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)

@@ -48,10 +48,10 @@ namespace IAEX
       CellCommandCenter(CellApplication *a);
       virtual ~CellCommandCenter() {};
 
-      virtual void executeCommand(std::unique_ptr<Command> cmd);
-      virtual CellApplication *application();
+      virtual void executeCommand(std::unique_ptr<Command> cmd) override;
+      virtual CellApplication *application() override;
 
-      virtual void setApplication(CellApplication *app);
+      virtual void setApplication(CellApplication *app) override;
 
    private:
       CellApplication *app_;

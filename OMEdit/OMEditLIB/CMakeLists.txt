@@ -21,12 +21,12 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       LSP/ModelicaLSPClient.cpp
                       LSP/LSPSetupDialog.cpp
                       Util/Helper.cpp
-                      Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
                       Util/DirectoryOrFileSelector.cpp
                       MainWindow.cpp
+                      LoadCompiledModelDialog.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
                       Modeling/MessagesWidget.cpp
@@ -80,9 +80,6 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
-                      MCP/MCPServer.cpp
-                      MCP/MCPToolsSimulation.cpp
-                      MCP/MCPToolsDiagram.cpp
                       Simulation/TranslationFlagsWidget.cpp
                       Simulation/SimulationDialog.cpp
                       Simulation/SimulationOutputWidget.cpp
@@ -136,6 +133,10 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       FlatModelica/Expression.cpp
                       FlatModelica/ExpressionFuncs.cpp
                       FlatModelica/Parser.cpp
+                      MCP/MCPServer.cpp
+                      MCP/MCPToolsSimulation.cpp
+                      MCP/MCPToolsDiagram.cpp
+                      Search/FindUsageWidget.cpp
                       Animation/OpenGLWidget.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
@@ -156,14 +157,13 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       LSP/ModelicaLSPClient.h
                       LSP/LSPSetupDialog.h
                       LSP/LSPProtocol.h
-                      MCP/MCPServer.h
                       Util/Helper.h
-                      Search/FindUsageWidget.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
                       Util/DirectoryOrFileSelector.h
                       MainWindow.h
+                      LoadCompiledModelDialog.h
                       OMC/OMCProxy.h
                       Modeling/Model.h
                       Modeling/MessagesWidget.h
@@ -275,6 +275,9 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       FlatModelica/Expression.h
                       FlatModelica/ExpressionFuncs.h
                       FlatModelica/Parser.h
+                      MCP/MCPServer.h
+                      MCP/MCPServerPrivate.h
+                      Search/FindUsageWidget.h
                       Animation/OpenGLWidget.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h

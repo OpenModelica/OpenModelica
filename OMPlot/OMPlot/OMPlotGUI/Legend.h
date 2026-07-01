@@ -52,7 +52,7 @@ class Legend : public QwtLegend
   Q_OBJECT
 public:
   Legend(Plot *pParent);
-  bool eventFilter(QObject *object, QEvent *event);
+  bool eventFilter(QObject *object, QEvent *event) override;
 public slots:
   void toggleSign(bool checked);
   void switchAxis(bool checked);
@@ -65,9 +65,9 @@ private:
   QAction* mpToggleAxisAction;
   QAction *mpSetupAction;
 protected:
-  virtual QWidget *createWidget(const QwtLegendData &data) const;
-  virtual void mousePressEvent(QMouseEvent *event);
-  virtual void mouseDoubleClickEvent(QMouseEvent *event);
+  virtual QWidget *createWidget(const QwtLegendData &data) const override;
+  virtual void mousePressEvent(QMouseEvent *event) override;
+  virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 };
 }
 
