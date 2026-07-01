@@ -137,8 +137,10 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
     fprintf(fout, formatint, (data->localData[0])->integerVars[i]);
   for(i = 0; i < data->modelData->nVariablesBoolean; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
     fprintf(fout, formatbool, (data->localData[0])->booleanVars[i]);
-  //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
-  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
+  for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput) {
+    modelica_string sv = (data->localData[0])->stringVars[i];
+    fprintf(fout, formatstring, sv ? MMC_STRINGDATA(sv) : "");
+  }
 
   for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME) {
@@ -166,10 +168,11 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
     }
   }
-  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-  //  /* there would no negation of a string happen */
-  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
-  //}
+  for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    /* there would no negation of a string happen */
+    modelica_string sv = (data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID];
+    fprintf(fout, formatstring, sv ? MMC_STRINGDATA(sv) : "");
+  }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -212,6 +215,12 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, format, escapedNameBuffer);
     }
   }
+  for(i = 0; i < mData->nVariablesString; i++) {
+    if(!mData->stringVarsData[i].filterOutput) {
+      csvEscapedString(mData->stringVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
 
   for(i = 0; i < mData->nAliasReal; i++) {
     if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
@@ -228,6 +237,12 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
   for(i = 0; i < mData->nAliasBoolean; i++) {
     if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
       csvEscapedString(mData->booleanAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
+  for(i = 0; i < mData->nAliasString; i++) {
+    if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+      csvEscapedString(mData->stringAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
       fprintf(fout, format, escapedNameBuffer);
     }
   }

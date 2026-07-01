@@ -161,6 +161,10 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
     free(reader->params);
     reader->params=NULL;
   }
+  if (reader->stringData) { /* #15969 */
+    free(reader->stringData);
+    reader->stringData=NULL;
+  }
   for(i=0; i<reader->nvar*2; i++) {
     if (reader->vars[i]) free(reader->vars[i]);
   }
@@ -419,6 +423,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           }
           reader->allInfo[k].name[hdr.mrows] = '\0';
           reader->allInfo[k].isParam = -1;
+          reader->allInfo[k].isString = 0;
           reader->allInfo[k].index = -1;
           trimWhitespace(reader->allInfo[k].name);
           /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
@@ -437,6 +442,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           }
           reader->allInfo[k].name[hdr.ncols] = '\0';
           reader->allInfo[k].isParam = -1;
+          reader->allInfo[k].isString = 0;
           reader->allInfo[k].index = -1;
           trimWhitespace(reader->allInfo[k].name);
           /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
@@ -484,14 +490,22 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==1) {
         for(k=0; k<hdr.ncols; k++) {
           reader->allInfo[k].isParam = tmp[k*hdr.mrows] == 1;
+          reader->allInfo[k].isString = tmp[k*hdr.mrows] == 3; /* #15969: CHANNEL_STRING */
           reader->allInfo[k].index = tmp[k*hdr.mrows+1];
+          if (reader->allInfo[k].isString && tmp[k*hdr.mrows+1] > (int32_t)reader->nStringSignals) {
+            reader->nStringSignals = tmp[k*hdr.mrows+1];
+          }
           /* fprintf(stderr, "    Variable %s isParam=%d index=%d\n", reader->allInfo[k].name, reader->allInfo[k].isParam, reader->allInfo[k].index); */
         }
       }
       if(binTrans==0) {
         for(k=0; k<hdr.mrows; k++) {
           reader->allInfo[k].isParam = tmp[k] == 1;
+          reader->allInfo[k].isString = tmp[k] == 3; /* #15969: CHANNEL_STRING */
           reader->allInfo[k].index =  tmp[k + hdr.mrows];
+          if (reader->allInfo[k].isString && tmp[k + hdr.mrows] > (int32_t)reader->nStringSignals) {
+            reader->nStringSignals = tmp[k + hdr.mrows];
+          }
           /* fprintf(stderr, "    Variable %s isParam=%d index=%d\n", reader->allInfo[k].name, reader->allInfo[k].isParam, reader->allInfo[k].index); */
         }
       }
@@ -590,6 +604,29 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       return "Implementation error: Unknown case";
     }
   }
+
+  /* #15969: optionally read the stringData matrix, present when the model has
+   * time-varying String variables. The file is positioned right after data_2. */
+  if (reader->nStringSignals > 0) {
+    MHeader_t hdr;
+    if (1 == omc_fread(&hdr, sizeof(MHeader_t), 1, reader->file, 0)) {
+      char *name = (char*) malloc(hdr.namelen);
+      if (1 == omc_fread(name, hdr.namelen, 1, reader->file, 0)
+          && hdr.namelen > 0 && name[hdr.namelen-1] == '\0'
+          && 0 == strcmp(name, "stringData")) {
+        size_t total = (size_t)hdr.mrows * hdr.ncols;
+        reader->stringMaxLen = hdr.mrows;
+        reader->stringData = (char*) malloc(total ? total : 1);
+        if (total && read_chars(hdr.type, total, reader->file, reader->stringData)) {
+          free(name);
+          return "Corrupt header: stringData matrix";
+        }
+        reader->nStringRows = reader->nStringSignals ? (hdr.ncols / reader->nStringSignals) : 0;
+      }
+      free(name);
+    }
+  }
+
   return 0;
 }
 
@@ -1154,6 +1191,32 @@ int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMa
       }
     }
     return 0;
+}
+
+/* #15969: read the value of a time-varying String variable at a given time.
+   Strings are step-like display values, so we return the value at the row at or
+   just before the requested time. */
+const char* omc_matlab4_read_string_val(ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
+{
+  int i1, i2;
+  double w1, w2;
+  size_t row, col;
+  if (!var || !var->isString || !reader->stringData || reader->nStringSignals == 0 || reader->nStringRows == 0) {
+    return NULL;
+  }
+  if (!omc_matlab4_read_vals(reader, 1)) {
+    return NULL;
+  }
+  find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
+  row = (i1 >= 0) ? (size_t)i1 : (i2 >= 0 ? (size_t)i2 : 0);
+  if (row >= reader->nStringRows) {
+    row = reader->nStringRows - 1;
+  }
+  if (var->index < 1 || (uint32_t)var->index > reader->nStringSignals) {
+    return NULL;
+  }
+  col = row * reader->nStringSignals + (var->index - 1);
+  return reader->stringData + (size_t)col * reader->stringMaxLen;
 }
 
 /**
