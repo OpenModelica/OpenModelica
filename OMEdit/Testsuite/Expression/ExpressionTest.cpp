@@ -153,6 +153,16 @@ void ExpressionTest::dynamicSelect_data()
   QTest::addRow("OpenIPSL Bus angle")
     << "DynamicSelect(\"Angle\", String(angleDisplay, significantDigits=3) + \"°\")"
     << "DynamicSelect(\"Angle\",\"1°\")";
+
+  // #15969: when the frontend rewrites a DynamicSelect user-function call, its
+  // dynamic argument becomes a reference to the synthesized auxiliary variable.
+  // OMEdit must evaluate that reference from the result file (here the test
+  // substitutes every variable with 1.0). The real auxiliary name contains '$'
+  // and is delivered as a JSON cref, so it is looked up by name and never parsed
+  // from a string.
+  QTest::addRow("DynamicSelectAuxVariable")
+    << "DynamicSelect(\"0.0\", dynamicSelectAux)"
+    << "DynamicSelect(\"0.0\",1)";
 }
 
 void ExpressionTest::operators()
