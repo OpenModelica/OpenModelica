@@ -436,8 +436,7 @@ void buildRustOMC() {
   // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
   // without re-running codegen.
   stash name: 'rust-generated-src',
-        includes: 'OMCompiler/Compiler/OpenModelica.rs/**/src/*.rs,' +
-                  'OMCompiler/Compiler/OpenModelica.rs/**/src/**/*.rs'
+        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs'
   stash name: 'omc-cmake-rust-gui-inputs',
         includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
                   'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
