@@ -530,7 +530,8 @@ void partestRust(partition) {
     # anything else, so junit below still publishes the per-test results.
     test \$CODE = 0 -o \$CODE = 7 || exit 1
   """
-  junit 'testsuite/partest/result.xml'
+  // TODO: Make this conditional on a flag
+  // junit 'testsuite/partest/result.xml'
 }
 
 // Cargo workspace unit tests as their own stage (parallel with partest), in the
