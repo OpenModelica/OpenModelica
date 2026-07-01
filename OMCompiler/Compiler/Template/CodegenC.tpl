@@ -5897,7 +5897,25 @@ match row
               >>
             else depsCode
           else depsCode
-        else depsCode
+        else
+          match listReverse(crefSubs(sc))
+          case WHOLEDIM() :: _ then
+            match context
+            case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+              match simVarFromHT(crefStripSubs(sc), jacHT)
+              case SIMVAR() then
+                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wr<%k%>;
+                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                    <%depsCode%>
+                  }
+                }
+                >>
+              else depsCode
+            else depsCode
+          else depsCode
     ;separator="\n")
     if bodyCode then
       <<
@@ -5930,8 +5948,23 @@ match context
           }
           >>
         else
-          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
-          'col_counts[<%v.index%> + (<%offset%>)]++;'
+          match listReverse(crefSubs(seed))
+          case WHOLEDIM() :: outer_rev_subs then
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+            <<
+            {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++;
+              }
+            }
+            >>
+          else
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+            'col_counts[<%v.index%> + (<%offset%>)]++;'
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
 end resizableColCount;
@@ -5991,14 +6024,36 @@ match row
           else ''
         else ''
       else
-        match context
-        case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
-          match simVarFromHT(crefStripSubs(sc), jacHT)
-          case v as SIMVAR() then
-            let off_sc = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &preExp, &varDecls, &auxFunction)
-            (deps |> (seed, _, _) => resizableColFill(seed, '<%v.index%> + (<%off_sc%>)', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+        match listReverse(crefSubs(sc))
+        case WHOLEDIM() :: outer_rev_subs then
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let outer_off = match outer_rev_subs
+                case {} then '0'
+                else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _wr<%k%>;
+                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                  unsigned int row_<%k%> = <%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
+                  <%depsWhole%>
+                }
+              }
+              >>
+            else ''
           else ''
-        else ''
+        else
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let off_sc = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &preExp, &varDecls, &auxFunction)
+              (deps |> (seed, _, _) => resizableColFill(seed, '<%v.index%> + (<%off_sc%>)', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+            else ''
+          else ''
 end resizableFillDepsForRow;
 
 template resizableColFill(ComponentRef seed, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
@@ -6022,8 +6077,23 @@ match context
           }
           >>
         else
-          let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
-          '<%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;'
+          match listReverse(crefSubs(seed))
+          case WHOLEDIM() :: outer_rev_subs then
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+            <<
+            {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+            >>
+          else
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+            '<%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;'
     else '/* resizableColFill: seed not found in jacHT */'
   else ''
 end resizableColFill;
