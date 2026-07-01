@@ -1971,6 +1971,29 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 }
 
 /*!
+ * \brief VariablesWidget::readVariableStringValue
+ * Reads the value of a time-varying String variable from the .mat result file
+ * at a specific time (issue #15969). Returns (value, true) only if the variable
+ * exists and is a string variable.
+ * \param variable
+ * \param time
+ * \return
+ */
+QPair<QString, bool> VariablesWidget::readVariableStringValue(QString variable, double time)
+{
+  if (mModelicaMatReader.file) {
+    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
+    if (var && var->isString) {
+      const char *str = omc_matlab4_read_string_val(&mModelicaMatReader, var, time);
+      if (str) {
+        return qMakePair(QString::fromUtf8(str), true);
+      }
+    }
+  }
+  return qMakePair(QString(), false);
+}
+
+/*!
  * \brief VariablesWidget::plotVariables
  * Plot/unplot the checked/unchecked index.
  * \param index

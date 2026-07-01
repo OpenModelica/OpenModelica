@@ -257,6 +257,13 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
     auto expression = pExpression->evaluate([&](std::string name) -> auto {
       auto vname = QString::fromStdString(name);
       if (readFromResultFileForDynamicSelect) {
+        // #15969: a DynamicSelect user-function result is stored as an auxiliary
+        // variable in the result file. If it is a String variable, read it as a
+        // string; otherwise read it as a number.
+        QPair<QString, bool> stringValue = MainWindow::instance()->getVariablesWidget()->readVariableStringValue(vname, time);
+        if (stringValue.second) {
+          return FlatModelica::Expression(stringValue.first.toStdString());
+        }
         QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
         if (value.second) {
           return FlatModelica::Expression(value.first);
