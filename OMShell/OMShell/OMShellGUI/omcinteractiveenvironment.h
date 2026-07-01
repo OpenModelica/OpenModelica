@@ -38,7 +38,22 @@
 
 #include <QtCore/QString>
 
+#if defined(__EMSCRIPTEN__)
+// Web build: omc is not linked in-process. It runs as a separate wasm module in
+// a Web Worker (omc_worker.js); this environment bridges to it via postMessage.
+// There is no MetaModelica runtime, so threadData is an empty carrier and the
+// MMC try/init control flow is plain block structure, mirroring the no-op slice
+// of omc_rust_embedding.h so main.cpp compiles unchanged.
+struct threadData_s {};
+typedef struct threadData_s threadData_t;
+#define MMC_INIT(...)       ((void) 0)
+#define MMC_TRY_TOP()       { threadData_t threadDataOnStack = {}; threadData_t *threadData = &threadDataOnStack; (void) threadData; {
+#define MMC_CATCH_TOP(...)  } if (0) { __VA_ARGS__; } }
+#elif defined(OMC_RUST_ABI)
+#include "omc_rust_embedding.h"
+#else
 #include "meta/meta_modelica.h"
+#endif
 
 namespace IAEX
 {
@@ -56,6 +71,14 @@ namespace IAEX
     virtual QString getError();
     virtual int getErrorLevel();
     virtual void evalExpression(const QString expr);
+#if defined(__EMSCRIPTEN__)
+    // Queue a command on the omc worker without blocking the caller (used for the
+    // startup MSL install; result/diagnostics are not returned).
+    void startBackgroundCommand(const QString expr);
+    // Current download progress as display text, or empty when nothing is
+    // downloading; used to drive the status bar.
+    QString progressText();
+#endif
     static QString OMCVersion();
     static QString OpenModelicaHome();
     static QString TmpPath();
@@ -64,6 +87,7 @@ namespace IAEX
     static OmcInteractiveEnvironment* selfInstance;
     QString result_;
     QString error_;
+    QString omcVersion_;
     int severity;
   };
 }

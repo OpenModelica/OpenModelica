@@ -185,6 +185,7 @@ public:
   void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem, int column);
   QModelIndex variablesTreeItemIndex(VariablesTreeItem *pVariablesTreeItem, int column = 0) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  void sortVariablesTreeItems();
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
   void removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem);

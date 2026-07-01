@@ -1,0 +1,25 @@
+[package]
+name = "omshell_core"
+version = "0.1.0"
+edition = "2024"
+
+# UI-agnostic OMShell logic shared by omshell_egui and omshell_dioxus: the
+# OmcBackend trait + mock, a cfg-split driver (native worker thread / wasm
+# synchronous), command completion, and the REPL state machine.
+#
+# This crate has NO dependency on the compiler. The real backend is wired through
+# FFI (libOpenModelicaCompiler.so) on native and the omc wasm module's JS
+# exports on web, so the compiler never enters the GUI cargo graph and the GUIs
+# can be built (e.g. via trunk) without dragging in the full compiler build.
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+
+# On wasm the driver runs omc in a dedicated Web Worker (src/driver.rs) and talks
+# to it via postMessage. Pins match the rest of the wasm build (wasm-bindgen the
+# wasmer `js` backend targets).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.125"
+js-sys = "0.3.102"
+web-sys = { version = "0.3.102", features = ["Worker", "WorkerOptions", "WorkerType", "MessageEvent"] }

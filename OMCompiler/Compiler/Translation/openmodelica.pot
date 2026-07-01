@@ -4576,7 +4576,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:2609
 msgid ""
-"Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
+"Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n"
 "\n"
 msgstr ""
 

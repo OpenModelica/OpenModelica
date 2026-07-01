@@ -2,7 +2,9 @@
 
 find_package(FLEX)
 
-if(NOT FLEX_FOUND)
+if(CMAKE_CROSSCOMPILING)
+  # omc-diff is a build-host test tool; not needed in a cross-compiled image.
+elseif(NOT FLEX_FOUND)
   message(WARNING "GNU Flex not found. You will not be able to use omc-diff to verify test results against expected results.")
 else()
   FLEX_TARGET(omc_diff_lexer omc-diff.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)

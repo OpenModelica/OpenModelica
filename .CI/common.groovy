@@ -311,6 +311,247 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   sanityCheck('build', true)
 }
 
+// sccache config for the cargo builds: a shared S3 (MinIO) compile cache at
+// sccache.openmodelica.org, replacing the per-node /cache/sccache volume so the
+// cache is shared across agents (see .CI/sccache/). Incremental must be off for
+// sccache to hit. The cache size is bounded server-side (bucket TTL + quota);
+// SCCACHE_CACHE_SIZE does not apply to the S3 backend.
+//
+// RUSTC_WRAPPER is a selective shim (rustc-sccache-wrapper.sh), not sccache
+// directly: it only sends the crates.io/git dependencies through sccache and
+// runs our own (always-regenerated, never-cached) workspace crates under bare
+// rustc, so cargo pipelining survives on the generated-crate chain that
+// dominates the build. Absolute path: cargo's CWD is the OpenModelica.rs
+// workspace, not the repo root.
+//
+// AWS_ACCESS_KEY_ID is the scoped, non-secret key (readwrite on the sccache
+// bucket only); the matching secret is injected separately by withSccache() from
+// the 'sccache-ci-secret-key' Jenkins credential, never stored here.
+def sccacheEnv() {
+  return [// "RUSTC_WRAPPER=${env.WORKSPACE}/.CI/scripts/rustc-sccache-wrapper.sh",
+          'RUSTC_WRAPPER=sccache',
+          'SCCACHE_BUCKET=omc-sccache',
+          'SCCACHE_ENDPOINT=https://sccache.openmodelica.org',
+          'SCCACHE_REGION=auto',
+          'SCCACHE_S3_USE_SSL=true',
+          'AWS_ACCESS_KEY_ID=sccache-ci',
+          'CARGO_INCREMENTAL=0'
+          ]
+}
+
+// Run `body` with the shared sccache environment plus the S3 secret key bound
+// from the Jenkins credential (the access key is non-secret, see sccacheEnv).
+// extraEnv is prepended for callers that need build-specific vars.
+def withSccache(List extraEnv = [], Closure body) {
+  withCredentials([string(credentialsId: 'sccache-ci-secret-key',
+                          variable: 'AWS_SECRET_ACCESS_KEY')]) {
+    // Normalise the per-job workspace prefix out of the cache keys so the cache is
+    // shared across jobs/branches, not just rebuilds at the same checkout path.
+    // Without this, sccache hashes the absolute paths embedded in compile commands
+    // (-I.../source) and in the C/C++ preprocessor line markers, so every job's
+    // workspace path is a distinct key — each job re-populates the bucket with its
+    // own copies instead of hitting. SCCACHE_BASEDIRS (sccache's CCACHE_BASEDIR)
+    // strips this prefix before hashing; it must be absolute and must be in the
+    // environment of *every* sccache call, since a client auto-restarts a
+    // timed-out server and the restarted server inherits the env. env.WORKSPACE is
+    // unreliable in the docker agent (see makeLibsAndCache), so read it from pwd.
+    def basedir = sh(script: 'pwd', returnStdout: true).trim()
+    withEnv(extraEnv + sccacheEnv() + ["SCCACHE_BASEDIRS=${basedir}"]) {
+      // Preflight: fail fast if the S3 cache backend is not usable. sccache
+      // otherwise silently degrades to read-only / no-cache on a backend error
+      // (wrong bucket, endpoint, credential, or an unwritable proxy), hiding a
+      // broken cache behind a normal-looking but uncached build. A fresh server
+      // runs a storage read+write check at startup; surface its failure.
+      sh '''
+        set -e
+        log="$(mktemp)"
+        sccache --stop-server >/dev/null 2>&1 || true
+        SCCACHE_ERROR_LOG="$log" SCCACHE_LOG=warn sccache --start-server
+        sccache --show-stats
+        if grep -qiE "storage (write )?check failed|read-only storage|cache storage failed" "$log"; then
+          echo "ERROR: sccache S3 cache backend is not usable; failing build:" >&2
+          cat "$log" >&2
+          rm -f "$log"
+          exit 1
+        fi
+        rm -f "$log"
+      '''
+      try {
+        body()
+      } finally {
+        // Post-run stats: compile requests, cache hits/misses and S3 errors for
+        // this build. In finally so they surface even when the body fails (which
+        // is when the hit rate matters most). Best-effort; never fail the build.
+        sh 'sccache --show-stats || true'
+      }
+    }
+  }
+}
+
+void buildRustOMC() {
+  standardSetup()
+  // RUST_OMC_THREADS=4 parallelises the rustc front-end on the (near-serial)
+  // generated-crate chain. Linking uses mold (RUST_OMC_MOLD defaults ON); the
+  // image ships a current mold (see .CI/cache/rust/Dockerfile).
+  sh """
+    cmake -S . -B build_cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_OMC_ENABLE_RUST=ON \
+      -DRUST_OMC_CI=ON \
+      -DOM_ENABLE_GUI_CLIENTS=OFF \
+      -DRUST_OMC_SCRIPTING_API=ON \
+      -DOM_USE_CCACHE=OFF \
+      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_C_COMPILER=clang \
+      -DCMAKE_CXX_COMPILER=clang++ \
+      -DCMAKE_INSTALL_PREFIX=build \
+      -DRUST_OMC_TIMINGS=ON \
+      -DRUST_OMC_THREADS=4 \
+      -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
+  """
+  // O3 is the default release opt-level; CI uses O2 to cut build time.
+  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+    // install builds the whole tree (incl. rust_omc + the cdylib) and installs in
+    // one pass. Don't also pass rust_omc as a goal: recursive sub-makes would re-run
+    // the always-run cdylib custom target a second time (a redundant cargo pass).
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
+    sh "build/bin/omc --version"
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target rust_wasm_runtime"
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+  }
+  // cargo --timings HTML report for the omc artifact builds (RUST_OMC_TIMINGS=ON).
+  archiveArtifacts artifacts: 'build_cmake/OMCompiler/Compiler/rust-target/cargo-timings/cargo-timing-*.html', allowEmptyArchive: true, fingerprint: true
+  archiveArtifacts artifacts: 'runtime.wasm', fingerprint: true
+  stash name: 'wasm-jit-runtime', includes: 'runtime.wasm'
+  // Generated by the SimulationRuntime cmake (skipped in the wasm build); the web
+  // codegen reads it from the source tree, so hand it over.
+  stash name: 'runtime-sources-mo', includes: 'OMCompiler/SimulationRuntime/c/RuntimeSources.mo'
+  // testsuite-depends (above) builds ffi-test-lib into the testsuite source tree;
+  // partestRust only unstashes this stash and never rebuilds it, so carry the .so
+  // along or the flattening/modelica/ffi tests can't find libFFITestLib.so.
+  stash name: 'omc-cmake-rust',
+        includes: 'build/**,' +
+                  'testsuite/flattening/modelica/ffi/FFITest/Resources/Library/**'
+  // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
+  // without re-running codegen.
+  stash name: 'rust-generated-src',
+        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs'
+  stash name: 'omc-cmake-rust-gui-inputs',
+        includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
+                  'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
+}
+
+void buildRustWeb() {
+  standardSetup()
+  unstash 'wasm-jit-runtime'
+  unstash 'runtime-sources-mo'
+  // The mmtorust transpile is identical to stage 1's; reuse its generated .rs
+  // (RUST_OMC_PREBUILT_GENERATED_SRC below) instead of re-running the codegen.
+  unstash 'rust-generated-src'
+  sh """
+    cmake -S . -B build_web \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_OMC_WASM=ON \
+      -DRUST_OMC_WASM_MODE=web-release \
+      -DRUST_OMC_WASM_RUNTIME=${env.WORKSPACE}/runtime.wasm \
+      -DRUST_OMC_PREBUILT_GENERATED_SRC=ON \
+      -DRUST_OMC_TIMINGS=ON \
+      -DOM_USE_CCACHE=OFF \
+      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_INSTALL_PREFIX=install_web
+  """
+  withSccache {
+    sh "cmake --build build_web --parallel ${numPhysicalCPU()}"
+  }
+  sh "cmake --install build_web --component web"
+  // cargo --timings HTML report for the wasm crate build (RUST_OMC_TIMINGS=ON).
+  archiveArtifacts artifacts: 'build_web/OMCompiler/Compiler/rust-target/cargo-timings/cargo-timing-*.html', allowEmptyArchive: true, fingerprint: true
+  // Ship the web bundle as a single zip rather than the loose html+js+wasm tree.
+  def webZip = "OpenModelicaCompiler-web-${tagName()}.zip"
+  sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
+  archiveArtifacts artifacts: webZip, fingerprint: true
+  stash name: 'web', includes: webZip
+}
+
+void buildRustGUI() {
+  standardSetup()
+  unstash 'omc-cmake-rust-gui-inputs'
+  sh """
+    cmake -S . -B build_gui \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_OMC_ENABLE_RUST=ON \
+      -DOM_ENABLE_GUI_CLIENTS=ON \
+      -DRUST_OMC_PREBUILT_CDYLIB=${env.WORKSPACE}/build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so \
+      -DRUST_OMC_PREBUILT_SCRIPTING_API_QT_DIR=${env.WORKSPACE}/build_cmake/OMCompiler/Compiler/scripting-api-qt \
+      -DOM_OMC_ENABLE_CPP_RUNTIME=OFF \
+      -DOM_USE_CCACHE=OFF \
+      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_C_COMPILER=clang \
+      -DCMAKE_CXX_COMPILER=clang++ \
+      -DCMAKE_INSTALL_PREFIX=build_gui_install
+  """
+  withSccache {
+    sh "cmake --build build_gui --parallel ${numPhysicalCPU()}"
+  }
+}
+
+// One partest shard against the Rust-built omc (unstashed). Builds the test
+// libraries with that omc (cmake's libs-for-testing == omc index.mos); the repo's
+// index.json is copied into place first so omc uses it instead of downloading.
+void partestRust(partition) {
+  standardSetup()
+  unstash 'omc-cmake-rust'
+  // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
+  // prebuilt binaries from the clang job (file sets are disjoint from build/**'s
+  // rust omc, so this adds to the tree without overwriting it). Needed by the
+  // OMSimulator tests and the -lomcruntime bootstrapping tests respectively.
+  unstash 'omsimulator'
+  unstash 'omcruntime'
+  sh """#!/bin/bash -xe
+    test ! -z '${env.LIBRARIES}'
+    mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+    rm -rf libraries/.openmodelica/cache
+    mkdir -p libraries/.openmodelica/libraries
+    ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+    cp libraries/index.json libraries/.openmodelica/libraries/
+    ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
+    build/bin/omc-diff -v1.4
+  """
+  sh """#!/bin/bash -x
+    ulimit -t 1500
+    ulimit -v 6291456
+    cd testsuite/partest
+    ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml
+    CODE=\$?
+    # 0/7 == the run completed (7 means some tests failed); only fail the step on
+    # anything else, so junit below still publishes the per-test results.
+    test \$CODE = 0 -o \$CODE = 7 || exit 1
+  """
+  // TODO: Make this conditional on a flag
+  // junit 'testsuite/partest/result.xml'
+}
+
+// Cargo workspace unit tests as their own stage (parallel with partest), in the
+// fast dev/cranelift profile. The generated .rs are unstashed from stage 1, so
+// nextest compiles them directly — no codegen rebuild. nextest's `ci` profile
+// writes a per-test JUnit report (.config/nextest.toml). The `openmodelica`
+// launcher is excluded: its build.rs links the prebuilt cdylib, which this stage
+// does not build.
+void ctestRust() {
+  standardSetup()
+  unstash 'rust-generated-src'
+  try {
+    withSccache {
+      sh "cd OMCompiler/Compiler/OpenModelica.rs && cargo nextest run --workspace --exclude openmodelica --profile ci"
+    }
+  } finally {
+    junit testResults: 'OMCompiler/Compiler/OpenModelica.rs/target/nextest/ci/junit.xml', allowEmptyResults: true
+  }
+}
+
 def getQtMajorVersion(qtVersion) {
   def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
   if (qtVersion.equals('qt5')) {

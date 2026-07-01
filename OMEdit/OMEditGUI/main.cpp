@@ -92,6 +92,7 @@ void messageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString
 static char *g_output = NULL;
 LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
+#if defined(__MINGW32__) // symbolised backtrace via bfd; MinGW only (no bfd under MSVC)
   if (g_output == NULL) {
     g_output = (char*) malloc(BUFFER_MAX);
   }
@@ -106,11 +107,22 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
     release_set(set);
     SymCleanup(GetCurrentProcess());
   }
+#else // MSVC/clang-cl: no bfd, report without a symbolised stack trace
+  (void)info;
+#endif
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString(g_output));
   pCrashReportDialog->exec();
   exit(1);
   return EXCEPTION_CONTINUE_SEARCH;
+}
+
+#elif defined(__EMSCRIPTEN__) // wasm: no execinfo/backtrace, no addr2line subprocess
+
+#include <signal.h>
+void signalHandler(int signalNumber)
+{
+  exit(signalNumber);
 }
 
 #else // Unix
@@ -232,6 +244,10 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_LINUX
   qputenv("EGL_LOG_LEVEL", "fatal");
 #endif // #ifdef Q_OS_LINUX
+  // Qt WebEngine (DocumentationWidget) needs shared OpenGL contexts; must be set
+  // before the QApplication. Without it WebEngine logs "Using Shared GL: no" and
+  // crashes during GL init on Windows.
+  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   OMEditApplication a(argc, argv, threadData);
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
@@ -252,6 +268,12 @@ int main(int argc, char *argv[])
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG
 
+#if defined(__EMSCRIPTEN__)
+  // From here on omc bridge calls must wait via a nested QEventLoop, not a raw
+  // Asyncify suspend (which corrupts Qt's wasm event pump mid-event). See OMCProxy.
+  extern bool g_omcMainLoopRunning;
+  g_omcMainLoopRunning = true;
+#endif
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

@@ -42,7 +42,9 @@
 #ifndef WIN32
 #include "omc_config.h"
 #endif
+#ifndef OMC_RUST_ABI
 #include "gc.h"
+#endif
 
 extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
@@ -82,7 +84,11 @@ static bool contains(std::string s1, std::string s2);
     args = mmc_mk_cons(mmc_mk_scon("+locale=C"), args);
 
     // initialize threadData
+#ifdef OMC_RUST_ABI
+    threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
+#else
     threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
+#endif
     MMC_TRY_TOP_INTERNAL()
     omc_Main_init(threadData, args);
     MMC_CATCH_TOP()
@@ -104,7 +110,11 @@ static bool contains(std::string s1, std::string s2);
 
   OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
   {
+#ifdef OMC_RUST_ABI
+    free(threadData_);
+#else
     GC_free(threadData_);
+#endif
   }
 
   std::string OmcInteractiveEnvironment::getResult() {

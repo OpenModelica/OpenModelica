@@ -1,0 +1,65 @@
+[package]
+name = "libopenmodelica_compiler"
+version = "0.1.0"
+edition = "2024"
+
+# Builds `libOpenModelicaCompiler.so`, the shared library OMEdit links against
+# to drive the Rust omc in-process. The `extern "C"` surface lives in src/lib.rs
+# and wraps the safe embedding API in `openmodelica_backend_main::capi`.
+[lib]
+name = "OpenModelicaCompiler"
+crate-type = ["cdylib"]
+
+[dependencies]
+# The workspace dep sets `default-features = false`; this cdylib selects the
+# code-generation targets via its own `default`/forwarding features below.
+openmodelica_backend_main.workspace = true
+# The generated OMEdit C-ABI crate, behind the `scripting_api` feature (off by
+# default; the OMEdit build enables it — see build-omedit.sh).
+openmodelica_scripting_qt = { workspace = true, optional = true }
+openmodelica_script_util.workspace = true
+openmodelica_util.workspace = true
+metamodelica.workspace = true
+arcstr.workspace = true
+# Used by the MetaModelica-ABI compatibility shims (src/mmc_compat.rs) to
+# allocate/free the malloc-boxed values shared with OMEdit (the header's
+# `mmc_mk_*` use malloc/strdup, so the shims free them with the same allocator).
+libc.workspace = true
+
+# wasm build: the JS bindings (src/wasm_api.rs). Pinned to match the
+# wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);
+# since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.125"
+openmodelica_wasi.workspace = true
+# Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
+openmodelica_frontend_types.workspace = true
+# Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C
+# zlib, so it builds for wasm32).
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# Renders `plot(...)` as an SVG chart in-browser (src/wasm_plot.rs); pure-Rust
+# SVG backend (default features), so it builds for wasm32.
+charton = "0.5"
+# DOM access to insert the rendered SVG into the page's #log element.
+web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "Node"] }
+# Building the {urls, filename} pending-download list for the JS host (omc_take_pending_downloads).
+js-sys = "0.3.102"
+# charton → ahash seeds its hashmaps with getrandom, which needs the JS backend
+# explicitly selected on wasm (paired with the cfg in .cargo/config.toml).
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[features]
+# Code-generation targets forwarded to openmodelica_backend_main. `default`
+# keeps the native set (C, C++, FMU); `scripting_api` (the OMEdit ABI) and
+# `susan` are off unless requested. The wasm build uses `--no-default-features`
+# to drop all of these and keep only the in-process wasm-jit target.
+default = ["cpp", "codegen_c", "codegen_fmu"]
+cpp = ["openmodelica_backend_main/cpp"]
+codegen_c = ["openmodelica_backend_main/codegen_c"]
+codegen_fmu = ["openmodelica_backend_main/codegen_fmu"]
+susan = ["openmodelica_backend_main/susan"]
+scripting_api = ["dep:openmodelica_scripting_qt"]
+
+# Forward the wasm-jit engine choice (default wasmtime; see
+# openmodelica_codegen_wasm_jit).
+engine-wasmer = ["openmodelica_backend_main/engine-wasmer"]

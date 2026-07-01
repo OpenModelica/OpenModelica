@@ -1,0 +1,85 @@
+[package]
+name = "openmodelica_backend_main"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_tpl.workspace = true
+openmodelica_error.workspace = true
+metamodelica.workspace=true
+openmodelica_ast.workspace=true
+openmodelica_backend.workspace=true
+openmodelica_backend_tools.workspace=true
+openmodelica_backend_types.workspace=true
+openmodelica_simcode_util.workspace=true
+openmodelica_nbackend.workspace=true
+openmodelica_simcode_types.workspace=true
+openmodelica_codegen.workspace=true
+openmodelica_codegen_xml.workspace=true
+# Optional code-generation *target* crates. Each is behind a Cargo feature so a
+# build that does not ship the corresponding runtime can drop it entirely; the
+# generated dispatch code (SimCodeMain.rs, Main.rs) wraps every reference in
+# `#[cfg(feature = …)]` and bails/panics when the target is absent (see
+# `mmtorust` codegen `gate_value`). backend_main is the only always-built crate
+# that references these, so the features live here.
+openmodelica_codegen_fmu_c = { workspace = true, optional = true }
+openmodelica_codegen_fmu_omsi = { workspace = true, optional = true }
+openmodelica_codegen_c = { workspace = true, optional = true }
+openmodelica_codegen_cfunctions.workspace=true
+openmodelica_codegen_wasm_jit.workspace=true
+openmodelica_codegen_cpp = { workspace = true, optional = true }
+openmodelica_codegen_cpp_ext = { workspace = true, optional = true }
+openmodelica_codegen_cpp_omsi_ext = { workspace = true, optional = true }
+openmodelica_dump_extra.workspace=true
+openmodelica_frontend.workspace=true
+openmodelica_frontend_base.workspace = true
+openmodelica_frontend_dump.workspace=true
+openmodelica_frontend_inst.workspace=true
+openmodelica_frontend_types.workspace=true
+openmodelica_nf_frontend.workspace=true
+openmodelica_program_util.workspace=true
+openmodelica_script_util.workspace=true
+openmodelica_susan = { workspace = true, optional = true }
+openmodelica_util.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+anyhow.workspace=true
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true
+
+[features]
+# Code-generation targets. `default` keeps the native compiler's full set
+# (C, C++, FMU); `susan` (the .tpl→MetaModelica template compiler) and the
+# OMEdit scripting-API generator are off by default and enabled only when the
+# build system needs to (re)compile those crates. A build without the C++
+# runtime drops `cpp`; the wasm build uses `--no-default-features` to drop all
+# of these and keep only the in-process wasm-jit target.
+#
+# `dep:<crate>` ties each feature to its optional dependency. `codegen_fmu`
+# implies `codegen_c` because the FMU C export builds on the C codegen.
+default = ["cpp", "codegen_c", "codegen_fmu"]
+cpp = [
+    "dep:openmodelica_codegen_cpp",
+    "dep:openmodelica_codegen_cpp_ext",
+    "dep:openmodelica_codegen_cpp_omsi_ext",
+]
+codegen_c = ["dep:openmodelica_codegen_c"]
+codegen_fmu = [
+    "dep:openmodelica_codegen_fmu_c",
+    "dep:openmodelica_codegen_fmu_omsi",
+    "codegen_c",
+]
+susan = ["dep:openmodelica_susan"]
+
+# Forward the wasm-jit engine choice. Default is wasmtime (implicit); enabling
+# `engine-wasmer` switches the native build to wasmer (benchmarking) and is
+# required for a wasm build. See openmodelica_codegen_wasm_jit.
+engine-wasmer = ["openmodelica_codegen_wasm_jit/engine-wasmer"]
+
+# Enable the native ZeroMQ interactive server (Main.rs uses ZeroMQ.rs). The
+# `zeromq` feature pulls native libzmq, which has no wasm target and no
+# MSVC-ABI build here, so it is only requested off-wasm and off-Windows; those
+# builds use ZeroMQ.rs's feature-off fallback (interactive ZMQ unavailable).
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows")))'.dependencies]
+openmodelica_util = { workspace = true, features = ["zeromq"] }

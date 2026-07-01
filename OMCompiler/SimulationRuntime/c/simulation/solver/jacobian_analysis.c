@@ -465,7 +465,7 @@ static void svd_sparse_free_ctx(primme_callback_ctx_t *ctx)
 {
     free(ctx->inv_diag_AAt);
     free(ctx->inv_diag_AtA);
-};
+}
 
 /**
  * @brief Computes both Jacobi scaling vectors for preconditioning:

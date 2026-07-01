@@ -64,6 +64,3 @@ if(MINGW)
     message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
   ")
 endif()
-
-install(FILES commands.xml
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell)

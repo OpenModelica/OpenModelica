@@ -1,0 +1,14 @@
+[package]
+name = "openmodelica_tpl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+metamodelica.workspace = true
+openmodelica_util.workspace = true
+openmodelica_util_datatypes_basic.workspace = true
+const-str.workspace = true
+arcstr.workspace = true
+anyhow.workspace = true
+loop_unwrap.workspace = true
+match_deref.workspace = true

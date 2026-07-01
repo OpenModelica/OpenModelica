@@ -76,7 +76,7 @@ using namespace OMPlot;
 static const QString ERROR_INTERVAL_SIZE_NOT_SPECIFIED = QObject::tr("Interval size not specified.");
 static const QString ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH = QObject::tr("Arrays must be of the same length in array parametric plot.");
 static const QString ERROR_UNKNOWN_TIME_UNIT = QObject::tr("Unknown time unit in plotArray(Parametric).");
-static const QString ERROR_FILE_NOT_FOUND = QObject::tr("File not found");
+static const QString ERROR_MSG_FILE_NOT_FOUND = QObject::tr("File not found");
 static const QString ERROR_FAILED_TO_OPEN_FILE = QObject::tr("Failed to open simulation result file");
 static const QString ERROR_CORRUPTED_FILE = QObject::tr("Corrupted file");
 static const QString ERROR_COULD_NOT_DETERMINE_VARIABLE_NAME = QObject::tr("Could not determine the variable name!");
@@ -271,7 +271,7 @@ void PlotWindow::initializeFile(QString file)
 {
   mFile.setFileName(file);
   if (!mFile.exists()) {
-    throw NoFileException(windowTitle(), ERROR_FILE_NOT_FOUND, file);
+    throw NoFileException(windowTitle(), ERROR_MSG_FILE_NOT_FOUND, file);
   }
 }
 

@@ -115,6 +115,7 @@ private:
 
   IAEX::CommandCompletion* commandcompletion_;
   int fontSize_;
+  bool busy_;
 
   int currentFunction_;
   QString currentFunctionName_;

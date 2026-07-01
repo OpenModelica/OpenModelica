@@ -93,6 +93,12 @@ Plot::Plot(PlotWindow *pParent)
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
   pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
+#if defined(__EMSCRIPTEN__)
+  // wasm: the offscreen BackingStore pixmap shows up black, so paint directly;
+  // ImmediatePaint makes replot() repaint synchronously.
+  pPlotCanvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
+  pPlotCanvas->setPaintAttribute(QwtPlotCanvas::ImmediatePaint, true);
+#endif
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
 #if QWT_VERSION >= 0x060000

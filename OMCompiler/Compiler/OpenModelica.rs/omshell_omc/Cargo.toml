@@ -1,0 +1,27 @@
+[package]
+name = "omshell_omc"
+version = "0.1.0"
+edition = "2024"
+
+# Real OMC backend for the OMShell GUIs. Native links the compiler crate
+# directly and drives it in-process through openmodelica_backend_main::capi;
+# wasm calls the separately-built omc wasm module's JS exports. Both implement
+# omshell_core::OmcBackend.
+[lib]
+path = "src/lib.rs"
+
+[[example]]
+name = "link_check"
+path = "examples/link_check.rs"
+
+[dependencies]
+omshell_core = { path = "../omshell_core" }
+
+# In-process compiler (native). The codegen targets mirror libopenmodelica_compiler's
+# default set so translateModel/buildModel behave as in a normal omc.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+openmodelica_backend_main = { workspace = true, features = ["cpp", "codegen_c", "codegen_fmu"] }
+arcstr.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"

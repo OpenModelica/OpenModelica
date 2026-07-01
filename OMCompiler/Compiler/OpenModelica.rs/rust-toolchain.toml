@@ -1,0 +1,13 @@
+# Pinned toolchain for the mmtorust omc port — the single source of truth.
+# rustup auto-installs this on any cargo invocation in the workspace.
+#
+# nightly is required: Cargo.toml enables the unstable `codegen-backend`
+# cargo-feature and profile.dev uses the cranelift rustc backend
+# (rustc-codegen-cranelift-preview). wasm32-unknown-unknown is for the web /
+# wasm-jit builds. Keep `channel` in sync with .CI/cache/rust/Dockerfile, which
+# pre-installs the same toolchain so CI containers don't auto-install on first use.
+[toolchain]
+channel = "nightly-2026-05-31"
+profile = "minimal"
+components = ["rustc-codegen-cranelift-preview", "clippy", "rustfmt"]
+targets = ["wasm32-unknown-unknown"]

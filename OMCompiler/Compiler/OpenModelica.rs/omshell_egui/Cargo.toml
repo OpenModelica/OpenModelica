@@ -1,0 +1,35 @@
+[package]
+name = "omshell_egui"
+version = "0.1.0"
+edition = "2024"
+
+# egui front-end for OMShell. Uses eframe's wgpu backend (native + web via trunk),
+# which also lets the Help -> WebGPU test composite a wgpu scene inside egui.
+[[bin]]
+name = "OMShell-egui"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+omshell_core = { path = "../omshell_core" }
+# The real OMC backend: the compiler linked in-process on native, the omc wasm
+# module's JS exports on web.
+omshell_omc = { path = "../omshell_omc" }
+# The shared WebGPU demo (Help -> WebGPU test), composited via an egui_wgpu callback.
+omshell_wgpu = { path = "../omshell_wgpu" }
+egui = "0.34"
+eframe = { version = "0.34", default-features = false, features = [
+    "wgpu",
+    "default_fonts",
+    "wayland",
+    "x11",
+] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = "0.15"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"

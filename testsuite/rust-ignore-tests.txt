@@ -1,0 +1,76 @@
+# Tests known to fail in the Rust port for reasons we accept (not codegen bugs).
+# Used to filter failed.frontend-refactor-deps before triaging.
+#
+# Rust aborts the process on stack overflow (no catchable recursion limit),
+# unlike MMC which unwinds. Any test that deliberately drives deep recursion
+# to hit a recursion-limit / stack-overflow error message will differ.
+./flattening/modelica/algorithms-functions/StackOverflowTest.mos
+./flattening/modelica/declarations/ErrorRecursionLimit.mo
+#
+# Parser error position: the hand-written recursive-descent parser reports a
+# "No viable alternative near token: X" syntax error at a different token than
+# ANTLR's error recovery picked. The error is still raised and the file still
+# fails to parse; only which token/line:col is named differs.
+./openmodelica/parser/Class4.mo
+./openmodelica/parser/ConstructParameters1.mo
+./openmodelica/parser/Declaration1.mo
+./openmodelica/parser/Declaration2.mo
+./openmodelica/parser/Declaration3.mo
+./openmodelica/parser/Identifier.mo
+./openmodelica/parser/ParseError1.mo
+./openmodelica/parser/ParseError2.mo
+./openmodelica/parser/RealOpLexerModelica.mo
+./openmodelica/parser/WildLexerMetaModelica.mo
+# Error reporting wrong column/line
+./simulation/modelica/others/TestSolve18.mos
+./openmodelica/conversion/ConvertModifiersMissingValue1.mos
+# PureImpure3 now parses correctly (pure/impure are demoted to identifiers under
+# --std=<3.3 --strict, so `pure function` is rejected at 9:1-9:5 as it should
+# be); only the wording differs ("No viable alternative near token: pure" vs
+# ANTLR's "Parser error: Unexpected token near: pure (IDENT)").
+./openmodelica/parser/PureImpure3.mo
+#
+# Lexer error message + position on invalid input. The hand-written lexer
+# rejects the bad character (so the file still fails to lex, as expected) but
+# reports e.g. "unexpected character: '#'" where ANTLR reports "Lexer failed to
+# recognize '#'" / "Lexer got '& ' but failed to recognize the rest: '…'". The
+# column also follows ANTLR's internal recovery point (after the partially
+# consumed token), which our lexer does not reproduce.
+./openmodelica/parser/ParseString.mos
+./openmodelica/parser/MetaModelicaStringOpModelicaLexer.mo
+#
+# Integer width: MMC modelica_integer is 63-bit; the Rust port uses i32.
+# Tests asserting the 63-bit max literal / wide-integer overflow behaviour differ.
+# The min/max reductions over an empty array seed with +-intMaxLit()
+# (=LONG_MAX/2 = 4611686018427387903), which does not fit in i32; the only diffs
+# in these tests are those sentinel values.
+./flattening/modelica/mosfiles/IntMulOverflow.mos
+./openmodelica/parser/IntegerLiterals64.mo
+./flattening/modelica/scodeinst/FuncBuiltinMax.mo
+./flattening/modelica/scodeinst/FuncBuiltinMax2.mo
+./flattening/modelica/scodeinst/FuncBuiltinMin.mo
+./flattening/modelica/scodeinst/FuncBuiltinMin2.mo
+./flattening/modelica/scodeinst/FuncBuiltinReduction.mo
+./flattening/modelica/scodeinst/CevalReduction1.mo
+# saveTotalModel(obfuscate=true) replaces assert/terminate messages with
+# "<fn> message <stringHashDjb2(msg)>"; C's stringHashDjb2 accumulates djb2 in a
+# 64-bit modelica_integer (then labs), the port's Integer is i32 so the embedded
+# hash value differs. Only those hash numbers differ; not fixable without i64.
+./openmodelica/interactive-API/Obfuscation1.mos
+#
+# Library version: the image ships Modelica 3.2.3+maint and 4.1.0 only. This
+# test does loadModel(Modelica,{"3.1"}) and dumps MSL annotations/algorithms
+# (Resistor docs, Blocks.Sources.BooleanTable); 3.2.3 differs from the recorded
+# 3.1 content (<i>/<HTML> vs <em>/<html>, different BooleanTable body). The boot
+# omc produces the same 3.2.3 content — purely a library-version mismatch, not a
+# port codegen difference.
+./openmodelica/interactive-API/interactive_api_calls.mos
+# Backend does operations in different order
+./simulation/modelica/NBackend/differentation/adjoint_jacobian2.mos
+./simulation/modelica/NBackend/functions/function_annotation_der.mos
+./simulation/modelica/NBackend/index_reduction/static_IR.mos
+./simulation/modelica/NBackend/initialization/TestInversePlant.mos
+./simulation/modelica/NBackend/simplification/splitIf.mos
+./simulation/modelica/start_value_selection/asmaFlow.mos
+# Fails also for bootstrapped OMC with the same limits
+./simulation/modelica/NBackend/ScalableTestsuite/BreakerNetwork.mos

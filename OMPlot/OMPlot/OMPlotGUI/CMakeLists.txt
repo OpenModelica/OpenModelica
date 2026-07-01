@@ -32,7 +32,7 @@ set(OMPLOTLIB_HEADERS OMPlot.h
                       LinearScaleEngine.h)
 
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})
-target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
+target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE OMPLOTLIB_LIBRARY)
 
 if(MSVC)
   set_target_properties(OMPlotLib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)

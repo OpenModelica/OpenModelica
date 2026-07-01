@@ -80,12 +80,16 @@ private:
   void translateModel();
   void writeTranslationOutput(QString output, QColor color);
   void translationProcessFinishedHelper();
+// Qt for WebAssembly has no QProcess; CRML translation runs in the omc worker on
+// the web build, so the subprocess-driven slots are unavailable there.
+#if QT_CONFIG(process)
 private slots:
   void translationProcessStarted();
   void readTranslationStandardOutput();
   void readTranslationStandardError();
   void translationProcessError(QProcess::ProcessError error);
   void translationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 public slots:
   void cancelTranslation();
 signals:

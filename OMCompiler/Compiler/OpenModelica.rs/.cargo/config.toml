@@ -1,0 +1,14 @@
+# Scoped to the wasm target, so native builds are unaffected.
+#
+# `getrandom`: the wasm32 build pulls it (via charton → ahash) for seeding hash
+# maps. getrandom 0.3 has no default backend on wasm32-unknown-unknown: the
+# JS-backed one must be selected with this cfg *and* the `wasm_js` feature (see
+# libopenmodelica_compiler's wasm dependencies).
+#
+# `-Zcodegen-backend=llvm`: the workspace `profile.dev` selects the cranelift
+# rustc backend (fast native builds), which cannot target wasm32. A later
+# `-Zcodegen-backend` wins, so this forces LLVM for every wasm32 build (trunk,
+# wasm/build.sh, plain `cargo build --target wasm32-...`) without touching the
+# native profile.
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"', '-Zcodegen-backend=llvm']

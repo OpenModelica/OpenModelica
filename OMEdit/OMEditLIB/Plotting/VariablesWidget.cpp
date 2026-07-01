@@ -58,6 +58,8 @@
 #include <QMenu>
 #include <QToolBar>
 
+#include <algorithm>
+
 using namespace OMPlot;
 
 namespace VariableItemData {
@@ -693,6 +695,50 @@ void VariablesTreeModel::removeVariableTreeItem(VariablesTreeItem *pVariablesTre
 }
 
 /*!
+ * \brief sortVariablesTreeItemChildren
+ * Recursively sorts a tree item's children by the natural sort of their display
+ * name. The comparator calls the non-virtual VariablesTreeItem::data, so unlike
+ * QSortFilterProxyModel::lessThan there is no virtual call_indirect (which traps
+ * under Asyncify on wasm).
+ * \param pVariablesTreeItem
+ */
+static void sortVariablesTreeItemChildren(VariablesTreeItem *pVariablesTreeItem)
+{
+  std::sort(pVariablesTreeItem->mChildren.begin(), pVariablesTreeItem->mChildren.end(),
+            [](VariablesTreeItem *pLeft, VariablesTreeItem *pRight) {
+              return StringHandler::naturalSort(pLeft->data(0, Qt::DisplayRole).toString(),
+                                                pRight->data(0, Qt::DisplayRole).toString());
+            });
+  for (VariablesTreeItem *pChild : pVariablesTreeItem->mChildren) {
+    sortVariablesTreeItemChildren(pChild);
+  }
+}
+
+/*!
+ * \brief VariablesTreeModel::sortVariablesTreeItems
+ * Sorts the variable tree in place (each node's children by natural sort),
+ * preserving persistent indexes. Used on wasm instead of the proxy sort.
+ */
+void VariablesTreeModel::sortVariablesTreeItems()
+{
+  emit layoutAboutToBeChanged();
+  const QModelIndexList oldIndexes = persistentIndexList();
+  QVector<VariablesTreeItem*> items;
+  items.reserve(oldIndexes.size());
+  for (const QModelIndex &index : oldIndexes) {
+    items << static_cast<VariablesTreeItem*>(index.internalPointer());
+  }
+  sortVariablesTreeItemChildren(mpRootVariablesTreeItem);
+  for (int i = 0; i < oldIndexes.size(); ++i) {
+    VariablesTreeItem *pItem = items.at(i);
+    if (pItem) {
+      changePersistentIndex(oldIndexes.at(i), createIndex(pItem->row(), oldIndexes.at(i).column(), pItem));
+    }
+  }
+  emit layoutChanged();
+}
+
+/*!
  * \brief VariablesTreeModel::insertVariablesItems
  * Inserts the variables in the Variable Browser.
  * \param fileName
@@ -743,6 +789,24 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     infoFileName = QString("%1_info.json").arg(text);
   }
   bool readingVariablesFromInitFile = false;
+#if defined(__EMSCRIPTEN__)
+  // _init.xml lives in omc's cwd (the working directory) in the worker VFS; read it
+  // from there (QFile can't reach the worker store).
+  extern QByteArray omcWorkerReadFile(const char *path);
+  QByteArray initData = omcWorkerReadFile(QString("%1/%2").arg(filePath, initFileName).toUtf8().constData());
+  if (!initData.isEmpty()) {
+    QXmlStreamReader initXmlReader(initData);
+    readingVariablesFromInitFile = variablesList.isEmpty();
+    parseInitXml(initXmlReader, simulationOptions, &variablesList);
+    if (initXmlReader.hasError()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFileName, initXmlReader.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFileName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+#else
   QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
   if (initFile.exists()) {
     if (initFile.open(QIODevice::ReadOnly)) {
@@ -751,11 +815,20 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QXmlStreamReader initXmlReader(data);
       readingVariablesFromInitFile = variablesList.isEmpty();
       parseInitXml(initXmlReader, simulationOptions, &variablesList);
+      if (initXmlReader.hasError()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to parse %1: %2").arg(initFile.fileName(), initXmlReader.errorString()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
     } else {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
+  } else if (!simulationOptions.isInteractiveSimulation() && variablesList.isEmpty()) {
+    // No init file and no variable list given: the Variable Browser will be empty.
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The initialization file %1 was not found; the Variable Browser may be incomplete.").arg(initFile.fileName()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
+#endif
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
@@ -1231,9 +1304,11 @@ void VariablesTreeModel::openTransformationsBrowser()
           checkForProfilingFiles = false;
         }
       }
+#if !defined(__EMSCRIPTEN__)
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
       pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
+#endif
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
@@ -1543,8 +1618,18 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   }
   mOpenedResultFileName = "";
   initializeVisualization();
+#if defined(__EMSCRIPTEN__)
+  // QSortFilterProxyModel::sort traps under Asyncify on wasm: the proxy's
+  // lessThan virtual dispatch is a call_indirect whose function pointer is
+  // threaded through Asyncify's instrumentation and gets mis-typed. Sort the
+  // source items directly instead (a non-virtual comparator, no call_indirect)
+  // and leave the proxy's own sorting off — the proxy then shows source order.
+  mpVariablesTreeModel->sortVariablesTreeItems();
+  mpVariablesTreeView->setSortingEnabled(false);
+#else
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
+#endif
   // since we cleared the filter above so we need to apply it back.
   findVariables();
   MainWindow::instance()->getStatusBar()->clearMessage();
@@ -2324,6 +2409,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
             pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
+#if !defined(__EMSCRIPTEN__)
             OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
             if (pOpcUaClient) {
               Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
@@ -2334,15 +2420,18 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pCurveData->setAxisVectors(memory);
               pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
             }
+#endif
           }
         }
       } else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
         // remove the variable from the data fetch list
+#if !defined(__EMSCRIPTEN__)
         OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
         if (pOpcUaClient) {
           Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
           pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
         }
+#endif
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
           if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
@@ -2577,10 +2666,16 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
       pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
     }
     int port = pVariablesTreeRootItem->getSimulationOptions().getInteractiveSimulationPortNumber();
+#if !defined(__EMSCRIPTEN__)
     OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
     if (pOpcUaClient) {
       pOpcUaClient->writeValue(variableValue, variableName);
     }
+#else
+    Q_UNUSED(port);
+    Q_UNUSED(variableValue);
+    Q_UNUSED(variableName);
+#endif
 
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);

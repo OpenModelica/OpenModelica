@@ -20,5 +20,5 @@ BEGIN
     END
   END
 END
-IDI_ICON1   ICON  DISCARDABLE  "..\\OMEditLIB\\Resources\\icons\\omedit.ico"
+IDI_ICON1   ICON  DISCARDABLE  "../OMEditLIB/Resources/icons/omedit.ico"
 1           24    DISCARDABLE "OMEdit.manifest"

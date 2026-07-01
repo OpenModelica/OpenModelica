@@ -37,6 +37,43 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#if defined(__EMSCRIPTEN__)
+
+// No antlr4 runtime / OMParser on the wasm build, so FlatModelica parsing is
+// unavailable; passthrough/no-op bodies.
+#include "Parser.h"
+
+QString FlatModelica::Parser::getModelicaComment(QString element)
+{
+  return element;
+}
+
+void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &, QString &type, QString &modifier, QString &comment)
+{
+  type.clear();
+  modifier.clear();
+  comment.clear();
+}
+
+void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QString &, QString &type, QString &modifier, QString &comment)
+{
+  type.clear();
+  modifier.clear();
+  comment.clear();
+}
+
+void FlatModelica::Parser::getModifierFromElementModification(const QString &, QString &modifier)
+{
+  modifier.clear();
+}
+
+QString FlatModelica::Parser::getModificationFromStartAndStopInterval(antlr4::Token *, antlr4::Token *)
+{
+  return "";
+}
+
+#else
+
 #define ANTLR4CPP_STATIC
 #include "antlr4-runtime.h"
 #include "modelicaLexer.h"
@@ -183,3 +220,5 @@ QString FlatModelica::Parser::getModificationFromStartAndStopInterval(antlr4::To
   }
   return "";
 }
+
+#endif // __EMSCRIPTEN__

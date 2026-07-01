@@ -2916,7 +2916,9 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("displayUnknownFrames", displayUnknownFrames);
   }
+#if !defined(__EMSCRIPTEN__)
   MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+#endif
 
   bool clearOutputOnNewRun = mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked();
   if (clearOutputOnNewRun == OptionsDefaults::Debugger::clearOutputOnNewRun) {
@@ -5239,7 +5241,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new ComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+#if defined(__EMSCRIPTEN__)
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("wasm-jit"));
+#else
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+#endif
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));

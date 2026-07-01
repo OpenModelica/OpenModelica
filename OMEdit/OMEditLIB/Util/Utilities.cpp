@@ -58,6 +58,7 @@ extern "C" {
 extern const char* System_openModelicaPlatform();
 }
 
+#if !defined(__EMSCRIPTEN__)
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -67,6 +68,7 @@ SplashScreen *SplashScreen::instance()
   }
   return mpInstance;
 }
+#endif
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
@@ -489,6 +491,7 @@ ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentL
   setForeground(mColor);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief QDetachableProcess::QDetachableProcess
  * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
@@ -533,6 +536,7 @@ void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
   setProcessState(QProcess::NotRunning);
 }
 #endif
+#endif // QT_CONFIG(process)
 
 
 JsonDocument::JsonDocument(QObject *pParent)
@@ -952,7 +956,9 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#if !QT_CONFIG(process)
+  Q_UNUSED(pProcess); /* no QProcess on wasm */
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)

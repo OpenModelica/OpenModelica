@@ -188,9 +188,11 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem, bool inter
   // export the model to a temp directory and send the file location.
   QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
+#if !defined(__EMSCRIPTEN__)
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName, interactive);
     MessagesWidget::instance()->addSimulationOutputTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
+#endif
   }
 }
 

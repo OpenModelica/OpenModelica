@@ -94,13 +94,15 @@ private:
   bool mIsZipCompilationProcessKilled;
   bool mIsZipCompilationProcessRunning;
   void runPostCompilation();
-  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void writeCompilationOutput(QString output, QColor color);
   void writePostCompilationOutput(QString output, QColor color);
-  void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void zipFMU();
-  void ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void setDefaults();
+// No QProcess on Qt for WebAssembly; FMU export runs in the omc worker there.
+#if QT_CONFIG(process)
+  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+  void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+  void ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
 private slots:
   void compilationProcessStarted();
   void readCompilationStandardOutput();
@@ -117,6 +119,7 @@ private slots:
   void readZipCompilationStandardError();
   void ZipCompilationProcessError(QProcess::ProcessError error);
   void ZipCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 public slots:
   void cancelCompilation();
 signals:

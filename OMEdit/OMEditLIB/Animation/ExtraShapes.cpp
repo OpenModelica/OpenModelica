@@ -51,6 +51,26 @@
 #include "ExtraShapes.h"
 #include <iostream>
 
+namespace {
+// osg-typed normalize/cross for this OSG geometry builder, kept local so it does
+// not depend on the now backend-neutral helpers in Visualization.h.
+osg::Vec3f normalize(osg::Vec3f vec)
+{
+  osg::Vec3f vecOut;
+  if (vec.length() >= 100 * 1.e-15)
+    vecOut = vec / vec.length();
+  else
+    vecOut = vec / (100 * 1.e-15);
+  return vecOut;
+}
+
+osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2)
+{
+  return osg::Vec3f(vec1[1] * vec2[2] - vec1[2] * vec2[1],
+                    vec1[2] * vec2[0] - vec1[0] * vec2[2],
+                    vec1[0] * vec2[1] - vec1[1] * vec2[0]);
+}
+}
 
 /*!
  * \brief absoluteVector

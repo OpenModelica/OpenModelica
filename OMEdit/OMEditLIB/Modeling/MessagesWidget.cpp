@@ -596,6 +596,7 @@ void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
  */
 bool MessagesWidget::closeTab(int index)
 {
+#if !defined(__EMSCRIPTEN__)
   // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pSimulationOutputWidget
@@ -622,6 +623,7 @@ bool MessagesWidget::closeTab(int index)
     emit messageTabClosed(index);
     return true;
   }
+#endif
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {

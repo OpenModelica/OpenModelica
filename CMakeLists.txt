@@ -35,6 +35,10 @@ include(cmake/omc_check_exists.cmake)
 ## Get the revision info. The version is saved in the variable SOURCE_REVISION
 include(cmake/omc_git_revision.cmake)
 
+# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W/OpenBLAS/Boost.
+# Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
+include(${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/Compiler/OpenModelica.rs/.cmake/windows-deps.cmake)
+
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
 # well as linux. See the file for more info.
@@ -54,6 +58,20 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 ## OPTIONS #################################################################################################
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+
+# Web (wasm) target: build the browser/Node WebAssembly bundle of omc. It is a
+# Rust-omc build (OM_OMC_ENABLE_RUST) compiled for wasm32-unknown-unknown, so the
+# C libraries and the *Qt* GUI clients are unused. We force Rust mode on and skip
+# the native runtime / 3rdParty / libraries / testsuite subdirectories. The Qt
+# clients (the OM_ENABLE_GUI_CLIENTS subdirs below) are guarded with NOT
+# OM_OMC_WASM rather than forcing the flag off, so OM_ENABLE_GUI_CLIENTS still
+# carries the user's intent into the wasm build — where it selects the OMShell
+# *web* pages (omshell_egui + omshell_dioxus; see omc_rust_setup_wasm). Mode/
+# profile is chosen with RUST_OMC_WASM_MODE.
+omc_option(OM_OMC_WASM "Build only the WebAssembly (browser/Node) omc bundle." OFF)
+if(OM_OMC_WASM)
+  set(OM_OMC_ENABLE_RUST ON CACHE BOOL "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." FORCE)
+endif()
 
 ## On Conda-forge this should be disabled
 omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
@@ -223,7 +241,10 @@ enable_testing()
 
 omc_add_subdirectory(OMCompiler)
 
-if(OM_ENABLE_GUI_CLIENTS)
+# The Qt GUI clients cannot target wasm; in the wasm build OM_ENABLE_GUI_CLIENTS
+# instead selects the OMShell web pages (handled in omc_rust_setup_wasm), so skip
+# these native subdirs there.
+if(OM_ENABLE_GUI_CLIENTS AND NOT OM_OMC_WASM)
   # select qt version 5/6
   set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
 
@@ -240,8 +261,12 @@ if(OM_ENABLE_GUI_CLIENTS)
   endif()
 endif()
 
-omc_add_subdirectory(libraries)
-omc_add_subdirectory(testsuite)
+# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+# skip them so `make all` builds only the wasm target in that mode.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(libraries)
+  omc_add_subdirectory(testsuite)
+endif()
 
 ## Packaging ##########################################################################################
 # Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.

@@ -10,7 +10,10 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrt)
 ## OPTIONS #################################################################################################
 
 omc_option(OM_OMC_ENABLE_FORTRAN "Enable Fortran support. Fortran is required if you enable IPOPT support." ON)
-if(OM_OMC_ENABLE_FORTRAN)
+# Fortran is only needed by the C simulation runtime (MOO / old optimization),
+# which the wasm/web bundle does not build — so don't require a Fortran compiler
+# in wasm mode even though the option stays nominally ON.
+if(OM_OMC_ENABLE_FORTRAN AND NOT OM_OMC_WASM)
   enable_language(Fortran)
 endif()
 
@@ -38,6 +41,12 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
+# Build the Rust (mmtorust) omc port instead of the bootstrapped C omc. When ON,
+# the compiler is produced by transpiling the MetaModelica sources to Rust and
+# `cargo build`ing them (see Compiler/.cmake/rust_omc.cmake); bomc/omc are never
+# compiled from C. The simulation/function runtime C libraries are still built.
+omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." OFF)
+
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,
@@ -63,11 +72,18 @@ if(WIN32)
     endif()
   endif()
 endif()
-target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+# Build dir first: it holds the CMake-generated omc_config.unix.h (the source dir
+# may hold the autotools build's copy); source dir provides omc_config.h itself.
+target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 ## Subdirectories ##########################################################################################
-omc_add_subdirectory(3rdParty)
+# The C/C++ 3rd-party libraries (fmilib, libzmq, lapack, …) are linked only by the
+# native omc artifacts and the simulation runtime. The wasm/web bundle uses none
+# of them (the cdylib is built --no-default-features), so skip them in wasm mode.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(3rdParty)
+endif()
 
 
 # These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.
@@ -81,7 +97,20 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
 endif()
 
-omc_add_subdirectory(SimulationRuntime)
-omc_add_subdirectory(Parser)
+# The C simulation/function runtime libraries are dlopened by the native omc and
+# installed alongside it; the wasm/web bundle does not use them, so skip them in
+# wasm mode (leaving `make all` to build only the wasm target).
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(SimulationRuntime)
+endif()
+# The ANTLR Modelica parser (omparse) and the Examples are part of the C omc
+# toolchain only — the Rust omc port has its own parser and links neither. They
+# also pull in the C compiler runtime (omc::compiler::runtime), which the Rust
+# build deliberately does not build. Skip them in Rust mode.
+if(NOT OM_OMC_ENABLE_RUST)
+  omc_add_subdirectory(Parser)
+endif()
 omc_add_subdirectory(Compiler)
-omc_add_subdirectory(Examples)
+if(NOT OM_OMC_ENABLE_RUST)
+  omc_add_subdirectory(Examples)
+endif()

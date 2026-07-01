@@ -71,11 +71,23 @@
 
 /* Skip compiling against some stuff for the JavaScript runtime */
 #if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
+/* Guarded so a build that also sets these on the command line (the CMake build)
+   can share this autotools-generated header without a redefinition clash. */
+#ifndef WITH_SUNDIALS
 #define WITH_SUNDIALS
+#endif
+#ifndef OMC_HAVE_IPOPT
 @OMC_HAVE_IPOPT@
+#endif
+#ifndef OMC_HAVE_PRIMME
 @OMC_HAVE_PRIMME@
+#endif
+#ifndef OMC_HAVE_COLPACK
 @OMC_HAVE_COLPACK@
+#endif
+#ifndef WITH_SUITESPARSE
 @WITH_SUITESPARSE@
+#endif
 #define WITH_HWLOC @WITH_HWLOC@
 @WITH_UUID@
 #endif
