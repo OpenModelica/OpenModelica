@@ -67,6 +67,13 @@ void DynamicAnnotationTest::initTestCase()
   if (!MainWindow::instance()->getOMCProxy()->existClass("EnableInReplaceable1")) {
     QFAIL(QString("Failed to load file %1").arg(enableInReplaceable1FileName).toStdString().c_str());
   }
+
+  // load EnableNonLiteral.mo (regression model for #15965)
+  const QString enableNonLiteralFileName = QFINDTESTDATA("EnableNonLiteral.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(enableNonLiteralFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("EnableNonLiteral")) {
+    QFAIL(QString("Failed to load file %1").arg(enableNonLiteralFileName).toStdString().c_str());
+  }
 }
 
 void DynamicAnnotationTest::evaluate()
@@ -122,6 +129,17 @@ void DynamicAnnotationTest::evaluate_data()
   QTest::newRow("Evaluate Dialog(enable = booleanParam) in record")
       << "EnableInReplaceable.ClassWithInstances"
       << "mainRecord"
+      << "realParam"
+      << true;
+
+  // Regression test for #15965: enable is a call to a user function that the
+  // FlatModelica evaluator cannot reduce, so it evaluates to the non-literal
+  // fixed point userPredicate(true). This used to make evaluate_helper recurse
+  // until the stack overflowed. It must now terminate; the non-literal result
+  // leaves the enable at its default (true).
+  QTest::newRow("Evaluate Dialog(enable = userPredicate(booleanParam)) does not recurse")
+      << "EnableNonLiteral.ClassWithInstances"
+      << "mainClass"
       << "realParam"
       << true;
 }
