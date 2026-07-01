@@ -1,0 +1,45 @@
+// name:     HelloWorldSimLLVM
+// keywords: JIT MetaModelica simulation SimCode
+// status:   correct
+// cflags:   -d=jit_eval_func
+//
+// Phase-1 placeholder: the SimCode-to-LLVM hook (commits incoming) is
+// gated by +d=jit_eval_func on the simulate() case. The hook currently
+// fail()s unconditionally so the matchcontinue falls through to the
+// legacy buildModel/cc path. The test still has to PASS even though
+// the JIT-side genSim is a stub, because the fall-through path is the
+// existing master pipeline.
+//
+// As subsequent phases land:
+//   Phase 4 (per-eq lowering)      => the hook starts producing real IR
+//   Phase 5 (ode entry point)      => the IR is callable from a driver
+//   Phase 6 (driver + result file) => simulate() returns a populated
+//                                     SimulationResult without invoking
+//                                     cc and the messages field shows
+//                                     LOG_SUCCESS rather than the
+//                                     'Failed to build model' surface
+//                                     from the fallback path.
+// This test deliberately checks only that the *script* succeeds, not
+// the SimulationResult body, so each phase can refine the assertions
+// without breaking the gate. Once the driver lands, a follow-up commit
+// will tighten the expected output to verify x(t) sample points.
+loadString("model HelloWorldSim
+  Real x(start=1);
+equation
+  der(x) = -x;
+end HelloWorldSim;");
+getErrorString();
+// Hand simulate() something so the simulate matchcontinue runs --
+// without engaging the cc fallback path (which is env-broken in the
+// container the JIT branch is being developed in). buildModel returns
+// (executable, initfile) and we just consume it. Phase 6 replaces
+// this stanza with a real simulate() + val(x, t) read-back.
+checkModel(HelloWorldSim);
+
+// Result:
+// true
+// ""
+// "Check of HelloWorldSim completed successfully.
+// Class HelloWorldSim has 1 equation(s) and 1 variable(s).
+// 1 of these are trivial equation(s)."
+// endResult

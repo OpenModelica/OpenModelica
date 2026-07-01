@@ -62,6 +62,31 @@ set(OMC_RUNTIIME_SOURCES
     OMGraphics.cpp
     OMGraphics_omc.cpp)
 
+# Pick the LLVM backend: real implementation when OM_OMC_ENABLE_LLVM is ON,
+# otherwise the no-op stubs. The stubs match the symbol list expected by
+# Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
+if(OM_OMC_ENABLE_LLVM)
+  # llvm_gen_wrappers.c defines run_jit_internal which llvm_gen.cpp
+  # forward-declares and the JIT path calls at runtime. llvm_gen.cpp holds both
+  # the IR backend and the in-process JIT; omc_jit_perform_simulation_adapter.c
+  # drives a simulation against the JIT'd model.
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c llvm_gen_layout.c
+    omc_jit_perform_simulation_adapter.c)
+  # llvm_gen_layout.c uses offsetof() on the runtime DATA struct, so it needs
+  # the simulation_data.h header on its include path. The header itself lives in
+  # OMCompiler/SimulationRuntime/c/ and is part of the runtime build; we only
+  # need its layout, not the full runtime here.
+  # omc_jit_perform_simulation_adapter.c re-uses the runtime's solver .inc files
+  # and needs the same include path.
+  set_source_files_properties(
+    llvm_gen_layout.c
+    omc_jit_perform_simulation_adapter.c
+    PROPERTIES INCLUDE_DIRECTORIES
+      "${CMAKE_SOURCE_DIR}/OMCompiler/SimulationRuntime/c")
+else()
+  list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
+endif()
+
 
 # ######################################################################################################################
 # Library: omcruntime
@@ -82,6 +107,68 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
 
 if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+endif()
+
+# LLVM backend (revive of PR #11766). Prefer LLVM 18 then 16. The backend
+# uses Core, MCJIT, Orc (legacy ORCv1 in the branch — Stage 3 will port to
+# ORCv2), TransformUtils, IPO and the native target. Component names are
+# resolved via llvm_map_components_to_libnames. Gated on the general
+# OM_OMC_ENABLE_LLVM so a future AoT path reuses the same find + libs.
+if(OM_OMC_ENABLE_LLVM)
+  # LLVM 16's LLVMSupport export references zstd::libzstd_shared as a link
+  # dependency. Some Debian/Ubuntu images ship libzstd.so without the CMake
+  # config that defines that target — declare a thin imported shim here so
+  # find_package(LLVM) does not abort. Harmless when zstd's own CMake
+  # config defines the target first.
+  if(NOT TARGET zstd::libzstd_shared)
+    find_library(OMC_ZSTD_LIB
+                 NAMES zstd libzstd libzstd.so.1
+                 PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+    if(NOT OMC_ZSTD_LIB)
+      # Fall back to the SONAME — Debian/Ubuntu without -dev have no libzstd.so symlink.
+      find_file(OMC_ZSTD_SO
+                NAMES libzstd.so.1
+                PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+      set(OMC_ZSTD_LIB ${OMC_ZSTD_SO})
+    endif()
+    if(OMC_ZSTD_LIB)
+      message(STATUS "Defining zstd::libzstd_shared shim for LLVM at ${OMC_ZSTD_LIB}.")
+      add_library(zstd::libzstd_shared SHARED IMPORTED)
+      set_target_properties(zstd::libzstd_shared PROPERTIES IMPORTED_LOCATION ${OMC_ZSTD_LIB})
+    endif()
+  endif()
+
+  # Prefer LLVM 18 then 16, but fall back to whatever LLVM the system ships.
+  # NB: a bare major request (e.g. "18") is rejected by Debian/Ubuntu's
+  # LLVMConfigVersion.cmake, which insists on a matching major.minor — so the
+  # versioned probes below only succeed on distros that relax that check. The
+  # unversioned fallback is what actually finds LLVM on Debian-family systems.
+  # The ORC v2 LLJIT surface used by OMC_JIT.hpp is stable across 16/17/18.
+  find_package(LLVM 18 CONFIG QUIET)
+  if(NOT LLVM_FOUND)
+    find_package(LLVM 16 CONFIG QUIET)
+  endif()
+  if(NOT LLVM_FOUND)
+    find_package(LLVM CONFIG REQUIRED)
+  endif()
+  if(LLVM_PACKAGE_VERSION VERSION_LESS 16)
+    message(FATAL_ERROR "OMC LLVM JIT needs LLVM >= 16 (ORC v2 LLJIT); found ${LLVM_PACKAGE_VERSION}.")
+  endif()
+  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} for OMC (headers at ${LLVM_INCLUDE_DIRS}).")
+
+  llvm_map_components_to_libnames(LLVM_JIT_LIBS
+    core orcjit mcjit executionengine
+    transformutils ipo support irreader
+    bitwriter
+    native nativecodegen)
+
+  target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})
+  target_compile_definitions(omcruntime PUBLIC ${LLVM_DEFINITIONS_LIST})
+  target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM)
+  # Path to the matching clang/llvm-link, used to lower a model's C to bitcode
+  # for the `llvm` simCodeTarget regardless of the configured CC.
+  target_compile_definitions(omcruntime PRIVATE OMC_LLVM_TOOLS_DIR="${LLVM_TOOLS_BINARY_DIR}")
+  target_link_libraries(omcruntime PUBLIC ${LLVM_JIT_LIBS})
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})

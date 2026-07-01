@@ -77,6 +77,42 @@ constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
 constant Integer backendCevalInterface = 32;
+// SimCodeToLLVM: per-build list<String> of <Model>_*.c segment files
+// that SimCodeToLLVM successfully emitted in-memory beyond what the
+// static runtimeEntryCatalog declares (e.g. _06inz.c when initial
+// equations all lower cleanly). compileModelToBitcode reads it via
+// SimCodeToLLVM.displacedSegmentFiles() and skips the matching clang
+// invocations. Reset to {} at the start of every genSim call.
+constant Integer simCodeToLLVMDynamicSkips = 33;
+
+// SimCodeMain: the per-build modelGUID. SimCodeMain.callTargetTemplates
+// generates one System.getUUIDStr() to label this codegen unit;
+// SerializeInitXML stamps it into <prefix>_init.xml and CodegenC's
+// setupDataStruc bakes it into modelData->modelGUID. The simulation
+// runtime cross-checks the two at startup. Under -d=jitSimulate the
+// SCTL main shim has to use the SAME guid so the runtime accepts the
+// init.xml that CodegenC's satellites still emit. The slot is set
+// once per codegen and read both from callTargetTemplates and from
+// SimCodeToLLVM.emitMainShimBlock.
+constant Integer simCodeModelGuid = 34;
+
+// SimCodeMain: Boolean "SCTL covers every dynamic equation in this
+// SimCode". Set by SimCodeToLLVM.canCoverModel before callTargetTemplates
+// runs under -d=jitSimulate. The C case reads it: when false, fall back
+// to emitting <Model>.c so the dangling <Model>_eqFunction_N refs from
+// the still-clang'd satellites resolve at JIT-link time. Default is
+// false (the safer fallback) for any path that does not flip it.
+constant Integer simCodeSctlCanCover = 35;
+
+// SimCodeToLLVM: the per-build model symbol prefix, set once at the start of
+// genSim to System.makeC89Identifier(simCode.fileNamePrefix). SCTL must name
+// its emitted model-level symbols (functionODE, callback, setupDataStruc, ...)
+// the same way CodegenC does, namely from fileNamePrefix and NOT from the
+// model name, so the JIT linker resolves SCTL's IR against the clang'd
+// satellites. The two coincide for the default fileNamePrefix but diverge for
+// an explicit one (e.g. simulate(M, fileNamePrefix="x")). Read via
+// SimCodeToLLVM.modelFilePrefix().
+constant Integer simCodeToLLVMFilePrefix = 36;
 
 // indexes in System.tick
 // ----------------------

@@ -2252,7 +2252,6 @@ algorithm
     case DAE.SHARED_LITERAL(exp = e) then typeof(e);
     // A little crazy, but sometimes we call typeof on things that will not be used in the end...
     case DAE.EMPTY(ty = tp) then tp;
-
     case e
       algorithm
         msg := "- Expression.typeof failed for " + ExpressionBasics.printExpStr(e);

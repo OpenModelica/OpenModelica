@@ -365,6 +365,7 @@ if true then /* Suppress output */
     "../MidCode/DAEToMid.mo",
     "../MidCode/MidToMid.mo",
     "../MidCode/HashTableMidVar.mo",
+    "../MidCode/MidCodeUtil.mo",
 
   // "NFFrontEnd";
     "../NFFrontEnd/BaseModelica.mo",
@@ -514,6 +515,7 @@ if true then /* Suppress output */
     "../Template/NFInstDumpTpl.mo",
     "../Template/SimCodeDump.mo",
     "../Template/VisualXMLTpl.mo",
+    "../Template/MidCodeDump.mo",
 
     "../Util/Autoconf.mo",
     "../Util/AvlTree.mo",
@@ -554,7 +556,28 @@ if true then /* Suppress output */
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };
-  files := cat(1, alwaysfiles, backendfiles);
+  // "LLVM": default to the stub package; opt-in to the real LLVM
+  // sources when OPENMODELICA_LLVM_JIT="Yes". The inline-if
+  // expression form ( llvmfiles := if cond then ... else ... ; )
+  // tripped the bootstrap omc Jenkins uses with a cryptic
+  //   Type error in conditional 'true'. Expected Boolean, got Boolean.
+  // even with the backendfiles-style spelling. Use a plain
+  // statement-form if so the assignment is two separate ones --
+  // no inline expression, no surprise type unification.
+  llvmfiles := {
+    "../Stubs/EXT_LLVM.mo",
+    "../Stubs/MidToLLVM.mo",
+    "../Stubs/SimCodeToLLVM.mo"
+  };
+  if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_LLVM_JIT") == "Yes" then
+    llvmfiles := {
+      "../LLVM/MidToLLVMUtil.mo",
+      "../LLVM/EXT_LLVM.mo",
+      "../LLVM/MidToLLVM.mo",
+      "../LLVM/SimCodeToLLVM.mo"
+    };
+  end if;
+  files := cat(1, alwaysfiles, backendfiles, llvmfiles);
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
     print("Failed to load compiler sources:\n");

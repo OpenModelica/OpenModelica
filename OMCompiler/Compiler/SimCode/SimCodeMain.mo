@@ -110,6 +110,7 @@ import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
 import SimCodeFunctionUtil;
+import SimCodeToLLVM;
 import StateMachineFlatten;
 import SimCodeUtilShared;
 import SimCodeVar;
@@ -312,9 +313,22 @@ algorithm
   end if;
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  callTargetTemplates(simCode, Config.simCodeTarget());
-  timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-  ExecStat.execStat("Templates");
+  /* SimCode JIT hook (LLVM JIT revive). When +d=jitSimulate is set
+   * hand the freshly-built SimCode to SimCodeToLLVM.genSim before the
+   * legacy C-codegen path. genSim returns true if it has produced a
+   * complete in-memory module that supersedes the templates; on false
+   * (current behaviour for any model whose constructs are not yet
+   * covered) the templates run as before and Adrian's
+   * compileModelToBitcode/runModelViaLLVMJIT keystone takes over for
+   * the simulate() call. */
+  if Flags.isSet(Flags.JIT_SIMULATE) and SimCodeToLLVM.genSim(simCode) then
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("SimCode JIT");
+  else
+    callTargetTemplates(simCode, Config.simCodeTarget());
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("Templates");
+  end if;
   return;
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
@@ -578,9 +592,25 @@ protected
 
 
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
+  String effectiveTarget;
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
-  () := match target
+  /* llvm-jit re-uses the C codegen path (every satellite .c file, the
+   * _model.h header, the _init.xml / _info.json metadata) but skips
+   * the <Model>.c driver emission -- SimCodeToLLVM owns the callback
+   * table + setupDataStruc + main shim as LLVM IR and the
+   * perform_simulation adapter in Compiler/runtime/ owns the solver
+   * driver. Route llvm-jit through the C case and gate the driver
+   * emission on the original target string below. */
+  // Statement-form if: the tarball bootstrap omc rejects the inline
+  // expression form here with "Type error in conditional 'true'.
+  // Expected Boolean, got Boolean." Same workaround as the llvmfiles
+  // gate in LoadCompilerSources.mos.
+  effectiveTarget := target;
+  if target == "llvm-jit" then
+    effectiveTarget := "C";
+  end if;
+  () := match effectiveTarget
     local
       String str, guid;
       list<PartialRunTpl> codegenFuncs;
@@ -599,6 +629,20 @@ algorithm
     case "C"
       algorithm
         guid := System.getUUIDStr();
+        /* When the user asked for the llvm-jit target, surface a
+         * loud warning iff SCTL cannot fully cover the model so the
+         * eventual JIT-link "Symbols not found" error is preceded
+         * by a clear "which feature is missing" diagnostic. We do
+         * NOT silently fall back to the C path -- the JIT mode is
+         * the JIT mode; the C path is `+simCodeTarget=C` (default). */
+        if target == "llvm-jit" and not SimCodeToLLVM.canCoverModel(simCode) then
+          Error.addCompilerWarning(
+            "SimCodeToLLVM: +simCodeTarget=llvm-jit selected but the model contains "
+            + "constructs SCTL does not yet lower (clocked partitions, state sets, "
+            + "algorithms, nonlinear/linear systems, sample(), or other unsupported "
+            + "equation classes). The JIT will fail loudly with 'Symbols not found' at "
+            + "materialization; either reduce the model or switch to +simCodeTarget=C.");
+        end if;
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
@@ -641,7 +685,9 @@ algorithm
           generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str);
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
-        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=""), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
+        if target <> "llvm-jit" then
+          codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=""), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
+        end if;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions, a_genericCalls=simCode.generic_loop_calls), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
         codegenFuncs := (function runToStr(func=function SerializeSparsityPattern.serialize(code=simCode))) :: codegenFuncs;

@@ -35,14 +35,16 @@
 
 encapsulated package MidCode
 
+type Function = Integer;
+type Record = Integer;
+
 uniontype Program
   record PROGRAM
     String name;
-    list<Integer> functions;
+    list<Function> functions;
+    list<Record> records;
   end PROGRAM;
 end Program;
 
-type Function = Integer;
-
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backendInterface");
 end MidCode;

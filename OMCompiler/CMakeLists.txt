@@ -38,6 +38,45 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
+# LLVM backend for the MetaModelica compiler (PR #11766 revive).
+# OM_OMC_ENABLE_LLVM: when ON the build finds a host LLVM (>= 16) and wires up
+# the real Compiler/LLVM/* MetaModelica sources plus the
+# Compiler/runtime/llvm_gen.cpp backend (IR generation and the in-process JIT
+# that runs it, -d=jitSimulate); when OFF it links against stubs. A single flag
+# is deliberate: IR generation and JIT execution currently share one
+# translation unit (llvm_gen.cpp), so there is nothing yet to gate separately.
+# If an ahead-of-time (AoT) path is added later -- and the JIT runtime is split
+# out of llvm_gen.cpp -- a JIT/AoT sub-option can be reintroduced under this
+# master.
+#
+# Default OFF: the LLVM backend is experimental and strictly opt-in. A build
+# that does not pass -DOM_OMC_ENABLE_LLVM=ON proceeds exactly as before through
+# the stub path, whether or not a host LLVM is installed -- so a machine or CI
+# image without llvm-dev (which today includes the build-deps image) is
+# completely unaffected, and the mere presence of an LLVM install never changes
+# the default build. Enable it explicitly to build and test the backend;
+# Compiler/runtime then locates the host LLVM, preferring 18 then 16. A
+# non-MSYS clang toolchain on Windows is left open; macOS and MSYS/MinGW Windows
+# are not supported.
+set(OM_OMC_LLVM_PLATFORM_OK FALSE)
+if(NOT APPLE)
+  if(NOT WIN32)
+    set(OM_OMC_LLVM_PLATFORM_OK TRUE)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW AND NOT MSYS)
+    set(OM_OMC_LLVM_PLATFORM_OK TRUE)
+  endif()
+endif()
+
+omc_option(OM_OMC_ENABLE_LLVM "Enable the LLVM backend (IR generation + in-process JIT) for the MetaModelica compiler (experimental, revive of PR #11766)." OFF)
+
+# Safety net: if the option is forced ON on an unsupported platform (macOS,
+# MSYS/MinGW Windows, a non-clang Windows compiler), turn it back off with a
+# warning rather than fail the build.
+if(OM_OMC_ENABLE_LLVM AND NOT OM_OMC_LLVM_PLATFORM_OK)
+  message(WARNING "OM_OMC_ENABLE_LLVM is not supported on this platform; forcing it OFF.")
+  set(OM_OMC_ENABLE_LLVM OFF CACHE BOOL "Enable the LLVM backend (IR generation + in-process JIT) for the MetaModelica compiler (experimental, revive of PR #11766)." FORCE)
+endif()
+
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,

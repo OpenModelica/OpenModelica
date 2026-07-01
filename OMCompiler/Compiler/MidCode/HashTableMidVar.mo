@@ -47,6 +47,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 public import MidCode;
+public import MidCodeUtil;
 protected import ComponentReference;
 protected import ComponentReferenceBasics;
 
@@ -96,7 +97,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,MidCode.varString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,MidCodeUtil.varString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="backend_tools");

@@ -72,6 +72,7 @@ import Binding;
 import BlockCallRewrite;
 import CevalScript;
 import CodegenWasmJit;
+import EXT_LLVM;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -131,6 +132,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeToLLVM;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
 import StateMachineFlatten;
@@ -1420,6 +1422,27 @@ algorithm
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
+    /* JIT-first simulate path (LLVM JIT revive). Engaged when the
+     * user passes +d=jit_eval_func -- the same gate that the
+     * function-eval JIT uses. Currently a placeholder: the hook
+     * builds a SimCode-shaped value (or fails) and hands it to
+     * SimCodeToLLVM.genSim. Phase 1 of the SimCode JIT lands the
+     * traversal skeleton in SimCodeToLLVM.mo; genSim returns false
+     * unconditionally there, so this case fail()s and the matchcontinue
+     * falls through to the legacy buildModel-based simulate case below.
+     * Phase 3+ will replace the False stub with real SimCode-to-LLVM
+     * lowering and an in-memory simulation driver. */
+    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      guard Flags.isSet(Flags.JIT_EVAL_FUNC)
+      algorithm
+        /* TODO Phase 3: extract SimCode from translateModel without
+         * triggering its C-file emission and hand it to
+         * SimCodeToLLVM.genSim. Until then this case is structurally
+         * present so the matchcontinue ordering is correct but it
+         * always fail()s to fall through to the legacy buildModel
+         * path. */
+      then fail();
+
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1470,10 +1493,14 @@ algorithm
            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-           // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable.
+           // Default path: spawn the native executable. The two JIT
+           // targets (wasm-jit, llvm-jit) run the simulation in-process
+           // instead. Dispatch is uniform on Config.simCodeTarget() --
+           // -d=jitSimulate aliases to "llvm-jit" inside Config.
            if Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           elseif Config.simCodeTarget() == "llvm-jit" then
+             resI := runModelViaLLVMJIT(exeDir, executable, logFile);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
            end if;
@@ -6177,6 +6204,142 @@ algorithm
   outExtDecl.annotation_ := moveAnnotationOptInfo(outExtDecl.annotation_, dstPath);
 end moveExternalDeclInfo;
 
+protected function compileModelToBitcode
+  "The -d=jitSimulate counterpart of CevalScript.compileModel: lower the model's
+   generated C (CodegenC output, in the current working directory) to a single
+   linked LLVM bitcode module <prefix>.bc, using the clang/llvm-link that omc
+   was configured against. The compile is driven by a generated shell script so
+   the makefile's (already fully expanded) CPPFLAGS are reused verbatim via
+   `eval`, independent of the configured CC.
+
+   The set of <Model>_*.c files skipped from clang is sourced from
+   SimCodeToLLVM.displacedSegmentFiles() (SCTL-emitted entry points) plus
+   a small set of files that CodegenC produces as pure includes-and-comments
+   for models that do not use the corresponding feature."
+  input String prefix;
+protected
+  String toolsDir, script, scriptFile;
+  Integer rc;
+  list<String> skipFiles;
+algorithm
+  toolsDir := EXT_LLVM.getLLVMToolsDir();
+  if stringEmpty(toolsDir) then
+    Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: this omc was built without LLVM JIT support."});
+    fail();
+  end if;
+  /* Nothing is unconditionally skipped. Every empty segment is a
+   * trivial clang invocation; every non-empty segment may export
+   * symbols the JIT needs (Modelica.Mechanics.Translational
+   * .Examples.Friction's _functions.c exports user-function
+   * bodies like omc_*ExternalCombiTable1D_constructor; First's
+   * _03lsy.c exports _initialLinearSystem). The dynamic skip list
+   * SCTL records into via recordDisplacedSegment remains the
+   * single source of truth: when SCTL emits the corresponding IR
+   * the clang step skips that .c file, otherwise clang owns it. */
+  skipFiles := SimCodeToLLVM.displacedSegmentFiles();
+  scriptFile := prefix + "_jitcompile.sh";
+  script := stringAppendList({
+    "#!/bin/bash\n",
+    "set -e\n",
+    // CPPFLAGS in the generated makefile is fully expanded (include dirs + -D
+    // defines); reuse it. `eval` re-tokenizes so the makefile's quoting around
+    // the -I paths is honoured.
+    "CPPFLAGS=$(grep '^CPPFLAGS=' ", prefix, ".makefile | cut -d= -f2-)\n",
+    // Match only this model's files: <prefix>.c plus <prefix>_*.c segments.
+    // The bare <prefix>*.c glob would also pull in sibling models that share
+    // a name prefix (e.g. HelloWorld*.c matches HelloWorldSim_*.c too),
+    // producing duplicate-symbol failures at llvm-link.
+    "shopt -s nullglob\n",
+    "SRCS=()\n",
+    "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
+    // Under -d=jitSimulate SimCodeMain skips the <prefix>.c emission
+    // (SimCodeToLLVM owns the driver in IR), so the literal entry in
+    // this for-loop expands to a non-existent path. nullglob does not
+    // strip literals -- check existence explicitly.
+    "  [ -e \"$f\" ] || continue\n",
+    // SimCodeToLLVM owns these entry points in-memory (either via a stub
+    // in the runtimeEntryCatalog or because the .c file is empty); skip
+    // clang so llvm-link does not see duplicate symbols and so we don't
+    // waste a clang invocation per file.
+    "  case \"$f\" in\n",
+    stringAppendList(list("    " + prefix + skip + ") continue ;;\n"
+                           for skip in skipFiles)),
+    "  esac\n",
+    "  SRCS+=(\"$f\")\n",
+    "done\n",
+    "BCS=()\n",
+    // Fan out clang invocations in parallel: each .c -> .bc compile is
+    // independent and the per-process clang startup cost dominates the
+    // actual work for the trivial-but-numerous segments OpenModelica
+    // emits (HelloWorld spent ~700 ms on six sequential ~120 ms clang
+    // invocations). Bound concurrency to nproc to keep the build
+    // machine responsive.
+    "JOBS=$(nproc 2>/dev/null || echo 4)\n",
+    "PIDS=()\n",
+    "for f in \"${SRCS[@]}\"; do\n",
+    "  while [ ${#PIDS[@]} -ge $JOBS ]; do\n",
+    "    if ! wait -n; then exit 1; fi\n",
+    "    NEW_PIDS=(); for p in \"${PIDS[@]}\"; do kill -0 $p 2>/dev/null && NEW_PIDS+=($p); done; PIDS=(\"${NEW_PIDS[@]}\")\n",
+    "  done\n",
+    "  ( eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\" ) &\n",
+    "  PIDS+=($!)\n",
+    "  BCS+=(\"${f%.c}.bc\")\n",
+    "done\n",
+    "wait\n",
+    // SimCodeToLLVM's bitcode arrives in-memory via stashCurrentModuleAsBitcode;
+    // omc_runModelViaJIT adds it to the LLJIT before this <prefix>.bc.
+    // When SCTL owns every .c file the catalog covers (and -d=jitSimulate
+    // is also skipping <prefix>.c), BCS is empty -- nothing for llvm-link
+    // to merge, and runModelViaLLVMJIT detects the missing <prefix>.bc and
+    // passes an empty bitcode path so the JIT relies on g_sctlBitcodeBytes
+    // alone.
+    "if [ ${#BCS[@]} -gt 0 ]; then\n",
+    "  \"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
+    "  mv ", prefix, "_linked.bc ", prefix, ".bc\n",
+    "fi\n"
+  });
+  System.writeFile(scriptFile, script);
+  rc := System.systemCall("/bin/bash " + scriptFile, prefix + "_jitcompile.log");
+  if rc <> 0 then
+    Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: failed to lower model to LLVM bitcode (see " + prefix + "_jitcompile.log)."});
+    fail();
+  end if;
+end compileModelToBitcode;
+
+protected function runModelViaLLVMJIT
+  "The -d=jitSimulate counterpart of spawning the model executable: JIT-compile
+   the model's linked bitcode (<prefix>.bc) with LLVM ORC and run it in-process.
+   Runs from exeDir so the model resolves its init xml / result file relative to
+   the working directory exactly as the native executable would.
+
+   The <prefix>.bc only exists when at least one .c file survived the
+   catalog-driven skip list in compileModelToBitcode. When SCTL owns every
+   model symbol -- the end state we are converging on -- no .c file is
+   clang'd and no <prefix>.bc is written; pass an empty bitcode path so
+   omc_runModelViaJIT JITs the SCTL bitcode alone."
+  input String exeDir;
+  input String modelName;
+  input String logFile;
+  output Integer status;
+protected
+  String oldDir, runtimeLib, bcPath;
+algorithm
+  oldDir := System.pwd();
+  if not stringEmpty(exeDir) then
+    System.cd(exeDir);
+  end if;
+  runtimeLib := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple
+                + "/omc/libSimulationRuntimeC" + Autoconf.dllExt;
+  // Statement-form if: bootstrap omc from tarball rejects the inline
+  // expression form with "Expected Boolean, got Boolean."
+  bcPath := "";
+  if System.regularFileExists(modelName + ".bc") then
+    bcPath := modelName + ".bc";
+  end if;
+  status := EXT_LLVM.runModelViaJIT(bcPath, runtimeLib, modelName, logFile);
+  System.cd(oldDir);
+end runModelViaLLVMJIT;
+
 protected function buildModel "translates and builds the model by running compiler script on the generated makefile"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -6269,7 +6432,13 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Config.simCodeTarget() <> "wasm-jit" then
+            // Default: spawn clang via CevalScript.compileModel. The
+            // two JIT targets (wasm-jit, llvm-jit) compile in-process
+            // during this clock so the cost is attributed to
+            // timeCompile rather than leaking into timeSimulation.
+            if Config.simCodeTarget() == "llvm-jit" then
+              compileModelToBitcode(filenameprefix);
+            elseif Config.simCodeTarget() <> "wasm-jit" then
               CevalScript.compileModel(filenameprefix, libsAndLibDirs);
             else
               CodegenWasmJit.finishCompile(filenameprefix);

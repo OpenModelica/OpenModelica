@@ -566,6 +566,17 @@ constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
 constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
   "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
+/* LLVM JIT flags (added on the LLVM revive branch) */
+constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(201, "jit_eval_func", false,
+  "Turns on/off JIT compilation of MetaModelica functions via the LLVM backend.");
+constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(202, "jit_dump_ir", false,
+  "Dumps LLVM-IR before JIT execution.");
+constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(203, "jit_no_opt", false,
+  "Generates LLVM-IR without optimization passes.");
+constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(204, "dumpMidCode", false,
+  "Dumps MidCode after generation in a human-readable format.");
+constant DebugFlag JIT_SIMULATE = DEBUG_FLAG(205, "jitSimulate", false,
+  "Simulate models by JIT-compiling the generated C via LLVM (ORC) and running it in-process, instead of building and running a native executable.");
 
 public
 // CONFIGURATION FLAGS
