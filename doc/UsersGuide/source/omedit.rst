@@ -1977,6 +1977,94 @@ Sensitivity Optimization Options
 
   -  *python* - sets the Python executable to run OMSens scripts.
 
+.. _omedit-options-language-server:
+
+Language Server Options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OMEdit can connect to an external Modelica language server that speaks the
+`Language Server Protocol (LSP) <https://microsoft.github.io/language-server-protocol/>`_
+over stdin/stdout. When enabled, the language server provides:
+
+-  **Hover** - hover the mouse over a symbol in the text editor to see its
+   documentation in a tooltip.
+
+-  **Go to definition** - Ctrl+Click a symbol, or use *Go to Definition* from
+   the right-click menu, to navigate to where it is defined (including across
+   files).  When the language server cannot resolve the symbol, OMEdit falls
+   back to its built-in class navigation.
+
+The feature is opt-in and disabled by default.
+
+-  Language Server Protocol (LSP)
+
+  -  *Enable Language Server* - when checked, OMEdit starts
+     the language server process on launch and connects to it.
+
+  -  *Server Executable* - path to the language server executable.
+     Leave blank (recommended) to use the server bundled with OMEdit.
+     Use *Browse* to select a custom server or *Auto Detect* to locate one
+     automatically.
+
+  -  *Library Paths* - optional semicolon-separated list of Modelica library
+     root directories (each containing a ``package.mo``) that the server loads
+     on startup.  These enable *Go to Definition* and richer hover across
+     files.  Loading large libraries such as the Modelica Standard Library can
+     take a few seconds at startup.
+
+  -  *Log language server messages to the Messages Browser* - when checked,
+     messages from the language server are shown in the Messages Browser,
+     prefixed with ``LSP``.
+
+Hover information is shown as a tooltip.  Navigation works both with Ctrl+Click
+and from the editor right-click menu (*Go to Definition*, marked with the
+language server icon while the server is running).  Enabling or disabling the
+language server takes effect immediately; a restart is not required.
+
+**Runtime requirement: Node.js**
+
+OMEdit ships with a pre-built Modelica language server that runs on
+`Node.js <https://nodejs.org>`_ (version 16 or later), which is therefore the
+only external dependency.  If Node.js is not installed when you enable the
+language server, OMEdit shows a one-time setup dialog with platform-specific
+installation instructions.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Platform
+     - Install command
+   * - Windows
+     - ``winget install OpenJS.NodeJS.LTS``
+   * - macOS
+     - ``brew install node``
+   * - Linux (Debian/Ubuntu)
+     - ``sudo apt install nodejs``
+   * - Linux (Fedora/RHEL)
+     - ``sudo dnf install nodejs``
+
+After installing Node.js, open *Tools > Options > Language Server*, check
+*Enable Language Server*, leave *Server Executable* blank, and
+click *OK*.  The language server starts immediately.
+
+**Configuration via omedit.ini**
+
+The same settings can be written directly to ``~/.config/openmodelica/omedit.ini``:
+
+.. code-block:: ini
+
+   [languageServer]
+   enabled=true
+   executable=
+   libraries=/path/to/Modelica 4.0.0;/path/to/MyLibrary
+   logging=false
+
+Leave ``executable`` empty to use the bundled server.  ``libraries`` is an
+optional semicolon-separated list of library roots; leave it empty for the
+fastest startup (hover and in-file features still work).  Set ``logging=true``
+to echo language server messages to the Messages Browser.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 

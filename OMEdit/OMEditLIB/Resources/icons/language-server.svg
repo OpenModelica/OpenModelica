@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32px" height="32px" viewBox="0 0 32 32">
+  <!-- Modelica M -->
+  <text x="0.5" y="22"
+        style="font-size:18px;font-weight:bold;font-family:'Courier New',Courier,monospace;fill:#1a4b8c;">M</text>
+
+  <!-- Double-headed arrow (↔) -->
+  <!-- Left arrowhead -->
+  <polygon points="10,16 13.5,13 13.5,19" fill="#444444"/>
+  <!-- Shaft -->
+  <rect x="13" y="14.5" width="6" height="3" fill="#444444"/>
+  <!-- Right arrowhead -->
+  <polygon points="22,16 18.5,13 18.5,19" fill="#444444"/>
+
+  <!-- Server rack box -->
+  <rect x="23" y="4" width="8.5" height="24" rx="1" ry="1"
+        fill="#f0f0f0" stroke="#333333" stroke-width="1.5"/>
+  <!-- Shelf dividers -->
+  <line x1="23" y1="12" x2="31.5" y2="12" stroke="#333333" stroke-width="1"/>
+  <line x1="23" y1="20" x2="31.5" y2="20" stroke="#333333" stroke-width="1"/>
+  <!-- Status LEDs -->
+  <circle cx="30" cy="8"  r="1.2" fill="#27ae60"/>
+  <circle cx="30" cy="16" r="1.2" fill="#27ae60"/>
+  <circle cx="30" cy="24" r="1.2" fill="#27ae60"/>
+</svg>

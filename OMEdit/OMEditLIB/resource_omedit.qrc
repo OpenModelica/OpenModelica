@@ -212,5 +212,6 @@
         <file>Resources/icons/drop-menu.svg</file>
         <file>Resources/json/MCPTools.json</file>
         <file>Resources/json/MCPAdminTools.json</file>
+        <file>Resources/icons/language-server.svg</file>
     </qresource>
 </RCC>

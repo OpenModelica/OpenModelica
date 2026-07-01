@@ -51,10 +51,13 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "LSP/ModelicaLSPClient.h"
+#include "LSP/LSPSetupDialog.h"
 #include <limits>
 
 #include <QStringBuilder>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QColorDialog>
 #include <QButtonGroup>
 
@@ -132,6 +135,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
+  mpLanguageServerPage = new LanguageServerPage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
   if (!MainWindow::instance()->isTestsuiteRunning()) {
@@ -183,6 +187,7 @@ void OptionsDialog::readSettings()
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
   readTraceabilitySettings();
+  readLanguageServerSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -3149,6 +3154,86 @@ void OptionsDialog::saveTraceabilitySettings()
     mpSettings->setValue("traceability/Port", port);
   }
 }
+
+/*!
+ * \brief OptionsDialog::readLanguageServerSettings
+ * Reads language server settings from omedit.ini.
+ */
+void OptionsDialog::readLanguageServerSettings()
+{
+  if (mpSettings->contains("languageServer/enabled")) {
+    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
+  } else {
+    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+  }
+  if (mpSettings->contains("languageServer/executable")) {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
+  } else {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
+  }
+  mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
+  mpLanguageServerPage->getLibrariesTextBox()->setText(mpSettings->value("languageServer/libraries").toString());
+}
+
+/*!
+ * \brief OptionsDialog::saveLanguageServerSettings
+ * Saves language server settings to omedit.ini.
+ */
+void OptionsDialog::saveLanguageServerSettings()
+{
+  // Capture previous LSP-relevant settings to decide whether a running server must restart.
+  const bool wasEnabled = mpSettings->value("languageServer/enabled", false).toBool();
+  const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
+  const QString oldLibraries = mpSettings->value("languageServer/libraries").toString().trimmed();
+
+  bool enabled = mpLanguageServerPage->getEnableLSPCheckBox()->isChecked();
+  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
+
+  // When enabling, check that Node.js is present for .js-based servers
+  if (enabled) {
+    QString resolved = executable.isEmpty() ? ModelicaLSPClient::findBundledServer() : executable;
+    if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
+      LSPSetupDialog setupDialog(this);
+      setupDialog.exec();
+      if (setupDialog.result() == QDialog::Rejected) {
+        // User chose to disable — uncheck the box before saving
+        mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+        enabled = false;
+      }
+    }
+  }
+
+  if (!enabled) {
+    mpSettings->remove("languageServer/enabled");
+  } else {
+    mpSettings->setValue("languageServer/enabled", enabled);
+  }
+  if (executable.isEmpty()) {
+    mpSettings->remove("languageServer/executable");
+  } else {
+    mpSettings->setValue("languageServer/executable", executable);
+  }
+  mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
+  QString libraries = mpLanguageServerPage->getLibrariesTextBox()->text().trimmed();
+  if (libraries.isEmpty()) {
+    mpSettings->remove("languageServer/libraries");
+  } else {
+    mpSettings->setValue("languageServer/libraries", libraries);
+  }
+
+  // Apply the change to the running session without requiring a restart.
+  if (enabled) {
+    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable) || (oldLibraries != libraries);
+    if (settingsChanged) {
+      // Restart so a new executable or library set is picked up.
+      MainWindow::instance()->stopLanguageServer();
+    }
+    MainWindow::instance()->startLanguageServer();
+  } else {
+    MainWindow::instance()->stopLanguageServer();
+  }
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -3296,6 +3381,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
   pTraceabilityItem->setText(tr("Traceability"));
+  // Language Server Item
+  QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
+  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/language-server.svg"));
+  pLanguageServerItem->setText(tr("Language Server"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -3326,6 +3415,7 @@ void OptionsDialog::createPages()
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
+  addPage(mpLanguageServerPage);
 }
 
 void OptionsDialog::addPage(QWidget* pPage)
@@ -3433,6 +3523,7 @@ void OptionsDialog::saveSettings()
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
+  saveLanguageServerSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -6959,4 +7050,95 @@ void CRMLPage::browseCompilerProcessFile()
 void CRMLPage::resetCompilerProcessPath()
 {
   mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+/*!
+ * \brief LanguageServerPage::LanguageServerPage
+ * \param pOptionsDialog
+ */
+LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
+  // Enable LSP checkbox
+  mpEnableLSPCheckBox = new QCheckBox(tr("Enable Language Server"));
+  mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
+  // Enable logging checkbox
+  mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
+  mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
+  // Server executable
+  mpServerExecutableLabel = new Label(tr("Server Executable:"));
+  mpServerExecutableTextBox = new QLineEdit;
+  mpServerExecutableTextBox->setPlaceholderText(tr("e.g. modelica-language-server"));
+  mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
+  mpBrowseServerExecutableButton->setAutoDefault(false);
+  connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
+  mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
+  mpAutoDetectButton->setAutoDefault(false);
+  connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  // Library roots loaded by the server (enables cross-file go-to-definition)
+  mpLibrariesLabel = new Label(tr("Library Paths:"));
+  mpLibrariesTextBox = new QLineEdit;
+  mpLibrariesTextBox->setPlaceholderText(tr("Semicolon-separated library roots, e.g. /path/to/Modelica 4.0.0"));
+  mpLibrariesTextBox->setToolTip(tr("Modelica library root directories (each containing a package.mo) the language server loads "
+                                    "so go-to-definition can resolve across files. Loading large libraries "
+                                    "such as the MSL can take several seconds at startup."));
+  // Layout inside group box
+  QGridLayout *pGroupBoxLayout = new QGridLayout;
+  pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGroupBoxLayout->addWidget(mpEnableLSPCheckBox, 0, 0, 1, 3);
+  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 1, 0);
+  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 1, 1);
+  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 1, 2);
+  pGroupBoxLayout->addWidget(mpAutoDetectButton, 2, 1);
+  pGroupBoxLayout->addWidget(mpLibrariesLabel, 3, 0);
+  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 3, 1, 1, 2);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 4, 0, 1, 3);
+  mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
+  // Main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpLanguageServerGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LanguageServerPage::browseServerExecutable
+ * Opens a file browser to select the language server executable.
+ */
+void LanguageServerPage::browseServerExecutable()
+{
+  mpServerExecutableTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
+}
+
+/*!
+ * \brief LanguageServerPage::autoDetectServerExecutable
+ * Searches PATH for the modelica-language-server executable.
+ */
+void LanguageServerPage::autoDetectServerExecutable()
+{
+  // Bundled server.js shipped alongside OMEdit
+  QString found = ModelicaLSPClient::findBundledServer();
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+    if (LSPClient::findNodeExecutable().isEmpty()) {
+      QMessageBox::information(this, Helper::applicationName,
+                               tr("Found the bundled language server at:\n%1\n\n"
+                                  "Node.js is required to run it but was not found on the PATH.\n"
+                                  "Install Node.js from https://nodejs.org and restart OMEdit.")
+                               .arg(found));
+    }
+    return;
+  }
+  // Standalone binary on PATH
+  found = QStandardPaths::findExecutable(ModelicaLSPClient::defaultServerName());
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+    return;
+  }
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("No language server found.\n\n"
+                              "Install Node.js (https://nodejs.org) — OMEdit will use the "
+                              "bundled server automatically on next launch."));
 }

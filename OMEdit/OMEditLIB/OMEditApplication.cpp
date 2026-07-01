@@ -48,6 +48,7 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
 #include <QMessageBox>
 #include <QTextCodec>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
@@ -277,6 +278,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
     }
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
+  }
+
+  if (pSettings->contains("languageServer/enabled") && pSettings->value("languageServer/enabled").toBool()) {
+    pMainwindow->startLanguageServer();
   }
 
   if (!testsuiteRunning) {

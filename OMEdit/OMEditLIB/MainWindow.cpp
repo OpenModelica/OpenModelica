@@ -83,8 +83,12 @@
 #include "CrashReport/CrashReportDialog.h"
 #include "FMI/FMUExportOutputWidget.h"
 #include "PlotCurve.h"
+#include "LSP/ModelicaLSPClient.h"
 #include "LoadCompiledModelDialog.h"
 #include <QtSvg/QSvgGenerator>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QDir>
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 
@@ -164,6 +168,99 @@ MainWindow *MainWindow::instance()
     mpInstance = new MainWindow;
   }
   return mpInstance;
+}
+
+/*!
+ * \brief MainWindow::startLanguageServer
+ * Starts the language server process if it is not already running.
+ * Resolves the executable from the user setting, then the bundled server,
+ * then the system PATH. Skips silently when no usable server is available.
+ */
+void MainWindow::startLanguageServer()
+{
+  if (mpLSPClient) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QString executable = pSettings->value("languageServer/executable").toString().trimmed();
+  if (executable.isEmpty()) {
+    executable = ModelicaLSPClient::findBundledServer();
+  }
+  if (executable.isEmpty()) {
+    executable = QStandardPaths::findExecutable(ModelicaLSPClient::defaultServerName());
+  }
+  // For .js servers, skip when Node.js is absent. The user is notified in the Options dialog.
+  bool canStart = !executable.isEmpty() &&
+                  !(executable.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty());
+  if (!canStart) {
+    return;
+  }
+  LSPClient *pLSPClient = new ModelicaLSPClient(this);
+  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
+  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
+  QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+  // Optional library roots the server loads so go-to-definition can resolve across files.
+  QStringList libraries;
+  const QString librariesSetting = pSettings->value("languageServer/libraries").toString().trimmed();
+  if (!librariesSetting.isEmpty()) {
+    const QStringList parts = librariesSetting.split(QLatin1Char(';'), Qt::SkipEmptyParts);
+    for (const QString &part : parts) {
+      const QString trimmed = part.trimmed();
+      if (!trimmed.isEmpty()) {
+        libraries.append(trimmed);
+      }
+    }
+  }
+  // Only keep the client once it actually launched, otherwise a single failed
+  // launch would block every later retry in this session.
+  if (!pLSPClient->start(executable, rootUri, libraries)) {
+    pLSPClient->deleteLater();
+    return;
+  }
+  mpLSPClient = pLSPClient;
+}
+
+/*!
+ * \brief MainWindow::onLanguageServerLogMessage
+ * Writes a language server message to the Messages Browser. All messages are
+ * prefixed with "LSP". The LSP message type (1=Error, 2=Warning, others=Info) is
+ * mapped to the OMEdit message level. Errors are always shown so that startup
+ * failures are visible; informational and warning messages require language
+ * server logging to be enabled.
+ */
+void MainWindow::onLanguageServerLogMessage(QString message, int type)
+{
+  if (message.isEmpty()) {
+    return;
+  }
+  if (type != 1) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    if (!pSettings->value("languageServer/logging", false).toBool()) {
+      return;
+    }
+  }
+  QString level = Helper::notificationLevel;
+  if (type == 1) {
+    level = Helper::errorLevel;
+  } else if (type == 2) {
+    level = Helper::warningLevel;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QStringLiteral("LSP: %1").arg(message),
+                                                        Helper::scriptingKind, level));
+}
+
+/*!
+ * \brief MainWindow::stopLanguageServer
+ * Stops and destroys the language server process if it is running.
+ */
+void MainWindow::stopLanguageServer()
+{
+  if (!mpLSPClient) {
+    return;
+  }
+  mpLSPClient->stop();
+  mpLSPClient->deleteLater();
+  mpLSPClient = nullptr;
 }
 
 /*!
