@@ -575,6 +575,8 @@ constant DebugFlag TEARING_COST = DEBUG_FLAG(201, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
 constant DebugFlag OMEDIT = DEBUG_FLAG(202, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
+constant DebugFlag NF_API_DYNAMIC_SELECT_AUX = DEBUG_FLAG(203, "nfAPIDynamicSelectAux", false,
+  "Synthesize auxiliary result-file variables bound to user-function calls inside DynamicSelect dynamic expressions so OMEdit can display them.");
 
 public
 // CONFIGURATION FLAGS
