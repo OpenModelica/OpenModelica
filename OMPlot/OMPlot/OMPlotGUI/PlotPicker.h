@@ -50,7 +50,7 @@ class PlotPicker : public QwtPlotPicker
 public:
   PlotPicker(QWidget *pCanvas, Plot *pPlot);
   QList<PlotCurve*> curvesAtPosition(const QPoint pos, QList<int> *indexes) const;
-  virtual QwtText trackerText(const QPoint &pos) const;
+  virtual QwtText trackerText(const QPoint &pos) const override;
 private:
   Plot *mpPlot;
 };

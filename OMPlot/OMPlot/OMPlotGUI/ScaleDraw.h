@@ -51,7 +51,7 @@ public:
   QString getUnitPrefix() const {return mUnitPrefix;}
   int getExponent() const {return mExponent;}
   void invalidateCache() {QwtAbstractScaleDraw::invalidateCache();}
-  virtual QwtText label(double value) const;
+  virtual QwtText label(double value) const override;
 private:
   bool mPrefixLabel;
   Plot *mpParentPlot;

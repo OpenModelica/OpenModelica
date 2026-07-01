@@ -158,7 +158,7 @@ public
             end if;
             if not listEmpty(simJac.generic_loop_calls) then
               str := str + StringUtil.headline_3("Generic Calls");
-              str := str + List.toString(simJac.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n");
+              str := str + List.toString(simJac.generic_loop_calls, SimGenericCall.toString, List.Style.NEWLINE_INDENT);
             end if;
             str := str + "\n";
           end if;
@@ -238,7 +238,7 @@ public
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
-          list<SimVar> seedVars, resVars, tmpVars, loopVars;
+          list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> local_idx_map;
           ComponentRef cref;

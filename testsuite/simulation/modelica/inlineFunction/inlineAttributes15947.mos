@@ -1,0 +1,75 @@
+// name: inlineAttributes15947
+// keywords: inline attributes min max nominal unit
+// status: correct
+// teardown_command: rm -rf InlineAttr15947*
+//
+// Tests that function input/output attributes (min/max/nominal/unit) are not
+// dropped when a function is inlined, in both the old and the new backend.
+// The declared attributes are carried onto the model variables bound to the
+// function inputs/outputs. See
+// https://github.com/OpenModelica/OpenModelica/issues/15947
+
+loadString("
+function fin
+  input  Real x(min = 5.0, max = 50.0, nominal = 10.0, unit = \"K\");
+  output Real y(min = 1.0, max = 99.0, nominal = 20.0, unit = \"Pa\");
+algorithm
+  y := x * 2.0;
+  annotation(Inline = true);
+end fin;
+
+function finI
+  input  Integer xi(min = 2, max = 8);
+  output Integer yi(min = 1, max = 20);
+algorithm
+  yi := xi * 2;
+  annotation(Inline = true);
+end finI;
+
+model InlineAttr15947
+  Real z, a;
+  Integer zi, ai;
+equation
+  z = fin(a);
+  a = 3.0 - time;
+  zi = finI(ai);
+  ai = integer(time) + 1;
+end InlineAttr15947;
+"); getErrorString();
+
+// Each declared attribute should show up exactly once in the generated
+// _init.xml (on the model variable bound to the function input/output),
+// independent of variable ordering or whitespace.
+// Order of counts: input unit, output unit, input nominal, output nominal,
+//                  input Real min, output Real max, output Integer min, output Integer max.
+
+// Sum of the per-attribute match counts. All 8 markers are present exactly
+// once, so the total is 8 in both backends.
+
+// old backend (default)
+translateModel(InlineAttr15947); getErrorString();
+system("c=0; for p in 'unit=\"K\"' 'unit=\"Pa\"' 'nominal=\"10.0\"' 'nominal=\"20.0\"' 'min=\"5.0\"' 'max=\"99.0\"' 'min=\"1\"' 'max=\"20\"'; do c=$((c+$(grep -c -- \"$p\" InlineAttr15947_init.xml))); done; printf '%s' \"$c\"", outputFile="InlineAttr15947_ob.txt"); getErrorString();
+readFile("InlineAttr15947_ob.txt");
+
+// new backend
+setCommandLineOptions("--newBackend=true"); getErrorString();
+translateModel(InlineAttr15947); getErrorString();
+system("c=0; for p in 'unit=\"K\"' 'unit=\"Pa\"' 'nominal=\"10.0\"' 'nominal=\"20.0\"' 'min=\"5.0\"' 'max=\"99.0\"' 'min=\"1\"' 'max=\"20\"'; do c=$((c+$(grep -c -- \"$p\" InlineAttr15947_init.xml))); done; printf '%s' \"$c\"", outputFile="InlineAttr15947_nb.txt"); getErrorString();
+readFile("InlineAttr15947_nb.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "8"
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "8"
+// endResult

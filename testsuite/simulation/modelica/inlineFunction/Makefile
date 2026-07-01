@@ -4,6 +4,7 @@ TESTFILES = \
 inlineArray2.mos \
 inlineArray3.mos \
 inlineArrayRecord.mos \
+inlineAttributes15947.mos \
 inlineFunction1.mos \
 inlineFunction2.mos \
 inlineFunction3.mos \

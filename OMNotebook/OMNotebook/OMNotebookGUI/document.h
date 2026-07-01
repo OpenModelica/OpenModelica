@@ -45,6 +45,7 @@
 
 //STD Haders
 #include <vector>
+#include <memory>
 
 //QT Headers
 #include <QtCore/QObject>
@@ -107,7 +108,7 @@ namespace IAEX
     virtual CellCursor *getCursor() = 0;
     virtual void cursorStepUp() = 0;
     virtual void cursorStepDown() = 0;
-    virtual void cursorMoveAfter(Cell *aCell, const bool open) = 0;
+    virtual void cursorMoveAfter(Cell *aCell, bool open) = 0;
     virtual void cursorUngroupCell() = 0;
     virtual void cursorSplitCell() = 0;
     virtual void cursorAddCell() = 0;
@@ -135,8 +136,8 @@ namespace IAEX
 
     // Image operations
     virtual void textcursorInsertImage( QString filepath, QSize size ) = 0;
-    virtual QString addImage( QImage *image ) = 0;
-    virtual QImage *getImage( QString name ) = 0;
+    virtual QString addImage( QImage image ) = 0;
+    virtual QImage getImage( QString name ) = 0;
 
     // Link operations
     virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor ) = 0;
@@ -148,7 +149,7 @@ namespace IAEX
     virtual void clearSelection() = 0;
 
     //command operations
-    virtual void executeCommand(Command *cmd) = 0;
+    virtual void executeCommand(std::unique_ptr<Command> cmd) = 0;
 
     //Observer interface
     virtual void attach(DocumentView *d) = 0;

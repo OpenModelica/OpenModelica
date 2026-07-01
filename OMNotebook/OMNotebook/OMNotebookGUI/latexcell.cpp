@@ -219,10 +219,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -260,21 +259,6 @@ namespace IAEX {
 
     createLatexCell();
     createOutputCell();
-
-    imageFile=0;
-  }
-
-  /*!
-  *
-  * \brief The class destructor
-  */
-  LatexCell::~LatexCell()
-  {
-    delete input_;
-    delete output_;
-    if(imageFile) {
-      delete imageFile;
-    }
   }
 
   void LatexCell::addToHighlighter()
@@ -715,7 +699,7 @@ namespace IAEX {
   * \param readonly The boolean value of readonly property
      clear text selection in chapter counter
   */
-  void LatexCell::setReadOnly(const bool readonly)
+  void LatexCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -747,7 +731,7 @@ namespace IAEX {
   * \brief Set evaluated value on the texteditor
   * \param evaluated The boolean value of evaluated property
   */
-  void LatexCell::setEvaluated(const bool evaluated)
+  void LatexCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -757,18 +741,15 @@ namespace IAEX {
   * \brief Set if the output part of the cell shoud be
   * closed(hidden) or not.
   */
-  void LatexCell::setClosed(const bool closed, bool update)
+  void LatexCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -776,14 +757,14 @@ namespace IAEX {
   }
 
 
-  void LatexCell::setFocus(const bool focus)
+  void LatexCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
   }
 
 
-  void LatexCell::setFocusOutput(const bool focus)
+  void LatexCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -839,7 +820,7 @@ namespace IAEX {
   *
   * \return State of LatexCell (closed or not)
   */
-  bool LatexCell::isClosed()
+  bool LatexCell::isClosed() const
   {
     return closed_;
   }
@@ -852,7 +833,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool LatexCell::isEditable()
+  bool LatexCell::isEditable() const
   {
     return false;
   }
@@ -929,7 +910,6 @@ void LatexCell::eval(bool silent)
     setState(Eval_l);
     input_->setReadOnly(true);
     bool setdvi=false;
-    bool setpng=false;
     bool setpage=false;
     evaluated_ = true;
     QString tempdir=OmcInteractiveEnvironment::TmpPath();
@@ -1176,7 +1156,7 @@ void LatexCell::setState(int state_)
       next()->accept(v);
   }
 
-  void LatexCell::viewExpression(const bool flag) {
+  void LatexCell::viewExpression(bool) {
   }
 
 }

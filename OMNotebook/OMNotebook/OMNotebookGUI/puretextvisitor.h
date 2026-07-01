@@ -57,31 +57,31 @@ namespace IAEX
 
   public:
     PureTextVisitor(QFile *file);
-    virtual ~PureTextVisitor();
+    virtual ~PureTextVisitor() {};
 
-    virtual void visitCellNodeBefore(Cell *node);
-    virtual void visitCellNodeAfter(Cell *node);
+    virtual void visitCellNodeBefore(Cell *node) override;
+    virtual void visitCellNodeAfter(Cell *node) override;
 
-    virtual void visitCellGroupNodeBefore(CellGroup *node);
-    virtual void visitCellGroupNodeAfter(CellGroup *node);
+    virtual void visitCellGroupNodeBefore(CellGroup *node) override;
+    virtual void visitCellGroupNodeAfter(CellGroup *node) override;
 
-    virtual void visitTextCellNodeBefore(TextCell *node);
-    virtual void visitTextCellNodeAfter(TextCell *node);
+    virtual void visitTextCellNodeBefore(TextCell *node) override;
+    virtual void visitTextCellNodeAfter(TextCell *node) override;
 
-    virtual void visitInputCellNodeBefore(InputCell *node);
-    virtual void visitInputCellNodeAfter(InputCell *node);
+    virtual void visitInputCellNodeBefore(InputCell *node) override;
+    virtual void visitInputCellNodeAfter(InputCell *node) override;
 
-    virtual void visitGraphCellNodeBefore(GraphCell *node);
-    virtual void visitGraphCellNodeAfter(GraphCell *node);
+    virtual void visitGraphCellNodeBefore(GraphCell *node) override;
+    virtual void visitGraphCellNodeAfter(GraphCell *node) override;
 
-    virtual void visitLatexCellNodeBefore(LatexCell *node);
-    virtual void visitLatexCellNodeAfter(LatexCell *node);
+    virtual void visitLatexCellNodeBefore(LatexCell *node) override;
+    virtual void visitLatexCellNodeAfter(LatexCell *node) override;
 
-    virtual void visitCellCursorNodeBefore(CellCursor *cursor);
-    virtual void visitCellCursorNodeAfter(CellCursor *cursor);
+    virtual void visitCellCursorNodeBefore(CellCursor *cursor) override;
+    virtual void visitCellCursorNodeAfter(CellCursor *cursor) override;
 
   private:
-    QTextStream *ts_;
+    QTextStream ts_;
   };
 }
 #endif

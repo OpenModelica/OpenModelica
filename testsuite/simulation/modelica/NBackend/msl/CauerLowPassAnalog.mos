@@ -12,79 +12,106 @@ simulate(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog); getErrorString
 // true
 // ""
 // true
-// ################################################################################
+// #######################
 //
-// 	Index Reduction
+//     Index Reduction
 //
-// ################################################################################
+// #######################
 //
-// (8) Sorted State Candidates
-// ****************************************
-// {C3.v, L2.n.v, C2.v, L1.n.v, R1.n.v, C1.v, C5.v, C4.v}
+// State Candidate Variables (8/8)
+// *********************************
+// (1)       [STAT] (1) Real C5.v (fixed = true, start = 0.0)
+// (2)       [STAT] (1) Real C4.v (start = 0.0)
+// (3)       [STAT] (1) Real C3.v (fixed = true, start = 0.0)
+// (4)       [STAT] (1) Real C2.v (start = 0.0)
+// (5)       [STAT] (1) Real C1.v (fixed = true, start = 0.0)
+// (6)       [ALGB] (1) Real R1.n.v
+// (7)       [ALGB] (1) Real L2.n.v
+// (8)       [ALGB] (1) Real L1.n.v
 //
-// (5) Constraint Equations
-// ****************************************
-// [SCAL] ($RES_SIM_39) C3.v = L1.n.v - 0.0
-// [SCAL] ($RES_SIM_31) C5.v = L2.n.v - 0.0
-// [SCAL] ($RES_SIM_35) C4.v = L1.n.v - L2.n.v
-// [SCAL] ($RES_SIM_47) C1.v = R1.n.v - 0.0
-// [SCAL] ($RES_SIM_43) C2.v = R1.n.v - L1.n.v
+// Constraint Equations (5/5)
+// ****************************
+// (1)       [SCAL] (1) C4.v = L1.n.v - L2.n.v; ($RES_SIM_33)
+// (2)       [SCAL] (1) C1.v = R1.n.v; ($RES_SIM_45)
+// (3)       [SCAL] (1) C5.v = L2.n.v; ($RES_SIM_29)
+// (4)       [SCAL] (1) C2.v = R1.n.v - L1.n.v; ($RES_SIM_41)
+// (5)       [SCAL] (1) C3.v = L1.n.v; ($RES_SIM_37)
 //
 // [dummyselect] 1. Differentiate the constraint equations
-// ----------------------------------------
-// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_39) C3.v = L1.n.v - 0.0
-// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_39) $DER.C3.v = $DER.L1.n.v
+// ---------------------------------------------------------
+// [dummyselect] constraint eqn:		[SCAL] (1) C4.v = L1.n.v - L2.n.v; ($RES_SIM_33)
+// [dummyselect] differentiated eqn:	[SCAL] (1) $DER.C4.v = $DER.L1.n.v - $DER.L2.n.v; ($RES_SIM_33)
 //
-// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_31) C5.v = L2.n.v - 0.0
-// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_31) $DER.C5.v = $DER.L2.n.v
+// [dummyselect] constraint eqn:		[SCAL] (1) C1.v = R1.n.v; ($RES_SIM_45)
+// [dummyselect] differentiated eqn:	[SCAL] (1) $DER.C1.v = $DER.R1.n.v; ($RES_SIM_45)
 //
-// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_35) C4.v = L1.n.v - L2.n.v
-// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_35) $DER.C4.v = $DER.L1.n.v - $DER.L2.n.v
+// [dummyselect] constraint eqn:		[SCAL] (1) C5.v = L2.n.v; ($RES_SIM_29)
+// [dummyselect] differentiated eqn:	[SCAL] (1) $DER.C5.v = $DER.L2.n.v; ($RES_SIM_29)
 //
-// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_47) C1.v = R1.n.v - 0.0
-// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_47) $DER.C1.v = $DER.R1.n.v
+// [dummyselect] constraint eqn:		[SCAL] (1) C2.v = R1.n.v - L1.n.v; ($RES_SIM_41)
+// [dummyselect] differentiated eqn:	[SCAL] (1) $DER.C2.v = $DER.R1.n.v - $DER.L1.n.v; ($RES_SIM_41)
 //
-// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_43) C2.v = R1.n.v - L1.n.v
-// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_43) $DER.C2.v = $DER.R1.n.v - $DER.L1.n.v
+// [dummyselect] constraint eqn:		[SCAL] (1) C3.v = L1.n.v; ($RES_SIM_37)
+// [dummyselect] differentiated eqn:	[SCAL] (1) $DER.C3.v = $DER.L1.n.v; ($RES_SIM_37)
 //
-// (3) Selected States
-// ****************************************
-// {C4.v, C5.v, C1.v}
+// [dummyselect] (3) Selected States
+// ***********************************
+// [STAT] (1) Real C4.v (start = 0.0)
+// [STAT] (1) Real C2.v (start = 0.0)
+// [STAT] (1) Real L1.n.v
 //
-// ========================================
-// 	 STATIC STATE SELECTION
+// ======================================================
+//   	 STATIC STATE SELECTION
 // 	(no unmatched equations)
-// ========================================
-// ################################################################################
+// ======================================================
 //
-// 	Balance Initialization
+// Created State Start Equations (2):
+// ************************************
+// 	[SCAL] (1) L2.i = $START.L2.i; ($RES_SRT_78)
+// 	[SCAL] (1) L1.i = $START.L1.i; ($RES_SRT_77)
 //
-// ################################################################################
+// Created Algebraic Start Equations (3):
+// ****************************************
+// 	[SCAL] (1) C1.v = $START.C1.v; ($RES_SRT_81)
+// 	[SCAL] (1) C3.v = $START.C3.v; ($RES_SRT_80)
+// 	[SCAL] (1) C5.v = $START.C5.v; ($RES_SRT_79)
 //
-// Stage 3 overdetermined.
+// Created Parameter Binding Equations (16):
+// *******************************************
+// 	[SCAL] (1) R1.T_heatPort = R1.T; ($RES_BND_97)
+// 	[SCAL] (1) R2.T_heatPort = R2.T; ($RES_BND_96)
+// 	[SCAL] (1) V.signalSource.startTime = V.startTime; ($RES_BND_95)
+// 	[SCAL] (1) V.signalSource.offset = V.offset; ($RES_BND_94)
+// 	[SCAL] (1) V.signalSource.height = V.V; ($RES_BND_93)
+// 	[SCAL] (1) R2.T = R2.T_ref; ($RES_BND_92)
+// 	[SCAL] (1) R1.T = R1.T_ref; ($RES_BND_91)
+// 	[SCAL] (1) L2.L = l2; ($RES_BND_90)
+// 	[SCAL] (1) L1.L = l1; ($RES_BND_89)
+// 	[SCAL] (1) C5.C = c5; ($RES_BND_88)
+// 	[SCAL] (1) C4.C = c4; ($RES_BND_87)
+// 	[SCAL] (1) C3.C = c3; ($RES_BND_86)
+// 	[SCAL] (1) C2.C = c2; ($RES_BND_85)
+// 	[SCAL] (1) C1.C = c1; ($RES_BND_84)
+// 	[SCAL] (1) c4 = 1.0 / l2 / 1.392270203025; ($RES_BND_83)
+// 	[SCAL] (1) c2 = 1.0 / l1 / 2.906997720064; ($RES_BND_82)
+//
+// ##############################
+//
+//     Balance Initialization
+//
+// ##############################
+//
 // Not underdetermined.
-//
-// (3) Unmatched equations:
-// ****************************************
-// 	[SCAL] ($RES_SIM_75) $DER.C4.v = $DER.L1.n.v - $DER.L2.n.v;
-// 	[SCAL] ($RES_SIM_74) $DER.C1.v = $DER.R1.n.v;
-// 	[SCAL] ($RES_SIM_73) $DER.C2.v = $DER.R1.n.v - $DER.L1.n.v;
-//
-// (0) Unmatched variables:
-// ****************************************
+// **********************
+// Not overdetermined.
+// *********************
 //
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassAnalog_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassAnalog', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassAnalog', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
-// Checking for consistency is not yet supported, following equations had to be removed:
-// 	[SCAL] ($RES_SIM_75) $DER.C4.v = $DER.L1.n.v - $DER.L2.n.v;
-// 	[SCAL] ($RES_SIM_74) $DER.C1.v = $DER.R1.n.v;
-// 	[SCAL] ($RES_SIM_73) $DER.C2.v = $DER.R1.n.v - $DER.L1.n.v;
-// "
+// ""
 // endResult

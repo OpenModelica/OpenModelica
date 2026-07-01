@@ -59,24 +59,24 @@ namespace IAEX
    public:
       typedef QString attribute_t;
       typedef QString value_t;
+
    public:
-      Rule(attribute_t a, value_t v) : attribute_(a), value_(v){}
-      virtual ~Rule(){}
+      Rule(attribute_t a, value_t v) : attribute_{std::move(a)}, value_{std::move(v)} {}
 
-      attribute_t attribute() const
+      const attribute_t& attribute() const
       {
-   return attribute_;
+        return attribute_;
       }
 
-      value_t value() const
+      const value_t& value() const
       {
-   return value_;
+        return value_;
       }
 
-    void setValue( value_t val )
-    {
-    value_ = val;
-    }
+      void setValue( const value_t &val )
+      {
+        value_ = val;
+      }
 
    private:
       attribute_t attribute_;

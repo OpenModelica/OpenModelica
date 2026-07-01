@@ -385,7 +385,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -441,7 +441,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -475,7 +475,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -566,7 +566,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -852,9 +852,9 @@ protected
       case ConversionRule.MODIFIERS()
         algorithm
           print("convertModifiers: ");
-          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
           print(" => ");
-          print(List.toString(rule.newMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.newMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
         then
           ();
 

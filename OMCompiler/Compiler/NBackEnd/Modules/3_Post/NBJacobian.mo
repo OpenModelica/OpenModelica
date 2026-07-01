@@ -1191,7 +1191,6 @@ protected
     output Option<Jacobian> MRF_jacobian;
     output Option<Jacobian> R0_jacobian;
   protected
-    Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean staticAsContinuous = true;
     VariablePointers seedCandidates, partialCandidates;
   algorithm
