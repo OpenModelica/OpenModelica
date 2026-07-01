@@ -3162,9 +3162,9 @@ void OptionsDialog::saveTraceabilitySettings()
 void OptionsDialog::readLanguageServerSettings()
 {
   if (mpSettings->contains("languageServer/enabled")) {
-    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
+    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
   } else {
-    mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
   }
   if (mpSettings->contains("languageServer/executable")) {
     mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
@@ -3186,7 +3186,7 @@ void OptionsDialog::saveLanguageServerSettings()
   const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
   const QString oldLibraries = mpSettings->value("languageServer/libraries").toString().trimmed();
 
-  bool enabled = mpLanguageServerPage->getEnableLSPCheckBox()->isChecked();
+  bool enabled = mpLanguageServerPage->getLanguageServerGroupBox()->isChecked();
   QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
 
   // When enabling, check that Node.js is present for .js-based servers
@@ -3196,8 +3196,8 @@ void OptionsDialog::saveLanguageServerSettings()
       LSPSetupDialog setupDialog(this);
       setupDialog.exec();
       if (setupDialog.result() == QDialog::Rejected) {
-        // User chose to disable — uncheck the box before saving
-        mpLanguageServerPage->getEnableLSPCheckBox()->setChecked(false);
+        // User chose to disable — uncheck the groupbox before saving
+        mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
         enabled = false;
       }
     }
@@ -7061,9 +7061,8 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
-  // Enable LSP checkbox
-  mpEnableLSPCheckBox = new QCheckBox(tr("Enable Language Server"));
-  mpEnableLSPCheckBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
+  mpLanguageServerGroupBox->setCheckable(true);
+  mpLanguageServerGroupBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
   // Enable logging checkbox
   mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
   mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
@@ -7087,14 +7086,13 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // Layout inside group box
   QGridLayout *pGroupBoxLayout = new QGridLayout;
   pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGroupBoxLayout->addWidget(mpEnableLSPCheckBox, 0, 0, 1, 3);
-  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 1, 0);
-  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 1, 1);
-  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 1, 2);
-  pGroupBoxLayout->addWidget(mpAutoDetectButton, 2, 1);
-  pGroupBoxLayout->addWidget(mpLibrariesLabel, 3, 0);
-  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 3, 1, 1, 2);
-  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 4, 0, 1, 3);
+  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 0, 0);
+  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 0, 1);
+  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 0, 2);
+  pGroupBoxLayout->addWidget(mpAutoDetectButton, 1, 1);
+  pGroupBoxLayout->addWidget(mpLibrariesLabel, 2, 0);
+  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 2, 1, 1, 2);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 3, 0, 1, 3);
   mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
   // Main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

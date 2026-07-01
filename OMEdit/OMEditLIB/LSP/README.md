@@ -74,6 +74,12 @@ The bundle consists of three files that must stay together:
 - `tree-sitter-modelica.wasm` — Modelica grammar for tree-sitter
 - `web-tree-sitter.wasm` — the tree-sitter WebAssembly runtime
 
+At build time, CMake downloads a pinned `modelica-language-server` release
+(`MODELICA_LS_VERSION`) and verifies it against a known SHA256
+(`MODELICA_LS_TGZ_SHA256`) before extracting these three files. Set
+`MODELICA_LS_DIR` to a local build directory to bundle that instead, e.g. when
+developing against an unreleased server version.
+
 ## Architecture
 
 `LSPClient` (`LSPClient.h` / `LSPClient.cpp`) is an abstract base that manages one
