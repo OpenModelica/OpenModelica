@@ -129,6 +129,30 @@ void ExpressionTest::dynamicSelect_data()
   QTest::addRow("DynamicSelect15")
     << "DynamicSelect({0, 127, 255}, {min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 28.0 + min(1.0, max(0.0, ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 255.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 108.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 200.0})"
     << "DynamicSelect({0,127,255},{28,108,200})";
+
+  // Exact DynamicSelect expressions from OpenIPSL 3.1.0 that triggered #15965.
+  // The dynamic part is a call to a user function (displayPower), which the
+  // FlatModelica evaluator cannot execute, so it stays a non-literal call. The
+  // whole DynamicSelect is likewise not a reducible builtin, so evaluation
+  // leaves it as a non-literal expression (a fixed point). It must NOT loop; the
+  // fix that matters is in DynamicAnnotation::evaluate_helper (see the
+  // DynamicAnnotation testsuite), but this documents why the expression does not
+  // reduce to a literal.
+  // The real expression uses the qualified name
+  // OpenIPSL.NonElectrical.Functions.displayPower; the string parser used here
+  // only handles simple names, but the evaluation behaviour (a user-function
+  // call that stays non-literal) is identical.
+  QTest::addRow("OpenIPSL Generator P")
+    << "DynamicSelect(\"0.0 MW\", displayPower(P, \" MW\"))"
+    << "DynamicSelect(\"0.0 MW\",displayPower(1,\" MW\"))";
+
+  QTest::addRow("OpenIPSL Bus voltage")
+    << "DynamicSelect(\"Vpu\", String(v, significantDigits=3))"
+    << "DynamicSelect(\"Vpu\",\"1\")";
+
+  QTest::addRow("OpenIPSL Bus angle")
+    << "DynamicSelect(\"Angle\", String(angleDisplay, significantDigits=3) + \"°\")"
+    << "DynamicSelect(\"Angle\",\"1°\")";
 }
 
 void ExpressionTest::operators()
