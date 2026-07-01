@@ -1503,6 +1503,10 @@ algorithm
     case DAE.T_METAOPTION(__) then 1;
     case DAE.T_METALIST(__) then (if listLength(elements) then 1 else 0);
     case DAE.T_ARRAY(__) then 2;
+    /* Plain product tuple (multi-return call args, non-meta tuple
+     * expressions). Lowered by DAEToMid the same shape as META_TUPLE,
+     * so it takes the same ctor tag. */
+    case DAE.T_TUPLE(__) then 0;
     else algorithm Error.addInternalError("Ctag generation fail:" + anyString(ty) + "\n",sourceInfo()); then fail();
  end match;
 end genTypeCtorIndex;

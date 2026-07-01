@@ -845,6 +845,19 @@ algorithm
       DoubleEnded.push_back(values, varExp);
     end for;
     then MidCode.LITERALMETATYPE(DoubleEnded.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
+  /* DAE.TUPLE holds the arguments of a multi-return call (e.g. record
+   * constructors, functions with several outputs). Lower it the same
+   * way as META_TUPLE -- a metatype box of the boxed element values.
+   * Previously fell through the ExpToMid else and raised
+   * "DAE.Exp to Mid conversion failed: TUPLE". */
+  case DAE.TUPLE(PR=expLst)
+  algorithm
+    values := DoubleEnded.fromList({});
+    for exp in expLst loop
+      varExp := rValueToVar(ExpToMid(exp, state), state);
+      DoubleEnded.push_back(values, varExp);
+    end for;
+    then MidCode.LITERALMETATYPE(DoubleEnded.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
   case DAE.METARECORDCALL(_, expLst, _, _, _)
   algorithm
     values := DoubleEnded.fromList({});
