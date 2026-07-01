@@ -265,6 +265,7 @@ public:
   void updatePlotWindows();
   void updateBrowserTime(double time);
   QPair<double, bool> readVariableValue(QString variable, double time, bool reportError = true);
+  QPair<QString, bool> readVariableStringValue(QString variable, double time);
   void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
