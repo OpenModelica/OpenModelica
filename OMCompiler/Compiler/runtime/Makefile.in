@@ -14,6 +14,10 @@ ZMQINCLUDE = ../../3rdParty/libzmq/include
 GCINCLUDE = -DGC_THREADS -I$(top_builddir)/3rdParty/gc/include
 OMC_CONFIG_INC = $(top_builddir)
 
+COLPACKDIR = $(top_builddir)/3rdParty/ColPack
+COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
+COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
+
 CFLAGS = @CFLAGS@ @CHECK_C_ERRORS@ $(USE_CORBA)
 OMPCC = @CC@ @OMPCFLAGS@
 OMBUILDDIR = @OMBUILDDIR@
@@ -32,7 +36,7 @@ CC	= @CC@
 CXX	= @CXX@
 IDL	= @IDLCMD@
 CXXFLAGS = @CXXFLAGS@
-CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/"
+CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) $(COLPACK_INCLUDES) -I$(FMIINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/"
 TRIPLE=@host_short@
 SHREXT=@SHREXT@
 RPATH=@RPATH@

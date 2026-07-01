@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <setjmp.h>
+#include <time.h>
 
 #include "openmodelica.h"
 #include "openmodelica_func.h"
@@ -116,11 +117,19 @@ int jacADJ_symColored(double *t, double *y, double *yprime,
                    double *deltaD, double *pd, double *cj, double *h,
                    double *wt, double *rpar, int* ipar);
 
+int jacA_symBiColored(double *t, double *y, double *yprime,
+                      double *deltaD, double *pd, double *cj, double *h,
+                      double *wt, double *rpar, int* ipar);
+
+int jacADJ_symColored(double *t, double *y, double *yprime,
+                   double *deltaD, double *pd, double *cj, double *h,
+                   double *wt, double *rpar, int* ipar);
+
 void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nCols);
+                                 void* Jac, int nRows);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -391,6 +400,18 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       dasslData->allocatedParMem = 1;   /* true */
 #endif
       break;
+    case BICOLOREDSYMJAC: {
+      JACOBIAN* jac_A = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors
+          + (jac_A->adjointJacobian ? jac_A->adjointJacobian->sparsePattern->maxColors : 0);
+      if (!jac_A->isBidirectional) {
+        warningStreamPrint(OMC_LOG_SOLVER, 0,
+            "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; "
+            "falling back to standard colored symbolic evaluation.");
+      }
+      dasslData->jacobianFunction = jacA_symBiColored;
+      break;
+    }
     case SYMJAC:
       dasslData->jacobianFunction = jacA_sym;
 #ifdef USE_PARJAC
@@ -530,6 +551,28 @@ int printVector(int logLevel, const char* name,  double* vec, int n, double time
   for(i=0; i<n; ++i)
   {
     infoStreamPrint(logLevel, 0, "%d. %g", i+1, vec[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
+}
+
+int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* data, int n, double time)
+{
+  int row, col;
+
+  infoStreamPrint(logLevel, 1, "%s at time=%g", name, time);
+  for (col = 0; col < n; ++col)
+  {
+    const char* colName = data->modelData->realVarsData[col].info.name;
+    for (row = 0; row < n; ++row)
+    {
+      const char* rowName = data->modelData->realVarsData[row].info.name;
+      const int idx = col * n + row;
+      infoStreamPrint(logLevel, 0,
+                      "J(row=%d:'%s', col=%d:'%s') = %.16g [flat=%d]",
+                      row, rowName, col, colName, matrix[idx], idx);
+    }
   }
   messageClose(logLevel);
 
@@ -1022,15 +1065,14 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
  * @param nth       Sparsity pattern lead index, unused.
  * @param value     Value to set in position (i,j)
  * @param Jac       Pointer to double array storing matrix.
- * @param nCols     Number of columns of Jacobian matrix
+ * @param nRows     Number of rows of Jacobian matrix
  */
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nCols)
+                                 void* Jac, int nRows)
 {
   UNUSED(nth);
-  /* Store so that resulting matrix matches forward layout */
   double* A = (double*) Jac;
-  A[row * nCols + column] = value;
+  A[column*nRows + row] = value;
 }
 
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
@@ -1064,9 +1106,54 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
       jac->constantEqns(data, threadData, jac, NULL);
   }
 
-  // Note: this assumes a square matrix i.e. `nRows == nCols`
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparseAdj);
+
+
+  return 0;
+}
+
+/* \fn jacA_symBiColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates the Jacobian matrix using bidirectional (star bicolored)
+ * evaluation: a forward/column phase followed by an adjoint/row phase, recovering
+ * all nonzeros with fewer evaluations than either direction alone.
+ */
+int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
+                      double *matrixA, double *cj, double *h, double *wt,
+                      double *rpar, int *ipar)
+{
+  DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+  const int index = data->callback->INDEX_JAC_A;
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  const SPARSE_PATTERN* sp = jac->sparsePattern;
+  const unsigned int nRows = jac->sizeRows;
+  const unsigned int nCols = jac->sizeCols;
+  const unsigned int nnz = sp->nnz;
+  unsigned int col, nz;
+
+  double* sparse_buf = (double*) malloc(nnz * sizeof(double));
+  if (!sparse_buf) {
+    throwStreamPrint(threadData, "jacA_symBiColored: out of memory allocating sparse buffer (nnz=%u)", nnz);
+    return 1;
+  }
+
+
+
+  /* Evaluate into compact nnz-sized sparse buffer (CSC-indexed) */
+  evalJacobian(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);
+
+  /* Scatter nonzeros to the dense column-major DASSL matrixA */
+  for (col = 0; col < nCols; col++) {
+    for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+      matrixA[col * nRows + sp->index[nz]] = sparse_buf[nz];
+    }
+  }
+
+  free(sparse_buf);
   return 0;
 }
 
@@ -1317,6 +1404,9 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
+  /* Initialize dense Jacobian buffer since sparse/colored evaluators only write structural non-zeros. */
+  memset(pd, 0, dasslData->N * dasslData->N * sizeof(double));
+
   /* Compute J = (∂F)/(∂y) */
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
@@ -1331,10 +1421,59 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   }
 
   /* debug */
-  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)){
-    _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
-    _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", OMC_LOG_JAC);
-    _omc_destroyMatrix(dumpJac);
+  /* Compare evaluated Jacobian against a numerical reference.
+   * Only meaningful when the configured method is not already numerical. */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)
+      && dasslData->dasslJacobian != COLOREDNUMJAC
+      && dasslData->dasslJacobian != NUMJAC)
+  {
+    // print the analytical Jacobian for debugging
+    printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: analytical Jacobian pd (column-major)", pd,
+                        data, dasslData->N, *t);
+
+    // and print comparison to numerical Jacobian
+    double* pdNumerical = (double*) calloc(dasslData->N * dasslData->N, sizeof(double));
+    if (pdNumerical != NULL)
+    {
+      int row, col, k;
+      double absDiff, relDiff;
+      double maxAbsDiff = 0.0, maxRelDiff = 0.0;
+      int maxAbsRow = 0, maxAbsCol = 0, maxRelRow = 0, maxRelCol = 0;
+
+      /* Compute numerical Jacobian ∂F/∂y using finite differences */
+      jacA_num(t, y, yprime, deltaD, pdNumerical, cj, h, wt, rpar, ipar);
+
+      /* Apply the same cj * ∂F/∂y' = -cj*I correction */
+      for (k = 0; k < dasslData->N * dasslData->N; k += dasslData->N + 1)
+      {
+        pdNumerical[k] -= *cj;
+      }
+
+      /* Find maximum absolute and relative element-wise differences */
+      for(col = 0; col < dasslData->N; col++)
+      {
+        for(row = 0; row < dasslData->N; row++)
+        {
+          int idx = col * dasslData->N + row;
+          absDiff = fabs(pd[idx] - pdNumerical[idx]);
+          relDiff = absDiff / fmax(fabs(pdNumerical[idx]), 1e-15);
+          if(absDiff > maxAbsDiff) { maxAbsDiff = absDiff; maxAbsRow = row; maxAbsCol = col; }
+          if(relDiff > maxRelDiff) { maxRelDiff = relDiff; maxRelRow = row; maxRelCol = col; }
+        }
+      }
+
+      infoStreamPrint(OMC_LOG_JAC, 1, "Jacobian verification: analytical vs. numerical");
+      infoStreamPrint(OMC_LOG_JAC, 0,
+                      "Max absolute difference: %g at (row=%d:'%s', col=%d:'%s')",
+                      maxAbsDiff, maxAbsRow, data->modelData->realVarsData[maxAbsRow].info.name,
+                      maxAbsCol, data->modelData->realVarsData[maxAbsCol].info.name);
+      infoStreamPrint(OMC_LOG_JAC, 0,
+                      "Max relative difference: %g at (row=%d:'%s', col=%d:'%s')",
+                      maxRelDiff, maxRelRow, data->modelData->realVarsData[maxRelRow].info.name,
+                      maxRelCol, data->modelData->realVarsData[maxRelCol].info.name);
+      messageClose(OMC_LOG_JAC);
+      free(pdNumerical);
+    }
   }
 
   /* set context for the start values extrapolation of non-linear algebraic loops */

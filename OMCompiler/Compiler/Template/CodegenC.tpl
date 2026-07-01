@@ -3401,12 +3401,21 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
           case PARAM() then 'VAR_KIND_PARAMETER'
           else 'VAR_KIND_VARIABLE'
         end match
-        <<
-        <%cComment%>
-        sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
-        sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
-        sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
-        >>
+        if intLt(index, 0) then
+          <<
+          <%cComment%>
+          /* Use default scaling/bounds for unresolved temporary indices (e.g. symbolic-adjoint loop vars). */
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+          >>
+        else
+          <<
+          <%cComment%>
+          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+          >>
       else
         <<
         <%cComment%>
@@ -5632,7 +5641,10 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           listLength(coloredRows),
           modelNamePrefix,
           fileNamePrefix,
-          isAdjoint)
+          isAdjoint,
+          isBidirectional,
+          adjointJacobianIndex,
+          adjointMatrixName)
       // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
@@ -5644,7 +5656,10 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           maxColorCols,
           modelNamePrefix,
           fileNamePrefix,
-          isAdjoint)
+          isAdjoint,
+          isBidirectional,
+          adjointJacobianIndex,
+          adjointMatrixName)
       ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
@@ -5660,7 +5675,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix, Boolean isAdjoint)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -5685,6 +5700,7 @@ match sparsepattern
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
+    let isRowEval = if isAdjoint then "1" else "0"
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -5696,7 +5712,7 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
-      jacobian->isRowEval = <%boolStrC(isAdjoint)%>;
+      jacobian->isRowEval = <%isRowEval%>;
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -5714,6 +5730,17 @@ match sparsepattern
       <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
 
       omc_fclose(pFile);
+
+      <%if isBidirectional then <<
+      /* Initialize adjoint Jacobian and set up bidirectional evaluation */
+      {
+        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
+        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
+        jacobian->isBidirectional = 1;
+        jacobian->adjointJacobian = adjJac;
+        initBidirectionalRecovery(jacobian);
+      }
+      >> %>
 
       return 0;
     }

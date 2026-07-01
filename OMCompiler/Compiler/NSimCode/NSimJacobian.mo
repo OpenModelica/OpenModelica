@@ -90,6 +90,9 @@ public
       list<SimGenericCall> generic_loop_calls             "Generic for-loop and array calls";
       Option<UnorderedMap<ComponentRef, SimVar>> jac_map  "hash table for cref -> simVar";
       Boolean isAdjoint                                   "indicates if this is an adjoint jacobian";
+      Boolean isBidirectional                              "indicates if this jacobian is part of a bidirectional pair";
+      Integer adjointJacobianIndex                         "index of the adjoint jacobian for bidirectional (-1 if not bidirectional)";
+      String adjointMatrixName                              "matrix name of the adjoint jacobian for bidirectional";
     end SIM_JAC;
 
     function toString
@@ -322,7 +325,10 @@ public
               numColors           = listLength(coloring),
               generic_loop_calls  = generic_loop_calls,
               jac_map             = SOME(jac_map),
-              isAdjoint           = jacobian.isAdjoint
+              isAdjoint           = jacobian.isAdjoint,
+              isBidirectional     = false,
+              adjointJacobianIndex = -1,
+              adjointMatrixName   = ""
             );
 
             indices.jacobianIndex := indices.jacobianIndex + 1;
@@ -390,6 +396,17 @@ public
         end if;
       end if;
 
+      // Link forward and adjoint for bidirectional mode
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" then
+        simJac := match simJac
+          case SIM_JAC() algorithm
+            simJac.isBidirectional := true;
+            simJac.adjointJacobianIndex := match simJacAdjoint case SIM_JAC() then simJacAdjoint.jacobianIndex; else -1; end match;
+            simJac.adjointMatrixName   := match simJacAdjoint case SIM_JAC() then simJacAdjoint.name; else ""; end match;
+          then simJac;
+          else simJac;
+        end match;
+      end if;
     end createSimulationJacobian;
 
     function createOptimizationJacobian
@@ -527,8 +544,14 @@ public
       output SparsityColoring simColoringCols;
       output SparsityColoring simColoringRows;
     algorithm
-      simColoringCols := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols);
-      simColoringRows := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows);
+      (simColoringCols, simColoringRows) := match coloring
+        case Jacobian.SparsityColoring.SPARSITY_COLORING() then (
+          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
+          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
+        case Jacobian.SparsityColoring.SPARSITY_BICOLORING() then (
+          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
+          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
+      end match;
     end createSparsityColoring;
 
     function empty
@@ -611,7 +634,10 @@ public
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
             crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap),
-            isAdjoint           = simJac.isAdjoint
+            isAdjoint           = simJac.isAdjoint,
+            isBidirectional     = simJac.isBidirectional,
+            adjointJacobianIndex = simJac.adjointJacobianIndex,
+            adjointMatrixName   = simJac.adjointMatrixName
           );
         then oldJac;
 
@@ -622,7 +648,7 @@ public
     end convert;
   end SimJacobian;
 
-  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE(), false);
+  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE(), false, false, -1, "");
 
   annotation(__OpenModelica_Interface="nbackend");
 end NSimJacobian;

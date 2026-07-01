@@ -3513,10 +3513,10 @@ algorithm
       Integer newIdx;
       Boolean isAdj;
       Option<HashTableCrefSimVar.HashTable> crefToSimVarHTJacobian;
-    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass))
+    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj,false,-1,"")),(newIdx,ass))
       algorithm
         (jacCols,(newIdx,ass)) := List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
-   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass));
+   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj,false,-1,"")),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;

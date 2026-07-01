@@ -1,0 +1,152 @@
+// name: arrowhead
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend --generateDynamicJacobian=bidirectional
+
+loadString("
+  model arrowhead
+    parameter Integer n = 3;
+    Real x[n](each start=1);
+  equation
+    der(x[1]) = sum(x);
+    for i in 2:n loop
+      der(x[i]) = x[i];
+    end for;
+  end arrowhead;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrowhead_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC'",
+//     messages = "LOG_JAC           | info    | Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-08
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -99999999 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -99999999 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -99999999 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 2.98023e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 1.49012e-08 at (row=0:'x[1]', col=2:'x[3]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=7e-08
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -45833332.33333333 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -45833332.33333333 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -45833332.33333333 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 4.47035e-08 at (row=0:'x[1]', col=1:'x[2]')
+// |                 | |       | | Max relative difference: 4.47035e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1.5e-07
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -18749999 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -18749999 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -18749999 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 2.98023e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 2.98023e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=3.1e-07
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -9374999 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -9374999 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -9374999 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 2.98023e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 1.49012e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=6.3e-07
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -4687499 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -4687499 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -4687499 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 4.47035e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 2.98023e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1.27e-06
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -2343749 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -2343749 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -2343749 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 1.49011e-08 at (row=0:'x[1]', col=1:'x[2]')
+// |                 | |       | | Max relative difference: 1.49011e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=2.55e-06
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -1171874 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -1171874 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -1171874 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 4.47035e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 1.49011e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=5.11e-06
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -585936.5 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -585936.5 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -585936.5 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 1.49012e-08 at (row=0:'x[1]', col=0:'x[1]')
+// |                 | |       | | Max relative difference: 1.49011e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1.023e-05
+// |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -292967.75 [flat=0]
+// |                 | |       | | J(row=1:'x[2]', col=0:'x[1]') = 0 [flat=1]
+// |                 | |       | | J(row=2:'x[3]', col=0:'x[1]') = 0 [flat=2]
+// |                 | |       | | J(row=0:'x[1]', col=1:'x[2]') = 1 [flat=3]
+// |                 | |       | | J(row=1:'x[2]', col=1:'x[2]') = -292967.75 [flat=4]
+// |                 | |       | | J(row=2:'x[3]', col=1:'x[2]') = 0 [flat=5]
+// |                 | |       | | J(row=0:'x[1]', col=2:'x[3]') = 1 [flat=6]
+// |                 | |       | | J(row=1:'x[2]', col=2:'x[3]') = 0 [flat=7]
+// |                 | |       | | J(row=2:'x[3]', col=2:'x[3]') = -292967.75 [flat=8]
+// LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
+// |                 | |       | | Max absolute difference: 1.4901e-08 at (row=0:'x[1]', col=1:'x[2]')
+// |                 | |       | | Max relative difference: 1.4901e-08 at (row=0:'x[1]', col=1:'x[2]')
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

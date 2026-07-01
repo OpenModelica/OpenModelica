@@ -1,22 +1,11 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-adjoint_jacobian1.mos \
-adjoint_jacobian2.mos \
-adjoint_jacobian3.mos \
-adjoint_jacobian4.mos \
-allTheBuildins.mos \
-diff_subs.mos \
-arrayDiff.mos \
-arrayScalar.mos \
-algebraicLoop.mos \
-numericJacobianRows.mos \
-tornNLSJacobianRows.mos \
+arrowhead.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

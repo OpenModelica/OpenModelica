@@ -61,6 +61,7 @@ simulationdaemode.log \
 simulationnewbackend-alias.log \
 simulationnewbackend-arrayhandling.log \
 simulationnewbackend-basics.log \
+simulationnewbackend-bicoloring.log \
 simulationnewbackend-cpp.log \
 simulationnewbackend-differentation.log \
 simulationnewbackend-event_handling.log \
@@ -356,6 +357,8 @@ simulationnewbackend-arrayhandling.log: omc-diff
 simulationnewbackend-basics.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/basics/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-bicoloring.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/bicoloring/ -f Makefile test > $@
 simulationnewbackend-cpp.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/cpp/ -f Makefile test > $@
 	@echo $@ done

@@ -130,37 +130,58 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
 
 #pragma omp for
   for (i=0; i < spp->maxColors; i++) {
-    /* Set seed vector for current color */
-    for (j=0; j < columns; j++) {
-      if (spp->colorCols[j]-1 == i) {
-        t_jac->seedVars[j] = 1;
-      }
-    }
+     if (t_jac->isRowEval == 1) {
+       /* Row evaluation: sparse pattern is CSR, colorCols encodes row colors. */
+       for (j=0; j < rows; j++) {
+         if (spp->colorCols[j]-1 == i) {
+           t_jac->seedVars[j] = 1;
+         }
+       }
 
-    /* Evaluate with updated seed vector */
-    if (t_jac->isRowEval) {
-      data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
-    } else {
-      data->callback->functionJacA_column(data, threadData, t_jac, NULL);
-    }
+       data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
 
-    /* Save jacobian elements in matrixA*/
-    for (j=0; j < columns; j++) {
-      if (t_jac->seedVars[j] == 1) {
-        nth = spp->leadindex[j];
-        while (nth < spp->leadindex[j+1]) {
-          currentIndex = spp->index[nth];
-          (*setJacElement)(currentIndex, j, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-          nth++;
-        }
-      }
-    }
+       for (j=0; j < rows; j++) {
+         if (spp->colorCols[j]-1 == i) {
+           nth = spp->leadindex[j];
+           while (nth < spp->leadindex[j+1]) {
+             currentIndex = spp->index[nth];
+             (*setJacElement)(j, currentIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
+             nth++;
+           }
+           t_jac->seedVars[j] = 0;
+         }
+       }
+       // avoid accumulation
+       for (j=0; j < rows; j++) {
+          t_jac->resultVars[j] = 0;
+       }
+       // reset tmp vars
+       for (j=0; j < t_jac->sizeTmpVars; j++) {
+          t_jac->tmpVars[j] = 0;
+       }
+     } else {
+       /* Column evaluation: sparse pattern is CSC, colorCols encodes column colors. */
+       for (j=0; j < columns; j++) {
+         if (spp->colorCols[j]-1 == i) {
+           t_jac->seedVars[j] = 1;
+         }
+       }
 
-    /* Reset seed vector */
-    for (j=0; j < columns; j++) {
-      t_jac->seedVars[j] = 0;
-    }
-  }
+       data->callback->functionJacA_column(data, threadData, t_jac, NULL);
+
+       for (j=0; j < columns; j++) {
+         if (spp->colorCols[j]-1 == i) {
+           nth = spp->leadindex[j];
+           while (nth < spp->leadindex[j+1]) {
+             currentIndex = spp->index[nth];
+             (*setJacElement)(currentIndex, j, nth, t_jac->resultVars[currentIndex], matrixA, rows);
+             nth++;
+           }
+           t_jac->seedVars[j] = 0;
+         }
+       }
+     }
+   }
 
 } // omp parallel
 }

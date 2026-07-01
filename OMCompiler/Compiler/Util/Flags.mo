@@ -894,10 +894,11 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
 constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamicJacobian",
   NONE(), EXTERNAL(), STRING_FLAG("numeric"),
   SOME(STRING_DESC_OPTION({
-    ("none", "Does not generate Jacobian. For use with explicit solvers."),
-    ("numeric", "Generates sparsity pattern for numeric Jacobian."),
-    ("symbolic", "Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'."),
-    ("symbolicadjoint", "Generates adjoint Jacobian symbolically.")
+    ("none", ("Does not generate Jacobian. For use with explicit solvers.")),
+    ("numeric", ("Generates sparsity pattern for numeric Jacobian.")),
+    ("symbolic", ("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'.")),
+    ("symbolicadjoint", ("Generates adjoint Jacobian symbolically.")),
+    ("bidirectional", ("Generates bidirectional Jacobian using star bicoloring (ColPack). Combines forward and adjoint modes."))
     })),
   "Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x.");
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",

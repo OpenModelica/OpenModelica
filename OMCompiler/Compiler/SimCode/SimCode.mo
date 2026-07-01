@@ -100,10 +100,13 @@ uniontype JacobianMatrix
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
     Boolean isAdjoint; // true if this jacobian is for adjoint calculation
+    Boolean isBidirectional; // true if part of a bidirectional pair
+    Integer adjointJacobianIndex; // index of adjoint jacobian for bidirectional (-1 if none)
+    String adjointMatrixName; // matrix name of adjoint jacobian for bidirectional
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 

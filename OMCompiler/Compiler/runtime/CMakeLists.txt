@@ -36,7 +36,7 @@ omc_check_function_exists_and_define(ctime_r)
 
 # Libraries
 ##################################################################################################
-set(OMC_RUNTIIME_SOURCES
+set(OMC_RUNTIME_SOURCES
     Error_omc.cpp
     Dynload_omc.cpp
     Print_omc.c
@@ -62,13 +62,17 @@ set(OMC_RUNTIIME_SOURCES
     OMGraphics.cpp
     OMGraphics_omc.cpp)
 
+if(OM_OMC_ENABLE_COLPACK)
+  list(APPEND OMC_RUNTIME_SOURCES ColPackBicoloring_omc.cpp)
+endif()
+
 
 # ######################################################################################################################
 # Library: omcruntime
 add_library(omcruntime STATIC)
 add_library(omc::compiler::runtime ALIAS omcruntime)
 
-target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
+target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
@@ -79,6 +83,10 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
+endif()
 
 if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
@@ -159,10 +167,8 @@ target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::FMIL::expat)
-
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 
 ################################################################################
 # This is a lazy approach to generating OMCompiler/omc_config.unix.h and Compiler/Util/Autoconf.mo

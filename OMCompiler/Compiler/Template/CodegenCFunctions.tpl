@@ -4723,7 +4723,7 @@ template contextCref(ComponentRef cr, Context context, Text &preExp, Text &varDe
     then (match Config.simCodeTarget()
           case "omsic" then crefOMSI(cr, context)
            /*deactivated case "omsicpp" then crefOMSI(cr, context)*/
-          else jacCrefs(cr, context, 0))
+          else jacCrefs(cr, context, 0, &sub))
 
   case OMSI_CONTEXT(__) then crefOMSI(cr, context)
   else cref(cr, &sub)
@@ -4832,19 +4832,27 @@ template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Int
       >>
     else "_" + System.unquoteIdentifier(crefStr(cr))
     )
-  case JACOBIAN_CONTEXT(jacHT=SOME(_)) then jacCrefs(cr, context, ix)
+  case JACOBIAN_CONTEXT(jacHT=SOME(_)) then
+    let &sub = buffer ""
+    jacCrefs(cr, context, ix, &sub)
   else crefOld(cr, ix)
 end contextCrefOld;
 
-template jacCrefs(ComponentRef cr, Context context, Integer ix)
+template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
  match context
    case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
      match simVarFromHT(cr, jacHT)
-     case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-     case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-     case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
+       if stringEq(sub, "") then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian->resultVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then
+       if stringEq(sub, "") then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian->tmpVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+       if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then crefOld(cr, ix)
 end jacCrefs;
 
@@ -8052,7 +8060,7 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      if (indices[i] == -1) {
+      if (indices[i] < 0) {
         linearSystemData->nominal[i] = 1.0;
         linearSystemData->min[i]     = -DBL_MAX;
         linearSystemData->max[i]     = DBL_MAX;

@@ -816,7 +816,7 @@ else
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID $COLPACK_LDFLAGS"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   AR_SH="$AR -ru"
