@@ -602,7 +602,14 @@ algorithm
    * perform_simulation adapter in Compiler/runtime/ owns the solver
    * driver. Route llvm-jit through the C case and gate the driver
    * emission on the original target string below. */
-  effectiveTarget := if target == "llvm-jit" then "C" else target;
+  // Statement-form if: the tarball bootstrap omc rejects the inline
+  // expression form here with "Type error in conditional 'true'.
+  // Expected Boolean, got Boolean." Same workaround as the llvmfiles
+  // gate in LoadCompilerSources.mos.
+  effectiveTarget := target;
+  if target == "llvm-jit" then
+    effectiveTarget := "C";
+  end if;
   () := match effectiveTarget
     local
       String str, guid;

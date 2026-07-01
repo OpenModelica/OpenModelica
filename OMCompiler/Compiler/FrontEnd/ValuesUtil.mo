@@ -144,7 +144,12 @@ algorithm
       eltTps := List.map(valLst,valueExpType);
     then DAE.T_METARECORD(path, path, eltTps, indx, {}, false);
     case Values.LIST(valLst) algorithm
-      eltTp := if not listEmpty(valLst) then valueExpType(listHead(valLst)) else DAE.T_METALIST_DEFAULT;
+      // Statement-form if: bootstrap omc from tarball rejects this
+      // inline expression with "Expected Boolean, got Boolean."
+      eltTp := DAE.T_METALIST_DEFAULT;
+      if not listEmpty(valLst) then
+        eltTp := valueExpType(listHead(valLst));
+      end if;
     then DAE.T_METALIST(eltTp);
     case Values.META_TUPLE(valLst) algorithm
       eltTps := List.map(valLst, valueExpType);

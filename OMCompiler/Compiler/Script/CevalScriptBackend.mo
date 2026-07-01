@@ -6330,7 +6330,12 @@ algorithm
   end if;
   runtimeLib := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple
                 + "/omc/libSimulationRuntimeC" + Autoconf.dllExt;
-  bcPath := if System.regularFileExists(modelName + ".bc") then modelName + ".bc" else "";
+  // Statement-form if: bootstrap omc from tarball rejects the inline
+  // expression form with "Expected Boolean, got Boolean."
+  bcPath := "";
+  if System.regularFileExists(modelName + ".bc") then
+    bcPath := modelName + ".bc";
+  end if;
   status := EXT_LLVM.runModelViaJIT(bcPath, runtimeLib, modelName, logFile);
   System.cd(oldDir);
 end runModelViaLLVMJIT;
