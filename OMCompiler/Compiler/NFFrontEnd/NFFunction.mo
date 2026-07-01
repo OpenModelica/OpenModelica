@@ -1902,6 +1902,9 @@ uniontype Function
           // argument should be a cref?
           case "change" then true;
           case "der" then true;
+          // The two arguments may have different types (arrays, expressions,
+          // literals), so they are typed and cast individually. #15969
+          case "DynamicSelect" then true;
           // Function should not be used in function context.
           case "edge" then true;
           // can have variable number of arguments

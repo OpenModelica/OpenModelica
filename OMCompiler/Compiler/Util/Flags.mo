@@ -566,6 +566,8 @@ constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
 constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
   "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
+constant DebugFlag NF_API_DYNAMIC_SELECT_AUX = DEBUG_FLAG(201, "nfAPIDynamicSelectAux", false,
+  "Synthesize auxiliary result-file variables bound to user-function calls inside DynamicSelect dynamic expressions so OMEdit can display them.");
 
 public
 // CONFIGURATION FLAGS
