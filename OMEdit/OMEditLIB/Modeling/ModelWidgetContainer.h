@@ -592,7 +592,6 @@ public:
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
-  void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
@@ -657,7 +656,6 @@ private:
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
-  void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   bool dependsOnModel(const QString &modelName, bool unload);
   void updateElementModeButtons();
   void reDrawModelWidgetHelper();

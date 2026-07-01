@@ -66,11 +66,9 @@ class OMSProxy : public QObject
 {
   Q_OBJECT
 private:
-  // the only classes that are allowed to create and destroy
+  // the only class that are allowed to destroy
   friend class MainWindow;
-  friend class LibraryWidget;
 
-  static void create();
   static void destroy();
   OMSProxy();
   ~OMSProxy();
@@ -95,7 +93,12 @@ private slots:
   void readGuiServerStandardOutput();
   void readGuiServerStandardError();
 public:
-  static OMSProxy* instance() {return mpInstance;}
+  static OMSProxy* instance() {
+    if (!mpInstance)
+      mpInstance = new OMSProxy;
+    return mpInstance;
+  }
+  static bool isCreated() { return mpInstance != nullptr; }
 
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
   bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);

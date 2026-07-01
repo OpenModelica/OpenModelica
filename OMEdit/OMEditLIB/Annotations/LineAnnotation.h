@@ -150,7 +150,6 @@ public:
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();
-  void showOMSConnection();
   void updateTransistion();
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 

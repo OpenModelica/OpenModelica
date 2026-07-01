@@ -2124,10 +2124,6 @@ void MainWindow::createNewMOSFile()
  */
 void MainWindow::createNewSSPModel()
 {
-  //create an object of OMSProxy when user first creates a SSP Model
-  if (!OMSProxy::instance())
-    OMSProxy::create();
-
   CreateModelDialog *pCreateModelDialog = new CreateModelDialog(this);
   pCreateModelDialog->exec();
 }
@@ -5294,7 +5290,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setWindowTitle(tr("About %1").arg(Helper::applicationName));
   setAttribute(Qt::WA_DeleteOnClose);
 
-  const QString omsVersionLine = OMSProxy::instance()
+  const QString omsVersionLine = OMSProxy::isCreated()
       ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
       : QString();
   const QString aboutText = tr(
