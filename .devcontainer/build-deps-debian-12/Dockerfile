@@ -1,5 +1,4 @@
-ARG BASE_IMAGE=docker.openmodelica.org/build-deps:v1.22.3
-FROM ${BASE_IMAGE}
+FROM docker.openmodelica.org/build-deps:debian-12-debug
 
 ENV SHELL=/bin/bash
 
@@ -7,11 +6,6 @@ ARG USERNAME=openmodelica-user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Additional software (gdb, valgrind)
-RUN apt-get update \
-    && apt-get install -qy build-essential gdb valgrind \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME

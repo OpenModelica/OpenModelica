@@ -1,22 +1,10 @@
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+FROM docker.openmodelica.org/build-deps:debian-13-debug
 
 ENV SHELL=/bin/bash
 
 ARG USERNAME=openmodelica-user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-
-# Additional software (gdb, valgrind) and set locale
-RUN apt-get update \
-    && apt-get install -qy build-essential gdb valgrind locales \
-    && locale-gen en_US.UTF-8 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
 
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \

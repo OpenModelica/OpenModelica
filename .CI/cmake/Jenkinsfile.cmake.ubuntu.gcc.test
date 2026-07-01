@@ -25,7 +25,7 @@ pipeline {
         stage('autoconf-jammy-gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
