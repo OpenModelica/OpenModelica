@@ -48,6 +48,10 @@ typedef struct {
        *descr;
   /** Non-zero if this entry is a parameter (stored in data_1). */
   int isParam;
+  /** Non-zero if this entry is a time-varying String variable (#15969); its
+      value is stored in the stringData matrix, and `index` is the 1-based string
+      signal index. */
+  int isString;
   /** 1-based index into the appropriate data block; negative values indicate a
       negative alias (the file also contains negative alias columns). */
   int index;
@@ -87,6 +91,14 @@ typedef struct {
   double **vars;
   /** 1 if stored in double precision, 0 if stored as float */
   char doublePrecision;
+  /** #15969: string result support. stringData is a column-major char matrix of
+      stringMaxLen rows and (nStringSignals * nStringRows) columns; the string
+      for signal s (1-based) at time row r is stringData + (r*nStringSignals +
+      (s-1)) * stringMaxLen. */
+  char *stringData;
+  uint32_t stringMaxLen;
+  uint32_t nStringSignals;
+  uint32_t nStringRows;
 } ModelicaMatReader;
 
 
@@ -105,6 +117,11 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
 
 int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
+
+/* #15969: read the value of a time-varying String variable at a given time.
+   Returns a pointer into the reader's stringData (valid until the reader is
+   freed), or NULL if `var` is not a string variable / has no data. */
+const char* omc_matlab4_read_string_val(ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
 
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
