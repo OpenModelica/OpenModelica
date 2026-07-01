@@ -103,7 +103,7 @@ public
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
-      Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map  "map for accumulating adjoint gradients for component refs; each entry tagged with root seed cref";
+      Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map  "map for accumulating adjoint gradients for component refs";
       Expression current_grad                                   "current gradient expression, used in reverse mode";
       Boolean collectAdjoints                                   "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
     end DIFFERENTIATION_ARGUMENTS;
