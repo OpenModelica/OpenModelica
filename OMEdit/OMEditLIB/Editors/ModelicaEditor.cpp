@@ -440,6 +440,11 @@ void ModelicaEditor::requestDefinitionAt(const QPoint &pos)
   if (!pLSPClient || !pLSPClient->isRunning()) {
     return;
   }
+  /* Rapid repeated invocations (e.g. quick successive ctrl+clicks) must not pile up
+     overlapping requests/timers on the same editor. */
+  if (mPendingDefinitionRequestId != -1) {
+    return;
+  }
   ensureLanguageServerConnected();
   flushPendingContentChange();
   const QString uri = documentUri();
