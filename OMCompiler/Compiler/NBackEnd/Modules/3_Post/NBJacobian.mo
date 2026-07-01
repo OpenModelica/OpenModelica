@@ -208,6 +208,7 @@ public
     list<SparsityPatternRow> row_wise_pattern = {};
     list<ComponentRef> seed_vars = {};
     list<ComponentRef> partial_vars = {};
+    list<Adjacency.Matrix> sparsity_patterns = {};
     Integer nnz = 0;
     VarData varData;
     SparsityPattern sparsityPattern;
@@ -243,6 +244,7 @@ public
 
             comps         := listAppend(arrayList(jac.comps), comps);
 
+            sparsity_patterns := jac.sparsity :: sparsity_patterns;
             col_wise_pattern  := listAppend(tmpPattern.col_wise_pattern, col_wise_pattern);
             row_wise_pattern  := listAppend(tmpPattern.row_wise_pattern, row_wise_pattern);
             seed_vars         := listAppend(tmpPattern.seed_vars, seed_vars);
@@ -282,7 +284,7 @@ public
         jacType           = jacType,
         varData           = varData,
         comps             = listArray(comps),
-        //sparsity          = Adjacency.Matrix.SPARSITY(arrayCreate()),
+        sparsity          = Adjacency.Matrix.combine(sparsity_patterns),
         sparsityPattern   = sparsityPattern,
         sparsityColoring  = sparsityColoring,
         isAdjoint         = name == "ADJ" // this is maybe bad (e.g. when name changes)
@@ -1108,10 +1110,14 @@ protected
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
 
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
+    VariablePointers adjacencyVars;
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, res_vars_d, tmp_vars, tmp_vars_d, seed_vars, seed_vars_d;
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
+    Adjacency.Matrix fullLocal, sparsity;
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
@@ -1127,6 +1133,9 @@ protected
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
                                                                      makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    for v in VariablePointers.toList(seedCandidates) loop
+      UnorderedSet.add(BVariable.getVarName(v), seed_set);
+    end for;
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
@@ -1136,13 +1145,14 @@ protected
       makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
     end for;
 
-    res_vars := Pointer.access(pDer_vars_ptr);
+    for v in res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+    end for;
+    res_vars_d := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop
-      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
-    end for;
-    tmp_vars := Pointer.access(pDer_vars_ptr);
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous); end for;
+    tmp_vars_d := Pointer.access(pDer_vars_ptr);
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -1161,11 +1171,11 @@ protected
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
 
     // collect var data (most of this can be removed)
-    unknown_vars  := listAppend(res_vars, tmp_vars);
+    unknown_vars  := listAppend(res_vars_d, tmp_vars_d);
     all_vars      := unknown_vars;  // add other vars later on
 
-    seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars;     // add other auxiliaries later on
+    seed_vars_d   := Pointer.access(seed_vars_ptr);
+    aux_vars      := seed_vars_d;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
 
@@ -1176,17 +1186,19 @@ protected
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
       dependencies  = VariablePointers.fromList(depend_vars),
-      resultVars    = VariablePointers.fromList(res_vars),
-      tmpVars       = VariablePointers.fromList(tmp_vars),
-      seedVars      = VariablePointers.fromList(seed_vars)
+      resultVars    = VariablePointers.fromList(res_vars_d),
+      tmpVars       = VariablePointers.fromList(tmp_vars_d),
+      seedVars      = VariablePointers.fromList(seed_vars_d)
     );
 
     if isSome(full) then
-      //sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
+      fullLocal := Util.getOption(full);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
-      fail();
+      adjacencyVars := VariablePointers.clone(seedCandidates);
+      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+      fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
     end if;
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
@@ -1195,7 +1207,7 @@ protected
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
-      // sparsity
+      sparsity          = sparsity,
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring,
       isAdjoint         = false
@@ -1403,6 +1415,11 @@ protected
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars;
     BVariable.VarData varDataJac;
+
+    VariablePointers adjacencyVars;
+    Adjacency.Matrix fullLocal, sparsity;
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
 
@@ -1780,6 +1797,15 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
+    if isSome(full) then
+      fullLocal := Util.getOption(full);
+    else
+      adjacencyVars := VariablePointers.clone(seedCandidates);
+      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+      fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
+    end if;
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
+
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
@@ -1792,6 +1818,7 @@ protected
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
+      sparsity          = sparsity,
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring,
       isAdjoint         = true
@@ -1802,25 +1829,59 @@ protected
     extends Module.jacobianInterface;
   protected
     VarData varDataJac;
+    VariablePointers adjacencyVars;
+    Adjacency.Matrix sparsity, fullLocal;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
-    list<Pointer<Variable>> res_vars, tmp_vars;
+    list<Pointer<Variable>> res_vars, tmp_vars, seed_vars_d, pDer_vars_d;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
+    Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+
+    UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    seed_vars_d := Pointer.access(seed_vars_ptr);
+    for v in VariablePointers.toList(seedCandidates) loop
+      UnorderedSet.add(BVariable.getVarName(v), seed_set);
+    end for;
+
+    for v in res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+    end for;
+    pDer_vars_d := Pointer.access(pDer_vars_ptr);
+
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
-      auxiliaries   = VariablePointers.fromList({}),
+      auxiliaries   = VariablePointers.fromList(seed_vars_d),
       aliasVars     = VariablePointers.fromList({}),
-      diffVars      = VariablePointers.fromList({}),
+      diffVars      = partialCandidates,
       dependencies  = VariablePointers.fromList({}),
-      resultVars    = VariablePointers.fromList(res_vars),
+      resultVars    = VariablePointers.fromList(pDer_vars_d),
       tmpVars       = VariablePointers.fromList(tmp_vars),
-      seedVars      = seedCandidates
+      seedVars      = VariablePointers.fromList(seed_vars_d)
     );
+
+    if isSome(strongComponents) then
+      if isSome(full) then
+        fullLocal := Util.getOption(full);
+      else
+        adjacencyVars := VariablePointers.clone(seedCandidates);
+        adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+        fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
+      end if;
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
+      fail();
+    end if;
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
@@ -1829,6 +1890,7 @@ protected
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray({}),
+      sparsity          = sparsity,
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring,
       isAdjoint         = false

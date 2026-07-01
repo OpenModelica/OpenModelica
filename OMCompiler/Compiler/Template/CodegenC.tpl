@@ -1933,6 +1933,7 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
     <<
     #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%jac.matrixName%> <%jac.jacobianIndex%>
     int <%symbolName(modelNamePrefix,"functionJac")%><%jac.matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%jac.matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%jac.matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     void <%symbolName(modelNamePrefix,"Jac")%><%jac.matrixName%>_DAG(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.matrixName, jac.crefsHT))%>
@@ -2792,7 +2793,11 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
     case nls as NONLINEARSYSTEM(__) then
       let size = listLength(nls.crefs)
       let generatedJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-      let initialJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+      let initialJac = match nls.jacobianMatrix
+        case SOME(JAC_MATRIX(columns={})) then 'NULL'
+        case SOME(JAC_MATRIX(matrixName=name, sparsityMatrix=SPARSITY())) then '<%symbolName(modelPrefixName,"initialResizableAnalyticJacobian")%><%name%>'
+        case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>'
+        case NONE() then 'NULL'
       let jacIndex = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then '-1' case SOME(JAC_MATRIX(jacobianIndex=jacindex)) then  '<%jacindex%> /*jacInx*/' case NONE() then '-1'
       let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName, "")
       let casualCall = if not intEq(indexStrict, 0) then '<%symbolName(modelPrefixName,"eqFunction")%>_<%indexStrict%>' else 'NULL'
@@ -3009,18 +3014,21 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix,prototypes)
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
-        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,
-        coloredCols=colorList,maxColorCols=maxColor))),
+        jacobianMatrix=SOME(JAC_MATRIX(matrixName=jacMatrixName,sparsityMatrix=sparsityMatrix,sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,
+        coloredCols=colorList,maxColorCols=maxColor,seedVars=seedVars,crefsHT=crefsHT))),
         alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
+      let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, listLength(seedVars), colorList, maxColor, createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, useResizable)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
+      <%newSparsity%>
       <%sparseData%>
       <%nonlinearData%>
       <%bodyStaticData%>
@@ -3029,13 +3037,15 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__),alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
+      let newSparsity = generateResizableEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, '')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
+      <%newSparsity%>
       <%sparseData%>
       <%nonlinearData%>
       <%bodyStaticData%>
@@ -3043,29 +3053,32 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       >>
     // dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
-        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,coloredCols=colorList,maxColorCols=maxColor))),
+        jacobianMatrix=SOME(JAC_MATRIX(matrixName=jacMatrixName,sparsityMatrix=sparsityMatrix,sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,coloredCols=colorList,maxColorCols=maxColor,seedVars=seedVars,crefsHT=crefsHT))),
         alternativeTearing = SOME(at as NONLINEARSYSTEM(
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern2,coloredCols=colorList2,maxColorCols=maxColor2))))
         ) then
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, listLength(seedVars), colorList, maxColor, createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, useResizable)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, '')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
       <%residualFunction%>
+      <%newSparsity%>
       <%sparseData%>
       <%nonlinearData%>
       <%bodyStaticData%>
@@ -3084,20 +3097,22 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
+      let newSparsity = generateResizableEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, '')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, '')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
       <%residualFunction%>
+      <%newSparsity%>
       <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
@@ -3279,6 +3294,113 @@ template generateStaticEmptySparseData(String indexName, String systemType)
   >>
 end generateStaticEmptySparseData;
 
+
+template generateResizableEmptySparseData(String indexName, String systemType)
+"template generateStaticEmptySparseData
+  This template generates source code for functions that initialize the sparse-pattern."
+::=
+  <<
+  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+  {
+    /* no sparsity pattern available */
+    inSysData->isPatternAvailable = FALSE;
+  }
+
+  void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+  {
+    /* nothing to free */
+  }
+  >>
+end generateResizableEmptySparseData;
+
+template generateResizableSparseData(String indexName, String systemType, Sparsity sparsity, Integer nCols, list<list<Integer>> coloredCols, Integer maxColors, Context context)
+"template generateResizableSparseData
+  This template generates source code for functions that initialize the sparse-pattern."
+::=
+match sparsity
+  case EMPTY() then
+    <<
+
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      inSysData->isPatternAvailable = FALSE;
+    }
+
+    void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    {
+    }
+    >>
+  case SPARSITY() then
+    let &preExpC = buffer ""
+    let &varDeclsC = buffer ""
+    let &auxFunctionC = buffer ""
+    let &subC = buffer ""
+    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
+    let &preExpF = buffer ""
+    let &varDeclsF = buffer ""
+    let &auxFunctionF = buffer ""
+    let &subF = buffer ""
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'inSysData->sparsePattern') ;separator="\n")
+    let nColors = if coloredCols then intString(maxColors) else nCols
+    let colorCode = if coloredCols then
+        (coloredCols |> colorGroup hasindex c0 =>
+          (colorGroup |> col =>
+            'inSysData->sparsePattern->colorCols[<%col%>] = <%intAdd(c0, 1)%>;'
+          ;separator="\n")
+        ;separator="\n")
+      else
+        <<for (i = 0; i < <%nCols%>; i++) inSysData->sparsePattern->colorCols[i] = i + 1;>>
+    <<
+
+    OMC_DISABLE_OPT
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      unsigned int i, nnz;
+      unsigned int col_counts[<%nCols%>];
+      unsigned int col_fill[<%nCols%>];
+      <%varDeclsC%><%varDeclsF%>
+
+      <%preExpC%><%preExpF%>
+      <%auxFunctionC%><%auxFunctionF%>
+
+      /* Phase 1: count non-zeros per column */
+      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
+      <%countCode%>
+
+      /* Compute total nnz and allocate pattern */
+      nnz = 0;
+      for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
+      inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, <%nColors%>);
+      if (!inSysData->sparsePattern) return;
+
+      /* Compute leadindex as prefix sum of col_counts */
+      inSysData->sparsePattern->leadindex[0] = 0;
+      for (i = 0; i < <%nCols%>; i++)
+        inSysData->sparsePattern->leadindex[i + 1] = inSysData->sparsePattern->leadindex[i] + col_counts[i];
+
+      /* Phase 2: fill row indices */
+      memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
+      <%fillCode%>
+
+      /* Fill color array */
+      <%colorCode%>
+
+      inSysData->isPatternAvailable = TRUE;
+    }
+
+    void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      if (inSysData->isPatternAvailable) {
+        freeSparsePattern(inSysData->sparsePattern);
+        free(inSysData->sparsePattern);
+        inSysData->sparsePattern = NULL;
+        inSysData->isPatternAvailable = FALSE;
+      }
+    }
+    >>
+end generateResizableSparseData;
+
+
 template generateStaticSparseData(String indexName, String systemType, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor)
 "template generateStaticSparseData
   This template generates source code for functions that initialize the sparse-pattern."
@@ -3389,8 +3511,9 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
   end match
 end generateStaticNonlinearData;
 
-template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
-  "Generates initial function for nonlinear loops."
+template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String useResizableSparsity)
+  "Generates initial function for nonlinear loops.
+   useResizableSparsity: non-empty string = use resizable pattern init; empty = use static pattern init."
 ::=
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
@@ -3416,6 +3539,9 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
         >>
 
   ;separator="\n")
+  let sparsityInitCall = if useResizableSparsity
+    then 'initializeResizableSparsityPattern<%indexName%>(sysData);'
+    else 'initializeSparsePattern<%indexName%>(sysData);'
   <<
 
   OMC_DISABLE_OPT
@@ -3425,7 +3551,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
     <%bodyStaticData%>
     /* initial sparse pattern */
     if (initSparsePattern) {
-      initializeSparsePattern<%indexName%>(sysData);
+      <%sparsityInitCall%>
     }
     if (initNonlinearPattern) {
       initializeNonlinearPattern<%indexName%>(sysData);
@@ -5647,6 +5773,9 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isAdjoint)
       ;separator="\n")
 
+  let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, listLength(seedVars), coloredCols, maxColorCols, createJacContext(matrixName, crefsHT), modelNamePrefix) ;separator="\n")
+
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
@@ -5654,11 +5783,346 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   <<
   <%jacMats%>
 
+  <%resizableSparsity%>
+
   <%initialjacMats%>
 
   <%jacGenericCalls%>
   >>
 end functionAnalyticJacobians;
+
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, list<list<Integer>> coloredCols, Integer maxColors, Context context, String modelNamePrefix)
+"Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
+::=
+match sparsity
+  case EMPTY() then
+    <<
+    int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
+    {
+      return 1;
+    }
+    >>
+  case SPARSITY() then
+    let &preExpC = buffer ""
+    let &varDeclsC = buffer ""
+    let &auxFunctionC = buffer ""
+    let &subC = buffer ""
+    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
+    let &preExpF = buffer ""
+    let &varDeclsF = buffer ""
+    let &auxFunctionF = buffer ""
+    let &subF = buffer ""
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'jacobian->sparsePattern') ;separator="\n")
+    let nColors = if coloredCols then intString(maxColors) else nCols
+    let colorCode = if coloredCols then
+        (coloredCols |> colorGroup hasindex c0 =>
+          (colorGroup |> col =>
+            'jacobian->sparsePattern->colorCols[<%col%>] = <%intAdd(c0, 1)%>;'
+          ;separator="\n")
+        ;separator="\n")
+      else
+        <<for (i = 0; i < <%nCols%>; i++) jacobian->sparsePattern->colorCols[i] = i + 1;>>
+    let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
+    let tmpvarsSize = (columns |> JAC_COLUMN() => listLength(columnVars); separator="\n")
+    let constantEqns = (columns |> JAC_COLUMN() =>
+      match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
+      ;separator="")
+    let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
+    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    <<
+    int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
+    {
+      unsigned int i, nnz;
+      unsigned int col_counts[<%nCols%>];
+      unsigned int col_fill[<%nCols%>];
+      <%varDeclsC%><%varDeclsF%>
+
+      <%preExpC%><%preExpF%>
+      <%auxFunctionC%><%auxFunctionF%>
+
+      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
+
+      /* Phase 1: count non-zeros per column */
+      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
+      <%countCode%>
+
+      /* Compute total nnz and allocate pattern */
+      nnz = 0;
+      for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
+      jacobian->sparsePattern = allocSparsePattern(<%nCols%>, nnz, <%nColors%>);
+      if (!jacobian->sparsePattern) return 1;
+
+      /* Compute leadindex as prefix sum of col_counts */
+      jacobian->sparsePattern->leadindex[0] = 0;
+      for (i = 0; i < <%nCols%>; i++)
+        jacobian->sparsePattern->leadindex[i + 1] = jacobian->sparsePattern->leadindex[i] + col_counts[i];
+
+      /* Phase 2: fill row indices */
+      memcpy(col_fill, jacobian->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
+      <%fillCode%>
+
+      /* Fill color array */
+      <%colorCode%>
+
+      jacobian->availability = <%availability%>;
+      return 0;
+    }
+    >>
+end initialResizableAnalyticJacobians;
+
+template resizableSparsityRowCount(SparsityRow row, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+"Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
+ depsCode is computed once from dependencies (in SPARSITY_ROW scope) then reused per solved_cref."
+::=
+match row
+  case SPARSITY_ROW() then
+    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
+    let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
+    let depsCode = (dependencies |> (seed, _, _) => resizableColCount(seed, context, &preExp, &varDecls, &auxFunction) ;separator="\n")
+    let bodyCode = (solved_crefs |> sc hasindex k =>
+      match crefSubs(sc)
+        case {WHOLEDIM()} then
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case SIMVAR() then
+              let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _wr<%k%>;
+                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                  <%depsCode%>
+                }
+              }
+              >>
+            else depsCode
+          else depsCode
+        else
+          match listReverse(crefSubs(sc))
+          case WHOLEDIM() :: _ then
+            match context
+            case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+              match simVarFromHT(crefStripSubs(sc), jacHT)
+              case SIMVAR() then
+                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wr<%k%>;
+                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                    <%depsCode%>
+                  }
+                }
+                >>
+              else depsCode
+            else depsCode
+          else depsCode
+    ;separator="\n")
+    if bodyCode then
+      <<
+      /* <%crefStrNoUnderscore(equation_name)%> count */
+      <%forIter%>
+        <%bodyCode%>
+      <%forTail%>
+      >>
+    else ''
+end resizableSparsityRowCount;
+
+template resizableColCount(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+"Increment col_counts for one dependency cref."
+::=
+match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarFromHT(crefStripSubs(seed), jacHT)
+    case v as SIMVAR() then
+      match crefSubs(seed)
+        case {} then
+          'col_counts[<%v.index%>]++;'
+        case {WHOLEDIM()} then
+          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          {
+            unsigned int _wc<%v.index%>;
+            for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+              col_counts[<%v.index%> + _wc<%v.index%>]++;
+            }
+          }
+          >>
+        else
+          match listReverse(crefSubs(seed))
+          case WHOLEDIM() :: outer_rev_subs then
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+            <<
+            {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++;
+              }
+            }
+            >>
+          else
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+            'col_counts[<%v.index%> + (<%offset%>)]++;'
+    else '/* resizableColCount: seed not found in jacHT */'
+  else ''
+end resizableColCount;
+
+template resizableSparsityRowFill(SparsityRow row, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub, String spPattern)
+"Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
+ Uses resizableFillDepsForRow helper to avoid nested iteration over two record fields."
+::=
+match row
+  case SPARSITY_ROW() then
+    let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
+    let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
+    let bodyCode = (solved_crefs |> sc hasindex k =>
+      resizableFillDepsForRow(row, k, sc, context, &preExp, &varDecls, &auxFunction, spPattern)
+    ;separator="\n")
+    if bodyCode then
+      <<
+      /* <%crefStrNoUnderscore(equation_name)%> fill */
+      <%forIter%>
+        <%bodyCode%>
+      <%forTail%>
+      >>
+    else ''
+end resizableSparsityRowFill;
+
+template resizableFillDepsForRow(SparsityRow row, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+"Generate fill code for solved_cref sc (row index k) against all dependencies in row.
+ Explicitly binds dependencies in the SPARSITY_ROW pattern to keep it in scope through nested matches."
+::=
+match row
+  case SPARSITY_ROW(dependencies=deps) then
+    let depsWhole = (deps |> (seed, _, _) => resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+    match crefSubs(sc)
+      case {WHOLEDIM()} then
+        match context
+        case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+          match simVarFromHT(crefStripSubs(sc), jacHT)
+          case v as SIMVAR() then
+            let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+            <<
+            {
+              unsigned int _wr<%k%>;
+              for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                <%depsWhole%>
+              }
+            }
+            >>
+          else ''
+        else ''
+      case {} then
+        match context
+        case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+          match simVarFromHT(crefStripSubs(sc), jacHT)
+          case v as SIMVAR() then
+            (deps |> (seed, _, _) => resizableColFill(seed, intString(v.index), context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+          else ''
+        else ''
+      else
+        match listReverse(crefSubs(sc))
+        case WHOLEDIM() :: outer_rev_subs then
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let outer_off = match outer_rev_subs
+                case {} then '0'
+                else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _wr<%k%>;
+                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                  unsigned int row_<%k%> = <%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
+                  <%depsWhole%>
+                }
+              }
+              >>
+            else ''
+          else ''
+        else
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let off_sc = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &preExp, &varDecls, &auxFunction)
+              (deps |> (seed, _, _) => resizableColFill(seed, '<%v.index%> + (<%off_sc%>)', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+            else ''
+          else ''
+end resizableFillDepsForRow;
+
+template resizableColFill(ComponentRef seed, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+"Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
+::=
+match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarFromHT(crefStripSubs(seed), jacHT)
+    case v as SIMVAR() then
+      match crefSubs(seed)
+        case {} then
+          '<%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;'
+        case {WHOLEDIM()} then
+          let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          {
+            unsigned int _wc<%v.index%>;
+            for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+              <%spPattern%>->index[col_fill[<%v.index%> + _wc<%v.index%>]++] = <%rowExpr%>;
+            }
+          }
+          >>
+        else
+          match listReverse(crefSubs(seed))
+          case WHOLEDIM() :: outer_rev_subs then
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+            <<
+            {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+            >>
+          else
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+            '<%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;'
+    else '/* resizableColFill: seed not found in jacHT */'
+  else ''
+end resizableColFill;
+
+template seedSizeAssignments(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarFromHT(crefStripSubs(seed), jacHT)
+    case v as SIMVAR(varKind=BackendDAE.JAC_VAR())
+    case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR())
+    case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+      let dims = (List.zip(crefDims(seed), crefSubs(seed)) |> (dim, sub) hasindex i0 => dimensionSizeAssignment(dim, sub, v.index, i0, context, &preExp, &varDecls, &auxFunction) ;separator="*")
+      let &preExp += 'number_of_entries += <%if stringEq(dims, '') then '1' else dims%>;<%\n%> /*<%jacSparsityIndex(crefStripSubs(seed), context)%>*/' // ToDo: multiply size of iterator here
+      <<
+
+      >>
+    else 'NOT FOUND'
+end seedSizeAssignments;
+
+template dimensionSizeAssignment(Dimension dim, Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+  let tmp_name = 's<%var_index%>_<%dim_index%>'
+  let dim_exp = dimension(dim, context, &preExp, &varDecls, &auxFunction)
+  let &varDecls += 'size_t <%tmp_name%> = <%dim_exp%>;<%\n%>'
+  match sub
+    case INDEX() then '1'
+    else tmp_name
+end dimensionSizeAssignment;
 
 template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix, Boolean isAdjoint)
 "template initialAnalyticJacobians

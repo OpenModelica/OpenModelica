@@ -194,6 +194,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
@@ -206,6 +207,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
@@ -218,6 +220,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
