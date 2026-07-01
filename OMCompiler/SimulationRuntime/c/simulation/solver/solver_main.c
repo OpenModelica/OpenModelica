@@ -384,15 +384,73 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   /* try */
   {
     int success = 0;
-#if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-    if(initialization(data, threadData, init_initMethod, init_file, init_time))
+    int attempt;
+    /* The configured (by default: homotopy) initialization is attempt 0. If it
+     * fails, automatically RESTART CLEANLY and retry once without homotopy
+     * (attempt 1): the failed homotopy attempt leaves per-nonlinear-system
+     * initial-guess state that cannot be reset in place, so we re-allocate the
+     * nonlinear systems to get a pristine solver state. The fallback is skipped
+     * if the user already requested -noHomotopyOnFirstTry or the model has no
+     * homotopy operator. #14104 / #15886 */
+    int allowFallback = !omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY];
+    modelica_boolean hasHomotopy = FALSE;
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
     {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
-      simInfo->stopTime = simInfo->startTime;
-      retValue = -1;
+      long hi;
+      for (hi = 0; hi < data->modelData->nNonLinearSystems; hi++) {
+        if (data->simulationInfo->nonlinearSystemData[hi].homotopySupport) { hasHomotopy = TRUE; break; }
+      }
     }
+#endif
+
+    for (attempt = 0; attempt < 2; attempt++)
+    {
+      retValue = 0;
+      success = 0;
+#if !defined(OMC_EMCC)
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+      if(initialization(data, threadData, init_initMethod, init_file, init_time))
+      {
+        retValue = -1;
+      }
+      success = 1;
+#if !defined(OMC_EMCC)
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+      if (success && !retValue) {
+        break;   /* initialized successfully */
+      }
+
+      /* failed (assertion or unsolved). Try the clean no-homotopy restart once. */
+      if (attempt == 0 && allowFallback && hasHomotopy)
+      {
+        warningStreamPrint(OMC_LOG_STDOUT, 0,
+          "Initialization failed; restarting the nonlinear solvers and retrying automatically without homotopy (equivalent to -noHomotopyOnFirstTry).");
+        omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]    = 0;
+        omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] = 1;
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+        /* pristine solver state: re-create the nonlinear systems in the same
+         * (non-initial) configuration as at start-up */
+        data->simulationInfo->initial = 0;
+        freeNonlinearSystems(data, threadData);
+        initializeNonlinearSystems(data, threadData);
+#endif
+        continue;
+      }
+
+      /* no (more) fallback available -> report failure as before */
+      retValue = -1;
+      simInfo->stopTime = simInfo->startTime;
+      if (!success) {
+        infoStreamPrint(OMC_LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
+      } else {
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
+      }
+      break;
+    }
+
     if (!retValue)
     {
       if (data->simulationInfo->homotopySteps == 0) {
@@ -402,17 +460,6 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
         usedLocal = data->callback->homotopyMethod == LOCAL_EQUIDISTANT_HOMOTOPY || data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY ;
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
       }
-    }
-
-    success = 1;
-#if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-
-    if (!success)
-    {
-      retValue =  -1;
-      infoStreamPrint(OMC_LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
     }
   }
 
