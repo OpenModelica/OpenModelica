@@ -260,7 +260,20 @@ extern "C++"
 										 std::vector<llvm::Type*> args, modelica_boolean isVariadic=false)
   {
     DBG("Creating external call for:%s of type:%d\n",name,functionTy);
-    llvm::FunctionType *ft = llvm::FunctionType::get(getLLVMType(functionTy), args, isVariadic);
+    /* getLLVMType returns nullptr for MODELICA_UNKNOWN (0) and any type
+     * id outside the enumerated set. llvm::FunctionType::get segfaults
+     * on a null return type, so raise an MMC failure that MidToLLVM's
+     * genProgram try/else catches (skipped function) rather than
+     * crash the compiler. Mirrors createFunctionType at
+     * llvm_gen.cpp:2562. */
+    llvm::Type *retTy = getLLVMType(functionTy);
+    if (!retTy) {
+      fprintf(stderr,
+              "createExternalCallDecl: unknown return type %u for '%s', raising MMC failure\n",
+              (unsigned)functionTy, name);
+      MMC_THROW();
+    }
+    llvm::FunctionType *ft = llvm::FunctionType::get(retTy, args, isVariadic);
     if (!ft) {
       fprintf(stderr,"Unknown function type. Generating external call declaration for:%s failed\n", name);
       return nullptr;

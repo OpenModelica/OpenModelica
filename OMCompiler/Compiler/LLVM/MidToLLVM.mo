@@ -842,11 +842,12 @@ function genCall
   "Generates an llvm, call instruction, observe that a call is a terminator in MidCode, but not
    a terminator in LLVM IR. The arguments for this functions must have been created before this function is called."
   input MidCode.Terminator term "The call expression, a terminator in MidCode not a terminator in LLVM!";
-  input Integer functionTy "The type of the function";
+  input Integer functionTyIn "The type of the function";
 protected
   String dest "The destination variable, it get's assigned IFF there is an assignment call.";
   String functionName "The name of the function to be called";
   Boolean assignment "True if it is a non void function";
+  Integer functionTy = functionTyIn;
 algorithm
   () := match term
     local
@@ -861,6 +862,16 @@ algorithm
      case MidCode.CALL(func=pPath,builtin=true,inputs=_,outputs=_,next=_,ty=_)
        algorithm
          functionName := identBuiltinCall(pPath, functionTy);
+         // fail() is nominally polymorphic (never-returns). DAEToMid
+         // types the call as T_UNKNOWN, which getTypeIdentifier maps
+         // to MODELICA_UNKNOWN (0). The C runtime function is void
+         // (declared __attribute__((noreturn)) in meta_modelica_data.h),
+         // so override the LLVM return type here or
+         // createExternalCallDecl feeds nullptr into
+         // llvm::FunctionType::get and segfaults.
+         if functionName == "mmc_throw_internal" then
+           functionTy := MODELICA_VOID;
+         end if;
        then();
   end match;
   () := match term
