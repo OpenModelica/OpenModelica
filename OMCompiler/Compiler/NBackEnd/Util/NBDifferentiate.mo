@@ -499,11 +499,6 @@ public
                 ComponentRef.subscriptsAllFlat(lhs_base),
                 Expression.fromCref(seed_base),
                 true);
-          // print seed_base and subscripts for debugging
-          print("seed_base: " + ComponentRef.toString(seed_base) + "\n");
-          print("lhs_base: " + ComponentRef.toString(lhs_base) + "\n");
-          print("lhs subscripts: " + ComponentRef.toString(ComponentRef.stripSubscriptsAll(lhs_base)) + "\n");
-          print("seed_subscripted: " + Expression.toString(seed_subscripted) + "\n");
           diffArguments.current_grad := seed_subscripted;
           diffArguments.collectAdjoints := true;
           (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
@@ -3721,7 +3716,6 @@ protected
     list<Expression> oldList;
   algorithm
     newList := match oldOpt
-      // each entry is grad where grad is the current total adjoint for that cref; we prepend the new grad to the list for the root seed cref
       // probably the only case since empty list is used to initialize
       case SOME(oldList) then (current_grad :: oldList);
       else {current_grad};
