@@ -260,7 +260,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DEBUG_ADJOINT,
   Flags.FLOW_ALIAS_ELIMINATION,
   Flags.DUMP_CHECK_MODEL,
-  Flags.CHECK_DEF_USE
+  Flags.CHECK_DEF_USE,
+  Flags.NF_API_DYNAMIC_SELECT_AUX
 };
 
 protected

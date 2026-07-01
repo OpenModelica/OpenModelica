@@ -2129,7 +2129,6 @@ protected
 
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
     (arg1, ty1, var1) := Typing.typeExp(expStatic, context, info);
-    arg1 := ExpandExp.expand(arg1);
 
     // if we cannot typecheck the dynamic part, ignore it!
     // https://trac.openmodelica.org/OpenModelica/ticket/5631
@@ -2145,19 +2144,105 @@ protected
       end if;
     end try;
 
-    arg2 := ExpandExp.expand(arg2);
+    // #15969: OMEdit's annotation evaluator cannot call Modelica user functions.
+    // Replace each user function call in the dynamic expression with a reference
+    // to an auxiliary result-file variable (synthesized during flattening under
+    // the same deterministic name), keeping the rest of the expression so OMEdit
+    // can still evaluate it.
+    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) and InstContext.inInstanceAPI(context) then
+      (arg2, _) := replaceDynamicSelectUserFunctions(arg2);
+    end if;
+
     ty := ty1;
     variability := var2;
 
     {fn} := Function.typeRefCache(fn_ref);
 
-    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, purity, ty1));
-    else
-      variability := var1;
-      callExp := arg1;
-    end if;
+    // Always keep both arguments; OMEdit selects the static or dynamic part.
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, purity, ty1));
   end typeDynamicSelectCall;
+
+public
+  function dynamicSelectAuxName
+    "Deterministic name (issue #15969) for the auxiliary variable bound to a
+     DynamicSelect user function call. Derived purely from the content of the
+     call so that the instance API annotation rewrite and the flattening pass
+     agree on the name without any shared state (both hash the same call)."
+    input Expression callExp;
+    output String name =
+      "$DynamicSelect$" + intString(stringHashDjb2Mod(Expression.toString(callExp), 1073741789));
+  end dynamicSelectAuxName;
+
+  function replaceDynamicSelectUserFunctions
+    "#15969: Replaces every user (non-builtin) function call in the expression
+     with a reference to an auxiliary variable, keeping the surrounding
+     expression intact, and returns the rewritten expression together with the
+     list of (auxiliary name, binding call) pairs. Shared by the instance API
+     annotation rewrite (NFBuiltinCall.typeDynamicSelectCall) and the flattening
+     synthesis (NFInst)."
+    input Expression exp;
+    output Expression outExp;
+    output list<tuple<String, Expression>> auxVars;
+  algorithm
+    (outExp, auxVars) := replaceDynamicSelectUserFunctions2(exp, {});
+  end replaceDynamicSelectUserFunctions;
+
+protected
+  function replaceDynamicSelectUserFunctions2
+    input output Expression exp;
+    input output list<tuple<String, Expression>> auxVars;
+  protected
+    Function fn;
+    String name;
+    Type ty;
+  algorithm
+    (exp, auxVars) := match exp
+      // A user function call: replace the whole call (with its original
+      // arguments) by a reference to an auxiliary variable, and do not descend
+      // into it (so its arguments stay in the binding).
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+        guard not Function.isBuiltin(fn)
+        algorithm
+          ty := Expression.typeOf(exp);
+          name := dynamicSelectAuxName(exp);
+
+          if not List.exist1(auxVars, dynamicSelectAuxExists, name) then
+            auxVars := (name, exp) :: auxVars;
+          end if;
+        then
+          (Expression.CREF(ty, ComponentRef.fromNode(InstNode.NAME_NODE(name), ty)), auxVars);
+
+      // Anything else: descend into the direct subexpressions.
+      else Expression.mapFoldShallow(exp, replaceDynamicSelectUserFunctions2, auxVars);
+    end match;
+  end replaceDynamicSelectUserFunctions2;
+
+  function dynamicSelectAuxExists
+    input tuple<String, Expression> auxVar;
+    input String name;
+    output Boolean res = Util.tuple21(auxVar) == name;
+  end dynamicSelectAuxExists;
+
+public
+  function containsUserFunctionCall
+    "Returns true if the expression contains a call to a non-builtin (user
+     defined) function."
+    input Expression exp;
+    output Boolean res = Expression.contains(exp, isUserFunctionCall);
+  end containsUserFunctionCall;
+
+protected
+  function isUserFunctionCall
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      local
+        Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then not Function.isBuiltin(fn);
+      else false;
+    end match;
+  end isUserFunctionCall;
 
   function typeBackSampleCall
     input Call call;
