@@ -2129,7 +2129,6 @@ protected
 
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
     (arg1, ty1, var1) := Typing.typeExp(expStatic, context, info);
-    arg1 := ExpandExp.expand(arg1);
 
     // if we cannot typecheck the dynamic part, ignore it!
     // https://trac.openmodelica.org/OpenModelica/ticket/5631
@@ -2144,8 +2143,6 @@ protected
         return;
       end if;
     end try;
-
-    arg2 := ExpandExp.expand(arg2);
 
     // #15969: OMEdit's annotation evaluator cannot call Modelica user functions.
     // Replace each user function call in the dynamic expression with a reference
