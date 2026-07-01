@@ -129,6 +129,16 @@ void ExpressionTest::dynamicSelect_data()
   QTest::addRow("DynamicSelect15")
     << "DynamicSelect({0, 127, 255}, {min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 28.0 + min(1.0, max(0.0, ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 255.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 108.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 200.0})"
     << "DynamicSelect({0,127,255},{28,108,200})";
+
+  // #15969: when the frontend rewrites a DynamicSelect user-function call, its
+  // dynamic argument becomes a reference to the synthesized auxiliary variable.
+  // OMEdit must evaluate that reference from the result file (here the test
+  // substitutes every variable with 1.0). The real auxiliary name contains '$'
+  // and is delivered as a JSON cref, so it is looked up by name and never parsed
+  // from a string.
+  QTest::addRow("DynamicSelectAuxVariable")
+    << "DynamicSelect(\"0.0\", dynamicSelectAux)"
+    << "DynamicSelect(\"0.0\",1)";
 }
 
 void ExpressionTest::operators()

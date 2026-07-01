@@ -1,0 +1,56 @@
+// name: DynamicSelectUserFunctions
+// keywords: DynamicSelect annotation
+// status: correct
+//
+// Tests #15969: a DynamicSelect whose dynamic expression calls a user function
+// gets an auxiliary result variable synthesized (numeric and String), so the
+// value is written to the (here CSV) result file and can be read back by OMEdit.
+//
+
+setCommandLineOptions("-d=nfAPIDynamicSelectAux"); getErrorString();
+loadString("
+  function scaleVal
+    input Real u;
+    output Real y;
+  algorithm
+    y := 100.0*u;
+  end scaleVal;
+  function dispVal
+    input Real u;
+    output String s;
+  algorithm
+    s := \"u=\" + String(u, format=\".2f\");
+  end dispVal;
+  model DynSelAux
+    Real u(start = 0.0, fixed = true);
+  equation
+    der(u) = 1.0 - u;
+    annotation(Icon(graphics = {
+      Rectangle(extent = {{-100,-100},{100,100}}, lineThickness = DynamicSelect(0.25, scaleVal(u))),
+      Text(extent = {{-100,-100},{100,100}}, textString = DynamicSelect(\"0\", dispVal(u)))
+    }));
+  end DynSelAux;
+"); getErrorString();
+simulate(DynSelAux, stopTime=1.0, numberOfIntervals=2, outputFormat="csv"); getErrorString();
+readFile("DynSelAux_res.csv");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DynSelAux_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DynSelAux', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "\"time\",\"u\",\"der(u)\",\"$DynamicSelect$320314351\",\"$DynamicSelect$85559355\"
+// 0,0,1,0,\"u=0.00\"
+// 0.5,0.3934686188569886,0.6065313811430114,39.34686188569886,\"u=0.39\"
+// 1,0.6321217723555973,0.3678782276444027,63.21217723555973,\"u=0.63\"
+// 1,0.6321217723555973,0.3678782276444027,63.21217723555973,\"u=0.63\"
+// "
+// endResult

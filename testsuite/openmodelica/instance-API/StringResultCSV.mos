@@ -1,0 +1,37 @@
+// name: StringResultCSV
+// keywords: string result csv
+// status: correct
+//
+// Tests #15969: a model with a time-varying String variable is written to a CSV
+// result file, with the string values in their own column.
+//
+
+loadString("
+  model StringResultCSV
+    Real u(start = 0.0, fixed = true);
+    String s = \"u=\" + String(u, format=\".1f\");
+  equation
+    der(u) = 1.0;
+  end StringResultCSV;
+"); getErrorString();
+simulate(StringResultCSV, stopTime=1.0, numberOfIntervals=2, outputFormat="csv"); getErrorString();
+readFile("StringResultCSV_res.csv");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StringResultCSV_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StringResultCSV', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "\"time\",\"u\",\"der(u)\",\"s\"
+// 0,0,1,\"u=0.0\"
+// 0.5,0.5,1,\"u=0.5\"
+// 1,1,1,\"u=1.0\"
+// 1,1,1,\"u=1.0\"
+// "
+// endResult
