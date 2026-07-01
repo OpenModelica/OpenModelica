@@ -8382,6 +8382,8 @@ public function allPreOptimizationModules
     (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias"),
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
     (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange"),
+    (BackendDAEOptimize.clampBoundedFunctionArgs, "clampBoundedFunctionArgs"),
+    (BackendDAEOptimize.inferBoundsFromAsserts, "inferBoundsFromAsserts"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
     (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars"),
     (BackendDAEOptimize.removeEqualRHS, "removeEqualRHS"),
@@ -8408,6 +8410,8 @@ public function allPostOptimizationModules
   "This list contains all back end sim-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPostOptimizationModules = {
     (BackendInline.lateInlineFunction, "lateInlineFunction"),
+    (BackendDAEOptimize.clampBoundedFunctionArgs, "clampBoundedFunctionArgs"),
+    (BackendDAEOptimize.inferBoundsFromAsserts, "inferBoundsFromAsserts"),
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (CommonSubExpression.cseBinary, "cseBinary"),
