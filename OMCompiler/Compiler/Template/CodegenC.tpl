@@ -3040,7 +3040,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let newSparsity = generateResizableEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, false)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, '')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -3071,7 +3071,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, false)
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, '')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -3099,13 +3099,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let indexName = 'NLS<%nls.index%>'
       let newSparsity = generateResizableEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, false)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, '')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, false)
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, '')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
