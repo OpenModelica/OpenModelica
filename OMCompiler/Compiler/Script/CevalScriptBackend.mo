@@ -1514,7 +1514,7 @@ algorithm
         str := AbsynUtil.pathString(className);
         res := "Failed to build model: " + str;
       then
-        createSimulationResultFailure(res, simOptionsAsString(vals));
+        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
@@ -1523,7 +1523,7 @@ algorithm
         createSimulationResultFailure(
           "Simulation failed for model: " + str +
           "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(vals));
+          simOptionsAsString(List.stripLast(vals)));
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
