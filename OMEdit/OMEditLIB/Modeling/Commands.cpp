@@ -722,7 +722,7 @@ void OMSimulatorUndoCommand::redoInternal()
   MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pModelLibraryTreeItem, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
-    QString rootCref;
+    QString rootCref = "";
     OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, mModelName, rootCref);
   }
   // reload/redraw the OMSimulator model
@@ -746,7 +746,7 @@ void OMSimulatorUndoCommand::undo()
 {
   // load the old snapshot
   if (mDoSnapShot) {
-    QString rootCref;
+    QString rootCref = "";
     OMSProxy::instance()->importSnapshot(mModelName, mOldSnapshot, mModelName, rootCref);
   }
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot, mNewEditedCref, mOldEditedCref);

@@ -4864,20 +4864,13 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
    */
   if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
-    if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
-      LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
-      if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()) {
-        pShapeAnnotation->editTransition();
-      } else {
-        pShapeAnnotation->showShapeProperties();
-      }
-      return;
-    } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
-      LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
-      if (pConnectionLineAnnotation && pConnectionLineAnnotation->isConnection()) {
-        pConnectionLineAnnotation->showOMSConnection();
-      }
+    LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+    if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()) {
+      pShapeAnnotation->editTransition();
+    } else {
+      pShapeAnnotation->showShapeProperties();
     }
+    return;
   }
   if (!handleDoubleClickOnComponent(event)) {
     return;
@@ -6755,20 +6748,6 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
   }
 }
 
-/*!
- * \brief ModelWidget::associateBusWithConnectors
- * Associates the bus component with each of its connector component.
- * \param busName
- */
-void ModelWidget::associateBusWithConnectors(QString busName)
-{
-  // get the bus component
-  Element *pIconBusComponent = mpIconGraphicsView->getElementObject(busName);
-  associateBusWithConnectors(pIconBusComponent, mpIconGraphicsView);
-  Element *pDiagramBusComponent = mpDiagramGraphicsView->getElementObject(busName);
-  associateBusWithConnectors(pDiagramBusComponent, mpDiagramGraphicsView);
-}
-
 const QString modelicaBlocksInterfacesRealInput = "Modelica.Blocks.Interfaces.RealInput";
 const QString modelicaBlocksInterfacesRealOutput = "Modelica.Blocks.Interfaces.RealOutput";
 
@@ -7402,18 +7381,6 @@ void ModelWidget::drawOMSModelConnections()
   }
 
   mpDiagramGraphicsView->handleCollidingConnections();
-}
-
-/*!
- * \brief ModelWidget::associateBusWithConnectors
- * Helper function for ModelWidget::associateBusWithConnectors(busName)
- * \param pBusComponent
- * \param pGraphicsView
- */
-void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView)
-{
-  Q_UNUSED(pBusComponent);
-  Q_UNUSED(pGraphicsView);
 }
 
 /*!

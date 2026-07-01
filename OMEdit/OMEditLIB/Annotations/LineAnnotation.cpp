@@ -41,7 +41,6 @@
 #include "LineAnnotation.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
-#include "OMS/OMSModel.h"
 #include "Util/ResourceCache.h"
 
 #include <QMessageBox>
@@ -1322,33 +1321,6 @@ void LineAnnotation::setAligned(bool aligned)
  * \brief LineAnnotation::updateOMSConnection
  * Updates the OMSimulator model connection
  */
-// void LineAnnotation::updateOMSConnection()
-// {
-//   // connection geometry
-//   //ssd_connection_geometry_t connectionGeometry;
-//   OMSModel::ConnectionGeometry connectionGeometry;
-//   QVector<QPointF> points = mPoints;
-//   if (points.size() >= 2) {
-//     points.removeFirst();
-//     points.removeLast();
-//   }
-//   // connectionGeometry.n = points.size();
-//   // if (points.size() == 0) {
-//   //   connectionGeometry.pointsX = NULL;
-//   //   connectionGeometry.pointsY = NULL;
-//   // } else {
-//   //   connectionGeometry.pointsX = new double[points.size()];
-//   //   connectionGeometry.pointsY = new double[points.size()];
-//   // }
-//   // for (int i = 0 ; i < points.size() ; i++) {
-//   //   connectionGeometry.pointsX[i] = points.at(i).x();
-//   //   connectionGeometry.pointsY[i] = points.at(i).y();
-//   // }
-//   connectionGeometry.setPoints(mPoints);
-
-//   OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), connectionGeometry);
-// }
-
 void LineAnnotation::updateOMSConnection()
 {
   QVector<QPointF> points = mPoints;
@@ -1389,9 +1361,6 @@ void LineAnnotation::updateToolTip()
   }
 }
 
-void LineAnnotation::showOMSConnection()
-{
-}
 
 /*!
  * \brief LineAnnotation::findLineColorForConnection

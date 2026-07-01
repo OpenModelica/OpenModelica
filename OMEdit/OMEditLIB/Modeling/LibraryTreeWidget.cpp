@@ -51,7 +51,6 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
-#include "OMS/OMSModel.h"
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -4228,9 +4227,6 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
-  // create OMSProxy on first SSP file open if not already created
-  if (!OMSProxy::instance())
-    OMSProxy::create();
   // load the model in OMSimulator
   QString modelName;
   bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), modelName);

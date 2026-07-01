@@ -165,16 +165,6 @@ bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &repl
 OMSProxy *OMSProxy::mpInstance = 0;
 
 /*!
- * \brief OMSProxy::create
- */
-void OMSProxy::create()
-{
-  if (!mpInstance) {
-    mpInstance = new OMSProxy;
-  }
-}
-
-/*!
  * \brief OMSProxy::destroy
  */
 void OMSProxy::destroy()
