@@ -5346,7 +5346,7 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 void AboutOMEditDialog::showReportIssue()
 {
   // show the CrashReportDialog
-  CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", CrashReportDialog::ReportIssue);
   pCrashReportDialog->exec();
 }
 
