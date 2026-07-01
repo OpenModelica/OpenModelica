@@ -54,6 +54,9 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 /*!
   \class TVariablesTreeItem
@@ -981,6 +984,24 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pDependsGridLayout->addWidget(mpDependsVariableTreeWidget, 1, 0);
   QFrame *pDependsFrame = new QFrame;
   pDependsFrame->setLayout(pDependsGridLayout);
+  /* runtime values tree widget (populated from <model>_dbg.json, see -lv=LOG_EBDD) */
+  Label *pRuntimeValuesLabel = new Label(tr("Runtime Values"));
+  pRuntimeValuesLabel->setObjectName("LabelWithBorder");
+  mpRuntimeValuesTreeWidget = new QTreeWidget;
+  mpRuntimeValuesTreeWidget->setItemDelegate(new ItemDelegate(mpRuntimeValuesTreeWidget));
+  mpRuntimeValuesTreeWidget->setIndentation(Helper::treeIndentation);
+  mpRuntimeValuesTreeWidget->setColumnCount(3);
+  mpRuntimeValuesTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  QStringList runtimeHeaderLabels;
+  runtimeHeaderLabels << tr("Variable / Solve") << tr("Value") << tr("Residual");
+  mpRuntimeValuesTreeWidget->setHeaderLabels(runtimeHeaderLabels);
+  QGridLayout *pRuntimeValuesGridLayout = new QGridLayout;
+  pRuntimeValuesGridLayout->setSpacing(1);
+  pRuntimeValuesGridLayout->setContentsMargins(0, 0, 0, 0);
+  pRuntimeValuesGridLayout->addWidget(pRuntimeValuesLabel, 0, 0);
+  pRuntimeValuesGridLayout->addWidget(mpRuntimeValuesTreeWidget, 1, 0);
+  QFrame *pRuntimeValuesFrame = new QFrame;
+  pRuntimeValuesFrame->setLayout(pRuntimeValuesGridLayout);
   /* operations tree widget */
   Label *pEquationOperationsLabel = new Label(tr("Equation Operations"));
   pEquationOperationsLabel->setObjectName("LabelWithBorder");
@@ -1071,6 +1092,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpEquationsNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
   mpEquationsNestedHorizontalSplitter->addWidget(pDefinesFrame);
   mpEquationsNestedHorizontalSplitter->addWidget(pDependsFrame);
+  mpEquationsNestedHorizontalSplitter->addWidget(pRuntimeValuesFrame);
   /* Equations nested vertical splitter */
   mpEquationsNestedVerticalSplitter = new QSplitter;
   mpEquationsNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -1247,6 +1269,63 @@ static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
   return NULL;
 }
 
+OMEquation* TransformationsWidget::resolveAliasEquation(QList<OMEquation*> &equations, OMEquation *equation)
+{
+  if (equation && equation->tag.compare(QStringLiteral("alias")) == 0 && equation->aliasOf >= 0) {
+    OMEquation *original = getOMEquation(equations, equation->aliasOf);
+    if (original) {
+      return original;
+    }
+  }
+  return equation;
+}
+
+/*!
+ * \brief TransformationsWidget::enrichAliasEquations
+ * Once all equations are parsed, copies the aliased original equation's text and
+ * defines/depends onto each alias equation so the debugger shows the full
+ * equation formula next to the alias indicator instead of just a reference, and
+ * registers the alias in the defined-in / used-in lists of the variables so that
+ * selecting a variable also lists the alias equations (e.g. the initial and
+ * initial-lambda0 ones) it is defined by (#10995). Operations and source are
+ * resolved on demand via resolveAliasEquation().
+ */
+void TransformationsWidget::enrichAliasEquations(QList<OMEquation*> &equations, QHash<QString, OMVariable> &variables)
+{
+  for (int i = 1; i < equations.size(); i++) {
+    OMEquation *eq = equations[i];
+    if (eq->tag.compare(QStringLiteral("alias")) != 0 || eq->aliasOf < 0) {
+      continue;
+    }
+    OMEquation *original = getOMEquation(equations, eq->aliasOf);
+    if (!original) {
+      continue;
+    }
+    if (eq->text.isEmpty()) {
+      eq->text = original->text;
+    }
+    // propagate defines: the alias defines the same variable(s) as its original,
+    // so register it in each variable's "defined in" list.
+    if (eq->defines.isEmpty()) {
+      foreach (const QString &vname, original->defines) {
+        eq->defines << vname;
+        if (variables.contains(vname)) {
+          variables[vname].definedIn << eq->index;
+        }
+      }
+    }
+    // likewise propagate depends so the alias appears in each variable's "used in".
+    if (eq->depends.isEmpty()) {
+      foreach (const QString &vname, original->depends) {
+        eq->depends << vname;
+        if (variables.contains(vname)) {
+          variables[vname].usedIn << eq->index;
+        }
+      }
+    }
+  }
+}
+
 /*!
  * \brief TransformationsWidget::loadTransformations
  * \param profiling - is profiling enabled
@@ -1364,6 +1443,13 @@ void TransformationsWidget::loadTransformations()
     if (QFile::exists(profilingJSONFileName)) {
       mProfilingJSONFullFileName = profilingJSONFileName;
     }
+  }
+  /* EBDD runtime info is loaded whenever <model>_dbg.json exists next to the info file
+   * (produced by simulating with -lv=LOG_EBDD); it is independent of profiling. */
+  mDebugJSONFullFileName = "";
+  QString debugJSONFileName = mInfoJSONFullFileName.left(mInfoJSONFullFileName.size() - 9) + "dbg.json";
+  if (QFile::exists(debugJSONFileName)) {
+    mDebugJSONFullFileName = debugJSONFileName;
   }
   qDeleteAll(mEquations);
   mEquations.clear();
@@ -1498,10 +1584,19 @@ void TransformationsWidget::loadTransformations()
           } else {
             eq->display = eq->tag;
           }
-          // equation text
+          // equation text. For an alias equation (tag=="alias") "equation" is an
+          // integer array [aliasOf] referencing the original equation rather than
+          // text; record the target so its text/defines/depends/source can be
+          // resolved for display (#10995). Otherwise it is an array of text lines.
+          const bool isAliasEq = (eq->tag.compare(QStringLiteral("alias")) == 0);
           if (!veq["equation"].get(arr)) {
             for (simdjson::ondemand::value v : arr) {
-              if (!v.get(sv)) {
+              if (isAliasEq) {
+                int64_t aliasIdx;
+                if (!v.get(aliasIdx)) {
+                  eq->aliasOf = (int)aliasIdx;
+                }
+              } else if (!v.get(sv)) {
                 eq->text << QString::fromUtf8(sv.data(), sv.size());
               }
             }
@@ -1519,14 +1614,18 @@ void TransformationsWidget::loadTransformations()
       }
     }
 
+    enrichAliasEquations(mEquations, mVariables);
     parseProfiling(mProfilingJSONFullFileName);
+    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
   } else {
     QFile file(mInfoJSONFullFileName);
     mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
     /* load equations */
+    enrichAliasEquations(mEquations, mVariables);
     parseProfiling(mProfilingJSONFullFileName);
+    parseRuntimeInfoFile(mEquations, mDebugJSONFullFileName, &mRuntimeModelSolves);
     mpEquationTreeModel->insertEquations(mEquations, true);
     hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
   }
@@ -1564,12 +1663,17 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     return;
   }
   mCurrentEquationIndex = equationIndex;
+  /* For an alias equation, show the original equation's defines/depends/operations
+   * and source so the user does not have to bounce between sections (#10995). */
+  OMEquation *displayEquation = resolveAliasEquation(mEquations, equation);
   /* fetch defines */
-  fetchDefines(equation);
+  fetchDefines(displayEquation);
   /* fetch depends */
-  fetchDepends(equation);
+  fetchDepends(displayEquation);
+  /* fetch runtime values (keyed to the selected equation itself) */
+  fetchRuntimeValues(equation);
   /* fetch operations */
-  fetchOperations(equation, (HtmlDiff)mpEquationDiffFilterComboBox->itemData(mpEquationDiffFilterComboBox->currentIndex()).toInt());
+  fetchOperations(displayEquation, (HtmlDiff)mpEquationDiffFilterComboBox->itemData(mpEquationDiffFilterComboBox->currentIndex()).toInt());
 
   /* TODO: This data is correct. Add this to some widget thingy somewhere.
    * Maybe a small one that you can click to enlarge.
@@ -1604,11 +1708,11 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
   }
 #endif
 
-  if (!equation->info.isValid) {
+  if (!displayEquation->info.isValid) {
     return;
   }
-  /* open the model with and go to the equation line */
-  QString fileName = equation->info.file;
+  /* open the model with and go to the equation line (the original's, for an alias) */
+  QString fileName = displayEquation->info.file;
   QFileInfo fileInfo(fileName);
   if (fileInfo.isRelative()) {
     // find the class
@@ -1625,7 +1729,7 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(equation->info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(displayEquation->info.lineStart);
     mpTransformationsEditor->getPlainTextEdit()->foldAll();
   }
 }
@@ -1672,6 +1776,132 @@ void TransformationsWidget::fetchDepends(OMEquation *equation)
     }
     mpDependsVariableTreeWidget->resizeColumnToContents(0);
   }
+}
+
+void TransformationsWidget::fetchRuntimeValues(OMEquation *equation)
+{
+  /* Clear the runtime values tree. */
+  clearTreeWidgetItems(mpRuntimeValuesTreeWidget);
+  if (!equation) {
+    return;
+  }
+  if (equation->runtimeSolves.isEmpty()) {
+    QStringList values;
+    values << tr("No runtime data (simulate with -lv=LOG_EBDD).");
+    QTreeWidgetItem *pItem = new QTreeWidgetItem(values);
+    pItem->setToolTip(0, values.at(0));
+    mpRuntimeValuesTreeWidget->addTopLevelItem(pItem);
+    return;
+  }
+  /* Each solve of this equation system becomes a top-level row (time, status,
+   * iteration count) with one child row per iteration variable. */
+  foreach (const OMRuntimeSolve &solve, equation->runtimeSolves) {
+    QStringList solveValues;
+    const bool isJacobian = (solve.kind == QStringLiteral("jacobian"));
+    const bool isNewtonIter = (solve.kind == QStringLiteral("newtonIteration"));
+    const bool isHomotopy = (solve.kind == QStringLiteral("homotopy"));
+    if (solve.kind == QStringLiteral("convergenceDiagnostics")) {
+      QStringList cdValues;
+      cdValues << tr("convergence diagnostics: %1 non-linear equation(s)").arg(solve.nonlinearEquations);
+      QTreeWidgetItem *pCdTreeItem = new QTreeWidgetItem(cdValues);
+      pCdTreeItem->setToolTip(0, tr("variables the non-linear equations depend on non-linearly"));
+      foreach (const QString &vname, solve.nonlinearVars) {
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(QStringList() << vname);
+        pCdTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pCdTreeItem);
+      pCdTreeItem->setExpanded(true);
+      continue;
+    }
+    if (solve.kind == QStringLiteral("nullSpace")) {
+      QStringList nsValues;
+      nsValues << tr("null space: %1 linearly-dependent variable(s)").arg(solve.linearlyDependentVars.size());
+      QTreeWidgetItem *pNsTreeItem = new QTreeWidgetItem(nsValues);
+      pNsTreeItem->setToolTip(0, tr("variables involved in the (near-)singular part of the Jacobian"));
+      foreach (const QString &vname, solve.linearlyDependentVars) {
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(QStringList() << vname);
+        pNsTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pNsTreeItem);
+      pNsTreeItem->setExpanded(true);
+      continue;
+    }
+    if (solve.kind == QStringLiteral("chattering")) {
+      QStringList chatValues;
+      chatValues << tr("chattering: %1 state events in [%2, %3]")
+                    .arg(QString::number(solve.stateEvents), QString::number(solve.timeStart, 'g', 8), QString::number(solve.timeEnd, 'g', 8));
+      QTreeWidgetItem *pChatTreeItem = new QTreeWidgetItem(chatValues);
+      pChatTreeItem->setToolTip(0, tr("this equation is involved in chattering; zero-crossing: %1").arg(solve.zeroCrossing));
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pChatTreeItem);
+      continue;
+    }
+    if (isHomotopy) {
+      /* one row per accepted homotopy step: lambda and the path point */
+      QStringList homValues;
+      homValues << tr("t = %1   [homotopy step %2, lambda = %3]")
+                   .arg(QString::number(solve.time, 'g', 6), QString::number(solve.step), QString::number(solve.lambda, 'g', 4));
+      QTreeWidgetItem *pHomTreeItem = new QTreeWidgetItem(homValues);
+      pHomTreeItem->setToolTip(0, tr("homotopy continuation step %1 (lambda = %2)").arg(QString::number(solve.step), QString::number(solve.lambda)));
+      foreach (const OMRuntimeVariable &var, solve.variables) {
+        QStringList varValues;
+        varValues << var.name << QString::number(var.value, 'g', 6) << QString::number(var.residual, 'g', 3);
+        QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(varValues);
+        pHomTreeItem->addChild(pVarTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pHomTreeItem);
+      pHomTreeItem->setExpanded(true);
+      continue;
+    }
+    if (isJacobian) {
+      /* one top-level row per Jacobian, with a child row per matrix row */
+      QStringList jacValues;
+      jacValues << tr("t = %1   [Jacobian, iteration %2]").arg(QString::number(solve.time, 'g', 6), QString::number(solve.iteration));
+      QTreeWidgetItem *pJacTreeItem = new QTreeWidgetItem(jacValues);
+      pJacTreeItem->setToolTip(0, tr("d f_row / d x_col, columns: %1").arg(solve.jacobianVars.join(", ")));
+      for (int r = 0; r < solve.jacobianRows.size(); ++r) {
+        QStringList rowStrings;
+        foreach (double c, solve.jacobianRows.at(r)) {
+          rowStrings << QString::number(c, 'g', 4);
+        }
+        const QString rowLabel = r < solve.jacobianVars.size() ? solve.jacobianVars.at(r) : QString::number(r);
+        QStringList rowValues;
+        rowValues << rowLabel << rowStrings.join(", ");
+        QTreeWidgetItem *pRowTreeItem = new QTreeWidgetItem(rowValues);
+        pJacTreeItem->addChild(pRowTreeItem);
+      }
+      mpRuntimeValuesTreeWidget->addTopLevelItem(pJacTreeItem);
+      pJacTreeItem->setExpanded(true);
+      continue;
+    }
+    if (isNewtonIter) {
+      /* one row per Newton iteration: the initial guess and (scaled) residual */
+      solveValues << tr("t = %1   [Newton iteration %2]").arg(QString::number(solve.time, 'g', 6), QString::number(solve.iteration));
+    } else {
+      solveValues << tr("t = %1   [%2, %3 iter]").arg(QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations));
+    }
+    QTreeWidgetItem *pSolveTreeItem = new QTreeWidgetItem(solveValues);
+    pSolveTreeItem->setToolTip(0, isNewtonIter
+                               ? tr("Newton iteration %1 at time %2").arg(QString::number(solve.iteration), QString::number(solve.time, 'g', 6))
+                               : tr("%1 system solved at time %2 (%3, %4 iterations)")
+                                 .arg(solve.kind, QString::number(solve.time, 'g', 6), solve.status, QString::number(solve.iterations)));
+    foreach (const OMRuntimeVariable &var, solve.variables) {
+      QStringList varValues;
+      varValues << var.name << QString::number(var.value, 'g', 6) << QString::number(var.residual, 'g', 3);
+      QTreeWidgetItem *pVarTreeItem = new QTreeWidgetItem(varValues);
+      pVarTreeItem->setToolTip(0, var.name);
+      if (isNewtonIter) {
+        pVarTreeItem->setToolTip(1, tr("value = %1, residual = %2 (scaled %3), nominal = %4")
+                                 .arg(QString::number(var.value), QString::number(var.residual),
+                                      QString::number(var.residualScaled), QString::number(var.nominal)));
+      } else {
+        pVarTreeItem->setToolTip(1, tr("value = %1, nominal = %2").arg(QString::number(var.value), QString::number(var.nominal)));
+      }
+      pSolveTreeItem->addChild(pVarTreeItem);
+    }
+    mpRuntimeValuesTreeWidget->addTopLevelItem(pSolveTreeItem);
+    pSolveTreeItem->setExpanded(true);
+  }
+  mpRuntimeValuesTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::fetchOperations(OMEquation *equation, HtmlDiff htmlDiff)
@@ -1868,4 +2098,110 @@ void TransformationsWidget::parseProfiling(QString fileName)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
     MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
+}
+
+/*!
+ * \brief TransformationsWidget::parseRuntimeInfoFile
+ * Parses the EBDD runtime info file <model>_dbg.json and attaches the runtime
+ * solve records to the matching equations. The file is newline-delimited JSON
+ * (one record per line, the first line being a meta header), keyed by eqIndex
+ * which is the same equation index used by the static <model>_info.json.
+ * Static so it can be unit tested without constructing the widget.
+ * \param equations the equations to attach runtime records to (matched by index)
+ * \param fileName the <model>_dbg.json file
+ */
+void TransformationsWidget::parseRuntimeInfoFile(QList<OMEquation*> &equations, const QString &fileName,
+                                                 QList<OMRuntimeSolve> *modelSolves)
+{
+  if (fileName.isEmpty()) {
+    return;
+  }
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+      QStringLiteral("Failed to open EBDD runtime file %1").arg(fileName), Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  bool index_error = false;
+  while (!file.atEnd()) {
+    QByteArray line = file.readLine().trimmed();
+    if (line.isEmpty()) {
+      continue;
+    }
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(line, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+      continue;
+    }
+    QJsonObject obj = doc.object();
+    // skip the meta header line and any line without an equation index
+    if (obj.contains(QStringLiteral("format")) || !obj.contains(QStringLiteral("eqIndex"))) {
+      continue;
+    }
+    int id = obj.value(QStringLiteral("eqIndex")).toInt(-1);
+    OMRuntimeSolve solve;
+    solve.kind = obj.value(QStringLiteral("kind")).toString();
+    solve.section = obj.value(QStringLiteral("section")).toString();
+    solve.status = obj.value(QStringLiteral("status")).toString();
+    solve.time = obj.value(QStringLiteral("time")).toDouble();
+    solve.iterations = obj.value(QStringLiteral("iterations")).toInt();
+    solve.iteration = obj.value(QStringLiteral("iteration")).toInt();
+    solve.step = obj.value(QStringLiteral("step")).toInt();
+    solve.lambda = obj.value(QStringLiteral("lambda")).toDouble();
+    solve.timeStart = obj.value(QStringLiteral("timeStart")).toDouble();
+    solve.timeEnd = obj.value(QStringLiteral("timeEnd")).toDouble();
+    solve.stateEvents = obj.value(QStringLiteral("stateEvents")).toInt();
+    solve.zeroCrossing = obj.value(QStringLiteral("zeroCrossing")).toString();
+    foreach (const QJsonValue &v, obj.value(QStringLiteral("linearlyDependentVars")).toArray()) {
+      solve.linearlyDependentVars.append(v.toString());
+    }
+    solve.nonlinearEquations = obj.value(QStringLiteral("nonlinearEquations")).toInt();
+    foreach (const QJsonValue &v, obj.value(QStringLiteral("nonlinearVars")).toArray()) {
+      solve.nonlinearVars.append(v.toString());
+    }
+    if (solve.kind == QStringLiteral("jacobian")) {
+      // jacobian record: "vars" is a list of column labels, "rows" the matrix.
+      foreach (const QJsonValue &v, obj.value(QStringLiteral("vars")).toArray()) {
+        solve.jacobianVars.append(v.toString());
+      }
+      foreach (const QJsonValue &r, obj.value(QStringLiteral("rows")).toArray()) {
+        QList<double> rowValues;
+        foreach (const QJsonValue &c, r.toArray()) {
+          rowValues.append(c.toDouble());
+        }
+        solve.jacobianRows.append(rowValues);
+      }
+    } else {
+      QJsonArray vars = obj.value(QStringLiteral("vars")).toArray();
+      foreach (const QJsonValue &v, vars) {
+        QJsonObject vo = v.toObject();
+        OMRuntimeVariable rv;
+        rv.name = vo.value(QStringLiteral("name")).toString();
+        rv.value = vo.value(QStringLiteral("value")).toDouble();
+        rv.residual = vo.value(QStringLiteral("residual")).toDouble();
+        rv.residualScaled = vo.value(QStringLiteral("residualScaled")).toDouble();
+        rv.nominal = vo.value(QStringLiteral("nominal")).toDouble();
+        solve.variables.append(rv);
+      }
+    }
+    // route by index: model-level records (eqIndex < 0, e.g. event iterations)
+    // are not tied to a single equation.
+    if (id < 0) {
+      if (modelSolves) {
+        modelSolves->append(solve);
+      }
+      continue;
+    }
+    OMEquation *equation = getOMEquation(equations, id);
+    if (!equation) {
+      if (!index_error) {
+        index_error = true;
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+          QStringLiteral("EBDD runtime info refers to unknown equation index %1").arg(id), Helper::scriptingKind, Helper::errorLevel));
+      }
+      continue;
+    }
+    equation->runtimeSolves.append(solve);
+  }
+  file.close();
 }

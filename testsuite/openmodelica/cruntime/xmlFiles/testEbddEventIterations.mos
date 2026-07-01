@@ -1,0 +1,49 @@
+// name:     testEbddEventIterations
+// keywords: EBDD runtime info dbg.json LOG_EBDD event iterations
+// status: correct
+// teardown_command: rm -rf EbddEvent* ebddevcheck.txt
+//
+// Item 8 of the EBDD runtime-information work package: simulating with
+// -lv=LOG_EBDD must emit a model-level eventIteration record (eqIndex -1) for
+// each event iteration, carrying the discrete (boolean/integer) variable values,
+// so the discrete state can be traced across the iterations an event triggers.
+// See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+loadString("
+model EbddEvent
+  Boolean b(start = false);
+  Integer c(start = 0);
+  Real x(start = 0);
+equation
+  der(x) = 1;
+  b = x > 0.5;
+  c = if b then 2 else 1;
+end EbddEvent;
+"); getErrorString();
+
+simulate(EbddEvent, stopTime = 1.0, numberOfIntervals = 5, simflags = "-lv=LOG_EBDD"); getErrorString();
+
+// Structural checks (no dependence on the number of events or solver values):
+//  - the file has at least one eventIteration record
+//  - it is a model-level record (eqIndex -1)
+//  - it carries the discrete variables 'b' and 'c'
+system("f=EbddEvent_dbg.json; if [ -f \"$f\" ] && [ $(grep -c '\"kind\":\"eventIteration\"' \"$f\") -ge 1 ] && grep -q '\"eqIndex\":-1' \"$f\" && grep -q '\"name\":\"b\"' \"$f\" && grep -q '\"name\":\"c\"' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddevcheck.txt"); getErrorString();
+readFile("ebddevcheck.txt");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EbddEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EbddEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EBDD'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "OK
+// "
+// endResult

@@ -54,6 +54,7 @@
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
 #include "nonlinearSolverHybrd.h"
+#include "ebdd_runtime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1348,6 +1349,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     /* debug information */
     debugInt(OMC_LOG_NLS_V, "Iteration:", numberOfIterations);
 
+    /* EBDD: per-iteration initial guess + (scaled) residuals, keyed by eqIndex.
+     * x is the iterate entering this iteration, f1 its residual; xScaling holds
+     * the variable nominals (first n entries). No-op unless -lv=LOG_EBDD. */
+    ebddRuntimeLogNewtonIteration(data, nlsData, numberOfIterations, solverData->n,
+                                  x, solverData->f1, solverData->resScaling,
+                                  solverData->xScaling);
+
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
     if (numberOfIterations>1)
       solverinfo = linearSolverWrapper(data, solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod, solverData->casualTearingSet);
@@ -1653,6 +1661,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugString(OMC_LOG_NLS_V,"UPS! assert when calculating Jacobian!!!");
       break;
     }
+    /* EBDD: the Jacobian at the new iterate, before row scaling. It is stored
+     * column-major and column-scaled by xScaling; the emitter unscales it back
+     * to d f_row / d x_col. It is evaluated at the iterate that enters the NEXT
+     * iteration, so tag it numberOfIterations+1 to align with that iteration's
+     * newtonIteration record (same iterate). No-op unless -lv=LOG_EBDD. */
+    ebddRuntimeLogJacobian(data, nlsData, numberOfIterations + 1, solverData->n,
+                           solverData->fJac, solverData->xScaling);
     vecCopy(n, solverData->f1, solverData->fJac + n*n);
     /* calculate scaling factor of residuals */
     matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
@@ -2090,6 +2105,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         fprintf(pFile, "\n");
       }
 #endif
+      /* EBDD: same accepted homotopy step (lambda = y0[n], path point y0[0..n-1],
+       * residual hvec), keyed by eqIndex. No-op unless -lv=LOG_EBDD. */
+      if (solverData->initHomotopy) {
+        ebddRuntimeLogHomotopyStep(data, solverData->userData->nlsData, numSteps,
+                                   n, solverData->y0[n], solverData->y0, solverData->hvec);
+      }
     }
   }
   if (solverData->initHomotopy)

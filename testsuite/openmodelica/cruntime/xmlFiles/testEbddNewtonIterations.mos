@@ -1,0 +1,47 @@
+// name:     testEbddNewtonIterations
+// keywords: EBDD runtime info dbg.json LOG_EBDD Newton iterations
+// status: correct
+// teardown_command: rm -rf EbddNewton* ebddnewtoncheck.txt
+//
+// Item 2 of the EBDD runtime-information work package: simulating with
+// -lv=LOG_EBDD must emit per-Newton-iteration records into <model>_dbg.json,
+// each keyed by eqIndex and carrying, per iteration variable, the current
+// iterate value, the residual, the scaled residual and the nominal.
+// See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+loadString("
+model EbddNewton \"small model with a nonlinear algebraic loop\"
+  Real x(start = 1.0);
+  Real y(start = 1.0);
+  Real u = 1.0 + time;
+equation
+  x^2 + y = 3 + u;
+  x - y^2 = -1 - u;
+end EbddNewton;
+"); getErrorString();
+
+simulate(EbddNewton, stopTime = 1.0, numberOfIntervals = 2, simflags = "-lv=LOG_EBDD"); getErrorString();
+
+// Structural checks (no dependence on iteration count or solver values):
+//  - the file has at least one newtonIteration record
+//  - that record carries an "iteration" index and a "residualScaled" field
+//  - it carries the iteration variable 'y'
+system("f=EbddNewton_dbg.json; if [ -f \"$f\" ] && [ $(grep -c '\"kind\":\"newtonIteration\"' \"$f\") -ge 1 ] && grep -q '\"iteration\":' \"$f\" && grep -q '\"residualScaled\":' \"$f\" && grep -q '\"name\":\"y\"' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddnewtoncheck.txt"); getErrorString();
+readFile("ebddnewtoncheck.txt");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EbddNewton_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EbddNewton', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EBDD'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// "OK
+// "
+// endResult

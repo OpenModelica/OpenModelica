@@ -1,0 +1,53 @@
+// name:     testEbddNullSpace
+// keywords: EBDD runtime info dbg.json LOG_EBDD null space singular Jacobian
+// status: correct
+// teardown_command: rm -rf EbddNullspace* ebddnscheck.txt
+//
+// Item 4 of the EBDD runtime-information work package: when the Newton
+// diagnostics analyse a nonlinear initial system, simulating with
+// -lv=LOG_EBDD,LOG_NLS_NEWTON_DIAGNOSTICS must emit a nullSpace record into
+// <model>_dbg.json, keyed by eqIndex, listing the linearly-dependent variables
+// that form the singular / null-space part of the Jacobian. Here w enters every
+// equation only linearly; nonlinear tearing is disabled so the full system is
+// kept and the analysis sees w as linearly dependent.
+// See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+setCommandLineOptions("--maxSizeNonlinearTearing=0"); getErrorString();
+
+loadString("
+model EbddNullspace
+  Real x(start = 1.2);
+  Real y(start = 0.8);
+  Real w(start = 1.0);
+equation
+  x^2 + y^2 + w = 5;
+  x + y + w = 3;
+  x - y + w = 1;
+end EbddNullspace;
+"); getErrorString();
+
+// echo(false) suppresses the verbose newton-diagnostics simulation record so the
+// test only checks the stable structural outcome.
+echo(false);
+simulate(EbddNullspace, stopTime = 0.0, simflags = "-lv=LOG_EBDD,LOG_NLS_NEWTON_DIAGNOSTICS");
+echo(true);
+getErrorString();
+
+// Structural checks (no dependence on solver values):
+//  - the file has at least one nullSpace record
+//  - it carries the linearlyDependentVars list with the linear variable 'w'
+system("f=EbddNullspace_dbg.json; if [ -f \"$f\" ] && [ $(grep -c '\"kind\":\"nullSpace\"' \"$f\") -ge 1 ] && grep -q '\"linearlyDependentVars\":\\[\"w\"\\]' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddnscheck.txt"); getErrorString();
+readFile("ebddnscheck.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "OK
+// "
+// endResult

@@ -103,6 +103,7 @@ simulation/solver/epsilon.h \
 simulation/solver/events.h \
 simulation/solver/external_input.h \
 simulation/solver/discrete_changes.h \
+simulation/solver/ebdd_runtime.h \
 simulation/solver/ida_solver.h \
 simulation/solver/linearSolverLapack.h \
 simulation/solver/linearSolverTotalPivot.h \
