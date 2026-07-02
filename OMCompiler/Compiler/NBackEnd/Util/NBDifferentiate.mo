@@ -2243,8 +2243,16 @@ public
       else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
     end match;
 
-    // only add inputs as its the only relevant part for pre-defined function derivatives
+    // add all interface nodes of func (inputs, locals, outputs) since all have been
+    // differentiated to produce der_func; this prevents re-differentiation of func.outputs
+    // that became locals in der_func when creating higher-order derivatives
     for node in func.inputs loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.locals loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.outputs loop
       UnorderedSet.add(node, diffInfo);
     end for;
 
@@ -2432,6 +2440,7 @@ public
           new_nodes := d_node :: new_nodes;
           // add to skipped nodes if differentiated again because the derivative now already exists
           UnorderedSet.add(node, diffInfo);
+        else
         end if;
       end if;
     end for;
