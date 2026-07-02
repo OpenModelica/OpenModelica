@@ -757,7 +757,7 @@ protected
                       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
-      print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS or StateSelect.PREFER:"));
+      print(StringUtil.headline_4("[stateselection] (" + intString(listLength(forced_states)) + ") Forced states by StateSelect.ALWAYS:"));
       if listEmpty(forced_states) then
         print("\t<no states>\n\n");
       else
@@ -836,11 +836,6 @@ protected
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
-        guard(variability == NFPrefixes.Variability.CONTINUOUS)
-      then VariableKind.STATE(1, NONE(), false);
-
-      // variable -> artificial state if it has stateSelect = StateSelect.prefer
-      case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.PREFER)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then VariableKind.STATE(1, NONE(), false);
 
