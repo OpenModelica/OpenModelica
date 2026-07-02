@@ -59,6 +59,39 @@
 
 #include <limits>
 
+enum GBODESettingType
+{
+  GBODE_SETTING_COMBO,
+  GBODE_SETTING_TEXT,
+  GBODE_SETTING_FLAG
+};
+
+struct GBODESetting
+{
+  const char *flag;
+  const char *label;
+  int descriptionFlag;
+  GBODESettingType type;
+  const char * const *names;
+  const char * const *descriptions;
+  int size;
+  const char *defaultValue;
+  bool singleRate;
+};
+
+static int getGBODESettingsCount();
+static const GBODESetting& getGBODESetting(int index);
+static const GBODESetting* findGBODESetting(const QString &flag);
+static QString getSimulationFlagName(QString flag, QString *pValue = 0);
+static QString getGBODEMethod(QString *pSolverMethod);
+static QString removeGBODEFlagsFromText(QString text);
+static bool setComboBoxText(ComboBox *pComboBox, const QString &text);
+static QString getComboBoxValue(ComboBox *pComboBox);
+static QString getGBODESettingDefaultValue(const GBODESetting &setting, const QString &gbodeMethod, const QMap<QString, ComboBox*> &gbodeComboBoxes, bool useGBODEMethod);
+static void addSolverMethod(ComboBox *pMethodComboBox, QStringList *pSolverMethodsDisplayDesc, const QStringList &solverMethods,
+                            const QStringList &solverMethodsDesc, const QString &text, const QString &method, const QString &description = QString());
+static QGridLayout* createGBODELayout(QWidget *pWidget);
+
 /*!
  * \class SimulationDialog
  * \brief Displays a dialog with simulation options.
@@ -195,9 +228,25 @@ void SimulationDialog::setUpForm()
   // get the solver methods
   QStringList solverMethods, solverMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
+  QStringList solverMethodsDisplayDesc;
   mpMethodComboBox = new ComboBox;
-  mpMethodComboBox->addItems(solverMethods);
-  Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("DASSL"), QStringLiteral("dassl"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("IDA"), QStringLiteral("ida"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("Radau IIA 5(3) (GBODE preset)"), QStringLiteral("gbode:radauIIA3"),
+                  tr("GBODE preset. Radau IIA, 3 stages, order 5, L-stable."));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("ESDIRK 4(3) (GBODE preset)"), QStringLiteral("gbode:esdirk4"),
+                  tr("GBODE preset. ESDIRK4(3)6L[2]SA method, 6 stages, order 4, L-stable, uses EDIRK Stage-Value-Predictors."));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("Tsitouras 5(4) (GBODE preset)"), QStringLiteral("gbode:tsit5"),
+                  tr("GBODE preset. Explicit Runge-Kutta method, 7 stages, order 5."));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("GBODE"), QStringLiteral("gbode"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("CVODE"), QStringLiteral("cvode"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("Explicit Euler"), QStringLiteral("euler"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("Runge-Kutta"), QStringLiteral("rungekutta"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("SymSolver"), QStringLiteral("symSolver"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("SymSolverSsc"), QStringLiteral("symSolverSsc"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("QSS"), QStringLiteral("qss"));
+  addSolverMethod(mpMethodComboBox, &solverMethodsDisplayDesc, solverMethods, solverMethodsDesc, tr("Optimization"), QStringLiteral("optimization"));
+  Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDisplayDesc);
   connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableDisableOptions(int)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
@@ -236,14 +285,61 @@ void SimulationDialog::setUpForm()
   // set the layout for options groupbox
   QGridLayout *pOptionsGridLayout = new QGridLayout;
   pOptionsGridLayout->setColumnStretch(1, 1);
-  pOptionsGridLayout->addWidget(mpRootFindingCheckBox, 0, 0, 1, 2);
-  pOptionsGridLayout->addWidget(mpRestartAfterEventCheckBox, 1, 0, 1, 2);
-  pOptionsGridLayout->addWidget(mpInitialStepSizeLabel, 2, 0);
-  pOptionsGridLayout->addWidget(mpInitialStepSizeTextBox, 2, 1);
-  pOptionsGridLayout->addWidget(mpMaxStepSizeLabel, 3, 0);
-  pOptionsGridLayout->addWidget(mpMaxStepSizeTextBox, 3, 1);
-  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderLabel, 4, 0);
-  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderSpinBox, 4, 1);
+  pOptionsGridLayout->addWidget(mpRootFindingCheckBox, 2, 0, 1, 2);
+  pOptionsGridLayout->addWidget(mpRestartAfterEventCheckBox, 3, 0, 1, 2);
+  pOptionsGridLayout->addWidget(mpInitialStepSizeLabel, 4, 0);
+  pOptionsGridLayout->addWidget(mpInitialStepSizeTextBox, 4, 1);
+  pOptionsGridLayout->addWidget(mpMaxStepSizeLabel, 5, 0);
+  pOptionsGridLayout->addWidget(mpMaxStepSizeTextBox, 5, 1);
+  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderLabel, 6, 0);
+  pOptionsGridLayout->addWidget(mpMaxIntegrationOrderSpinBox, 6, 1);
+  // GBODE Settings
+  mpGBODESettingsLabel = new Label(tr("GBODE Flags:"));
+  mpGBODESettingsLabel->setToolTip(tr("Additional simulation flags for the GBODE solver and GBODE presets."));
+  mpGBODESettingsToggleButton = new QToolButton;
+  mpGBODESettingsToggleButton->setCheckable(true);
+  mpGBODESettingsToggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  mpGBODESettingsToggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+  connect(mpGBODESettingsToggleButton, SIGNAL(toggled(bool)), SLOT(setGBODESettingsExpanded(bool)));
+
+  QWidget *pGBODESingleRateWidget = new QWidget;
+  QGridLayout *pGBODESingleRateLayout = createGBODELayout(pGBODESingleRateWidget);
+  mpGBODEMultiRateWidget = new QWidget;
+  QGridLayout *pGBODEMultiRateLayout = createGBODELayout(mpGBODEMultiRateWidget);
+  int singleRateRow = 0;
+  int multiRateRow = 0;
+  for (int i = 0; i < getGBODESettingsCount(); i++) {
+    if (getGBODESetting(i).singleRate) {
+      addGBODESetting(pGBODESingleRateLayout, singleRateRow++, i);
+    } else {
+      addGBODESetting(pGBODEMultiRateLayout, multiRateRow++, i);
+    }
+  }
+  mpGBODEMultirateCheckBox = new QCheckBox(tr("Multirate"));
+  mpGBODEMultirateCheckBox->setToolTip(FLAG_DETAILED_DESC[FLAG_MR_PAR]);
+  connect(mpGBODEMultirateCheckBox, SIGNAL(toggled(bool)), SLOT(setGBODEMultirate(bool)));
+
+  mpGBODESettingsWidget = new QWidget;
+  QVBoxLayout *pGBODESettingsWidgetLayout = new QVBoxLayout;
+  pGBODESettingsWidgetLayout->setContentsMargins(0, 3, 0, 0);
+  pGBODESettingsWidgetLayout->setSpacing(4);
+  QFrame *pGBODESettingsLine = new QFrame;
+  pGBODESettingsLine->setFrameShape(QFrame::HLine);
+  pGBODESettingsLine->setFrameShadow(QFrame::Sunken);
+  pGBODESettingsWidgetLayout->addWidget(pGBODESettingsLine);
+  pGBODESettingsWidgetLayout->addWidget(new Label(tr("Single-rate")));
+  pGBODESettingsWidgetLayout->addWidget(pGBODESingleRateWidget);
+  pGBODESettingsWidgetLayout->addWidget(mpGBODEMultirateCheckBox);
+  pGBODESettingsWidgetLayout->addWidget(mpGBODEMultiRateWidget);
+  mpGBODESettingsWidget->setLayout(pGBODESettingsWidgetLayout);
+
+  mpGBODESettingsLabel->setVisible(false);
+  mpGBODESettingsToggleButton->setVisible(false);
+  pOptionsGridLayout->addWidget(mpGBODESettingsLabel, 0, 0);
+  pOptionsGridLayout->addWidget(mpGBODESettingsToggleButton, 0, 1, Qt::AlignLeft);
+  pOptionsGridLayout->addWidget(mpGBODESettingsWidget, 1, 0, 1, 2);
+  applyDefaultGBODESettings(QString());
+  setGBODESettingsExpanded(false);
   mpOptionsGroupBox->setLayout(pOptionsGridLayout);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
@@ -747,6 +843,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
         QMap<QString, QString> additionalSimulationFlags;
+        QStringList gbodeSimulationFlags;
+        QString gbodeMethod;
         // if the class has __OpenModelica_simulationFlags annotation then use its values.
         QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
         foreach (QString simulationFlag, simulationFlags) {
@@ -769,6 +867,16 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpIgnoreHideResultCheckBox->setChecked(true);
           } else if (simulationFlag.compare("f") == 0) {
             mpModelSetupFileTextBox->setText(value);
+          } else if (findGBODESetting(simulationFlag)) {
+            additionalSimulationFlags.insert(simulationFlag, value);
+            if (applyGBODESimulationFlag(simulationFlag, value)) {
+              gbodeSimulationFlags << simulationFlag;
+              if (simulationFlag.compare(QStringLiteral("gbm")) == 0) {
+                gbodeMethod = value;
+              } else {
+                setGBODESettingsExpanded(true);
+              }
+            }
           } else if (simulationFlag.compare("iif") == 0) {
             mpEquationSystemInitializationFileTextBox->setText(value);
           } else if (simulationFlag.compare("iim") == 0) {
@@ -803,7 +911,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
             }
           } else if (simulationFlag.compare("s") == 0) {
-            mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
+            mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findData(value));
           } else if (simulationFlag.compare("lv") == 0) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
             QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
@@ -856,6 +964,24 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
                                                                     Helper::simulationKind, Helper::warningLevel));
             }
           }
+        }
+        QString solverMethod = mpMethodComboBox->currentData().toString();
+        getGBODEMethod(&solverMethod);
+        if (solverMethod.compare(QStringLiteral("gbode")) == 0) {
+          foreach (QString flag, gbodeSimulationFlags) {
+            additionalSimulationFlags.remove(flag);
+          }
+          if (!gbodeMethod.isEmpty()) {
+            if (!gbodeSimulationFlags.contains(QStringLiteral("gbfm"))) {
+              setComboBoxText(mGBODEComboBoxes.value(QStringLiteral("gbfm")), gbodeMethod);
+            }
+            int currentIndex = mpMethodComboBox->findData(QString("gbode:%1").arg(gbodeMethod));
+            if (currentIndex > -1) {
+              mpMethodComboBox->setCurrentIndex(currentIndex);
+            }
+          }
+        } else {
+          setGBODESettingsExpanded(false);
         }
         QStringList additionalSimulationFlagsList;
         QMapIterator<QString, QString> additionalSimulationFlagsIterator(additionalSimulationFlags);
@@ -944,7 +1070,29 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
     mpInteractiveSimulationGroupBox->setEnabled(false);
   }
   // Integration
-  int currentIndex = mpMethodComboBox->findText(simulationOptions.getMethod(), Qt::MatchExactly);
+  QString additionalSimulationFlags = simulationOptions.getAdditionalSimulationFlags();
+  QStringList additionalSimulationFlagsList = StringHandler::splitStringWithSpaces(additionalSimulationFlags, false);
+  QString gbodeMethod;
+  bool gbodeFastMethodSet = false;
+  bool isGBODE = simulationOptions.getMethod().compare(QStringLiteral("gbode")) == 0;
+  applyDefaultGBODESettings(QString());
+  applyGBODESimulationFlags(additionalSimulationFlagsList, &gbodeMethod, &gbodeFastMethodSet, isGBODE);
+  if (isGBODE) {
+    applyGBODESimulationFlags(simulationOptions.getSimulationFlags(), &gbodeMethod, &gbodeFastMethodSet, true);
+  }
+  if (!gbodeMethod.isEmpty() && !gbodeFastMethodSet) {
+    setComboBoxText(mGBODEComboBoxes.value(QStringLiteral("gbfm")), gbodeMethod);
+  }
+  if (isGBODE) {
+    additionalSimulationFlags = removeGBODEFlagsFromText(additionalSimulationFlags);
+  }
+  int currentIndex = -1;
+  if (simulationOptions.getMethod().compare(QStringLiteral("gbode")) == 0 && !gbodeMethod.isEmpty()) {
+    currentIndex = mpMethodComboBox->findData(QString("gbode:%1").arg(gbodeMethod));
+  }
+  if (currentIndex < 0) {
+    currentIndex = mpMethodComboBox->findData(simulationOptions.getMethod());
+  }
   if (currentIndex > -1) {
     mpMethodComboBox->setCurrentIndex(currentIndex);
   }
@@ -1027,7 +1175,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
     }
     i++;
   }
-  mpAdditionalSimulationFlagsTextBox->setText(simulationOptions.getAdditionalSimulationFlags());
+  mpAdditionalSimulationFlagsTextBox->setText(additionalSimulationFlags);
   // output format
   bool state = mpOutputFormatComboBox->blockSignals(true);
   currentIndex = mpOutputFormatComboBox->findText(simulationOptions.getOutputFormat(), Qt::MatchExactly);
@@ -1169,7 +1317,15 @@ SimulationOptions SimulationDialog::createSimulationOptions()
 
   simulationOptions.setInteractiveSimulation(mpInteractiveSimulationGroupBox->isChecked());
   simulationOptions.setInteractiveSimulationWithSteps(mpInteractiveSimulationStepCheckBox->isChecked());
-  simulationOptions.setMethod(mpMethodComboBox->currentText());
+  QString solverMethod = mpMethodComboBox->currentData().toString();
+  QString gbodeMethod = getGBODEMethod(&solverMethod);
+  QString additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text();
+  if (solverMethod.compare(QStringLiteral("gbode")) == 0) {
+    applyGBODESimulationFlags(StringHandler::splitStringWithSpaces(additionalSimulationFlags, false));
+    additionalSimulationFlags = removeGBODEFlagsFromText(additionalSimulationFlags);
+  }
+
+  simulationOptions.setMethod(solverMethod);
   simulationOptions.setTolerance(mpToleranceTextBox->text());
   simulationOptions.setJacobian(mpJacobianComboBox->currentText());
   simulationOptions.setRootFinding(mpRootFindingCheckBox->isChecked());
@@ -1212,7 +1368,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     i++;
   }
   simulationOptions.setLogStreams(logStreams);
-  simulationOptions.setAdditionalSimulationFlags(mpAdditionalSimulationFlagsTextBox->text());
+  simulationOptions.setAdditionalSimulationFlags(additionalSimulationFlags);
 
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
   simulationOptions.setSinglePrecision(mpSinglePrecisionCheckBox->isChecked());
@@ -1263,6 +1419,9 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
   simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
   simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+  if (solverMethod.compare(QStringLiteral("gbode")) == 0) {
+    appendGBODESimulationFlags(&simulationFlags, gbodeMethod);
+  }
   simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
   simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
@@ -1386,8 +1545,8 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
     simulationFlags.append(QString("-l=").append(simulationOptions.getStopTime()));
   }
-  if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
-    simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
+  if (!simulationOptions.getAdditionalSimulationFlags().isEmpty()) {
+    simulationFlags.append(StringHandler::splitStringWithSpaces(simulationOptions.getAdditionalSimulationFlags()));
   }
   // setup interactive simulation server
   if (mpInteractiveSimulationGroupBox->isChecked()) {
@@ -1519,13 +1678,15 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   QString oldSimulationFlags = QString("annotate=%1").arg(MainWindow::instance()->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
   // new simulation flags
   QMap<QString, QString> simulationFlags;
+  QString solverMethod = mpMethodComboBox->currentData().toString();
+  QString gbodeMethod = getGBODEMethod(&solverMethod);
 
   // Flags from General tab
   if (!mpJacobianComboBox->currentText().isEmpty()) {
     simulationFlags.insert("jacobian", mpJacobianComboBox->currentText());
   }
   if (mpOptionsGroupBox->isEnabled()) {
-    if (mpMethodComboBox->currentText().compare(QStringLiteral("gbode")) != 0) {
+    if (solverMethod.compare(QStringLiteral("gbode")) != 0) {
       if (!mpRootFindingCheckBox->isChecked()) {
         simulationFlags.insert("noRootFinding", "()");
       }
@@ -1587,29 +1748,18 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
+  QStringList additionalSimulationFlags = StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text(), false);
+  if (solverMethod.compare(QStringLiteral("gbode")) == 0) {
+    applyGBODESimulationFlags(additionalSimulationFlags);
+    removeGBODESimulationFlags(&additionalSimulationFlags);
+    appendGBODESimulationFlags(&additionalSimulationFlags, gbodeMethod);
+  }
   foreach (QString additionalSimulationFlag, additionalSimulationFlags) {
-    additionalSimulationFlag = additionalSimulationFlag.trimmed();
-    if (additionalSimulationFlag.startsWith('-')) {
-      additionalSimulationFlag.remove(0, 1);
-    }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-    QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
-    if (nameValueList.size() < 2) {
-      simulationFlags.insert(nameValueList.at(0), "()");
-    } else {
-      simulationFlags.insert(nameValueList.at(0), nameValueList.at(1));
-    }
+    QString flagValue;
+    simulationFlags.insert(getSimulationFlagName(additionalSimulationFlag, &flagValue), flagValue);
   }
   // Flags from Output tab
-  simulationFlags.insert("s", mpMethodComboBox->currentText());
+  simulationFlags.insert("s", solverMethod);
   if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.insert("single", "()");
   }
@@ -1721,7 +1871,7 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
     numberOfIntervals = QString::number((stopTime - startTime) / interval);
   }
   simulationParameters.append(", numberOfIntervals=").append(numberOfIntervals);
-  simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
+  simulationParameters.append(", method=").append("\"").append(simulationOptions.getMethod()).append("\"");
   if (!mpToleranceTextBox->text().isEmpty()) {
     simulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
   }
@@ -2080,15 +2230,32 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
  */
 void SimulationDialog::enableDisableOptions(int index)
 {
-  const QString method = mpMethodComboBox->itemText(index);
+  QString method = mpMethodComboBox->itemData(index).toString();
+  QString gbodeMethod = getGBODEMethod(&method);
+  bool wasGBODEVisible = mpGBODESettingsToggleButton->isVisible();
+  bool isGBODE = method.compare(QStringLiteral("gbode")) == 0;
+  mpGBODESettingsToggleButton->setVisible(isGBODE);
+  mpGBODESettingsLabel->setVisible(isGBODE);
+  mpRootFindingCheckBox->setVisible(!isGBODE);
+  mpRestartAfterEventCheckBox->setVisible(!isGBODE);
+  mpMaxIntegrationOrderLabel->setVisible(!isGBODE);
+  mpMaxIntegrationOrderSpinBox->setVisible(!isGBODE);
+  if (!isGBODE) {
+    setGBODESettingsExpanded(false);
+  }
   if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
     // gbode doesn't handle following options yet
-    bool isGbode = method.compare(QStringLiteral("gbode")) == 0;
-    mpRootFindingCheckBox->setEnabled(!isGbode);
-    mpRestartAfterEventCheckBox->setEnabled(!isGbode);
-    mpMaxIntegrationOrderSpinBox->setEnabled(!isGbode);
+    if (isGBODE && !gbodeMethod.isEmpty()) {
+      setGBODEMethod(gbodeMethod);
+    } else if (isGBODE && wasGBODEVisible) {
+      applyDefaultGBODESettings(QString());
+    }
+    mpRootFindingCheckBox->setEnabled(!isGBODE);
+    mpRestartAfterEventCheckBox->setEnabled(!isGBODE);
+    mpMaxIntegrationOrderLabel->setEnabled(!isGBODE);
+    mpMaxIntegrationOrderSpinBox->setEnabled(!isGBODE);
   } else {
     mpOptionsGroupBox->setEnabled(false);
     mpEquidistantTimeGridCheckBox->setEnabled(false);
@@ -2250,6 +2417,462 @@ void SimulationDialog::resultFileNameChanged(int index)
   if (pComboBoxSender) {
     mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
+  }
+}
+
+// GBODE specific settings and functions
+
+static const GBODESetting GBODE_SETTINGS[] =
+{
+  {"gbm", "Method (-gbm):", FLAG_SR, GBODE_SETTING_COMBO, GB_METHOD_NAME, GB_METHOD_DESC, RK_MAX, "esdirk4", true},
+  {"gbctrl", "Controller (-gbctrl):", FLAG_SR_CTRL, GBODE_SETTING_COMBO, GB_CTRL_METHOD_NAME, GB_CTRL_METHOD_DESC, GB_CTRL_MAX, "pid_h312", true},
+  {"gberr", "Error (-gberr):", FLAG_SR_ERR, GBODE_SETTING_COMBO, GB_EXTRAPOL_METHOD_NAME, GB_EXTRAPOL_METHOD_DESC, GB_EXT_MAX, "default", true},
+  {"gbint", "Interpolation (-gbint):", FLAG_SR_INT, GBODE_SETTING_COMBO, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_METHOD_DESC, GB_INTERPOL_MAX, "dense_output_errctrl", true},
+  {"gbnls", "Non Linear Solver (-gbnls):", FLAG_SR_NLS, GBODE_SETTING_COMBO, GB_NLS_METHOD_NAME, GB_NLS_METHOD_DESC, GB_NLS_MAX, "internal", true},
+  {"gbctrl_filter", "Controller Filter (-gbctrl_filter):", FLAG_SR_CTRL_FILTER, GBODE_SETTING_TEXT, 0, 0, 0, "1.0", true},
+  {"gbnls_internal_damping", "Internal Damping (-gbnls_internal_damping):", FLAG_SR_NLS_INTERNAL_DAMPING_FAC, GBODE_SETTING_TEXT, 0, 0, 0, "0.8", true},
+  {"gbnls_internal_jackeep", "Internal Jac Keep (-gbnls_internal_jackeep):", FLAG_SR_NLS_INTERNAL_JACKEEP, GBODE_SETTING_TEXT, 0, 0, 0, "auto", true},
+  {"gbctrl_evnt_reinit", "Event Step Size Reinit (-gbctrl_evnt_reinit)", FLAG_SR_CTRL_EVNT_REINIT, GBODE_SETTING_FLAG, 0, 0, 0, "", true},
+  {"gbctrl_fhr", "Adaptive Step Size Damping (-gbctrl_fhr)", FLAG_SR_CTRL_FHR, GBODE_SETTING_FLAG, 0, 0, 0, "", true},
+  {"gbratio", "Fast States Ratio (-gbratio):", FLAG_MR_PAR, GBODE_SETTING_TEXT, 0, 0, 0, "0.0", false},
+  {"gbfm", "Fast Method (-gbfm):", FLAG_MR, GBODE_SETTING_COMBO, GB_METHOD_NAME, GB_METHOD_DESC, RK_MAX, "gbm", false},
+  {"gbfctrl", "Fast Controller (-gbfctrl):", FLAG_MR_CTRL, GBODE_SETTING_COMBO, GB_CTRL_METHOD_NAME, GB_CTRL_METHOD_DESC, GB_CTRL_MAX, "gbctrl", false},
+  {"gbferr", "Fast Error (-gbferr):", FLAG_MR_ERR, GBODE_SETTING_COMBO, GB_EXTRAPOL_METHOD_NAME, GB_EXTRAPOL_METHOD_DESC, GB_EXT_MAX, "default", false},
+  {"gbfint", "Fast Interpolation (-gbfint):", FLAG_MR_INT, GBODE_SETTING_COMBO, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_METHOD_DESC, GB_INTERPOL_MAX, "gbint", false},
+  {"gbfnls", "Fast Non Linear Solver (-gbfnls):", FLAG_MR_NLS, GBODE_SETTING_COMBO, GB_NLS_METHOD_NAME, GB_NLS_METHOD_DESC, GB_NLS_MAX, "gbnls", false}
+};
+
+static const int GBODE_SETTINGS_COUNT = sizeof(GBODE_SETTINGS) / sizeof(GBODESetting);
+
+static int getGBODESettingsCount()
+{
+  return GBODE_SETTINGS_COUNT;
+}
+
+static const GBODESetting& getGBODESetting(int index)
+{
+  return GBODE_SETTINGS[index];
+}
+
+static const GBODESetting* findGBODESetting(const QString &flag)
+{
+  for (int i = 0; i < GBODE_SETTINGS_COUNT; i++) {
+    if (flag.compare(GBODE_SETTINGS[i].flag) == 0) {
+      return &GBODE_SETTINGS[i];
+    }
+  }
+  return 0;
+}
+
+static QString getSimulationFlagName(QString flag, QString *pValue)
+{
+  flag = flag.trimmed();
+  while (flag.startsWith('-')) {
+    flag.remove(0, 1);
+  }
+  int valueIndex = flag.indexOf('=');
+  if (pValue) {
+    *pValue = (valueIndex > -1 && valueIndex < flag.size() - 1) ? flag.mid(valueIndex + 1) : QStringLiteral("()");
+  }
+  return valueIndex > -1 ? flag.left(valueIndex) : flag;
+}
+
+static QString getGBODEMethod(QString *pSolverMethod)
+{
+  if (pSolverMethod->startsWith(QStringLiteral("gbode:"))) {
+    QString gbodeMethod = pSolverMethod->mid(QStringLiteral("gbode:").size());
+    *pSolverMethod = QStringLiteral("gbode");
+    return gbodeMethod;
+  }
+  return QString();
+}
+
+static QString getGBODEFastInterpolationDefault(QString interpolation)
+{
+  return (interpolation.compare(QStringLiteral("dense_output_errctrl")) == 0 || interpolation.compare(QStringLiteral("hermite_errctrl")) == 0) ? QStringLiteral("dense_output") : interpolation;
+}
+
+static QString formatGBODEMethodDisplayText(const QString &name, int stages, int order, const QString &stability, const QString &type)
+{
+  QString stabilityText = stability.isEmpty() ? QStringLiteral("stability: none") : QStringLiteral("%1-stable").arg(stability);
+  return QStringLiteral("%1 (stages: %2, order: %3, %4, %5)").arg(name).arg(stages).arg(order).arg(stabilityText, type);
+}
+
+static QString getGBODEMethodDisplayText(const QString &method)
+{
+  bool ok;
+  int stages = method.right(1).toInt(&ok);
+  if (method.compare(QStringLiteral("adams")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Adams-Moulton"), 2, 2, QString("A"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("expl_euler")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Explicit Euler"), 1, 1, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("impl_euler")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Implicit Euler"), 1, 1, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("trapezoid")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Trapezoid"), 2, 2, QStringLiteral("A"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("sdirk2")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("SDIRK2"), 2, 2, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("sdirk3")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("SDIRK3"), 3, 3, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("sdirk4")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("SDIRK4"), 5, 4, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("esdirk2")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("TR-BDF2"), 3, 2, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("esdirk3")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("ESDIRK3(2)4L[2]SA"), 4, 3, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("esdirk4")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("ESDIRK4(3)6L[2]SA"), 6, 4, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("esdirk4s7")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("ESDIRK4(3)7L[2]SA"), 7, 4, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("radauIA"))) return formatGBODEMethodDisplayText(QStringLiteral("Radau IA"), stages, 2 * stages - 1, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("radauIIA"))) return formatGBODEMethodDisplayText(QStringLiteral("Radau IIA"), stages, 2 * stages - 1, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("lobattoIIIA"))) return formatGBODEMethodDisplayText(QStringLiteral("Lobatto IIIA"), stages, 2 * stages - 2, QStringLiteral("A"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("lobattoIIIB"))) return formatGBODEMethodDisplayText(QStringLiteral("Lobatto IIIB"), stages, 2 * stages - 2, QStringLiteral("A"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("lobattoIIIC"))) return formatGBODEMethodDisplayText(QStringLiteral("Lobatto IIIC"), stages, 2 * stages - 2, QStringLiteral("L"), QStringLiteral("implicit"));
+  if (ok && method.startsWith(QStringLiteral("gauss"))) return formatGBODEMethodDisplayText(QStringLiteral("Gauss"), stages, 2 * stages, QStringLiteral("A"), QStringLiteral("implicit"));
+  if (method.compare(QStringLiteral("merson")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Merson"), 5, 4, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("mersonSsc1")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Merson SSC 1"), 5, 1, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("mersonSsc2")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Merson SSC 2"), 5, 2, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("heun")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Heun"), 2, 2, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("fehlberg12")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Fehlberg 1(2)"), 3, 2, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("fehlberg45")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Fehlberg 4(5)"), 6, 5, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("fehlberg78")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Fehlberg 7(8)"), 13, 8, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("fehlbergSsc1")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Fehlberg SSC 1"), 13, 1, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("fehlbergSsc2")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Fehlberg SSC 2"), 13, 2, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("rk810")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Runge-Kutta 8(10)"), 17, 10, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("rk1012")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Runge-Kutta 10(12)"), 25, 12, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("rk1214")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Runge-Kutta 12(14)"), 35, 14, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("dopri45")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Dormand-Prince 4(5)"), 7, 5, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("dopriSsc1")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Dormand-Prince SSC 1"), 7, 1, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("dopriSsc2")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Dormand-Prince SSC 2"), 7, 2, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("tsit5")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Tsitouras 5(4)"), 7, 5, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("rungekutta")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Classical Runge-Kutta"), 4, 4, QString(), QStringLiteral("explicit"));
+  if (method.compare(QStringLiteral("rungekuttaSsc")) == 0) return formatGBODEMethodDisplayText(QStringLiteral("Runge-Kutta SSC"), 5, 1, QString(), QStringLiteral("explicit"));
+  return method;
+}
+
+static QString getGBODESettingDisplayText(const QString &flag, const QString &name)
+{
+  if (flag.compare(QStringLiteral("gbm")) == 0 || flag.compare(QStringLiteral("gbfm")) == 0) return getGBODEMethodDisplayText(name);
+  if (name.compare(QStringLiteral("default")) == 0) return QStringLiteral("Default");
+  if (name.compare(QStringLiteral("richardson")) == 0) return QStringLiteral("Richardson");
+  if (name.compare(QStringLiteral("embedded")) == 0) return QStringLiteral("Embedded");
+  if (name.compare(QStringLiteral("i")) == 0) return QStringLiteral("I");
+  if (name.compare(QStringLiteral("pi_33")) == 0) return QStringLiteral("PI 33");
+  if (name.compare(QStringLiteral("pi_34")) == 0) return QStringLiteral("PI 34");
+  if (name.compare(QStringLiteral("pi_42")) == 0) return QStringLiteral("PI 42");
+  if (name.compare(QStringLiteral("pid_h312")) == 0) return QStringLiteral("PID H312");
+  if (name.compare(QStringLiteral("pid_soederlind")) == 0) return QStringLiteral("PID Soederlind");
+  if (name.compare(QStringLiteral("pid_stiff")) == 0) return QStringLiteral("PID stiff");
+  if (name.compare(QStringLiteral("pc")) == 0) return QStringLiteral("Predictive PI");
+  if (name.compare(QStringLiteral("pc_hybrid")) == 0) return QStringLiteral("Hybrid predictive PI");
+  if (name.compare(QStringLiteral("pi_h211")) == 0) return QStringLiteral("PI H211");
+  if (name.compare(QStringLiteral("pi_h0_211")) == 0) return QStringLiteral("PI H0 211");
+  if (name.compare(QStringLiteral("pid_h0_312")) == 0) return QStringLiteral("PID H0 312");
+  if (name.compare(QStringLiteral("pid_h0_321")) == 0) return QStringLiteral("PID H0 321");
+  if (name.compare(QStringLiteral("ppid")) == 0) return QStringLiteral("PPID");
+  if (name.compare(QStringLiteral("const")) == 0) return QStringLiteral("Constant");
+  if (name.compare(QStringLiteral("linear")) == 0) return QStringLiteral("Linear");
+  if (name.compare(QStringLiteral("hermite")) == 0) return QStringLiteral("Hermite");
+  if (name.compare(QStringLiteral("hermite_a")) == 0) return QStringLiteral("Hermite A");
+  if (name.compare(QStringLiteral("hermite_b")) == 0) return QStringLiteral("Hermite B");
+  if (name.compare(QStringLiteral("hermite_errctrl")) == 0) return QStringLiteral("Hermite with error control");
+  if (name.compare(QStringLiteral("dense_output")) == 0) return QStringLiteral("Dense output");
+  if (name.compare(QStringLiteral("dense_output_errctrl")) == 0) return QStringLiteral("Dense output with error control");
+  if (name.compare(QStringLiteral("newton")) == 0) return QStringLiteral("Newton");
+  if (name.compare(QStringLiteral("kinsol")) == 0) return QStringLiteral("KINSOL");
+  if (name.compare(QStringLiteral("experimental-kinsol")) == 0) return QStringLiteral("Experimental KINSOL");
+  if (name.compare(QStringLiteral("internal")) == 0) return QStringLiteral("Internal");
+  return name;
+}
+
+static QString removeGBODEFlagsFromText(QString text)
+{
+  QStringList flags;
+  QString flag;
+  bool quotesOpen = false;
+  text = text.trimmed();
+  for (int i = 0; i < text.size(); i++) {
+    if (text.at(i) == '"') {
+      quotesOpen = !quotesOpen;
+    }
+    if (text.at(i) == ' ' && !quotesOpen) {
+      if (!flag.isEmpty() && !findGBODESetting(getSimulationFlagName(flag))) {
+        flags << flag;
+      }
+      flag.clear();
+    } else {
+      flag.append(text.at(i));
+    }
+  }
+  if (!flag.isEmpty() && !findGBODESetting(getSimulationFlagName(flag))) {
+    flags << flag;
+  }
+  return flags.join(" ");
+}
+
+static bool setComboBoxText(ComboBox *pComboBox, const QString &text)
+{
+  int currentIndex = text.isEmpty() ? 0 : pComboBox->findData(text, Qt::UserRole, Qt::MatchExactly);
+  if (currentIndex < 0) {
+    currentIndex = pComboBox->findText(text, Qt::MatchExactly);
+  }
+  if (currentIndex > -1) {
+    pComboBox->setCurrentIndex(currentIndex);
+    return true;
+  }
+  return false;
+}
+
+static QString getComboBoxValue(ComboBox *pComboBox)
+{
+  QString value = pComboBox->currentData().toString();
+  return value.isEmpty() ? pComboBox->currentText() : value;
+}
+
+static QString getGBODESettingDefaultValue(const GBODESetting &setting, const QString &gbodeMethod, const QMap<QString, ComboBox*> &gbodeComboBoxes, bool useGBODEMethod)
+{
+  QString flag(setting.flag);
+  QString defaultValue(setting.defaultValue);
+  if ((useGBODEMethod && flag.compare(QStringLiteral("gbm")) == 0) || defaultValue.compare(QStringLiteral("gbm")) == 0) {
+    defaultValue = gbodeMethod;
+  } else if (defaultValue.startsWith(QStringLiteral("gb"))) {
+    defaultValue = getComboBoxValue(gbodeComboBoxes.value(defaultValue));
+    if (flag.compare(QStringLiteral("gbfint")) == 0) {
+      defaultValue = getGBODEFastInterpolationDefault(defaultValue);
+    }
+  }
+  return defaultValue;
+}
+
+static void addSolverMethod(ComboBox *pMethodComboBox, QStringList *pSolverMethodsDisplayDesc, const QStringList &solverMethods,
+                            const QStringList &solverMethodsDesc, const QString &text, const QString &method, const QString &description)
+{
+  pMethodComboBox->addItem(text, method);
+  int methodIndex = solverMethods.indexOf(method);
+  pSolverMethodsDisplayDesc->append(description.isEmpty() && methodIndex > -1 ? solverMethodsDesc.at(methodIndex) : description);
+}
+
+static QGridLayout* createGBODELayout(QWidget *pWidget)
+{
+  QGridLayout *pLayout = new QGridLayout;
+  pLayout->setContentsMargins(0, 0, 0, 0);
+  pLayout->setHorizontalSpacing(6);
+  pLayout->setVerticalSpacing(4);
+  pLayout->setAlignment(Qt::AlignTop);
+  pLayout->setColumnStretch(1, 1);
+  pWidget->setLayout(pLayout);
+  return pLayout;
+}
+
+/*!
+ * \brief SimulationDialog::applyDefaultGBODESettings
+ * Applies the default values to the GBODE settings.
+ * \param gbodeMethod
+ */
+void SimulationDialog::applyDefaultGBODESettings(const QString &gbodeMethod)
+{
+  const QString singleRateMethod = gbodeMethod.isEmpty() ? QStringLiteral("esdirk4") : gbodeMethod;
+  for (int i = 0; i < getGBODESettingsCount(); i++) {
+    const GBODESetting &setting = getGBODESetting(i);
+    const QString flag(setting.flag);
+    QString defaultValue = getGBODESettingDefaultValue(setting, singleRateMethod, mGBODEComboBoxes, true);
+    if (setting.type == GBODE_SETTING_COMBO) {
+      setComboBoxText(mGBODEComboBoxes.value(flag), defaultValue);
+    } else if (setting.type == GBODE_SETTING_TEXT) {
+      mGBODETextBoxes.value(flag)->setText(defaultValue);
+    } else if (setting.type == GBODE_SETTING_FLAG) {
+      mGBODECheckBoxes.value(flag)->setChecked(false);
+    }
+  }
+  setGBODEMultirate(false);
+}
+
+/*!
+ * \brief SimulationDialog::addGBODESetting
+ * Adds a GBODE setting widget to the layout.
+ * \param pLayout
+ * \param row
+ * \param settingIndex
+ */
+void SimulationDialog::addGBODESetting(QGridLayout *pLayout, int row, int settingIndex)
+{
+  const GBODESetting &setting = getGBODESetting(settingIndex);
+  if (setting.type == GBODE_SETTING_FLAG) {
+    QCheckBox *pCheckBox = new QCheckBox(tr(setting.label));
+    pCheckBox->setToolTip(FLAG_DETAILED_DESC[setting.descriptionFlag]);
+    mGBODECheckBoxes.insert(setting.flag, pCheckBox);
+    pLayout->addWidget(pCheckBox, row, 0, 1, 2);
+  } else {
+    Label *pLabel = new Label(tr(setting.label));
+    pLabel->setToolTip(FLAG_DETAILED_DESC[setting.descriptionFlag]);
+    pLayout->addWidget(pLabel, row, 0);
+    if (setting.type == GBODE_SETTING_COMBO) {
+      QStringList descriptions;
+      descriptions << "";
+      ComboBox *pComboBox = new ComboBox;
+      pComboBox->addItem("");
+      for (int i = 1; i < setting.size; i++) {
+        QString name(setting.names[i]);
+        pComboBox->addItem(getGBODESettingDisplayText(setting.flag, name), name);
+        descriptions << QString("-%1=%2\n%3").arg(setting.flag, setting.names[i], setting.descriptions[i]);
+      }
+      Utilities::setToolTip(pComboBox, tr(setting.label), descriptions);
+      mGBODEComboBoxes.insert(setting.flag, pComboBox);
+      pLayout->addWidget(pComboBox, row, 1);
+    } else if (setting.type == GBODE_SETTING_TEXT) {
+      QLineEdit *pTextBox = new QLineEdit;
+      pTextBox->setToolTip(FLAG_DETAILED_DESC[setting.descriptionFlag]);
+      mGBODETextBoxes.insert(setting.flag, pTextBox);
+      pLayout->addWidget(pTextBox, row, 1);
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::setGBODESettingsExpanded
+ * Expands or collapses the GBODE settings.
+ * \param expanded
+ */
+void SimulationDialog::setGBODESettingsExpanded(bool expanded)
+{
+  bool state = mpGBODESettingsToggleButton->blockSignals(true);
+  mpGBODESettingsToggleButton->setChecked(expanded);
+  mpGBODESettingsToggleButton->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+  mpGBODESettingsToggleButton->setText(expanded ? tr("Collapse") : tr("Expand"));
+  mpGBODESettingsToggleButton->setToolTip(expanded ? tr("Collapse GBODE settings") : tr("Expand GBODE settings"));
+  mpGBODESettingsToggleButton->blockSignals(state);
+  mpGBODESettingsWidget->setVisible(expanded);
+}
+
+/*!
+ * \brief SimulationDialog::setGBODEMultirate
+ * Enables or disables the GBODE multirate settings.
+ * \param enabled
+ */
+void SimulationDialog::setGBODEMultirate(bool enabled)
+{
+  bool state = mpGBODEMultirateCheckBox->blockSignals(true);
+  mpGBODEMultirateCheckBox->setChecked(enabled);
+  mpGBODEMultirateCheckBox->blockSignals(state);
+  if (enabled && mGBODETextBoxes.value(QStringLiteral("gbratio"))->text().toDouble() <= 0.0) {
+    mGBODETextBoxes.value(QStringLiteral("gbratio"))->setText(QStringLiteral("0.1"));
+  }
+  mpGBODEMultiRateWidget->setVisible(enabled);
+}
+
+/*!
+ * \brief SimulationDialog::setGBODEMethod
+ * Sets the GBODE method and keeps the fast method in sync if it was not changed manually.
+ * \param gbodeMethod
+ */
+void SimulationDialog::setGBODEMethod(const QString &gbodeMethod)
+{
+  ComboBox *pGBODEMethodComboBox = mGBODEComboBoxes.value(QStringLiteral("gbm"));
+  ComboBox *pGBODEFastMethodComboBox = mGBODEComboBoxes.value(QStringLiteral("gbfm"));
+  QString previousGBODEMethod = getComboBoxValue(pGBODEMethodComboBox);
+  setComboBoxText(pGBODEMethodComboBox, gbodeMethod);
+  if (getComboBoxValue(pGBODEFastMethodComboBox).isEmpty() || getComboBoxValue(pGBODEFastMethodComboBox).compare(previousGBODEMethod) == 0) {
+    setComboBoxText(pGBODEFastMethodComboBox, gbodeMethod);
+  }
+}
+
+/*!
+ * \brief SimulationDialog::applyGBODESimulationFlag
+ * Applies a GBODE simulation flag to the matching widget.
+ * \param flag
+ * \param value
+ * \return true if the flag was applied.
+ */
+bool SimulationDialog::applyGBODESimulationFlag(const QString &flag, const QString &value)
+{
+  const GBODESetting *pSetting = findGBODESetting(flag);
+  if (!pSetting) {
+    return false;
+  }
+  if (pSetting->type == GBODE_SETTING_COMBO) {
+    return setComboBoxText(mGBODEComboBoxes.value(flag), value);
+  } else if (pSetting->type == GBODE_SETTING_TEXT) {
+    if (value.compare(QStringLiteral("()")) == 0) {
+      return false;
+    }
+    mGBODETextBoxes.value(flag)->setText(value);
+    if (flag.compare(QStringLiteral("gbratio")) == 0) {
+      setGBODEMultirate(value.toDouble() > 0.0);
+    }
+  } else if (pSetting->type == GBODE_SETTING_FLAG) {
+    mGBODECheckBoxes.value(flag)->setChecked(value.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0);
+  }
+  return true;
+}
+
+/*!
+ * \brief SimulationDialog::applyGBODESimulationFlags
+ * Applies GBODE simulation flags to the matching widgets.
+ * \param simulationFlags
+ * \param pGBODEMethod
+ * \param pGBODEFastMethodSet
+ * \param expandSettings
+ */
+void SimulationDialog::applyGBODESimulationFlags(const QStringList &simulationFlags, QString *pGBODEMethod, bool *pGBODEFastMethodSet, bool expandSettings)
+{
+  foreach (QString simulationFlag, simulationFlags) {
+    QString flagValue;
+    QString flagName = getSimulationFlagName(simulationFlag, &flagValue);
+    if (applyGBODESimulationFlag(flagName, flagValue)) {
+      if (pGBODEMethod && flagName.compare(QStringLiteral("gbm")) == 0) {
+        *pGBODEMethod = flagValue;
+      }
+      if (pGBODEFastMethodSet && flagName.compare(QStringLiteral("gbfm")) == 0) {
+        *pGBODEFastMethodSet = true;
+      }
+      if (expandSettings && flagName.compare(QStringLiteral("gbm")) != 0) {
+        setGBODESettingsExpanded(true);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::removeGBODESimulationFlags
+ * Removes GBODE simulation flags from a list of simulation flags.
+ * \param pSimulationFlags
+ */
+void SimulationDialog::removeGBODESimulationFlags(QStringList *pSimulationFlags) const
+{
+  for (int i = pSimulationFlags->size() - 1; i >= 0; --i) {
+    if (findGBODESetting(getSimulationFlagName(pSimulationFlags->at(i)))) {
+      pSimulationFlags->removeAt(i);
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::appendGBODESimulationFlags
+ * Appends GBODE simulation flags from the settings widgets.
+ * \param pSimulationFlags
+ * \param gbodeMethod
+ */
+void SimulationDialog::appendGBODESimulationFlags(QStringList *pSimulationFlags, const QString &gbodeMethod) const
+{
+  QString method = getComboBoxValue(mGBODEComboBoxes.value(QStringLiteral("gbm")));
+  if (method.isEmpty()) {
+    method = gbodeMethod;
+  }
+  for (int i = 0; i < getGBODESettingsCount(); i++) {
+    const GBODESetting &setting = getGBODESetting(i);
+    const QString flag(setting.flag);
+    if (!setting.singleRate && !mpGBODEMultirateCheckBox->isChecked()) {
+      continue;
+    }
+    if (setting.type == GBODE_SETTING_FLAG) {
+      if (mGBODECheckBoxes.value(flag)->isChecked()) {
+        pSimulationFlags->append(QString("-%1").arg(flag));
+      }
+      continue;
+    }
+    QString value;
+    QString defaultValue = getGBODESettingDefaultValue(setting, method, mGBODEComboBoxes, false);
+    if (setting.type == GBODE_SETTING_COMBO) {
+      value = getComboBoxValue(mGBODEComboBoxes.value(flag));
+    } else if (setting.type == GBODE_SETTING_TEXT) {
+      value = mGBODETextBoxes.value(flag)->text().trimmed();
+    }
+    if (flag.compare(QStringLiteral("gbm")) == 0 && !gbodeMethod.isEmpty() && value.isEmpty()) {
+      value = gbodeMethod;
+    }
+    if (!value.isEmpty() && (value.compare(defaultValue) != 0 || (flag.compare(QStringLiteral("gbm")) == 0 && !gbodeMethod.isEmpty()))) {
+      pSimulationFlags->append(QString("-%1=%2").arg(flag, value));
+    }
   }
 }
 
