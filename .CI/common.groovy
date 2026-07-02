@@ -371,7 +371,7 @@ void buildGUI(stash, qtVersion) {
   }
 }
 
-void buildAndRunOMEditTestsuite(stash, qtVersion) {
+void buildAndRunOMEditTestsuite(stashName, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -394,13 +394,13 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
   """)
   } else {
 
-  if (stash) {
+  if (stashName) {
     standardSetup()
     sh 'rm -rf OMEdit/common'
-    unstash stash
+    unstash stashName
   }
   sh 'autoreconf --install'
-  if (stash) {
+  if (stashName) {
     patchConfigStatus()
   }
   if (qtVersion.equals('qt6')) {
@@ -408,7 +408,7 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
   } else {
     sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   }
-  if (stash) {
+  if (stashName) {
     makeLibsAndCache()
   }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
@@ -470,12 +470,12 @@ def getVersion() {
   }
 }
 
-void compliance(stash) {
+void compliance(stashName) {
   if (isWindows()) {
     // do nothing for now
   } else {
   standardSetup()
-  unstash stash
+  unstash stashName
   makeLibsAndCache()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
