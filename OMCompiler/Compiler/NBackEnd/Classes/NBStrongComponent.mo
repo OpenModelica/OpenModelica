@@ -1032,7 +1032,10 @@ public
   algorithm
     b := match comp
       case SINGLE_COMPONENT()     then Equation.isDiscrete(comp.eqn);
-      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn));
+      // mixed algorithms assign both discrete (e.g. $SEV_0) and continuous vars;
+      // treat as discrete so Jacobian computation does not try to differentiate boolean assignments
+      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn)) or
+        List.any(list(Slice.getT(v) for v in comp.vars), BVariable.isDiscrete);
       case SLICED_COMPONENT()     then Equation.isDiscrete(Slice.getT(comp.eqn));
       case RESIZABLE_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT()   then List.all(comp.entwined_slices, isDiscrete);
