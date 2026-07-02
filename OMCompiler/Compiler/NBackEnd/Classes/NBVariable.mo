@@ -1205,6 +1205,19 @@ function isJacobianResultVar
     Pointer.update(varPointer, var);
   end setStateDerivativeVar;
 
+  function setStateDerKind
+    "Updates a variable pointer to STATE_DER kind, linking it to its state.
+    Used when an existing frontend derivative variable is promoted to STATE_DER."
+    input Pointer<Variable> varPointer;
+    input Pointer<Variable> statePointer;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
+    Pointer.update(varPointer, var);
+  end setStateDerKind;
+
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
     Only if it currently is an algebraic variable, required for DAEMode."
