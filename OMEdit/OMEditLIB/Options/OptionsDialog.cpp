@@ -3191,7 +3191,7 @@ void OptionsDialog::saveLanguageServerSettings()
 
   // When enabling, check that Node.js is present for .js-based servers
   if (enabled) {
-    QString resolved = executable.isEmpty() ? ModelicaLSPClient::findBundledServer() : executable;
+    const QString resolved = ModelicaLSPClient::resolveExecutable(executable);
     if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
       LSPSetupDialog setupDialog(this);
       setupDialog.exec();

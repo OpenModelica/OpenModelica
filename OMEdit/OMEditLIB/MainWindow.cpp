@@ -182,13 +182,8 @@ void MainWindow::startLanguageServer()
     return;
   }
   QSettings *pSettings = Utilities::getApplicationSettings();
-  QString executable = pSettings->value("languageServer/executable").toString().trimmed();
-  if (executable.isEmpty()) {
-    executable = ModelicaLSPClient::findBundledServer();
-  }
-  if (executable.isEmpty()) {
-    executable = QStandardPaths::findExecutable(ModelicaLSPClient::defaultServerName());
-  }
+  const QString configured = pSettings->value("languageServer/executable").toString().trimmed();
+  const QString executable = ModelicaLSPClient::resolveExecutable(configured);
   // For .js servers, skip when Node.js is absent. The user is notified in the Options dialog.
   bool canStart = !executable.isEmpty() &&
                   !(executable.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty());

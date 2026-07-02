@@ -52,6 +52,10 @@ public:
   static QString defaultServerName();
   // Locates the Modelica language server shipped alongside OMEdit, if any.
   static QString findBundledServer();
+  // Resolves the executable to launch: the configured path if set, otherwise the
+  // bundled server, otherwise defaultServerName() on PATH. Empty if none is available.
+  // Shared by MainWindow::startLanguageServer() and the Options page so both agree.
+  static QString resolveExecutable(const QString &configured);
 
 protected:
   QJsonObject initializationOptions(const QStringList &libraries) const override;

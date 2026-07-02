@@ -39,6 +39,7 @@
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
+#include <QStandardPaths>
 
 /*!
  * \brief ModelicaLSPClient::ModelicaLSPClient
@@ -113,4 +114,19 @@ QString ModelicaLSPClient::findBundledServer()
     return candidate;
   }
   return QString();
+}
+
+/*!
+ * \brief ModelicaLSPClient::resolveExecutable
+ */
+QString ModelicaLSPClient::resolveExecutable(const QString &configured)
+{
+  if (!configured.isEmpty()) {
+    return configured;
+  }
+  QString executable = findBundledServer();
+  if (!executable.isEmpty()) {
+    return executable;
+  }
+  return QStandardPaths::findExecutable(defaultServerName());
 }

@@ -55,6 +55,16 @@ releases the distribution `nodejs` package may be too old; install a current
 release from [NodeSource](https://github.com/nodesource/distributions) or via
 [nvm](https://github.com/nvm-sh/nvm) instead.
 
+## Crash recovery
+
+If the server process exits unexpectedly, `LSPClient` restarts it automatically
+after a short delay, up to 5 times within a 3-minute window (matching
+`vscode-languageclient`'s default policy). Once that limit is hit it stops
+retrying and reports the failure as an error message. Every crash and restart
+attempt is also appended to `languageserver_crash.log` in OMEdit's temporary
+directory (see *Tools > Open Temporary Directory*), so the log can be attached
+to a bug report.
+
 ## Using a custom server
 
 Set *Server Executable* to any LSP-compatible Modelica server executable:

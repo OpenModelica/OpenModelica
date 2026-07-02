@@ -34,11 +34,25 @@
  */
 
 #include "LSP/LSPClient.h"
+#include "Util/Utilities.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <QTextStream>
+#include <QTimer>
+
+namespace {
+  // Mirrors vscode-languageclient's default restart policy: give up once the
+  // server has crashed this many times within this time window.
+  const int kMaxCrashesInWindow = 5;
+  const qint64 kCrashWindowMs = 3 * 60 * 1000;
+  // Brief pause before restarting so a fast crash loop does not spin the CPU.
+  const int kRestartDelayMs = 1000;
+}
 
 /*!
  * \brief LSPClient::LSPClient
@@ -48,7 +62,8 @@ LSPClient::LSPClient(QObject *pParent)
   : QObject(pParent),
     mpProcess(new QProcess(this)),
     mNextId(1),
-    mInitialized(false)
+    mInitialized(false),
+    mIntentionalStop(false)
 {
   qRegisterMetaType<LSP::Location>("LSP::Location");
   connect(mpProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadyRead()));
@@ -73,6 +88,10 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
   if (mpProcess->state() != QProcess::NotRunning) {
     return true;
   }
+  mLastExecutable = executable;
+  mLastRootUri = rootUri;
+  mLastLibraries = libraries;
+  mIntentionalStop = false;
   mInitialized = false;
   mReadBuffer.clear();
   mPendingRequests.clear();
@@ -132,6 +151,7 @@ void LSPClient::stop()
   if (mpProcess->state() == QProcess::NotRunning) {
     return;
   }
+  mIntentionalStop = true;
   if (mInitialized) {
     QJsonObject shutdown;
     shutdown["jsonrpc"] = QStringLiteral("2.0");
@@ -339,11 +359,55 @@ void LSPClient::onProcessError(QProcess::ProcessError error)
  */
 void LSPClient::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  Q_UNUSED(exitCode)
-  Q_UNUSED(exitStatus)
   mInitialized = false;
   mPendingRequests.clear();
   mOpenDocuments.clear();
+
+  if (mIntentionalStop) {
+    return;
+  }
+
+  const QString statusText = exitStatus == QProcess::CrashExit ? QStringLiteral("crashed") : QStringLiteral("exited unexpectedly");
+  logCrashEvent(tr("Language server %1 (exit code %2).").arg(statusText).arg(exitCode));
+
+  const qint64 now = QDateTime::currentMSecsSinceEpoch();
+  mCrashTimestamps.append(now);
+  while (!mCrashTimestamps.isEmpty() && now - mCrashTimestamps.first() > kCrashWindowMs) {
+    mCrashTimestamps.removeFirst();
+  }
+
+  if (mCrashTimestamps.size() >= kMaxCrashesInWindow) {
+    const QString message = tr("Language server crashed %1 times in the last %2 minute(s). It will not be restarted. "
+                                "See the language server log for details.")
+                             .arg(kMaxCrashesInWindow).arg(kCrashWindowMs / 60000);
+    logCrashEvent(message);
+    emit serverError(message);
+    return;
+  }
+
+  emit serverError(tr("Language server %1, restarting (attempt %2 of %3)...")
+                    .arg(statusText).arg(mCrashTimestamps.size()).arg(kMaxCrashesInWindow));
+  const QString executable = mLastExecutable;
+  const QString rootUri = mLastRootUri;
+  const QStringList libraries = mLastLibraries;
+  QTimer::singleShot(kRestartDelayMs, this, [this, executable, rootUri, libraries]() {
+    start(executable, rootUri, libraries);
+  });
+}
+
+/*!
+ * \brief LSPClient::logCrashEvent
+ * Appends a timestamped line to the language server crash log, so a persistent
+ * record survives to be attached to a bug report.
+ */
+void LSPClient::logCrashEvent(const QString &line)
+{
+  QFile logFile(Utilities::tempDirectory() + QStringLiteral("languageserver_crash.log"));
+  if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
+    return;
+  }
+  QTextStream stream(&logFile);
+  stream << QDateTime::currentDateTime().toString(Qt::ISODate) << " - " << line << Qt::endl;
 }
 
 /*!

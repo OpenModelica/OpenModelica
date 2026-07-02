@@ -280,7 +280,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
   }
 
-  if (pSettings->contains("languageServer/enabled") && pSettings->value("languageServer/enabled").toBool()) {
+  if (!testsuiteRunning && pSettings->contains("languageServer/enabled") &&
+      pSettings->value("languageServer/enabled").toBool()) {
     pMainwindow->startLanguageServer();
   }
 

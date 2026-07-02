@@ -100,12 +100,23 @@ private:
   QHash<int, QString> mPendingRequests; // id -> method name
   QHash<QString, DocumentState> mOpenDocuments; // uri -> open state
 
+  // Arguments of the most recent start(), reused to auto-restart after a crash.
+  QString mLastExecutable;
+  QString mLastRootUri;
+  QStringList mLastLibraries;
+  // Set while stop() is tearing the process down so onProcessFinished() does not
+  // mistake the intentional exit for a crash.
+  bool mIntentionalStop;
+  // Epoch-millisecond timestamps of recent crashes, used to cap the restart rate.
+  QList<qint64> mCrashTimestamps;
+
   void sendMessage(const QJsonObject &message);
   int sendRequest(const QString &method, const QJsonObject &params);
   void processMessage(const QJsonObject &message);
   void handleResponse(int id, const QJsonValue &result);
   void handleNotification(const QString &method, const QJsonObject &params);
   int nextId() { return mNextId++; }
+  void logCrashEvent(const QString &line);
 
   static QJsonObject makePosition(int line, int character);
   static QJsonObject makeTextDocumentIdentifier(const QString &uri);
