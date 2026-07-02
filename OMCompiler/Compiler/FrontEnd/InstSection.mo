@@ -2699,9 +2699,7 @@ algorithm
 
     case SCode.EQ_CONNECT(crefLeft = cr1, crefRight = cr2, info = info)
       algorithm
-        cr1_str := Dump.printComponentRefStr(cr1);
-        cr2_str := Dump.printComponentRefStr(cr2);
-        Error.addSourceMessage(Error.CONNECT_IN_IF, {cr1_str, cr2_str}, info);
+        Error.addSourceMessage(Error.IN_NON_EVALUABLE_IF_OR_FOR, {"connect"}, info);
       then
         fail();
 

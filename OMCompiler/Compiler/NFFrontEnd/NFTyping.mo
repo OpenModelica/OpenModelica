@@ -3046,28 +3046,13 @@ algorithm
       InstNode iterator;
       Integer next_context;
       SourceInfo info;
+      Variability var;
 
     case Equation.EQUALITY() then typeEqualityEquation(eq.lhs, eq.rhs, context, eq.scope, eq.source);
     case Equation.CONNECT()  then typeConnect(eq.lhs, eq.rhs, context, eq.scope, eq.source);
-
-    case Equation.FOR()
-      algorithm
-        info := ElementSource.getInfo(eq.source);
-
-        if isSome(eq.range) then
-          SOME(e1) := eq.range;
-        else
-          e1 := deduceIterationRangeEq(eq, eq.iterator, info);
-        end if;
-
-        e1 := typeIterator(eq.iterator, e1, context, structural = true);
-        next_context := InstContext.set(context, NFInstContext.FOR);
-        body := list(typeEquation(e, next_context) for e in eq.body);
-      then
-        Equation.FOR(eq.iterator, SOME(e1), body, eq.scope, eq.source);
-
-    case Equation.IF() then typeIfEquation(eq.branches, context, eq.scope, eq.source);
-    case Equation.WHEN() then typeWhenEquation(eq.branches, context, eq.scope, eq.source);
+    case Equation.FOR()      then typeForEquation(eq, context);
+    case Equation.IF()       then typeIfEquation(eq.branches, context, eq.scope, eq.source);
+    case Equation.WHEN()     then typeWhenEquation(eq.branches, context, eq.scope, eq.source);
 
     case Equation.ASSERT()
       algorithm
@@ -3116,12 +3101,11 @@ protected
 algorithm
   info := ElementSource.getInfo(source);
 
-  // Connections may not be used in if-equations unless the conditions are
-  // parameter expressions.
+  // Connections may not be used in if-equations or for-equations unless the
+  // conditions are evaluable expressions.
   // TODO: Also check for cardinality etc. as per 8.3.3.
   if InstContext.inNonexpandable(context) then
-    Error.addSourceMessage(Error.CONNECT_IN_IF,
-      {Expression.toString(lhsConn), Expression.toString(rhsConn)}, info);
+    Error.addSourceMessage(Error.IN_NON_EVALUABLE_IF_OR_FOR, {"connect"}, info);
     fail();
   end if;
 
@@ -3551,6 +3535,40 @@ algorithm
   end if;
 end typeCondition;
 
+function typeForEquation
+  input Equation eq;
+  input InstContext.Type context;
+  output Equation forEq;
+protected
+  InstNode iterator;
+  Option<Expression> range;
+  list<Equation> body;
+  InstNode scope;
+  DAE.ElementSource src;
+  SourceInfo info;
+  Expression range_exp;
+  Variability range_var;
+  InstContext.Type next_context;
+algorithm
+  Equation.FOR(iterator, range, body, scope, src) := eq;
+
+  if isSome(range) then
+    SOME(range_exp) := range;
+  else
+    range_exp := deduceIterationRangeEq(eq, iterator, ElementSource.getInfo(src));
+  end if;
+
+  (range_exp, _, range_var) := typeIterator(iterator, range_exp, context, structural = true);
+  next_context := InstContext.set(context, NFInstContext.FOR);
+
+  if range_var > Variability.PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
+    next_context := InstContext.set(context, NFInstContext.NONEXPANDABLE);
+  end if;
+
+  body := list(typeEquation(e, next_context) for e in body);
+  forEq := Equation.FOR(iterator, SOME(range_exp), body, scope, src);
+end typeForEquation;
+
 function typeIfEquation
   input list<Equation.Branch> branches;
   input InstContext.Type context;
@@ -3652,6 +3670,11 @@ function typeWhenCondition
   output Type ty;
   output Variability variability;
 algorithm
+  if InstContext.inNonexpandable(context) then
+    Error.addSourceMessage(Error.IN_NON_EVALUABLE_IF_OR_FOR, {"when"}, ElementSource.getInfo(source));
+    fail();
+  end if;
+
   (outCondition, ty, variability) := typeCondition(condition, context, source,
     Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = allowClock);
 

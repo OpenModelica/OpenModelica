@@ -1251,6 +1251,7 @@ WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
+WhenIllegalContext5.mo \
 WhenInitial1.mo \
 WhenInitial2.mo \
 WhenInitial3.mo \
