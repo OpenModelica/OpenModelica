@@ -34,6 +34,7 @@
 #endif
 
 #include "jacobianSymbolical.h"
+#include "../jacobian_util.h"
 
 #ifdef USE_PARJAC
 /** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
@@ -106,6 +107,26 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
                                               threadData_t* threadData,
                                               setJacElementFunc setJacElement)
 {
+
+#ifndef USE_PARJAC
+  /* Non-parallel path: for column eval, delegate to evalJacobian, which uses the same
+   * coloring algorithm through the jacobian->evalColumn function pointer and produces
+   * column-major dense output (jac[col * sizeRows + row]) — identical to what
+   * setJacElementDasslSparse writes.  This unifies the single-threaded evaluation of
+   * jacA_symColored with the evalJacobian path that jacA_symBiColored already uses.
+   *
+   * Note: the caller may already have invoked constantEqns before this call; evalJacobian
+   * will call it again internally.  The double call is redundant and should be cleaned up.
+   *
+   * Row eval (isRowEval == TRUE) falls through to the serial omp block below because
+   * evalJacobian and evalJacobianRow both produce row-major dense output for CSR patterns,
+   * whereas setJacElementDasslSparseAdj expects column-major.
+   * TODO: Unify the row-eval path once evalJacobianRow output layout is made column-major. */
+  if (!jacColumns->isRowEval) {
+    evalJacobian(data, threadData, jacColumns, NULL, (modelica_real*)matrixA, 1 /* isDense */);
+    return;
+  }
+#endif /* !USE_PARJAC */
 
 #ifdef USE_PARJAC
   GC_allow_register_threads();

@@ -156,12 +156,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
 
-  /* Dispatch to bidirectional evaluation if applicable */
-  if (jacobian->isBidirectional && jacobian->adjointJacobian) {
-    evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
-    return;
-  }
-
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);

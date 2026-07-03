@@ -121,10 +121,6 @@ int jacA_symBiColored(double *t, double *y, double *yprime,
                       double *deltaD, double *pd, double *cj, double *h,
                       double *wt, double *rpar, int* ipar);
 
-int jacADJ_symColored(double *t, double *y, double *yprime,
-                   double *deltaD, double *pd, double *cj, double *h,
-                   double *wt, double *rpar, int* ipar);
-
 void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
@@ -1141,10 +1137,8 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
     return 1;
   }
 
-
-
   /* Evaluate into compact nnz-sized sparse buffer (CSC-indexed) */
-  evalJacobian(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);
+  evalJacobianBidirectional(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);
 
   /* Scatter nonzeros to the dense column-major DASSL matrixA */
   for (col = 0; col < nCols; col++) {
