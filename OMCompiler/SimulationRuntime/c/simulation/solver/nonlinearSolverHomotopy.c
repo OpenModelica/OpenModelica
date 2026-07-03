@@ -2295,13 +2295,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
         debugString(OMC_LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.1;
       }
     }
     if (success != NLS_SOLVED) {
