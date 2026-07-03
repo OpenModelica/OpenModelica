@@ -5946,6 +5946,18 @@ match context
             }
           }
           >>
+        case {SLICE(exp=sliceExp)} then
+          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+          <<
+          {
+            unsigned int _sc<%v.index%>;
+            for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+              col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+            }
+          }
+          >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
@@ -6072,6 +6084,18 @@ match context
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
               <%spPattern%>->index[col_fill[<%v.index%> + _wc<%v.index%>]++] = <%rowExpr%>;
+            }
+          }
+          >>
+        case {SLICE(exp=sliceExp)} then
+          let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+          <<
+          {
+            unsigned int _sc<%v.index%>;
+            for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+              <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
             }
           }
           >>
