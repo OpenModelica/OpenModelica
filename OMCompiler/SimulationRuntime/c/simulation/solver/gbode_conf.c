@@ -103,6 +103,18 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
       case RK_GAUSS4:
       case RK_GAUSS5:
       case RK_GAUSS6:
+      case RK_SIRK3_2_3L2SA:
+      case RK_SIRK3_2_4L3SA:
+      case RK_SIRK3_2_5L3SA:
+      case RK_SIRK4_3_5L3SA:
+      case RK_SIRK5_4_5L3SA:
+      case RK_SIRK4_3_6L4SA:
+      case RK_SIRK5_4_6L4SA:
+      case RK_SIRK5_4_7L4SA:
+      case RK_SIRK6_5_7L4SA:
+      case RK_SIRK6_5_8L4SA:
+      case RK_SIRK5_4_7L5SA:
+      case RK_FIRK7_6_5L4SA:
       case RK_RADAU_IA_2:
       case RK_RADAU_IA_3:
       case RK_RADAU_IA_4:

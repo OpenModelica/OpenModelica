@@ -243,6 +243,18 @@ enum GB_METHOD {
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
   RK_ESDIRK4_7L2SA,   /* esdirk4s7*/
+  RK_SIRK3_2_3L2SA,   /* sirk3l */
+  RK_SIRK3_2_4L3SA,   /* sirk3 */
+  RK_SIRK3_2_5L3SA,   /* sirk3s5 */
+  RK_SIRK4_3_5L3SA,   /* sirk4 */
+  RK_SIRK5_4_5L3SA,   /* sirk5 */
+  RK_SIRK4_3_6L4SA,   /* sirk4s6 */
+  RK_SIRK5_4_6L4SA,   /* sirk5s6 */
+  RK_SIRK5_4_7L4SA,   /* sirk5s7 */
+  RK_SIRK6_5_7L4SA,   /* sirk6s7 */
+  RK_SIRK6_5_8L4SA,   /* sirk6s8 */
+  RK_SIRK5_4_7L5SA,   /* sirk5s7l5 */
+  RK_FIRK7_6_5L4SA,   /* firk7 */
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/

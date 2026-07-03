@@ -155,6 +155,9 @@ typedef struct DATA_GBODE{
   double *err;                                      /* error of each individual state during integration err = errest/errtol*/
   double *errValues;                                /* ring buffer for step size control */
   double *stepSizeValues;                           /* ring buffer for step size control */
+  double *nominals;                                 /* nominal values for each state, queried once at the start of the simulation */
+  double *mins;                                     /* minimum values for each state, queried once at the start of the simulation */
+  double *maxs;                                     /* maximum values for each state, queried once at the start of the simulation */
   double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
   double percentage;                                /* percentage of fast states */
   double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval and for dense output */
