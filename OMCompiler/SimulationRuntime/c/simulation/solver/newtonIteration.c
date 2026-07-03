@@ -234,9 +234,9 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
       for(i=0; i<solverData->n;i++)
       {
-        buffer[0] = 0;
+        char *p = buffer;
         for(j=0; j<solverData->n; j++)
-          sprintf(buffer, "%s%10g ", buffer, fjac[i*n+j]);
+          p += sprintf(p, "%10g ", fjac[i*n+j]);
         infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
       }
       messageClose(OMC_LOG_NLS_JAC);
