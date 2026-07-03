@@ -12,10 +12,15 @@
 # compilation code. It needs to be set to a valid directory resembling path.
 set(SCOREP_INCLUDE_ ".")
 
-# The boost libraries and headers are expected to be in the system directories.
-# For MSVC this needs to be adjusted. However, it is not clear which approach we are
-# taking for MSVC yet. So leave it like this until we decide.
-set(Boost_INCLUDE_ ".")
+# Boost include path for the generated ModelicaConfig_gcc.inc.
+# Use Boost_INCLUDE_DIR if set (e.g. from cmake_3.14.cmake's CONFIG-mode
+# extraction or from FindBoost.cmake in MODULE mode), otherwise fall back
+# to "." (which relies on the compiler's default search path).
+if(Boost_INCLUDE_DIR)
+  set(Boost_INCLUDE_ "${Boost_INCLUDE_DIR}")
+else()
+  set(Boost_INCLUDE_ ".")
+endif()
 # This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
 # The actual boost libraries needed to be linked.
