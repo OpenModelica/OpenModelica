@@ -53,20 +53,20 @@
 /*!
  * \brief CrashReportDialog::CrashReportDialog
  */
-CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
+CrashReportDialog::CrashReportDialog(QString stacktrace, CrashSource source)
   : QDialog(0)
 {
   // flush all streams before making a crash report so we get full logs.
   fflush(NULL);
   setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::reportIssue));
   setAttribute(Qt::WA_DeleteOnClose);
-  mReportIssue = reportIssue;
+  mSource = source;
   // brief stack trace
   mStackTrace = stacktrace;
-  // create the GDB stack trace
-  if (!mReportIssue) {
-    createGDBBacktrace();
-  }
+  // For crash reports the backtrace has already been captured by the crash
+  // handler and written to the stacktrace file (which the checkbox below
+  // uploads). We deliberately do NOT attach gdb here: the process that crashed
+  // is gone and attaching to this reporter process would be misleading.
   // set heading
   mpCrashReportHeading = Utilities::getHeadingLabel(Helper::reportIssue);
   // set separator line
@@ -113,7 +113,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   }
   // openmodelica.stacktrace.OMEdit file checkbox
   QFileInfo OMStackTraceFileInfo(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
-  if (!mReportIssue) {
+  if (mSource != ReportIssue) {
     mpOMStackTraceFileCheckBox = new QCheckBox(OMStackTraceFileInfo.absoluteFilePath());
     if (OMStackTraceFileInfo.exists()) {
       mpOMStackTraceFileCheckBox->setChecked(true);
@@ -140,8 +140,11 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   pMainLayout->addWidget(mpCrashReportHeading, 0, 0, 1, 2);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
   int index = 2;
-  if (!reportIssue) {
-    pMainLayout->addWidget(new Label(tr("The program crashed unexpectedly. Please report the issue.")), index++, 0, 1, 2);
+  if (mSource == LiveCrash) {
+    pMainLayout->addWidget(new Label(tr("OMEdit crashed unexpectedly. Please report the issue.")), index++, 0, 1, 2);
+  } else if (mSource == PreviousCrash) {
+    pMainLayout->addWidget(new Label(tr("OMEdit closed unexpectedly during a previous session. "
+                                        "This is a report about that earlier crash, not an ongoing problem.")), index++, 0, 1, 2);
   }
   pMainLayout->addWidget(mpEmailLabel, index++, 0, 1, 2);
   pMainLayout->addWidget(mpEmailTextBox, index++, 0, 1, 2);
@@ -156,7 +159,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   if (OMEditCommandsMosFileInfo.exists()) {
     pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index++, 0, 1, 2);
   }
-  if (OMStackTraceFileInfo.exists() && !mReportIssue) {
+  if (OMStackTraceFileInfo.exists() && mSource != ReportIssue) {
     pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index++, 0, 1, 2);
   }
   pMainLayout->addWidget(mpProgressLabel, index, 0);
@@ -297,7 +300,7 @@ void CrashReportDialog::sendReport()
     pHttpMultiPart->append(OMEditCommandsMosFileHttpPart);
   }
   // OMStackTraceFile
-  if (!mReportIssue && mpOMStackTraceFileCheckBox->isChecked()) {
+  if (mSource != ReportIssue && mpOMStackTraceFileCheckBox->isChecked()) {
     QHttpPart OMStackTraceFileCheckBoxHttpPart;
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"openmodelica.stacktrace.OMEdit\"; filename=\"openmodelica.stacktrace.OMEdit\""));

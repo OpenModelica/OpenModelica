@@ -54,9 +54,19 @@ class CrashReportDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CrashReportDialog(QString stacktrace, bool reportIssue = false);
+  /*!
+   * \enum CrashSource
+   * Describes what the dialog is reporting so we can use the right wording and
+   * decide whether a backtrace needs to be captured.
+   */
+  enum CrashSource {
+    ReportIssue,    /* manual Help->Report Issue; nothing crashed */
+    LiveCrash,      /* shown by the crash-reporter sub-process right after a crash */
+    PreviousCrash   /* shown at the next startup because an earlier session crashed */
+  };
+  CrashReportDialog(QString stacktrace, CrashSource source = LiveCrash);
 private:
-  bool mReportIssue;
+  CrashSource mSource;
   QString mStackTrace;
   Label *mpCrashReportHeading;
   QFrame *mpHorizontalLine;
