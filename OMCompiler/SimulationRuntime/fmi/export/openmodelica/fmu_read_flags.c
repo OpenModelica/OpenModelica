@@ -225,7 +225,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
         functions->freeMemory(solverInfo);
         return -1;
-        retValue = -1;
       } else {
         cvodeData->freeSolverMemory = functions->freeMemory;
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
