@@ -1068,6 +1068,10 @@ void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
 {
   UNUSED(nth);
   double* A = (double*) Jac;
+  // this col-major at the moment to match the layout of the numerical Jacobian
+  // row-major would be
+  //A[row*nCols + column] = value; // or
+  //A[row*nRows + column] = value;
   A[column*nRows + row] = value;
 }
 
