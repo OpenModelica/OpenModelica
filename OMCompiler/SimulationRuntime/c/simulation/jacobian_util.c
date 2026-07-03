@@ -33,6 +33,18 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 
+void setJacobianDenseElementColumnMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value)
+{
+  (void)nCols;
+  jac[column * nRows + row] = value;
+}
+
+void setJacobianDenseElementRowMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value)
+{
+  (void)nRows;
+  jac[row * nCols + column] = value;
+}
+
 /**
  * @brief Initialize analytic jacobian.
  *
@@ -150,11 +162,17 @@ void freeJacobianCopy(JACOBIAN *jac)
  *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense), non zero-initialized
  *  \param [ref] [isDense]         Flag to set dense / sparse output
  */
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
+void evalJacobianWithSetDenseElement(DATA* data, threadData_t *threadData,
+                                     JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                                     modelica_real* jac, modelica_boolean isDense,
+                                     jacobianSetDenseElementFunc setDenseElement)
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
+
+  if (setDenseElement == NULL) {
+    setDenseElement = setJacobianDenseElementColumnMajor;
+  }
 
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
@@ -170,7 +188,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
-    // direction = 0; direction < sizeDirection; direction++
     for (column = 0; column < jacobian->sizeCols; column++)
       if (sp->colorCols[column]-1 == color)
         jacobian->seedVars[column] = 1.0;
@@ -187,8 +204,9 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
           else {
-            /* dense case (row major layout for csc format) */
-            jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+            /* dense case */
+            setDenseElement(jac, row, column, jacobian->sizeRows, jacobian->sizeCols,
+                            jacobian->resultVars[row]); //* solverData->xScaling[j];
           }
         }
         /* de-activate seed variable for the corresponding color */
@@ -196,6 +214,15 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
       }
     }
   }
+}
+
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
+                  JACOBIAN* parentJacobian, modelica_real* jac,
+                  modelica_boolean isDense)
+{
+  /* Keep default behavior unchanged: dense output is column-major. */
+  evalJacobianWithSetDenseElement(data, threadData, jacobian, parentJacobian,
+                                  jac, isDense, setJacobianDenseElementColumnMajor);
 }
 
 /*!

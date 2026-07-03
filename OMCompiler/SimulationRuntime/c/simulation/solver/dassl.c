@@ -1398,7 +1398,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
-  /* Initialize dense Jacobian buffer since sparse/colored evaluators only write structural non-zeros. */
+  /* Initialize dense Jacobian buffer */
   memset(pd, 0, dasslData->N * dasslData->N * sizeof(double));
 
   /* Compute J = (∂F)/(∂y) */
@@ -1443,28 +1443,25 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
         pdNumerical[k] -= *cj;
       }
 
-      /* Find maximum absolute and relative element-wise differences */
-      for(col = 0; col < dasslData->N; col++)
+      infoStreamPrint(OMC_LOG_JAC, 1,
+                      "Jacobian comparison (column-major): analytical vs numerical (element-wise)");
+      for (col = 0; col < dasslData->N; col++)
       {
-        for(row = 0; row < dasslData->N; row++)
+        const char* colName = data->modelData->realVarsData[col].info.name;
+        for (row = 0; row < dasslData->N; row++)
         {
-          int idx = col * dasslData->N + row;
-          absDiff = fabs(pd[idx] - pdNumerical[idx]);
-          relDiff = absDiff / fmax(fabs(pdNumerical[idx]), 1e-15);
-          if(absDiff > maxAbsDiff) { maxAbsDiff = absDiff; maxAbsRow = row; maxAbsCol = col; }
-          if(relDiff > maxRelDiff) { maxRelDiff = relDiff; maxRelRow = row; maxRelCol = col; }
+          const char* rowName = data->modelData->realVarsData[row].info.name;
+          const int idx = col * dasslData->N + row;
+          const double analytical = pd[idx];
+          const double numerical = pdNumerical[idx];
+          const double absElemDiff = fabs(analytical - numerical);
+          const double relElemDiff = absElemDiff / fmax(fabs(numerical), 1e-15);
+          infoStreamPrint(OMC_LOG_JAC, 0,
+                          "J(row=%d:'%s', col=%d:'%s') ana=%.16g num=%.16g absDiff=%.16g relDiff=%.16g [flat=%d]",
+                          row, rowName, col, colName,
+                          analytical, numerical, absElemDiff, relElemDiff, idx);
         }
       }
-
-      infoStreamPrint(OMC_LOG_JAC, 1, "Jacobian verification: analytical vs. numerical");
-      infoStreamPrint(OMC_LOG_JAC, 0,
-                      "Max absolute difference: %g at (row=%d:'%s', col=%d:'%s')",
-                      maxAbsDiff, maxAbsRow, data->modelData->realVarsData[maxAbsRow].info.name,
-                      maxAbsCol, data->modelData->realVarsData[maxAbsCol].info.name);
-      infoStreamPrint(OMC_LOG_JAC, 0,
-                      "Max relative difference: %g at (row=%d:'%s', col=%d:'%s')",
-                      maxRelDiff, maxRelRow, data->modelData->realVarsData[maxRelRow].info.name,
-                      maxRelCol, data->modelData->realVarsData[maxRelCol].info.name);
       messageClose(OMC_LOG_JAC);
       free(pdNumerical);
     }

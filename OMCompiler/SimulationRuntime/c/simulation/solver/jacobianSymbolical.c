@@ -36,6 +36,95 @@
 #include "jacobianSymbolical.h"
 #include "../jacobian_util.h"
 
+typedef void (*jacobianScatter_func_ptr)(setJacElementFunc setJacElement,
+                                         unsigned int activeIndex,
+                                         unsigned int currentIndex,
+                                         unsigned int nth,
+                                         const JACOBIAN* t_jac,
+                                         void* matrixA,
+                                         int rows);
+
+typedef void (*jacobianCleanup_func_ptr)(JACOBIAN* t_jac, unsigned int rows);
+
+static void scatterRowEval(setJacElementFunc setJacElement,
+                           unsigned int activeIndex,
+                           unsigned int currentIndex,
+                           unsigned int nth,
+                           const JACOBIAN* t_jac,
+                           void* matrixA,
+                           int rows)
+{
+  (*setJacElement)(activeIndex, currentIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
+}
+
+static void scatterColumnEval(setJacElementFunc setJacElement,
+                              unsigned int activeIndex,
+                              unsigned int currentIndex,
+                              unsigned int nth,
+                              const JACOBIAN* t_jac,
+                              void* matrixA,
+                              int rows)
+{
+  (*setJacElement)(currentIndex, activeIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
+}
+
+static void cleanupRowEval(JACOBIAN* t_jac, unsigned int rows)
+{
+  unsigned int j;
+
+  /* Avoid accumulation of resultVars and tmpVars between colors for row evaluation. */
+  for (j = 0; j < rows; j++) {
+    t_jac->resultVars[j] = 0;
+  }
+  for (j = 0; j < t_jac->sizeTmpVars; j++) {
+    t_jac->tmpVars[j] = 0;
+  }
+}
+
+static void cleanupNoop(JACOBIAN* t_jac, unsigned int rows)
+{
+  (void)t_jac;
+  (void)rows;
+}
+
+static void evaluateOneColor(unsigned int color,
+                             unsigned int activeDim,
+                             unsigned int rows,
+                             SPARSE_PATTERN* spp,
+                             JACOBIAN* t_jac,
+                             DATA* data,
+                             threadData_t* threadData,
+                             void* matrixA,
+                             setJacElementFunc setJacElement,
+                             jacobianColumn_func_ptr evalFunc,
+                             jacobianScatter_func_ptr scatterFunc,
+                             jacobianCleanup_func_ptr cleanupFunc)
+{
+  unsigned int j, nth, currentIndex;
+
+  for (j = 0; j < activeDim; j++) {
+    if (spp->colorCols[j] - 1 == color) {
+      t_jac->seedVars[j] = 1;
+    }
+  }
+
+  evalFunc(data, threadData, t_jac, NULL);
+
+  for (j = 0; j < activeDim; j++) {
+    if (spp->colorCols[j] - 1 == color) {
+      nth = spp->leadindex[j];
+      while (nth < spp->leadindex[j + 1]) {
+        currentIndex = spp->index[nth];
+        scatterFunc(setJacElement, j, currentIndex, nth, t_jac, matrixA, rows);
+        nth++;
+      }
+      t_jac->seedVars[j] = 0;
+    }
+  }
+
+  cleanupFunc(t_jac, rows);
+}
+
 #ifdef USE_PARJAC
 /** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
  *
@@ -122,8 +211,9 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
    * evalJacobian and evalJacobianRow both produce row-major dense output for CSR patterns,
    * whereas setJacElementDasslSparseAdj expects column-major.
    * TODO: Unify the row-eval path once evalJacobianRow output layout is made column-major. */
+  // this is now dense output with row major set to reflect the layout of the numerical Jacobian in DASSL
   if (!jacColumns->isRowEval) {
-    evalJacobian(data, threadData, jacColumns, NULL, (modelica_real*)matrixA, 1 /* isDense */);
+    evalJacobianWithSetDenseElement(data, threadData, jacColumns, NULL, (modelica_real*)matrixA, 1 /* isDense */, setJacobianDenseElementRowMajor);
     return;
   }
 #endif /* !USE_PARJAC */
@@ -147,61 +237,19 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
 #endif
   JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
 
-  unsigned int i, j, currentIndex, nth;
+  unsigned int i;
+  const int isRowEval = (t_jac->isRowEval == 1);
+  const unsigned int activeDim = isRowEval ? (unsigned int) rows : (unsigned int) columns;
+  jacobianColumn_func_ptr evalFunc = isRowEval
+      ? data->callback->functionJacADJ_column
+      : data->callback->functionJacA_column;
+  jacobianScatter_func_ptr scatterFunc = isRowEval ? scatterRowEval : scatterColumnEval;
+  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? cleanupRowEval : cleanupNoop;
 
 #pragma omp for
   for (i=0; i < spp->maxColors; i++) {
-     if (t_jac->isRowEval == 1) {
-       /* Row evaluation: sparse pattern is CSR, colorCols encodes row colors. */
-       for (j=0; j < rows; j++) {
-         if (spp->colorCols[j]-1 == i) {
-           t_jac->seedVars[j] = 1;
-         }
-       }
-
-       data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
-
-       for (j=0; j < rows; j++) {
-         if (spp->colorCols[j]-1 == i) {
-           nth = spp->leadindex[j];
-           while (nth < spp->leadindex[j+1]) {
-             currentIndex = spp->index[nth];
-             (*setJacElement)(j, currentIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-             nth++;
-           }
-           t_jac->seedVars[j] = 0;
-         }
-       }
-       // avoid accumulation
-       for (j=0; j < rows; j++) {
-          t_jac->resultVars[j] = 0;
-       }
-       // reset tmp vars
-       for (j=0; j < t_jac->sizeTmpVars; j++) {
-          t_jac->tmpVars[j] = 0;
-       }
-     } else {
-       /* Column evaluation: sparse pattern is CSC, colorCols encodes column colors. */
-       for (j=0; j < columns; j++) {
-         if (spp->colorCols[j]-1 == i) {
-           t_jac->seedVars[j] = 1;
-         }
-       }
-
-       data->callback->functionJacA_column(data, threadData, t_jac, NULL);
-
-       for (j=0; j < columns; j++) {
-         if (spp->colorCols[j]-1 == i) {
-           nth = spp->leadindex[j];
-           while (nth < spp->leadindex[j+1]) {
-             currentIndex = spp->index[nth];
-             (*setJacElement)(currentIndex, j, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-             nth++;
-           }
-           t_jac->seedVars[j] = 0;
-         }
-       }
-     }
+    evaluateOneColor(i, activeDim, (unsigned int) rows, spp, t_jac, data, threadData,
+                     matrixA, setJacElement, evalFunc, scatterFunc, cleanupFunc);
    }
 
 } // omp parallel
