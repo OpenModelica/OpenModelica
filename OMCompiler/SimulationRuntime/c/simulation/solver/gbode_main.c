@@ -922,7 +922,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     messageClose(OMC_LOG_GBODE);
 
-    if (gbfData->nlsData->isPatternAvailable) {
+    if (gbfData->nlsData->sparsePattern) {
       if (gbfData->nlsSolverMethod != GB_NLS_INTERNAL)
       {
         // internal does it by itself
@@ -942,14 +942,14 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
+        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE, !!gbfData->nlsData->sparsePattern);
         break;
       case GB_NLS_KINSOL_B:
         B_nlsKinsolFree(solverData->ordinaryData);
         /* Set NLS user data */
         NLS_USERDATA* B_nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         B_nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
+        solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, !!gbfData->nlsData->sparsePattern);
         break;
       case GB_NLS_INTERNAL:
         // notify internal to update the sparsity + symbolic factorization in the next iteration

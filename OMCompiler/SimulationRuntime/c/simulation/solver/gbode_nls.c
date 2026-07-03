@@ -89,7 +89,6 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   /* Initialize sparsity pattern */
   if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
   }
 }
 
@@ -117,7 +116,6 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   /* Initialize sparsity pattern, First guess (all states are fast states) */
   if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
   }
 }
 
@@ -146,7 +144,6 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   /* Initialize sparsity pattern */
   if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-    nonlinsys->isPatternAvailable = TRUE;
   }
 }
 
@@ -278,30 +275,30 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_KINSOL_B:
     nlsData->nlsMethod = NLS_KINSOL_B;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
     nlsData->nlsLinearSolver = LS_NONE;
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, FALSE);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -360,8 +357,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   case GM_TYPE_IMPLICIT:
     // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
     // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
-    // we must do nothing here except set that pattern is available
-    nlsData->isPatternAvailable = TRUE;
+    // we must do nothing here except check that pattern is available
+    assertStreamPrint(threadData, nlsData->sparsePattern, "Sparsity pattern not available.");
     nlsData->initializeStaticNLSData = NULL;
     break;
   default:
@@ -393,30 +390,30 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_KINSOL_B:
     nlsData->nlsMethod = NLS_KINSOL_B;
-    if (nlsData->isPatternAvailable) {
+    if (nlsData->sparsePattern) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, !!nlsData->sparsePattern);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
     nlsData->nlsMethod = NLS_NONE;
     nlsData->nlsLinearSolver = LS_NONE;
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, TRUE);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;

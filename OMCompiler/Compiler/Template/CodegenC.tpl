@@ -3269,12 +3269,7 @@ template generateStaticEmptySparseData(String indexName, String systemType)
   void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
   {
     /* no sparsity pattern available */
-    inSysData->isPatternAvailable = FALSE;
-  }
-
-  void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-  {
-    /* nothing to free */
+    inSysData->sparsePattern = NULL;
   }
   >>
 end generateStaticEmptySparseData;
@@ -3301,7 +3296,6 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       <%colPtr%>
       <%rowIndex%>
       /* sparsity pattern available */
-      inSysData->isPatternAvailable = TRUE;
       inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
       /* write lead index of compressed sparse column */
@@ -3315,15 +3309,6 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
 
       /* write color array */
       <%colorString%>
-    }
-
-    void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-    {
-      if (inSysData->isPatternAvailable) {
-        freeSparsePattern(inSysData->sparsePattern);
-        inSysData->sparsePattern = NULL;
-        inSysData->isPatternAvailable = FALSE;
-      }
     }
     >>
   end match
@@ -3443,7 +3428,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   OMC_DISABLE_OPT
   void freeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData)
   {
-    freeSparsePattern<%indexName%>(sysData);
+    freeSparsePattern(sysData->sparsePattern); sysData->sparsePattern = NULL;
   }
   >>
 end generateStaticInitialData;

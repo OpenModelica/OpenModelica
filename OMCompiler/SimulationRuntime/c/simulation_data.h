@@ -403,7 +403,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
-  modelica_boolean isPatternAvailable;
   NONLINEAR_PATTERN *nonlinearPattern;
   int *eqn_simcode_indices;
   modelica_integer torn_plus_residual_size;

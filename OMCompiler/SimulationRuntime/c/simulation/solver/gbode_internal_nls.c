@@ -1420,7 +1420,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 void *gbInternalNlsAllocate(int size,
                             NLS_USERDATA* userData,
                             modelica_boolean attemptRetry,
-                            modelica_boolean isPatternAvailable,
                             modelica_boolean isFast)
 {
   BUTCHER_TABLEAU *tabl = (isFast ? ((DATA_GBODEF *) userData->solverData)->tableau

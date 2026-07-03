@@ -435,7 +435,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   /* Init sparsitiy pattern */
   nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, 1 /* true */, 1 /* true */);
 
-  if(nonlinsys->isPatternAvailable) {
+  if(nonlinsys->sparsePattern) {
     /* only test for singularity if sparsity pattern is supposed to be there */
     modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys->sparsePattern, nonlinsys->size, OMC_LOG_NLS);
     if (!useSparsityPattern) {
@@ -447,7 +447,6 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       //printSparseStructure(nonlinsys->sparsePattern, nonlinsys->size, nonlinsys->size, OMC_LOG_NLS, "NLS sparse pattern");
       freeSparsePattern(nonlinsys->sparsePattern);
       nonlinsys->sparsePattern = NULL;
-      nonlinsys->isPatternAvailable = FALSE;
       omc_flag[FLAG_NO_SCALING] = TRUE;
     }
   }
@@ -475,7 +474,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->nlsMethod = data->simulationInfo->nlsMethod;
   nonlinsys->nlsLinearSolver = data->simulationInfo->nlsLinearSolver;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (nonlinsys->isPatternAvailable && !(data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B))
+  if (nonlinsys->sparsePattern && !(data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B))
   {
     nnz = nonlinsys->sparsePattern->nnz;
 
@@ -515,7 +514,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 // FIXME: add generation of scalar system (total system size = 1) to codegen
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* check for trivial sparsity pattern (is not always generated) */
-  if (nonlinsys->size == 1 && !nonlinsys->isPatternAvailable && (nonlinsys->nlsMethod == NLS_KINSOL || nonlinsys->nlsMethod == NLS_KINSOL_B)) {
+  if (nonlinsys->size == 1 && !nonlinsys->sparsePattern && (nonlinsys->nlsMethod == NLS_KINSOL || nonlinsys->nlsMethod == NLS_KINSOL_B)) {
     nonlinsys->nlsMethod = NLS_HYBRID;
     nonlinsys->nlsLinearSolver = NLS_LS_DEFAULT;
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d with size 1x1 (nnz = 1) does not exist. "
@@ -543,7 +542,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY || data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY )) {
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE, nonlinsys->isPatternAvailable);
+      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE, !!nonlinsys->sparsePattern);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
@@ -553,7 +552,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY || data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY )) {
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) B_nlsKinsolAllocate(size, nlsUserData, TRUE, nonlinsys->isPatternAvailable);
+      nonlinsys->solverData = (void*) B_nlsKinsolAllocate(size, nlsUserData, TRUE, !!nonlinsys->sparsePattern);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
