@@ -12,12 +12,53 @@
 # compilation code. It needs to be set to a valid directory resembling path.
 set(SCOREP_INCLUDE_ ".")
 
-# The boost libraries and headers are expected to be in the system directories.
-# For MSVC this needs to be adjusted. However, it is not clear which approach we are
-# taking for MSVC yet. So leave it like this until we decide.
-set(Boost_INCLUDE_ ".")
-# This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
-set(Boost_LIBS_ ".")
+# Boost include path for the generated ModelicaConfig_gcc.inc.
+# Use Boost_INCLUDE_DIR if set (e.g. from cmake_3.14.cmake's CONFIG-mode
+# extraction or from FindBoost.cmake in MODULE mode), otherwise fall back
+# to "." (which relies on the compiler's default search path).
+# For cross-compilation the standard /usr/include is mapped to ".".
+if(Boost_INCLUDE_DIR)
+  if("${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
+    set(Boost_INCLUDE_ ".")
+  else()
+    set(Boost_INCLUDE_ "${Boost_INCLUDE_DIR}")
+  endif()
+else()
+  set(Boost_INCLUDE_ ".")
+endif()
+# Boost library directory for -L flag (used in ModelicaConfig_gcc.inc).
+# Prefer Boost_LIBRARY_DIRS from FindBoost (MODULE mode) or extracted in
+# CONFIG mode. Fall back to deriving from the imported target location.
+if(Boost_LIBRARY_DIRS)
+  list(GET Boost_LIBRARY_DIRS 0 _boost_lib_dir_tmp)
+  if("${_boost_lib_dir_tmp}" STREQUAL "/usr/lib" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib64" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib/x86_64-linux-gnu" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib/aarch64-linux-gnu")
+    set(Boost_LIBS_ ".")
+  else()
+    set(Boost_LIBS_ "${_boost_lib_dir_tmp}")
+  endif()
+elseif(Boost_LIBRARY_DIR)
+  set(Boost_LIBS_ "${Boost_LIBRARY_DIR}")
+else()
+  set(Boost_LIBS_ ".")
+  foreach(_comp IN ITEMS filesystem program_options)
+    if(TARGET Boost::${_comp})
+      get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION_RELEASE)
+      if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
+        get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION)
+      endif()
+      if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
+        get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION_DEBUG)
+      endif()
+      if(_loc AND NOT _loc STREQUAL "_loc-NOTFOUND")
+        get_filename_component(_dir "${_loc}" DIRECTORY)
+        if(NOT "${_dir}" STREQUAL "/usr/lib" AND NOT "${_dir}" STREQUAL "/usr/lib64")
+          set(Boost_LIBS_ "${_dir}")
+        endif()
+        break()
+      endif()
+    endif()
+  endforeach()
+endif()
 # The actual boost libraries needed to be linked.
 if (NOT Boost_LIBRARIES_)
 set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
