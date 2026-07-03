@@ -611,6 +611,13 @@ public
           repetitions         = listArray(listReverse(reps)),
           solved_crefs        = listArray(listReverse(solved_crefs)));
 
+        case EMPTY() then SPARSITY(
+          equation_names      = listArray({}),
+          equation_iterators  = listArray({}),
+          dependencies        = listArray({}),
+          repetitions         = listArray({}),
+          solved_crefs        = listArray({}));
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong matrix type.
             Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});

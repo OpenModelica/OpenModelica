@@ -1376,7 +1376,7 @@ protected
     for v in res_vars loop
       UnorderedSet.add(BVariable.getVarName(v), pder_set);
     end for;
-    res_vars_d := Pointer.access(pDer_vars_ptr);
+    res_vars_d := listReverse(Pointer.access(pDer_vars_ptr));
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous); end for;
@@ -1402,7 +1402,7 @@ protected
     unknown_vars  := listAppend(res_vars_d, tmp_vars_d);
     all_vars      := unknown_vars;  // add other vars later on
 
-    seed_vars_d   := Pointer.access(seed_vars_ptr);
+    seed_vars_d   := listReverse(Pointer.access(seed_vars_ptr));
     aux_vars      := seed_vars_d;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
@@ -1419,13 +1419,14 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars_d)
     );
 
-    if isSome(full) then
-      fullLocal := Util.getOption(full);
-    else
-      adjacencyVars := VariablePointers.clone(seedCandidates);
-      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
-      fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
-    end if;
+    // Always rebuild the full matrix from the actual comps equations.
+    // Using part.adjacencyMatrix (the `full` param) would fail because residual
+    // equations created by finalize() during tearing get new names and don't
+    // appear in the partition's pre-tearing adjacency matrix.
+    adjacencyVars := VariablePointers.clone(seedCandidates);
+    adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
@@ -2205,13 +2206,10 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    if isSome(full) then
-      fullLocal := Util.getOption(full);
-    else
-      adjacencyVars := VariablePointers.clone(seedCandidates);
-      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
-      fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
-    end if;
+    adjacencyVars := VariablePointers.clone(seedCandidates);
+    adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
@@ -2278,13 +2276,10 @@ protected
     );
 
     if isSome(strongComponents) then
-      if isSome(full) then
-        fullLocal := Util.getOption(full);
-      else
-        adjacencyVars := VariablePointers.clone(seedCandidates);
-        adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
-        fullLocal     := Adjacency.Matrix.createFull(adjacencyVars, equations);
-      end if;
+      adjacencyVars := VariablePointers.clone(seedCandidates);
+      adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+      fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
+        List.flatten(list(StrongComponent.getEquations(comp) for comp in arrayList(Util.getOption(strongComponents))))));
       sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
