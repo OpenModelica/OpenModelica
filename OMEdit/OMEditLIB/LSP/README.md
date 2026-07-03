@@ -1,0 +1,109 @@
+# OMEdit Language Server Protocol (LSP) Client
+
+OMEdit includes an opt-in [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/)
+client that connects to an external Modelica language server and surfaces its
+capabilities inside the text editor.
+
+## Features
+
+| Feature | How it works |
+|---|---|
+| **Hover** | Pause the mouse over a symbol — a tooltip shows its documentation. |
+| **Go to definition** | Ctrl+Click a symbol, or pick *Go to Definition* from the right-click menu, to jump to where it is defined (including across files). Falls back to OMEdit's built-in class navigation when the server cannot resolve the symbol. |
+| **Document sync** | Open documents are kept in sync (`didOpen`/`didChange`/`didClose`) so the server always sees the latest text. |
+
+## Enabling the LSP client
+
+### Via the Options dialog
+
+Open *Tools > Options > Language Server* and:
+
+1. Check *Enable Language Server*.
+2. Leave *Server Executable* blank — OMEdit will use the bundled server automatically.
+3. Click *OK*. The language server starts immediately.
+
+If Node.js is not installed, a setup dialog appears with platform-specific
+installation instructions.
+
+### Via omedit.ini
+
+Edit `~/.config/openmodelica/omedit.ini` and add:
+
+```ini
+[languageServer]
+enabled=true
+executable=
+```
+
+Leave `executable` empty to use the bundled server (requires Node.js on PATH).
+
+## Runtime requirement: Node.js
+
+The bundled server is a JavaScript file; **Node.js (version 16 or later)** must be
+installed to run it. OMEdit detects this automatically and shows a one-time setup
+dialog when the language server is enabled while Node.js is missing.
+
+| Platform | Install command |
+|---|---|
+| **Windows** | `winget install OpenJS.NodeJS.LTS` |
+| **macOS** | `brew install node` |
+| **Linux (Debian/Ubuntu)** | `sudo apt install nodejs` |
+| **Linux (Fedora/RHEL)** | `sudo dnf install nodejs` |
+
+Or download directly from [nodejs.org](https://nodejs.org). On older Debian/Ubuntu
+releases the distribution `nodejs` package may be too old; install a current
+release from [NodeSource](https://github.com/nodesource/distributions) or via
+[nvm](https://github.com/nvm-sh/nvm) instead.
+
+## Crash recovery
+
+If the server process exits unexpectedly, `LSPClient` restarts it automatically
+after a short delay, up to 5 times within a 3-minute window (matching
+`vscode-languageclient`'s default policy). Once that limit is hit it stops
+retrying and reports the failure as an error message. Every crash and restart
+attempt is also appended to `languageserver_crash.log` in OMEdit's temporary
+directory (see *Tools > Open Temporary Directory*), so the log can be attached
+to a bug report.
+
+## Using a custom server
+
+Set *Server Executable* to any LSP-compatible Modelica server executable:
+
+- A standalone binary: set the path directly, no Node.js needed.
+- A `.js` file: OMEdit calls `node <path>` automatically.
+
+## Bundled server
+
+OMEdit ships with a pre-built copy of the
+[Modelica Language Server](https://github.com/OpenModelica/modelica-language-server)
+in `<install_prefix>/share/omedit/languageserver/` (Linux/macOS) or
+`<install_prefix>/bin/languageserver/` (Windows).
+
+The bundle consists of three files that must stay together:
+- `server.js` — the language server bundle
+- `tree-sitter-modelica.wasm` — Modelica grammar for tree-sitter
+- `web-tree-sitter.wasm` — the tree-sitter WebAssembly runtime
+
+At build time, CMake downloads a pinned `modelica-language-server` release
+(`MODELICA_LS_VERSION`) and verifies it against a known SHA256
+(`MODELICA_LS_TGZ_SHA256`) before extracting these three files. Set
+`MODELICA_LS_DIR` to a local build directory to bundle that instead, e.g. when
+developing against an unreleased server version.
+
+## Architecture
+
+`LSPClient` (`LSPClient.h` / `LSPClient.cpp`) is an abstract base that manages one
+`QProcess` and speaks JSON-RPC 2.0 with `Content-Length` framing.  When the
+executable ends with `.js`, `LSPClient::start()` automatically prepends `node` as
+the program and passes the `.js` path as an argument.
+
+`ModelicaLSPClient` (`ModelicaLSPClient.h` / `ModelicaLSPClient.cpp`) is the
+concrete client for the Modelica language server.  It locates the bundled server
+and supplies the Modelica-specific initialization options (the library search
+path).
+
+`LSPSetupDialog` (`LSPSetupDialog.h` / `LSPSetupDialog.cpp`) is shown when the
+user enables the bundled JavaScript server but Node.js is not found on PATH.
+
+`LSPProtocol.h` defines the `LSP::Position`, `LSP::Range`, and `LSP::Location`
+data structures.

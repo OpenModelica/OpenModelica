@@ -43,18 +43,27 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
+#include "LSP/LSPProtocol.h"
 
+#include <QPoint>
+#include <QPointer>
 #include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class ModelWidget;
 class LibraryTreeItem;
+class LSPClient;
+class QAction;
+class QTimer;
+class QTextCursor;
+class QTextBlock;
 
 class ModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
   ModelicaEditor(QWidget *pParent);
+  ~ModelicaEditor();
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -74,11 +83,35 @@ public:
   static void getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations);
   static bool getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
   static QList<CompleterItem> getCodeSnippets();
+  bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 private:
   QString mLastValidText;
   bool mTextChanged;
+  int mPendingHoverRequestId;
+  int mPendingDefinitionRequestId;
+  QPoint mLastToolTipGlobalPos;
+  QPointer<LSPClient> mConnectedLSPClient;
+  bool mLSPDocumentOpened;
+  QString mLSPDocumentUri;
+  QString mDefinitionFallbackWord;
+  QTimer *mpContentChangeTimer;
+  QTimer *mpDefinitionFallbackTimer;
+  QString documentUri() const;
+  QString documentText();
+  void lspPositionForCursor(const QTextCursor &cursor, int &line, int &character);
+  int leadingSpacesForBlock(const QTextBlock &block);
+  bool ensureLanguageServerConnected();
+  void notifyLanguageServerContentChanged();
+  void flushPendingContentChange();
+  void requestDefinitionAt(const QPoint &pos);
+  bool navigateToLSPLocation(const LSP::Location &location);
+  void navigateToClassFallback();
 private slots:
   virtual void showContextMenu(QPoint point) override;
+  void onLSPHoverResult(int requestId, const QString &content);
+  void onLSPDefinitionResult(int requestId, const LSP::Location &location);
+  void sendLanguageServerContentChange();
+  void onDefinitionFallbackTimeout();
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
