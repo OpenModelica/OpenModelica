@@ -1220,7 +1220,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 
     if (nls->call_jac || gbData->eventHappened)
     {
-      gbInternal_evalJacobian(data, threadData, gbData, nls);
+      ret = gbInternal_evalJacobian(data, threadData, gbData, nls);
+      if (ret < 0) return ret;
 
       jac_called = TRUE;
     }
