@@ -638,7 +638,7 @@ public
     end if;
 
     if negated then
-      b := Binding.mapExp(binding, Expression.negate);
+      b := Binding.mapExpShallow(binding, Expression.negate);
     else
       b := binding;
     end if;
@@ -682,7 +682,7 @@ public
               attr_binding := evalAliasAttribute(attr_binding);
 
               if negated then
-                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+                attr_binding := Binding.mapExpShallow(attr_binding, Expression.negate);
               end if;
 
               startValues := (var.name, attr_binding) :: startValues;
@@ -694,7 +694,7 @@ public
               attr_binding := evalAliasAttribute(attr_binding);
 
               if negated then
-                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+                attr_binding := Binding.mapExpShallow(attr_binding, Expression.negate);
               end if;
 
               nominalValues := (var.name, attr_binding) :: nominalValues;
