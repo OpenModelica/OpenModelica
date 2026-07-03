@@ -163,6 +163,8 @@ DASSL::~DASSL()
     delete solveFunctionStartValues;
   if (solveFunctionEndValues)
     delete solveFunctionEndValues;
+  if (solverValues)
+    delete solverValues;
 #endif
 }
 

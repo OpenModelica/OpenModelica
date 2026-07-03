@@ -151,14 +151,11 @@ Cvode::~Cvode()
 		delete[] _ysave;
 
 #ifdef RUNTIME_PROFILING
-	if (measuredFunctionStartValues)
-		delete measuredFunctionStartValues;
-	if (measuredFunctionEndValues)
-		delete measuredFunctionEndValues;
-	if (solveFunctionStartValues)
-		delete solveFunctionStartValues;
-	if (solveFunctionEndValues)
-		delete solveFunctionEndValues;
+	delete measuredFunctionStartValues;
+	delete measuredFunctionEndValues;
+	delete solveFunctionStartValues;
+	delete solveFunctionEndValues;
+	delete solverValues;
 #endif
 }
 
