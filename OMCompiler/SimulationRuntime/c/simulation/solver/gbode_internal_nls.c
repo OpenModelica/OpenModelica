@@ -1677,13 +1677,11 @@ void gbInternalNlsFree(void *nls_ptr)
   if (nls->ownsNlsPattern)
   {
     freeSparsePattern(nls->nlsPattern);
-    free(nls->nlsPattern);
   }
 
   if (nls->ownsODEPatternMR)
   {
     freeSparsePattern(nls->odePatternMR);
-    free(nls->odePatternMR);
   }
 
   if (!nls->tabl->t_transform)

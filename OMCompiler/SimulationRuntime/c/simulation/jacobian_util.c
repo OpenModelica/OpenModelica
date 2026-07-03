@@ -109,8 +109,7 @@ void freeJacobian(JACOBIAN *jac)
     free(jac->seedVars); jac->seedVars = NULL;
     free(jac->tmpVars); jac->tmpVars = NULL;
     free(jac->resultVars); jac->resultVars = NULL;
-    freeSparsePattern(jac->sparsePattern);
-    free(jac->sparsePattern); jac->sparsePattern = NULL;
+    freeSparsePattern(jac->sparsePattern); jac->sparsePattern = NULL;
     freeEvalDAG(jac->dag); jac->dag = NULL;
     freeEvalSelection(jac->evalSelection); jac->evalSelection = NULL;
     free(jac->recoverMask); jac->recoverMask = NULL;
@@ -622,7 +621,6 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
     if (row >= nRows) {
       /* Out of bounds. Clean up and abort. */
       freeSparsePattern(csr);
-      free(csr);
       return NULL;
     }
     Bp[row]++;
@@ -646,7 +644,6 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
     if (stop < start || stop > nnz) {
       /* Corrupt CSC pointers. Clean up and abort. */
       freeSparsePattern(csr);
-      free(csr);
       return NULL;
     }
     for (unsigned int jj = start; jj < stop; jj++) {
@@ -682,10 +679,11 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
  */
 void freeSparsePattern(SPARSE_PATTERN *spp)
 {
-  if (spp != NULL) {
-    free(spp->index); spp->index = NULL;
-    free(spp->colorCols); spp->colorCols = NULL;
-    free(spp->leadindex); spp->leadindex = NULL;
+  if (spp) {
+    free(spp->index);
+    free(spp->colorCols);
+    free(spp->leadindex);
+    free(spp);
   }
 }
 

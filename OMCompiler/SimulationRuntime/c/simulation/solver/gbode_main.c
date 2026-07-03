@@ -593,7 +593,6 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
 
   /* Free sparsity pattern */
   freeSparsePattern(gbfData->sparsePattern_DIRK);
-  free(gbfData->sparsePattern_DIRK);
 
   /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);

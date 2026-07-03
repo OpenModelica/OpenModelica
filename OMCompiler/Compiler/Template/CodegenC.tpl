@@ -3321,7 +3321,6 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
     {
       if (inSysData->isPatternAvailable) {
         freeSparsePattern(inSysData->sparsePattern);
-        free(inSysData->sparsePattern);
         inSysData->sparsePattern = NULL;
         inSysData->isPatternAvailable = FALSE;
       }
