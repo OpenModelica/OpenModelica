@@ -14,14 +14,15 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
 
 
 # Boost and a threading library are required for the CPP-runtime.
-if(APPLE)
- # MacPorts installs the Boost configuration file in a non-standard location,
- # keep using the old FindBoost module for now.
- find_package(Boost COMPONENTS program_options filesystem REQUIRED)
-elseif(CMAKE_VERSION VERSION_LESS "3.30")
+if(APPLE OR CMAKE_VERSION VERSION_LESS "3.30")
  find_package(Boost COMPONENTS program_options filesystem REQUIRED)
 else()
   find_package(Boost CONFIG COMPONENTS program_options filesystem REQUIRED)
+  # In CONFIG mode, BoostConfig.cmake does not set Boost_INCLUDE_DIR.
+  # Extract it from the Boost::headers target.
+  if(TARGET Boost::headers)
+    get_target_property(Boost_INCLUDE_DIR Boost::headers INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
 endif()
 
 find_package(Threads REQUIRED)
