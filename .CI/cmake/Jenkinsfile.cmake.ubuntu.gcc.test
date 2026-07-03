@@ -9,6 +9,9 @@ pipeline {
       agent {
         label '!windows'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -32,6 +35,9 @@ pipeline {
                     "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script { common.buildOMC('gcc', 'g++', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/bin/OMCppOSUSimulation, build/include/omc/omsi/**, build/include/omc/omsic/**, build/lib/x86_64-linux-gnu/omc/omsi/**, build/lib/x86_64-linux-gnu/omc/omsicpp/**, **/config.status'
@@ -46,6 +52,9 @@ pipeline {
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                     "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -78,6 +87,9 @@ pipeline {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -103,6 +115,9 @@ pipeline {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -127,6 +142,9 @@ pipeline {
           environment {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {

@@ -27,6 +27,9 @@ pipeline {
           label 'linux'
         }
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           common = load("${env.workspace}/.CI/common.groovy")

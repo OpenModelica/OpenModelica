@@ -15,6 +15,9 @@ pipeline {
       agent {
         label 'linux'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -39,6 +42,9 @@ pipeline {
       environment {
         RUNTESTDB = "/cache/runtest/"
         LIBRARIES = "/cache/omlibrary"
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
       }
       steps {
         script {

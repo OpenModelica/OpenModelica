@@ -27,6 +27,9 @@ pipeline {
       agent {
         label 'linux'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -67,6 +70,9 @@ pipeline {
           environment {
             QTDIR = "/usr/lib/qt4"
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script { common.buildOMC('gcc', 'g++', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
@@ -83,6 +89,9 @@ pipeline {
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
             }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -107,6 +116,9 @@ pipeline {
           environment {
             RUNTESTDB = '/c/dev/'
             LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -137,6 +149,9 @@ pipeline {
             beforeAgent true
             expression { !shouldWeDisableAllCMakeBuilds_value }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
@@ -157,6 +172,9 @@ pipeline {
           when {
             beforeAgent true
             expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -189,6 +207,9 @@ pipeline {
             beforeAgent true
             expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
@@ -214,6 +235,9 @@ pipeline {
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
             }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script { common.standardSetup() }
@@ -260,6 +284,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -290,6 +317,9 @@ pipeline {
           when {
             beforeAgent true
             expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -322,6 +352,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -352,6 +385,9 @@ pipeline {
           when {
             beforeAgent true
             expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -384,6 +420,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -415,6 +454,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -437,6 +479,9 @@ pipeline {
           when {
             beforeAgent true
             expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -483,6 +528,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script { common.compliance() }
           }
@@ -504,6 +552,9 @@ pipeline {
             RUNTESTDB = "/cache/runtest/" // Dummy directory
             LIBRARIES = "/cache/omlibrary"
             GITHUB_AUTH = credentials('OpenModelica-Hudson')
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -543,6 +594,9 @@ pipeline {
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.buildGUI('omc-clang', 'qt5')
@@ -559,6 +613,9 @@ pipeline {
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -581,6 +638,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -601,6 +661,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script { common.standardSetup() }
             unstash 'omc-clang'
@@ -619,6 +682,9 @@ pipeline {
           when {
             beforeAgent true
             expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -650,6 +716,9 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.standardSetup()
@@ -675,6 +744,9 @@ pipeline {
           when {
             beforeAgent true
             expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             echo "Running on: ${env.NODE_NAME}"
@@ -790,6 +862,9 @@ pipeline {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             script {
               common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
@@ -808,6 +883,9 @@ pipeline {
           environment {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
@@ -858,6 +936,9 @@ pipeline {
             beforeAgent true
             expression { !isPR }
           }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
           steps {
             unstash 'compliance'
             echo "${env.NODE_NAME}"
@@ -875,6 +956,9 @@ pipeline {
           when {
             beforeAgent true
             expression { !isPR }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             unstash 'usersguide'
@@ -896,6 +980,9 @@ pipeline {
             beforeAgent true
             branch 'omlib-staging'
             expression { return currentBuild.currentResult == 'SUCCESS' }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script { common.standardSetup() }
@@ -921,6 +1008,7 @@ pipeline {
           }
           options {
             skipDefaultCheckout true
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             git branch: 'main', credentialsId: 'Hudson-SSH-Key', url: 'git@github.com:OpenModelica/www.openmodelica.org.git'

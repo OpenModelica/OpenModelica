@@ -9,6 +9,9 @@ pipeline {
       agent {
         label '!windows'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -27,6 +30,9 @@ pipeline {
             node {
               label 'M1'
             }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
