@@ -100,7 +100,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-     
+
 {
     _simObjects = shared_ptr<ISimObjects>(new SimObjects(globalSettings->getRuntimeLibrarypath(),
                                                          globalSettings->getRuntimeLibrarypath(), globalSettings));
@@ -145,7 +145,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-     
+
 {
       __z = _simObjects->getSimVars(modelName)->getStateVector();
     __zDot = _simObjects->getSimVars(modelName)->getDerStateVector();

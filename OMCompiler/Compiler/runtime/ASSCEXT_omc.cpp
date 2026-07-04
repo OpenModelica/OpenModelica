@@ -89,7 +89,7 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
       adj_col = MMC_CDR(adj_col);
       val_col = MMC_CDR(val_col);
 
-      ASSC_ELEMENT elem = {.index = ((int)adj_i)-1, .value = (int)val_i};
+      ASSC_ELEMENT elem = {((int)adj_i)-1, (int)val_i};
       listPushBack(rows[i], &elem);
     }
     // set next starting point

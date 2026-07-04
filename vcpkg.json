@@ -1,0 +1,24 @@
+{
+  "name": "openmodelica",
+  "version-string": "1.27.0",
+  "homepage": "https://openmodelica.org/",
+  "description": "OpenModelica is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.",
+  "dependencies": [
+    "boost-asio",
+    "boost-chrono",
+    "boost-circular-buffer",
+    "boost-filesystem",
+    "boost-graph",
+    "boost-lambda",
+    "boost-program-options",
+    "boost-ublas",
+    "curl",
+    "dirent",
+    "expat",
+    "gettext",
+    "lapack",
+    "libffi",
+    "libiconv",
+    "pthread"
+  ]
+}

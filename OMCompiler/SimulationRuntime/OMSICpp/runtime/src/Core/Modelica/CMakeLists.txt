@@ -109,23 +109,17 @@ if(CMAKE_BUILD_TYPE)
 endif(CMAKE_BUILD_TYPE)
 
 if(WIN32)
-  # Check environment variables
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
-  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-
   if(MSVC)
     set(Boost_LIBS_ "$(OMHOME)/bin/msvc")
-  else(MSVC)
-    set(Boost_LIBS_ "$(OMHOME)/bin")
-  endif(MSVC)
-
-  if(MSVC)
     set(Boost_INCLUDE_ "$(OMHOME)/include/omc/omsicpp/3rdParty/boost/msvc/")
-  else(MSVC)
-    set(Boost_INCLUDE_ "$(MSYSTEM_PREFIX_ESCAPED)/include/")
-  endif(MSVC)
+  else()
+    if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+      message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+    endif()
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+    set(Boost_LIBS_ "$(OMHOME)/bin")
+    set(Boost_INCLUDE_ "${MSYSTEM_PREFIX_ESCAPED}/include/")
+  endif()
 
   set(SUNDIALS_LIBS_ "$(OMHOME)/bin")
   set(SUNDIALS_INCLUDE_DIR_ "$(OMHOME)/include/omc/omsicpp/sundials")
@@ -270,9 +264,7 @@ if(MSVC)
   if(BUILD_SHARED_LIBS)
     message(STATUS "MSVC config file generated in ${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc")
     message(STATUS  ${SYSTEM_CFLAGS} )
-    get_target_property(libModelica ${ModelicaName} LOCATION)
-    get_filename_component(libModelicaName ${libModelica} NAME)
-    set(PCH_LIB ${libModelicaName})
+    set(PCH_LIB "${CMAKE_SHARED_LIBRARY_PREFIX}${ModelicaName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     configure_file (
     "ModelicaConfig_msvc.inc.in"
     "${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc"

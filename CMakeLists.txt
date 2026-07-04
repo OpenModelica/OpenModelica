@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.18)
 
 option(OM_WITH_VCPKG "Use vcpkg to manage dependencies." OFF)
 if(OM_WITH_VCPKG)
@@ -87,7 +87,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 
 ### Build type configurations ###############################################################################
 # Default build type is Debug.

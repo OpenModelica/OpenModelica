@@ -42,7 +42,10 @@ extern "C" {
 
 #include <stdlib.h>
 #if defined(OM_HAVE_PTHREADS)
-#include <pthread.h>
+  #ifdef _WIN32
+    #include <winsock2.h>  /* Must precede windows.h (via pthread.h) to prevent winsock/winsock2 conflict */
+  #endif
+  #include <pthread.h>
 #endif
 #include <setjmp.h>
 
