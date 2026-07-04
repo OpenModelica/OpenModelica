@@ -331,6 +331,8 @@ public
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
+          UnorderedMap<ComponentRef, Integer> residual_idx_map;
+          list<SimVar> residualVarsList;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals;
@@ -427,7 +429,22 @@ public
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
-              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              // Map each residual var to its index in daeModeData->residualVars so the
+              // daeMode simulation jacobian's sparsity rows are indexed consistently with
+              // the residual vector (rr[i]=residualVars[i]). The jacobian's own result-var
+              // order can diverge from the residual-array order (partition/component
+              // reordering between backend and simcode), which would otherwise place
+              // jacobian entries in the wrong residual rows and break IDA's corrector.
+              residual_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+              () := match daeModeData
+                case SOME(DAE_MODE_DATA(residualVars = residualVarsList)) algorithm
+                  for rv in residualVarsList loop
+                    UnorderedMap.add(SimVar.getName(rv), rv.index, residual_idx_map);
+                  end for;
+                then ();
+                else ();
+              end match;
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map, SOME(residual_idx_map));
               // should jacAdjoint be added aswell? -> for now no
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
             else
@@ -791,9 +808,43 @@ public
     protected
       list<list<SimStrongComponent.Block>> blcks;
       list<SimVar> residualVars;
+      list<SimVar> algebraicVars = {};
+      Integer savedResidualIndex;
     algorithm
+      // The daeMode residuals are written into their own daeModeData->residualVars
+      // array, indexed 0..nResidualVars-1. The SimCodeIndices.residualIndex counter is,
+      // however, shared with the initialization system created just before us: a
+      // nonlinear initial system creates residual(s) and bumps residualIndex past 0, so
+      // the daeMode residuals would start at 1 and overflow / leave a garbage slot 0 in
+      // residualVars (the state residual gets dropped -> IDACalcIC der blows up -> IDA
+      // linear setup fails). Reset to 0 so the daeMode residual indices match their own
+      // array; restore afterwards so unrelated downstream indexing is unaffected.
+      savedResidualIndex := simCodeIndices.residualIndex;
+      simCodeIndices.residualIndex := 0;
       (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
-      data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
+      simCodeIndices.residualIndex := savedResidualIndex;
+      // The daeMode algebraic unknowns are each partition's daeUnknowns; reuse their
+      // already-created SimVars from the simcode map (do not re-index them). Without
+      // this the daeMode system is left with 0 algebraic unknowns, so the global
+      // residual system is over-determined and IDA's linear setup fails on loops.
+      for system in systems loop
+        algebraicVars := match system.daeUnknowns
+          local
+            VariablePointers daeUnknowns;
+            list<SimVar> acc;
+          case SOME(daeUnknowns) algorithm
+            acc := algebraicVars;
+            for var in VariablePointers.toList(daeUnknowns) loop
+              // state derivatives are the integrator's y', not global algebraic unknowns
+              if not BVariable.isStateDerivative(var) then
+                acc := UnorderedMap.getSafe(BVariable.getVarName(var), simcode_map, sourceInfo()) :: acc;
+              end if;
+            end for;
+          then acc;
+          else algebraicVars;
+        end match;
+      end for;
+      data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, listReverse(algebraicVars), {}, DaeModeConfig.ALL));
     end create;
 
     function addJacobian

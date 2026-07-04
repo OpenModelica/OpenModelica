@@ -1,0 +1,60 @@
+// name: TestDaeModeNBAlgLoop
+// keywords: NewBackend daeMode algebraic loop
+// status: correct
+// Torn nonlinear algebraic loop in daeMode. Runs newInst with both the old and
+// the new backend; the new backend support is added by the daeMode fixes.
+
+loadString("
+model TestDaeModeNBAlgLoop
+  Real x(start = 1, fixed = true);
+  Real a;
+  Real b;
+equation
+  der(x) = -x;
+  a + b = x;
+  a = sin(b) + 2*a;
+end TestDaeModeNBAlgLoop;
+"); getErrorString();
+
+// old backend (new frontend)
+setCommandLineOptions("-d=newInst --daeMode"); getErrorString();
+simulate(TestDaeModeNBAlgLoop, stopTime = 1.0, tolerance = 1e-8); getErrorString();
+val(x, 1.0); val(a, 0.0); val(b, 0.0);
+
+// new backend (new frontend)
+setCommandLineOptions("-d=newInst --newBackend --daeMode"); getErrorString();
+simulate(TestDaeModeNBAlgLoop, stopTime = 1.0, tolerance = 1e-8); getErrorString();
+val(x, 1.0); val(a, 0.0); val(b, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestDaeModeNBAlgLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'ida', fileNamePrefix = 'TestDaeModeNBAlgLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0.36787942556979447
+// -0.9345632107520242
+// 1.9345632107520243
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestDaeModeNBAlgLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'ida', fileNamePrefix = 'TestDaeModeNBAlgLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3678793995937988
+// -0.9345632107520242
+// 1.9345632107520243
+// endResult

@@ -1,0 +1,53 @@
+// name: TestDaeModeNBMultiPartition
+// keywords: NewBackend daeMode partition
+// status: correct
+// Decoupled state and standalone nonlinear algebraic equation -> two partitions in
+// daeMode; residual/jacobian row indexing must stay consistent. newInst, both backends.
+
+loadString("
+model TestDaeModeNBMultiPartition
+  Real x(start = 1, fixed = true);
+  Real b(start = 2);
+equation
+  der(x) = -x;
+  b = sin(b) + 0.5;
+end TestDaeModeNBMultiPartition;
+"); getErrorString();
+
+setCommandLineOptions("-d=newInst --daeMode"); getErrorString();
+simulate(TestDaeModeNBMultiPartition, stopTime = 1.0, tolerance = 1e-8); getErrorString();
+val(x, 1.0); val(b, 0.0);
+
+setCommandLineOptions("-d=newInst --newBackend --daeMode"); getErrorString();
+simulate(TestDaeModeNBMultiPartition, stopTime = 1.0, tolerance = 1e-8); getErrorString();
+val(x, 1.0); val(b, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestDaeModeNBMultiPartition_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'ida', fileNamePrefix = 'TestDaeModeNBMultiPartition', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3678794208691052
+// 1.4973003890958922
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestDaeModeNBMultiPartition_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'ida', fileNamePrefix = 'TestDaeModeNBMultiPartition', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.3678794258038379
+// 1.4973003890958925
+// endResult
