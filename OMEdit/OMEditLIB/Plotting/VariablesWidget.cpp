@@ -2074,6 +2074,20 @@ QPair<QString, bool> VariablesWidget::readVariableStringValue(QString variable, 
         return qMakePair(QString::fromUtf8(str), true);
       }
     }
+  } else if (mpCSVData) {
+    char **strDataSet = read_csv_dataset_str(mpCSVData, variable.toUtf8().constData());
+    double *timeDataSet = read_csv_dataset(mpCSVData, "time");
+    if (strDataSet && timeDataSet) {
+      const double tolerance = 1e-12;
+      for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
+        // relative distance. See #14959
+        double diff  = qAbs(timeDataSet[i] - time);
+        double scale = qMax(qAbs(timeDataSet[i]), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
+          return qMakePair(QString::fromUtf8(strDataSet[i] ? strDataSet[i] : ""), true);
+        }
+      }
+    }
   }
   return qMakePair(QString(), false);
 }
@@ -2766,7 +2780,7 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
         errorString = msg[0];
       }
     } else if (pVariablesTreeItem->getFileName().endsWith(".csv")) {
-      mpCSVData = read_csv(fileName.toUtf8().constData());
+      mpCSVData = read_csv_all(fileName.toUtf8().constData());
       if (mpCSVData) {
         //Read in timevector
         double *timeVals = read_csv_dataset(mpCSVData, "time");

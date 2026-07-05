@@ -134,7 +134,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   case CSV:
-    simresglob->csvReader = read_csv(filename);
+    simresglob->csvReader = read_csv_all(filename);
     if (simresglob->csvReader==NULL) {
       msg[1] = filename;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
