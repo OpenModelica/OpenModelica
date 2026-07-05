@@ -1,0 +1,16 @@
+// Math-event hysteresis under wasm-jit: integer/floor/ceil/div/mod of a
+// continuous state generate zero-crossings via C's `mathEventsValuePre` scheme
+// (the discretized value is held between events, refreshed at each event). Values
+// match /usr/bin/omc (the C target) bit-for-bit; diffSimulationResults reports 0
+// differing variables at relTol=1e-6.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("MathEventAll.mo"); getErrorString();
+simulate(MathEventAll, stopTime = 5.0, numberOfIntervals = 500); getErrorString();
+val(ni, 0.5); // expect 1  (x=1.05)
+val(ni, 2.5); // expect 4  (x=4.05)
+val(ni, 4.9); // expect 7  (x=7.65)
+val(fl, 3.2); // expect 5  (floor(5.1))
+val(ce, 3.2); // expect 6  (ceil(5.1))
+val(md, 1.1); // expect ~1.95 (mod(1.95,2))
+val(md, 3.1); // expect ~0.95 (mod(4.95,2))
+val(dv, 4.9); // expect 3  (div(7.65,2))

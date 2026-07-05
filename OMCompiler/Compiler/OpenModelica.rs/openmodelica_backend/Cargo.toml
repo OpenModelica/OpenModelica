@@ -1,0 +1,32 @@
+[package]
+name = "openmodelica_backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_codegen_graphml.workspace = true
+openmodelica_tpl.workspace = true
+openmodelica_error.workspace = true
+anyhow.workspace=true
+metamodelica.workspace=true
+openmodelica_ast.workspace=true
+openmodelica_backend_types.workspace=true
+openmodelica_simcode_util.workspace=true
+openmodelica_backend_util.workspace=true
+openmodelica_simcode_types.workspace=true
+openmodelica_frontend.workspace=true
+openmodelica_frontend_base.workspace = true
+openmodelica_frontend_types.workspace=true
+openmodelica_frontend_dump.workspace=true
+openmodelica_nf_frontend.workspace=true
+openmodelica_util.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+openmodelica_ast_collections.workspace=true
+openmodelica_program_util.workspace=true
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true
+# Profiling-file readers in the hand-written HpcOmBenchmarkExt.rs.
+roxmltree.workspace=true
+serde_json.workspace=true

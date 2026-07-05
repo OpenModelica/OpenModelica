@@ -1266,11 +1266,11 @@ protected
         (LFG_jacobian, MRF_jacobian, R0_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
       end if;
 
-      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" and Util.isSome(jacobian) and not BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" and isSome(jacobian) and not BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
         // Bidirectional: generate adjoint jacobian in addition to forward
         adjointJac := jacobianSymbolicAdjoint(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
         part.association := Partition.Association.CONTINUOUS(kind, jacobian, adjointJac, LFG_jacobian, MRF_jacobian, R0_jacobian);
-      elseif Util.isSome(jacobian) then
+      elseif isSome(jacobian) then
         if BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
           part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian, LFG_jacobian, MRF_jacobian, R0_jacobian);
         else

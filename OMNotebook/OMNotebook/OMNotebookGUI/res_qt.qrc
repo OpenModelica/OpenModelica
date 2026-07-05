@@ -66,5 +66,7 @@
         <file>Resources/sketchIcons/saveas.svg</file>
         <file>Resources/sketchIcons/import.svg</file>
         <file>Resources/sketchIcons/export.svg</file>
+        <file alias="stylesheet.xml">stylesheet.xml</file>
+        <file alias="commands.xml">commands.xml</file>
     </qresource>
 </RCC>

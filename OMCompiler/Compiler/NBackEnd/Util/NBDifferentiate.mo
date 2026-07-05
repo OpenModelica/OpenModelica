@@ -722,7 +722,7 @@ public
   algorithm
     stmts := {};
     // Only generate accumulation statements if there is an adjoint_map
-    if Util.isSome(diffArguments.adjoint_map) then
+    if isSome(diffArguments.adjoint_map) then
       SOME(amap) := diffArguments.adjoint_map;
       keys := UnorderedMap.keyList(amap);
       // the keys in the adjoint_map are the variables we need to accumulate into; the values are the terms to accumulate
@@ -2673,7 +2673,7 @@ public
         list<Statement> branch_stmts_flat;
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
-        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+        Boolean isReverse = isSome(diffArguments.adjoint_map);
 
       // 0. do not differentiate if it already exists differentiated due to previous differentiation
       case _ guard(UnorderedSet.contains(stmt, diffInfo)) then {stmt};

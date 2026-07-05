@@ -1,0 +1,18 @@
+[package]
+name = "openmodelica_ast"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_wasi.workspace = true
+metamodelica.workspace = true
+anyhow.workspace = true
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+winnow.workspace = true
+# ParserExt forwards parser diagnostics to the Error subsystem
+# (ErrorExt::addSourceMessage), like the C parser links against errorext.
+openmodelica_error.workspace = true
+
+[dev-dependencies]

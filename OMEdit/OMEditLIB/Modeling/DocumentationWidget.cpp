@@ -52,7 +52,9 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+// QtWebEngine stubs come in via DocumentationWidget.h on wasm.
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -482,8 +484,14 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   }
   // read documentation
   QString documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
+#if defined(__EMSCRIPTEN__)
+  // Main-thread QFile writes do not persist through the worker VFS on wasm, so feed
+  // the HTML to the viewer directly instead of round-tripping through a temp file.
+  mpDocumentationViewer->setHtml(documentation);
+#else
   writeDocumentationFile(documentation);
   mpDocumentationViewer->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
+#endif
 
   if ((mDocumentationHistoryPos >= 0) && (pLibraryTreeItem == mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem)) {
     /* reload url */
@@ -1535,7 +1543,9 @@ void DocumentationViewer::setFocusInternal()
  */
 void DocumentationViewer::createActions()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+  // QWebEnginePage shim has no page actions (action() returns nullptr).
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebEnginePage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -1647,7 +1657,9 @@ void DocumentationViewer::showContextMenu(QPoint point)
 {
   QMenu menu(this);
   // add QWebPage default actions
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+  // QWebEnginePage shim has no page actions.
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   menu.addAction(page()->action(QWebEnginePage::SelectAll));
   menu.addAction(page()->action(QWebEnginePage::Copy));
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)

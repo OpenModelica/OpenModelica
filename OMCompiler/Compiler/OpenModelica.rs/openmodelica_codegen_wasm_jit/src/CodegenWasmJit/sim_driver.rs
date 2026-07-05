@@ -1,0 +1,1210 @@
+//! Engine-independent simulation drivers.
+//!
+//! The two JIT backends (`sim_runtime_wasmtime`, `sim_runtime_wasmer`) differ
+//! only in how they compile a module, call an exported function, and read/write
+//! linear memory. Everything above that — the forward-Euler and DASSL loops, the
+//! in-wasm `simulate` driver, result-row capture, `terminate()` polling, and the
+//! post-run parameter read — is identical, so it lives here once, expressed
+//! against the object-safe [`SimEngine`] trait. Each backend provides a thin
+//! `SimEngine` impl (memory access + function calls) plus its own module
+//! compilation and external-"C" import wiring, then hands an engine to [`drive`].
+
+use anyhow::{Result, bail};
+
+use super::{REAL_OFF, ResultKind, SimLayout, SimModel, SolveStats, StateSetInfo, TIME_OFF};
+use crate::CodegenWasmJitFunctions::WTy;
+
+/// Persistent pivoting state for one `$STATESET` across integration steps (C's
+/// `set->colPivot`/`rowPivot`). `comparePivot` detects a selection change against
+/// the previous `col_pivot`.
+struct StateSetPivot {
+    col_pivot: Vec<usize>,
+    row_pivot: Vec<usize>,
+}
+
+/// Initialise each state set's pivoting to the identity selection, matching C's
+/// `initializeStateSetPivoting` (`colPivot[n] = nCandidates-n-1`) and the
+/// wasm-side `A[n,n]=1` seeded in `functionParameters`.
+fn init_state_pivots(state_sets: &[StateSetInfo]) -> Vec<StateSetPivot> {
+    state_sets
+        .iter()
+        .map(|s| {
+            let nc = s.n_candidates as usize;
+            let nd = s.n_dummy as usize;
+            StateSetPivot {
+                col_pivot: (0..nc).map(|n| nc - n - 1).collect(),
+                row_pivot: (0..nd).collect(),
+            }
+        })
+        .collect()
+}
+
+/// Full-pivot Gaussian elimination selecting `n_rows` pivot columns of the
+/// `n_rows × n_cols` matrix `a` (column-major), reordering `row_ind`/`col_ind` so
+/// `a_pivoted[i,j] = a[row_ind[i], col_ind[j]]`. Port of C's `pivot()`
+/// (`math-support/pivot.c`). Returns false if the (remaining) matrix is all zero.
+fn pivot(a: &mut [f64], n_rows: usize, n_cols: usize, row_ind: &mut [usize], col_ind: &mut [usize]) -> bool {
+    const FAC: f64 = 1.125; // how much larger before rows/cols are interchanged
+    let at = |a: &[f64], r: usize, c: usize, ri: &[usize], ci: &[usize]| a[ri[r] + n_rows * ci[c]];
+    for row in 0..n_rows.min(n_cols) {
+        // maxsearch: largest |element| in the trailing submatrix.
+        let mut best: Option<(usize, usize)> = None;
+        let mut mabs = 0.0f64;
+        for r in row..n_rows {
+            for c in row..n_cols {
+                let t = at(a, r, c, row_ind, col_ind).abs();
+                if t > mabs {
+                    mabs = t;
+                    best = Some((r, c));
+                }
+            }
+        }
+        let Some((maxrow, maxcol)) = best else { return false };
+        let pv = at(a, row, row, row_ind, col_ind).abs();
+        if mabs > FAC * pv {
+            row_ind.swap(row, maxrow);
+            col_ind.swap(row, maxcol);
+        }
+        let pv = at(a, row, row, row_ind, col_ind);
+        // one step of Gaussian elimination on the pivoted matrix
+        for i in (row + 1)..n_rows {
+            let leader = at(a, i, row, row_ind, col_ind);
+            if leader != 0.0 {
+                let scale = -leader / pv;
+                a[row_ind[i] + n_rows * col_ind[row]] = 0.0;
+                for j in (row + 1)..n_cols {
+                    let t2 = at(a, row, j, row_ind, col_ind);
+                    a[row_ind[i] + n_rows * col_ind[j]] += scale * t2;
+                }
+            }
+        }
+    }
+    true
+}
+
+/// Select the states for one `$STATESET` at the current point (C's
+/// `stateSelectionSet` with `switchStates=1`): evaluate the analytic Jacobian
+/// column-by-column via `functionStateSetJacobians`, pivot to choose the dummy
+/// columns, and — if the selection changed — rebuild the `A` matrix and reinit
+/// the state variables from their candidates (`setAMatrix`). Returns whether the
+/// selection changed (the caller restarts the integrator, as a state change is a
+/// discontinuity in the state vector).
+fn state_selection_set(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    info: &StateSetInfo,
+    st: &mut StateSetPivot,
+) -> Result<bool> {
+    let nc = info.n_candidates as usize;
+    let nd = info.n_dummy as usize;
+    if nd == 0 {
+        return Ok(false);
+    }
+
+    // getAnalyticalJacobianSet: J (column-major nd x nc). Seed one candidate at a
+    // time, run the column equations, read the result rows.
+    let mut jac = vec![0.0f64; nd * nc];
+    for col in 0..nc {
+        for (c, &soff) in info.seed_offs.iter().enumerate() {
+            write_f64(e, sim_data + soff, if c == col { 1.0 } else { 0.0 })?;
+        }
+        e.call1("functionStateSetJacobians", sim_data)?;
+        for row in 0..nd {
+            jac[row + nd * col] = read_f64(e, sim_data + info.result_offs[row])?;
+        }
+    }
+    // leave seeds cleared
+    for &soff in &info.seed_offs {
+        write_f64(e, sim_data + soff, 0.0)?;
+    }
+
+    let old_col = st.col_pivot.clone();
+    if !pivot(&mut jac, nd, nc, &mut st.row_pivot, &mut st.col_pivot) {
+        bail!("CodegenWasmJit: singular Jacobian for dynamic state selection");
+    }
+
+    // comparePivot: enable = 1 for the first nd pivot columns (dummy), 2 for the
+    // rest (states). A change in which columns are states means a new selection.
+    let mut new_enable = vec![0u8; nc];
+    let mut old_enable = vec![0u8; nc];
+    for i in 0..nc {
+        let entry = if i < nd { 1 } else { 2 };
+        new_enable[st.col_pivot[i]] = entry;
+        old_enable[old_col[i]] = entry;
+    }
+    let changed = new_enable != old_enable;
+    if changed {
+        // setAMatrix: zero A, then for each state column set A[row,col]=1 and
+        // reinit the state variable to its candidate's current value.
+        for &aoff in &info.a_offs {
+            write_i32(e, sim_data + aoff, 0)?;
+        }
+        let mut row = 0usize;
+        for col in 0..nc {
+            if new_enable[col] == 2 {
+                write_i32(e, sim_data + info.a_offs[row * nc + col], 1)?;
+                let v = read_f64(e, sim_data + info.candidate_offs[col])?;
+                write_f64(e, sim_data + info.state_offs[row], v)?;
+                row += 1;
+            }
+        }
+    }
+    Ok(changed)
+}
+
+/// Run state selection over every `$STATESET` (C's `stateSelection`). Returns
+/// whether any set switched its selection.
+fn run_state_selection(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    state_sets: &[StateSetInfo],
+    pivots: &mut [StateSetPivot],
+) -> Result<bool> {
+    let mut changed = false;
+    for (info, st) in state_sets.iter().zip(pivots.iter_mut()) {
+        changed |= state_selection_set(e, sim_data, info, st)?;
+    }
+    Ok(changed)
+}
+
+/// The per-run capabilities a backend must expose: read/write the instance's
+/// linear memory and call its exported functions. Object-safe so the drivers can
+/// take `&mut dyn SimEngine` (and the DASSL residual callback a `*mut dyn`).
+pub(super) trait SimEngine {
+    /// Read `buf.len()` bytes of linear memory starting at byte address `addr`.
+    fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()>;
+    /// Write `buf` to linear memory starting at byte address `addr`.
+    fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()>;
+    /// Call the exported `fn(u32) -> ()` `name` (an equation function). Backends
+    /// cache the resolved function; a missing export is an error.
+    fn call1(&mut self, name: &str, arg: u32) -> Result<()>;
+    /// Like [`call1`] but a no-op if `name` is not exported (optional teardown
+    /// hooks such as `callExternalObjectDestructors`).
+    fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()>;
+    /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
+    /// in-wasm Euler driver; returns the result-buffer pointer.
+    fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
+    /// If the last wasm call trapped on a failed `assert()`, take the recorded
+    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only]` (handles
+    /// into shared memory), else `None`. Backed by the engine's `rt_assert` host
+    /// import; lets [`drive`] report a model assertion instead of a bare trap.
+    fn take_pending_assert(&mut self) -> Option<[i32; 7]>;
+}
+
+/// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
+/// its base; `0` is null) into a Rust `String`.
+fn read_rt_string(e: &dyn SimEngine, handle: i32) -> Result<String> {
+    if handle <= 0 {
+        return Ok(String::new());
+    }
+    let base = handle as u32;
+    let len = read_i32(e, base + 4)?.max(0) as usize;
+    let mut buf = vec![0u8; len];
+    e.read_bytes(base + 8, &mut buf)?;
+    Ok(String::from_utf8_lossy(&buf).into_owned())
+}
+
+/// A `functionODE`/`functionAlgebraics` trap during integration is usually a
+/// failed model `assert()`, whose message + source info `rt_assert` recorded. If
+/// one is pending, route it to the error buffer (matching the C target's
+/// `[file:l:c] Error: <msg>`, and so OMEdit shows it) and return the enriched
+/// error; otherwise return the original trap error.
+fn enrich_trap(e: &mut dyn SimEngine, err: anyhow::Error) -> anyhow::Error {
+    let Some(pa) = e.take_pending_assert() else { return err };
+    let msg = read_rt_string(e, pa[0]).unwrap_or_default();
+    let file = read_rt_string(e, pa[1]).unwrap_or_default();
+    let info = metamodelica::SourceInfo {
+        fileName: arcstr::ArcStr::from(file),
+        isReadOnly: pa[6] != 0,
+        lineNumberStart: pa[2],
+        columnNumberStart: pa[3],
+        lineNumberEnd: pa[4],
+        columnNumberEnd: pa[5],
+        lastModification: metamodelica::OrderedFloat(0.0),
+    };
+    let _ = openmodelica_util::Error::addSourceMessage(
+        openmodelica_util::Error::COMPILER_ERROR.clone(),
+        metamodelica::cons(arcstr::ArcStr::from(msg.as_str()), metamodelica::nil()),
+        info,
+    );
+    anyhow::anyhow!("assertion failed: {msg}")
+}
+
+/// Result of a simulation run.
+pub(super) struct RunResult {
+    /// Row-major trajectory: `n_rows * n_reals` f64, each row
+    /// `[time, realVars…, intAlg…, boolAlg…]` (integer/boolean algebraics
+    /// captured per row, as f64).
+    pub(super) rows: Vec<f64>,
+    /// Columns per row = `SimLayout::n_row_total()`.
+    pub(super) n_reals: u32,
+    /// Parameter values (in result `Param` order), read from `SimData` after the run.
+    pub(super) params: Vec<f64>,
+    /// Solver statistics (steps, evaluations, events).
+    pub(super) stats: SolveStats,
+}
+
+/// Read one little-endian i32 from linear memory at byte address `addr`.
+pub(super) fn read_i32(e: &dyn SimEngine, addr: u32) -> Result<i32> {
+    let mut b = [0u8; 4];
+    e.read_bytes(addr, &mut b)?;
+    Ok(i32::from_le_bytes(b))
+}
+
+/// Read one little-endian f64 from linear memory at byte address `addr`.
+pub(super) fn read_f64(e: &dyn SimEngine, addr: u32) -> Result<f64> {
+    let mut b = [0u8; 8];
+    e.read_bytes(addr, &mut b)?;
+    Ok(f64::from_le_bytes(b))
+}
+
+/// Write one little-endian f64 to linear memory at byte address `addr`.
+pub(super) fn write_f64(e: &mut dyn SimEngine, addr: u32, v: f64) -> Result<()> {
+    e.write_bytes(addr, &v.to_le_bytes())
+}
+
+/// Write one little-endian i32 to linear memory at byte address `addr`.
+fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> {
+    e.write_bytes(addr, &v.to_le_bytes())
+}
+
+/// Error out if a nonlinear system raised the `nls_fail` flag during the last
+/// equation call in a context that cannot back off (initialisation, an output
+/// point, the Euler loop). The DASSL residual handles this recoverably instead.
+fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if read_i32(e, sim_data + layout.nls_fail_off)? != 0 {
+        bail!("CodegenWasmJit: nonlinear system did not converge");
+    }
+    Ok(())
+}
+
+/// Append one trajectory row to `rows`: the real part `[time | realVars]`
+/// followed by the integer and boolean algebraic slots (converted to f64),
+/// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
+/// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
+/// same layout.
+fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    for i in 0..layout.n_reals_row() {
+        rows.push(read_f64(e, sim_data + i * 8)?);
+    }
+    for i in 0..layout.n_int_alg() {
+        rows.push(read_i32(e, sim_data + layout.int_off + i * 4)? as f64);
+    }
+    for j in 0..layout.n_bool_alg() {
+        rows.push(read_i32(e, sim_data + layout.bool_off + j * 4)? as f64);
+    }
+    Ok(())
+}
+
+/// True if `terminate()` raised the `SimData` flag during the last step.
+fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
+    Ok(read_i32(e, sim_data + layout.terminate_off)? != 0)
+}
+
+/// Copy the live real-variable region (states | derivatives | real algebraics) to
+/// its pre-value mirror. Called at a state event before the discrete update so
+/// `pre(x)` of a continuous variable equals its value *at the event* — e.g.
+/// `reinit(v, -0.8*pre(v))` must see the impact velocity, not the last output
+/// row's. The boolean/integer pre regions are deliberately left stale so the
+/// when-body edge test (`cond && !pre(cond)`) still fires.
+fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    let bytes = ((2 * layout.n_states + layout.n_real_alg) * 8) as usize;
+    if bytes == 0 {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; bytes];
+    e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
+    e.write_bytes(sim_data + layout.pre_real_off, &buf)
+}
+
+/// Per-sample time-event state: each sample's next firing time and its interval,
+/// loaded from the sample region (populated by the model's `initSample`). The
+/// driver interleaves these events with the integration — at a firing time it
+/// raises the sample's `active` flag, runs the discrete update, and advances the
+/// next time by the interval (C's `samplesInfo` + `nextSampleEvent`).
+struct Samples {
+    /// Next firing time per sample (starts at the sample's `start`).
+    next: Vec<f64>,
+    interval: Vec<f64>,
+    /// Absolute address of the `active` flag array (`sim_data + sample_active_off`).
+    active_off: u32,
+}
+
+impl Samples {
+    /// Read the start/interval pairs `initSample` wrote into the sample region.
+    fn load(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Self> {
+        let n = layout.n_samples as usize;
+        let mut next = Vec::with_capacity(n);
+        let mut interval = Vec::with_capacity(n);
+        for k in 0..n as u32 {
+            let base = sim_data + layout.sample_off + k * 16;
+            next.push(read_f64(e, base)?);
+            interval.push(read_f64(e, base + 8)?);
+        }
+        Ok(Samples { next, interval, active_off: sim_data + layout.sample_active_off })
+    }
+
+    /// Time of the next sample event (min of `next`), or +inf if there are none.
+    fn next_time(&self) -> f64 {
+        self.next.iter().copied().fold(f64::INFINITY, f64::min)
+    }
+
+    /// Fire every sample due at `t`: raise its `active` flag, run the discrete
+    /// update (`functionAlgebraics` — evaluates the sample conditions, the
+    /// when-bodies on their rising edge, and saves pre-values), then clear the
+    /// flags and advance the fired samples by their interval. `t` is written as
+    /// the current simulation time first.
+    fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+        let eps = t.abs().max(1.0) * 1e-10;
+        let mut fired = vec![false; self.next.len()];
+        for k in 0..self.next.len() {
+            if self.next[k] <= t + eps {
+                fired[k] = true;
+                write_i32(e, self.active_off + k as u32 * 4, 1)?;
+            }
+        }
+        write_f64(e, sim_data + TIME_OFF, t)?;
+        e.call1("functionAlgebraics", sim_data)?;
+        for k in 0..self.next.len() {
+            if fired[k] {
+                write_i32(e, self.active_off + k as u32 * 4, 0)?;
+                // Advance to the next firing; a non-positive interval is a
+                // one-shot event (guard against a never-advancing schedule).
+                self.next[k] = if self.interval[k] > 0.0 {
+                    self.next[k] + self.interval[k]
+                } else {
+                    f64::INFINITY
+                };
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Select the integrator and run it, then free external objects and read back the
+/// parameter values. `method` is the model's `experiment` integration method
+/// (empty = the DASSL default); `host_driven` forces the native Euler loop over
+/// the in-wasm one when `method="euler"` (for debugging / no-`simulate` builds).
+pub(super) fn drive(
+    e: &mut (dyn SimEngine + 'static),
+    model: &SimModel,
+    sim_data: u32,
+    method: &str,
+    host_driven: bool,
+    bench: bool,
+) -> Result<(RunResult, &'static str)> {
+    let layout = &model.layout;
+    let n_reals = layout.n_row_total();
+    let n_rows = model.n_intervals + 1;
+    let start = model.start_time;
+    let stop = model.stop_time;
+
+    // Time events (`sample`) and state events (zero-crossings) both need the
+    // host-side event loop, which drives DASSL between events (clamping to sample
+    // times, root-finding for crossings); the in-wasm Euler `simulate` can do
+    // neither. So any model with events uses the event-aware DASSL driver
+    // regardless of the requested method (Euler-with-events falls back to DASSL).
+    let mut stats = SolveStats::default();
+    let (driver_result, label) = if layout.n_samples > 0 || layout.n_zc > 0 {
+        (run_dassl_events(e, model, sim_data, n_reals, n_rows, start, stop, bench, &mut stats), "dassl-events")
+    } else {
+        match method {
+            "dassl" | "dasslrt" | "ida" | "" => {
+                (run_dassl(e, model, sim_data, n_reals, n_rows, start, stop, bench, &mut stats), "dassl")
+            }
+            "euler" => {
+                if host_driven {
+                    (run_host(e, model, sim_data, n_reals, n_rows, start, stop, &mut stats), "euler-host")
+                } else {
+                    (run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats), "euler-wasm")
+                }
+            }
+            other => bail!(
+                "CodegenWasmJit: unsupported integration method `{other}` (supported: `dassl`, `euler`)"
+            ),
+        }
+    };
+    // A trap during integration is usually a failed model `assert()`; surface its
+    // message rather than a bare `unreachable` trap.
+    let rows = driver_result.map_err(|err| enrich_trap(e, err))?;
+    stats.method = label;
+
+    // Free external objects (tables, etc.) constructed at init by calling each
+    // destructor in reverse order, so repeated simulations in one process (e.g.
+    // OMEdit) don't leak the native objects. Absent when the model has none.
+    e.call1_if_present("callExternalObjectDestructors", sim_data)?;
+
+    // Read parameter values from SimData (result `Param` order).
+    let mut params = Vec::new();
+    for v in &model.result_vars {
+        if let ResultKind::Param { off, wty, .. } = &v.kind {
+            let val = match wty {
+                WTy::F64 => read_f64(e, sim_data + off)?,
+                WTy::I32 => read_i32(e, sim_data + off)? as f64,
+            };
+            params.push(val);
+        }
+    }
+
+    Ok((RunResult { rows, n_reals, params, stats }, label))
+}
+
+/// In-wasm driver: one call to `simulate`, then read the result buffer.
+fn run_wasm(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    n_reals: u32,
+    n_rows: u32,
+    layout: &SimLayout,
+    start: f64,
+    stop: f64,
+    stats: &mut SolveStats,
+) -> Result<Vec<f64>> {
+    stats.steps = (n_rows - 1) as u64;
+    let buf = e.call_simulate(sim_data, start, stop, n_rows - 1)?;
+    // The Euler loop cannot back off, so a non-converging NLS is fatal here.
+    check_nls(e, sim_data, layout)?;
+    // The loop records how many rows it wrote (< n_rows if terminate() fired).
+    let written = read_i32(e, sim_data + layout.n_out_off)?.max(0) as u32;
+    let count = (written.min(n_rows) * n_reals) as usize;
+    let mut bytes = vec![0u8; count * 8];
+    e.read_bytes(buf, &mut bytes)?;
+    Ok(bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+}
+
+/// Host-driven driver: the forward-Euler loop in native Rust.
+fn run_host(
+    e: &mut dyn SimEngine,
+    model: &SimModel,
+    sim_data: u32,
+    n_reals: u32,
+    n_rows: u32,
+    start: f64,
+    stop: f64,
+    stats: &mut SolveStats,
+) -> Result<Vec<f64>> {
+    let layout = &model.layout;
+    stats.steps = (n_rows - 1) as u64;
+    e.call1("functionParameters", sim_data)?;
+    // No state events on this path, so relations never need the held phase;
+    // evaluate them fresh throughout (mode 2). `rt_solve_nls` still holds them
+    // internally around its Newton solve.
+    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
+    e.call1("functionInitialEquations", sim_data)?;
+    check_nls(e, sim_data, layout)?;
+
+    let n_states = layout.n_states;
+    let n_steps = n_rows - 1;
+    let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+    let states_base = sim_data + REAL_OFF;
+    let ders_base = states_base + n_states * 8;
+    let mut pivots = init_state_pivots(&model.state_sets);
+
+    let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+    for row in 0..n_rows {
+        let time = start + row as f64 * h;
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
+        check_nls(e, sim_data, layout)?; // Euler cannot back off — non-convergence is fatal
+        capture_row(e, &mut rows, sim_data, layout)?;
+        // terminate() fired in functionAlgebraics: keep this row, stop the run.
+        if terminated(e, sim_data, layout)? {
+            break;
+        }
+        if row == n_steps {
+            break;
+        }
+        // Re-select states before the Euler update; a switch reinits the states,
+        // so refresh the derivatives it uses (see `run_dassl`).
+        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+            e.call1("functionODE", sim_data)?;
+        }
+        // Forward-Euler update of the states.
+        for i in 0..n_states {
+            let s = read_f64(e, states_base + i * 8)?;
+            let d = read_f64(e, ders_base + i * 8)?;
+            write_f64(e, states_base + i * 8, s + h * d)?;
+        }
+    }
+    Ok(rows)
+}
+
+// ===========================================================================
+// DASSL (daskr) driver
+// ===========================================================================
+//
+// The model is an explicit ODE `der(y) = f(t, y)` (the wasm `functionODE`
+// computes `f` into the derivative slots given `time` + state slots). DASSL
+// solves the equivalent DAE residual `G(t, y, y') = y' - f(t, y) = 0` with its
+// numerical Jacobian, choosing internal steps adaptively and interpolating back
+// to each output point. `daskr`'s `RES` callback is a bare `unsafe fn` (Fortran
+// calling convention) that cannot capture, so the wasm context is passed through
+// a thread-local raw pointer set for the duration of the integration
+// (single-threaded; `RES` only runs nested inside `ddaskr`).
+
+/// Context the `RES` callback needs to evaluate `f(t, y)` through wasm. `engine`
+/// is a type-erased pointer to the backend (valid only while `ddaskr` runs).
+struct ResCtx {
+    engine: *mut dyn SimEngine,
+    sim_data: u32,
+    states_base: u32,
+    ders_base: u32,
+    n_states: usize,
+    /// `SimData` offset of the nonlinear-solve failure flag.
+    nls_fail_off: u32,
+    /// Number of residual (right-hand-side) evaluations, for the bench line.
+    nfe: u64,
+    /// `SimData` offset of the zero-crossing value region (for the root callback).
+    zc_off: u32,
+    /// Number of zero-crossings (root functions).
+    n_zc: usize,
+    /// A wasm trap / memory error captured inside the callback, surfaced after
+    /// `ddaskr` returns (the C-style callback cannot return a `Result`).
+    err: Option<anyhow::Error>,
+}
+
+/// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
+/// whose sign change is a state event. Writes the candidate `t`/`y` into SimData,
+/// evaluates the continuous equations (`functionODE`) so any algebraics a
+/// crossing depends on are current, then the emitted `functionZeroCrossings`, and
+/// reads the results back. Errors are stashed in `ResCtx::err` (the C-style
+/// callback cannot return a status).
+unsafe fn dassl_rt(
+    _neq: *mut i32,
+    t: *mut f64,
+    y: *mut f64,
+    _yprime: *mut f64,
+    _nrt: *mut i32,
+    rval: *mut f64,
+    _rpar: *mut f64,
+    _ipar: *mut i32,
+) {
+    let ctx = RES_CTX.with(|c| c.get());
+    if ctx.is_null() {
+        return;
+    }
+    let ctx = unsafe { &mut *ctx };
+    let e = unsafe { &mut *ctx.engine };
+    let run = (|| -> Result<()> {
+        // A root probe may sit at an awkward candidate state where a nonlinear
+        // system can't converge; keep that transient failure from leaking into the
+        // next checked evaluation by clearing the flag around this probe.
+        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        for i in 0..ctx.n_states {
+            write_f64(e, ctx.states_base + (i as u32) * 8, unsafe { *y.add(i) })?;
+        }
+        e.call1("functionODE", ctx.sim_data)?;
+        e.call1("functionZeroCrossings", ctx.sim_data)?;
+        for i in 0..ctx.n_zc {
+            let g = read_f64(e, ctx.sim_data + ctx.zc_off + (i as u32) * 8)?;
+            unsafe { *rval.add(i) = g };
+        }
+        Ok(())
+    })();
+    if let Err(err) = run {
+        ctx.err = Some(err);
+    }
+}
+
+thread_local! {
+    static RES_CTX: std::cell::Cell<*mut ResCtx> = const { std::cell::Cell::new(std::ptr::null_mut()) };
+}
+
+/// Clears the thread-local `RES_CTX` on drop so a stale pointer never leaks into
+/// a later run on the same thread (even if `ddaskr` bails early).
+struct ResCtxGuard;
+impl Drop for ResCtxGuard {
+    fn drop(&mut self) {
+        RES_CTX.with(|c| c.set(std::ptr::null_mut()));
+    }
+}
+
+/// DASSL residual `G(t, y, y') = y' - f(t, y)`. Writes `t` and the candidate
+/// states `y` into `SimData`, calls the wasm `functionODE` to get `f` into the
+/// derivative slots, then `delta := y' - f`. A wasm trap sets `IRES = -2`
+/// (unrecoverable). A *non-converging nonlinear system* inside `functionODE`
+/// (which raises the `nls_fail` flag instead of trapping) sets `IRES = -1`, the
+/// recoverable signal that makes DASKR back off to a smaller step and retry from
+/// the restored guess — mirroring the C runtime.
+unsafe fn dassl_res(
+    t: *mut f64,
+    y: *mut f64,
+    yprime: *mut f64,
+    _cj: *mut f64,
+    delta: *mut f64,
+    ires: *mut i32,
+    _rpar: *mut f64,
+    _ipar: *mut i32,
+) {
+    let ctx = RES_CTX.with(|c| c.get());
+    if ctx.is_null() {
+        unsafe { *ires = -2 };
+        return;
+    }
+    let ctx = unsafe { &mut *ctx };
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    let run = (|| -> Result<()> {
+        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
+        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        for i in 0..n {
+            write_f64(e, ctx.states_base + (i as u32) * 8, unsafe { *y.add(i) })?;
+        }
+        e.call1("functionODE", ctx.sim_data)?;
+        for i in 0..n {
+            let f = read_f64(e, ctx.ders_base + (i as u32) * 8)?;
+            unsafe { *delta.add(i) = *yprime.add(i) - f };
+        }
+        Ok(())
+    })();
+    ctx.nfe += 1;
+    match run {
+        Err(err) => {
+            ctx.err = Some(err);
+            unsafe { *ires = -2 };
+        }
+        Ok(()) => {
+            // A nonlinear system did not converge: recoverable — ask DASKR to
+            // retry at a smaller step (the guess was restored by the codegen).
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
+                unsafe { *ires = -1 };
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_dassl(
+    e: &mut (dyn SimEngine + 'static),
+    model: &SimModel,
+    sim_data: u32,
+    n_reals: u32,
+    n_rows: u32,
+    start: f64,
+    stop: f64,
+    bench: bool,
+    stats: &mut SolveStats,
+) -> Result<Vec<f64>> {
+    use daskr::solver;
+
+    // Silence DASKR's own diagnostic printing (it would go to stdout and corrupt
+    // the omc result record); failures are surfaced here via IDID instead.
+    daskr::aux::xsetf(0);
+
+    let layout = &model.layout;
+    e.call1("functionParameters", sim_data)?;
+    // No state events on this path, so relations never need the held phase;
+    // evaluate them fresh throughout (mode 2). `rt_solve_nls` still holds them
+    // internally around its Newton solve.
+    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
+    e.call1("functionInitialEquations", sim_data)?;
+    check_nls(e, sim_data, layout)?; // a non-converging init NLS is not recoverable
+
+    let n_states = layout.n_states as usize;
+    let states_base = sim_data + REAL_OFF;
+    let ders_base = states_base + layout.n_states * 8;
+    let n_steps = n_rows - 1;
+    let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+
+    // Emit one result row (`[time, realVars…]`) from the current SimData, after
+    // setting `time` and recomputing `functionODE`/`functionAlgebraics` so the
+    // reported derivatives and algebraics are consistent with the states. At an
+    // output point DASSL has already accepted the state, so a non-converging NLS
+    // here is a genuine failure (not a step-size issue).
+    let emit_row = |e: &mut dyn SimEngine, rows: &mut Vec<f64>, time: f64| -> Result<()> {
+        // Clear the recoverable-NLS flag so `check_nls` reflects only this point's
+        // solve, not a transient failure leaked from an earlier `functionODE`
+        // (e.g. a DASKR root-finding probe at an awkward candidate state).
+        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
+        check_nls(e, sim_data, layout)?;
+        capture_row(e, rows, sim_data, layout)
+    };
+
+    let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+    // Row 0 at the start time.
+    emit_row(e, &mut rows, start)?;
+    if terminated(e, sim_data, layout)? {
+        return Ok(rows); // terminate() at the initial point
+    }
+
+    // No states: nothing to integrate — just evaluate outputs on the grid.
+    if n_states == 0 {
+        for row in 1..n_rows {
+            let time = if row == n_steps { stop } else { start + row as f64 * h };
+            emit_row(e, &mut rows, time)?;
+            if terminated(e, sim_data, layout)? {
+                break;
+            }
+        }
+        return Ok(rows);
+    }
+
+    // Dynamic state selection: seed the identity pivots (matching the wasm-side
+    // `A[n,n]=1`), then re-pivot once at the initial point on the resolved states
+    // — C re-selects immediately after initialisation. A switch reinits the state
+    // variables from their candidates, so refresh the derivatives before reading
+    // the initial `y`/`yp`.
+    let mut pivots = init_state_pivots(&model.state_sets);
+    if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+        e.call1("functionODE", sim_data)?;
+    }
+
+    // Initial y, y' from SimData. For an explicit ODE the consistent initial
+    // derivative is exactly f(t0, y0), which `functionODE` (already called by
+    // `emit_row`) has written into the derivative slots — so INFO(11)=0.
+    let mut y: Vec<f64> = (0..n_states)
+        .map(|i| read_f64(e, states_base + (i as u32) * 8))
+        .collect::<Result<_>>()?;
+    let mut yp: Vec<f64> = (0..n_states)
+        .map(|i| read_f64(e, ders_base + (i as u32) * 8))
+        .collect::<Result<_>>()?;
+
+    // --- DASKR work arrays / options (dense, numerical Jacobian). ---
+    let neq = n_states as i32;
+    let nrt = 0i32;
+    let mut info = [0i32; 24]; // all defaults: dense direct method, numerical Jac,
+                               // scalar tolerances, interpolating output, no IC calc.
+    let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+    let mut rtol = [tol];
+    let mut atol = [tol];
+    let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
+    let liw = (40 + neq + 64) as usize;
+    let mut rwork = vec![0.0f64; lrw];
+    let mut iwork = vec![0i32; liw];
+    let mut rpar = [0.0f64];
+    let mut ipar = [0i32];
+    let mut jroot = [0i32];
+    let mut idid = 0i32;
+    let mut t = start;
+
+    // Install the wasm context for the residual callback. `engine` is a raw
+    // pointer to `*e`, live only across the `ddaskr` calls below (`e` is not used
+    // directly meanwhile); the guard clears the thread-local on any exit.
+    let engine: *mut dyn SimEngine = &mut *e;
+    let mut ctx = ResCtx {
+        engine,
+        sim_data,
+        states_base,
+        ders_base,
+        n_states,
+        nls_fail_off: layout.nls_fail_off,
+        nfe: 0,
+        zc_off: 0,
+        n_zc: 0,
+        err: None,
+    };
+    let _guard = ResCtxGuard;
+    RES_CTX.with(|c| c.set(&mut ctx as *mut ResCtx));
+
+    for row in 1..n_rows {
+        let mut tout = if row == n_steps { stop } else { start + row as f64 * h };
+        // DASKR integrates past TOUT and interpolates back to T = TOUT
+        // (INFO(3)=0), updating t, y, yp in place. INFO(1) stays 0 across
+        // continuation calls (DASKR tracks state in rwork/iwork).
+        // IDID = -1 means DASKR expended its per-call work quota (~500 internal
+        // steps) before reaching TOUT — recoverable by calling again to resume
+        // (t/y/yp are updated in place). A stiff interval that needs many steps
+        // (fullRobot's controllers/mechanics) hits this repeatedly, so continue up
+        // to a generous cap before declaring a runaway.
+        let mut work_retries = 0;
+        loop {
+            unsafe {
+                solver::ddaskr(
+                    dassl_res,
+                    neq,
+                    &mut t,
+                    y.as_mut_ptr(),
+                    yp.as_mut_ptr(),
+                    &mut tout,
+                    info.as_mut_ptr(),
+                    rtol.as_mut_ptr(),
+                    atol.as_mut_ptr(),
+                    &mut idid,
+                    rwork.as_mut_ptr(),
+                    lrw as i32,
+                    iwork.as_mut_ptr(),
+                    liw as i32,
+                    rpar.as_mut_ptr(),
+                    ipar.as_mut_ptr(),
+                    solver::dummy_jacd,
+                    solver::dummy_jack,
+                    solver::dummy_psol,
+                    solver::dummy_rt,
+                    nrt,
+                    jroot.as_mut_ptr(),
+                );
+            }
+            if ctx.err.is_some() {
+                break;
+            }
+            if idid == -1 && work_retries < 10_000 {
+                // Resume the interrupted step: INFO(1)=1 is DASKR's continuation
+                // flag. It returns IDID=-1 with INFO(1) left at -1 (an internal
+                // marker); calling again without setting it to 1 reads as illegal
+                // input and trips DASKR's "apparent infinite loop" abort (which
+                // calls process::exit). Setting it to 1 continues cleanly.
+                info[0] = 1;
+                work_retries += 1;
+                continue;
+            }
+            break;
+        }
+        // Surface a wasm error captured in the callback, then DASSL failures.
+        if let Some(err) = ctx.err.take() {
+            return Err(err.context(format!("in DASSL residual at t={t}")));
+        }
+        if idid < 0 {
+            bail!("CodegenWasmJit: DASSL (daskr) failed at t={t} (target {tout}), IDID={idid}");
+        }
+        // t == tout now; write the interpolated state back and emit the row.
+        for i in 0..n_states {
+            write_f64(e, states_base + (i as u32) * 8, y[i])?;
+        }
+        emit_row(e, &mut rows, tout)?;
+        if terminated(e, sim_data, layout)? {
+            break; // terminate() fired: keep this row, stop integrating
+        }
+        // Re-select states at the accepted point. A switch changes the meaning of
+        // the state vector (a discontinuity), so refresh the derivatives, re-read
+        // y/yp from the reinitialised states, and restart DASKR (INFO(1)=0).
+        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+            e.call1("functionODE", sim_data)?;
+            for i in 0..n_states {
+                y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+            }
+            info[0] = 0;
+        }
+    }
+
+    // DASKR IWORK counters (1-based in the docs): IWORK(11)=NST steps,
+    // IWORK(13)=NJE Jacobian evals, IWORK(14)=NETF error-test failures,
+    // IWORK(15)=NCFN nonlinear convergence failures. functionODE calls are the
+    // host's own `RES` counter (ctx.nfe).
+    let nst = iwork.get(10).copied().unwrap_or(0);
+    let nje = iwork.get(12).copied().unwrap_or(0);
+    if bench {
+        eprintln!(
+            "wasm-jit sim [dassl] DASKR stats: {nst} steps, {} residual evals (={:.1}/step), {nje} Jacobian evals",
+            ctx.nfe,
+            ctx.nfe as f64 / (nst.max(1) as f64),
+        );
+    }
+    stats.steps = nst.max(0) as u64;
+    stats.res_evals = ctx.nfe;
+    stats.jac_evals = nje.max(0) as u64;
+    stats.err_test_fails = iwork.get(13).copied().unwrap_or(0).max(0) as u64;
+    stats.conv_test_fails = iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+    Ok(rows)
+}
+
+// ===========================================================================
+// DASSL driver with event handling (time events + state events)
+// ===========================================================================
+//
+// A near-copy of `run_dassl` that clamps the integration to each `sample` firing
+// time and uses DASKR root-finding on the zero-crossing functions for state
+// events: between events DASSL integrates as usual; at a sample time or a located
+// crossing the discrete update runs (edge-detected when-bodies) and the
+// integrator restarts. Kept separate from `run_dassl` so the fullRobot-validated
+// event-free path is untouched. A discrete update that reinitialises a continuous
+// state re-reads y and recomputes yp before restarting; state events on algebraic
+// variables that need the full discrete solve are only approximately handled.
+
+#[allow(clippy::too_many_arguments)]
+fn run_dassl_events(
+    e: &mut (dyn SimEngine + 'static),
+    model: &SimModel,
+    sim_data: u32,
+    n_reals: u32,
+    n_rows: u32,
+    start: f64,
+    stop: f64,
+    bench: bool,
+    stats: &mut SolveStats,
+) -> Result<Vec<f64>> {
+    use daskr::solver;
+    daskr::aux::xsetf(0);
+
+    let layout = &model.layout;
+    e.call1("functionParameters", sim_data)?;
+    // Relation mode 2 (init): all relations fresh, through the initial row, so
+    // `relations[]` is populated before the states loop starts holding it.
+    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
+    if layout.n_samples > 0 {
+        e.call1("initSample", sim_data)?; // fill start/interval from parameters
+    }
+    e.call1("functionInitialEquations", sim_data)?;
+    check_nls(e, sim_data, layout)?;
+
+    let n_states = layout.n_states as usize;
+    let states_base = sim_data + REAL_OFF;
+    let ders_base = states_base + layout.n_states * 8;
+    let n_steps = n_rows - 1;
+    let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+
+    let emit_row = |e: &mut dyn SimEngine, rows: &mut Vec<f64>, time: f64| -> Result<()> {
+        // Clear the recoverable-NLS flag so `check_nls` reflects only this point's
+        // solve, not a transient failure leaked from an earlier `functionODE`
+        // (e.g. a DASKR root-finding probe at an awkward candidate state).
+        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
+        check_nls(e, sim_data, layout)?;
+        capture_row(e, rows, sim_data, layout)
+    };
+
+    let mut samp = Samples::load(e, sim_data, layout)?;
+    let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+
+    // A sample scheduled exactly at the start time fires before row 0.
+    if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
+        samp.fire(e, sim_data, start)?;
+        stats.time_events += 1;
+    }
+    emit_row(e, &mut rows, start)?;
+    if terminated(e, sim_data, layout)? {
+        return Ok(rows);
+    }
+
+    // No continuous states: evaluate outputs on the grid, firing events between.
+    if n_states == 0 {
+        for row in 1..n_rows {
+            let tout = if row == n_steps { stop } else { start + row as f64 * h };
+            let eps = tout.abs().max(1.0) * 1e-10;
+            let mut grid_covered = false;
+            while samp.next_time() <= tout + eps {
+                let te = samp.next_time();
+                // Snap an event onto the grid point it (near-)coincides with, so
+                // the output row lands at exactly `tout` (float accumulation of the
+                // sample times otherwise drifts the final row off `stop`).
+                let te = if (te - tout).abs() <= eps { tout } else { te };
+                // Emit a pre-event row (old values), fire, then a post-event row
+                // (new values) — a step in the result, as the C runtime does. An
+                // event landing on the grid point covers this row.
+                emit_row(e, &mut rows, te)?;
+                samp.fire(e, sim_data, te)?;
+                stats.time_events += 1;
+                emit_row(e, &mut rows, te)?;
+                if terminated(e, sim_data, layout)? {
+                    return Ok(rows);
+                }
+                if te >= tout - eps {
+                    grid_covered = true;
+                }
+            }
+            if !grid_covered {
+                emit_row(e, &mut rows, tout)?;
+                if terminated(e, sim_data, layout)? {
+                    break;
+                }
+            }
+        }
+        return Ok(rows);
+    }
+
+    // Dynamic state selection: identity pivots, then re-pivot at the initial point
+    // (see `run_dassl`). A switch reinits states, so refresh the derivatives first.
+    let mut pivots = init_state_pivots(&model.state_sets);
+    if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+        e.call1("functionODE", sim_data)?;
+    }
+
+    // Continuous states: DASSL between events, with DASKR root-finding on the
+    // zero-crossing functions for state events.
+    let mut y: Vec<f64> = (0..n_states)
+        .map(|i| read_f64(e, states_base + (i as u32) * 8))
+        .collect::<Result<_>>()?;
+    let mut yp: Vec<f64> = (0..n_states)
+        .map(|i| read_f64(e, ders_base + (i as u32) * 8))
+        .collect::<Result<_>>()?;
+
+    let neq = n_states as i32;
+    let nrt = layout.n_zc as i32;
+    let rt_fn: solver::RtFn = if layout.n_zc > 0 { dassl_rt } else { solver::dummy_rt };
+    let mut info = [0i32; 24];
+    let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+    let mut rtol = [tol];
+    let mut atol = [tol];
+    let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
+    let liw = (40 + neq + 64) as usize;
+    let mut rwork = vec![0.0f64; lrw];
+    let mut iwork = vec![0i32; liw];
+    let mut rpar = [0.0f64];
+    let mut ipar = [0i32];
+    let mut jroot = vec![0i32; (nrt as usize).max(1)];
+    let mut idid = 0i32;
+    let mut t = start;
+
+    let engine: *mut dyn SimEngine = &mut *e;
+    let mut ctx = ResCtx {
+        engine,
+        sim_data,
+        states_base,
+        ders_base,
+        n_states,
+        nls_fail_off: layout.nls_fail_off,
+        nfe: 0,
+        zc_off: layout.zc_off,
+        n_zc: layout.n_zc as usize,
+        err: None,
+    };
+    let _guard = ResCtxGuard;
+    RES_CTX.with(|c| c.set(&mut ctx as *mut ResCtx));
+
+    // Snapshot the current state as a pre-event result row without running the
+    // discrete update (so the value just *before* the event is captured).
+    let capture_pre = |e: &mut dyn SimEngine, rows: &mut Vec<f64>, time: f64| -> Result<()> {
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        e.call1("functionODE", sim_data)?;
+        capture_row(e, rows, sim_data, layout)
+    };
+
+    for row in 1..n_rows {
+        let tout = if row == n_steps { stop } else { start + row as f64 * h };
+        let eps = tout.abs().max(1.0) * 1e-10;
+        let mut grid_covered = false;
+        loop {
+            // Mode 0: hold relations across the DASKR solve so its residual/Jacobian
+            // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
+            write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+            let te = samp.next_time();
+            let target = tout.min(te);
+            // Integrate from the current t toward `target` (a grid point or the
+            // next scheduled sample). DASKR may stop early at a zero-crossing root.
+            if target - t > eps {
+                let mut tt = target;
+                let mut work_retries = 0;
+                loop {
+                    unsafe {
+                        solver::ddaskr(
+                            dassl_res, neq, &mut t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
+                            info.as_mut_ptr(), rtol.as_mut_ptr(), atol.as_mut_ptr(), &mut idid,
+                            rwork.as_mut_ptr(), lrw as i32, iwork.as_mut_ptr(), liw as i32,
+                            rpar.as_mut_ptr(), ipar.as_mut_ptr(), solver::dummy_jacd,
+                            solver::dummy_jack, solver::dummy_psol, rt_fn, nrt,
+                            jroot.as_mut_ptr(),
+                        );
+                    }
+                    if ctx.err.is_some() {
+                        break;
+                    }
+                    if idid == -1 && work_retries < 10_000 {
+                        info[0] = 1;
+                        work_retries += 1;
+                        continue;
+                    }
+                    break;
+                }
+                if let Some(err) = ctx.err.take() {
+                    return Err(err.context(format!("in DASSL residual at t={t}")));
+                }
+                if idid < 0 {
+                    bail!("CodegenWasmJit: DASSL (daskr) failed at t={t} (target {tt}), IDID={idid}");
+                }
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, y[i])?;
+                }
+                // IDID=5: a zero-crossing root at `t` (< target). Handle the state
+                // event here, then restart the integrator and keep going.
+                if idid == 5 {
+                    stats.state_events += 1;
+                    let troot = t;
+                    // pre-event row (before the discrete update), then the event +
+                    // post-event row (emit_row runs functionAlgebraics, whose
+                    // edge-detected when-bodies fire and may reinit a state).
+                    capture_pre(e, &mut rows, troot)?;
+                    // pre(x) of continuous vars must be the value at the crossing
+                    // (e.g. reinit's `pre(v)` = impact velocity), so refresh the
+                    // real pre-region before the discrete update fires.
+                    save_pre_real(e, sim_data, layout)?;
+                    write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
+                    emit_row(e, &mut rows, troot)?;
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(rows);
+                    }
+                    // Re-read states (a reinit may have jumped one), recompute the
+                    // consistent derivative, and restart DASKR at troot (INFO(1)=0).
+                    for i in 0..n_states {
+                        y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                    }
+                    e.call1("functionODE", sim_data)?;
+                    for i in 0..n_states {
+                        yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    }
+                    info[0] = 0;
+                    continue;
+                }
+            }
+            // Reached `target`. Fire a sample event at `te` if it lands at or
+            // before this output point (pre-event row, fire, post-event row).
+            if te <= tout + eps {
+                // Snap an event near a grid point onto it so the row lands exactly
+                // there (keeps the final row at `stop` despite float drift).
+                let te = if (te - tout).abs() <= eps { tout } else { te };
+                emit_row(e, &mut rows, te)?; // pre-event row (held)
+                write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
+                samp.fire(e, sim_data, te)?;
+                stats.time_events += 1;
+                emit_row(e, &mut rows, te)?;
+                if terminated(e, sim_data, layout)? {
+                    return Ok(rows);
+                }
+                for i in 0..n_states {
+                    y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                }
+                // A sample may change discrete state the derivative depends on;
+                // recompute yp and restart so DASKR continues consistently.
+                if layout.n_zc > 0 {
+                    e.call1("functionODE", sim_data)?;
+                    for i in 0..n_states {
+                        yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    }
+                    info[0] = 0;
+                }
+                if te >= tout - eps {
+                    grid_covered = true;
+                }
+            }
+            if target >= tout - eps {
+                break;
+            }
+        }
+        if !grid_covered {
+            write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+            emit_row(e, &mut rows, tout)?;
+            if terminated(e, sim_data, layout)? {
+                break;
+            }
+        }
+        // Re-select states at the accepted output point (see `run_dassl`).
+        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+            e.call1("functionODE", sim_data)?;
+            for i in 0..n_states {
+                y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+            }
+            info[0] = 0;
+        }
+    }
+
+    let nst = iwork.get(10).copied().unwrap_or(0);
+    if bench {
+        eprintln!(
+            "wasm-jit sim [dassl-events] DASKR stats: {nst} steps, {} residual evals",
+            ctx.nfe,
+        );
+    }
+    stats.steps = nst.max(0) as u64;
+    stats.res_evals = ctx.nfe;
+    stats.jac_evals = iwork.get(12).copied().unwrap_or(0).max(0) as u64;
+    stats.err_test_fails = iwork.get(13).copied().unwrap_or(0).max(0) as u64;
+    stats.conv_test_fails = iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+    Ok(rows)
+}

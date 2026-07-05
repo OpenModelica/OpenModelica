@@ -1,0 +1,8 @@
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("BouncingBall.mo"); getErrorString();
+simulate(BouncingBall, stopTime = 3.0, numberOfIntervals = 500); getErrorString();
+val(h, 0.4);  // expect ~0.21516  (pre-first-bounce, bit-exact)
+val(h, 0.45); // expect ~0.006737 (just before first bounce)
+val(h, 1.0);  // expect ~0.46797
+val(h, 2.0);  // expect ~0.26070
+val(h, 3.0);  // expect ~0.06871

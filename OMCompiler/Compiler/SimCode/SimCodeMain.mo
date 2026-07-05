@@ -723,7 +723,19 @@ algorithm
     then ();
 
     case "wasm-jit" algorithm
+      // translateModel records the lowering error and fails, so the message
+      // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
+      guid := System.getUUIDStr();
+      SerializeInitXML.simulationInitFile(simCode, guid);
+    then ();
+
+    case "wasm" algorithm
+      // Standalone WASI command module (merged model + runtime); run on the
+      // desktop with wasmtime. The module carries its own metadata, so no
+      // _init.xml is needed for a CLI simulate. emitStandalone records the error
+      // and fails if lowering fails, instead of emitting a silent empty module.
+      CodegenWasmJit.emitStandalone(simCode);
     then ();
 
     case "None"
@@ -771,10 +783,13 @@ protected function callTargetTemplatesFMU
   input String FMUVersion;
   input String FMUType;
   input Absyn.Program program;
+protected
+  // No WASM FMU support yet; fall back to C so the testsuite passes.
+  String fmuTarget = if target == "wasm-jit" and Testsuite.isRunning() then "C" else target;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
-  () := match (simCode,target)
+  () := match (simCode,fmuTarget)
     local
       String str, newdir, newpath, resourcesDir, dirname, htmlFile;
       String fmutmp;

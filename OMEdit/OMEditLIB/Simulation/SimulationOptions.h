@@ -129,7 +129,11 @@ public:
     setReSimulate(false);
     setWorkingDirectory("");
     setFileName("");
+#if defined(__EMSCRIPTEN__)
+    setTargetLanguage("wasm-jit"); // the web build simulates in the omc worker via wasm-jit
+#else
     setTargetLanguage("C");
+#endif
   }
 
   void setClassName(const QString &className) {mClassName = className;}

@@ -190,6 +190,19 @@ protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResu
     ("timeFrontend",   Values.REAL(0.0))
   };
 
+// The build-phase times only (reversed order), for paths that skip translate/
+// build (resimulateExecutable) but still run the model: createSimulationResult-
+// FromcallModelExecutable adds the real timeTotal/timeSimulation, and these keep
+// the result a complete SimulationResult record (0.0 for the phases not run)
+// instead of a truncated one missing fields.
+protected constant list<tuple<String,Values.Value>> zeroBuildPhaseResultValues =
+  { ("timeCompile",    Values.REAL(0.0)),
+    ("timeTemplates",  Values.REAL(0.0)),
+    ("timeSimCode",    Values.REAL(0.0)),
+    ("timeBackend",    Values.REAL(0.0)),
+    ("timeFrontend",   Values.REAL(0.0))
+  };
+
 protected constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
 protected constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
 protected constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
@@ -655,7 +668,7 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
@@ -1424,7 +1437,19 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        if Config.simCodeTarget() == "omsicpp" then
+        // resimulateExecutable is the last (new) argument; pull it off so the rest
+        // of the pipeline sees the original simulate() argument list.
+        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+        vals := List.stripLast(vals);
+
+        if resimulateExecutable <> "" then
+          // Skip translation and build; simulate the already-built model directly.
+          b := true;
+          executable := resimulateExecutable;
+          compileDir := System.pwd() + Autoconf.pathDelimiter;
+          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+          resultValues := zeroBuildPhaseResultValues;
+        elseif Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
          (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1441,7 +1466,7 @@ algorithm
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           executable := filenameprefix;
           simflags:="";
-          resultValues:={};
+          resultValues:=zeroBuildPhaseResultValues;
         elseif not Config.simCodeTarget() == "omsic" then
           (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         else
@@ -1471,9 +1496,12 @@ algorithm
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
            // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable.
+           // writes the result file directly, instead of spawning an executable;
+           // the wasm target runs the standalone module in a wasmtime subprocess.
            if Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           elseif Config.simCodeTarget() == "wasm" then
+             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
            end if;
@@ -1499,7 +1527,7 @@ algorithm
         str := AbsynUtil.pathString(className);
         res := "Failed to build model: " + str;
       then
-        createSimulationResultFailure(res, simOptionsAsString(vals));
+        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
@@ -1508,7 +1536,7 @@ algorithm
         createSimulationResultFailure(
           "Simulation failed for model: " + str +
           "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(vals));
+          simOptionsAsString(List.stripLast(vals)));
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
@@ -6269,10 +6297,13 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Config.simCodeTarget() <> "wasm-jit" then
-              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
-            else
+            if Config.simCodeTarget() == "wasm-jit" then
               CodegenWasmJit.finishCompile(filenameprefix);
+            elseif Config.simCodeTarget() == "wasm" then
+              // The standalone module was already produced in emitStandalone;
+              // there is nothing to compile/link here.
+            else
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
             end if;
           else
             success := false;

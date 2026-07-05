@@ -6,9 +6,14 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omshell)
 
 project(OMShell)
 
-## The autotools/Makefiles based OpenModelica build skips omshell-terminal on Windows.
-## So we make it default-enabled optional component here as well. In case it needs to be disabled in some cases.
-option(OM_OMSHELL_ENABLE_TERMINAL "Enable building the OMShell REPL terminal (in addition to the OMSell GUI)" ON)
+## mosh needs GNU readline. Native Windows (MinGW/MSYS2) has it, but the xwin
+## cross sysroot does not, so default OFF only when cross-compiling.
+if(CMAKE_CROSSCOMPILING)
+  set(_om_omshell_terminal_default OFF)
+else()
+  set(_om_omshell_terminal_default ON)
+endif()
+option(OM_OMSHELL_ENABLE_TERMINAL "Enable building the OMShell REPL terminal (in addition to the OMSell GUI)" ${_om_omshell_terminal_default})
 
 omc_add_subdirectory(OMShell/OMShellGUI)
 

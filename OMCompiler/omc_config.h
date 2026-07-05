@@ -153,7 +153,7 @@
 #define CONFIG_GCC_VERSION ""
 #define DEFAULT_LDFLAGS ""
 
-#include "omc_config.unix.h"
+#include <omc_config.unix.h>
 
 #endif /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 

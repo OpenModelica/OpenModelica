@@ -73,6 +73,9 @@
 
 class OMCProxy;
 
+#if !defined(__EMSCRIPTEN__)
+// Omitted on wasm: showMessage()/repaint() pumps the Qt-for-WebAssembly event
+// dispatcher during early startup, which traps. Uses are guarded at the call sites.
 class SplashScreen : public QSplashScreen
 {
   Q_OBJECT
@@ -90,6 +93,7 @@ public slots:
     repaint();
   }
 };
+#endif
 
 class StatusBar : public QStatusBar
 {
@@ -430,6 +434,10 @@ public:
   }
 };
 
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off), so this
+// subprocess wrapper is unavailable on the web build. omc/compile/simulate run
+// in the omc Web Worker instead.
+#if QT_CONFIG(process)
 class QDetachableProcess : public QProcess
 {
   Q_OBJECT
@@ -441,6 +449,7 @@ public:
   void start(const QString &command, OpenMode mode = ReadWrite);
 #endif
 };
+#endif
 
 class JsonDocument : public QObject
 {

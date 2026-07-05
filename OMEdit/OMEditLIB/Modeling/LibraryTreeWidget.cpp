@@ -1297,7 +1297,9 @@ void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString
   foreach (QString systemLib, systemLibs) {
     LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItem(systemLib);
     if (!pLibraryTreeItem) {
+#if !defined(__EMSCRIPTEN__)
       SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, systemLib), Qt::AlignRight, Qt::white);
+#endif
       createLibraryTreeItem(systemLib, mpRootLibraryTreeItem, true, true, true);
     }
   }
@@ -4748,9 +4750,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
       /* Save the traceabiliy information and send to Daemon. */
+#if !defined(__EMSCRIPTEN__)
       if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
         MainWindow::instance()->getCommitChangesDialog()->commitAndGenerateTraceabilityURI(pLibraryTreeItem->getFileName());
       }
+#endif
     } else {
       return false;
     }

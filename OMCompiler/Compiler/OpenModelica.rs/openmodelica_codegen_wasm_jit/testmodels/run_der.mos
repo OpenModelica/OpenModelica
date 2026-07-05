@@ -1,0 +1,13 @@
+// Explicit der(cref) left in an equation (an ODE/algebraic the backend did not
+// differentiate away). It is lowered by reading the derivative variable's slot
+// ($DER.<cref>), as the C target does. Both models used to bail at translate with
+// `builtin function der not yet supported`; they now simulate and match
+// /usr/bin/omc (the C target). Values are at stopTime with numberOfIntervals=50.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects, stopTime = 1.0, numberOfIntervals = 50); getErrorString();
+val(bodyCylinder1.body.w_a[1], 1.0); // expect ~5.92213
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.HeatLosses, stopTime = 1.0, numberOfIntervals = 50); getErrorString();
+val(damper1.lossPower, 1.0); // expect ~0.26442

@@ -40,6 +40,7 @@
 #include "SimulationOutputWidget.h"
 #include "ArchivedSimulationsWidget.h"
 #include "MainWindow.h"
+#include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
@@ -390,11 +391,17 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions.getOutputFileName(), mSimulationOptions.getStartTime().toDouble(), mSimulationOptions.getStopTime().toDouble(), this);
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
-  // start the tcp server
+  // start the tcp server (the wasm-jit in-process run has no socket-based progress
+  // stream, and Qt for WebAssembly has no working sockets)
+#if defined(__EMSCRIPTEN__)
+  mpTcpServer = 0;
+  mSocketState = SocketState::NotConnected;
+#else
   mpTcpServer = new QTcpServer;
   mSocketState = SocketState::NotConnected;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
+#endif
   mpCompilationProcess = 0;
   setCompilationProcessKilled(false);
   mIsCompilationProcessRunning = false;
@@ -411,6 +418,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
  */
 SimulationOutputWidget::~SimulationOutputWidget()
 {
+#if QT_CONFIG(process)
   // compilation process
   if (mpCompilationProcess && isCompilationProcessRunning()) {
     mpCompilationProcess->kill();
@@ -426,6 +434,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
     mpSimulationProcess->kill();
     mpSimulationProcess->deleteLater();
   }
+#endif
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
     Utilities::removeDirectoryRecursively(mSimulationOptions.getWorkingDirectory());
@@ -433,9 +442,11 @@ SimulationOutputWidget::~SimulationOutputWidget()
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
   }
+#if !defined(__EMSCRIPTEN__)
   if (mpTcpServer) {
     mpTcpServer->deleteLater();
   }
+#endif
 }
 
 QString SimulationOutputWidget::getCompilationStandardError()
@@ -449,11 +460,88 @@ QString SimulationOutputWidget::getCompilationStandardError()
  */
 void SimulationOutputWidget::start()
 {
+#if QT_CONFIG(process)
   if (!mSimulationOptions.isReSimulate()) {
     compileModel();
   } else {
     runSimulationExecutable();
   }
+#endif
+}
+
+/*!
+ * \brief SimulationOutputWidget::runWasmJitSimulation
+ * Runs an already-translated wasm-jit model in-process and shows omc's simulate()
+ * output in this widget's log. The wasm-jit target has no simulation executable or
+ * process pipeline (used by the web build and native builds without a C compiler),
+ * so omc runs the JIT-compiled model itself and reports through the SimulationResult
+ * record instead of a process' stdout. Surfacing that here means a failed run (e.g.
+ * a non-converging nonlinear system) is visible instead of silently doing nothing.
+ */
+void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParameters)
+{
+  mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
+  mpProgressBar->setRange(0, 0);
+  mpProgressLabel->setText(tr("Running simulation of %1.").arg(mSimulationOptions.getClassName()));
+  writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), Qt::black);
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  // the in-process run writes its result into omc's cwd; read it back from there.
+  pOMCProxy->changeDirectory(mSimulationOptions.getWorkingDirectory());
+  // The runtime flags (-lv logging streams, solver options, …) are not part of
+  // simulationParameters; pass them via simflags so the wasm-jit run honours them
+  // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
+  const QString simflags = mSimulationOptions.getSimulationFlags().join(" ");
+  const QString command = QString("simulate(%1, %2, resimulateExecutable=\"%3\", simflags=\"%4\")")
+                              .arg(mSimulationOptions.getClassName(), simulationParameters,
+                                   mSimulationOptions.getOutputFileName(), simflags);
+  // Echo the flags in the compilation output (always visible) so the run is
+  // debuggable even if the simulation-messages path has a problem.
+  writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), Qt::black);
+  pOMCProxy->sendCommand(command);
+  const QString simulationResult = pOMCProxy->getResult();
+  pOMCProxy->printMessagesStringInternal();
+  // The SimulationResult record carries the run's messages; an empty resultFile
+  // means the run failed and the messages say why.
+  const QString resultFile = QRegularExpression("resultFile = \"([^\"]*)\"").match(simulationResult).captured(1);
+  QString messages = QRegularExpression("messages = \"(.*)\",\\s*\\n\\s*timeFrontend", QRegularExpression::DotMatchesEverythingOption)
+                         .match(simulationResult).captured(1);
+  messages.replace("\\\"", "\"");
+  const bool ok = !resultFile.isEmpty();
+  // Enable + switch to the Output tab; on the native path this is done when the
+  // simulation process starts, but that code is compiled out on wasm (no QProcess),
+  // so the wasm-jit path must do it here or the messages land in a disabled tab.
+  mpGeneratedFilesTabWidget->setTabEnabled(1, true);
+  mpGeneratedFilesTabWidget->setCurrentIndex(1);
+  if (!messages.trimmed().isEmpty()) {
+    // Write each log line as its own message: writeSimulationOutput wraps the text
+    // in a <message text="…"/> element, and XML attribute-value normalization would
+    // otherwise collapse the embedded newlines of a multi-line blob into spaces.
+    const QStringList lines = messages.split('\n');
+    for (const QString &line : lines) {
+      if (!line.trimmed().isEmpty()) {
+        writeSimulationOutput(line, ok ? StringHandler::Unknown : StringHandler::Error, true);
+      }
+    }
+  } else if (!ok) {
+    writeSimulationOutput(tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName()), StringHandler::Error, true);
+  }
+#if defined(__EMSCRIPTEN__)
+  // omc cd'd into the working directory, so the result lands there in the worker
+  // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
+  extern bool omcWorkerStageFile(const char *path);
+  omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
+#endif
+  mpProgressBar->setRange(0, 100);
+  mpProgressBar->setValue(100);
+  const QString progressStr = ok ? tr("Simulation of %1 finished.").arg(mSimulationOptions.getClassName())
+                                 : tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
+  mpCancelButton->setEnabled(false);
+  mpOpenOutputFileButton->setEnabled(true);
+  MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
+  emit simulationFinished();
 }
 
 /*!
@@ -501,6 +589,7 @@ void SimulationOutputWidget::embeddedServerInitialized()
   }
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::compileModel
  * Compiles the simulation model.
@@ -685,6 +774,7 @@ void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, 
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::updateMessageTab
@@ -716,6 +806,7 @@ void SimulationOutputWidget::reSimulate(bool showSetup)
   MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, showSetup);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::startSimulationAfterBuild
  * Resumes execution by launching the simulation executable after a successful
@@ -777,6 +868,7 @@ void SimulationOutputWidget::runSimulationExecutable()
   writeSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
   mpSimulationProcess->start(fileName, args);
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::writeCompilationOutput
@@ -791,6 +883,7 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
   mpCompilationOutputTextBox->appendOutput(output, format);
 }
 
+#if QT_CONFIG(process)
 void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
   QString progressStr;
@@ -818,6 +911,7 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
     deleteIntermediateCompilationFiles();
   }
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
@@ -864,6 +958,7 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
   }
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::simulationProcessFinishedHelper
  * Helper function for socketDisconnected and simulationProcessFinished
@@ -929,6 +1024,7 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
   // this signal is used by testsuite to know that the simulation is finished.
   emit simulationFinished();
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::openTransformationalDebugger
@@ -967,6 +1063,7 @@ void SimulationOutputWidget::openSimulationLogFile()
  */
 void SimulationOutputWidget::createSimulationProgressSocket()
 {
+#if !defined(__EMSCRIPTEN__)
   if (sender()) {
     QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
@@ -978,6 +1075,7 @@ void SimulationOutputWidget::createSimulationProgressSocket()
       disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
     }
   }
+#endif
 }
 
 /*!
@@ -987,6 +1085,7 @@ void SimulationOutputWidget::createSimulationProgressSocket()
  */
 void SimulationOutputWidget::readSimulationProgress()
 {
+#if !defined(__EMSCRIPTEN__)
   if (sender()) {
     QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
     if (pTcpSocket) {
@@ -996,6 +1095,7 @@ void SimulationOutputWidget::readSimulationProgress()
       }
     }
   }
+#endif
 }
 
 /*!
@@ -1004,12 +1104,15 @@ void SimulationOutputWidget::readSimulationProgress()
  */
 void SimulationOutputWidget::socketDisconnected()
 {
+#if QT_CONFIG(process)
   mSocketState = SocketState::Disconnected;
   if (!mIsSimulationProcessRunning) {
     simulationProcessFinishedHelper();
   }
+#endif
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::compilationProcessStarted
 * Slot activated when mpCompilationProcess started signal is raised.\n
@@ -1097,7 +1200,9 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     compilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
+#endif // QT_CONFIG(process)
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::simulationProcessStarted
  * Slot activated when mpSimulationProcess started signal is raised.\n
@@ -1185,6 +1290,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   }
   MainWindow::instance()->getSimulationDialog()->stopInteractiveSimulationSampling(mSimulationOptions);
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::cancelCompilationOrSimulation
@@ -1193,6 +1299,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
  */
 void SimulationOutputWidget::cancelCompilationOrSimulation()
 {
+#if QT_CONFIG(process)
   QString progressStr;
   if (isCompilationProcessRunning()) {
     setCompilationProcessKilled(true);
@@ -1218,6 +1325,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   mpArchivedSimulationItem->setStatus(Helper::finished);
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
+#endif // QT_CONFIG(process)
 }
 
 /*!

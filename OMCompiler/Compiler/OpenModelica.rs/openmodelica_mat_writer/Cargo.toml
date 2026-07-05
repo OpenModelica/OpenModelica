@@ -1,0 +1,13 @@
+# MATLAB v4 (`.mat`) result-file writer for the wasm-jit simulation target.
+# `no_std` + `alloc`, no wasm intrinsics and no I/O — it produces the file bytes
+# as a `Vec<u8>` and the caller writes them. So one implementation is shared by
+# the host (which writes the bytes to the VFS / disk) and the standalone
+# `wasm32-wasip1` runtime's `_start` (which writes them via WASI), with no risk of
+# the two `.mat` serializers drifting apart. Builds for the host, wasm32-unknown
+# and wasm32-wasip1 alike.
+[package]
+name = "openmodelica_mat_writer"
+version = "0.1.0"
+edition = "2024"
+
+[lib]

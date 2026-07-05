@@ -39,10 +39,13 @@
 
 #include "Visualization.h"
 
+#include <cmath>
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
 #include <QGLWidget>
 #endif
 
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 #include <QOpenGLContext> // must be included before OSG headers
 #include <osg/GL> // for having direct access to glClear()
 
@@ -59,6 +62,7 @@
 #include <osgUtil/CullVisitor>
 
 #include <OpenThreads/ScopedLock>
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -103,7 +107,6 @@ OMVisualBase::OMVisualBase(VisualizationAbstract* visualization, const std::stri
   : _modelFile(modelFile),
     _path(path),
     _xmlFileName(assembleXMLFileName(modelFile, path)),
-    _updateVisitor(),
     _visualization(visualization),
     _shapes(),
     _vectors()
@@ -194,52 +197,28 @@ int OMVisualBase::getVisualizerObjectIndexByID(const std::string& visualizerID)
 
 void OMVisualBase::updateVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
 {
-  int visualizerIdx = getVisualizerObjectIndexByID(visualizerName);
-  AbstractVisualizerObject* visualizer = getVisualizerObjectByID(visualizerName);
-  osg::ref_ptr<osg::Node> child = _visualization->getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
-  _updateVisitor._visualizer = visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  child->accept(_updateVisitor);
+  updateVisualizer(getVisualizerObjectByID(visualizerName), changeMaterialProperties);
 }
 
 void OMVisualBase::modifyVisualizer(const std::string& visualizerName, const bool changeMaterialProperties)
 {
-  int visualizerIdx = getVisualizerObjectIndexByID(visualizerName);
-  AbstractVisualizerObject* visualizer = getVisualizerObjectByID(visualizerName);
-  osg::ref_ptr<osg::Node> child = _visualization->getOMVisScene()->getScene().getRootNode()->getChild(visualizerIdx);
-  _updateVisitor._visualizer = visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  visualizer->setStateSetAction(StateSetAction::modify);
-  child->accept(_updateVisitor);
-  visualizer->setStateSetAction(StateSetAction::update);
+  modifyVisualizer(getVisualizerObjectByID(visualizerName), changeMaterialProperties);
 }
 
 void OMVisualBase::updateVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
-  _updateVisitor._visualizer = visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  visualizer->getTransformNode()->accept(_updateVisitor);
+  _visualization->getScene()->updateVisualizer(visualizer, changeMaterialProperties);
 }
 
 void OMVisualBase::modifyVisualizer(AbstractVisualizerObject* visualizer, const bool changeMaterialProperties) {
-  _updateVisitor._visualizer = visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  visualizer->setStateSetAction(StateSetAction::modify);
-  visualizer->getTransformNode()->accept(_updateVisitor);
-  visualizer->setStateSetAction(StateSetAction::update);
+  _visualization->getScene()->modifyVisualizer(visualizer, changeMaterialProperties);
 }
 
 void OMVisualBase::updateVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
-  _updateVisitor._visualizer = &visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  visualizer.getTransformNode()->accept(_updateVisitor);
+  _visualization->getScene()->updateVisualizer(&visualizer, changeMaterialProperties);
 }
 
 void OMVisualBase::modifyVisualizer(AbstractVisualizerObject& visualizer, const bool changeMaterialProperties) {
-  _updateVisitor._visualizer = &visualizer;
-  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
-  visualizer.setStateSetAction(StateSetAction::modify);
-  visualizer.getTransformNode()->accept(_updateVisitor);
-  visualizer.setStateSetAction(StateSetAction::update);
+  _visualization->getScene()->modifyVisualizer(&visualizer, changeMaterialProperties);
 }
 
 void OMVisualBase::initVisObjects()
@@ -594,13 +573,13 @@ void OMVisualBase::updateVisObjects(const double time)
       _visualization->updateVisualizerAttribute(shape._extra, time);
 
       rAndT rT = rotateModelica2OSG(
-          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
-          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
-          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
-          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
-          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
+          Mat3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+               shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+               shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          Vec3(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+          Vec3(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          Vec3(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
+          Vec3(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
           shape._type);
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
 
@@ -645,11 +624,11 @@ void OMVisualBase::updateVisObjects(const double time)
       _visualization->updateVisualizerAttribute(vector._twoHeadedArrow, time);
 
       rAndT rT = rotateModelica2OSG(
-          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
-                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
-                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
-          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
-          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
+          Mat3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
+               vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
+               vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
+          Vec3(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
+          Vec3(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp));
       assemblePokeMatrix(vector._mat, rT._T, rT._r);
 
       // Update the vectors
@@ -669,8 +648,8 @@ void OMVisualBase::updateVisObjects(const double time)
 void OMVisualBase::setUpScene()
 {
   // Build scene graph
-  _visualization->getOMVisScene()->getScene().setUpScene(_shapes);
-  _visualization->getOMVisScene()->getScene().setUpScene(_vectors);
+  _visualization->getScene()->setUpShapes(_shapes);
+  _visualization->getScene()->setUpVectors(_vectors);
 }
 
 void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
@@ -761,6 +740,7 @@ void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
  * \param[in] mutex OT mutex for synchronization of frame rendering.
  * \param[in] frame VW frame function to trigger frame rendering.
  */
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex, std::function<void()> frame)
 {
   /* Return early if there is nothing to do */
@@ -1188,6 +1168,103 @@ AutoTransformVisualizer::AutoTransformVisualizer(AbstractVisualizerObject* visua
   : _visualizer(visualizer)
 {
 }
+#else // OMEDIT_ANIMATION_QUICK3D
+
+/*!
+ * \brief OMVisualBase::chooseVectorScales (Qt Quick 3D)
+ * Data-only counterpart of the OSG heuristic. There is no osgViewer::View and no
+ * osg::AutoTransform on the Quick 3D path, so the auto-scale-cancellation factors
+ * stay 1 and the iterative camera-fit refinement of the length scale is dropped
+ * (the viewer's fitToScene frames the arrows instead). What remains is exact and
+ * backend-independent: the adjustable-radius median heuristic and the per-quantity
+ * default length scale (so e.g. forces in newtons are not drawn kilometres long).
+ */
+void OMVisualBase::chooseVectorScales()
+{
+  if (_vectors.size() == 0) {
+    return;
+  }
+
+  /* Constant shared with the OSG heuristic */
+  constexpr int8_t factorRadius = -10; // Vector radius vs. median of fixed radii [%]
+
+  /* Adjustable-radius vectors: scale the default radius by the median of the
+     fixed-radius vectors and the relevant shapes (mirrors the OSG path). */
+  std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
+  std::vector<float> radii;
+  for (VectorObject& vector : _vectors) {
+    if (vector.isRadiusAdjustable()) {
+      adjustableRadiusVectors.push_back(vector);
+    } else {
+      const float radius = vector.getRadius();
+      if (radius > 0) {
+        radii.push_back(radius);
+      }
+    }
+  }
+  for (ShapeObject& shape : _shapes) {
+    if (isCADType(shape._type)) {
+      continue;
+    }
+    // For the world component, keep only the axis/gravity arrow lines
+    if (shape._id.rfind("world.", 0) == 0 &&
+        shape._id != "world.x_arrowLine" && shape._id != "world.y_arrowLine" &&
+        shape._id != "world.z_arrowLine" && shape._id != "world.gravityArrowLine") {
+      continue;
+    }
+    float radius = shape._width.exp / 2;
+    if (shape._type == "sphere") {
+      radius = shape._length.exp / 2;
+    } else if (shape._type == "spring") {
+      radius = shape._width.exp;
+    }
+    if (radius > 0) {
+      radii.push_back(radius);
+    }
+  }
+  if (!adjustableRadiusVectors.empty() && !radii.empty()) {
+    const size_t s = radii.size();
+    float median = radii[0];
+    if (s > 1) {
+      const auto beg = radii.begin();
+      const auto mid = beg + s / 2;
+      std::nth_element(beg, mid, radii.end());
+      if (s & 1) {
+        median = *mid;
+      } else {
+        const auto maxIt = std::max_element(beg, mid);
+        median = *maxIt + (*mid - *maxIt) * 0.5f;
+      }
+    }
+    const float scale = median / VectorObject::kRadius * (1.0f + factorRadius / 100.0f);
+    for (VectorObject& vector : adjustableRadiusVectors) {
+      vector.setRadiusScale(scale);
+    }
+  }
+
+  /* Adjustable-length vectors: only the per-quantity default magnitude (the OSG
+     binary search's initial guess); forces/torques are divided by their MSL
+     reference so they render at a comparable size. */
+  for (VectorObject& vector : _vectors) {
+    vector.setOnlyShaftLengthCounted(false);
+    if (vector.isLengthAdjustable()) {
+      float scale = 1.0f;
+      switch (vector.getQuantity()) {
+        case VectorQuantity::force:
+          scale /= VectorObject::kScaleForce;
+          break;
+        case VectorQuantity::torque:
+          scale /= VectorObject::kScaleTorque;
+          break;
+        default:
+          break;
+      }
+      vector.setLengthScale(scale);
+    }
+    updateVisualizer(vector); // rebuild the arrow at its new size
+  }
+}
+#endif // !OMEDIT_ANIMATION_QUICK3D
 
 
 ///--------------------------------------------------///
@@ -1196,11 +1273,18 @@ AutoTransformVisualizer::AutoTransformVisualizer(AbstractVisualizerObject* visua
 
 VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
   : _visType(visType),
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
     mpOMVisScene(new OMVisScene(this)),
+#endif
     mpOMVisualBase(new OMVisualBase(this, modelFile, path)),
     mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.016, 0.0, 1.0))
 {
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   mpOMVisScene->getScene().setPath(path);
+#else
+  // The Qt Quick 3D scene is injected by the viewer (setScene); path stored there.
+  Q_UNUSED(path);
+#endif
 }
 
 VisType VisualizationAbstract::getVisType() const
@@ -1208,9 +1292,20 @@ VisType VisualizationAbstract::getVisType() const
   return _visType;
 }
 
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 OMVisScene* VisualizationAbstract::getOMVisScene() const
 {
   return mpOMVisScene;
+}
+#endif
+
+AnimationScene* VisualizationAbstract::getScene() const
+{
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
+  return &mpOMVisScene->getScene();
+#else
+  return mpScene;
+#endif
 }
 
 OMVisualBase* VisualizationAbstract::getBaseData() const
@@ -1263,8 +1358,10 @@ void VisualizationAbstract::sceneUpdate()
         mpTimeManager->setPause(true);
       }
     } else {
-      // set new visualization time
-      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual() * mpTimeManager->getSpeedUp());
+      // Advance by the real wall-clock time elapsed since the last frame (×speedUp)
+      // instead of a fixed step, so when rendering can't keep up the playback skips
+      // ahead and stays synced to real time rather than lagging behind.
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getPlaybackDelta() * mpTimeManager->getSpeedUp());
       if (newTime <= mpTimeManager->getEndTime()) {
         mpTimeManager->setVisTime(newTime);
       } else {
@@ -1301,6 +1398,7 @@ void VisualizationAbstract::pauseVisualization()
 }
 
 
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 OMVisScene::OMVisScene(VisualizationAbstract* visualization)
   : _scene(visualization)
 {
@@ -1331,17 +1429,31 @@ osg::ref_ptr<osg::Group> OSGScene::getRootNode()
   return _rootNode;
 }
 
+void OSGScene::updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties)
+{
+  _updateVisitor._visualizer = visualizer;
+  _updateVisitor._changeMaterialProperties = changeMaterialProperties;
+  static_cast<osg::Transform*>(visualizer->getTransformNode())->accept(_updateVisitor);
+}
+
+void OSGScene::modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties)
+{
+  visualizer->setStateSetAction(StateSetAction::modify);
+  updateVisualizer(visualizer, changeMaterialProperties);
+  visualizer->setStateSetAction(StateSetAction::update);
+}
+
 std::string OSGScene::getPath() const
 {
   return _path;
 }
 
-void OSGScene::setPath(const std::string path)
+void OSGScene::setPath(const std::string& path)
 {
   _path = path;
 }
 
-void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
+void OSGScene::setUpShapes(std::vector<ShapeObject>& shapes)
 {
   for (ShapeObject& shape : shapes)
   {
@@ -1396,11 +1508,11 @@ void OSGScene::setUpScene(std::vector<ShapeObject>& shapes)
 
     _rootNode->addChild(transf.get());
 
-    shape.setTransformNode(transf);
+    shape.setTransformNode(transf.get());
   }
 }
 
-void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
+void OSGScene::setUpVectors(std::vector<VectorObject>& vectors)
 {
   for (VectorObject& vector : vectors)
   {
@@ -1430,7 +1542,7 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 
     _rootNode->addChild(transf.get());
 
-    vector.setTransformNode(transf);
+    vector.setTransformNode(transf.get());
   }
 }
 
@@ -1460,8 +1572,10 @@ void UpdateVisitor::apply(osg::Transform& node)
 void UpdateVisitor::apply(osg::AutoTransform& node)
 {
   //std::cout<<"AT "<<node.className()<<"  "<<node.getName()<<std::endl;
-  node.setPosition(_visualizer->_mat.getTrans());
-  node.setRotation(_visualizer->_mat.getRotate());
+  osg::Matrix mat;
+  mat.set(_visualizer->_mat.ptr());
+  node.setPosition(mat.getTrans());
+  node.setRotation(mat.getRotate());
   traverse(node);
 }
 
@@ -1471,7 +1585,9 @@ void UpdateVisitor::apply(osg::AutoTransform& node)
 void UpdateVisitor::apply(osg::MatrixTransform& node)
 {
   //std::cout<<"MT "<<node.className()<<"  "<<node.getName()<<std::endl;
-  node.setMatrix(_visualizer->_mat);
+  osg::Matrix mat;
+  mat.set(_visualizer->_mat.ptr());
+  node.setMatrix(mat);
   traverse(node);
 }
 
@@ -1496,8 +1612,8 @@ void UpdateVisitor::apply(osg::Geode& node)
       if (isCADType(shape->_type))
       {
         //it's a cad file so we have to rescale the underlying geometry vertices
-        osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
-        if (transformNode.valid() && transformNode->getNumChildren() > 0)
+        osg::Transform* transformNode = static_cast<osg::Transform*>(shape->getTransformNode());
+        if (transformNode && transformNode->getNumChildren() > 0)
         {
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid())
@@ -1635,8 +1751,8 @@ void UpdateVisitor::apply(osg::Geode& node)
     if (_visualizer->isShape()) {
       ShapeObject* shape = _visualizer->asShape();
       if (isCADType(shape->_type)) {
-        osg::ref_ptr<osg::Transform> transformNode = shape->getTransformNode();
-        if (transformNode.valid() && transformNode->getNumChildren() > 0) {
+        osg::Transform* transformNode = static_cast<osg::Transform*>(shape->getTransformNode());
+        if (transformNode && transformNode->getNumChildren() > 0) {
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid()) {
             stateSet = cad->getOrCreateStateSet();
@@ -1848,32 +1964,32 @@ void InfoVisitor::apply(osg::Geode& geode)
 }
 
 
-osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V)
+#endif // !OMEDIT_ANIMATION_QUICK3D (OSG renderer classes)
+
+Vec3 Mat3mulV3(Mat3 M, Vec3 V)
 {
-  return osg::Vec3f(M[0] * V[0] + M[1] * V[1] + M[2] * V[2],
-                    M[3] * V[0] + M[4] * V[1] + M[5] * V[2],
-                    M[6] * V[0] + M[7] * V[1] + M[8] * V[2]);
+  return Vec3(M[0] * V[0] + M[1] * V[1] + M[2] * V[2],
+              M[3] * V[0] + M[4] * V[1] + M[5] * V[2],
+              M[6] * V[0] + M[7] * V[1] + M[8] * V[2]);
 }
 
-osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M)
+Vec3 V3mulMat3(Vec3 V, Mat3 M)
 {
-  return osg::Vec3f(M[0] * V[0] + M[3] * V[1] + M[6] * V[2],
-                    M[1] * V[0] + M[4] * V[1] + M[7] * V[2],
-                    M[2] * V[0] + M[5] * V[1] + M[8] * V[2]);
+  return Vec3(M[0] * V[0] + M[3] * V[1] + M[6] * V[2],
+              M[1] * V[0] + M[4] * V[1] + M[7] * V[2],
+              M[2] * V[0] + M[5] * V[1] + M[8] * V[2]);
 }
 
-osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2)
+Mat3 Mat3mulMat3(Mat3 M1, Mat3 M2)
 {
-  osg::Matrix3 M3;
+  Mat3 M3;
   for (int i = 0; i < 3; ++i)
   {
     for (int j = 0; j < 3; ++j)
     {
-      //cout<<" i and j "<<i<<" "<<j<<endl;
       float x = 0.0;
       for (int k = 0; k < 3; ++k)
       {
-        //cout<<M1[i*3+k]<<" * "<<M2[k*3+j]<<" = "<<M1[i*3+k]*M2[k*3+j]<<endl;
         x = M1[i * 3 + k] * M2[k * 3 + j] + x;
       }
       M3[i * 3 + j] = x;
@@ -1883,47 +1999,56 @@ osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2)
   return M3;
 }
 
-osg::Vec3f normalize(osg::Vec3f vec)
+// Length computed exactly as osg::Vec3f::length() did (float std::sqrt) so the
+// ported math is bit-identical to the previous OSG code; QVector3D::length()
+// uses a higher-precision hypot and diverges by ~1e-6.
+static float vec3Length(const Vec3& v)
 {
-  osg::Vec3f vecOut;
-  if (vec.length() >= 100 * 1.e-15)
-    vecOut = vec / vec.length();
+  return std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+}
+
+Vec3 normalize(Vec3 vec)
+{
+  Vec3 vecOut;
+  const float len = vec3Length(vec);
+  if (len >= 100 * 1.e-15)
+    vecOut = vec / len;
   else
     vecOut = vec / (100 * 1.e-15);
   return vecOut;
 }
 
-osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2)
+Vec3 cross(Vec3 vec1, Vec3 vec2)
 {
-  return osg::Vec3f(vec1[1] * vec2[2] - vec1[2] * vec2[1],
-                    vec1[2] * vec2[0] - vec1[0] * vec2[2],
-                    vec1[0] * vec2[1] - vec1[1] * vec2[0]);
+  return Vec3(vec1[1] * vec2[2] - vec1[2] * vec2[1],
+              vec1[2] * vec2[0] - vec1[0] * vec2[2],
+              vec1[0] * vec2[1] - vec1[1] * vec2[0]);
 }
 
-Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir)
+Directions fixDirections(Vec3 lDir, Vec3 wDir)
 {
   Directions dirs;
-  osg::Vec3f e_x;
-  osg::Vec3f e_y;
+  Vec3 e_x;
+  Vec3 e_y;
 
   //lengthDirection
-  double abs_n_x = lDir.length();
+  double abs_n_x = vec3Length(lDir);
   if (abs_n_x < 1e-10)
-    e_x = osg::Vec3f(1, 0, 0);
+    e_x = Vec3(1, 0, 0);
   else
     e_x = lDir / abs_n_x;
 
   //widthDirection
-  osg::Vec3f n_z_aux = cross(e_x, wDir);
-  osg::Vec3f e_y_aux;
-  if (n_z_aux * n_z_aux > 1e-6)
+  Vec3 n_z_aux = cross(e_x, wDir);
+  Vec3 e_y_aux;
+  if (QVector3D::dotProduct(n_z_aux, n_z_aux) > 1e-6)
     e_y_aux = wDir;
   else
   {
     if (fabs(e_x[0]) > 1e-6)
-      e_y_aux = osg::Vec3f(0, 1, 0);
+      e_y_aux = Vec3(0, 1, 0);
     else
-      e_y_aux = osg::Vec3f(1, 0, 0);
+      e_y_aux = Vec3(1, 0, 0);
   }
   e_y = cross(normalize(cross(e_x, e_y_aux)), e_x);
 
@@ -1932,7 +2057,7 @@ Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir)
   return dirs;
 }
 
-void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r)
+void assemblePokeMatrix(Mat4& M, const Mat3& T, const Vec3& r)
 {
   M(3, 3) = 1.0;
   for (int row = 0; row < 3; ++row)
@@ -1944,26 +2069,26 @@ void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f&
   }
 }
 
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type)
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 r_shape, Vec3 lDir, Vec3 wDir, std::string type)
 {
   rAndT res;
 
   Directions dirs = fixDirections(lDir, wDir);
-  osg::Vec3f hDir = dirs._lDir ^ dirs._wDir;
+  Vec3 hDir = cross(dirs._lDir, dirs._wDir);
   //std::cout << "lDir " << dirs._lDir[0] << ", " << dirs._lDir[1] << ", " << dirs._lDir[2] << std::endl;
   //std::cout << "wDir " << dirs._wDir[0] << ", " << dirs._wDir[1] << ", " << dirs._wDir[2] << std::endl;
   //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
 
-  osg::Matrix3 T0;
+  Mat3 T0;
   if (isCADType(type))
   {
-    T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
-                      dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                            hDir[0],       hDir[1],       hDir[2]);
+    T0 = Mat3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2],
+              dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                    hDir[0],       hDir[1],       hDir[2]);
   } else {
-    T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                            hDir[0],       hDir[1],       hDir[2],
-                      dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+    T0 = Mat3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                    hDir[0],       hDir[1],       hDir[2],
+              dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
   }
   //std::cout << "T0 " << T0[0] << ", " << T0[1] << ", " << T0[2] << std::endl;
   //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5] << std::endl;
@@ -1975,7 +2100,7 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::
   return res;
 }
 
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir)
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 dir)
 {
   rAndT res;
 
@@ -1983,20 +2108,20 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir)
   int i = dir[0] ? 0 : dir[1] ? 1 : 2;
   int j = (i + 1) % 3;
 
-  osg::Vec3f lDir = dir;
-  osg::Vec3f wDir = osg::Vec3f();
+  Vec3 lDir = dir;
+  Vec3 wDir = Vec3();
   wDir[i] = -lDir[j];
   wDir[j] = +lDir[i];
 
   Directions dirs = fixDirections(lDir, wDir);
-  osg::Vec3f hDir = dirs._lDir ^ dirs._wDir;
+  Vec3 hDir = cross(dirs._lDir, dirs._wDir);
   //std::cout << "lDir " << dirs._lDir[0] << ", " << dirs._lDir[1] << ", " << dirs._lDir[2] << std::endl;
   //std::cout << "wDir " << dirs._wDir[0] << ", " << dirs._wDir[1] << ", " << dirs._wDir[2] << std::endl;
   //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
 
-  osg::Matrix3 T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
-                                       hDir[0],       hDir[1],       hDir[2],
-                                 dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+  Mat3 T0 = Mat3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                       hDir[0],       hDir[1],       hDir[2],
+                 dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
   //std::cout << "T0 " << T0[0] << ", " << T0[1] << ", " << T0[2] << std::endl;
   //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5] << std::endl;
   //std::cout << "   " << T0[6] << ", " << T0[7] << ", " << T0[8] << std::endl;
