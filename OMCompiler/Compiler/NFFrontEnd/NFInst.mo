@@ -4223,17 +4223,21 @@ function synthesizeDynamicSelectAux
   input InstNode clsNode;
   input InstContext.Type context;
 algorithm
-  synthesizeDynamicSelectAuxNode(clsNode, context);
+  synthesizeDynamicSelectAuxNode(clsNode, ComponentRef.EMPTY(), context);
 end synthesizeDynamicSelectAux;
 
 protected
 function synthesizeDynamicSelectAuxNode
   input InstNode clsNode;
+  input ComponentRef prefix
+    "The component instance path from the flat model root down to this class, so
+     that the synthesized bindings can reference the instance's variables.";
   input InstContext.Type context;
 protected
   Class cls;
   array<InstNode> comps;
   InstNode comp_cls;
+  ComponentRef comp_prefix;
 algorithm
   if InstNode.isEmpty(clsNode) or not InstNode.isClass(clsNode) then
     return;
@@ -4249,19 +4253,22 @@ algorithm
   comps := Class.getComponents(cls);
 
   // Process this class' own graphical annotations.
-  injectClassDynamicSelectAux(clsNode, context);
+  injectClassDynamicSelectAux(clsNode, prefix, context);
 
-  // Recurse into the classes of the (original) components.
+  // Recurse into the classes of the (original) components, extending the prefix
+  // with each component so its bindings resolve to the right instance.
   for c in comps loop
     if InstNode.isComponent(c) then
       comp_cls := Component.classInstance(InstNode.component(c));
-      synthesizeDynamicSelectAuxNode(comp_cls, context);
+      comp_prefix := ComponentRef.prefixCref(c, InstNode.getType(c), {}, prefix);
+      synthesizeDynamicSelectAuxNode(comp_cls, comp_prefix, context);
     end if;
   end for;
 end synthesizeDynamicSelectAuxNode;
 
 function injectClassDynamicSelectAux
   input InstNode clsNode;
+  input ComponentRef prefix;
   input InstContext.Type context;
 protected
   list<Absyn.Exp> bindings;
@@ -4300,6 +4307,11 @@ algorithm
         for aux_var in aux_vars loop
           (name, binding) := aux_var;
           if not List.exist1(aux_comps, isNamedComponent, name) then
+            // The binding's component references are typed relative to this
+            // class (e.g. A.B.u); rewrite them to the instance path (e.g. c.u)
+            // so that they are valid once the class is flattened as a component,
+            // since flattening does not prefix binding references.
+            binding := Expression.map(binding, function instanceDynamicSelectBindingCref(prefix = prefix));
             aux_comps := makeDynamicSelectAuxComponent(name, binding, clsNode) :: aux_comps;
           end if;
         end for;
@@ -4375,6 +4387,21 @@ function isNamedComponent
   input String name;
   output Boolean res = InstNode.name(node) == name;
 end isNamedComponent;
+
+function instanceDynamicSelectBindingCref
+  "Rewrites a component reference in a synthesized DynamicSelect binding from the
+   class-relative form to the instance path: the class/package prefix is stripped
+   and the instance prefix is appended, so e.g. A.B.u with prefix c becomes c.u."
+  input ComponentRef prefix;
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.CREF()
+      then Expression.CREF(exp.ty,
+        ComponentRef.append(BuiltinCall.stripCrefClassPrefix(exp.cref), prefix));
+    else exp;
+  end match;
+end instanceDynamicSelectBindingCref;
 
 function makeDynamicSelectAuxComponent
   "Builds a typed auxiliary component named `name`, bound to `dynExp`, as a public
