@@ -59,6 +59,7 @@ import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import NFModifier.ModifierScope;
+import NFModifier.ModTable;
 import Operator = NFOperator;
 import Equation = NFEquation;
 import Statement = NFStatement;
@@ -212,15 +213,6 @@ algorithm
 
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, classPath);
-
-  // Give synthesized DynamicSelect auxiliary String variables an empty start
-  // value so the runtime can initialize them (a String variable without a start
-  // attribute would otherwise be a null pointer at the first output). The start
-  // is added here because a builtin type's attributes are taken from its class
-  // during flattening, which the directly-synthesized component bypasses.
-  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) then
-    flatModel.variables := list(addDynamicSelectAuxStringStart(v) for v in flatModel.variables);
-  end if;
 
   flatModel := EvalConstants.evaluate(flatModel, context);
 
@@ -4402,7 +4394,15 @@ protected
   SCode.Element def;
   String type_name;
 algorithm
-  cls_inst := dynamicSelectAuxClassNode(dynExp, elem_ty);
+  // A String variable without a start attribute is a null pointer at the first
+  // output, so give String auxiliaries a class whose start is the empty string.
+  // The start is set here, when the component is created, because a basic type's
+  // attributes are taken from its class during flattening.
+  if Type.isString(elem_ty) then
+    cls_inst := makeStringAuxClassNode();
+  else
+    cls_inst := dynamicSelectAuxClassNode(dynExp, elem_ty);
+  end if;
   type_name := InstNode.name(cls_inst);
 
   // Integer, Boolean and enumeration variables cannot be continuous, so clamp
@@ -4431,28 +4431,41 @@ algorithm
     Pointer.create(comp), parent, InstNodeType.NORMAL_COMP());
 end makeDynamicSelectAuxComponent;
 
-function addDynamicSelectAuxStringStart
-  "Ensures a synthesized DynamicSelect auxiliary String variable has a start
-   attribute (defaulting to the empty string)."
-  input output Variable var;
+function makeStringAuxClassNode
+  "Returns a copy of the builtin String type node whose start attribute is bound
+   to the empty string, used as the class of a synthesized DynamicSelect String
+   auxiliary variable so that flattening emits start=\"\" for it."
+  output InstNode node = NFBuiltin.STRING_NODE;
 protected
-  Boolean has_start = false;
+  Class cls;
+  ClassTree tree;
+  array<InstNode> comps;
+  Modifier start_mod;
 algorithm
-  if Type.isString(Type.arrayElementType(var.ty)) and
-     System.stringFind(ComponentRef.toString(var.name), "$DynamicSelect$") >= 0 then
-    for a in var.typeAttributes loop
-      if Util.tuple21(a) == "start" then
-        has_start := true;
-      end if;
-    end for;
+  cls := InstNode.getClass(node);
+  tree := Class.classTree(cls);
+  comps := arrayCopy(ClassTree.getComponents(tree));
 
-    if not has_start then
-      var.typeAttributes := ("start",
-        NFBinding.makeFlat(Expression.STRING(""), Variability.CONSTANT, NFBinding.Source.GENERATED))
-        :: var.typeAttributes;
+  start_mod := Modifier.MODIFIER("start", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+    NFBinding.makeFlat(Expression.STRING(""), Variability.CONSTANT, NFBinding.Source.GENERATED),
+    ModTable.EMPTY(), Absyn.dummyInfo);
+
+  for i in 1:arrayLength(comps) loop
+    if InstNode.name(comps[i]) == "start" then
+      comps[i] := InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
+        Pointer.create(Component.TYPE_ATTRIBUTE(Type.STRING(), start_mod)),
+        InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
     end if;
-  end if;
-end addDynamicSelectAuxStringStart;
+  end for;
+
+  tree := match tree
+    case ClassTree.FLAT_TREE()
+      then ClassTree.FLAT_TREE(tree.tree, tree.classes, comps, tree.imports, tree.duplicates);
+    else tree;
+  end match;
+
+  node := InstNode.replaceClass(Class.setClassTree(tree, cls), node);
+end makeStringAuxClassNode;
 
 function dynamicSelectAuxClassNode
   "Returns the class node to use for an auxiliary variable bound to the given
