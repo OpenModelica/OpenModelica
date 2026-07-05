@@ -2168,14 +2168,66 @@ protected
 
 public
   function dynamicSelectAuxName
-    "Deterministic name for the auxiliary variable bound to a
-     DynamicSelect user function call. Derived purely from the content of the
-     call so that the instance API annotation rewrite and the flattening pass
-     agree on the name without any shared state (both hash the same call)."
+    "Deterministic name for the auxiliary variable bound to a DynamicSelect user
+     function call, derived from the content of the call so that the instance API
+     annotation rewrite and the flattening pass agree on the name without any
+     shared state. The class/package path that prefixes each component reference
+     is stripped first, leaving the reference relative to the component's own
+     class, so that the name does not depend on the instantiation context: the
+     same call is typed as 'scaleVal(u)' when the class is instantiated on its own
+     (as the instance API does per component when drawing an icon) but as
+     'scaleVal(A.B.u)' once flattened inside an enclosing model. Both must yield
+     the same auxiliary variable name so a component's icon animates when shown in
+     an enclosing model's diagram. Only the class path is stripped (not component
+     prefixes), so e.g. scaleVal(a.u) and scaleVal(b.u) in the same class stay
+     distinct."
     input Expression callExp;
     output String name =
-      "$DynamicSelect$" + intString(stringHashDjb2Mod(Expression.toString(callExp), 1073741789));
+      "$DynamicSelect$" +
+      intString(stringHashDjb2Mod(Expression.toString(Expression.map(callExp, stripCrefPrefixForName)), 1073741789));
   end dynamicSelectAuxName;
+
+  function stripCrefPrefixForName
+    "Strips the leading class/package path from every component reference in the
+     expression (see dynamicSelectAuxName)."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF()
+        then Expression.CREF(exp.ty, stripCrefClassPrefix(exp.cref));
+      else exp;
+    end match;
+  end stripCrefPrefixForName;
+
+  function stripCrefClassPrefix
+    "Cuts the class/package path prefixing a component reference so only the part
+     relative to the component's own class remains, e.g. A.B.a.u -> a.u."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF()
+        algorithm
+          if restCrefStartsWithClass(cref.restCref) then
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+          else
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripCrefClassPrefix(cref.restCref));
+          end if;
+        then
+          outCref;
+      else cref;
+    end match;
+  end stripCrefClassPrefix;
+
+  function restCrefStartsWithClass
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF() then InstNode.isClass(cref.node);
+      else false;
+    end match;
+  end restCrefStartsWithClass;
 
   function replaceDynamicSelectUserFunctions
     "Replaces every user (non-builtin) function call in the expression
