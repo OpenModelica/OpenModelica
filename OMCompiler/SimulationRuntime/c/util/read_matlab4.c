@@ -766,7 +766,12 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
   size_t absVarIndex = abs(varIndex);
   size_t ix = (varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex) -1;
-  assert(absVarIndex > 0 && absVarIndex <= reader->nvar);
+  /* A String variable's index refers to the stringData matrix, not data_2, so it
+   * can be larger than nvar; guard against indexing the numeric data/vars arrays
+   * out of bounds (returning NULL rather than corrupting the heap). */
+  if (!(absVarIndex > 0 && absVarIndex <= reader->nvar)) {
+    return NULL;
+  }
   if (0 == reader->nrows) {
     return NULL;
   } else if(!reader->vars[ix]) {
