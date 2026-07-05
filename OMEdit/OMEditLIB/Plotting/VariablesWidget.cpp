@@ -2075,7 +2075,7 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 /*!
  * \brief VariablesWidget::readVariableStringValue
  * Reads the value of a time-varying String variable from the .mat result file
- * at a specific time (issue #15969). Returns (value, true) only if the variable
+ * at a specific time. Returns (value, true) only if the variable
  * exists and is a string variable.
  * \param variable
  * \param time

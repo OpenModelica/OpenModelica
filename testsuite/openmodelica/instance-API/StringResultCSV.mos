@@ -2,14 +2,18 @@
 // keywords: string result csv
 // status: correct
 //
-// Tests #15969: a model with a time-varying String variable is written to a CSV
-// result file, with the string values in their own column.
+// Tests that a model with time-varying String variables is written to a CSV
+// result file, with the string values in their own column. A second string is
+// crafted to contain characters that would otherwise break the CSV (a double
+// quote, a comma and a newline); it must be escaped (quotes doubled, the field
+// quoted) so the file stays well-formed.
 //
 
 loadString("
   model StringResultCSV
     Real u(start = 0.0, fixed = true);
     String s = \"u=\" + String(u, format=\".1f\");
+    String escape_me_if_you_can = \"a\\\"b,c\" + String(1.0) + \"\\nd\";
   equation
     der(u) = 1.0;
   end StringResultCSV;
@@ -28,10 +32,14 @@ readFile("StringResultCSV_res.csv");
 // "
 // end SimulationResult;
 // ""
-// "\"time\",\"u\",\"der(u)\",\"s\"
-// 0,0,1,\"u=0.0\"
-// 0.5,0.5,1,\"u=0.5\"
-// 1,1,1,\"u=1.0\"
-// 1,1,1,\"u=1.0\"
+// "\"time\",\"u\",\"der(u)\",\"escape_me_if_you_can\",\"s\"
+// 0,0,1,\"a\"\"b,c1
+// d\",\"u=0.0\"
+// 0.5,0.5,1,\"a\"\"b,c1
+// d\",\"u=0.5\"
+// 1,1,1,\"a\"\"b,c1
+// d\",\"u=1.0\"
+// 1,1,1,\"a\"\"b,c1
+// d\",\"u=1.0\"
 // "
 // endResult

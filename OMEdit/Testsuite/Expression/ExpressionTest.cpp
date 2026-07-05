@@ -154,7 +154,7 @@ void ExpressionTest::dynamicSelect_data()
     << "DynamicSelect(\"Angle\", String(angleDisplay, significantDigits=3) + \"°\")"
     << "DynamicSelect(\"Angle\",\"1°\")";
 
-  // #15969: when the frontend rewrites a DynamicSelect user-function call, its
+  // When the frontend rewrites a DynamicSelect user-function call, its
   // dynamic argument becomes a reference to the synthesized auxiliary variable.
   // OMEdit must evaluate that reference from the result file (here the test
   // substitutes every variable with 1.0). The real auxiliary name contains '$'

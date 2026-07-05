@@ -59,8 +59,8 @@ typedef struct mat_data
   size_t sync;        /* Number of emity until mat file header get's sinced. See falg `-mat_sync` */
   void *data_2;       /* Time variant data */
   MatVer4Type_t type; /* Level of precision for result storage */
-  size_t nStringSignals; /* #15969: number of (scalar) string signals */
-  void *stringValues;    /* #15969: std::vector<std::string>*, nStringSignals strings appended per emit */
+  size_t nStringSignals; /* number of (scalar) string signals */
+  void *stringValues;    /* std::vector<std::string>*, nStringSignals strings appended per emit */
 } mat_data;
 
 struct variableCount
@@ -75,7 +75,7 @@ enum channel_t : int32_t
   CHANNEL_TIME = 0,           /* Special case: Variable is time */
   CHANNEL_TIME_INVARIANT = 1, /* Variable stored in data_1 matrix */
   CHANNEL_TIME_VARIANT = 2,   /* Variable stored in data_2 matrix */
-  CHANNEL_STRING = 3          /* #15969: time-varying String; value is the 1-based string signal index into the stringData matrix */
+  CHANNEL_STRING = 3          /* time-varying String; value is the 1-based string signal index into the stringData matrix */
 };
 
 enum interpolation_t : int32_t
@@ -266,7 +266,7 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
     }
   }
 
-  /* String variables (#15969): time-varying strings are stored via a separate
+  /* String variables: time-varying strings are stored via a separate
    * stringData matrix; here we only reserve name/description/dataInfo slots. */
   for (int i = 0; i < mData->nVariablesStringArray; i++)
   {
@@ -557,7 +557,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   size_t maxLengthDesc = count.maxLengthDesc;
   matData->nSignals = count.nSignals;
 
-  /* #15969: count the scalar string signals that are actually written. */
+  /* count the scalar string signals that are actually written. */
   matData->nStringSignals = 0;
   for (int i = 0; i < mData->nVariablesStringArray; i++)
   {
@@ -693,7 +693,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  /* String variables (#15969) */
+  /* String variables */
   for (int i = 0; i < mData->nVariablesStringArray; i++)
   {
     if (!mData->stringVarsData[i].filterOutput)
@@ -1041,7 +1041,7 @@ void writeDataInfo(simulation_result *self,
     }
   }
 
-  /* String variables (#15969): stored in the separate stringData matrix. The
+  /* String variables: stored in the separate stringData matrix. The
    * index is a 1-based string signal index (the column base in stringData). */
   {
     int stringSignalIndex = 0;
@@ -1557,7 +1557,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  /* #15969: buffer the current string values (written as the stringData matrix
+  /* buffer the current string values (written as the stringData matrix
    * when the file is closed). */
   if (matData->stringValues != NULL)
   {
@@ -1615,7 +1615,7 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
     matData->nEmits = 0;
   }
 
-  /* #15969: write the stringData matrix holding all time-varying string values.
+  /* write the stringData matrix holding all time-varying string values.
    * It is a character matrix with maxLen rows and (nStringSignals * nEmits)
    * columns; column (emit * nStringSignals + signal) holds one string. */
   if (matData->stringValues != NULL)

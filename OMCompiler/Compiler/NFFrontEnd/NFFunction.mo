@@ -1902,8 +1902,9 @@ uniontype Function
           // argument should be a cref?
           case "change" then true;
           case "der" then true;
-          // The two arguments may have different types (arrays, expressions,
-          // literals), so they are typed and cast individually. #15969
+          // The dynamic argument is allowed to fail to typecheck (it is then
+          // ignored), and both arguments are kept in the typed call so OMEdit
+          // can pick the static or dynamic part, so it needs custom typing.
           case "DynamicSelect" then true;
           // Function should not be used in function context.
           case "edge" then true;
