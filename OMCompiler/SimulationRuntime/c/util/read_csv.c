@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "read_csv.h"
 #include "read_matlab4.h"
 #include "libcsv.h"
@@ -58,7 +59,37 @@ struct csv_body
   int cur_size;
   int row_length;
   int error;
+  /* String result support, only used when keepStrings is set. */
+  int keepStrings;
+  char **strres;     /* raw (un-escaped) text of every data cell */
+  char *isStringCol; /* per-column flag, set when a non-numeric cell is seen */
 };
+
+/* In-place transpose of a w*h matrix of pointers, same layout/semantics as
+   matrix_transpose (used to lay String cells out column-major like the data). */
+static void transpose_str(char **m, int w, int h)
+{
+  int start;
+  char *tmp;
+  if (!m) {
+    return;
+  }
+  for (start = 0; start <= w * h - 1; start++) {
+    int next = start;
+    int i = 0;
+    do {  i++;
+      next = (next % h) * w + next / h;
+    } while (next > start);
+    if (next < start || i == 1) continue;
+
+    tmp = m[next = start];
+    do {
+      i = (next % h) * w + next / h;
+      m[next] = (i == start) ? tmp : m[i];
+      next = i;
+    } while (next > start);
+  }
+}
 
 static void do_nothing(void *data, size_t len, void *t)
 {
@@ -160,6 +191,7 @@ static void add_cell(void *data, size_t len, void *t)
 {
   struct csv_body *body = (struct csv_body*) t;
   char *endptr = "";
+  int idx;
   if (body->error) {
     return;
   }
@@ -172,16 +204,36 @@ static void add_cell(void *data, size_t len, void *t)
     body->buffer_size = body->res ? 2*body->buffer_size : body->row_length*1024; /* Guess it's 1024 time points; we could also take the size of the file or something, but this is cool too */
     body->buffer_size = body->buffer_size > 0 ? body->buffer_size : 1024;
     body->res = body->res ? (double*)realloc(body->res, sizeof(double)*body->buffer_size) : (double*) malloc(sizeof(double)*body->buffer_size);
+    if (body->keepStrings) {
+      body->strres = body->strres ? (char**)realloc(body->strres, sizeof(char*)*body->buffer_size) : (char**) malloc(sizeof(char*)*body->buffer_size);
+    }
+  }
+  idx = body->size;
+  /* libcsv has already un-escaped the cell (doubled quotes collapsed, quotes and
+     embedded newlines removed), so store its content verbatim. */
+  if (body->keepStrings) {
+    body->strres[idx] = omc_strdup(data ? (char*) data : "");
   }
   if (data == NULL) {
-    body->res[body->size++] = 0.0;
+    body->res[idx] = 0.0;
+    body->size++;
     return;
   }
-  body->res[body->size++] = data ? om_strtod((const char*)data,&endptr) : 0;
+  body->res[idx] = om_strtod((const char*)data,&endptr);
   if (*endptr) {
-    fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
-    body->error = 1;
+    if (body->keepStrings) {
+      /* A non-numeric cell (e.g. a String value): remember that this column is a
+         String column and store NaN so numeric readers skip it. */
+      if (body->isStringCol && body->row_length > 0) {
+        body->isStringCol[idx % body->row_length] = 1;
+      }
+      body->res[idx] = NAN;
+    } else {
+      fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
+      body->error = 1;
+    }
   }
+  body->size++;
 }
 
 static void add_row(int c, void *t)
@@ -192,6 +244,11 @@ static void add_row(int c, void *t)
     fprintf(stderr,"Did not find time points for all variables for row: %d\n", body->found_first_row);
     body->error = 1;
     return;
+  }
+  /* The header row has just been counted, so row_length is now known: allocate
+     the per-column String flags before the first data row is parsed. */
+  if (body->keepStrings && body->found_first_row == 1 && !body->isStringCol && body->row_length > 0) {
+    body->isStringCol = (char*) calloc(body->row_length, sizeof(char));
   }
 }
 
@@ -239,7 +296,7 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   return body.res;
 }
 
-struct csv_data* read_csv(const char *filename)
+static struct csv_data* read_csv_internal(const char *filename, int keepStrings)
 {
   const int buf_size = 4096;
   char buf[4096];
@@ -251,6 +308,8 @@ struct csv_data* read_csv(const char *filename)
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
   size_t len;
+
+  body.keepStrings = keepStrings;
 
   FILE *fin = omc_fopen(filename, "r");
   if (!fin) {
@@ -300,10 +359,38 @@ struct csv_data* read_csv(const char *filename)
   res->variables = variables;
   res->data = body.res;
   res->numvars = body.row_length;
-  res->numsteps = body.size / body.row_length;
+  res->numsteps = body.row_length ? body.size / body.row_length : 0;
+  res->strdata = NULL;
+  res->isStringVar = NULL;
   matrix_transpose(res->data,res->numvars,res->numsteps);
+  if (keepStrings) {
+    /* Free the String storage of the numeric columns to keep memory low, then
+       lay out the String columns column-major like the data. */
+    if (body.strres && body.isStringCol && res->numvars > 0) {
+      int i;
+      for (i = 0; i < body.size; i++) {
+        if (!body.isStringCol[i % res->numvars]) {
+          free(body.strres[i]);
+          body.strres[i] = NULL;
+        }
+      }
+    }
+    transpose_str(body.strres, res->numvars, res->numsteps);
+    res->strdata = body.strres;
+    res->isStringVar = body.isStringCol;
+  }
   /* printf("num vars %d in %s num steps %d\n", body.row_length, filename, res->numsteps); */
   return res;
+}
+
+struct csv_data* read_csv(const char *filename)
+{
+  return read_csv_internal(filename, 0);
+}
+
+struct csv_data* read_csv_all(const char *filename)
+{
+  return read_csv_internal(filename, 1);
 }
 
 double* read_csv_dataset(struct csv_data *data, const char *var)
@@ -318,7 +405,25 @@ double* read_csv_dataset(struct csv_data *data, const char *var)
   if (found == -1) {
     return NULL;
   }
-  return data->data + i*data->numsteps;
+  return data->data + found*data->numsteps;
+}
+
+char** read_csv_dataset_str(struct csv_data *data, const char *var)
+{
+  int i,found=-1;
+  if (!data->strdata) {
+    return NULL;
+  }
+  for (i=0; i<data->numvars; i++) {
+    if (0==strcmp(data->variables[i],var)) {
+      found=i;
+      break;
+    }
+  }
+  if (found == -1 || (data->isStringVar && !data->isStringVar[found])) {
+    return NULL;
+  }
+  return data->strdata + found*data->numsteps;
 }
 
 void omc_free_csv_reader(struct csv_data *data)
@@ -329,7 +434,16 @@ void omc_free_csv_reader(struct csv_data *data)
   }
   free(data->variables);
   free(data->data);
+  if (data->strdata) {
+    for (i=0; i<data->numvars*data->numsteps; i++) {
+      free(data->strdata[i]);
+    }
+    free(data->strdata);
+  }
+  free(data->isStringVar);
   data->variables = 0;
   data->data = 0;
+  data->strdata = 0;
+  data->isStringVar = 0;
   free(data);
 }

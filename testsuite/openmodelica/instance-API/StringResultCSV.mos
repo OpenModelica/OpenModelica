@@ -6,7 +6,9 @@
 // result file, with the string values in their own column. A second string is
 // crafted to contain characters that would otherwise break the CSV (a double
 // quote, a comma and a newline); it must be escaped (quotes doubled, the field
-// quoted) so the file stays well-formed.
+// quoted) so the file stays well-formed. Reading the file back (here listing its
+// variables) must succeed, i.e. the escaping round-trips: an incorrect escape
+// would misalign the columns or make the reader fail.
 //
 
 loadString("
@@ -19,7 +21,8 @@ loadString("
   end StringResultCSV;
 "); getErrorString();
 simulate(StringResultCSV, stopTime=1.0, numberOfIntervals=2, outputFormat="csv"); getErrorString();
-readFile("StringResultCSV_res.csv");
+readFile("StringResultCSV_res.csv"); getErrorString();
+readSimulationResultVars("StringResultCSV_res.csv");
 
 // Result:
 // true
@@ -42,4 +45,6 @@ readFile("StringResultCSV_res.csv");
 // 1,1,1,\"a\"\"b,c1
 // d\",\"u=1.0\"
 // "
+// ""
+// {"time", "u", "der(u)", "escape_me_if_you_can", "s"}
 // endResult
