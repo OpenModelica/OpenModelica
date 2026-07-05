@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+DynamicSelectAuxNameConsistency.mos \
 DynamicSelectUserFunctions.mos \
 StringResultCSV.mos \
 StringResultMat.mos \

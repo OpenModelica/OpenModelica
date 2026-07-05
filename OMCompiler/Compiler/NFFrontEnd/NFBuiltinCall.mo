@@ -65,6 +65,7 @@ protected
   import Typing = NFTyping;
   import Util;
   import ExpandExp = NFExpandExp;
+  import SimplifyExp = NFSimplifyExp;
   import Operator = NFOperator;
   import Component = NFComponent;
   import NFPrefixes.ConnectorType;
@@ -2148,8 +2149,11 @@ protected
     // Replace each user function call in the dynamic expression with a reference
     // to an auxiliary result-file variable (synthesized during flattening under
     // the same deterministic name), keeping the rest of the expression so OMEdit
-    // can still evaluate it.
+    // can still evaluate it. The expression is simplified first so that the
+    // auxiliary name (a hash of the call) matches the one computed on the
+    // flattening side, which also simplifies before hashing.
     if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) and InstContext.inInstanceAPI(context) then
+      arg2 := SimplifyExp.simplify(arg2);
       (arg2, _) := replaceDynamicSelectUserFunctions(arg2);
     end if;
 
