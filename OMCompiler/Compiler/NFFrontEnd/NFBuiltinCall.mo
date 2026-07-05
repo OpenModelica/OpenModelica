@@ -2144,7 +2144,7 @@ protected
       end if;
     end try;
 
-    // #15969: OMEdit's annotation evaluator cannot call Modelica user functions.
+    // OMEdit's annotation evaluator cannot call Modelica user functions.
     // Replace each user function call in the dynamic expression with a reference
     // to an auxiliary result-file variable (synthesized during flattening under
     // the same deterministic name), keeping the rest of the expression so OMEdit
@@ -2164,7 +2164,7 @@ protected
 
 public
   function dynamicSelectAuxName
-    "Deterministic name (issue #15969) for the auxiliary variable bound to a
+    "Deterministic name for the auxiliary variable bound to a
      DynamicSelect user function call. Derived purely from the content of the
      call so that the instance API annotation rewrite and the flattening pass
      agree on the name without any shared state (both hash the same call)."
@@ -2174,7 +2174,7 @@ public
   end dynamicSelectAuxName;
 
   function replaceDynamicSelectUserFunctions
-    "#15969: Replaces every user (non-builtin) function call in the expression
+    "Replaces every user (non-builtin) function call in the expression
      with a reference to an auxiliary variable, keeping the surrounding
      expression intact, and returns the rewritten expression together with the
      list of (auxiliary name, binding call) pairs. Shared by the instance API
@@ -2222,27 +2222,6 @@ protected
     input String name;
     output Boolean res = Util.tuple21(auxVar) == name;
   end dynamicSelectAuxExists;
-
-public
-  function containsUserFunctionCall
-    "Returns true if the expression contains a call to a non-builtin (user
-     defined) function."
-    input Expression exp;
-    output Boolean res = Expression.contains(exp, isUserFunctionCall);
-  end containsUserFunctionCall;
-
-protected
-  function isUserFunctionCall
-    input Expression exp;
-    output Boolean res;
-  algorithm
-    res := match exp
-      local
-        Function fn;
-      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) then not Function.isBuiltin(fn);
-      else false;
-    end match;
-  end isUserFunctionCall;
 
   function typeBackSampleCall
     input Call call;

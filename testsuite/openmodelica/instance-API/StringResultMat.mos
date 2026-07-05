@@ -2,8 +2,8 @@
 // keywords: string result mat
 // status: correct
 //
-// Tests #15969: a model with a time-varying String variable can be simulated to
-// a .mat result file (the string is written to the stringData matrix) and the
+// Tests that a model with a time-varying String variable can be simulated to a
+// .mat result file (the string is written to the stringData matrix) and the
 // file remains readable (the string variable is listed and numeric variables
 // read back correctly).
 //

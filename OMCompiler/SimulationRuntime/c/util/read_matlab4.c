@@ -161,7 +161,7 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
     free(reader->params);
     reader->params=NULL;
   }
-  if (reader->stringData) { /* #15969 */
+  if (reader->stringData) {
     free(reader->stringData);
     reader->stringData=NULL;
   }
@@ -490,7 +490,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==1) {
         for(k=0; k<hdr.ncols; k++) {
           reader->allInfo[k].isParam = tmp[k*hdr.mrows] == 1;
-          reader->allInfo[k].isString = tmp[k*hdr.mrows] == 3; /* #15969: CHANNEL_STRING */
+          reader->allInfo[k].isString = tmp[k*hdr.mrows] == 3; /* CHANNEL_STRING */
           reader->allInfo[k].index = tmp[k*hdr.mrows+1];
           if (reader->allInfo[k].isString && tmp[k*hdr.mrows+1] > (int32_t)reader->nStringSignals) {
             reader->nStringSignals = tmp[k*hdr.mrows+1];
@@ -501,7 +501,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==0) {
         for(k=0; k<hdr.mrows; k++) {
           reader->allInfo[k].isParam = tmp[k] == 1;
-          reader->allInfo[k].isString = tmp[k] == 3; /* #15969: CHANNEL_STRING */
+          reader->allInfo[k].isString = tmp[k] == 3; /* CHANNEL_STRING */
           reader->allInfo[k].index =  tmp[k + hdr.mrows];
           if (reader->allInfo[k].isString && tmp[k + hdr.mrows] > (int32_t)reader->nStringSignals) {
             reader->nStringSignals = tmp[k + hdr.mrows];
@@ -605,7 +605,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     }
   }
 
-  /* #15969: optionally read the stringData matrix, present when the model has
+  /* optionally read the stringData matrix, present when the model has
    * time-varying String variables. The file is positioned right after data_2. */
   if (reader->nStringSignals > 0) {
     MHeader_t hdr;
@@ -1193,7 +1193,7 @@ int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMa
     return 0;
 }
 
-/* #15969: read the value of a time-varying String variable at a given time.
+/* read the value of a time-varying String variable at a given time.
    Strings are step-like display values, so we return the value at the row at or
    just before the requested time. */
 const char* omc_matlab4_read_string_val(ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)

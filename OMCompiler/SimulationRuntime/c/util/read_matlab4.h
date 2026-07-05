@@ -48,7 +48,7 @@ typedef struct {
        *descr;
   /** Non-zero if this entry is a parameter (stored in data_1). */
   int isParam;
-  /** Non-zero if this entry is a time-varying String variable (#15969); its
+  /** Non-zero if this entry is a time-varying String variable; its
       value is stored in the stringData matrix, and `index` is the 1-based string
       signal index. */
   int isString;
@@ -91,7 +91,7 @@ typedef struct {
   double **vars;
   /** 1 if stored in double precision, 0 if stored as float */
   char doublePrecision;
-  /** #15969: string result support. stringData is a column-major char matrix of
+  /** string result support. stringData is a column-major char matrix of
       stringMaxLen rows and (nStringSignals * nStringRows) columns; the string
       for signal s (1-based) at time row r is stringData + (r*nStringSignals +
       (s-1)) * stringMaxLen. */
@@ -118,7 +118,7 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
 
 int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
 
-/* #15969: read the value of a time-varying String variable at a given time.
+/* read the value of a time-varying String variable at a given time.
    Returns a pointer into the reader's stringData (valid until the reader is
    freed), or NULL if `var` is not a string variable / has no data. */
 const char* omc_matlab4_read_string_val(ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);

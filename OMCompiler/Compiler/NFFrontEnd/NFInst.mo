@@ -203,7 +203,7 @@ algorithm
   // Type the class.
   Typing.typeClass(inst_cls, context);
 
-  // #15969: Synthesize auxiliary variables bound to DynamicSelect dynamic
+  // Synthesize auxiliary variables bound to DynamicSelect dynamic
   // expressions that call user functions, so their values reach the result file
   // and OMEdit can display them without calling the function itself.
   if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) then
@@ -213,9 +213,11 @@ algorithm
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, classPath);
 
-  // #15969: Give synthesized DynamicSelect auxiliary String variables an empty
-  // start value so the runtime can initialize them (a String variable without a
-  // start attribute would otherwise be a null pointer at the first output).
+  // Give synthesized DynamicSelect auxiliary String variables an empty start
+  // value so the runtime can initialize them (a String variable without a start
+  // attribute would otherwise be a null pointer at the first output). The start
+  // is added here because a builtin type's attributes are taken from its class
+  // during flattening, which the directly-synthesized component bypasses.
   if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) then
     flatModel.variables := list(addDynamicSelectAuxStringStart(v) for v in flatModel.variables);
   end if;
@@ -4219,13 +4221,13 @@ end checkInstanceRestriction;
 
 public
 function synthesizeDynamicSelectAux
-  "#15969: Walks the instance tree and, for every class whose graphical
-   annotations contain a DynamicSelect whose dynamic expression calls a user
-   function, injects an auxiliary component bound to that dynamic expression.
-   Flattening then emits it as a result-file variable named exactly the way the
-   instance API rewrites the annotation (see NFApi.rewriteDynamicSelectAux and
-   NFBuiltinCall.dynamicSelectAuxName), so OMEdit can read the value from the
-   result file instead of calling the user function itself."
+  "Walks the instance tree and, for every class whose graphical annotations
+   contain a DynamicSelect whose dynamic expression calls a user function,
+   injects an auxiliary component bound to that dynamic expression. Flattening
+   then emits it as a result-file variable named exactly the way the instance
+   API rewrites the annotation (see NFBuiltinCall.dynamicSelectAuxName), so
+   OMEdit can read the value from the result file instead of calling the user
+   function itself."
   input InstNode clsNode;
   input InstContext.Type context;
 algorithm
@@ -4349,40 +4351,12 @@ algorithm
 
   for sm in submods loop
     bindings := match sm
-      case SCode.NAMEMOD(ident = "Icon", mod = m) then collectModBindings(m, bindings);
-      case SCode.NAMEMOD(ident = "Diagram", mod = m) then collectModBindings(m, bindings);
+      case SCode.NAMEMOD(ident = "Icon", mod = m) then SCodeUtil.collectModBindings(m, bindings);
+      case SCode.NAMEMOD(ident = "Diagram", mod = m) then SCodeUtil.collectModBindings(m, bindings);
       else bindings;
     end match;
   end for;
 end dynamicSelectAnnotationBindings;
-
-function collectModBindings
-  "Recursively collects all Absyn expression bindings in a modifier tree."
-  input SCode.Mod mod;
-  input output list<Absyn.Exp> acc;
-protected
-  list<SCode.SubMod> submods;
-  Option<Absyn.Exp> binding;
-algorithm
-  acc := match mod
-    case SCode.MOD(subModLst = submods, binding = binding)
-      algorithm
-        if isSome(binding) then
-          acc := Util.getOption(binding) :: acc;
-        end if;
-
-        for sm in submods loop
-          acc := match sm
-            case SCode.NAMEMOD() then collectModBindings(sm.mod, acc);
-            else acc;
-          end match;
-        end for;
-      then
-        acc;
-
-    else acc;
-  end match;
-end collectModBindings;
 
 function collectDynamicSelectDynExp
   "Absyn traversal function that collects the dynamic (second) argument of every
