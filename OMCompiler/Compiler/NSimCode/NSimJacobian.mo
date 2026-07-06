@@ -413,7 +413,10 @@ public
               UnorderedMap.add(cref, var.index, local_idx_map);
             end for;
 
-            (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, local_idx_map);
+            sparsity    := {};
+            sparsityT   := {};
+            coloring    := {};
+            rowColoring := {};
 
             jac := SIM_JAC(
               name                = jacobian.name,
@@ -584,82 +587,6 @@ public
         end if;
       end if;
     end createOptimizationJacobian;
-
-    function createSparsity
-      input BackendDAE jacobian;
-      input UnorderedMap<ComponentRef, Integer> local_idx_map;
-      output SparsityPattern sparsity;
-      output SparsityPattern sparsityT;
-      output SparsityColoring coloring;
-      output SparsityColoring rowColoring;
-    algorithm
-      (sparsity, sparsityT, coloring, rowColoring) := match jacobian
-        local
-          Jacobian.SparsityPattern Bpattern;
-
-        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern) algorithm
-          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, local_idx_map);
-          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, local_idx_map);
-          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, local_idx_map);
-        then (sparsity, sparsityT, coloring, rowColoring);
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-        then fail();
-      end match;
-    end createSparsity;
-
-    function createSparsityPattern
-      input list<Jacobian.SparsityPatternCol> cols            "columns that need to be generated (can be used for rows too)";
-      input UnorderedMap<ComponentRef, Integer> local_idx_map "hash table cref --> index";
-      output SparsityPattern simPattern = {};
-    protected
-      ComponentRef cref;
-      list<ComponentRef> dependencies;
-      list<Integer> dep_indices;
-    algorithm
-      for col in cols loop
-        (cref, dependencies) := col;
-        // TODO: once this works consistently, strip aways these safety checks
-        if not UnorderedMap.contains(cref, local_idx_map) then
-          Error.addCompilerWarning(
-            getInstanceName() + ": column cref not found in Jacobian local_idx_map: " +
-            ComponentRef.toString(cref) + "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
-          fail();
-        end if;
-
-        dep_indices := {};
-        for dep in dependencies loop
-          // TODO: once this works consistently, strip aways these safety checks
-          if not UnorderedMap.contains(dep, local_idx_map) then
-            Error.addCompilerWarning(
-              getInstanceName() + ": dependency cref not found in Jacobian local_idx_map: " +
-              ComponentRef.toString(dep) + "\n\tWhile processing column: " + ComponentRef.toString(cref) +
-              "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
-            fail();
-          end if;
-          dep_indices := UnorderedMap.getOrFail(dep, local_idx_map) :: dep_indices;
-        end for;
-        simPattern := (UnorderedMap.getOrFail(cref, local_idx_map), List.sort(dep_indices, intGt)) :: simPattern;
-      end for;
-      simPattern := List.sort(simPattern, Util.compareTupleIntGt);
-    end createSparsityPattern;
-
-    function createSparsityColoring
-      input Jacobian.SparsityColoring coloring;
-      input UnorderedMap<ComponentRef, Integer> idx_map;
-      output SparsityColoring simColoringCols;
-      output SparsityColoring simColoringRows;
-    algorithm
-      (simColoringCols, simColoringRows) := match coloring
-        case Jacobian.SparsityColoring.SPARSITY_COLORING() then (
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
-        case Jacobian.SparsityColoring.SPARSITY_BICOLORING() then (
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
-      end match;
-    end createSparsityColoring;
 
     function empty
       input String name = "";

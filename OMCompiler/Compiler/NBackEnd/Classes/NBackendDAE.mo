@@ -49,7 +49,6 @@ public
   import Events = NBEvents;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
-  import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
   import NBPartition;
@@ -133,8 +132,6 @@ public
     VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
     Adjacency.Matrix sparsity         "new sparsity pattern";
-    SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
-    SparsityColoring sparsityColoring "Coloring information";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
@@ -181,7 +178,7 @@ public
         for i in 1:arrayLength(bdae.comps) loop
           tmp := tmp + StrongComponent.toString(bdae.comps[i], i) + "\n";
         end for;
-        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern) + "\n" + SparsityColoring.toString(bdae.sparsityColoring);
+        tmp := tmp + Adjacency.Matrix.toString(bdae.sparsity);
       then tmp;
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
