@@ -304,8 +304,8 @@ fn define_external_imports(
         bail!(
             "CodegenWasmJit: this model uses external \"C\" functions (e.g. table blocks, \
              string scanning), which need the ModelicaExternalC side module — unavailable in \
-             this web build (build with the Emscripten SDK on PATH so build.rs can produce \
-             modelicaexternalc.wasm)"
+             this web build (build.rs could not compile modelicaexternalc.wasm; install the \
+             apt packages `clang`, `lld`, `wasi-libc`, and `libclang-rt-dev-wasm32`)"
         );
     }
 
