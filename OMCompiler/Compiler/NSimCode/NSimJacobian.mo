@@ -67,6 +67,7 @@ public
 
   // Old SimCode imports
   import OldSimCode = SimCode;
+  import OldBackendDAE = BackendDAE;
 
   // Util imports
   import StringUtil;
