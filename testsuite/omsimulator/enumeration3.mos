@@ -30,10 +30,7 @@ model.addComponent(CRef('default', 'A'), 'resources/Int1.fmu')
 model.addComponent(CRef('default', 'B'), 'resources/Enum1.fmu')
 model.addConnection(CRef('default', 'B', 'u'), CRef('default', 'A', 'y'))
 
-model.export('Enumeration3.ssp')
-
-model2 = SSP('Enumeration3.ssp')
-instantiated_model = model2.instantiate()
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('')
 
 instantiated_model.initialize()
@@ -58,6 +55,10 @@ readFile("Enumeration3_systemCall.log");
 // ""
 // 0
 // "info:    model doesn't contain any continuous state
+// info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

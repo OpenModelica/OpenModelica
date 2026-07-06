@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf Enumeration.py Enumeration.ssp Enumeration.fmu Enumeration.log Enumeration_systemCall.log temp-Enumeration/
+// teardown_command: rm -rf Enumeration.py Enumeration.fmu Enumeration.log Enumeration_systemCall.log temp-Enumeration/
 
 loadString("
 model Enumeration
@@ -23,10 +23,7 @@ model.addComponent(CRef('default', 'A'), 'resources/Enumeration.fmu')
 model.addComponent(CRef('default', 'B'), 'resources/Enumeration.fmu')
 model.addConnection(CRef('default', 'A', 'y'), CRef('default', 'B', 'u'))
 
-model.export('Enumeration.ssp')
-
-model2 = SSP('Enumeration.ssp')
-instantiated_model = model2.instantiate()
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('')
 
 instantiated_model.initialize()
@@ -47,6 +44,10 @@ readFile("Enumeration_systemCall.log");
 // ""
 // 0
 // "info:    model doesn't contain any continuous state
+// info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

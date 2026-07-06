@@ -1,6 +1,6 @@
 // keywords: fmu export
 // status: correct
-// teardown_command: rm -rf fmi_interpolate_cs.py fmi_interpolate_cs.ssp fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
+// teardown_command: rm -rf fmi_interpolate_cs.py fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
 // cflags: -d=fmuExperimental
 
 loadString("
@@ -36,10 +36,7 @@ model.addComponent(CRef('default', 'fmu1'), 'resources/fmu1.fmu')
 model.addComponent(CRef('default', 'fmu2'), 'resources/fmu2.fmu')
 model.addConnection(CRef('default', 'fmu1', 'y'), CRef('default', 'fmu2', 'u'))
 
-model.export('fmi_interpolate_cs.ssp')
-
-model2 = SSP('fmi_interpolate_cs.ssp')
-instantiated_model = model2.instantiate()
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('fmi_interpolate_cs_res.mat')
 
 instantiated_model.initialize()

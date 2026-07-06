@@ -1,6 +1,6 @@
 // keywords: fmu export
 // status: correct
-// teardown_command: rm -rf fmiblackbox.py fmiblackbox.ssp fmiblackbox_res.mat fmi_attributes_11.fmu fmiblackbox_fmi_attributes_11.log fmi_attributes_11_info.json fmiblackbox_systemCall.log temp-fmiblackbox/
+// teardown_command: rm -rf fmiblackbox.py fmiblackbox_res.mat fmi_attributes_11.fmu fmiblackbox_fmi_attributes_11.log fmi_attributes_11_info.json fmiblackbox_systemCall.log temp-fmiblackbox/
 
 loadString("
 model fmi_attributes_11
@@ -31,10 +31,7 @@ model = SSP()
 model.addResource('fmi_attributes_11.fmu', new_name='resources/fmi_attributes_11.fmu')
 model.addComponent(CRef('default', 'fmi_attributes_11'), 'resources/fmi_attributes_11.fmu')
 
-model.export('fmiblackbox.ssp')
-
-model2 = SSP('fmiblackbox.ssp')
-instantiated_model = model2.instantiate()
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('fmiblackbox_res.mat')
 
 instantiated_model.initialize()

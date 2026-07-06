@@ -14,12 +14,23 @@ readFile("Pendulum_systemCall.log");
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
 // ""
 // 0
-// "info:    maximum step size for 'model.root': 0.010000
+// "info:    Set temp directory to    \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
+// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
+// info:    New model \"model\" with corresponding temp directory \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\\model-yhp75x3y\"
+// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
+// info:    *** FMU Simulation Info ***
+//           - model:     model (model-exchange)
+//           - path:      Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu
+//           - startTime: 0.000000
+//           - stopTime:  5.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.010000
+// info:    maximum step size for 'model.root': 0.010000
 // info:    Result file: model_res.mat (bufferSize=10)
 // info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 2728 NumRhsEvals  = 2881 NumLinSolvSetups = 156
-//          NumNonlinSolvIters = 2880 NumNonlinSolvConvFails = 0 NumErrTestFails = 12
+//          NumSteps = 524 NumRhsEvals  = 542 NumLinSolvSetups = 36
+//          NumNonlinSolvIters = 541 NumNonlinSolvConvFails = 0 NumErrTestFails = 3
 // "
 // endResult

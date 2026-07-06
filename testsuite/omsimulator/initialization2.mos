@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.py initialization2.ssp input.csv temp-initialization2/
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.py input.csv
 
 loadString("
 model initialization2
@@ -32,10 +32,11 @@ model.addComponent(CRef('default', 'A'), 'resources/input.csv')
 model.addComponent(CRef('default', 'B'), 'resources/initialization2.fmu')
 model.addConnection(CRef('default', 'A', 'y'), CRef('default', 'B', 'u'))
 
-model.export('initialization2.ssp')
-
-model2 = SSP('initialization2.ssp')
-instantiated_model = model2.instantiate()
+solver1 = {'name' : 'solver1',  'method': 'cvode'}
+model.newSolver(solver1)
+model.setSolver(CRef('default', 'B'), 'solver1')
+model.setSolver(CRef('default', 'A'), 'solver1')
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('')
 
 instantiated_model.initialize()
@@ -62,15 +63,15 @@ readFile("initialization2_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // info:    Initialization
 // info:      A.y: 2.3
 // info:      B.x: 2.3
 // info:      B.y: 2.3
 // info:      B.u: 2.3
-// info:    Final Statistics for 'test.root':
-//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
-//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

@@ -33,7 +33,6 @@ system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallatio
 system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
 
-// Result:
 // true
 // ""
 // "simpleLoop.fmu"
@@ -43,7 +42,20 @@ readFile("simpleLoop_me_systemCall.log");
 // 0
 // ""
 // 0
-// "info:    model doesn't contain any continuous state
-// info:    Result file: model_res.mat (bufferSize=10)
-// "
-// endResult
+// "info:    Set temp directory to    \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
+// info:    Set working directory to \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
+// info:    New model \"simpleLoop\" with corresponding temp directory \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224/simpleLoop-0x259db7\"
+// info:    Set working directory to \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
+// info:    *** FMU Simulation Info ***
+//           - model:     simpleLoop (model exchange)
+//           - path:      simpleLoop.fmu
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    model doesn't contain any continuous state
+// info:    maximum step size for 'simpleLoop.root': 0.002000
+// info:    Result file: simpleLoop_res.mat (bufferSize=10)
+// info:    Final Statistics for 'simpleLoop.root':
+//          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
+//          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

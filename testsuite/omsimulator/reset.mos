@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf reset.lua reset.fmu reset.log reset_systemCall.log temp-reset/
+// teardown_command: rm -rf reset.py reset.fmu reset.log reset_systemCall.log
 
 loadString("
 model reset
@@ -13,47 +13,47 @@ end reset;"); getErrorString();
 
 buildModelFMU(reset, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
 
-writeFile("reset.lua", "
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp-reset/\")
+writeFile("reset.py", "
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"test\")
-oms_addSystem(\"test.root\", oms_system_wc)
-oms_addSubModel(\"test.root.A\", \"reset.fmu\")
-oms_setResultFile(\"test\", \"\")
+Settings.suppressPath = True
 
-oms_instantiate(\"test\")
-oms_initialize(\"test\")
+model = SSP()
+model.addResource('reset.fmu', new_name='resources/reset.fmu')
+model.addComponent(CRef('default', 'A'), 'resources/reset.fmu')
 
-print(\"info:    Initialization\")
-print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
-print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('')
 
-oms_simulate(\"test\")
-print(\"info:    Simulation\")
-print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
-print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:      A.x_start: {instantiated_model.getValue(CRef('default', 'A', 'x_start'))}\")
+print(f\"info:      A.x:       {instantiated_model.getValue(CRef('default', 'A', 'x'))}\")
 
-for i=1,2 do
-  oms_reset(\"test\")
-  oms_setReal(\"test.root.A.x_start\", 1.5)
-  oms_initialize(\"test\")
+instantiated_model.simulate()
+print(f\"info:    Simulation\")
+print(f\"info:      A.x_start: {instantiated_model.getValue(CRef('default', 'A', 'x_start'))}\")
+print(f\"info:      A.x:       {instantiated_model.getValue(CRef('default', 'A', 'x'))}\")
 
-  print(\"info:    Initialization\")
-  print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
-  print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+for i in range(2):
+  instantiated_model.reset()
+  instantiated_model.setValue(CRef('default', 'A', 'x_start'), 1.5)
+  instantiated_model.initialize()
 
-  oms_simulate(\"test\")
-  print(\"info:    Simulation\")
-  print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
-  print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
-end
+  print(f\"info:    Initialization\")
+  print(f\"info:      A.x_start: {instantiated_model.getValue(CRef('default', 'A', 'x_start'))}\")
+  print(f\"info:      A.x:       {instantiated_model.getValue(CRef('default', 'A', 'x'))}\")
 
-oms_terminate(\"test\")
-oms_delete(\"test\")
+  instantiated_model.simulate()
+  print(f\"info:    Simulation\")
+  print(f\"info:      A.x_start: {instantiated_model.getValue(CRef('default', 'A', 'x_start'))}\")
+  print(f\"info:      A.x:       {instantiated_model.getValue(CRef('default', 'A', 'x'))}\")
+
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator reset.lua", "reset_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 reset.py", "reset_systemCall.log");
 readFile("reset_systemCall.log");
 
 // Result:
@@ -65,25 +65,25 @@ readFile("reset_systemCall.log");
 // ""
 // 0
 // "info:    No result file will be created
+// info:    No result file will be created
+// info:    No result file will be created
 // info:    Initialization
 // info:      A.x_start: 1.0
 // info:      A.x:       1.0
 // info:    Simulation
 // info:      A.x_start: 1.0
-// info:      A.x:       0.36769542477096
-// info:    No result file will be created
+// info:      A.x:       0.3676954247709639
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.55154313715645
-// info:    No result file will be created
+// info:      A.x:       0.5515431371564458
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.55154313715645
+// info:      A.x:       0.5515431371564458
 // "
 // endResult

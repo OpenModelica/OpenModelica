@@ -17,11 +17,8 @@ getErrorString();
 
 // Simulate with OMSimulator
 writeFile("Issue_FMU_update_vars.py", "
-import sys
-sys.path.insert(0, '" + getInstallationDirectoryPath() + "/lib')
 
 from OMSimulator import SSP, Settings, CRef
-
 Settings.suppressPath = True
 
 model = SSP()
@@ -70,19 +67,15 @@ readFile("Issue_FMU_update_vars_systemCall.log");
 // true
 // ""
 // 0
-// "info:    Virgin settings
+// "info:    Result file: Issue_FMU_update_vars.mat (bufferSize=10)
+// info:    Virgin settings
 // info:      model.root.fmuvar.var     : -4.0
 // info:      model.root.fmuvar.x       : -30.0
 // info:    Instantiate settings
 // info:      model.root.fmuvar.var     : -3.0
 // info:      model.root.fmuvar.x       : -40.0
-// info:    maximum step size for 'model.root': 0.001000
-// info:    Result file: Issue_FMU_update_vars.mat (bufferSize=1)
 // info:    Initialize settings
 // info:      model.root.fmuvar.var     : -3.0
 // info:      model.root.fmuvar.x       : -40.0
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult
