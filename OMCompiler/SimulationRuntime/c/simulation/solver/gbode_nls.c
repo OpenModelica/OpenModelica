@@ -138,7 +138,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
                     "initializeStaticNLSData_IRK: GBODE scalar metadata cache is not available.");
 
   for (int i = 0; i < nonlinsys->size; i++) {
-    // The non-linear system has size stages*nStates, i.e. [states, states, ...].
+    // non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
     nonlinsys->nominal[i] = gbData->nominals[ii];
     nonlinsys->min[i]     = gbData->mins[ii];
@@ -269,7 +269,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   }
   else
   {
-    /* Internal NLS uses its own ODE-sized Jacobian data. */
+    /* internal NLS uses its own Jacobian data. */
     gbData->jacobian = NULL;
   }
   nlsData->initialAnalyticalJacobian = NULL;
