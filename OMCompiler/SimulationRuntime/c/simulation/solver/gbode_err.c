@@ -389,7 +389,8 @@ int gbTwoStepErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR 
   return evaluateError(context, two_step->fallback);
 }
 
-int gbRichardsonErrorEstimator(GB_ERROR_CONTEXT *, const GB_ERROR_ESTIMATOR *estimator)
+int gbRichardsonErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator)
 {
+  (void) context; // suppress it.
   return estimator->order;
 }
