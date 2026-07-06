@@ -278,6 +278,50 @@ fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()>
     Ok(())
 }
 
+/// Number of equidistant homotopy steps (C's `init_lambda_steps`).
+const HOMOTOPY_STEPS: i32 = 3;
+
+/// Solve the initial system: `functionParameters`, then `functionInitialEquations`
+/// with the relations fresh (init mode). Tries directly first (lambda = 1, so
+/// `homotopy(a, s)` = a); if that leaves a non-converged nonlinear system and the
+/// model uses `homotopy()`, fall back to the global equidistant homotopy
+/// continuation (C's `solveWithGlobalHomotopy`): lambda 0 -> 1 in `HOMOTOPY_STEPS`
+/// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
+/// step seeded by the previous one's solution. Leaves lambda = 1.
+fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    e.call1("functionParameters", sim_data)?;
+    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
+    if layout.n_samples > 0 {
+        e.call1("initSample", sim_data)?;
+    }
+    // Direct attempt (no continuation).
+    write_f64(e, sim_data + layout.lambda_off, 1.0)?;
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+    e.call1("functionInitialEquations", sim_data)?;
+    if check_nls(e, sim_data, layout).is_ok() {
+        return Ok(());
+    }
+    if !layout.has_homotopy {
+        check_nls(e, sim_data, layout)?; // re-surface the failure
+        return Ok(());
+    }
+    for step in 0..=HOMOTOPY_STEPS {
+        let lambda = step as f64 / HOMOTOPY_STEPS as f64;
+        write_f64(e, sim_data + layout.lambda_off, lambda)?;
+        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+        if step == 0 {
+            e.call1("functionInitialEquations_lambda0", sim_data)?;
+        } else {
+            e.call1("functionInitialEquations", sim_data)?;
+        }
+        if check_nls(e, sim_data, layout).is_err() {
+            bail!("CodegenWasmJit: homotopy initialization did not converge at lambda={lambda}");
+        }
+    }
+    write_f64(e, sim_data + layout.lambda_off, 1.0)?;
+    Ok(())
+}
+
 /// Append one trajectory row to `rows`: the real part `[time | realVars]`
 /// followed by the integer and boolean algebraic slots (converted to f64),
 /// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
@@ -485,13 +529,10 @@ fn run_host(
 ) -> Result<Vec<f64>> {
     let layout = &model.layout;
     stats.steps = (n_rows - 1) as u64;
-    e.call1("functionParameters", sim_data)?;
-    // No state events on this path, so relations never need the held phase;
-    // evaluate them fresh throughout (mode 2). `rt_solve_nls` still holds them
-    // internally around its Newton solve.
-    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
-    e.call1("functionInitialEquations", sim_data)?;
-    check_nls(e, sim_data, layout)?;
+    // Init (with homotopy fallback). No state events on this path, so relations
+    // stay fresh (mode 2, set by run_initialization); `rt_solve_nls` still holds
+    // them internally around its Newton solve.
+    run_initialization(e, sim_data, layout)?;
 
     let n_states = layout.n_states;
     let n_steps = n_rows - 1;
@@ -694,13 +735,9 @@ fn run_dassl(
     daskr::aux::xsetf(0);
 
     let layout = &model.layout;
-    e.call1("functionParameters", sim_data)?;
-    // No state events on this path, so relations never need the held phase;
-    // evaluate them fresh throughout (mode 2). `rt_solve_nls` still holds them
-    // internally around its Newton solve.
-    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
-    e.call1("functionInitialEquations", sim_data)?;
-    check_nls(e, sim_data, layout)?; // a non-converging init NLS is not recoverable
+    // Init (with homotopy fallback). No state events on this path, so relations
+    // stay fresh (mode 2); `rt_solve_nls` still holds them internally.
+    run_initialization(e, sim_data, layout)?;
 
     let n_states = layout.n_states as usize;
     let states_base = sim_data + REAL_OFF;
@@ -932,15 +969,10 @@ fn run_dassl_events(
     daskr::aux::xsetf(0);
 
     let layout = &model.layout;
-    e.call1("functionParameters", sim_data)?;
-    // Relation mode 2 (init): all relations fresh, through the initial row, so
-    // `relations[]` is populated before the states loop starts holding it.
-    write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
-    if layout.n_samples > 0 {
-        e.call1("initSample", sim_data)?; // fill start/interval from parameters
-    }
-    e.call1("functionInitialEquations", sim_data)?;
-    check_nls(e, sim_data, layout)?;
+    // Init (with homotopy fallback). Relation mode 2 (all relations fresh through
+    // the initial row, so `relations[]` is populated before the states loop starts
+    // holding it) and `initSample` are handled inside run_initialization.
+    run_initialization(e, sim_data, layout)?;
 
     let n_states = layout.n_states as usize;
     let states_base = sim_data + REAL_OFF;

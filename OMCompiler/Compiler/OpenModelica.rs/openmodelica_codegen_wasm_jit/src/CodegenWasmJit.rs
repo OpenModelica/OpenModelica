@@ -115,6 +115,13 @@ struct SimLayout {
     /// When true, `functionAlgebraics` also runs the discrete update and saves the
     /// `pre` regions, so drivers must call it only in the once-per-step order.
     has_when: bool,
+    /// The model uses `homotopy()`, so a `functionInitialEquations_lambda0` is
+    /// emitted and the driver may fall back to the homotopy continuation on a
+    /// failed direct initialization.
+    has_homotopy: bool,
+    /// `SimData` byte offset of the homotopy parameter lambda (f64). 1.0 outside
+    /// the homotopy continuation; `homotopy(a, s)` reads it as `s + lambda*(a-s)`.
+    lambda_off: u32,
     rparam_off: u32,
     int_off: u32,
     iparam_off: u32,
@@ -204,6 +211,7 @@ impl SimLayout {
         n_stateset_f64: u32,
         n_math: u32,
         has_when: bool,
+        has_homotopy: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -223,8 +231,10 @@ impl SimLayout {
         let terminate_off = pre_bool_off + n_bool_alg * 4;
         let n_out_off = terminate_off + 4;
         let nls_fail_off = n_out_off + 4;
+        // Homotopy parameter (f64), 8-aligned.
+        let lambda_off = (nls_fail_off + 4 + 7) & !7;
         // Sample region: 8-aligned start/interval f64 pairs, then i32 active flags.
-        let sample_off = (nls_fail_off + 4 + 7) & !7;
+        let sample_off = (lambda_off + 8 + 7) & !7;
         let sample_active_off = sample_off + n_samples * 16;
         // Zero-crossing values (f64 each), 8-aligned after the sample region.
         let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
@@ -240,7 +250,7 @@ impl SimLayout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let total = mathevents_off + n_math_slots * 8;
         SimLayout {
-            n_states, n_real_alg, has_when, rparam_off, int_off, iparam_off, bool_off, bparam_off,
+            n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off, bool_off, bparam_off,
             str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off,
             n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stateset_off, n_math, mathevents_off, total,
@@ -733,6 +743,8 @@ struct SimVarMap {
     mathevents_off: u32,
     /// Number of math-event slots (bounds the `mathEventsValuePre` region).
     n_mathevents: u32,
+    /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
+    lambda_off: u32,
 }
 
 /// Display name of a model variable's component reference (OMC `.`-separated
@@ -848,6 +860,7 @@ fn build_var_map(
         n_relations: layout.n_rel,
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math,
+        lambda_off: layout.lambda_off,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
 
@@ -1331,6 +1344,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     let stateset_scratch_f64 = stateset_scratch_f64(&sim_code.stateSets)?;
     let all_eqs = flatten_eqs(&sim_code.allEquations);
     let has_when = all_eqs.iter().any(|e| matches!(&**e, SimCode::SimEqSystem::SES_WHEN { .. }));
+    // The backend only emits a lambda-0 initial system when the model uses
+    // `homotopy()`; its presence is the signal to wire up the continuation.
+    let has_homotopy = (&*sim_code.initialEquations_lambda0).into_iter().next().is_some();
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -1348,6 +1364,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         stateset_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
         has_when,
+        has_homotopy,
     );
 
     let (mut var_map, result_vars) = build_var_map(vars, &layout)?;
@@ -1456,13 +1473,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         Vec::new()
     };
     let initial_eqs = flatten_eqs(&sim_code.initialEquations);
+    let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let (nls_systems, nls_jobs, nls_hist_bytes) =
-        collect_nls_jobs(&[&param_eqs, &initial_eqs, &ode_eqs, &algebraic_eqs]);
+        collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs]);
     var_map.nls_jobs = Arc::new(nls_jobs);
 
     // --- Type section: one type per import, per model function, per equation
@@ -1699,6 +1717,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         bodies.push(build_stateset_jac_fn(&sim_code.stateSets, &var_map, &eq_index, &by_name, &mut literals)?);
         Some(idx)
     };
+    // The lambda-0 (simplified) initial system, for the homotopy continuation's
+    // first step. Emitted only for models that use `homotopy()`.
+    let init_lambda0_idx = if lambda0_eqs.is_empty() {
+        None
+    } else {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(build_eq_fn("initialEquations_lambda0", lambda0_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
+        Some(idx)
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -1730,6 +1757,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     if stateset_jac_idx.is_some() {
         functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     }
+    if init_lambda0_idx.is_some() {
+        functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
+    }
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -1758,6 +1788,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     }
     if let Some(idx) = stateset_jac_idx {
         exports.export("functionStateSetJacobians", we::ExportKind::Func, idx);
+    }
+    if let Some(idx) = init_lambda0_idx {
+        exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, idx);
     }
 
     let mut module = we::Module::new();
@@ -2023,6 +2056,7 @@ fn build_eq_fn_with_prelude(
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2069,6 +2103,7 @@ fn build_init_sample_fn(
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2108,6 +2143,7 @@ fn build_zero_crossings_fn(
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
         zc_context: true,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2506,6 +2542,7 @@ fn build_nls_fns(
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
         zc_context: false,
     };
     let finish = |ctx: FnCtx| -> we::Function {
@@ -2647,6 +2684,12 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     // locals: BUF(i32), H(f64), ROW(i32), DEST(i32)
     let mut f = we::Function::new([(1, we::ValType::I32), (1, we::ValType::F64), (2, we::ValType::I32)]);
     use we::Instruction as I;
+
+    // lambda = 1.0 so homotopy(a, s) evaluates to the actual expression (this
+    // in-wasm Euler path does no homotopy continuation).
+    f.instruction(&I::LocalGet(SIM_DATA));
+    f.instruction(&I::F64Const(1.0f64.into()));
+    f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(layout.lambda_off, 3)));
 
     // functionParameters(sim_data); functionInitialEquations(sim_data)
     f.instruction(&I::LocalGet(SIM_DATA));

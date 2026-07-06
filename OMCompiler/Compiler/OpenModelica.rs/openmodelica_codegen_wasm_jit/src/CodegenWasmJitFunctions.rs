@@ -976,6 +976,9 @@ pub(crate) struct SimCtx {
     pub(crate) mathevents_off: u32,
     /// Number of math-event slots (bounds the `mathEventsValuePre` region).
     pub(crate) n_mathevents: u32,
+    /// `SimData` byte offset of the homotopy parameter lambda (`homotopy(a, s)` =
+    /// `s + lambda*(a-s)`).
+    pub(crate) lambda_off: u32,
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
     /// then evaluated *fresh* (so a sign change is detectable) rather than held.
     pub(crate) zc_context: bool,
@@ -4452,6 +4455,32 @@ fn compile_math_builtin(
             need_args(&argv, 1, name)?;
             let w = compile_exp(ctx, argv[0])?;
             Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
+        }
+        // `homotopy(actual, simplified)` = `simplified + lambda*(actual-simplified)`
+        // (C's `homotopy_` with `data->simulationInfo->lambda`). lambda is 1.0
+        // outside the continuation, so this is `actual` for the normal init and the
+        // non-initial partitions; the init driver sweeps lambda 0->1 on fallback.
+        "homotopy" => {
+            need_args(&argv, 2, name)?;
+            let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            let at = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(at));
+            let s = compile_exp(ctx, argv[1])?;
+            coerce(ctx, s, WTy::F64);
+            let st = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(st));
+            // simplified + lambda*(actual - simplified)
+            ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Add);
+            Ok(SigTy::Real)
         }
         // `pre(x)` reads x's pre-value slot (C's `*VarsPre`), populated by
         // savePreValues after each step. In simulation mode the argument is a
