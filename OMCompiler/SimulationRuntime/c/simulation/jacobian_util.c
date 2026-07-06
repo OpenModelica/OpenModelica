@@ -33,16 +33,41 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 
-void setJacobianDenseElementColumnMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value)
+/**
+ * @brief setJacElementFunc-compatible setter for a sparse CSC raw buffer.
+ *
+ * Writes value at the CSC position: jac[nth] = value.
+ * row, col, and nRows are unused; the position is determined solely by nth.
+ */
+void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows)
 {
-  (void)nCols;
-  jac[column * nRows + row] = value;
+  (void)row; (void)col; (void)nRows;
+  ((modelica_real*)jac)[nth] = value;
 }
 
-void setJacobianDenseElementRowMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value)
+/**
+ * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
+ *
+ * Writes value at: jac[col * nRows + row] = value.
+ * nth is unused.
+ */
+void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows)
 {
-  (void)nRows;
-  jac[row * nCols + column] = value;
+  (void)nth;
+  ((modelica_real*)jac)[col * nRows + row] = value;
+}
+
+
+/**
+ * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
+ *
+ * Writes value at: jac[col * nRows + row] = value.
+ * nth is unused.
+ */
+void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols)
+{
+  (void)nth;
+  ((modelica_real*)jac)[row * nCols + col] = value;
 }
 
 /**
@@ -150,79 +175,65 @@ void freeJacobianCopy(JACOBIAN *jac)
   }
 }
 
-/*! \fn evalJacobian
- *
- *  compute entries of Jacobian in sparse CSC or dense format
- *  uses coloring (sparsePattern non NULL)
- *
- *  \param [ref] [data]
- *  \param [ref] [threadData]
- *  \param [ref] [jacobian]        Pointer to Jacobian
- *  \param [ref] [parentJacobian]  Pointer to parent Jacobian
- *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense), non zero-initialized
- *  \param [ref] [isDense]         Flag to set dense / sparse output
- */
-void evalJacobianWithSetDenseElement(DATA* data, threadData_t *threadData,
-                                     JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-                                     modelica_real* jac, modelica_boolean isDense,
-                                     jacobianSetDenseElementFunc setDenseElement)
-{
-  int color, column, row, nz;
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-
-  if (setDenseElement == NULL) {
-    setDenseElement = setJacobianDenseElementColumnMajor;
-  }
-
-  /* evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-
-  if (isDense) {
-    /* memset to zero for dense, since solvers might destroy "hard zeros"
-     * does not apply for sparse, since the values are overwritten */
-    memset(jac, 0.0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
-  }
-
-  /* evaluate Jacobian */
-  for (color = 0; color < sp->maxColors; color++) {
-    /* activate seed variable for the corresponding color */
-    for (column = 0; column < jacobian->sizeCols; column++)
-      if (sp->colorCols[column]-1 == color)
-        jacobian->seedVars[column] = 1.0;
-
-    /* evaluate Jacobian column */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    for (column = 0; column < jacobian->sizeCols; column++) {
-      if (sp->colorCols[column]-1 == color) {
-        for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
-          row = sp->index[nz];
-          if (!isDense) {
-            /* sparse case */
-            jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
-          }
-          else {
-            /* dense case */
-            setDenseElement(jac, row, column, jacobian->sizeRows, jacobian->sizeCols,
-                            jacobian->resultVars[row]); //* solverData->xScaling[j];
-          }
-        }
-        /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[column] = 0.0;
-      }
-    }
-  }
-}
-
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
                   JACOBIAN* parentJacobian, modelica_real* jac,
                   modelica_boolean isDense)
 {
-  /* Keep default behavior unchanged: dense output is column-major. */
-  evalJacobianWithSetDenseElement(data, threadData, jacobian, parentJacobian,
-                                  jac, isDense, setJacobianDenseElementColumnMajor);
+  if (isDense) {
+    /* Zero-initialise first: solvers may leave stale values for structural zeros. */
+    memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawDenseColumnMajor);
+  } else {
+    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse);
+  }
+}
+
+/**
+ * @brief Evaluate Jacobian using coloring with a generic element setter.
+ *
+ * Same coloring algorithm as evalJacobian but accepts a
+ * setJacElementFunc setter and an opaque matrixA pointer.  This allows
+ * solver-specific matrix formats (e.g., Sundials SUNMatrix) to be populated
+ * directly without an intermediate dense buffer.
+ *
+ * The caller is responsible for zeroing matrixA before this call if needed.
+ * constantEqns is called internally when present.
+ *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param jacobian        Jacobian to evaluate (column-wise, CSC sparse pattern).
+ * @param parentJacobian  Parent Jacobian (can be NULL).
+ * @param matrixA         Opaque pointer to output matrix; passed through to setElement.
+ * @param setElement      Setter: (row, col, nz_index, value, matrixA, nRows).
+ */
+void evalJacobianColored(DATA* data, threadData_t *threadData,
+                         JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                         void* matrixA, setJacElementFunc setElement)
+{
+  int color, column, row, nz;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  for (color = 0; color < sp->maxColors; color++) {
+    for (column = 0; column < (int)jacobian->sizeCols; column++)
+      if (sp->colorCols[column] - 1 == color)
+        jacobian->seedVars[column] = 1.0;
+
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    for (column = 0; column < (int)jacobian->sizeCols; column++) {
+      if (sp->colorCols[column] - 1 == color) {
+        for (nz = sp->leadindex[column]; nz < (int)sp->leadindex[column + 1]; nz++) {
+          row = sp->index[nz];
+          setElement(row, column, nz, jacobian->resultVars[row], matrixA, (int)jacobian->sizeRows);
+        }
+        jacobian->seedVars[column] = 0.0;
+      }
+    }
+  }
 }
 
 /*!

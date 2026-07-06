@@ -33,20 +33,7 @@
 
 #include "../../simulation_data.h"
 #include "util/parallel_helper.h"
-
-/**
- * @brief Set element of Jacobian matrix.
- *
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index.
- * @param value     Value to set in position (i,j).
- * @param Jac       Pointer to data structure storing matrix.
- * @param nRows     Number of rows of Jacobian matrix, unused.
- */
-typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
+#include "../jacobian_util.h"  /* setJacElementFunc is defined here */
 
 void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns);
 

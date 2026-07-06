@@ -44,12 +44,55 @@ void freeJacobianCopy(JACOBIAN* jac);
 
 typedef void (*jacobianSetDenseElementFunc)(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value);
 
-void setJacobianDenseElementColumnMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value);
-void setJacobianDenseElementRowMajor(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value);
+/**
+ * @brief Generic element setter for a Jacobian matrix.
+ *
+ * Jac(row, column) = value.
+ *
+ * @param row     Row index.
+ * @param column  Column index.
+ * @param nth     Sparsity pattern position (CSC index).
+ * @param value   Value to set.
+ * @param Jac     Opaque pointer to the matrix data structure.
+ * @param nRows   Number of rows.
+ */
+typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
 
+/**
+ * @brief setJacElementFunc-compatible setter: writes jac[nth] = value (sparse CSC raw buffer).
+ */
+void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows);
+
+/**
+ * @brief setJacElementFunc-compatible setter: writes jac[col*nRows+row] = value (dense column-major raw buffer).
+ */
+void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows);
+
+/**
+ * @brief setJacElementFunc-compatible setter: writes jac[row*nCols+col] = value (dense row-major raw buffer).
+ */
+void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols);
+
+/**
+ * @brief Evaluate colored Jacobian, storing results via a generic setter.
+ *
+ * This is the unified core evaluation function.  All other evalJacobian* variants
+ * are thin wrappers that select an appropriate setJacElementFunc and delegate here.
+ *
+ * @param matrixA     Opaque pointer to output matrix; passed through to setElement.
+ * @param setElement  Setter called for each nonzero: (row, col, nz_index, value, matrixA, nRows).
+ */
+void evalJacobianColored(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                         void* matrixA, setJacElementFunc setElement);
+
+/**
+ * @brief Evaluate colored Jacobian into a raw modelica_real* buffer.
+ *
+ * Convenience wrapper over evalJacobianColored.
+ * isDense=TRUE  → column-major dense output; buffer is zero-initialised first.
+ * isDense=FALSE → sparse CSC output; values written at their CSC position (jac[nz]).
+ */
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
-void evalJacobianWithSetDenseElement(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-									 modelica_real* jac, modelica_boolean isDense, jacobianSetDenseElementFunc setDenseElement);
 
 void initBidirectionalRecovery(JACOBIAN* fwd);
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);

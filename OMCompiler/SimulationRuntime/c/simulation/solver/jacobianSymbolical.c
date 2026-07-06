@@ -198,23 +198,20 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
 {
 
 #ifndef USE_PARJAC
-  /* Non-parallel path: for column eval, delegate to evalJacobian, which uses the same
-   * coloring algorithm through the jacobian->evalColumn function pointer and produces
-   * column-major dense output (jac[col * sizeRows + row]) — identical to what
-   * setJacElementDasslSparse writes.  This unifies the single-threaded evaluation of
-   * jacA_symColored with the evalJacobian path that jacA_symBiColored already uses.
+  /* Non-parallel path: callers that pass setJacElement == NULL opt in to the fast path
+   * through evalJacobianWithSetDenseElement.  This requires matrixA to be a plain
+   * modelica_real* buffer laid out in column-major order (as DASSL uses).
    *
-   * Note: the caller may already have invoked constantEqns before this call; evalJacobian
-   * will call it again internally.  The double call is redundant and should be cleaned up.
+   * Callers that pass a non-NULL setJacElement (e.g. IDA with setJacElementSundialsSparse
+   * where matrixA is a SUNMatrix*) must NOT use this shortcut — they fall through to the
+   * serial OMP block below so that setJacElement is called correctly.
    *
-   * Row eval (isRowEval == TRUE) falls through to the serial omp block below because
-   * evalJacobian and evalJacobianRow both produce row-major dense output for CSR patterns,
-   * whereas setJacElementDasslSparseAdj expects column-major.
+   * Row eval (isRowEval == TRUE) also falls through because evalJacobianRow produces
+   * row-major output whereas adjoint setters expect column-major.
    * TODO: Unify the row-eval path once evalJacobianRow output layout is made column-major. */
-  // this is now dense output with row major set to reflect the layout of the numerical Jacobian in DASSL
   if (!jacColumns->isRowEval) {
-    evalJacobianWithSetDenseElement(data, threadData, jacColumns, NULL, (modelica_real*)matrixA, 1 /* isDense */, setJacobianDenseElementRowMajor);
-    return;
+      evalJacobianColored(data, threadData, jacColumns, NULL, matrixA, setJacElement);
+      return;
   }
 #endif /* !USE_PARJAC */
 

@@ -1008,7 +1008,7 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
 void setJacElementDasslSparse(int row, int column, int nth, double value, void* Jac, int nRows)
 {
   UNUSED(nth);  /* Disables compiler warning */
-
+  // column major
   double* A = (double*) Jac;
   A[column * nRows + row] = value;
 }
@@ -1045,7 +1045,7 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   }
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
-                                           data, threadData, &setJacElementDasslSparse);
+                                            data, threadData, &setJacElementRawDenseColumnMajor);
 
   return 0;
 }
@@ -1425,18 +1425,33 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
       && dasslData->dasslJacobian != COLOREDNUMJAC
       && dasslData->dasslJacobian != NUMJAC)
   {
-    // print the analytical Jacobian for debugging
-    printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: analytical Jacobian pd (column-major)", pd,
-                        data, dasslData->N, *t);
-
     // and print comparison to numerical Jacobian
     double* pdNumerical = (double*) calloc(dasslData->N * dasslData->N, sizeof(double));
     if (pdNumerical != NULL)
     {
-      int row, col, k;
-      double absDiff, relDiff;
-      double maxAbsDiff = 0.0, maxRelDiff = 0.0;
-      int maxAbsRow = 0, maxAbsCol = 0, maxRelRow = 0, maxRelCol = 0;
+      int k;
+
+      infoStreamPrint(OMC_LOG_JAC, 1,
+                      "State vector y (flat memory)");
+      for (k = 0; k < dasslData->N; ++k)
+      {
+        const char* stateName = data->modelData->realVarsData[k].info.name;
+        infoStreamPrint(OMC_LOG_JAC, 0,
+                        "flat=%d name='%s' y=%.16g",
+                        k, stateName, y[k]);
+      }
+      messageClose(OMC_LOG_JAC);
+
+      infoStreamPrint(OMC_LOG_JAC, 1,
+                      "State-derivative vector yprime (flat memory)");
+      for (k = 0; k < dasslData->N; ++k)
+      {
+        const char* stateName = data->modelData->realVarsData[k].info.name;
+        infoStreamPrint(OMC_LOG_JAC, 0,
+                        "flat=%d name='%s' yprime=%.16g",
+                        k, stateName, yprime[k]);
+      }
+      messageClose(OMC_LOG_JAC);
 
       /* Compute numerical Jacobian ∂F/∂y using finite differences */
       jacA_num(t, y, yprime, deltaD, pdNumerical, cj, h, wt, rpar, ipar);
@@ -1448,23 +1463,12 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
       }
 
       infoStreamPrint(OMC_LOG_JAC, 1,
-                      "Jacobian comparison (column-major): analytical vs numerical (element-wise)");
-      for (col = 0; col < dasslData->N; col++)
+                      "Jacobian comparison (column-major flat memory): analytical vs numerical");
+      for (k = 0; k < dasslData->N * dasslData->N; ++k)
       {
-        const char* colName = data->modelData->realVarsData[col].info.name;
-        for (row = 0; row < dasslData->N; row++)
-        {
-          const char* rowName = data->modelData->realVarsData[row].info.name;
-          const int idx = col * dasslData->N + row;
-          const double analytical = pd[idx];
-          const double numerical = pdNumerical[idx];
-          const double absElemDiff = fabs(analytical - numerical);
-          const double relElemDiff = absElemDiff / fmax(fabs(numerical), 1e-15);
-          infoStreamPrint(OMC_LOG_JAC, 0,
-                          "J(row=%d:'%s', col=%d:'%s') ana=%.16g num=%.16g absDiff=%.16g relDiff=%.16g [flat=%d]",
-                          row, rowName, col, colName,
-                          analytical, numerical, absElemDiff, relElemDiff, idx);
-        }
+        infoStreamPrint(OMC_LOG_JAC, 0,
+                        "flat=%d ana=%.16g num=%.16g",
+                        k, pd[k], pdNumerical[k]);
       }
       messageClose(OMC_LOG_JAC);
       free(pdNumerical);
