@@ -930,10 +930,12 @@ static inline void dense_kron_id_vec(int block_count,
  *   - then nComplexBlocks consecutive 2x2 real blocks.
  *
  * Lambda is the block diagonal part. Each diagonal block is either:
- *   - 1x1 real row: out_i += gamma[realEigenvalueIndex[i]] * v_i
+ *   - 1x1 real row: out_i += gamma[i] * v_i
  *
  *   - 2x2 complex block:  out_i   += alpha[j] * v_i - beta[j]  * v_{i+1}
  *                         out_i+1 += beta[j]  * v_i + alpha[j] * v_{i+1}
+ *
+ * where i and j are given from the eigenvalue indices (realEigenvalueIndex, complexEigenvalueIndex). 
  *
  * L contains only the strict lower triangular couplings outside these diagonal blocks.
  * Hence L never stores the lower entry inside a complex 2x2 block; that entry is beta[j].
