@@ -136,25 +136,9 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //   (11) Algorithm
 //   $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.V + $pDER_ODE_JAC_ADJ.i_R * (1/R);
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{1}
-//   1:	{0, 1}
+// Resizable Sparsity Pattern
+// ----------------------------
 //
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{1}
-//   1:	{0, 1}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {0}
-//   {1}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0}
-//   {1}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
