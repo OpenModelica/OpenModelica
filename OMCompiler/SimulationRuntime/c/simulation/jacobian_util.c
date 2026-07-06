@@ -210,6 +210,51 @@ void evalJacobianCleanupRowEval(JACOBIAN* jac)
 }
 
 /**
+ * @brief Evaluate one color of a Jacobian using a generic element setter.
+ *
+ * Single-color kernel shared by evalJacobianColored (serial) and
+ * evalJacobianColoredParallel (OpenMP). See jacobian_util.h for full documentation.
+ */
+void evalJacobianOneColor(DATA* data, threadData_t* threadData,
+                           JACOBIAN* jacobian, JACOBIAN* parentJac,
+                           const SPARSE_PATTERN* sp, int color,
+                           int isRowEval, unsigned int activeDim, int nRows,
+                           void* matrixA, setJacElementFunc setElement,
+                           jacobianColumn_func_ptr evalFunc,
+                           jacobianCleanup_func_ptr cleanupFunc)
+{
+  int j, nth, currentIndex;
+
+  /* Activate seeds for this color */
+  for (j = 0; j < (int)activeDim; j++)
+    if ((int)sp->colorCols[j] - 1 == color)
+      jacobian->seedVars[j] = 1.0;
+
+  evalFunc(data, threadData, jacobian, parentJac);
+
+  /* Scatter results */
+  for (j = 0; j < (int)activeDim; j++) {
+    if ((int)sp->colorCols[j] - 1 == color) {
+      nth = (int)sp->leadindex[j];
+      while (nth < (int)sp->leadindex[j + 1]) {
+        currentIndex = (int)sp->index[nth];
+        if (isRowEval)
+          /* j is active row, currentIndex is column */
+          setElement(j, currentIndex, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
+        else
+          /* j is active column, currentIndex is row */
+          setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
+        nth++;
+      }
+      jacobian->seedVars[j] = 0.0;
+    }
+  }
+
+  if (cleanupFunc != NULL)
+    cleanupFunc(jacobian);
+}
+
+/**
  * @brief Evaluate Jacobian using coloring with a generic element setter.
  *
  * Unified evaluation for both column-wise (forward) and row-wise (adjoint) mode,
@@ -240,46 +285,20 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
                          void* matrixA, setJacElementFunc setElement,
                          jacobianCleanup_func_ptr cleanupFunc)
 {
-  int color, j, nth, currentIndex;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   const int isRowEval = (jacobian->isRowEval == TRUE);
   const unsigned int activeDim = isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
   const int nRows = (int)jacobian->sizeRows;
+  int color;
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
   for (color = 0; color < (int)sp->maxColors; color++) {
-    /* Activate seeds for this color */
-    for (j = 0; j < (int)activeDim; j++) {
-      if ((int)sp->colorCols[j] - 1 == color)
-        jacobian->seedVars[j] = 1.0;
-    }
-
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    /* Scatter results */
-    for (j = 0; j < (int)activeDim; j++) {
-      if ((int)sp->colorCols[j] - 1 == color) {
-        nth = (int)sp->leadindex[j];
-        while (nth < (int)sp->leadindex[j + 1]) {
-          currentIndex = (int)sp->index[nth];
-          if (isRowEval)
-            /* j is active row, currentIndex is column */
-            setElement(j, currentIndex, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
-          else
-            /* j is active column, currentIndex is row */
-            setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
-          nth++;
-        }
-        jacobian->seedVars[j] = 0.0;
-      }
-    }
-
-    if (cleanupFunc != NULL) {
-      cleanupFunc(jacobian);
-    }
+    evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
+                         isRowEval, activeDim, nRows, matrixA, setElement,
+                         jacobian->evalColumn, cleanupFunc);
   }
 }
 

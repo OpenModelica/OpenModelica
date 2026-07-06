@@ -121,12 +121,6 @@ int jacA_symBiColored(double *t, double *y, double *yprime,
                       double *deltaD, double *pd, double *cj, double *h,
                       double *wt, double *rpar, int* ipar);
 
-void setJacElementDasslSparse(int l, int k, int nth, double val,
-                                     void* matrixA, int rows);
-
-void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nRows);
-
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
     int *neq,
@@ -993,26 +987,6 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
   return 0;
 }
 
-/**
- * @brief Set element of dense Jacobian matrix.
- *
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index, unused.
- * @param value     Value to set in position (i,j)
- * @param Jac       Pointer to double array storing matrix.
- * @param nRows     Number of rows of Jacobian matrix
- */
-void setJacElementDasslSparse(int row, int column, int nth, double value, void* Jac, int nRows)
-{
-  UNUSED(nth);  /* Disables compiler warning */
-  // column major
-  double* A = (double*) Jac;
-  A[column * nRows + row] = value;
-}
-
 /* \fn jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
  *
@@ -1050,31 +1024,6 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   return 0;
 }
 
-/**
- * @brief Set element of dense Jacobian matrix transposed.
- * Needed when calculating adjoint Jacobian.
- * Adjoint setter: flip indices to correct transposed storage
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index, unused.
- * @param value     Value to set in position (i,j)
- * @param Jac       Pointer to double array storing matrix.
- * @param nRows     Number of rows of Jacobian matrix
- */
-void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nRows)
-{
-  UNUSED(nth);
-  double* A = (double*) Jac;
-  // this col-major at the moment to match the layout of the numerical Jacobian
-  // row-major would be
-  //A[row*nCols + column] = value; // or
-  //A[row*nRows + column] = value;
-  A[column*nRows + row] = value;
-}
-
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
  *
@@ -1107,7 +1056,7 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
   }
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
-                                           data, threadData, &setJacElementDasslSparseAdj);
+                                           data, threadData, &setJacElementRawDenseColumnMajor); // TODO: row or column major here?
 
 
   return 0;

@@ -36,73 +36,59 @@
 #include "jacobianSymbolical.h"
 #include "../jacobian_util.h"
 
-typedef void (*jacobianScatter_func_ptr)(setJacElementFunc setJacElement,
-                                         unsigned int activeIndex,
-                                         unsigned int currentIndex,
-                                         unsigned int nth,
-                                         const JACOBIAN* t_jac,
-                                         void* matrixA,
-                                         int rows);
-
-static void scatterRowEval(setJacElementFunc setJacElement,
-                           unsigned int activeIndex,
-                           unsigned int currentIndex,
-                           unsigned int nth,
-                           const JACOBIAN* t_jac,
-                           void* matrixA,
-                           int rows)
+#ifdef USE_PARJAC
+/**
+ * @brief Parallel evaluation of a colored Jacobian.
+ *
+ * Distributes colors across OpenMP threads. Each thread works on its own
+ * thread-local Jacobian from the jacColumns array, calling the shared
+ * evalJacobianOneColor kernel for each color assigned to it.
+ *
+ * evalFunc is derived from data->callback because thread-local Jacobians
+ * allocated by allocateThreadLocalJacobians do not have evalColumn set.
+ *
+ * @param jacColumns  Array of thread-local Jacobians (one per thread).
+ * @param spp         Sparse pattern (must match the pattern in jacColumns[i]).
+ * @param matrixA     Opaque output matrix; forwarded to setElement.
+ * @param setElement  Setter: (row, col, nz_index, value, matrixA, nRows).
+ */
+static void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
+                                        JACOBIAN* jacColumns,
+                                        SPARSE_PATTERN* spp,
+                                        void* matrixA, setJacElementFunc setElement)
 {
-  (*setJacElement)(activeIndex, currentIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-}
+  const int isRowEval = (jacColumns[0].isRowEval == TRUE);
+  jacobianColumn_func_ptr evalFunc = isRowEval
+      ? data->callback->functionJacADJ_column
+      : data->callback->functionJacA_column;
 
-static void scatterColumnEval(setJacElementFunc setJacElement,
-                              unsigned int activeIndex,
-                              unsigned int currentIndex,
-                              unsigned int nth,
-                              const JACOBIAN* t_jac,
-                              void* matrixA,
-                              int rows)
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) shared(data, threadData, jacColumns, spp, matrixA, setElement, evalFunc, isRowEval)
 {
-  (*setJacElement)(currentIndex, activeIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-}
-
-static void evaluateOneColor(unsigned int color,
-                             unsigned int activeDim,
-                             unsigned int rows,
-                             SPARSE_PATTERN* spp,
-                             JACOBIAN* t_jac,
-                             DATA* data,
-                             threadData_t* threadData,
-                             void* matrixA,
-                             setJacElementFunc setJacElement,
-                             jacobianColumn_func_ptr evalFunc,
-                             jacobianScatter_func_ptr scatterFunc,
-                             jacobianCleanup_func_ptr cleanupFunc)
-{
-  unsigned int j, nth, currentIndex;
-
-  for (j = 0; j < activeDim; j++) {
-    if (spp->colorCols[j] - 1 == color) {
-      t_jac->seedVars[j] = 1;
-    }
+  /* Register omp-thread in GC */
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
   }
 
-  evalFunc(data, threadData, t_jac, NULL);
+  JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
+  const unsigned int activeDim = isRowEval ? t_jac->sizeRows : t_jac->sizeCols;
+  const int nRows = (int)t_jac->sizeRows;
+  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : evalJacobianCleanupNoop;
 
-  for (j = 0; j < activeDim; j++) {
-    if (spp->colorCols[j] - 1 == color) {
-      nth = spp->leadindex[j];
-      while (nth < spp->leadindex[j + 1]) {
-        currentIndex = spp->index[nth];
-        scatterFunc(setJacElement, j, currentIndex, nth, t_jac, matrixA, rows);
-        nth++;
-      }
-      t_jac->seedVars[j] = 0;
-    }
+  unsigned int color;
+#pragma omp for
+  for (color = 0; color < spp->maxColors; color++) {
+    evalJacobianOneColor(data, threadData, t_jac, NULL, spp, (int)color,
+                         isRowEval, activeDim, nRows, matrixA, setElement, evalFunc, cleanupFunc);
   }
-
-  cleanupFunc(t_jac);
+} // omp parallel
 }
+#endif /* USE_PARJAC */
+
 
 #ifdef USE_PARJAC
 /** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
@@ -175,58 +161,17 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
                                               threadData_t* threadData,
                                               setJacElementFunc setJacElement)
 {
+  (void)rows; (void)columns;
 
 #ifndef USE_PARJAC
-  /* Non-parallel path: callers that pass setJacElement == NULL opt in to the fast path
-   * through evalJacobianWithSetDenseElement.  This requires matrixA to be a plain
-   * modelica_real* buffer laid out in column-major order (as DASSL uses).
-   *
-   * Callers that pass a non-NULL setJacElement (e.g. IDA with setJacElementSundialsSparse
-   * where matrixA is a SUNMatrix*) must NOT use this shortcut — they fall through to the
-   * serial OMP block below so that setJacElement is called correctly. */
   {
     jacobianCleanup_func_ptr cleanup = jacColumns->isRowEval
         ? evalJacobianCleanupRowEval : NULL;
     evalJacobianColored(data, threadData, jacColumns, NULL, matrixA, setJacElement, cleanup);
-    return;
   }
-#endif /* !USE_PARJAC */
-
-#ifdef USE_PARJAC
-  GC_allow_register_threads();
+#else
+  evalJacobianColoredParallel(data, threadData, jacColumns, spp, matrixA, setJacElement);
 #endif
-
-#pragma omp parallel default(none) firstprivate(columns, rows) \
-                                   shared(spp, matrixA, jacColumns, data, threadData, setJacElement)
-{
-#ifdef USE_PARJAC
-  /* Register omp-thread in GC */
-  if(!GC_thread_is_registered()) {
-     struct GC_stack_base sb;
-     memset (&sb, 0, sizeof(sb));
-     GC_get_stack_base(&sb);
-     GC_register_my_thread (&sb);
-  }
-  //  printf("My id = %d of max threads= %d\n", omc_get_thread_num(), omp_get_num_threads());
-#endif
-  JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
-
-  unsigned int i;
-  const int isRowEval = (t_jac->isRowEval == 1);
-  const unsigned int activeDim = isRowEval ? (unsigned int) rows : (unsigned int) columns;
-  jacobianColumn_func_ptr evalFunc = isRowEval
-      ? data->callback->functionJacADJ_column
-      : data->callback->functionJacA_column;
-  jacobianScatter_func_ptr scatterFunc = isRowEval ? scatterRowEval : scatterColumnEval;
-  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : evalJacobianCleanupNoop;
-
-#pragma omp for
-  for (i=0; i < spp->maxColors; i++) {
-    evaluateOneColor(i, activeDim, (unsigned int) rows, spp, t_jac, data, threadData,
-                     matrixA, setJacElement, evalFunc, scatterFunc, cleanupFunc);
-   }
-
-} // omp parallel
 }
 
 #ifdef USE_PARJAC

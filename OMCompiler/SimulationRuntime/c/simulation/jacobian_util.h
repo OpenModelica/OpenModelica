@@ -94,6 +94,38 @@ void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, v
 void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols);
 
 /**
+ * @brief Evaluate one color of a Jacobian using a generic element setter.
+ *
+ * This is the shared single-color kernel used by both the serial evalJacobianColored
+ * and the parallel evalJacobianColoredParallel.  Callers pre-compute the derived
+ * quantities (isRowEval, activeDim, nRows) to avoid redundant work inside the parallel
+ * region.
+ *
+ * evalFunc is passed explicitly so that callers with thread-local Jacobians that do not
+ * have evalColumn set (e.g. those allocated by allocateThreadLocalJacobians) can supply
+ * the correct function pointer from data->callback directly.
+ *
+ * @param jacobian    Jacobian to evaluate (seedVars/resultVars must be thread-local).
+ * @param parentJac   Parent Jacobian; pass NULL in the parallel path.
+ * @param sp          Sparse pattern (CSC for column eval, CSR for row eval).
+ * @param color       0-based color index to process.
+ * @param isRowEval   Non-zero for row-wise (adjoint) evaluation.
+ * @param activeDim   jacobian->sizeRows (row eval) or jacobian->sizeCols (column eval).
+ * @param nRows       (int)jacobian->sizeRows, for the setElement nRows argument.
+ * @param matrixA     Opaque output matrix; forwarded to setElement.
+ * @param setElement  Setter: (row, col, nz_index, value, matrixA, nRows).
+ * @param evalFunc    Function that evaluates the Jacobian for the current seed vector.
+ * @param cleanupFunc Called after scatter to reset intermediate state; NULL is a no-op.
+ */
+void evalJacobianOneColor(DATA* data, threadData_t* threadData,
+                           JACOBIAN* jacobian, JACOBIAN* parentJac,
+                           const SPARSE_PATTERN* sp, int color,
+                           int isRowEval, unsigned int activeDim, int nRows,
+                           void* matrixA, setJacElementFunc setElement,
+                           jacobianColumn_func_ptr evalFunc,
+                           jacobianCleanup_func_ptr cleanupFunc);
+
+/**
  * @brief Evaluate colored Jacobian, storing results via a generic setter.
  *
  * This is the unified core evaluation function.  All other evalJacobian* variants
