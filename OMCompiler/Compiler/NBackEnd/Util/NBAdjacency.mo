@@ -1805,7 +1805,7 @@ public
       input Solvability sol;
       input UnorderedMap<ComponentRef, Solvability> map;
     algorithm
-      if rank(sol) > rank(getOptionOrDefault(UnorderedMap.get(cref, map), UNKNOWN())) then
+      if rank(sol) > rank(Util.getOptionOrDefault(UnorderedMap.get(cref, map), UNKNOWN())) then
         UnorderedMap.add(cref, sol, map);
       end if;
     end update;
@@ -2095,7 +2095,7 @@ public
       case Expression.SIZE() algorithm
         set  := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
         if isSome(exp.dimIndex) then
-          set2  := collectDependencies(getOption(exp.dimIndex), depth, map, dep_map, sol_map, rep_set);
+          set2  := collectDependencies(Util.getOption(exp.dimIndex), depth, map, dep_map, sol_map, rep_set);
           set := UnorderedSet.union(set, set2);
         end if;
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
@@ -2166,7 +2166,7 @@ public
       case Expression.RANGE() algorithm
         sets := collectDependencies(exp.start, depth, map, dep_map, sol_map, rep_set) :: sets;
         if isSome(exp.step) then
-          sets := collectDependencies(getOption(exp.step), depth, map, dep_map, sol_map, rep_set) :: sets;
+          sets := collectDependencies(Util.getOption(exp.step), depth, map, dep_map, sol_map, rep_set) :: sets;
         end if;
         sets := collectDependencies(exp.stop, depth, map, dep_map, sol_map, rep_set) :: sets;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
@@ -2266,7 +2266,7 @@ public
     // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
     if isSome(body.else_if) then
       set1 := UnorderedSet.union_list(sets1, ComponentRef.hash, ComponentRef.isEqual);
-      set2 := collectDependenciesIf(getOption(body.else_if), kind, map, dep_map, sol_map, rep_set);
+      set2 := collectDependenciesIf(Util.getOption(body.else_if), kind, map, dep_map, sol_map, rep_set);
       diff  := UnorderedSet.sym_difference(set1, set2);
       Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
       set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
@@ -2319,7 +2319,7 @@ public
 
     // traverse else when if it exists
     if isSome(body.else_when) then
-      lst := collectDependenciesWhen(getOption(body.else_when), kind, map, dep_map, sol_map, rep_set) :: lst;
+      lst := collectDependenciesWhen(Util.getOption(body.else_when), kind, map, dep_map, sol_map, rep_set) :: lst;
     end if;
     set := UnorderedSet.union_list(set :: set1 :: set2 :: lst, ComponentRef.hash, ComponentRef.isEqual);
   end collectDependenciesWhen;
