@@ -52,14 +52,22 @@ pub fn multiDownload(
     while let List::Cons { head: (urls, filename), tail } = &*cur {
         if openmodelica_wasi::read(filename.as_str()).is_none() {
             // Flatten this item's mirror URLs and record it for the host to fetch.
-            let mut mirrors: Vec<String> = Vec::new();
-            let mut u = urls.clone();
-            while let List::Cons { head, tail } = &*u {
-                mirrors.push(head.to_string());
-                let tail = tail.clone();
-                u = tail;
+            // A single command can ask for the same file repeatedly before it is
+            // fetched (installPackage consults the package index once per package
+            // it resolves, and the index is only cached after a successful read),
+            // so record each target filename at most once.
+            let name = filename.as_str();
+            let dup = PENDING.with(|p| p.borrow().iter().any(|(_, f)| f == name));
+            if !dup {
+                let mut mirrors: Vec<String> = Vec::new();
+                let mut u = urls.clone();
+                while let List::Cons { head, tail } = &*u {
+                    mirrors.push(head.to_string());
+                    let tail = tail.clone();
+                    u = tail;
+                }
+                PENDING.with(|p| p.borrow_mut().push((mirrors, filename.to_string())));
             }
-            PENDING.with(|p| p.borrow_mut().push((mirrors, filename.to_string())));
             all_present = false;
         }
 
