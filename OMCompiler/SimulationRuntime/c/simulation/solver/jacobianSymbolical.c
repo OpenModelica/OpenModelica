@@ -44,8 +44,6 @@ typedef void (*jacobianScatter_func_ptr)(setJacElementFunc setJacElement,
                                          void* matrixA,
                                          int rows);
 
-typedef void (*jacobianCleanup_func_ptr)(JACOBIAN* t_jac, unsigned int rows);
-
 static void scatterRowEval(setJacElementFunc setJacElement,
                            unsigned int activeIndex,
                            unsigned int currentIndex,
@@ -66,25 +64,6 @@ static void scatterColumnEval(setJacElementFunc setJacElement,
                               int rows)
 {
   (*setJacElement)(currentIndex, activeIndex, nth, t_jac->resultVars[currentIndex], matrixA, rows);
-}
-
-static void cleanupRowEval(JACOBIAN* t_jac, unsigned int rows)
-{
-  unsigned int j;
-
-  /* Avoid accumulation of resultVars and tmpVars between colors for row evaluation. */
-  for (j = 0; j < rows; j++) {
-    t_jac->resultVars[j] = 0;
-  }
-  for (j = 0; j < t_jac->sizeTmpVars; j++) {
-    t_jac->tmpVars[j] = 0;
-  }
-}
-
-static void cleanupNoop(JACOBIAN* t_jac, unsigned int rows)
-{
-  (void)t_jac;
-  (void)rows;
 }
 
 static void evaluateOneColor(unsigned int color,
@@ -122,7 +101,7 @@ static void evaluateOneColor(unsigned int color,
     }
   }
 
-  cleanupFunc(t_jac, rows);
+  cleanupFunc(t_jac);
 }
 
 #ifdef USE_PARJAC
@@ -204,14 +183,12 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
    *
    * Callers that pass a non-NULL setJacElement (e.g. IDA with setJacElementSundialsSparse
    * where matrixA is a SUNMatrix*) must NOT use this shortcut — they fall through to the
-   * serial OMP block below so that setJacElement is called correctly.
-   *
-   * Row eval (isRowEval == TRUE) also falls through because evalJacobianRow produces
-   * row-major output whereas adjoint setters expect column-major.
-   * TODO: Unify the row-eval path once evalJacobianRow output layout is made column-major. */
-  if (!jacColumns->isRowEval) {
-      evalJacobianColored(data, threadData, jacColumns, NULL, matrixA, setJacElement);
-      return;
+   * serial OMP block below so that setJacElement is called correctly. */
+  {
+    jacobianCleanup_func_ptr cleanup = jacColumns->isRowEval
+        ? evalJacobianCleanupRowEval : NULL;
+    evalJacobianColored(data, threadData, jacColumns, NULL, matrixA, setJacElement, cleanup);
+    return;
   }
 #endif /* !USE_PARJAC */
 
@@ -241,7 +218,7 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
       ? data->callback->functionJacADJ_column
       : data->callback->functionJacA_column;
   jacobianScatter_func_ptr scatterFunc = isRowEval ? scatterRowEval : scatterColumnEval;
-  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? cleanupRowEval : cleanupNoop;
+  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : evalJacobianCleanupNoop;
 
 #pragma omp for
   for (i=0; i < spp->maxColors; i++) {

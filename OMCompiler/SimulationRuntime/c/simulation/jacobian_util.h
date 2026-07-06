@@ -59,6 +59,26 @@ typedef void (*jacobianSetDenseElementFunc)(modelica_real* jac, int row, int col
 typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
 
 /**
+ * @brief Cleanup callback invoked after each color during Jacobian evaluation.
+ *
+ * Used to reset result and tmp vars between colors when needed (e.g. row-wise eval).
+ * Pass NULL or evalJacobianCleanupNoop when no cleanup is required.
+ *
+ * @param jac  Jacobian being evaluated.
+ */
+typedef void (*jacobianCleanup_func_ptr)(JACOBIAN* jac);
+
+/** No-op cleanup: does nothing. Use for column-wise (forward) evaluation. */
+void evalJacobianCleanupNoop(JACOBIAN* jac);
+
+/**
+ * @brief Row-eval cleanup: zeros resultVars and tmpVars after each color.
+ *
+ * Required for row-wise (adjoint) evaluation to prevent accumulation across colors.
+ */
+void evalJacobianCleanupRowEval(JACOBIAN* jac);
+
+/**
  * @brief setJacElementFunc-compatible setter: writes jac[nth] = value (sparse CSC raw buffer).
  */
 void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows);
@@ -79,11 +99,19 @@ void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void
  * This is the unified core evaluation function.  All other evalJacobian* variants
  * are thin wrappers that select an appropriate setJacElementFunc and delegate here.
  *
+ * Supports both column-wise (forward, jacobian->isRowEval == FALSE) and row-wise
+ * (adjoint, jacobian->isRowEval == TRUE) evaluation based on the jacobian's isRowEval flag.
+ * The sparsity pattern and seed/result indexing are chosen accordingly.
+ *
  * @param matrixA     Opaque pointer to output matrix; passed through to setElement.
  * @param setElement  Setter called for each nonzero: (row, col, nz_index, value, matrixA, nRows).
+ * @param cleanupFunc Called after each color to reset intermediate state.  Pass NULL or
+ *                    evalJacobianCleanupNoop for column-wise eval; pass
+ *                    evalJacobianCleanupRowEval for row-wise eval to avoid accumulation.
  */
 void evalJacobianColored(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-                         void* matrixA, setJacElementFunc setElement);
+                         void* matrixA, setJacElementFunc setElement,
+                         jacobianCleanup_func_ptr cleanupFunc);
 
 /**
  * @brief Evaluate colored Jacobian into a raw modelica_real* buffer.
