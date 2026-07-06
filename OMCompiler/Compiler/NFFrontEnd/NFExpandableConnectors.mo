@@ -77,7 +77,7 @@ protected
   array<list<Connector>> csets_array;
 algorithm
   // Sort the connections based on whether they involve expandable connectors,
-  // virtual/potentially present connectors, or only normal connectors.
+  // undeclared/potentially present connectors, or only normal connectors.
   (expandable_conns, undeclared_conns, conns) := sortConnections(connections.connections);
 
   // Don't do anything if there aren't any expandable connectors in the model.
@@ -86,11 +86,11 @@ algorithm
   end if;
 
   // Create a graph from the connections. Expandable connectors connect to
-  // expandable connectors, while virtual/potentially present connectors connect
+  // expandable connectors, while undeclared/potentially present connectors connect
   // to the expandable connector they belong to.
   csets := ConnectionSets.emptySets(listLength(expandable_conns) + listLength(undeclared_conns));
   csets := addExpandableConnectorsToSets(expandable_conns, csets);
-  (undeclared_conns, csets) := List.mapFold(undeclared_conns, addUndeclaredConnectorToSets, csets);
+  (undeclared_conns, csets) := List.mapFold(undeclared_conns, addExpandableConnectorElementToSets, csets);
 
   // Extract the sets of connected connectors.
   csets_array := ConnectionSets.extractSets(csets);
@@ -124,7 +124,7 @@ protected
 
 function sortConnections
   "Sorts the connections into different categories of connectors based on
-   whether they involve expandable connectors, virtual/potentially present
+   whether they involve expandable connectors, undeclared/potentially present
    connector, or only normal connectors."
   input list<Connection> conns;
   output list<Connection> expandableConnections = {};
@@ -137,8 +137,8 @@ algorithm
   for conn in conns loop
     Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
 
-    is_undeclared1 := ConnectorType.isUndeclared(c1.cty);
-    is_undeclared2 := ConnectorType.isUndeclared(c2.cty);
+    is_undeclared1 := ConnectorType.isUndeclared(c1.cty) or ConnectorType.isPotentiallyPresent(c1.cty);
+    is_undeclared2 := ConnectorType.isUndeclared(c2.cty) or ConnectorType.isPotentiallyPresent(c2.cty);
     is_expandable1 := ConnectorType.isExpandable(c1.cty);
     is_expandable2 := ConnectorType.isExpandable(c2.cty);
 
@@ -234,7 +234,7 @@ algorithm
   end match;
 end getExpandableConnectorsInConnector;
 
-function addUndeclaredConnectorToSets
+function addExpandableConnectorElementToSets
   input output Connection conn;
   input output ConnectionSets.Sets csets;
 protected
@@ -244,28 +244,24 @@ algorithm
 
   // Figure out which connector to add, and create a virtual connector if necessary.
   if ConnectorType.isUndeclared(c1.cty) then
-    if ConnectorType.isVirtual(c1.cty) then
-      c1 := makeVirtualConnector(c1, c2);
-      conn := Connection.CONNECTION(c1, c2);
-    end if;
-
+    c1 := makeVirtualConnector(c1, c2);
+    conn := Connection.CONNECTION(c1, c2);
     c := c1;
-  else
-    if ConnectorType.isVirtual(c2.cty) then
-      c2 := makeVirtualConnector(c2, c1);
-      conn := Connection.CONNECTION(c1, c2);
-    end if;
-
+  elseif ConnectorType.isUndeclared(c2.cty) then
+    c2 := makeVirtualConnector(c2, c1);
+    conn := Connection.CONNECTION(c1, c2);
     c := c2;
+  else
+    c := if ConnectorType.isPotentiallyPresent(c1.cty) then c1 else c2;
   end if;
 
-  // Create a parent connector for the undeclared connector, i.e. the expandable
+  // Create a parent connector for the undeclared/potentially present connector, i.e. the expandable
   // connector it should be added to. The type here is wrong, but it doesn't matter.
   ec := Connector.CONNECTOR(ComponentRef.rest(c.name), c.ty, c.face, ConnectorType.EXPANDABLE, c.source);
 
-  // Add a connection between the undeclared connector and the expandable connector.
+  // Add a connection between the undeclared/potentially present connector and the expandable connector.
   csets := addConnectionToSets(c, ec, csets);
-end addUndeclaredConnectorToSets;
+end addExpandableConnectorElementToSets;
 
 function addConnectionToSets
   input Connector c1;
@@ -316,7 +312,7 @@ algorithm
   for c in set loop
     if ConnectorType.isExpandable(c.cty) then
       exp_conns := c :: exp_conns;
-    elseif ConnectorType.isUndeclared(c.cty) then
+    elseif ConnectorType.isUndeclared(c.cty) or ConnectorType.isPotentiallyPresent(c.cty) then
       UnorderedSet.add(c, exp_set);
       markComponentPresent(ComponentRef.node(Connector.name(c)));
     end if;
@@ -444,7 +440,7 @@ algorithm
   else
     var := Variable.VARIABLE(connectorName, connectorType, NFBinding.EMPTY_BINDING,
       Visibility.PUBLIC, NFAttributes.AUGMENTED_ATTR, {}, {},
-      SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector")),
+      SCode.COMMENT(NONE(), SOME("variable added to expandable connector")),
       info, NFBackendExtension.DUMMY_BACKEND_INFO);
     vars := var :: vars;
   end if;

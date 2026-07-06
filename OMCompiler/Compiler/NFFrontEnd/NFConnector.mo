@@ -92,7 +92,7 @@ public
       res := Class.restriction(InstNode.getClass(Component.classInstance(comp)));
       cty := Component.connectorType(comp);
     else
-      cty := intBitOr(ConnectorType.VIRTUAL, ConnectorType.POTENTIAL);
+      cty := intBitOr(ConnectorType.UNDECLARED, ConnectorType.POTENTIAL);
     end if;
 
     conn := CONNECTOR(ComponentRef.simplifySubscripts(cref), ty, face, cty, source);
