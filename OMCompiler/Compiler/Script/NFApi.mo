@@ -65,6 +65,7 @@ import InstContext = NFInstContext;
 
 import Absyn.Path;
 import AbsynToSCode;
+import BuiltinCall = NFBuiltinCall;
 import CevalScriptBackend;
 import Config;
 import ConvertDAE = NFConvertDAE;
@@ -1965,6 +1966,16 @@ algorithm
     exp := Inst.instExp(absynExp, scope, INST_API_ANNOTATION_CONTEXT, info);
     exp := Typing.typeExp(exp, INST_API_ANNOTATION_CONTEXT, info);
     exp := SimplifyExp.simplify(exp);
+
+    // Reference each DynamicSelect auxiliary variable by its full instance path,
+    // relative to the annotation's owning scope. typeDynamicSelectCall creates
+    // the reference without a scope (it does not know the owning instance), so a
+    // sub-component's auxiliary (display.$DynamicSelect$H in the result file) is
+    // otherwise referenced as a bare $DynamicSelect$H and not found by OMEdit.
+    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) then
+      exp := BuiltinCall.prefixDynamicSelectAuxRefs(exp, scope);
+    end if;
+
     json := Expression.toJSON(exp);
   else
     if failOnError then

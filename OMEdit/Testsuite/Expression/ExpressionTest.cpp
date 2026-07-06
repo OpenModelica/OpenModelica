@@ -165,6 +165,47 @@ void ExpressionTest::dynamicSelect_data()
     << "DynamicSelect(\"0.0\",1)";
 }
 
+// The DynamicSelect user-function fix synthesizes an auxiliary result variable.
+// For a sub-component the frontend delivers the reference by its full instance
+// path as a JSON cref, e.g. parts ["display", "$DynamicSelect$926893828"]. OMEdit
+// must join those parts into the dotted name "display.$DynamicSelect$926893828"
+// and look that name up in the enclosing model's result file; a bare
+// "$DynamicSelect$926893828" (without the component prefix) would not be found,
+// so a sub-component's icon would not animate in the enclosing model's diagram.
+void ExpressionTest::dynamicSelectAuxCref()
+{
+  const QString auxName = "display.$DynamicSelect$926893828";
+
+  QJsonValue auxCref = QJsonObject{
+    {"$kind", "cref"},
+    {"parts", QJsonArray{
+      QJsonObject{{"name", "display"}},
+      QJsonObject{{"name", "$DynamicSelect$926893828"}}
+    }}
+  };
+
+  try {
+    FlatModelica::Expression e;
+    e.deserialize(auxCref);
+
+    // The parts are joined into the dotted instance-path name.
+    QCOMPARE(e.toQString(), auxName);
+
+    // Evaluating the reference looks the variable up by that exact name, which is
+    // how OMEdit reads its value from the result file.
+    std::string requested;
+    FlatModelica::Expression value = e.evaluate([&] (const std::string &name) {
+      requested = name;
+      return FlatModelica::Expression(2.5);
+    });
+
+    QCOMPARE(QString::fromStdString(requested), auxName);
+    QCOMPARE(value.realValue(), 2.5);
+  } catch (const std::exception &e) {
+    QFAIL(e.what());
+  }
+}
+
 void ExpressionTest::operators()
 {
   QFETCH(QString, string);
