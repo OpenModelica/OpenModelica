@@ -724,7 +724,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 
   if (!forbidden || !setColors) {
     free(forbidden); free(setColors);
-    freeSparsePattern(csr); free(csr);
+    freeSparsePattern(csr);
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
     sp->maxColors = nCols;
     return;
@@ -766,7 +766,6 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   free(setColors);
   free(forbidden);
   freeSparsePattern(csr);
-  free(csr);
 }
 
 /**
