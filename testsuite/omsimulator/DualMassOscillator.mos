@@ -1,8 +1,6 @@
 // name:     DualMassOscillator.mos
 // status:   correct
-// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu
-
-setCommandLineOptions("-g=MetaModelica");
+// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator.py DualMassOscillator.ssp DualMassOscillator_systemCall.log
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 
@@ -53,27 +51,3 @@ print("info:      system2.s2: " + realString(v2)+"\n");
 oms_terminate("DualMassOscillator");
 oms_delete("DualMassOscillator");
 unloadOMSimulator();
-
-// Result:
-// true
-// true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from DualMassOscillator.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
-// "
-// "DualMassOscillator.System1.fmu"
-// ""
-// "DualMassOscillator.System2.fmu"
-// ""
-// info:    maximum step size for 'DualMassOscillator.root': 0.001000
-// info:    Result file: DualMassOscillator.mat (bufferSize=100)
-// info:    Initialization
-// info:      system1.s1: 1.0
-// info:      system2.s2: 2.5
-// info:    Simulation
-// info:      system1.s1: 0.9169316895219363
-// info:      system2.s2: 1.9495200849017982
-// info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 3930 NumRhsEvals  = 4788 NumLinSolvSetups = 489
-//          NumNonlinSolvIters = 4787 NumNonlinSolvConvFails = 0 NumErrTestFails = 164
-// endResult

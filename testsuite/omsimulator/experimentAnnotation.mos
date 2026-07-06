@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf M.lua M.fmu M.log M_systemCall.log/
+// teardown_command: rm -rf M.fmu M.log M_systemCall.log/
 
 loadString("model M
   Real x = time;

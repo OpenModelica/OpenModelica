@@ -1,8 +1,6 @@
 // name : outputState_omc.mos
 // status: correct
-// teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
-
-setCommandLineOptions("-g=MetaModelica");
+// teardown_command: rm -rf outputState.py outputState.ssp outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
 
 loadString("
 model outputState
@@ -20,41 +18,41 @@ end sink;
 buildModelFMU(outputState, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 buildModelFMU(sink, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-echo(false);
+writeFile("outputState.py", "
+from OMSimulator import SSP, Settings, CRef
 
-loadOMSimulator();
-oms_setCommandLineOption("--suppressPath=true");
-oms_setTempDirectory("./temp-outputState/");
+Settings.suppressPath = True
 
-oms_newModel("test");
-oms_addSystem("test.root",  OpenModelica.Scripting.oms_system.oms_system_sc);
-oms_addSubModel("test.root.A", "outputState.fmu");
-oms_addSubModel("test.root.B", "sink.fmu");
-oms_addConnection("test.root.A.y", "test.root.B.u");
-oms_setResultFile("test", "");
+model = SSP()
+model.addResource('outputState.fmu', new_name='resources/outputState.fmu')
+model.addResource('sink.fmu', new_name='resources/sink.fmu')
+model.addComponent(CRef('default', 'A'), 'resources/outputState.fmu')
+model.addComponent(CRef('default', 'B'), 'resources/sink.fmu')
+model.addConnection(CRef('default', 'A', 'y'), CRef('default', 'B', 'u'))
 
-oms_instantiate("test");
-oms_setReal("test.root.A.y_start", 1.5);
+model.export('outputState.ssp')
 
-oms_initialize("test");
-(v1,_):=oms_getReal("test.root.A.y");
-(v2,_):=oms_getReal("test.root.B.u");
+model2 = SSP('outputState.ssp')
+instantiated_model = model2.instantiate()
+instantiated_model.setResultFile('')
+instantiated_model.setValue(CRef('default', 'A', 'y_start'), 1.5)
 
-print("info:    Initialization\n");
-print("info:      A.y: " + realString(v1)+"\n");
-print("info:      B.u: " + realString(v1)+"\n");
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:      A.y: {instantiated_model.getValue(CRef('default', 'A', 'y'))}\")
+print(f\"info:      B.u: {instantiated_model.getValue(CRef('default', 'B', 'u'))}\")
 
-oms_simulate("test");
-(v1,_):=oms_getReal("test.root.A.y");
-(v2,_):=oms_getReal("test.root.B.u");
+instantiated_model.simulate()
+print(f\"info:    Simulation\")
+print(f\"info:      A.y: {instantiated_model.getValue(CRef('default', 'A', 'y'))}\")
+print(f\"info:      B.u: {instantiated_model.getValue(CRef('default', 'B', 'u'))}\")
 
-print("info:    Simulation\n");
-print("info:      A.y: " + realString(v1)+"\n");
-print("info:      B.u: " + realString(v1)+"\n");
+instantiated_model.terminate()
+instantiated_model.delete()
+"); getErrorString();
 
-oms_terminate("test");
-oms_delete("test");
-unloadOMSimulator();
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 outputState.py", "outputState_systemCall.log");
+readFile("outputState_systemCall.log");
 
 
 // Result:
