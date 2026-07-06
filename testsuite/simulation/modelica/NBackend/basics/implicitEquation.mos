@@ -70,18 +70,6 @@ simulate(implicitEquation); getErrorString();
 // ----------------------------
 // $RES_SIM_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_1.x, {}, false)}
 //
-// Sparsity Pattern Cols
-// ***********************
-//
-// Sparsity Pattern Rows
-// ***********************
-//
-// Sparsity Coloring Columns
-// ***************************
-//
-// Sparsity Coloring Rows
-// ************************
-//
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 1, partition = 0)
 // ======================================================

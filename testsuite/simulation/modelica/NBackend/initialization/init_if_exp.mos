@@ -79,18 +79,6 @@ simulate(init_if_exp); getErrorString();
 // ----------------------------
 // $RES_SIM_1 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_LS_JAC_1.y, {}, false)}
 //
-// Sparsity Pattern Cols
-// ***********************
-//
-// Sparsity Pattern Rows
-// ***********************
-//
-// Sparsity Coloring Columns
-// ***************************
-//
-// Sparsity Coloring Rows
-// ************************
-//
 // ==========================================================
 //   SimCode Jacobian INI_NLS_JAC_2(idx = 0, partition = 0)
 // ==========================================================
@@ -112,18 +100,6 @@ simulate(init_if_exp); getErrorString();
 // Resizable Sparsity Pattern
 // ----------------------------
 // $RES_SIM_0 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_LS_JAC_1.u, {}, false)}
-//
-// Sparsity Pattern Cols
-// ***********************
-//
-// Sparsity Pattern Rows
-// ***********************
-//
-// Sparsity Coloring Columns
-// ***************************
-//
-// Sparsity Coloring Rows
-// ************************
 //
 // =========================================================
 //   SimCode Jacobian ALG_LS_JAC_1(idx = 2, partition = 2)
@@ -149,18 +125,6 @@ simulate(init_if_exp); getErrorString();
 // ----------------------------
 // $RES_SIM_0 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_LS_JAC_1.y, {}, false), ($SEED_ALG_LS_JAC_1.u, {}, false)}
 // $RES_SIM_1 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_LS_JAC_1.u, {}, false)}
-//
-// Sparsity Pattern Cols
-// ***********************
-//
-// Sparsity Pattern Rows
-// ***********************
-//
-// Sparsity Coloring Columns
-// ***************************
-//
-// Sparsity Coloring Rows
-// ************************
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 3, partition = 0)
