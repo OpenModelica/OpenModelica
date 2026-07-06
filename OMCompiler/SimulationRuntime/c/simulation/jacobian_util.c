@@ -688,6 +688,88 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
 }
 
 /**
+ * @brief Greedy distance-1 column coloring of a CSC sparse pattern.
+ *
+ * Two columns may share a color only if they have no non-zero row in common.
+ * Uses the existing csc_to_csr helper to build the row→columns map, then
+ * assigns the smallest available color to each column in order.
+ *
+ * Needed for the resizable analytic Jacobian path: the C sparsity pattern
+ * is built at runtime from WHOLEDIM loops that over-approximate array
+ * equations as dense blocks, so the compile-time coloring (derived from the
+ * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
+ * it here guarantees correctness.
+ *
+ * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
+ * @param nRows  Number of rows in the Jacobian.
+ * @param nCols  Number of columns (== size of sp->colorCols).
+ */
+void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
+{
+  if (!sp || nCols == 0) return;
+
+  SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
+  if (!csr) {
+    /* Fallback: trivial one-column-per-color coloring. */
+    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
+    sp->maxColors = nCols;
+    return;
+  }
+
+  /* forbidden[k] == 1 if color k is already used by an adjacent column.
+   * Index 0 unused; colors are 1-based, max is nCols. */
+  unsigned char* forbidden = (unsigned char*) calloc(nCols + 2, sizeof(unsigned char));
+  /* Track which forbidden slots were set so we can reset without a full memset. */
+  unsigned int* setColors  = (unsigned int*)  malloc(nCols * sizeof(unsigned int));
+
+  if (!forbidden || !setColors) {
+    free(forbidden); free(setColors);
+    freeSparsePattern(csr); free(csr);
+    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
+    sp->maxColors = nCols;
+    return;
+  }
+
+  unsigned int maxColor = 0;
+
+  for (unsigned int c = 0; c < nCols; c++) {
+    unsigned int nSet = 0;
+
+    /* Mark colors of already-colored columns that share a row with c. */
+    for (unsigned int nz = sp->leadindex[c]; nz < sp->leadindex[c + 1]; nz++) {
+      const unsigned int row = sp->index[nz];
+      if (row >= nRows) continue;
+      for (unsigned int nz2 = csr->leadindex[row]; nz2 < csr->leadindex[row + 1]; nz2++) {
+        const unsigned int c2 = csr->index[nz2];
+        if (c2 < c) {
+          const unsigned int used = sp->colorCols[c2];
+          if (used > 0 && used <= nCols && !forbidden[used]) {
+            forbidden[used] = 1;
+            setColors[nSet++] = used;
+          }
+        }
+      }
+    }
+
+    /* Smallest color not forbidden. */
+    unsigned int color = 1;
+    while (color <= nCols && forbidden[color]) color++;
+    sp->colorCols[c] = color;
+    if (color > maxColor) maxColor = color;
+
+    /* Reset forbidden markers for next iteration. */
+    for (unsigned int k = 0; k < nSet; k++) forbidden[setColors[k]] = 0;
+  }
+
+  sp->maxColors = maxColor;
+
+  free(setColors);
+  free(forbidden);
+  freeSparsePattern(csr);
+  free(csr);
+}
+
+/**
  * @brief Opens sparsity pattern file
  *
  * @param data        Runtime data struct.

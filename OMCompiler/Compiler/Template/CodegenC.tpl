@@ -3336,15 +3336,6 @@ match sparsity
     let &auxFunctionF = buffer ""
     let &subF = buffer ""
     let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'inSysData->sparsePattern') ;separator="\n")
-    let nColors = if coloredCols then intString(maxColors) else nCols
-    let colorCode = if coloredCols then
-        (coloredCols |> colorGroup hasindex c0 =>
-          (colorGroup |> col =>
-            'inSysData->sparsePattern->colorCols[<%col%>] = <%intAdd(c0, 1)%>;'
-          ;separator="\n")
-        ;separator="\n")
-      else
-        <<for (i = 0; i < <%nCols%>; i++) inSysData->sparsePattern->colorCols[i] = i + 1;>>
     <<
 
     OMC_DISABLE_OPT
@@ -3365,7 +3356,7 @@ match sparsity
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
-      inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, <%nColors%>);
+      inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
       if (!inSysData->sparsePattern) return;
 
       /* Compute leadindex as prefix sum of col_counts */
@@ -3377,8 +3368,8 @@ match sparsity
       memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
 
-      /* Fill color array */
-      <%colorCode%>
+      /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians). */
+      computeColumnColoring(inSysData->sparsePattern, <%nCols%>, <%nCols%>);
 
       inSysData->isPatternAvailable = TRUE;
     }
@@ -5812,15 +5803,6 @@ match sparsity
     let &auxFunctionF = buffer ""
     let &subF = buffer ""
     let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'jacobian->sparsePattern') ;separator="\n")
-    let nColors = if coloredCols then intString(maxColors) else nCols
-    let colorCode = if coloredCols then
-        (coloredCols |> colorGroup hasindex c0 =>
-          (colorGroup |> col =>
-            'jacobian->sparsePattern->colorCols[<%col%>] = <%intAdd(c0, 1)%>;'
-          ;separator="\n")
-        ;separator="\n")
-      else
-        <<for (i = 0; i < <%nCols%>; i++) jacobian->sparsePattern->colorCols[i] = i + 1;>>
     let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     let tmpvarsSize = (columns |> JAC_COLUMN() => listLength(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
@@ -5848,7 +5830,7 @@ match sparsity
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
-      jacobian->sparsePattern = allocSparsePattern(<%nCols%>, nnz, <%nColors%>);
+      jacobian->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
       if (!jacobian->sparsePattern) return 1;
 
       /* Compute leadindex as prefix sum of col_counts */
@@ -5860,8 +5842,12 @@ match sparsity
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
 
-      /* Fill color array */
-      <%colorCode%>
+      /* Compute coloring at runtime from the actual pattern.
+       * The WHOLEDIM-based C loops over-approximate array equations as dense
+       * blocks, so a compile-time coloring (derived from the exact symbolic
+       * sparsity) would be invalid for the runtime pattern.  Re-deriving it
+       * here guarantees that no two same-color columns share a non-zero row. */
+      computeColumnColoring(jacobian->sparsePattern, <%sizeRows%>, <%nCols%>);
 
       jacobian->availability = <%availability%>;
       return 0;
