@@ -3366,7 +3366,6 @@ match sparsity
     {
       if (inSysData->sparsePattern) {
         freeSparsePattern(inSysData->sparsePattern);
-        free(inSysData->sparsePattern);
         inSysData->sparsePattern = NULL;
       }
     }
@@ -3532,7 +3531,6 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   void freeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData)
   {
     freeSparsePattern(sysData->sparsePattern);
-    free(sysData->sparsePattern);
     sysData->sparsePattern = NULL;
   }
   >>
