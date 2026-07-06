@@ -813,7 +813,8 @@ function(omc_rust_omshell_qt_web_page)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
     COMMAND ${CMAKE_COMMAND} -E copy
             ${_qt_bld}/OMShell-qt.html ${_qt_bld}/OMShell-qt.js
-            ${_qt_bld}/OMShell-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+            ${_qt_bld}/OMShell-qt.wasm ${_qt_bld}/qtloader.js
+            ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     COMMENT "Qt: building OMShell-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
@@ -859,7 +860,8 @@ function(omc_rust_omnotebook_qt_web_page)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
     COMMAND ${CMAKE_COMMAND} -E copy
             ${_qt_bld}/OMNotebook-qt.html ${_qt_bld}/OMNotebook-qt.js
-            ${_qt_bld}/OMNotebook-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+            ${_qt_bld}/OMNotebook-qt.wasm ${_qt_bld}/qtloader.js
+            ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     # Example notebooks: gzip-tar the DrModelica/DrControl trees next to the page;
     # the page fetches and extracts them into MEMFS at startup so File menus and
@@ -919,7 +921,8 @@ function(omc_rust_omedit_qt_web_page)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_pkgdir}
     COMMAND ${CMAKE_COMMAND} -E copy
             ${_qt_bld}/OMEdit-qt.html ${_qt_bld}/OMEdit-qt.js
-            ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js ${_qt_pkgdir}/
+            ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
+            ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
@@ -1008,14 +1011,28 @@ function(omc_rust_setup_wasm)
   set(_wasm_artifact ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/${_wasm_name}.wasm)
   # Assemble the runnable bundle in the build tree (never the source tree). The
   # whole ${_web_dir} is installed as one tree, so this *is* the served layout:
-  #   web/index.html            + web/omc/*           (the omc module — shared)
+  #   web/index.html            + web/omc/*           (the client launcher + shared omc module)
+  #   web/home/index.html                             (default client: getVersion() splash)
+  #   web/omc-terminal/index.html                     (the omc REPL, one OMShell variant)
   #   web/omshell_egui.html      + web/omshell_egui/*   (added by the page helper)
   #   web/omshell_dioxus.html    + web/omshell_dioxus/*
-  # The browser launcher imports ./omc/; Node keeps pkg-nodejs/ + omc-cli.js.
+  # index.html is an SPA that loads each client in an iframe (hash-routed for
+  # shareable links). The browser launcher imports ./omc/; Node keeps
+  # pkg-nodejs/ + omc-cli.js.
   set(_web_dir ${CMAKE_CURRENT_BINARY_DIR}/web)
+  set(_web_launcher_extra "")
   if(_host STREQUAL "web")
     set(_wasm_pkgdir ${_web_dir}/omc)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/index.html)
+    set(_web_launcher_extra
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/omc-terminal/index.html ${_web_dir}/omc-terminal/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/home
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/home/index.html ${_web_dir}/home/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()
     set(_wasm_pkgdir ${_web_dir}/pkg-nodejs)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/omc-cli.js)
@@ -1057,6 +1074,7 @@ function(omc_rust_setup_wasm)
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
+    ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)

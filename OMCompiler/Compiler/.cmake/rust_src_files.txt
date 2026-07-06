@@ -257,3 +257,10 @@ rust-toolchain.toml
 susanSources.txt
 wasm/index.html
 wasm/omc-cli.js
+wasm/home/index.html
+wasm/omc-terminal/index.html
+wasm/icons/om.svg
+wasm/icons/omshell.svg
+wasm/icons/omnotebook.svg
+wasm/icons/omedit.png
+wasm/icons/openmodelica-logo.svg
