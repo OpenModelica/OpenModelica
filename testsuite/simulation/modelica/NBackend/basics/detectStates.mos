@@ -44,8 +44,8 @@ simulate(expandDerOperator3); getErrorString();
 // true
 // ""
 // true
-// [stateselection] (0) Forced states by StateSelect.ALWAYS or StateSelect.PREFER:
-// *********************************************************************************
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
 // 	<no states>
 //
 // [stateselection] (2) Natural states before index reduction:
@@ -66,8 +66,8 @@ simulate(expandDerOperator3); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// [stateselection] (0) Forced states by StateSelect.ALWAYS or StateSelect.PREFER:
-// *********************************************************************************
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
 // 	<no states>
 //
 // [stateselection] (2) Natural states before index reduction:
@@ -95,8 +95,8 @@ simulate(expandDerOperator3); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// [stateselection] (0) Forced states by StateSelect.ALWAYS or StateSelect.PREFER:
-// *********************************************************************************
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
 // 	<no states>
 //
 // [stateselection] (1) Natural states before index reduction:

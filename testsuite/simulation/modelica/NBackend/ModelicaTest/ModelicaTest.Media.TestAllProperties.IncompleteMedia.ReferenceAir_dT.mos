@@ -17,10 +17,14 @@ diffSimulationResults("ModelicaTest.Media.TestAllProperties.IncompleteMedia.Refe
 //     resultFile = "ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | error   | [ModelicaTest 4.1.0+maint.om/Media.mo:481:11-482:63:writable]
+// |                 | |       | The following assertion has been violated at time 0.100000
+// |                 | |       | ((err_T <= eps)) --> \"Error: abs(medium.T - T)/medium.T > eps
+// |                 | |       | (err_T = 0.000613707, eps = 1e-10)\"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
 // "
-// (true, {})
+// (false, {"medium.u", "medium.state.d", "medium.state.T", "medium.T_degC", "err_u", "err_d", "err_T"})
 // endResult
