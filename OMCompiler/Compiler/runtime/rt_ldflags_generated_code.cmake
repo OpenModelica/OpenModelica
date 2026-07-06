@@ -5,7 +5,15 @@
 # used, so this can be included before omc_config_unix.cmake.
 if(MINGW OR MSVC)
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
+  # -Wl,--allow-multiple-definition (MinGW only): SimulationRuntimeC.dll and OpenModelicaRuntimeC.dll
+  # both re-export the same __imp_ import descriptors; recent binutils ld errors on the duplicates,
+  # so keep the first (they resolve to the same DLL symbol). MSVC builds OpenModelicaRuntimeC static
+  # and uses link.exe, so it neither hits the issue nor understands this flag.
+  if(MINGW)
+    set(RT_LDFLAGS_GENERATED_CODE_SIM " -Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
+  else()
+    set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
+  endif()
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
 elseif(APPLE)

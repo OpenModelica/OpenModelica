@@ -27,7 +27,11 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  // -Wl,--allow-multiple-definition: SimulationRuntimeC.dll and OpenModelicaRuntimeC.dll both
+  // (re-)export the same import descriptors (__imp_omc_assert, __imp_messageClose, ...); recent
+  // binutils ld errors on the duplicate __imp_ symbols, so tell it to keep the first (they resolve
+  // to the same DLL symbol either way).
+  constant String ldflags_runtime_sim = "-Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
   // Same for szip instead of sz.
   constant String ldflags_zip = if isNewNewOMDev then "-lz -lsz " else "-lzip -lszip ";
   constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +

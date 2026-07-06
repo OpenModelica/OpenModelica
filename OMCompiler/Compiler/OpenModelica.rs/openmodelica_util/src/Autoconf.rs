@@ -152,8 +152,11 @@ pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CO
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {
     Some(s) => s,
     None => if cfg!(windows) {
+        // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
+        // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
+        // matching note in Autoconf.mo.omdev.mingw).
         const_str::concat!(
-            "-lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
+            "-Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
             win_linkType,
             " -lstdc++ -Wl,-Bdynamic "
         )
