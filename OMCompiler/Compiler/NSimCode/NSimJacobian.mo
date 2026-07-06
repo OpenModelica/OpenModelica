@@ -61,7 +61,6 @@ public
   import SimCodeUtil = NSimCodeUtil;
   import SimCode = NSimCode;
   import SimGenericCall = NSimGenericCall;
-  import NSimGenericCall.SimIterator;
   import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -78,7 +77,7 @@ public
   uniontype SparsityRow
     record SPARSITY_ROW
       ComponentRef equation_name "only for debugging";
-      list<SimIterator> equation_iterators;
+      list<SimGenericCall.SimIterator> equation_iterators;
       list<tuple<ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
       list<ComponentRef> solved_crefs;
     end SPARSITY_ROW;
@@ -104,7 +103,7 @@ public
 
       row := SPARSITY_ROW(
         equation_name       = equation_name,
-        equation_iterators  = SimIterator.fromIterator(equation_iterator),
+        equation_iterators  = SimGenericCall.SimIterator.fromIterator(equation_iterator),
         dependencies        = list((cref, dep, rep) threaded for cref in crefs, dep in deps, rep in reps),
         solved_crefs        = list(ComponentRef.fillSubscripts(cref) for cref in solved_crefs));
     end create;
@@ -115,7 +114,7 @@ public
     algorithm
       oldrow := OldSimCode.SPARSITY_ROW(
         equation_name       = ComponentRef.toDAE(row.equation_name),
-        equation_iterators  = list(SimIterator.convert(iter) for iter in row.equation_iterators),
+        equation_iterators  = list(SimGenericCall.SimIterator.convert(iter) for iter in row.equation_iterators),
         dependencies        = list((ComponentRef.toDAE(Util.tuple31(tpl)), Dependency.convert(Util.tuple32(tpl)), Util.tuple33(tpl)) for tpl in row.dependencies),
         solved_crefs        = list(ComponentRef.toDAE(cref) for cref in row.solved_crefs)
       );
