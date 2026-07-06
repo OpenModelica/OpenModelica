@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-double GenericController(double* err_values, double* stepSize_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method);
+double GenericController(double* err_values, double* stepSize_values, int err_order, enum GB_CTRL_METHOD ctrl_method);
 
 void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, SOLVER_INFO* solverInfo);
 

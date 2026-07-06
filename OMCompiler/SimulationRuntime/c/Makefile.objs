@@ -159,6 +159,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               dassl$(OBJ_EXT) \
               gbode_conf$(OBJ_EXT) \
               gbode_ctrl$(OBJ_EXT) \
+              gbode_err$(OBJ_EXT) \
               gbode_events$(OBJ_EXT) \
               gbode_main$(OBJ_EXT) \
               gbode_internal_nls$(OBJ_EXT) \

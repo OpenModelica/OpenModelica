@@ -41,16 +41,41 @@ extern "C" {
 #endif
 
 typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
+typedef struct GB_ERROR_ESTIMATOR GB_ERROR_ESTIMATOR;
+typedef struct GB_ERROR_CONTEXT GB_ERROR_CONTEXT;
+
 /**
  * @brief Function to compute interpolation using dense output.
  */
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
+/**
+ * @brief Function to compute variable-step two-step weights.
+ *
+ * The weights always act in K-space:
+ *     y_emb = y_n + h_old * d_old(r)^T * K_old + h_new * g_new(r)^T * K_new,
+ * where r = h_new / h_old.
+ * The callback also returns mu(r), used by the estimate as
+ *     err = mu(r) * (y_main - y_emb).
+ */
+typedef void (*gb_two_step_weights)(double r, double *d_old, double *g_new, double *mu);
+
+/**
+ * @brief General error estimator interface function.
+ */
+typedef int (*gb_error_estimator_fn)(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+
+#define GB_ERROR_ESTIMATOR_FAILED -1
+
+// some macros for stack arrays
+#define MAX_GBODE_STAGES 35
 #define MAX_GBODE_FIRK_STAGES 8
+
+// accessor for t_transform->L fields
 #define GBODE_L_INDEX(row, col) (((row) * ((row) - 1)) / 2 + (col))
 
 /**
- * @brief Data for contractive error estimates (requires T-Transformation + internal NLS strategy).
+ * @brief Data for contractive defect error estimates (requires T-Transformation + internal NLS strategy).
  *
  * Error estimates for superconvergent FIRK methods are extremely difficult as an embedded method can obtain a
  * maximum order of s-1 for s stages, while the methods have order 2s (Gauss), 2s-1 (Radau), 2s-2 (Lobatto). This
@@ -73,20 +98,89 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  * For theory of these estimates refer to
  *     Shampine & Baka "Error estimators for stiff differential equations" (original literature),
  *     Hairer & Wanner pp.123 "Solving Ordinary Differential Equations II" (Radau IIA estimate),
- *     Gonzalez-Pinto et al. "Two–step error estimators for implicit Runge–Kutta methods applied to stiff systems" (gives an overview of such ideas and
+ *     Gonzalez-Pinto et al. "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems" (gives an overview of such ideas and
  *                                                                                                                  an alternative 2-step estimator),
  */
-typedef struct CONTRACTIVE_ERROR {
+typedef struct CONTRACTIVE_DEFECT {
   /**
-   * @brief Weights of the stage values d(0)^T * A.
+   * @brief Weights d(0)^T * A for the K-space defect f(t_n, y_n) - d(0)^T * A * K.
    */
   double *dT_A;
+} CONTRACTIVE_DEFECT;
+
+/**
+ * @brief Data for variable-step two-step error estimates, in the spirit of
+ *        Gonzalez-Pinto et al. "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems".
+ *
+ * Uses the stage derivatives from the previous accepted step and the current step.
+ * With r = h / h_old, the generated K-space weights form
+ *
+ *    y_emb = y_n
+ *          + h_old * sum_i d_i(r) * K_old_i
+ *          + h     * sum_i g_i(r) * K_i,
+ *
+ * and the estimator writes abs(mu(r) * (y_{n+1} - y_emb)) directly to errest.
+ *
+ * The pole-free weights d and g are constructed such that the estimator has a fixed
+ * exact order for all r > 0, without degenerate points of higher or lower order.
+ * The scalar mu(r) is calibrated from linear test-equation analysis such that the
+ * estimator does not underestimate the true local error signal in the important
+ * regions of the complex plane: z -> 0, Re(z) < 0, and a small strip into Re(z) > 0.
+ *
+ * Basically mu(r) eliminates the dependency of the leading non-stiff Taylor
+ * error coefficient on the step ratio r, so the estimator starts with the same
+ * normalized error term for all r > 0.  This avoids step-ratio dependent
+ * under- or overestimation in the non-stiff limit and is chosen to keep the scaled
+ * estimator bounded in the stiff limit. (see Gonzalez-Pinto: He changes the step-size controller
+ * to achieve similar independence of r, but I argue that the estimate itself should be calibrated correctly.)
+ *
+ * If no valid previous step is available, e.g. at startup or after events, the
+ * one-step fallback estimator is used.
+ */
+typedef struct TWO_STEP_ESTIMATOR
+{
+  /**
+   * @brief Callback evaluating d_old(r), g_new(r), and mu(r) for K-space two-step estimates.
+   */
+  gb_two_step_weights weights;
 
   /**
-   * @brief Set to true, if we only apply the filter matrix ERR := (1 / (h * gamma) * I - J)^(-1) ERR
+   * @brief Optional tolerance scaling of mu.
+   *
+   * If muTolReference > 0, the final estimator factor is
+   *   mu := mu * (tol / muTolReference)^muTolExponent.
+   *
+   * This is useful for two-step pairs where the estimator order differs from
+   * the main method order by one. Then GBODE uses the user tolerance directly
+   * for step acceptance (no tolerance scaling), so the calibration factor has
+   * to carry the small remaining tolerance dependence.
    */
-  modelica_boolean apply_filter_only;
-} CONTRACTIVE_ERROR;
+  double muTolReference;
+  double muTolExponent;
+
+  /**
+   * @brief One-step estimator used when no previous step is available.
+   */
+  const GB_ERROR_ESTIMATOR *fallback;
+} TWO_STEP_ESTIMATOR;
+
+struct GB_ERROR_ESTIMATOR
+{
+  enum GB_ERROR_METHOD type;
+  int order;
+
+  gb_error_estimator_fn evaluate;
+  void *data;
+};
+
+typedef struct GB_ERROR_ESTIMATOR_SET
+{
+  GB_ERROR_ESTIMATOR active;
+  GB_ERROR_ESTIMATOR embedded;
+  GB_ERROR_ESTIMATOR contractive_defect;
+  GB_ERROR_ESTIMATOR contractive_filter;
+  GB_ERROR_ESTIMATOR two_step;
+} GB_ERROR_ESTIMATOR_SET;
 
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
@@ -232,10 +326,14 @@ typedef struct T_TRANSFORM {
   modelica_boolean lastColumnZero;
 
   /**
-   * @brief Number of unique real eigenvalues / complex eigenpairs and their row / block occurrences.
+   * @brief Number of unique real eigenvalues / complex eigenpairs.
    */
   int nRealEigenvalues;
   int nComplexEigenpairs;
+
+  /**
+   * @brief Number of real eigenvalue and complex eigenpair blocks in the diagonalization. (also counting repeated eigenvalues)
+   */
   int nRealBlocks;
   int nComplexBlocks;
 
@@ -320,10 +418,10 @@ typedef struct BUTCHER_TABLEAU {
   double *bt;                         /* Weights vector of embedded formula */
   double *b_dt;                       /* Weights vector for dense output */
   double *c;                          /* Nodes vector */
-  unsigned int nStages;               /* Number of stages */
-  unsigned int order_b;               /* Order of the Runge-Kutta method */
-  unsigned int order_bt;              /* Order of the embedded Runge-Kutta method */
-  unsigned int error_order;           /* Usually min(order_b, order_bt) */
+  int nStages;                        /* Number of stages */
+  int order_b;                        /* Order of the Runge-Kutta method */
+  int order_bt;                       /* Order of the embedded Runge-Kutta method */
+  int error_order;                    /* Usually min(order_b, order_bt) */
   double fac;                         /* Security factor for step size control */
   modelica_boolean  richardson;       /* if no embedded version is available, Richardson
                                          extrapolation can be used for step size control */
@@ -333,7 +431,8 @@ typedef struct BUTCHER_TABLEAU {
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
   STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
-  CONTRACTIVE_ERROR *contraction;     /* Contractive defect error estimate for method using -gbnls=internal */
+  GB_ERROR_ESTIMATOR_SET error;       /* Available and active error estimators */
+  enum GB_ERROR_METHOD error_method; /* Requested error estimator */
 } BUTCHER_TABLEAU;
 
 /**
@@ -351,6 +450,7 @@ enum GM_TYPE {
 
 BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
+void finalizeButcherTableauError(BUTCHER_TABLEAU *tableau, enum GB_NLS_METHOD nlsMethod);
 
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* expl);
 
