@@ -2999,7 +2999,6 @@ template getNLSPrototypes(Integer index)
   <<
   void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
   void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
-  void freeSparsePatternNLS<%index%>(NONLINEAR_SYSTEM_DATA *inSystemData);
   void freeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData);
   void getIterationVarsNLS<%index%>(DATA* data, double *array);
   >>
@@ -3291,19 +3290,14 @@ end generateStaticEmptySparseData;
 
 
 template generateResizableEmptySparseData(String indexName, String systemType)
-"template generateStaticEmptySparseData
+"template generateResizableEmptySparseData
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   <<
   void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
   {
     /* no sparsity pattern available */
-    inSysData->isPatternAvailable = FALSE;
-  }
-
-  void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
-  {
-    /* nothing to free */
+    inSysData->sparsePattern = NULL;
   }
   >>
 end generateResizableEmptySparseData;
@@ -3318,11 +3312,7 @@ match sparsity
 
     void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
     {
-      inSysData->isPatternAvailable = FALSE;
-    }
-
-    void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
-    {
+      inSysData->sparsePattern = NULL;
     }
     >>
   case SPARSITY() then
@@ -3370,17 +3360,14 @@ match sparsity
 
       /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians). */
       computeColumnColoring(inSysData->sparsePattern, <%nCols%>, <%nCols%>);
-
-      inSysData->isPatternAvailable = TRUE;
     }
 
     void freeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
     {
-      if (inSysData->isPatternAvailable) {
+      if (inSysData->sparsePattern) {
         freeSparsePattern(inSysData->sparsePattern);
         free(inSysData->sparsePattern);
         inSysData->sparsePattern = NULL;
-        inSysData->isPatternAvailable = FALSE;
       }
     }
     >>
@@ -3408,7 +3395,6 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       int i=0;
       <%colPtr%>
       <%rowIndex%>
-      /* sparsity pattern available */
       inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
       /* write lead index of compressed sparse column */
@@ -3545,7 +3531,9 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   OMC_DISABLE_OPT
   void freeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData)
   {
-    freeSparsePattern(sysData->sparsePattern); sysData->sparsePattern = NULL;
+    freeSparsePattern(sysData->sparsePattern);
+    free(sysData->sparsePattern);
+    sysData->sparsePattern = NULL;
   }
   >>
 end generateStaticInitialData;
