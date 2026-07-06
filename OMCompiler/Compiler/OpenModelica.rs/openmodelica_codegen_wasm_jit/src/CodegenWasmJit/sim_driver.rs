@@ -1058,11 +1058,16 @@ fn run_dassl_events(
     let _guard = ResCtxGuard;
     RES_CTX.with(|c| c.set(&mut ctx as *mut ResCtx));
 
-    // Snapshot the current state as a pre-event result row without running the
-    // discrete update (so the value just *before* the event is captured).
+    // Pre-event snapshot: the state just *before* the discrete update. Recorded
+    // real algebraics live in slots `functionAlgebraics` fills, so it must run or
+    // they keep the previous grid point's values. Skip it for `has_when` models —
+    // there it also saves `pre` early, breaking the post-event edge test.
     let capture_pre = |e: &mut dyn SimEngine, rows: &mut Vec<f64>, time: f64| -> Result<()> {
         write_f64(e, sim_data + TIME_OFF, time)?;
         e.call1("functionODE", sim_data)?;
+        if !layout.has_when {
+            e.call1("functionAlgebraics", sim_data)?;
+        }
         capture_row(e, rows, sim_data, layout)
     };
 

@@ -112,6 +112,9 @@ struct SimLayout {
     /// `algVars ++ discreteAlgVars` (the real algebraic variables emitted as
     /// time-variant result signals after the states and derivatives).
     n_real_alg: u32,
+    /// When true, `functionAlgebraics` also runs the discrete update and saves the
+    /// `pre` regions, so drivers must call it only in the once-per-step order.
+    has_when: bool,
     rparam_off: u32,
     int_off: u32,
     iparam_off: u32,
@@ -200,6 +203,7 @@ impl SimLayout {
         n_rel: u32,
         n_stateset_f64: u32,
         n_math: u32,
+        has_when: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -236,7 +240,7 @@ impl SimLayout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let total = mathevents_off + n_math_slots * 8;
         SimLayout {
-            n_states, n_real_alg, rparam_off, int_off, iparam_off, bool_off, bparam_off,
+            n_states, n_real_alg, has_when, rparam_off, int_off, iparam_off, bool_off, bparam_off,
             str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off,
             n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stateset_off, n_math, mathevents_off, total,
@@ -1325,6 +1329,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     let samples = collect_samples(&sim_code.timeEvents)?;
     let zero_crossings = collect_zero_crossings(&sim_code.zeroCrossings)?;
     let stateset_scratch_f64 = stateset_scratch_f64(&sim_code.stateSets)?;
+    let all_eqs = flatten_eqs(&sim_code.allEquations);
+    let has_when = all_eqs.iter().any(|e| matches!(&**e, SimCode::SimEqSystem::SES_WHEN { .. }));
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -1341,6 +1347,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         vi.numRelations.max(0) as u32,
         stateset_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
+        has_when,
     );
 
     let (mut var_map, result_vars) = build_var_map(vars, &layout)?;
@@ -1436,8 +1443,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     // equations. `allEquations` is the full solved list in that order, so it is
     // used as the per-step function (in place of `algebraicEquations`), and
     // pre-values are saved after each step so the next step's edge test sees them.
-    let all_eqs = flatten_eqs(&sim_code.allEquations);
-    let has_when = all_eqs.iter().any(|e| matches!(&**e, SimCode::SimEqSystem::SES_WHEN { .. }));
     let algebraic_eqs = if has_when { all_eqs } else { flatten_eqs_ll(&sim_code.algebraicEquations) };
     // pre := live regions, appended to the per-step (algebraic) function when the
     // model has `when`-equations (see `sim_save_pre_values`).
