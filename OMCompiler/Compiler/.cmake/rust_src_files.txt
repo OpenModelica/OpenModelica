@@ -10,7 +10,7 @@ Cargo.lock
 Cargo.toml
 daskr/Cargo.toml
 daskr/build.rs
-daskr/src/aux.rs
+daskr/src/auxiliary.rs
 daskr/src/lib.rs
 daskr/src/linpack.rs
 daskr/src/solver.rs

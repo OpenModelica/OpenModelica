@@ -34,7 +34,7 @@
     unused_mut
 )]
 
-use crate::aux::{real_pow, real_sign, xerrwd};
+use crate::auxiliary::{real_pow, real_sign, xerrwd};
 use crate::linpack;
 use core::slice;
 
@@ -2758,7 +2758,7 @@ pub unsafe fn ddaskr(
             }
         }
 
-        uround = crate::aux::d1mach();
+        uround = crate::auxiliary::d1mach();
         at!(rwork, 9) = uround;
         hmin = uround * 4.0 * (*t).abs().max((*tout).abs());
 

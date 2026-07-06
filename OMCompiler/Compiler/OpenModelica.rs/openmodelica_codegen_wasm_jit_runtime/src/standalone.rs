@@ -146,7 +146,7 @@ unsafe fn dassl_res(
 fn run_dassl(m: &SimMeta, sim_data: u32, n_reals: u32, n_rows: u32) -> Vec<f64> {
     use daskr::solver;
 
-    daskr::aux::xsetf(0); // silence DASKR's own printing
+    daskr::auxiliary::xsetf(0); // silence DASKR's own printing
     unsafe {
         functionParameters(sim_data);
         functionInitialEquations(sim_data);

@@ -77,7 +77,7 @@ fn compare(
 
     // Silence diagnostics in both implementations.
     unsafe { _daskr_xsetf_(&0) };
-    daskr::aux::xsetf(0);
+    daskr::auxiliary::xsetf(0);
 
     let lrw = 600i32;
     let liw = 100i32;
@@ -230,7 +230,7 @@ unsafe fn pre_psol_r(_neq: *mut i32, _t: *mut f64, _y: *mut f64, _yp: *mut f64, 
 fn krylov_preconditioned() {
     let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { _daskr_xsetf_(&0) };
-    daskr::aux::xsetf(0);
+    daskr::auxiliary::xsetf(0);
 
     let (neq, nrt) = (2i32, 0i32);
     let (lrw, liw) = (600i32, 100i32);

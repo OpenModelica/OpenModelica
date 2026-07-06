@@ -11,7 +11,7 @@
 //! Layers, bottom-up:
 //! * [`linpack`] — the LINPACK dense/banded LU factor+solve and the BLAS-1
 //!   kernels (`dlinpk.c`).
-//! * [`aux`] — machine constants and the error-message helpers (`daux.c`).
+//! * [`auxiliary`] — machine constants and the error-message helpers (`daux.c`).
 //! * [`solver`] — the core integrator (`ddaskr.c`): the BDF predictor/corrector,
 //!   initial-condition solver, root finder, and the Krylov (SPIGMR) linear
 //!   solver. All paths are cross-checked bit-for-bit against the C in
@@ -21,6 +21,6 @@
 //! The crate is pure Rust with no I/O on the numerical hot path, so it
 //! cross-compiles to `wasm32` with no extra toolchain.
 
-pub mod aux;
+pub mod auxiliary;
 pub mod linpack;
 pub mod solver;

@@ -103,7 +103,7 @@ fn bits_eq(a: &[f64], b: &[f64]) -> bool {
 #[test]
 fn d1mach_matches() {
     let c = unsafe { _daskr_d1mach_(&1) };
-    assert_eq!(daskr::aux::d1mach().to_bits(), c.to_bits());
+    assert_eq!(daskr::auxiliary::d1mach().to_bits(), c.to_bits());
 }
 
 #[test]

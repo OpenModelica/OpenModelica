@@ -691,7 +691,7 @@ fn run_dassl(
 
     // Silence DASKR's own diagnostic printing (it would go to stdout and corrupt
     // the omc result record); failures are surfaced here via IDID instead.
-    daskr::aux::xsetf(0);
+    daskr::auxiliary::xsetf(0);
 
     let layout = &model.layout;
     e.call1("functionParameters", sim_data)?;
@@ -929,7 +929,7 @@ fn run_dassl_events(
     stats: &mut SolveStats,
 ) -> Result<Vec<f64>> {
     use daskr::solver;
-    daskr::aux::xsetf(0);
+    daskr::auxiliary::xsetf(0);
 
     let layout = &model.layout;
     e.call1("functionParameters", sim_data)?;
