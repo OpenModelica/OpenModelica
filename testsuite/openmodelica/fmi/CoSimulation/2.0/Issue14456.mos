@@ -21,7 +21,13 @@ readFile("roomM370_cs_systemCall.log"); getErrorString();
 // "
 // 0
 // ""
-// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// "info:    *** FMU Simulation Info ***
+//           - model:     roomM370 (co-simulation)
+//           - startTime: 0.000000
+//           - stopTime:  8000.000000
+//           - tolerance: 0.000001
+//           - stepSize:  1.000000
+// LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
 // LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
@@ -33,7 +39,7 @@ readFile("roomM370_cs_systemCall.log"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
-// info:    Result file: model_res.mat (bufferSize=10)
+// info:    Result file: roomM370_res.mat (bufferSize=10)
 // "
 // ""
 // endResult
