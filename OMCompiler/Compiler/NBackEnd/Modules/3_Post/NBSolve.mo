@@ -330,7 +330,7 @@ public
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
           // array equation solved for the a sliced variable.
-          // get all slices of the variable ocurring in the equation and select the slice that fits the indices
+          // get all slices of the variable occurring in the equation and select the slice that fits the indices
           (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
           comp.eqn := eqn_slice;
           comp.status := solve_status;

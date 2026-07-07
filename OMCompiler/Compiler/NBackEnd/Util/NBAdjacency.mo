@@ -568,6 +568,20 @@ public
                   end for;
                 end for;
 
+                // Store result variables (state derivatives) in inner_map so later
+                // result equations can trace transitive dependencies through them.
+                // e.g. der(x_i) = f(der(x_j), x_k) with der(x_j) = g(x_s) -> x_s dep.
+                if changed then
+                  inner_deps := List.flatten(list(Util.tuple31(tpl) for tpl in local_deps));
+                  inner_deps := UnorderedSet.unique_list(inner_deps, ComponentRef.hash, ComponentRef.isEqual);
+                else
+                  inner_deps := UnorderedMap.keyList(full.dependencies[eqn_index]);
+                end if;
+                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                for cref in pder_crefs loop
+                  UnorderedMap.add(cref, inner_deps, inner_map);
+                end for;
+
                 try
                   pder_crefs := list(BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false)) for cref in pder_crefs);
                 else

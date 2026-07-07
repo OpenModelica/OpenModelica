@@ -631,6 +631,12 @@ protected
     // appear in the partition's pre-tearing adjacency matrix.
     adjacencyVars := VariablePointers.clone(seedCandidates);
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    // For ODE Jacobians, also include state derivatives as adjacency variables.
+    // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).
+    // Without this, the transitive seed dependency der(x_i) -> der(x_j) -> x_j is lost.
+    if jacType == JacobianType.ODE then
+      adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
+    end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
@@ -1408,6 +1414,9 @@ protected
 
     adjacencyVars := VariablePointers.clone(seedCandidates);
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    if jacType == JacobianType.ODE then
+      adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
+    end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
@@ -1467,6 +1476,9 @@ protected
     if isSome(strongComponents) then
       adjacencyVars := VariablePointers.clone(seedCandidates);
       adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+      if jacType == JacobianType.ODE then
+        adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
+      end if;
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in arrayList(Util.getOption(strongComponents))))));
       sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set);

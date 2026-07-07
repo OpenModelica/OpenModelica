@@ -1168,22 +1168,13 @@ public
     list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
     ComponentRef replaced, stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
-    list<Integer> sizes, int_subs;
   algorithm
     for cref in scalarized_dependencies loop
-      // remove all resizable parameters from cref
-      replaced := ComponentRef.mapExp(cref, Expression.replaceResizableParameter);
-      replaced := ComponentRef.simplifySubscripts(replaced);
-
-      // remove all subscripts from cref
-      stripped := ComponentRef.stripSubscriptsAll(replaced);
-
-      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
-      (var_start, _) := mapping.var_AtS[var_arr_idx];
-      sizes := ComponentRef.sizes(stripped, false);
-      int_subs := ComponentRef.subscriptsToInteger(replaced);
-      var_scal_idx := locationToIndex(sizes, int_subs, var_start);
-      indices := var_scal_idx :: indices;
+      (replaced, stripped)  := getReplacedAndStripped(cref);
+      var_arr_idx           := UnorderedMap.getSafe(stripped, map, sourceInfo());
+      (var_start, _)        := mapping.var_AtS[var_arr_idx];
+      var_scal_idx          := indexFromReplacedStripped(replaced, stripped, var_start);
+      indices               := var_scal_idx :: indices;
     end for;
   end upgradeRowFull;
 
@@ -1208,11 +1199,48 @@ public
     end for;
   end upgradeRow;
 
+  function getSingleIndex
+    input ComponentRef cref;
+    output Integer index;
+  protected
+    ComponentRef replaced, stripped;
+  algorithm
+    (replaced, stripped)  := getReplacedAndStripped(cref);
+    index                 := indexFromReplacedStripped(replaced, stripped, 0);
+  end getSingleIndex;
+
   // ############################################################
   //                Protected Functions
   // ############################################################
 
 protected
+  function getReplacedAndStripped
+    input ComponentRef cref;
+    output ComponentRef replaced;
+    output ComponentRef stripped;
+  algorithm
+    // remove all resizable parameters from cref
+    replaced  := ComponentRef.mapExp(cref, Expression.replaceResizableParameter);
+    replaced  := ComponentRef.simplifySubscripts(replaced);
+
+    // remove all subscripts from cref
+    stripped  := ComponentRef.stripSubscriptsAll(replaced);
+  end getReplacedAndStripped;
+
+  function indexFromReplacedStripped
+    input ComponentRef replaced;
+    input ComponentRef stripped;
+    input Integer var_start;
+    output Integer index;
+  protected
+    list<Integer> sizes, int_subs;
+  algorithm
+    // get the sizes and subscripts as integers and compute the final scalar index
+    sizes     := ComponentRef.sizes(stripped, false);
+    int_subs  := ComponentRef.subscriptsToInteger(replaced);
+    index     := locationToIndex(sizes, int_subs, var_start);
+  end indexFromReplacedStripped;
+
   function resolveSkipsLst
     input Integer index;
     input Type ty;

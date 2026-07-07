@@ -5717,8 +5717,20 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
 ::=
    let initialjacMats =
     (JacobianMatrices |> JAC_MATRIX() =>
-      // Adjoint: use transposed sparsity and row coloring
-      if isAdjoint then
+      // NBackEnd jacobians carry sparsity in sparsityMatrix (SPARSITY) and use the resizable
+      // initialization path.  The runtime callback is initialAnalyticJacobianXXX, so generate
+      // a thin wrapper that delegates to the already-generated initialResizableAnalyticJacobianXXX.
+      let isResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
+      if isResizable then
+        <<
+        int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
+        {
+          return <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixName%>(data, threadData, jacobian);
+        }
+        >>
+      // Old-backend jacobians: adjoint uses transposed sparsity and row coloring,
+      // normal uses regular sparsity and column coloring (reads from .bin or NOT_AVAILABLE).
+      else if isAdjoint then
         initialAnalyticJacobians(
           columns,
           seedVars,
@@ -5732,7 +5744,6 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isBidirectional,
           adjointJacobianIndex,
           adjointMatrixName)
-      // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
           columns,
