@@ -30,7 +30,7 @@ system("unzip -o -qq simpleLoop.fmu -d simpleLoop_FMU/");
 remove("simpleLoop.fmu");
 system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi -DFMI2_OVERRIDE_FUNCTION_PREFIX -DOMC_FMI_RUNTIME\" && make -s", "build_simpleLoop.log"); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu", "simpleLoop_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --suppressPath=true", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
 
 // true
@@ -42,13 +42,8 @@ readFile("simpleLoop_me_systemCall.log");
 // 0
 // ""
 // 0
-// "info:    Set temp directory to    \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
-// info:    Set working directory to \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
-// info:    New model \"simpleLoop\" with corresponding temp directory \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224/simpleLoop-0x259db7\"
-// info:    Set working directory to \"/var/lib/jenkins/ws/OpenModelica_PR-15804/testsuite/omsimulator/recompileFMU.mos_temp2224\"
-// info:    *** FMU Simulation Info ***
+// "info:    *** FMU Simulation Info ***
 //           - model:     simpleLoop (model exchange)
-//           - path:      simpleLoop.fmu
 //           - startTime: 0.000000
 //           - stopTime:  1.000000
 //           - tolerance: 0.000001

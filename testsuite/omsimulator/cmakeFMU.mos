@@ -7,7 +7,7 @@ loadFile("DualMassOscillator.mo"); getErrorString();
 buildModelFMU(DualMassOscillator.System1, fileNamePrefix="DualMassOscillator.System1", platforms={"dynamic"}); getErrorString();
 
 // this should be later replaced by a call to the OMSimulatorPython DualMassOscillator.fmu  when command line interface is implemented with oms3
-system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu", "DualMassOscillator_System1_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu --suppressPath=true", "DualMassOscillator_System1_systemCall.log");
 readFile("DualMassOscillator_System1_systemCall.log");
 
 // Result:
@@ -19,13 +19,8 @@ readFile("DualMassOscillator_System1_systemCall.log");
 // "DualMassOscillator.System1.fmu"
 // ""
 // 0
-// "info:    Set temp directory to    \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    New model \"model\" with corresponding temp directory \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\\model-7l33r28g\"
-// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    *** FMU Simulation Info ***
+// "info:    *** FMU Simulation Info ***
 //           - model:     model (model exchange)
-//           - path:      DualMassOscillator.System1.fmu
 //           - startTime: 0.000000
 //           - stopTime:  1.000000
 //           - tolerance: 0.000001

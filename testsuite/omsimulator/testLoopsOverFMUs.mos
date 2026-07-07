@@ -1,6 +1,6 @@
 // name:     testLoopsOverFMUs.mos
 // status:   correct
-// teardown_command: rm -rf loopsOverFMUs* temp/
+// teardown_command: rm -rf loopsOverFMUs*
 //
 // Test algeraic loops over FMUs A and B or C and D. Can't be solved by fixed-point-iteration
 // Using KINSOL to solve loops.
@@ -92,10 +92,7 @@ model.addConnection(CRef('default', 'A', 'c_in'), CRef('default', 'B', 'c_out'))
 model.addConnection(CRef('default', 'C', 'x_out'), CRef('default', 'D', 'x_in'))
 model.addConnection(CRef('default', 'C', 'x_in'), CRef('default', 'D', 'x_out'))
 
-model.export('loopsOverFMUs.ssp')
-
-model2 = SSP('loopsOverFMUs.ssp')
-instantiated_model = model2.instantiate()
+instantiated_model = model.instantiate()
 instantiated_model.setResultFile('loopsOverFMUs.mat')
 instantiated_model.setValue(CRef('default', 'A', 'c_in'), 1.0)
 
@@ -110,15 +107,15 @@ readFile("testLoopsOverFMUs_systemCall.log");
 
 // Possible solutions:
 // a≈0.635425, b=-1.8, c≈1.16458 or a≈1.16458, b=-1.8, c≈0.635425
-val(A.a_out, 0.1, "loopsOverFMUs.mat");
-val(A.b_out, 0.1, "loopsOverFMUs.mat");
-val(B.c_out, 0.1, "loopsOverFMUs.mat");
+val(a_out, 0.1, "loopsOverFMUs.mat");
+val(b_out, 0.1, "loopsOverFMUs.mat");
+val(c_out, 0.1, "loopsOverFMUs.mat");
 
 // x should be equal to y
-val(C.y, 0, "loopsOverFMUs.mat");
-val(C.y, 0.1, "loopsOverFMUs.mat");
-val(D.x_out, 0, "loopsOverFMUs.mat");
-val(D.x_out, 0.1, "loopsOverFMUs.mat");
+val(y, 0, "loopsOverFMUs.mat");
+val(y, 0.1, "loopsOverFMUs.mat");
+val(x_out, 0, "loopsOverFMUs.mat");
+val(x_out, 0.1, "loopsOverFMUs.mat");
 
 
 // Result:
@@ -134,28 +131,28 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // 0
 // ""
 // "info:    Alg. loop (size 3/7)
-//            loopsOverFMUs.root.B
-//            loopsOverFMUs.root.A
+//            model.root.B
+//            model.root.A
 // info:    Alg. loop (size 2/4)
-//            loopsOverFMUs.root.D
-//            loopsOverFMUs.root.C
-// info:    maximum step size for 'loopsOverFMUs.root': 0.001000
-// info:    Result file: loopsOverFMUs.mat (bufferSize=1)
+//            model.root.D
+//            model.root.C
+// info:    maximum step size for 'model.root': 0.001000
+// info:    Result file: loopsOverFMUs.mat (bufferSize=10)
 // info:    Alg. loop (size 3/7)
-//            loopsOverFMUs.root.B
-//            loopsOverFMUs.root.A
+//            model.root.B
+//            model.root.A
 // info:    Alg. loop (size 2/4)
-//            loopsOverFMUs.root.D
-//            loopsOverFMUs.root.C
-// info:    Final Statistics for 'loopsOverFMUs.root':
-//          NumSteps = 101 NumRhsEvals  = 102 NumLinSolvSetups = 7
+//            model.root.D
+//            model.root.C
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 101 NumRhsEvals  = 102 NumLinSolvSetups = 6
 //          NumNonlinSolvIters = 101 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // 0.6354248688935424
 // -1.8000000000000003
 // 1.1645751311064578
 // 2.0
-// 2.442813485479551
+// 2.4432947788070396
 // 2.0
-// 2.442813485479604
+// 2.443294778806989
 // endResult

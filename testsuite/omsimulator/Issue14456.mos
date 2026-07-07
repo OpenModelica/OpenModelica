@@ -7,7 +7,7 @@ loadFile("roomM370.mo"); getErrorString();
 buildModelFMU(roomM370, version="2.0", platforms=["dynamic"]); getErrorString();
 
 // this should be later replaced by a call to the OMSimulatorPython DualMassOscillator.fmu  when command line interface is implemented with oms3
-system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu", "roomM370_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu --suppressPath=true", "roomM370_systemCall.log");
 readFile("roomM370_systemCall.log");
 
 
@@ -19,13 +19,8 @@ readFile("roomM370_systemCall.log");
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
-// "info:    Set temp directory to    \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    New model \"roomM370\" with corresponding temp directory \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\\roomM370-io5vqdtn\"
-// info:    Set working directory to \"C:\\OPENMODELICAGIT\\OpenModelica\\testsuite\\omsimulator\"
-// info:    *** FMU Simulation Info ***
+// "info:    *** FMU Simulation Info ***
 //           - model:     roomM370 (model exchange)
-//           - path:      roomM370.fmu
 //           - startTime: 0.000000
 //           - stopTime:  8000.000000
 //           - tolerance: 0.000001
