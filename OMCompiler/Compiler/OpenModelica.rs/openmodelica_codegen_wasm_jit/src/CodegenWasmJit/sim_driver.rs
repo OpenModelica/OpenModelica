@@ -361,6 +361,42 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     e.write_bytes(sim_data + layout.pre_real_off, &buf)
 }
 
+/// Upper bound on discrete-update iterations at one event (C's `maxEventIterations`).
+const MAX_EVENT_ITER: usize = 20;
+
+/// Snapshot of the discrete state — boolean/integer algebraics and held relations
+/// — used to detect when an event's discrete update has reached a fixed point.
+fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
+    let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
+    let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
+    let (ints, rels) = rest.split_at_mut((layout.n_int_alg() * 4) as usize);
+    e.read_bytes(sim_data + layout.bool_off, bools)?;
+    e.read_bytes(sim_data + layout.int_off, ints)?;
+    e.read_bytes(sim_data + layout.relations_off, rels)?;
+    Ok(buf)
+}
+
+/// Run the discrete update to a fixed point: re-run `functionAlgebraics` (which
+/// fires edge-detected when-bodies and saves pre-values) until the discrete state
+/// stops changing. A single pass leaves conditions evaluated against the *pre*-event
+/// operands — after a `reinit` flips a state, the guarding relation must be
+/// recomputed and its pre refreshed, or the next crossing sees a stale edge (a
+/// bouncing ball then never settles). Assumes `functionODE` and the event time have
+/// already been written.
+fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    e.call1("functionAlgebraics", sim_data)?;
+    let mut prev = discrete_snapshot(e, sim_data, layout)?;
+    for _ in 1..MAX_EVENT_ITER {
+        e.call1("functionAlgebraics", sim_data)?;
+        let cur = discrete_snapshot(e, sim_data, layout)?;
+        if cur == prev {
+            break;
+        }
+        prev = cur;
+    }
+    Ok(())
+}
+
 /// Per-sample time-event state: each sample's next firing time and its interval,
 /// loaded from the sample region (populated by the model's `initSample`). The
 /// driver interleaves these events with the integration — at a firing time it
@@ -442,6 +478,10 @@ pub(super) fn drive(
     let n_rows = model.n_intervals + 1;
     let start = model.start_time;
     let stop = model.stop_time;
+
+    // Zero-crossing hysteresis band, from the same tolerance fed to DASSL below.
+    let rtol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+    write_f64(e, sim_data + layout.zctol_off, 1e-4 * rtol.max(1e-12))?;
 
     // Time events (`sample`) and state events (zero-crossings) both need the
     // host-side event loop, which drives DASSL between events (clamping to sample
@@ -1162,7 +1202,13 @@ fn run_dassl_events(
                     // real pre-region before the discrete update fires.
                     save_pre_real(e, sim_data, layout)?;
                     write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
-                    emit_row(e, &mut rows, troot)?;
+                    // Post-event row from the discrete update run to a fixed point.
+                    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+                    write_f64(e, sim_data + TIME_OFF, troot)?;
+                    e.call1("functionODE", sim_data)?;
+                    iterate_discrete(e, sim_data, layout)?;
+                    check_nls(e, sim_data, layout)?;
+                    capture_row(e, &mut rows, sim_data, layout)?;
                     if terminated(e, sim_data, layout)? {
                         return Ok(rows);
                     }

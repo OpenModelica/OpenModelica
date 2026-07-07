@@ -982,6 +982,12 @@ pub(crate) struct SimCtx {
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
     /// then evaluated *fresh* (so a sign change is detectable) rather than held.
     pub(crate) zc_context: bool,
+    /// `SimData` byte offset of the zero-crossing hysteresis tolerance, written by
+    /// the driver at run start from the run's tolerance. Continuous (Real) indexed
+    /// relations use a ±`tolZC*(max(|a|,|b|)+max(nom))` band at events and in
+    /// `functionZeroCrossings` so a relation stays put within the band — this keeps
+    /// a bouncing ball from chattering through the floor near rest.
+    pub(crate) zctol_off: u32,
 }
 
 /// One nonlinear system's `rt_solve_nls` wiring: `k` is the job ordinal (its
@@ -1200,13 +1206,6 @@ impl<'a> FnCtx<'a> {
         for (k, zc) in crossings.iter().enumerate() {
             self.emit(we::Instruction::LocalGet(data));
             match zc {
-                ZcInfo::Diff { lhs, rhs } => {
-                    let l = compile_exp(self, lhs)?;
-                    coerce(self, l, WTy::F64);
-                    let r = compile_exp(self, rhs)?;
-                    coerce(self, r, WTy::F64);
-                    self.emit(we::Instruction::F64Sub);
-                }
                 ZcInfo::Bool { expr } => {
                     // `select` picks `1.0` when the condition (top of stack) is
                     // nonzero, else `-1.0`; push both values first, condition last.
@@ -3889,38 +3888,149 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
         }
         return Ok(WTy::I32);
     }
-    // Relation hysteresis (C's `relationhysteresis`/`relation`): an indexed relation
-    // in an equation returns the *held* `relations[index]` during continuous
-    // integration (`rel_fresh == 0`) — so the value is fixed while a nonlinear
-    // solver varies the operands and the residual stays smooth — and only
-    // re-evaluates + stores when the driver requests it at an event/init
-    // (`rel_fresh != 0`). Inside `functionZeroCrossings` (`zc_context`) it is always
-    // evaluated fresh so a sign change is detectable.
-    let hyst = match ctx.sim() {
-        Ok(s) if !s.zc_context && index >= 0 && (index as u32) < s.n_relations => {
-            let off = s.relations_off + index as u32 * 4;
-            Some((s.data_local, off, s.rel_fresh_off))
+    // An indexed relation is held during continuous integration (`rel_fresh == 0`)
+    // and re-evaluated at events/init; the crossing function (`zc_context`) always
+    // re-evaluates. A Real inequality gets a hysteresis band (`compile_relation_hyst`)
+    // at events and in the crossing function, but stays exact at init (`rel_fresh == 2`)
+    // so a start value like `v <= 0` at `v == 0` resolves as written.
+    let indexed = matches!(ctx.sim(), Ok(s) if index >= 0 && (index as u32) < s.n_relations);
+    if !indexed {
+        return compile_relation_fresh(ctx, e1, op, e2);
+    }
+    let real_ineq = operand_type_of_relation(op)? == WTy::F64
+        && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
+    let data = ctx.sim()?.data_local;
+    let rel_off = ctx.sim()?.relations_off + index as u32 * 4;
+    let fresh_off = ctx.sim()?.rel_fresh_off;
+    if ctx.sim()?.zc_context {
+        if real_ineq {
+            compile_relation_hyst(ctx, e1, op, e2, rel_off)?;
+        } else {
+            compile_relation_fresh(ctx, e1, op, e2)?;
         }
-        _ => None,
-    };
-    if let Some((data, rel_off, fresh_off)) = hyst {
-        ctx.emit(we::Instruction::LocalGet(data));
-        ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
-        ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
-        let v = ctx.alloc_temp(WTy::I32);
-        compile_relation_fresh(ctx, e1, op, e2)?;
-        ctx.emit(we::Instruction::LocalSet(v));
-        ctx.emit(we::Instruction::LocalGet(data)); // store relations[index] = v
-        ctx.emit(we::Instruction::LocalGet(v));
-        ctx.emit(we::Instruction::I32Store(mem_arg(rel_off, 2)));
-        ctx.emit(we::Instruction::LocalGet(v));
-        ctx.emit(we::Instruction::Else);
-        ctx.emit(we::Instruction::LocalGet(data)); // held: relations[index]
-        ctx.emit(we::Instruction::I32Load(mem_arg(rel_off, 2)));
-        ctx.emit(we::Instruction::End);
         return Ok(WTy::I32);
     }
-    compile_relation_fresh(ctx, e1, op, e2)
+    // Equation context: held / init-fresh / event-fresh selected on `rel_fresh`.
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+    ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+    let v = ctx.alloc_temp(WTy::I32);
+    if real_ineq {
+        // rel_fresh == 2 (init): exact; else (event): hysteretic.
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+        ctx.emit(we::Instruction::I32Const(2));
+        ctx.emit(we::Instruction::I32Eq);
+        ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+        compile_relation_fresh(ctx, e1, op, e2)?;
+        ctx.emit(we::Instruction::Else);
+        compile_relation_hyst(ctx, e1, op, e2, rel_off)?;
+        ctx.emit(we::Instruction::End);
+    } else {
+        compile_relation_fresh(ctx, e1, op, e2)?;
+    }
+    ctx.emit(we::Instruction::LocalSet(v));
+    ctx.emit(we::Instruction::LocalGet(data)); // store relations[index] = v
+    ctx.emit(we::Instruction::LocalGet(v));
+    ctx.emit(we::Instruction::I32Store(mem_arg(rel_off, 2)));
+    ctx.emit(we::Instruction::LocalGet(v));
+    ctx.emit(we::Instruction::Else);
+    ctx.emit(we::Instruction::LocalGet(data)); // held: relations[index]
+    ctx.emit(we::Instruction::I32Load(mem_arg(rel_off, 2)));
+    ctx.emit(we::Instruction::End);
+    Ok(WTy::I32)
+}
+
+/// Emit a Real inequality with C's zero-crossing hysteresis band, leaving an i32
+/// boolean on the stack. The comparison boundary is offset by
+/// ±`eps = tolZC * (max(|a|,|b|) + max(nominal(a), nominal(b)))` in the direction
+/// that resists a flip, using the held `relations[]` value at `rel_off` as the
+/// current side: once true the relation stays true until the operand clears the
+/// band, and vice versa. `tolZC` is read from `SimData` (`zctol_off`).
+fn compile_relation_hyst(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    op: &DAE::Operator,
+    e2: &DAE::Exp,
+    rel_off: u32,
+) -> Result<()> {
+    use we::Instruction as I;
+    let data = ctx.sim()?.data_local;
+    let zctol_off = ctx.sim()?.zctol_off;
+    let nom = nominal_const(e1).max(nominal_const(e2));
+
+    let a = ctx.alloc_temp(WTy::F64);
+    let wa = compile_exp(ctx, e1)?;
+    coerce(ctx, wa, WTy::F64);
+    ctx.emit(I::LocalSet(a));
+    let b = ctx.alloc_temp(WTy::F64);
+    let wb = compile_exp(ctx, e2)?;
+    coerce(ctx, wb, WTy::F64);
+    ctx.emit(I::LocalSet(b));
+
+    // eps = tolZC * (max(|a|,|b|) + nom)
+    let eps = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::F64Abs);
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(I::F64Abs);
+    ctx.emit(I::F64Max);
+    ctx.emit(I::F64Const(nom.into()));
+    ctx.emit(I::F64Add);
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
+    ctx.emit(I::F64Mul);
+    ctx.emit(I::LocalSet(eps));
+
+    // diff = a - b
+    let diff = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(I::F64Sub);
+    ctx.emit(I::LocalSet(diff));
+
+    // relations[rel_off] chooses which band edge applies.
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Load(mem_arg(rel_off, 2)));
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
+    emit_hyst_cmp(ctx, op, diff, eps, true)?;
+    ctx.emit(I::Else);
+    emit_hyst_cmp(ctx, op, diff, eps, false)?;
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Emit `diff <op> (±eps)`, leaving an i32 boolean. `dir` is the current relation
+/// value; it selects which side of the band the boundary sits on so the relation
+/// resists flipping.
+fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: bool) -> Result<()> {
+    use DAE::Operator as O;
+    use we::Instruction as I;
+    // (comparison, whether the +eps edge applies for this direction).
+    let (cmp, plus) = match op {
+        O::LESSEQ { .. } => (I::F64Lt, dir),
+        O::LESS { .. } => (I::F64Le, dir),
+        O::GREATER { .. } => (I::F64Ge, !dir),
+        O::GREATEREQ { .. } => (I::F64Gt, !dir),
+        other => bail!("CodegenWasmJit: non-inequality in hysteresis path: {other:?}"),
+    };
+    ctx.emit(I::LocalGet(diff));
+    ctx.emit(I::LocalGet(eps));
+    if !plus {
+        ctx.emit(I::F64Neg);
+    }
+    ctx.emit(cmp);
+    Ok(())
+}
+
+/// A relation operand's nominal magnitude for the hysteresis band: the literal's
+/// magnitude for a constant, else the default nominal `1.0`.
+fn nominal_const(e: &DAE::Exp) -> f64 {
+    match e {
+        DAE::Exp::RCONST { real } => real.into_inner().abs(),
+        DAE::Exp::ICONST { integer } => (*integer as f64).abs(),
+        _ => 1.0,
+    }
 }
 
 /// Emit a plain (unheld) relational comparison, leaving an i32 boolean on the

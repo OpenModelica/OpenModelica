@@ -166,9 +166,9 @@ struct SimLayout {
     sample_active_off: u32,
     /// Number of state-event zero-crossing functions (`SimCode.zeroCrossings`).
     n_zc: u32,
-    /// Base of the zero-crossing value region (one f64 `g_i = lhs_i - rhs_i` per
-    /// crossing), written by the emitted `functionZeroCrossings` and read back by
-    /// the driver's DASKR root callback (`RtFn`). Empty when the model has none.
+    /// Base of the zero-crossing value region (one f64 `g_i` per crossing, ±1 as the
+    /// condition holds), written by the emitted `functionZeroCrossings` and read back
+    /// by the driver's DASKR root callback (`RtFn`). Empty when the model has none.
     zc_off: u32,
     /// Number of indexed relations (`SimCode.varInfo.numRelations`) — the C
     /// runtime's `relations[]`/hysteresis count.
@@ -190,6 +190,8 @@ struct SimLayout {
     n_math: u32,
     /// Base of the held math-event values (f64 each); C's `mathEventsValuePre`.
     mathevents_off: u32,
+    /// Zero-crossing hysteresis tolerance slot (f64); see [`SimCtx::zctol_off`].
+    zctol_off: u32,
     total: u32,
 }
 
@@ -248,12 +250,14 @@ impl SimLayout {
         // reserved slots.
         let mathevents_off = stateset_off + n_stateset_f64 * 8;
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
-        let total = mathevents_off + n_math_slots * 8;
+        // Zero-crossing tolerance (f64), 8-aligned after the math-event region.
+        let zctol_off = mathevents_off + n_math_slots * 8;
+        let total = zctol_off + 8;
         SimLayout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off, bool_off, bparam_off,
             str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off,
-            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stateset_off, n_math, mathevents_off, total,
+            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stateset_off, n_math, mathevents_off, zctol_off, total,
         }
     }
 
@@ -745,6 +749,8 @@ struct SimVarMap {
     n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
     lambda_off: u32,
+    /// `SimData` byte offset of the zero-crossing hysteresis tolerance (`SimCtx::zctol_off`).
+    zctol_off: u32,
 }
 
 /// Display name of a model variable's component reference (OMC `.`-separated
@@ -861,6 +867,7 @@ fn build_var_map(
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math,
         lambda_off: layout.lambda_off,
+        zctol_off: layout.zctol_off,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
 
@@ -1196,12 +1203,10 @@ struct SampleInfo {
 /// and locates the sign change. `SimCode.zeroCrossings` maps 1:1 onto these (as
 /// in the C target's `function_ZeroCrossings`), one `g` per entry.
 pub(crate) enum ZcInfo {
-    /// A bare numeric inequality `lhs OP rhs`: `g = lhs - rhs`, a continuous
-    /// function whose zero DASKR interpolates exactly.
-    Diff { lhs: Arc<DAE::Exp>, rhs: Arc<DAE::Exp> },
-    /// Any other condition (boolean combination, `if`-guard, `==`/`<>`, integer
-    /// relation): `g = expr ? 1 : -1`, matching the C target's
-    /// `gout[i] = (relation_) ? 1 : -1`. DASKR brackets the ±1 step.
+    /// A relation or boolean condition: `g = expr ? 1 : -1`. DASKR brackets the ±1
+    /// step. A Real inequality is lowered with a hysteresis band and held-relation
+    /// direction (see `compile_relation`), consistent with how the same relation
+    /// reads in the equations, so an event fires exactly when the relation flips.
     Bool { expr: Arc<DAE::Exp> },
     /// A math-event builtin (`integer`/`floor`/`ceil`/`div`/`mod`): `g =
     /// (test(fresh arg) != test(pre[idx])) ? 1 : -1`, C's `zeroCrossingTpl`. `ops`
@@ -1243,18 +1248,6 @@ pub(crate) fn math_event_index(last: &DAE::Exp) -> Result<u32> {
     }
 }
 
-/// Whether a relational `operator`'s operands are numeric (real/integer), so
-/// `lhs - rhs` is a meaningful continuous crossing function. String/bool
-/// relations are not.
-fn is_numeric_relation(op: &DAE::Operator) -> bool {
-    use DAE::Operator as O;
-    let ty = match op {
-        O::LESS { ty } | O::LESSEQ { ty } | O::GREATER { ty } | O::GREATEREQ { ty } => ty,
-        _ => return false,
-    };
-    matches!(&**ty, DAE::Type::T_REAL { .. } | DAE::Type::T_INTEGER { .. })
-}
-
 /// Whether `path` is the unqualified builtin call `name`.
 fn path_ident_is(path: &openmodelica_ast::Absyn::Path, name: &str) -> bool {
     matches!(path, openmodelica_ast::Absyn::Path::IDENT { name: n } if &**n == name)
@@ -1286,9 +1279,6 @@ fn collect_zero_crossings(
             bail!("CodegenWasmJit: for-loop (iterator) zero-crossing not yet supported: {:?}", zc.relation_);
         }
         match &*zc.relation_ {
-            DAE::Exp::RELATION { exp1, operator, exp2, .. } if is_numeric_relation(operator) => {
-                out.push(ZcInfo::Diff { lhs: exp1.clone(), rhs: exp2.clone() });
-            }
             DAE::Exp::RELATION { .. } | DAE::Exp::LBINARY { .. } | DAE::Exp::LUNARY { .. } => {
                 out.push(ZcInfo::Bool { expr: zc.relation_.clone() });
             }
@@ -2057,6 +2047,7 @@ fn build_eq_fn_with_prelude(
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2104,6 +2095,7 @@ fn build_init_sample_fn(
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2144,6 +2136,7 @@ fn build_zero_crossings_fn(
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
         zc_context: true,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -2543,6 +2536,7 @@ fn build_nls_fns(
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
         zc_context: false,
     };
     let finish = |ctx: FnCtx| -> we::Function {
