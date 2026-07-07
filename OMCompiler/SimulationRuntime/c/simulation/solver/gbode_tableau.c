@@ -33,7 +33,6 @@
 #include "gbode_tableau.h"
 #include "gbode_conf.h"
 #include "gbode_err.h"
-#include "simulation_options.h"
 
 #include <float.h>
 #include <math.h>
