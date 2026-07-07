@@ -1,0 +1,39 @@
+// name: fmi2_array_attributes_nb
+// keywords: FMI 2.0 export array nominal scalarized NewBackend
+// status: correct
+// teardown_command: rm -rf fmi2_array_attributes_nb.fmu fmi2_array_attributes_nb.fmutmp/ fmi2_array_attributes_nb.dims fmi2_array_attributes_nb.log fmi2_array_attributes_nb_info.json index.html
+//
+// #15926, new backend, scalarized (default), C runtime. A scalarized array
+// element must not be dimensioned in the exported FMU init (numberOfDimensions
+// stays 0), otherwise the nominal bound-attribute update throws at FMU init.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+model fmi2_array_attributes_nb
+  parameter Real x_nom[3] = {10.0, 20.0, 30.0};
+  Real x[3](nominal = x_nom, start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y = sum(x);
+equation
+  der(x) = -x;
+end fmi2_array_attributes_nb;
+"); getErrorString();
+
+buildModelFMU(fmi2_array_attributes_nb, version="2.0", fmuType="me"); getErrorString();
+
+// Scalarized elements must not be dimensioned (empty result).
+system("unzip -cqq fmi2_array_attributes_nb.fmu sources/fmi2_array_attributes_nb_init_fmu.c | grep -n 'numberOfDimensions = [1-9]' > fmi2_array_attributes_nb.dims || true"); getErrorString();
+readFile("fmi2_array_attributes_nb.dims"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_array_attributes_nb.fmu"
+// ""
+// 0
+// ""
+// ""
+// ""
+// endResult

@@ -50,7 +50,6 @@ void gbInternalScheduleFastStatesUpdate(void *nls_ptr);
 void *gbInternalNlsAllocate(int size,
                             NLS_USERDATA *userData,
                             modelica_boolean attemptRetry,
-                            modelica_boolean isPatternAvailable,
                             modelica_boolean isFast);
 
 void gbInternalNlsFree(void *nls_ptr);

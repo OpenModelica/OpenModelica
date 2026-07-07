@@ -1,0 +1,316 @@
+// name: AlgorithmSSATest
+// keywords: NewBackend
+// status: correct
+// cflags: -d=dumpSimCode
+
+loadString("
+  model AlgorithmSSATest
+    Real a(start = 1.0, fixed = true);
+    Real b(start = 0.0, fixed = true);
+    Real v;
+    Real x;
+  equation
+    der(a) = -a + x;
+    der(b) = v - b;
+  algorithm
+    v := x * x;
+    x := sin(v);
+    x := 3.0 * x;
+  end AlgorithmSSATest;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=dumpSimCode"); getErrorString();
+buildModel(AlgorithmSSATest); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ##################################
+//
+//     SimCode (AlgorithmSSATest)
+//
+// ##################################
+// ============
+//   SimVars
+// ============
+// States (2)
+// ************
+//   (0)[STAT] (1) Real a = 1.0
+//   (1)[STAT] (1) Real b = 0.0
+//
+// Derivatives (2)
+// *****************
+//   (2)[DER-] (1) Real $DER.a
+//   (3)[DER-] (1) Real $DER.b
+//
+// Algebraic Variables (2)
+// *************************
+//   (4)[ALGB] (1) Real v
+//   (5)[ALGB] (1) Real x
+//
+// Initial Partition
+// -------------------
+//   (5) a := $START.a
+//   (4) b := $START.b
+//   (3) Algorithm
+//   v := x * x;
+//   x := sin(v);
+//   x := 3.0 * x;
+//   (2) $DER.a := x - a
+//   (1) $DER.b := v - b
+//
+// ODE Partition 1
+// -----------------
+//   (8) Alias of 3
+//   (7) Alias of 2
+//   (6) Alias of 1
+//
+// Event Partition
+// -----------------
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ================================================
+//   SimCode Jacobian ADJ(idx = 1, partition = 1)
+// ================================================
+//
+// SeedVars (size = 2)
+// *********************
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.b
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.a
+//
+// TmpVars (size = 4)
+// ********************
+//   (0)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.x_2
+//   (1)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.x_1
+//   (2)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.v
+//   (3)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.x
+//
+// ResultVars (size = 2)
+// ***********************
+//
+// Column Equations (size = 3)
+// -----------------------------
+//   (11) Algorithm
+//   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
+//   (10) Algorithm
+//   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//   (9) Algorithm
+//   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
+//   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + ($pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x);
+//
+// Sparsity Pattern Cols
+// ***********************
+//   0:	{0}
+//   1:	{1}
+//
+// Sparsity Pattern Rows
+// ***********************
+//   0:	{0}
+//   1:	{1}
+//
+// Sparsity Coloring Columns
+// ***************************
+//   {1, 0}
+//
+// Sparsity Coloring Rows
+// ************************
+//   {1, 0}
+//
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
+// ============================================================
+//
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 8, partition = 0)
+// ============================================================
+//
+// ===========================================================
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 9, partition = 0)
+// ===========================================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 8: alias of 3
+// 7: alias of 2
+// 6: alias of 1
+// ========================================
+//
+//
+//
+// odeEquations (1 systems):
+// ========================================
+// 8: alias of 3
+// 7: alias of 2
+// 6: alias of 1
+// ========================================
+//
+//
+//
+// algebraicEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (5)
+// ========================================
+// 5: a=$START.a [Real]
+// 4: b=$START.b [Real]
+// 3:   v := x * x;
+//   x := sin(v);
+//   x := 3.0 * x;
+//
+// 2: $DER.a=x - a [Real]
+// 1: $DER.b=v - b [Real]
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+// 11:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
+//
+// 10:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//
+// 9:   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
+//   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x;
+//
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
+// 	11:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
+//
+// 	10:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//
+// 	9:   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
+//   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
+//   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x;
+//
+//
+// columnVars(4)
+// ----------------------
+// index:0: $pDER_ODE_JAC_ADJ.x_2 (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.x_1 (no alias)  initial: 	no arrCref index:(2) []
+// index:2: $pDER_ODE_JAC_ADJ.v (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(4) []
+// 	Jacobian idx: 7
+//
+// 	Jacobian idx: 8
+//
+// 	Jacobian idx: 9
+//
+//
+// modelInfo:
+// ========================================
+// stateVars (2)
+// ----------------------
+// index:0: a (no alias)  initial: 1.0	no arrCref index:(1) []
+// index:1: b (no alias)  initial: 0.0	no arrCref index:(2) []
+// derivativeVars
+// ----------------------
+// index:2: $DER.a (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $DER.b (no alias)  initial: 	no arrCref index:(4) []
+// algVars (2)
+// ----------------------
+// index:4: v (no alias)  initial: 	no arrCref index:(5) []
+// index:5: x (no alias)  initial: 	no arrCref index:(6) []
+// functions:
+// -----------
+//
+// {"AlgorithmSSATest", "AlgorithmSSATest_init.xml"}
+// ""
+// endResult

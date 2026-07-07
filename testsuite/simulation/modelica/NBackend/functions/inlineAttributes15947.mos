@@ -1,0 +1,49 @@
+// name: inlineAttributes15947
+// keywords: NewBackend inline attributes min max nominal start
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf InlineAttrNB15947*
+//
+// New backend test for issue #15947: the input/output attributes
+// (min/max/nominal/start/unit) declared on an inlined function must end up on
+// the model variables bound to the function inputs/outputs, also when the
+// result is forwarded through an alias chain (this exercises the $FUN alias
+// resolution in NBInline.propagateAttributes/resolveAlias).
+// https://github.com/OpenModelica/OpenModelica/issues/15947
+
+loadString("
+function fin
+  input  Real x(min = 5.0, max = 50.0, nominal = 10.0, unit = \"K\");
+  output Real y(min = 1.0, max = 99.0, nominal = 20.0, start = 7.0, unit = \"Pa\");
+algorithm
+  y := x * 2.0;
+  annotation(Inline = true);
+end fin;
+
+model InlineAttrNB15947
+  Real a, c, d;
+equation
+  a = 3.0 - time;     // 'a' is the call argument -> gets the input attributes
+  c = fin(a);         // single output -> 'c' gets the output attributes
+  d = c;              // alias chain that forwards 'c'
+end InlineAttrNB15947;
+"); getErrorString();
+
+translateModel(InlineAttrNB15947); getErrorString();
+
+// The propagated attributes must appear on the model variables in _init.xml:
+//   input  attributes on 'a': min=5.0 max=50.0 nominal=10.0 unit=K
+//   output attributes on 'c': min=1.0 max=99.0 nominal=20.0 start=7.0 unit=Pa
+// Each of the 9 markers must be present exactly once (sum = 9).
+system("c=0; for p in 'unit=\"K\"' 'unit=\"Pa\"' 'nominal=\"10.0\"' 'nominal=\"20.0\"' 'min=\"5.0\"' 'max=\"50.0\"' 'min=\"1.0\"' 'max=\"99.0\"' 'start=\"7.0\"'; do c=$((c+$(grep -c -- \"$p\" InlineAttrNB15947_init.xml))); done; printf '%s' \"$c\"", outputFile="InlineAttrNB15947_cnt.txt"); getErrorString();
+readFile("InlineAttrNB15947_cnt.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "9"
+// endResult

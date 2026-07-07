@@ -48,8 +48,16 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QTextCodec>
+#include <QTimer>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 #include <QStyleHints>
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
@@ -98,6 +106,48 @@ void dumpQtPaths()
   fflush(NULL);
 }
 
+namespace {
+  QString absolutePath(const QString &fileName)
+  {
+    QFileInfo fileInfo(fileName);
+    QString absoluteFileName = fileName;
+    if (fileInfo.isRelative()) {
+      absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
+    }
+    return absoluteFileName.replace("\\", "/");
+  }
+
+  bool styleSheetArgumentValue(const QString &argument, QString *pFileName)
+  {
+    const QString optionPrefix = "--StyleSheet=";
+    if (argument.startsWith(optionPrefix)) {
+      *pFileName = argument.mid(optionPrefix.length());
+      return true;
+    }
+    return false;
+  }
+
+  bool readStyleSheetFile(const QString &fileName, QString *pStyleSheet, QString *pErrorString)
+  {
+    QFile styleSheetFile(fileName);
+    if (!styleSheetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      *pErrorString = QString("Failed to load stylesheet file %1: %2").arg(fileName, styleSheetFile.errorString());
+      return false;
+    }
+    *pStyleSheet = QString::fromUtf8(styleSheetFile.readAll());
+    pErrorString->clear();
+    return true;
+  }
+
+  void appendStyleSheet(QString *pStyleSheet, const QString &styleSheet)
+  {
+    if (!pStyleSheet->isEmpty()) {
+      pStyleSheet->append("\n");
+    }
+    pStyleSheet->append(styleSheet);
+  }
+}
+
 /*!
  * \class OMEditApplication
  * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
@@ -111,6 +161,10 @@ void dumpQtPaths()
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+#if defined(__EMSCRIPTEN__)
+  // Build stamp in the console (stale-artifact diagnosis).
+  EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);
+#endif
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
     QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
@@ -125,8 +179,9 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // looks for QtWebEngine resources/locales under <install>/...
   // We install those under <install>/bin/... instead, so override the
   // search paths here before any QtWebEngine subprocess is launched.
-  qputenv("QTWEBENGINE_RESOURCES_PATH",  QByteArray(installationDirectoryPath) + "/bin/resources");
-  QString localesPath = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales";
+  // Chromium rejects a ".." segment in the resource path.
+  qputenv("QTWEBENGINE_RESOURCES_PATH", QDir::cleanPath(QString::fromLocal8Bit(installationDirectoryPath) + "/bin/resources").toLocal8Bit());
+  QString localesPath = QDir::cleanPath(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales");
   qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
 
@@ -138,7 +193,37 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // set the stylesheet
-  setStyleSheet("file:///:/Resources/css/stylesheet.qss");
+  QString applicationStyleSheet;
+  QStringList styleSheetLoadErrors;
+  QString defaultStyleSheetLoadError;
+  const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
+  if (!defaultStyleSheetLoaded) {
+    styleSheetLoadErrors.append(defaultStyleSheetLoadError);
+  }
+  if (defaultStyleSheetLoaded && arguments().size() > 1 && !testsuiteRunning) {
+    for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
+      if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
+        const QString absoluteStyleSheetFileName = absolutePath(styleSheetFileName);
+        QString customStyleSheet;
+        QString customStyleSheetLoadError;
+        if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &customStyleSheetLoadError)) {
+          appendStyleSheet(&applicationStyleSheet, customStyleSheet);
+        } else {
+          styleSheetLoadErrors.append(customStyleSheetLoadError);
+        }
+      }
+    }
+  }
+  if (defaultStyleSheetLoaded) {
+#if defined(__EMSCRIPTEN__)
+    // Applying it here pumps the wasm event dispatcher during early startup (like
+    // SplashScreen below), stalling the async library install. Defer to the loop.
+    QTimer::singleShot(0, this, [this, applicationStyleSheet]() { setStyleSheet(applicationStyleSheet); });
+#else
+    setStyleSheet(applicationStyleSheet);
+#endif
+  }
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif // #ifndef WIN32
@@ -175,13 +260,21 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       break;
     }
   }
-  // Splash Screen
+  // Splash Screen. On wasm QSplashScreen is compiled out (its repaint pumps the
+  // Qt-for-WebAssembly event dispatcher during early startup, which traps); an HTML
+  // overlay drawn straight into the DOM stands in for it instead.
+#if !defined(__EMSCRIPTEN__)
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
   pSplashScreen->setPixmap(pixmap);
   if (!testsuiteRunning) {
     pSplashScreen->show();
   }
+#else
+  if (!testsuiteRunning) {
+    WasmSplash::show();
+  }
+#endif
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
@@ -193,6 +286,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
@@ -213,16 +307,13 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         }
       } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
         dumpQtPaths();
+      } else if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
+        // The stylesheet option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {
           // if path is relative make it absolute
-          QFileInfo file (fileName);
-          QString absoluteFileName = fileName;
-          if (file.isRelative()) {
-            absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
-          }
-          absoluteFileName = absoluteFileName.replace("\\", "/");
+          const QString absoluteFileName = absolutePath(fileName);
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
@@ -238,6 +329,18 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   pMainwindow->setNewApiProfiling(newApiProfiling);
   pMainwindow->setNewApiNoJson(newApiNoJson);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
+
+  // The rest of startup makes blocking omc calls (setUpMainWindow loads libraries,
+  // queries the version, builds the library tree). On wasm omc lives in a Web
+  // Worker reached over Asyncify, and those blocking calls are only safe once Qt's
+  // event loop is running: a raw suspend during construction corrupts Qt's wasm
+  // event pump (QWasmSuspendResumeControl). So defer this whole block to the first
+  // event-loop tick on wasm; run it inline everywhere else.
+  auto initMainWindow = [=, this]() {
+#if defined(__EMSCRIPTEN__)
+  extern void omcInstallWorkerVfsFileEngine();
+  omcInstallWorkerVfsFileEngine();
+#endif
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
@@ -247,6 +350,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (!invalidFlags.isEmpty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
                                                           Helper::scriptingKind, Helper::errorLevel));
+  }
+  // show stylesheet load error
+  if (!styleSheetLoadErrors.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, styleSheetLoadErrors.join("\n"), Helper::scriptingKind, Helper::errorLevel));
   }
   // show qt translator load error
   if (!qtTranslatorLoadError.isEmpty()) {
@@ -267,6 +374,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
   }
 
+#if !defined(__EMSCRIPTEN__)
   if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
     int port = 3000;
     bool enableAdminTools = false;
@@ -278,12 +386,17 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
     new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
   }
+#endif
 
   if (!testsuiteRunning) {
     // finally show the main window
     pMainwindow->show();
     // hide the splash screen
+#if !defined(__EMSCRIPTEN__)
     SplashScreen::instance()->finish(pMainwindow);
+#else
+    WasmSplash::finish();
+#endif
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
     //! Fixes issue #7456
     if (OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked()) {
@@ -306,6 +419,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       }
     }
   }
+  }; // initMainWindow
+#if defined(__EMSCRIPTEN__)
+  QTimer::singleShot(0, this, initMainWindow);
+#else
+  initMainWindow();
+#endif
 }
 
 /*!

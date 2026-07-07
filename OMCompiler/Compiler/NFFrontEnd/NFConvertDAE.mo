@@ -48,6 +48,7 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import AbsynUtil;
 import AvlTreePathFunction;
 import Call = NFCall;
 import ComponentReferenceBasics;
@@ -214,14 +215,94 @@ algorithm
   source := match cref
     case ComponentRef.CREF()
       algorithm
-        source := ElementSource.addElementSourceType(source,
-          InstNode.scopePath(InstNode.classScope(InstNode.getDerivedNode(InstNode.parent(cref.node)))));
+        source := addComponentLevelTypeToSource(InstNode.parent(cref.node), source);
       then
         addComponentTypeToSource(cref.restCref, source);
 
     else source;
   end match;
 end addComponentTypeToSource;
+
+function addComponentLevelTypeToSource
+  "Records the type(s) of the class that owns the component referenced at one
+   level of a cref into the element source. For a regular component this is a
+   single class (the class in which the component is declared). When a component
+   is inherited through one or more `extends` of a visualization type, e.g.
+
+     model MyShape
+       extends ModelicaServices.Animation.Shape;
+     end MyShape;
+
+   getDerivedNode collapses the whole extends chain down to the most derived
+   class (MyShape), so the visualization base class (Shape) would be lost and
+   the backend (VisualXML) could no longer recognize it. In that case we record
+   the full extends chain, with the visualization base class kept in the primary
+   slot of this level so that the identifier prefix computed from the type index
+   in VisualXML.isVisualizationVarFold still points at the right component.
+
+   This is only reached when the element source types are recorded at all, i.e.
+   under -d=visxml (animation) or infoXmlOperations; otherwise the original
+   single most derived class entry is kept."
+  input InstNode parentNode;
+  input output DAE.ElementSource source;
+protected
+  InstNode concrete, n;
+  Absyn.Path concretePath, p;
+  list<Absyn.Path> chain = {};
+  Option<Absyn.Path> visPath = NONE();
+algorithm
+  // the collapsed, most derived class (default behaviour)
+  concrete := InstNode.classScope(InstNode.getDerivedNode(parentNode));
+  concretePath := InstNode.scopePath(concrete);
+
+  // Skip the chain walk when the most derived class is itself a visualization
+  // type (direct ModelicaServices/MultiBody shapes already match as a single
+  // entry); only an inherited shape needs the base classes recorded.
+  if not isVisualizerLeafName(concretePath) then
+    // walk the extends chain from where the component is actually declared up
+    // to the most derived class, collecting the intermediate base classes
+    n := InstNode.classScope(parentNode);
+    while InstNode.isBaseClass(n) loop
+      p := InstNode.scopePath(n, ignoreBaseClass = true);
+      chain := p :: chain;
+      if isNone(visPath) and isVisualizerLeafName(p) then
+        visPath := SOME(p);
+      end if;
+      n := InstNode.classScope(InstNode.getDerivedNode(n, recursive = false));
+    end while;
+  end if;
+
+  if isSome(visPath) then
+    // a visualization type appears as a base class -> record the whole chain
+    // with the visualization base class in the primary slot of this level
+    SOME(p) := visPath;
+    chain := listAppend(list(c for c guard not AbsynUtil.pathEqual(c, p) in chain),
+                        {concretePath});
+    for c in listReverse(chain) loop
+      source := ElementSource.addElementSourceType(source, c);
+    end for;
+    source := ElementSource.addElementSourceType(source, p);
+  else
+    // default (unchanged): single most derived class entry
+    source := ElementSource.addElementSourceType(source, concretePath);
+  end if;
+end addComponentLevelTypeToSource;
+
+function isVisualizerLeafName
+  "Returns true if the last identifier of the path is one of the visualization
+   type names (Shape, Vector, Surface). This is only used to position the type
+   in the element source; VisualXML.hasVisPath remains the authority on whether
+   a fully qualified path is actually a visualization type."
+  input Absyn.Path path;
+  output Boolean isVisualizer;
+algorithm
+  isVisualizer := match AbsynUtil.pathLastIdent(path)
+    case "Shape" then true;
+    case "Vector" then true;
+    case "Surface" then true;
+    else false;
+  end match;
+end isVisualizerLeafName;
 
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;

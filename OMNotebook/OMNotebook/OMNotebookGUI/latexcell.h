@@ -56,7 +56,7 @@ namespace IAEX
 
   public:
     LatexCell(Document *doc, QWidget *parent=0);
-    virtual ~LatexCell();
+    virtual ~LatexCell() {};
     QString text() override;
     QString textHtml() override;
     QTextDocument* document() override;
@@ -65,7 +65,7 @@ namespace IAEX
     virtual QTextCursor textCursor() override;
     virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    void viewExpression(const bool) override;
+    void viewExpression(bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -77,8 +77,8 @@ namespace IAEX
     virtual void addCellWidgets() override;
     virtual void removeCellWidgets() override;
     virtual void accept(Visitor &v) override;
-    virtual bool isClosed();
-    virtual bool isEditable() override;
+    virtual bool isClosed() const override;
+    virtual bool isEditable() const override;
     virtual bool isEvaluated();
 
   signals:
@@ -104,11 +104,11 @@ namespace IAEX
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly) override;
-    void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true) override;
-    virtual void setFocus(const bool focus) override;
-    virtual void setFocusOutput(const bool focus);
+    void setReadOnly(bool readonly) override;
+    void setEvaluated(bool evaluated);
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
+    virtual void setFocusOutput(bool focus);
     void setExpr(QString);
     void setState(int state);
 
@@ -135,18 +135,11 @@ namespace IAEX
   public:
     MyTextEdit3* input_;
     MyTextEdit3* output_;
-    //QTextBrowser *output_;
+
   private:
     QTextBrowser *chaptercounter_;
-    //InputCellDelegate *delegate_;
     QGridLayout *layout_;
     Document *document_;
-
-  public:
-    //QPushButton* variableButton;
-    //QPushButton* hideButton;
-    //QPushButton* latexButton;
-    QTemporaryFile* imageFile;
   };
 
 
@@ -176,11 +169,11 @@ namespace IAEX
     //void showVariableButton(bool);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void keyPressEvent(QKeyEvent *event );
-    void insertFromMimeData(const QMimeData *source);
-    void focusInEvent(QFocusEvent* event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event ) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent* event) override;
 
   private:
   };

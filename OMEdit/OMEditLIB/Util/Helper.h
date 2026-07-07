@@ -152,6 +152,7 @@ public:
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString loadCompiledModel;
   static QString newCRMLModel;
   static QString newCRMLModelTip;
   static QString newMOSScript;

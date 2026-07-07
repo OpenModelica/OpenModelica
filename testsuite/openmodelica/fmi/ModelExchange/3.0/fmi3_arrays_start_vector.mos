@@ -1,0 +1,49 @@
+// name: fmi3_arrays_start_vector.mos
+// keywords: FMI 3.0 export array start vector
+// status: correct
+// teardown_command: rm -rf fmi3_arrays_start_vector.fmu fmi3_arrays_start_vector.xml fmi3_arrays_start_vector_tmp.xml fmi3_arrays_start_vector.fmutmp/ fmi3_arrays_start_vector.log fmi3_arrays_start_vector_info.json index.html
+//
+// FMI 3.0 native array state with element-wise start values (start = {1,2,3}).
+// Checks the start attribute emitted for the array variable x.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi3_arrays_start_vector
+  Real x[3](start = {1.0, 2.0, 3.0}, each fixed = true);
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+end fmi3_arrays_start_vector;
+"); getErrorString();
+
+buildModelFMU(fmi3_arrays_start_vector, version="3.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi3_arrays_start_vector.fmu modelDescription.xml > fmi3_arrays_start_vector_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_arrays_start_vector_tmp.xml > fmi3_arrays_start_vector.xml"); getErrorString();
+readFile("fmi3_arrays_start_vector.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_arrays_start_vector.fmu"
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// 	Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//   </ModelVariables>
+// "
+// ""
+// endResult

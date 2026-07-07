@@ -887,8 +887,11 @@ algorithm
 end isVisualizationVarFold;
 
 function hasVisPath
-  "checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and
-   outputs * if true. outputs which path is the vis path
+  "checks if the path is a known visualization type and outputs its name if true.
+   These are Modelica.Mechanics.MultiBody.Visualizers.Advanced.{Shape,Vector,Surface}
+   and the underlying ModelicaServices.Animation.{Shape,Vector,Surface} they extend,
+   so that shapes instantiated directly from ModelicaServices are visualized as well.
+   outputs which path is the vis path
    author:Waurich TUD 2015-04"
   input  list<Absyn.Path> pathsIn;
   input Integer numIn;
@@ -910,18 +913,33 @@ algorithm
             path=Absyn.QUALIFIED(name="Visualizers",
               path=Absyn.QUALIFIED(name="Advanced",
                 path=Absyn.IDENT(name=name))))))::_
-        guard match name
-          case "Shape" then true;
-          case "Vector" then true;
-          case "Surface" then true;
-          else false;
-        end match
+        guard isVisualizerName(name)
+      then
+        (name, numIn);
+
+    case Absyn.QUALIFIED(name="ModelicaServices",
+        path=Absyn.QUALIFIED(name="Animation",
+          path=Absyn.IDENT(name=name)))::_
+        guard isVisualizerName(name)
       then
         (name, numIn);
 
     case _::rest then hasVisPath(rest,numIn+1);
   end match;
 end hasVisPath;
+
+function isVisualizerName
+  "true if the name is one of the supported visualization types"
+  input String name;
+  output Boolean isVisualizer;
+algorithm
+  isVisualizer := match name
+    case "Shape" then true;
+    case "Vector" then true;
+    case "Surface" then true;
+    else false;
+  end match;
+end isVisualizerName;
 
 function dumpVis
   "author: waurich TUD

@@ -27,15 +27,15 @@ simulate(Test4); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time ($RES_SIM_1)
+// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -70,14 +70,14 @@ simulate(Test4); getErrorString();
 // "Warning: NBAlias.setStartFixed: Multiple variables are fixed and have identical start values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
 //
 // 	Fixed start map after replacements:
 // 	(x, 20.0)
 // 	(z, 20.0)
 // Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
 // Checking for consistency is not yet supported, following equations had to be removed:
-// 	[SCAL] (1) x = $START.x ($RES_SRT_7);
+// [SCAL] (1) x = $START.x; ($RES_SRT_7)
 // "
 // endResult

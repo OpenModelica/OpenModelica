@@ -88,12 +88,12 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
-  Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
   MainWindow.cpp \
+  LoadCompiledModelDialog.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/Model.cpp \
@@ -203,15 +203,16 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/Parser.cpp \
   MCP/MCPServer.cpp \
   MCP/MCPToolsDiagram.cpp \
-  MCP/MCPToolsSimulation.cpp
+  MCP/MCPToolsSimulation.cpp \
+  Search/FindUsageWidget.cpp
 
 HEADERS  += Util/Helper.h \
-  Search/FindUsageWidget.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
   MainWindow.h \
+  LoadCompiledModelDialog.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Modeling/Model.h \
@@ -325,7 +326,8 @@ HEADERS  += Util/Helper.h \
   FlatModelica/ExpressionFuncs.h \
   FlatModelica/Parser.h \
   MCP/MCPServer.h \
-  MCP/MCPServerPrivate.h
+  MCP/MCPServerPrivate.h \
+  Search/FindUsageWidget.h
 
 CONFIG(osg) {
 

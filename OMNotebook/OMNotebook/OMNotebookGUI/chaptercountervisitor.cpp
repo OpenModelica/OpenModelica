@@ -87,7 +87,7 @@ namespace IAEX
   {}
 
   // GROUPCELL
-  void ChapterCounterVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  void ChapterCounterVisitor::visitCellGroupNodeBefore(CellGroup *)
   {}
 
   void ChapterCounterVisitor::visitCellGroupNodeAfter(CellGroup *)

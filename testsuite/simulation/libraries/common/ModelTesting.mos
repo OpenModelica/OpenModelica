@@ -40,6 +40,11 @@ if simulationRuntime == OpenModelicaModelTesting.SimulationRuntime.Cpp then
 else
   simflags := simflags + " -abortSlowSimulation -alarm=" + String(timeoutSim);
 end if;
+// Corpus-wide simCodeTarget override (e.g. partest -simCodeTarget=wasm-jit); wins over the choice above.
+simCodeTargetOverride := getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET");
+if simCodeTargetOverride <> "" then
+  setCommandLineOptions("+simCodeTarget=" + simCodeTargetOverride); getErrorString();
+end if;
 if modelTestingType == OpenModelicaModelTesting.Kind.Instantiation then
   print(if debug then "Start instantiateModel\n" else "");
   str:=instantiateModel(modelName);

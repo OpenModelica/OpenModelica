@@ -48,6 +48,7 @@ encapsulated package CodegenWasmJit
   sources. "
 
 import SimCode;
+import Error;
 
 function translateModel
   " Lower the model in `simCode` to a WebAssembly module written to
@@ -56,6 +57,8 @@ function translateModel
     Implemented in Rust. "
   input SimCode.SimCode simCode;
 algorithm
+  Error.addInternalError("CodegenWasmJit.translateModel: the wasm-jit target is only implemented in the Rust omc build", sourceInfo());
+  fail();
 end translateModel;
 
 function runSimulation
@@ -79,6 +82,29 @@ function finishCompile
   input String fileNamePrefix;
 algorithm
 end finishCompile;
+
+function emitStandalone
+  " The `wasm` simCodeTarget (vs in-process `wasm-jit`): lower the model and
+    merge it with the wasip1 runtime into a self-contained WASI command module
+    written to <simCode.fileNamePrefix>.wasm, runnable with
+    `wasmtime run <prefix>.wasm --dir .::.`. Implemented in Rust. "
+  input SimCode.SimCode simCode;
+algorithm
+  Error.addInternalError("CodegenWasmJit.emitStandalone: the wasm target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end emitStandalone;
+
+function runSimulationWasmtime
+  " Run the standalone module (built by emitStandalone) in a wasmtime subprocess;
+    its _start writes the result file. Returns 0 on success, 1 on failure.
+    Implemented in Rust. "
+  input String fileNamePrefix;
+  input String resultFile;
+  input String simflags;
+  output Integer status;
+algorithm
+  status := 0;
+end runSimulationWasmtime;
 
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJit;

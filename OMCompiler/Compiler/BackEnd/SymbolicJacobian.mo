@@ -580,7 +580,7 @@ algorithm
     List.map2_0(compsAdd, updateAssignment, ass1, ass2);
   end if;
   List.map2_0(compsNew, updateAssignment, ass1, ass2);
-  comps := List.replaceAtWithList(compsNew, idx-1, comps);
+  comps := List.replaceAtWithList(compsNew, idx, comps);
   systOut.matching := BackendDAE.MATCHING(ass1, ass2, listAppend(comps, compsAdd));
   systOut := BackendDAEUtil.setEqSystMatrices(systOut);
 end replaceStrongComponent;

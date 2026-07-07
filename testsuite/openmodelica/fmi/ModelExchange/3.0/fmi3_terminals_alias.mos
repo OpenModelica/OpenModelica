@@ -1,0 +1,78 @@
+// name: fmi3_terminals_alias.mos
+// keywords: FMI 3.0 export terminals connector flange causalization
+// status: correct
+// teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml Inertia2.log Inertia2_info.json index.html
+//
+// FMI 3.0 flange causalization (issue #15686). A model with unconnected acausal
+// (physical) connectors is exported with a causal FMU boundary: the flow variable
+// becomes an input and the connector's potential variable becomes an output (the
+// convention used for FMI terminal export), so the FMU can be reconnected into a
+// physical circuit. Both members still appear in the terminal and reference a real
+// modelDescription variable (the potential flange_a.phi == phi is kept as an
+// output, not dropped as an alias). memberName is unique per terminal.
+
+loadString("
+connector Flange
+  Real phi;
+  flow Real tau;
+end Flange;
+model Inertia2
+  Flange flange_a;
+  Flange flange_b;
+  parameter Real J = 1;
+  Real phi(start=0, fixed=true);
+  Real w(start=0, fixed=true);
+equation
+  phi = flange_a.phi;
+  phi = flange_b.phi;
+  w = der(phi);
+  J*der(w) = flange_a.tau + flange_b.tau;
+end Inertia2;
+"); getErrorString();
+
+buildModelFMU(Inertia2, version="3.0", fmuType="me"); getErrorString();
+
+// extract the generated terminalsAndIcons.xml
+system("unzip -cqq Inertia2.fmu terminalsAndIcons/terminalsAndIcons.xml > Inertia2_term.xml"); getErrorString();
+readFile("Inertia2_term.xml"); getErrorString();
+
+// the flanges are causalized: flow -> input, potential -> output
+system("for v in flange_a.phi flange_a.tau flange_b.phi flange_b.tau; do echo \"$v $(unzip -cqq Inertia2.fmu modelDescription.xml | grep \"name=\\\"$v\\\"\" | grep -oE 'causality=\"[a-z]+\"')\"; done"); getErrorString();
+
+// every terminal member references a variable that exists in modelDescription.xml
+system("for v in flange_a.tau flange_a.phi flange_b.tau flange_b.phi; do unzip -cqq Inertia2.fmu modelDescription.xml | grep -q \"name=\\\"$v\\\"\" && echo \"$v ok\"; done"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Inertia2.fmu"
+// ""
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiTerminalsAndIcons fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd\">
+//   <Terminals>
+//     <Terminal name=\"flange_a\" matchingRule=\"plug\" terminalKind=\"Flange\">
+//       <TerminalMemberVariable variableName=\"flange_a.phi\" memberName=\"phi\" variableKind=\"signal\"/>
+//       <TerminalMemberVariable variableName=\"flange_a.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
+//     </Terminal>
+//     <Terminal name=\"flange_b\" matchingRule=\"plug\" terminalKind=\"Flange\">
+//       <TerminalMemberVariable variableName=\"flange_b.phi\" memberName=\"phi\" variableKind=\"signal\"/>
+//       <TerminalMemberVariable variableName=\"flange_b.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
+//     </Terminal>
+//   </Terminals>
+// </fmiTerminalsAndIcons>"
+// ""
+// flange_a.phi causality="output"
+// flange_a.tau causality="input"
+// flange_b.phi causality="output"
+// flange_b.tau causality="input"
+// 0
+// ""
+// flange_a.tau ok
+// flange_a.phi ok
+// flange_b.tau ok
+// flange_b.phi ok
+// 0
+// ""
+// endResult

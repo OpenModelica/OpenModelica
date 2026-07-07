@@ -1,0 +1,58 @@
+// name: FlowAlias13
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+
+loadString("
+  model Splitter
+    TestAliasStream.FluidPort C;
+    TestAliasStream.FluidPort H;
+  equation
+    connect(C, H);
+  end Splitter;
+
+  model Test13
+    Splitter splitter[2];
+  end Test13;
+");
+
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(Test13); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test13'
+//   model 'Test13'
+//     Real 'splitter[1].C.p';
+//     Real 'splitter[1].C.h';
+//     Real 'splitter[1].H.p';
+//     Real 'splitter[1].H.h';
+//     Real 'splitter[2].C.p';
+//     Real 'splitter[2].C.h';
+//     Real 'splitter[2].H.p';
+//     Real 'splitter[2].H.h';
+//     Real 'splitter[1].C.w';
+//     Real 'splitter[1].H.w' = -'splitter[1].C.w' \"Alias variable\";
+//     Real 'splitter[2].C.w';
+//     Real 'splitter[2].H.w' = -'splitter[2].C.w' \"Alias variable\";
+//   equation
+//     'splitter[1].C.h' = 'splitter[1].H.h';
+//     'splitter[1].H.h' = 'splitter[1].C.h';
+//     'splitter[2].C.h' = 'splitter[2].H.h';
+//     'splitter[2].H.h' = 'splitter[2].C.h';
+//     'splitter[1].C.p' = 'splitter[1].H.p';
+//     'splitter[2].C.p' = 'splitter[2].H.p';
+//     'splitter[1].C.w' = 0.0;
+//     -'splitter[1].C.w' = 0.0;
+//     'splitter[2].C.w' = 0.0;
+//     -'splitter[2].C.w' = 0.0;
+//   end 'Test13';
+// end 'Test13';
+// "
+// ""
+// endResult

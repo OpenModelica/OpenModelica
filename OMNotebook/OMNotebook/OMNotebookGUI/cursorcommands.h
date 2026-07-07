@@ -57,7 +57,7 @@ namespace IAEX
   public:
     CursorMoveUpCommand(){}
     virtual ~CursorMoveUpCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -93,7 +93,7 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveUpCommand(), Exception: ") + e.what();
@@ -111,7 +111,7 @@ namespace IAEX
   public:
     CursorMoveDownCommand(){}
     virtual ~CursorMoveDownCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -147,7 +147,7 @@ namespace IAEX
           cursor->currentCell()->setFocus(true);
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveDownCommand(), Exception: ") + e.what();
@@ -165,7 +165,7 @@ namespace IAEX
   public:
     CursorMoveAfterCommand(Cell *cell):cell_(cell){}
     virtual ~CursorMoveAfterCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -202,7 +202,7 @@ namespace IAEX
         }
 
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CursorMoveAfterCommand(), Exception: ") + e.what();

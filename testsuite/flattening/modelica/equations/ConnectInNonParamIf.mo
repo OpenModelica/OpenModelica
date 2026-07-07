@@ -26,7 +26,7 @@ end ConnectInNonParamIf;
 
 // Result:
 // Error processing file: ConnectInNonParamIf.mo
-// [flattening/modelica/equations/ConnectInNonParamIf.mo:18:5-18:20:writable] Error: connect may not be used inside if-equations with non-parametric conditions (found connect(c1, c2)).
+// [flattening/modelica/equations/ConnectInNonParamIf.mo:18:5-18:20:writable] Error: connect may not be used inside if- or for-equations with non-evaluable conditions or iteration ranges.
 // Error: Error occurred while flattening model ConnectInNonParamIf
 //
 // # Error encountered! Exiting...

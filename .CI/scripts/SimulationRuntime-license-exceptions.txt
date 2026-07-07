@@ -158,6 +158,9 @@ OMCompiler/SimulationRuntime/cpp/FMU/fmiModelFunctions.h
 OMCompiler/SimulationRuntime/cpp/FMU2/fmi2FunctionTypes.h
 OMCompiler/SimulationRuntime/cpp/FMU2/fmi2Functions.h
 OMCompiler/SimulationRuntime/cpp/FMU2/fmi2TypesPlatform.h
+OMCompiler/SimulationRuntime/cpp/FMU3/fmi3FunctionTypes.h
+OMCompiler/SimulationRuntime/cpp/FMU3/fmi3Functions.h
+OMCompiler/SimulationRuntime/cpp/FMU3/fmi3PlatformTypes.h
 
 # [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
 OMCompiler/SimulationRuntime/cpp/Core/Utils/numeric/bindings/

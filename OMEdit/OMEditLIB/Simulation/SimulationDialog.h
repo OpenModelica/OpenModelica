@@ -202,6 +202,7 @@ private:
   void saveSimulationFlagsAnnotation();
   void saveTranslationFlagsAnnotation();
   void performSimulation(const SimulationOptions &simulationOptions);
+  void runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters);
   void saveDialogGeometry();
 public:
   void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);

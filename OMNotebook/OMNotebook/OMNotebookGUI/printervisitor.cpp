@@ -82,12 +82,9 @@ namespace IAEX
    * class).
    */
   PrinterVisitor::PrinterVisitor( QTextDocument* doc, QPrinter* printer )
-    : ignore_(false), firstChild_(true), closedCell_(0), currentTableRow_(0), printer_(printer)
+    : printEditor_{std::make_unique<QTextEdit>()}, printer_{printer}
   {
-    printEditor_ = new QTextEdit();
     printEditor_->setDocument( doc );
-
-
 
     // set table format
     QTextTableFormat tableFormat;
@@ -105,16 +102,6 @@ namespace IAEX
     QTextCursor cursor = printEditor_->textCursor();
     table_ = cursor.insertTable(1, 2, tableFormat);
 
-  }
-
-  /*!
-   * \author Anders Fernström
-   *
-   * \brief The class deconstructor
-   */
-  PrinterVisitor::~PrinterVisitor()
-  {
-    delete printEditor_;
   }
 
   // CELL

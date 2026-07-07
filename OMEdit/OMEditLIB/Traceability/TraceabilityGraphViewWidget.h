@@ -42,7 +42,9 @@
 
 #include "QWidget"
 #include "QUrl"
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+#include "Modeling/qtwebengine_compat.h" // QtWebEngine unavailable on wasm / stubbed on MSVC
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
 #else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebView>

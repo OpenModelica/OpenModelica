@@ -62,8 +62,8 @@ namespace IAEX
   public:
     AddCellCommand(){}
     virtual ~AddCellCommand(){}
-    virtual QString commandName(){ return QString("AddCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("AddCellCommand");}
+    void execute() override;
   };
 
 
@@ -72,8 +72,8 @@ namespace IAEX
   public:
     CreateNewCellCommand(const QString &style) : style_(style){}
     virtual ~CreateNewCellCommand(){}
-    virtual QString commandName(){ return QString("CreateNewCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("CreateNewCellCommand");}
+    void execute() override;
   private:
     QString style_;
   };
@@ -85,8 +85,8 @@ namespace IAEX
   public:
     DeleteCurrentCellCommand(){}
     virtual ~DeleteCurrentCellCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("DeleteCurrentCellCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("DeleteCurrentCellCommand");}
   };
 
 
@@ -95,8 +95,8 @@ namespace IAEX
   public:
     PasteCellsCommand(){}
     virtual ~PasteCellsCommand(){}
-    void execute();
-    QString commandName(){return QString("PasteCellsCommand");}
+    void execute() override;
+    QString commandName() override {return QString("PasteCellsCommand");}
   private:
     void pasteCell( Cell *cell, CellGroup *groupcell = 0 );
   };
@@ -107,8 +107,8 @@ namespace IAEX
   public:
     CopySelectedCellsCommand(){}
     virtual ~CopySelectedCellsCommand(){}
-    void execute();
-    QString commandName(){return QString("CopySelectedCellsCommand");}
+    void execute() override;
+    QString commandName() override {return QString("CopySelectedCellsCommand");}
   private:
   };
 
@@ -118,8 +118,8 @@ namespace IAEX
   public:
     DeleteSelectedCellsCommand(){}
     virtual ~DeleteSelectedCellsCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("DeleteSelectedCellsCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("DeleteSelectedCellsCommand");}
   };
 
 
@@ -129,8 +129,8 @@ namespace IAEX
   public:
     ChangeStyleOnSelectedCellsCommand(CellStyle style):style_(style){}
     virtual ~ChangeStyleOnSelectedCellsCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("ChangeStyleOnSelectedCellsCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("ChangeStyleOnSelectedCellsCommand");}
   private:
     CellStyle style_;
   };
@@ -140,8 +140,8 @@ namespace IAEX
   public:
     ChangeStyleOnCurrentCellCommand(const QString &style):style_(style){}
     virtual ~ChangeStyleOnCurrentCellCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("ChangeStyleOnCurrentCellCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("ChangeStyleOnCurrentCellCommand");}
   private:
     QString style_;
   };
@@ -160,7 +160,7 @@ namespace IAEX
   public:
     MakeGroupCellCommand(){}
     virtual ~MakeGroupCellCommand(){}
-    void execute();
+    void execute() override;
   };
 
   // 2006-04-26 AF, UNGROUP
@@ -169,8 +169,8 @@ namespace IAEX
   public:
     UngroupCellCommand(){}
     virtual ~UngroupCellCommand(){}
-    virtual QString commandName(){ return QString("UngroupCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("UngroupCellCommand");}
+    void execute() override;
   };
 
   // 2006-04-26 AF, SPLIT CELL
@@ -179,8 +179,8 @@ namespace IAEX
   public:
     SplitCellCommand(){}
     virtual ~SplitCellCommand(){}
-    virtual QString commandName(){ return QString("SplitCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("SplitCellCommand");}
+    void execute() override;
   };
 
 };

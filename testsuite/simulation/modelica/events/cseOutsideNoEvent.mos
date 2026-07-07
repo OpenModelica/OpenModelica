@@ -1,0 +1,38 @@
+// name: cseOutsideNoEvent
+// keywords: event, noEvent, common subexpression elimination
+// status: correct
+//
+// Companion of noEventNotRespected.mos: when the same relation (h < 0.5) is
+// shared between two equations *outside* any noEvent(..), the removeEqualRHS
+// common-subexpression optimization must still apply (b = a). The fix that
+// stops substitution inside noEvent(..)/smooth(..) must not disable this
+// legitimate case. See ticket #15936.
+
+loadString("
+model cseOutsideNoEvent
+  Real h(start=1, fixed=true);
+  Boolean a;
+  Boolean b;
+equation
+  der(h) = -1;
+  a = h < 0.5;
+  b = h < 0.5;
+  // a and b are the same relation, so they must always be equal
+  assert(a == b, \"a and b must be equal\");
+end cseOutsideNoEvent;
+"); getErrorString();
+
+simulate(cseOutsideNoEvent, stopTime=1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "cseOutsideNoEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'cseOutsideNoEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

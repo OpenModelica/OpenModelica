@@ -213,6 +213,8 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         setFormat(startIndex, text.length() - startIndex, mQuotationFormat);
         setCurrentBlockState(BlockState::QuotedString);
         break;
+      default:
+        break;
     }
 }
 

@@ -143,7 +143,6 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
 
   // free memory allocation for the transposed sprasity pattern
   freeSparsePattern(sparsePatternT);
-  free(sparsePatternT);
   free(tabu);
 }
 

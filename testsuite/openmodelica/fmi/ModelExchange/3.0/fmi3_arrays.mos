@@ -1,0 +1,63 @@
+// name: fmi3_arrays.mos
+// keywords: FMI 3.0 export array
+// status: correct
+// teardown_command: rm -rf fmi3_arrays.fmu fmi3_arrays.xml fmi3_arrays_tmp.xml fmi3_arrays.fmutmp/ fmi3_arrays.log fmi3_arrays_info.json index.html
+//
+// Native FMI 3.0 array variables exported with the new backend
+// (--newBackend --simCodeScalarize=false): one typed element with one value
+// reference and <Dimension> children; the array occupies a contiguous block of
+// scalar value references. The continuous-time state x has a fixed start value
+// (each fixed = true), so it is exported with initial="exact" and its start.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi3_arrays
+  Real x[3](each start = 1.0, each fixed = true);
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+end fmi3_arrays;
+"); getErrorString();
+
+buildModelFMU(fmi3_arrays, version="3.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi3_arrays.fmu modelDescription.xml > fmi3_arrays_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_arrays_tmp.xml > fmi3_arrays.xml"); getErrorString();
+readFile("fmi3_arrays.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi3_arrays_tmp.xml > fmi3_arrays.xml"); getErrorString();
+readFile("fmi3_arrays.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_arrays.fmu"
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// 	Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 1.0 1.0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <ContinuousStateDerivative valueReference=\"3\"/>
+//     <InitialUnknown valueReference=\"3\"/>
+//   </ModelStructure>
+// "
+// ""
+// endResult

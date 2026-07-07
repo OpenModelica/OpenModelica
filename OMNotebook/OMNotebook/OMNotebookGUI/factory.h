@@ -51,7 +51,7 @@ namespace IAEX
    {
    public:
       virtual ~Factory() = default;
-      virtual Cell *createCell(const QString &style, Cell *parent=0) = 0;
+      virtual Cell *createCell(const QString &style, Cell *parent = nullptr) = 0;
 
 
     //Fulhack to compile on VC++
@@ -65,8 +65,7 @@ namespace IAEX
    class NullFactory : public Factory
    {
    public:
-      virtual Cell *createCell(const QString &style, Cell *parent=0)
-      {return 0;}//new NullCell();}
+      virtual Cell *createCell(const QString &, Cell * = nullptr) override { return nullptr; }
    };
 }
 #endif

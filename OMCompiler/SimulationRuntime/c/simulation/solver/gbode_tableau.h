@@ -46,7 +46,8 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
  */
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
-#define MAX_GBODE_FIRK_STAGES 7
+#define MAX_GBODE_FIRK_STAGES 8
+#define GBODE_L_INDEX(row, col) (((row) * ((row) - 1)) / 2 + (col))
 
 /**
  * @brief Data for contractive error estimates (requires T-Transformation + internal NLS strategy).
@@ -94,9 +95,9 @@ typedef struct CONTRACTIVE_ERROR {
  * size (S * N) × (S * N), where S is the number of stages and N is the number
  * of ODE states, which is (almost impractically) costly.
  *
- * The T-transformation (T^{-1} * A^{-1} * T = Lambda) diagonalizes (or block-diagonalizes)
- * the Runge–Kutta coefficient matrix A, converting the single large system into several
- * independent N × N systems. These can be solved either as:
+ * The T-transformation (T^{-1} * A^{-1} * T = Lambda + L) diagonalizes (L = 0, Lambda = diagonal), block-diagonalizes (L = 0, Lambda contains cmplx blocks),
+ * or lower block-triangularizes (L != 0, Lambda = diagonal or block-diagonal) the Runge–Kutta coefficient matrix A, converting the single
+ * large system into several sequential N x N systems. The diagonal blocks are solved either as:
  *   - real-valued systems (for real eigenvalues of A^{-1}), or
  *   - 2×2 real block systems (for complex conjugate eigenpairs of A^{-1})
  *     Exploiting complex arithmetic, work can be further reduced
@@ -111,14 +112,21 @@ typedef struct CONTRACTIVE_ERROR {
  * parts are transformed and solved via T; explicit stages are evaluated normally.
  * Thus, the system we transform is only of size S_r = size member in T_TRANSFORM.
  *
- * @attention The T, T^{-1} and the block diagonal Lambda(alpha, beta, gamma) matrices must be permutated such that
- *            the real blocks are in the left upper corner and the complex blocks in right bottom corner:
+ * @attention The T, T^{-1} and Lambda(alpha, beta, gamma) + L matrices must be permutated such that
+ *            real scalar rows come first and complex 2x2 blocks follow. Any additional coupling is stored
+ *            in the strict lower triangular L and is handled by forward substitution:
  *
  *            *
  *               *  *
  *               *  *       = Lambda of Gauss 5-step (2 complex blocks, 1 real block)
  *                    *  *
  *                    *  *
+ *            *                0 0 0 0 0 0
+ *               *             * 0 0 0 0 0
+ *                  *       +  * * 0 0 0 0 = (Lambda + L) of 5-step FIRK7(6)5L[4]SA (triple Jordan single real eigenvalue with L contribution + 1 complex block)
+ *                    *  *     0 0 0 0 0 0
+ *                    *  *     0 0 0 0 0 0
+ *
  */
 typedef struct T_TRANSFORM {
   /**
@@ -154,26 +162,43 @@ typedef struct T_TRANSFORM {
   double *T;
 
   /**
-   * @brief Real eigenvalues of A^{-1} for modes that diagonalize to real scalars.
+   * @brief Unique real eigenvalues of A^{-1} for real scalar rows.
    *
-   * Size: nRealEigenvalues (<= S_r).
+   * Size: nRealEigenvalues (<= nRealBlocks). Repeated real rows point to these entries via realEigenvalueIndex.
    */
   double *gamma;
 
   /**
-   * @brief Real parts of complex eigenvalues of A^{-1} (for complex pairs).
+   * @brief Unique real parts of complex eigenvalues of A^{-1} (for complex pairs).
    *
-   * Size: nComplexEigenpairs. Paired with `beta` to form conjugate pairs
+   * Size: nComplexEigenpairs (<= nComplexBlocks). Paired with `beta` to form conjugate pairs
    * (alpha, beta) and (alpha, -beta) which produce 2×2 real block systems or a 1x1 complex system in the decoupled basis.
    */
   double *alpha;
 
   /**
-   * @brief Imaginary parts of complex eigenvalues of A^{-1}.
+   * @brief Unique imaginary parts of complex eigenvalues of A^{-1}.
    *
    * Size: nComplexEigenpairs.
    */
   double *beta;
+
+  /**
+   * @brief Maps real rows and complex 2x2 blocks to the unique eigenvalue/factorization.
+   *
+   * realEigenvalueIndex has size nRealBlocks, complexEigenpairIndex has size nComplexBlocks.
+   */
+  int *realEigenvalueIndex;
+  int *complexEigenpairIndex;
+
+  /**
+   * @brief Strict lower triangular coupling of T^{-1} * A_part^{-1} * T after extracting real/complex diagonal blocks.
+   *
+   * Stored packed lower triangular: L[GBODE_L_INDEX(row, col)] == L(row, col), col < row.
+   * hasL[row] is true if row has any non-zero lower coupling and should be applied.
+   */
+  double *L;
+  modelica_boolean *hasL;
 
   /**
    * @brief Factor for weighting the residual k1. If firstRowZero, then stage 1 is explicit and we need to
@@ -207,10 +232,12 @@ typedef struct T_TRANSFORM {
   modelica_boolean lastColumnZero;
 
   /**
-   * @brief Number of real eigenvalues and complex eigenpairs.
+   * @brief Number of unique real eigenvalues / complex eigenpairs and their row / block occurrences.
    */
   int nRealEigenvalues;
   int nComplexEigenpairs;
+  int nRealBlocks;
+  int nComplexBlocks;
 
   /**
    * @brief Size S_r of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)

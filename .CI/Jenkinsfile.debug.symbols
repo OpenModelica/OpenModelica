@@ -9,6 +9,9 @@ pipeline {
       agent {
         label '!windows'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -29,6 +32,9 @@ pipeline {
           args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                 "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
         }
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
       }
       steps {
         script {

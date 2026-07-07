@@ -93,6 +93,7 @@ BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
+BuiltinAttribute27.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -1250,6 +1251,7 @@ WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
+WhenIllegalContext5.mo \
 WhenInitial1.mo \
 WhenInitial2.mo \
 WhenInitial3.mo \

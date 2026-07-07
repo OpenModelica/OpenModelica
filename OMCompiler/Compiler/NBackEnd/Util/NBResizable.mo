@@ -105,13 +105,13 @@ public
           if UnorderedMap.isEmpty(c2pi) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
           end if;
           print(StringUtil.headline_2("[debug] Final Equality Constraints:"));
           if UnorderedMap.isEmpty(c2pe) then
             print("  <No Constraints>\n\n");
           else
-            print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
+            print(List.toStringCustom(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
           end if;
         end if;
 

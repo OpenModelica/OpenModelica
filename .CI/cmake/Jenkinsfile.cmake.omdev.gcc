@@ -9,6 +9,9 @@ pipeline {
       agent {
         label '!windows'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -31,6 +34,9 @@ pipeline {
           environment {
             RUNTESTDB = '/c/dev/'
             LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {

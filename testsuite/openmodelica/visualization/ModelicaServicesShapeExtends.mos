@@ -1,0 +1,90 @@
+// name:     ModelicaServicesShapeExtends
+// keywords: visualization
+// status:   correct
+// cflags: -d=newInst
+//
+// A model that inherits (via `extends`) from ModelicaServices.Animation.Shape
+// must be picked up for visualization as well. The extends chain is collapsed
+// to the most derived class during instantiation, so the Shape base class has
+// to be recorded in the element source for the backend to recognize it.
+// OpenModelicaBugs.ShapeDoesNotAnimate4 is the failing case from the report,
+// the other models are the variants that already worked. See #15940.
+//
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ModelicaServices, {"4.1.0"}); getErrorString();
+loadFile("OpenModelicaBugs.mo"); getErrorString();
+setDebugFlags("visxml"); getErrorString();
+translateModel(OpenModelicaBugs.ShapeDoesNotAnimate1); getErrorString();
+translateModel(OpenModelicaBugs.ShapeDoesNotAnimate2); getErrorString();
+translateModel(OpenModelicaBugs.ShapeDoesNotAnimate3); getErrorString();
+translateModel(OpenModelicaBugs.ShapeDoesNotAnimate4); getErrorString();
+readFile("OpenModelicaBugs.ShapeDoesNotAnimate4_visual.xml");
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>
+// <visualization>
+//   <shape>
+//       <ident>box</ident>
+//       <type>box</type>
+//       <T>
+//           <cref>box.R.T[1,1]</cref>
+//           <cref>box.R.T[1,2]</cref>
+//           <cref>box.R.T[1,3]</cref>
+//           <cref>box.R.T[2,1]</cref>
+//           <cref>box.R.T[2,2]</cref>
+//           <cref>box.R.T[2,3]</cref>
+//           <cref>box.R.T[3,1]</cref>
+//           <cref>box.R.T[3,2]</cref>
+//           <cref>box.R.T[3,3]</cref>
+//       </T>
+//       <r>
+//           <cref>box.r[1]</cref>
+//           <exp>0.0</exp>
+//           <exp>0.0</exp>
+//       </r>
+//       <r_shape>
+//           <exp>0.0</exp>
+//           <exp>0.0</exp>
+//           <exp>0.0</exp>
+//       </r_shape>
+//       <lengthDir>
+//           <exp>1.0</exp>
+//           <exp>0.0</exp>
+//           <exp>0.0</exp>
+//       </lengthDir>
+//       <widthDir>
+//           <exp>0.0</exp>
+//           <exp>1.0</exp>
+//           <exp>0.0</exp>
+//       </widthDir>
+//       <length><exp>1.0</exp></length>
+//       <width><exp>0.2</exp></width>
+//       <height><exp>0.1</exp></height>
+//       <extra><exp>0.0</exp></extra>
+//       <color>
+//           <exp>255.0</exp>
+//           <exp>0.0</exp>
+//           <exp>0.0</exp>
+//       </color>
+//       <specCoeff><exp>0.7</exp></specCoeff>
+//   </shape>
+// </visualization>"
+// ""
+// endResult

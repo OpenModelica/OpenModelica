@@ -95,7 +95,7 @@ public:
   static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
 public slots:
-  virtual void replot();
+  virtual void replot() override;
 };
 }
 

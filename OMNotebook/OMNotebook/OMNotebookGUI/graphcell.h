@@ -79,8 +79,8 @@ public:
     void             addCellWidgets()    override;
     void             removeCellWidgets() override;
     void             accept(Visitor &v)  override;
-    bool             isClosed();                 // not virtual in Cell
-    bool             isEditable() override;      // not virtual in Cell
+    bool             isClosed() const override;
+    bool             isEditable() const override;
     bool             isEvaluated();              // not virtual in Cell
 
     /* ----- GraphCell‑specific members (non‑virtual) ----- */
@@ -106,6 +106,10 @@ public:
     void             setFocusOutput(bool focus);
     void             setExpr(QString expr);
     void             delegateFinished(InputCellDelegate *delegate);
+#if defined(__EMSCRIPTEN__)
+    // Draw a plot from the 18 ABI-order PlotCallback strings the worker recorded.
+    void             renderPlotArgs(const QStringList &args);
+#endif
 
 public slots:
     void             plotVariablesSlot(QStringList lst);

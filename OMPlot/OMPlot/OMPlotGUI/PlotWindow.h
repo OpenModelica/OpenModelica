@@ -69,12 +69,25 @@
 #endif
 #endif
 
+// MSVC needs the class explicitly exported so its Qt staticMetaObject (a data
+// symbol) is visible across the OMPlotLib DLL boundary; WINDOWS_EXPORT_ALL_SYMBOLS
+// only covers functions. MinGW auto-imports data, so this is a no-op there.
+#if defined(_WIN32) && defined(_MSC_VER)
+#  ifdef OMPLOTLIB_LIBRARY
+#    define OMPLOT_EXPORT __declspec(dllexport)
+#  else
+#    define OMPLOT_EXPORT __declspec(dllimport)
+#  endif
+#else
+#  define OMPLOT_EXPORT
+#endif
+
 namespace OMPlot
 {
 class Plot;
 class PlotCurve;
 
-class PlotWindow : public QMainWindow
+class OMPLOT_EXPORT PlotWindow : public QMainWindow
 {
 	Q_OBJECT
 public:
@@ -220,7 +233,7 @@ public:
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event) override;
   void setTime(double time) {mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();

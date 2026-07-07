@@ -357,6 +357,8 @@ namespace IAEX {
 
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -384,6 +386,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     // CTRL+E: autoindent cell
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
     {
@@ -586,6 +589,8 @@ namespace IAEX {
       event->accept();
       emit eval();
     }
+// wasm: base class handles Ctrl+C so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -595,6 +600,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 1 );
     }
+#endif
     else
     {
       inCommand = false;
@@ -604,7 +610,7 @@ namespace IAEX {
     updatePosition();
   }
 
-  void MyTextEdit2::setAutoIndent(bool b)
+  void MyTextEdit2::setAutoIndent(bool)
   {
   }
 
@@ -683,9 +689,8 @@ namespace IAEX {
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent) :
-   Cell(parent), evaluated_(false), closed_(true), delegate_(0),
-    oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
+  GraphCell::GraphCell(Document *doc, QWidget *parent)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -1251,7 +1256,7 @@ namespace IAEX {
   *
   * 2006-03-02 AF, clear text selection in chapter counter
   */
-  void GraphCell::setReadOnly(const bool readonly)
+  void GraphCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -1287,7 +1292,7 @@ namespace IAEX {
   *
   * \param evaluated The boolean value of evaluated property
   */
-  void GraphCell::setEvaluated(const bool evaluated)
+  void GraphCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -1303,18 +1308,15 @@ namespace IAEX {
   * calculate the new height, to reflect the changes made when
   * porting from Q3TextEdit to QTextEdit.
   */
-  void GraphCell::setClosed(const bool closed, bool update)
+  void GraphCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -1324,7 +1326,7 @@ namespace IAEX {
   /*!
   * \author Ingemar Axelsson and Anders Fernström
   */
-  void GraphCell::setFocus(const bool focus)
+  void GraphCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -1333,7 +1335,7 @@ namespace IAEX {
   /*!
   * \author Anders Fernström
   */
-  void GraphCell::setFocusOutput(const bool focus)
+  void GraphCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -1407,7 +1409,7 @@ namespace IAEX {
   *
   * \return State of GraphCell (closed or not)
   */
-  bool GraphCell::isClosed()
+  bool GraphCell::isClosed() const
   {
     return closed_;
   }
@@ -1423,7 +1425,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool GraphCell::isEditable()
+  bool GraphCell::isEditable() const
   {
     return false;
   }
@@ -1447,7 +1449,7 @@ namespace IAEX {
     input_->setPlainText(expr);
   }
 
-  void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+  void GraphCell::PlotCallbackFunction(void *p, int /*externalWindow*/, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                        const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
@@ -1487,6 +1489,30 @@ namespace IAEX {
     }
   }
 
+#if defined(__EMSCRIPTEN__)
+  void GraphCell::renderPlotArgs(const QStringList &a)
+  {
+    // Build the list PlotCallbackFunction passes to plotVariablesSlot from the 18
+    // ABI-order args; the result file (a[0]) is already staged into the FS.
+    if (a.size() < 18) {
+      return;
+    }
+    // Plotting before a result exists (or against a result the worker could not
+    // read) leaves no file staged; skip rather than let OMPlot raise an error.
+    if (!QFile::exists(a.at(0))) {
+      return;
+    }
+    QStringList lst;
+    lst << "";                   // the first element must be empty
+    for (int i = 0; i < 17; ++i) {
+      lst << a.at(i);            // filename .. autoScale
+    }
+    lst << "" << "" << "" << ""; // skip yaxis / ylabel-right / yrange-right pair
+    lst << a.at(17).split(" ", Qt::SkipEmptyParts);  // variables
+    plotVariablesSlot(lst);
+  }
+#endif
+
   void GraphCell::plotVariablesSlot(QStringList lst)
   {
     try
@@ -1507,7 +1533,12 @@ namespace IAEX {
     }
     catch (PlotException &e)
     {
+#if defined(__EMSCRIPTEN__)
+      // A modal dialog freezes the single-threaded wasm event loop; just log.
+      qWarning("OMNotebook plot error: %s", e.what());
+#else
       QMessageBox::warning(nullptr, tr("Error"), e.what());
+#endif
     }
   }
 
@@ -1550,9 +1581,11 @@ namespace IAEX {
       // Only the text, no html tags. /AF
       QString expr = input_->toPlainText();
       // Before evaluating any expression set the plot callback pointer and function.
+#ifndef __EMSCRIPTEN__
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
       env->threadData_->plotClassPointer = this;
       env->threadData_->plotCB = GraphCell::PlotCallbackFunction;
+#endif
       // Before evaluating any expression also hide the PlotWindow. If callback function is called it will show it.
       mpPlotWindow->hide();
 
@@ -1592,6 +1625,23 @@ namespace IAEX {
 //        et->start();
         getDelegate()->evalExpression(expr);
         delegateFinished(getDelegate());
+#if defined(__EMSCRIPTEN__)
+        // Draw any plot() the command produced (omc ran in the worker, so its
+        // callback can't reach us). Deferred to the main loop because the code
+        // above runs in evalExpression's nested QEventLoop; on Qt for WebAssembly
+        // a qwt canvas built there only composites after a later relayout.
+        const QList<QStringList> plots = OmcInteractiveEnvironment::getInstance()->takePlotCommands();
+        if (!plots.isEmpty()) {
+          QTimer::singleShot(0, this, [this, plots]() {
+            for (const QStringList &args : plots) {
+              renderPlotArgs(args);
+            }
+            // Recompute the cell height; the resize composites the qwt canvas
+            // (the relayout that editing the input cell triggered by hand).
+            contentChanged();
+          });
+        }
+#endif
       }
     }
     input_->blockSignals(false);
@@ -1872,7 +1922,7 @@ namespace IAEX {
       next()->accept(v);
   }
 
-  void GraphCell::viewExpression(const bool flag) {
+  void GraphCell::viewExpression(bool) {
   }
 
 }

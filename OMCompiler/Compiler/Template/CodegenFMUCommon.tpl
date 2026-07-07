@@ -98,8 +98,8 @@ case SIMCODE(__) then
     completedIntegratorStepNotNeeded="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    canGetAndSetFMUstate="true"
+    canSerializeFMUstate="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>

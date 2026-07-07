@@ -47,8 +47,10 @@ CRMLEditor::CRMLEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
+#if !defined(__EMSCRIPTEN__)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+#endif
   QStringList keywords = CRMLHighlighter::getKeywords();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   QStringList types = CRMLHighlighter::getTypes();

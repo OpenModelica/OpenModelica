@@ -1,0 +1,76 @@
+// name: fmi3_graphics.mos
+// keywords: FMI 3.0 export graphics icon annotations terminals ports
+// status: correct
+// teardown_command: rm -rf GfxPorts.fmu GfxPorts.fmutmp/ GfxPorts.log GfxPorts_info.json index.html
+//
+// FMI 3.0 graphical user annotations. The model Icon is rendered to
+// terminalsAndIcons/icon.png (+ icon.svg companion) and an FMI 3.0
+// <GraphicalRepresentation> is added to terminalsAndIcons.xml (Qt-free, by the
+// OMGraphics runtime library, which consumes the in-memory model-instance
+// reference of issue #15219 for the *graphical* side only). Each placed signal
+// port (here input u / output y, which collapse to plain input/output Real in
+// the flat model) becomes a single-member <Terminal> with variableKind="signal"
+// and gets a
+// <TerminalGraphicalRepresentation> (placement box + iconBaseName) plus its
+// rendered port icon terminalsAndIcons/<iconBaseName>. All icon files live in
+// terminalsAndIcons/ and a PNG is always written (FMI 3.0 resolves iconBaseName
+// relative to terminalsAndIcons/terminalsAndIcons.xml and requires a PNG; the
+// SVG is an optional companion).
+
+loadString("
+connector RealInputI = input Real annotation(Icon(graphics={Polygon(points={{-100,100},{100,0},{-100,-100}}, fillColor={0,0,127}, fillPattern=FillPattern.Solid, lineColor={0,0,127})}));
+connector RealOutputI = output Real annotation(Icon(graphics={Polygon(points={{-100,100},{100,0},{-100,-100}}, fillColor={255,255,255}, fillPattern=FillPattern.Solid, lineColor={0,0,127})}));
+model GfxPorts
+  RealInputI u annotation(Placement(transformation(extent={{-120,-20},{-80,20}})));
+  RealOutputI y annotation(Placement(transformation(extent={{80,-20},{120,20}})));
+equation
+  y = 2*u;
+  annotation(Icon(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={
+    Rectangle(extent={{-80,-60},{80,60}}, fillColor={170,213,255}, fillPattern=FillPattern.Solid, lineColor={0,0,127}),
+    Text(extent={{-80,-40},{80,40}}, textString=\"%name\")
+  }));
+end GfxPorts;
+"); getErrorString();
+
+buildModelFMU(GfxPorts, version="3.0", fmuType="me"); getErrorString();
+
+// model icon SVG: the rectangle and the model-name text
+system("unzip -cqq GfxPorts.fmu terminalsAndIcons/icon.svg | grep -oE \"<rect|>GfxPorts<\""); getErrorString();
+
+// the rendered icon files present in the FMU: model icon + one per port connector
+// type, each as a mandatory PNG plus an optional SVG companion (all under
+// terminalsAndIcons/)
+system("unzip -l GfxPorts.fmu | grep -oE \"terminalsAndIcons/[A-Za-z]+\\.(png|svg)\" | sort"); getErrorString();
+
+// terminals: direction from the flat model (SimVar causality), graphics (placement
+// box + iconBaseName) from the model instance, in FMI 3.0 schema order. The
+// iconBaseName carries the .png extension and resolves to a file in terminalsAndIcons/.
+system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -oE \"<GraphicalRepresentation|<Terminal name=.[a-z]+.|variableKind=.[a-z]+.|iconBaseName=.[A-Za-z]+.png.\""); getErrorString();
+
+// Result:
+// true
+// ""
+// "GfxPorts.fmu"
+// ""
+// <rect
+// >GfxPorts<
+// 0
+// ""
+// terminalsAndIcons/RealInputI.png
+// terminalsAndIcons/RealInputI.svg
+// terminalsAndIcons/RealOutputI.png
+// terminalsAndIcons/RealOutputI.svg
+// terminalsAndIcons/icon.png
+// terminalsAndIcons/icon.svg
+// 0
+// ""
+// <GraphicalRepresentation
+// <Terminal name="u"
+// variableKind="signal"
+// iconBaseName="RealInputI.png"
+// <Terminal name="y"
+// variableKind="signal"
+// iconBaseName="RealOutputI.png"
+// 0
+// ""
+// endResult

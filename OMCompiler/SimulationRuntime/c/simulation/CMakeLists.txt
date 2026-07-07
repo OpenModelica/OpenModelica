@@ -184,6 +184,10 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     ${LAPACK_LIBRARIES}
 )
 
+if(OM_OMC_ENABLE_PRIMME)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
+endif()
+
 if(OM_OMC_ENABLE_OPTIMIZATION)
   target_link_libraries(OpenModelicaRuntimeCSimulation
     PUBLIC

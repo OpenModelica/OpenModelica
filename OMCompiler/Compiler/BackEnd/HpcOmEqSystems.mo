@@ -222,7 +222,7 @@ algorithm
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs := listLength(compsNew)-listLength(tvarIdcs);
-        compsTmp := List.replaceAtWithList(listAppend(compsNew, otherComps),compIdx-1,compsIn);
+        compsTmp := List.replaceAtWithList(listAppend(compsNew, otherComps),compIdx,compsIn);
         (ass1All,ass2All) := List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));
         syst.matching := BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
 
@@ -273,7 +273,7 @@ algorithm
         compsNew := listAppend(otherComps,compsNew);
 
         // insert the new components into the BLT, update matching for the new equations
-        compsTmp := List.replaceAtWithList(compsNew,compIdx-1,compsIn);
+        compsTmp := List.replaceAtWithList(compsNew,compIdx,compsIn);
           //print("compsTmp\n");
           //BackendDump.dumpComponents(compsTmp);
 

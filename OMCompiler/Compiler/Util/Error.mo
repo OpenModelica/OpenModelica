@@ -307,8 +307,8 @@ public constant ErrorTypes.Message IF_EQUATION_UNBALANCED = ErrorTypes.MESSAGE(1
   "In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch.");
 public constant ErrorTypes.Message IF_EQUATION_MISSING_ELSE = ErrorTypes.MESSAGE(115, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Missing else-clause in if-equation with non-parameter conditions.");
-public constant ErrorTypes.Message CONNECT_IN_IF = ErrorTypes.MESSAGE(116, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  "connect may not be used inside if-equations with non-parametric conditions (found connect(%s, %s)).");
+public constant ErrorTypes.Message IN_NON_EVALUABLE_IF_OR_FOR = ErrorTypes.MESSAGE(116, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s may not be used inside if- or for-equations with non-evaluable conditions or iteration ranges.");
 public constant ErrorTypes.Message CONNECT_IN_WHEN = ErrorTypes.MESSAGE(117, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "connect may not be used inside when-equations (found connect(%s, %s)).");
 public constant ErrorTypes.Message CONNECT_INCOMPATIBLE_TYPES = ErrorTypes.MESSAGE(118, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

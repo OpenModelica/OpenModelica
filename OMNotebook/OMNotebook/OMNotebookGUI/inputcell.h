@@ -63,7 +63,7 @@ namespace IAEX
 
   public:
     InputCell(Document *doc, QWidget *parent=0);
-    virtual ~InputCell();
+    virtual ~InputCell() {};
 
     QString text() override;
     QString textHtml() override;
@@ -73,7 +73,7 @@ namespace IAEX
     virtual QTextCursor textCursor() override;
     virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    void viewExpression(const bool) override;
+    void viewExpression(bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -87,8 +87,8 @@ namespace IAEX
 
     void setDelegate(InputCellDelegate *d);
     virtual void accept(Visitor &v) override;
-    virtual bool isClosed();
-    virtual bool isEditable() override;
+    virtual bool isClosed() const override;
+    virtual bool isEditable() const override;
     virtual bool isEvaluated();
 
   signals:
@@ -114,11 +114,11 @@ namespace IAEX
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly) override;
-    void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true) override;
-    virtual void setFocus(const bool focus) override;
-    virtual void setFocusOutput(const bool focus);
+    void setReadOnly(bool readonly) override;
+    void setEvaluated(bool evaluated);
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
+    virtual void setFocusOutput(bool focus);
 
 
 
@@ -141,22 +141,22 @@ namespace IAEX
     void setOutputStyle();
 
   private:
-    bool evaluated_;
-    bool closed_;
+    bool evaluated_ = false;
+    bool closed_ = true;
     static int numEvals_;
-    int oldHeight_;
+    int oldHeight_ = 0;
 
   public:
-    QTextBrowser *input_;
-    ModelicaTextHighlighter *mpModelicaTextHighlighter;
-    QTextBrowser *output_;
+    QTextBrowser *input_ = nullptr;
+    ModelicaTextHighlighter *mpModelicaTextHighlighter = nullptr;
+    QTextBrowser *output_ = nullptr;
   private:
-    QTextBrowser *chaptercounter_;
+    QTextBrowser *chaptercounter_ = nullptr;
 
-    InputCellDelegate *delegate_;
+    InputCellDelegate *delegate_ = nullptr;
 
-    QGridLayout *layout_;
-    Document *document_;
+    QGridLayout *layout_ = nullptr;
+    Document *document_ = nullptr;
   };
 
 
@@ -181,10 +181,10 @@ namespace IAEX
 
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void keyPressEvent(QKeyEvent *event );
-    void insertFromMimeData(const QMimeData *source);
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event ) override;
+    void insertFromMimeData(const QMimeData *source) override;
 
   private:
     bool inCommand;

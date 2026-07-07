@@ -766,7 +766,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit"})),
+  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
@@ -894,10 +894,11 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
 constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamicJacobian",
   NONE(), EXTERNAL(), STRING_FLAG("numeric"),
   SOME(STRING_DESC_OPTION({
-    ("none", "Does not generate Jacobian. For use with explicit solvers."),
-    ("numeric", "Generates sparsity pattern for numeric Jacobian."),
-    ("symbolic", "Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'."),
-    ("symbolicadjoint", "Generates adjoint Jacobian symbolically.")
+    ("none", ("Does not generate Jacobian. For use with explicit solvers.")),
+    ("numeric", ("Generates sparsity pattern for numeric Jacobian.")),
+    ("symbolic", ("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'.")),
+    ("symbolicadjoint", ("Generates adjoint Jacobian symbolically.")),
+    ("bidirectional", ("Generates bidirectional Jacobian using star bicoloring (ColPack). Combines forward and adjoint modes."))
     })),
   "Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x.");
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",

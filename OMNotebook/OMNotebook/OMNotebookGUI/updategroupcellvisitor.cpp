@@ -89,14 +89,14 @@ namespace IAEX
   {}
 
   // TEXTCELL
-  void UpdateGroupcellVisitor::visitTextCellNodeBefore(TextCell *node)
+  void UpdateGroupcellVisitor::visitTextCellNodeBefore(TextCell *)
   {}
 
   void UpdateGroupcellVisitor::visitTextCellNodeAfter(TextCell *)
   {}
 
   //INPUTCELL
-  void UpdateGroupcellVisitor::visitInputCellNodeBefore(InputCell *node)
+  void UpdateGroupcellVisitor::visitInputCellNodeBefore(InputCell *)
   {}
 
   void UpdateGroupcellVisitor::visitInputCellNodeAfter(InputCell *)
@@ -105,7 +105,7 @@ namespace IAEX
 
   //GRAPHCELL
 
-  void UpdateGroupcellVisitor::visitGraphCellNodeBefore(GraphCell *node)
+  void UpdateGroupcellVisitor::visitGraphCellNodeBefore(GraphCell *)
   {}
 
   void UpdateGroupcellVisitor::visitGraphCellNodeAfter(GraphCell *)
@@ -113,7 +113,7 @@ namespace IAEX
 
   //LATEXCELL
 
-  void UpdateGroupcellVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  void UpdateGroupcellVisitor::visitLatexCellNodeBefore(LatexCell *)
   {}
 
   void UpdateGroupcellVisitor::visitLatexCellNodeAfter(LatexCell *)

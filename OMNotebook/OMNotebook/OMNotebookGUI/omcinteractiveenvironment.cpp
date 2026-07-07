@@ -43,10 +43,252 @@
 
 //IAEX Headers
 #include "omcinteractiveenvironment.h"
+
+#if defined(__EMSCRIPTEN__)
+
+#include <cstdlib>
+#include <QEventLoop>
+#include <QTimer>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+
+// omc runs as a separate wasm module in a dedicated Web Worker (omc_worker.js),
+// the same one the egui/dioxus/OMShell-qt web clients use. The bridge spawns it
+// and round-trips one command at a time. To keep the Qt UI responsive while a
+// command runs, evalExpression posts the command and spins a nested QEventLoop
+// polling omshell_reply_ready(), instead of suspending the call stack. Sends are
+// serialised through a JS promise queue so the fire-and-forget startup MSL
+// install and later user commands cannot overlap on the single reply channel.
+// Download progress is reported back via omshell_progress_text(). The page lives
+// in a subdirectory next to the shared worker at the web root (../omc_worker.js).
+EM_JS(void, omshell_worker_setup, (), {
+  if (Module.__omshellWorker) return;
+  const w = new Worker(new URL("../omc_worker.js", document.baseURI), { type: "module" });
+  Module.__omshellWorker = w;
+  Module.__omshellPending = null;
+  Module.__omshellLastError = "";
+  Module.__omshellReply = null;
+  Module.__omshellProgress = null;
+
+  Module.__omshellQueue = Promise.resolve();
+  Module.__omshellSend = (msg) => {
+    const run = () => new Promise((resolve) => {
+      Module.__omshellPending = resolve;
+      w.postMessage(msg);
+    });
+    const p = Module.__omshellQueue.then(run);
+    Module.__omshellQueue = p.catch(() => {});
+    return p;
+  };
+
+  w.onmessage = (e) => {
+    const m = e.data;
+    if (m && m.kind === "progress") {
+      Module.__omshellProgress = m;
+      return;
+    }
+    if (m && (m.kind === "ready" || m.kind === "done")) {
+      Module.__omshellProgress = null;
+      const resolve = Module.__omshellPending;
+      Module.__omshellPending = null;
+      if (resolve) resolve(m);
+    }
+  };
+});
+
+EM_ASYNC_JS(char*, omshell_worker_init, (), {
+  omshell_worker_setup();
+  const reply = await Module.__omshellSend({ cmd: "init", installMsl: false });
+  Module.__omshellLastError = reply.message || "";
+  return stringToNewUTF8(reply.version || "");
+});
+
+EM_JS(void, omshell_worker_post_eval, (const char* src), {
+  Module.__omshellReply = null;
+  Module.__omshellProgress = null;
+  Module.__omshellPlots = [];
+  Module.__omshellSend({ cmd: "eval", src: UTF8ToString(src) }).then((reply) => {
+    // Stage each plot's result file into this module's FS (so OMPlot can fopen
+    // it) and keep its args for GraphCell. Set __omshellReply LAST so
+    // omshell_reply_ready() only reports done once the files are in place.
+    const plots = [];
+    for (const p of (reply.plots || [])) {
+      try {
+        if (p.bytes && p.file) {
+          const slash = p.file.lastIndexOf("/");
+          if (slash > 0) FS.mkdirTree(p.file.substring(0, slash));
+          FS.writeFile(p.file, p.bytes);
+        }
+        plots.push(p.args);
+      } catch (e) {
+        console.error("OMNotebook: staging plot result failed", e);
+      }
+    }
+    Module.__omshellPlots = plots;
+    Module.__omshellReply = reply;
+  });
+});
+
+// Take (and clear) the staged plot arg lists as JSON (array of 18-string arrays).
+EM_JS(char*, omshell_take_plots_json, (), {
+  const plots = Module.__omshellPlots || [];
+  Module.__omshellPlots = [];
+  return stringToNewUTF8(JSON.stringify(plots));
+});
+
+EM_JS(int, omshell_reply_ready, (), {
+  return Module.__omshellReply ? 1 : 0;
+});
+
+EM_JS(char*, omshell_take_result, (), {
+  const reply = Module.__omshellReply || {};
+  Module.__omshellLastError = reply.error || "";
+  Module.__omshellReply = null;
+  Module.__omshellProgress = null;
+  return stringToNewUTF8(reply.result || "");
+});
+
+EM_JS(char*, omshell_progress_text, (), {
+  const p = Module.__omshellProgress;
+  if (!p) return stringToNewUTF8("");
+  const s = p.total > 0
+    ? "Downloading " + p.file + "  " + Math.round(100 * p.done / p.total) + "%"
+    : "Downloading " + p.file + "  " + Math.round(p.done / 1024) + " KiB";
+  return stringToNewUTF8(s);
+});
+
+EM_JS(void, omshell_worker_eval_async, (const char* src), {
+  Module.__omshellSend({ cmd: "eval", src: UTF8ToString(src) });
+});
+
+EM_JS(char*, omshell_worker_last_error, (), {
+  return stringToNewUTF8(Module.__omshellLastError || "");
+});
+
+namespace IAEX
+{
+  OmcInteractiveEnvironment* OmcInteractiveEnvironment::selfInstance = NULL;
+  OmcInteractiveEnvironment* OmcInteractiveEnvironment::getInstance(threadData_t *threadData)
+  {
+    if (selfInstance == NULL)
+    {
+      selfInstance = new OmcInteractiveEnvironment(threadData);
+    }
+    return selfInstance;
+  }
+
+  static QString takeCString(char *s)
+  {
+    QString result = QString::fromUtf8(s ? s : "");
+    free(s);
+    return result;
+  }
+
+  OmcInteractiveEnvironment::OmcInteractiveEnvironment(threadData_t *threadData):threadData_(threadData),result_(""),error_("")
+  {
+    omcVersion_ = takeCString(omshell_worker_init());
+  }
+
+  OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
+  {
+  }
+
+  QString OmcInteractiveEnvironment::getResult() { return result_; }
+  QString OmcInteractiveEnvironment::getError() { return error_; }
+  int OmcInteractiveEnvironment::getErrorLevel() { return severity; }
+
+  void OmcInteractiveEnvironment::evalExpression(const QString expr)
+  {
+    // A command runs a nested event loop; ignore evals triggered (e.g. from
+    // another cell) while one is already in flight to keep the single worker
+    // reply channel unambiguous.
+    static bool active = false;
+    if (active) { result_.clear(); error_.clear(); severity = 0; return; }
+    active = true;
+
+    error_.clear();
+    omshell_worker_post_eval(expr.toUtf8().constData());
+    QEventLoop loop;
+    QTimer poll;
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&loop]() {
+      if (omshell_reply_ready()) loop.quit();
+    });
+    poll.start(30);
+    loop.exec();
+    result_ = takeCString(omshell_take_result()).trimmed();
+    error_ = takeCString(omshell_worker_last_error()).trimmed();
+    if( error_.size() > 2 ) {
+      if (error_.contains("Error:")) {
+        severity = 2;
+        error_ = QString( "OMC-ERROR: \n" ) + error_;
+      } else if (error_.contains("Warning:")) {
+        severity = 1;
+        error_ = QString( "OMC-WARNING: \n" ) + error_;
+      } else {
+        severity = 0;
+      }
+    } else {
+      error_.clear();
+      severity = 0;
+    }
+    active = false;
+  }
+
+  void OmcInteractiveEnvironment::startBackgroundCommand(const QString expr)
+  {
+    omshell_worker_eval_async(expr.toUtf8().constData());
+  }
+
+  QList<QStringList> OmcInteractiveEnvironment::takePlotCommands()
+  {
+    QList<QStringList> out;
+    QString json = takeCString(omshell_take_plots_json());
+    QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (doc.isArray()) {
+      const QJsonArray cmds = doc.array();
+      for (const QJsonValue &cmd : cmds) {
+        QStringList args;
+        const QJsonArray a = cmd.toArray();
+        for (const QJsonValue &v : a) {
+          args << v.toString();
+        }
+        out << args;
+      }
+    }
+    return out;
+  }
+
+  QString OmcInteractiveEnvironment::progressText()
+  {
+    return takeCString(omshell_progress_text());
+  }
+
+  QString OmcInteractiveEnvironment::OMCVersion()
+  {
+    return OmcInteractiveEnvironment::getInstance()->omcVersion_;
+  }
+
+  QString OmcInteractiveEnvironment::OpenModelicaHome()
+  {
+    return QString();
+  }
+
+  QString OmcInteractiveEnvironment::TmpPath()
+  {
+    return QString("/tmp/OpenModelica/");
+  }
+}
+
+#else
+
 #ifndef WIN32
 #include "omc_config.h"
 #endif
+#ifndef OMC_RUST_ABI
 #include "gc.h"
+#endif
 
 extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
@@ -241,3 +483,5 @@ namespace IAEX
     return result+"/OpenModelica/";
   }
 }
+
+#endif

@@ -1369,8 +1369,19 @@ namespace FlatModelica
       }
     }
 
+#if defined(__EMSCRIPTEN__)
+    // Web uses the getModelInstance JSON path (native walks references) and can
+    // carry expression kinds fromJson doesn't model yet, e.g. "sub". Fall back
+    // instead of aborting the whole diagram: best-effort for "sub" is its base
+    // expression; anything else becomes an opaque string.
+    if (kind.toString() == QLatin1String("sub") && value.contains("exp")) {
+      return ExpressionBase::deserialize(value["exp"]);
+    }
+    return std::make_unique<String>(QJsonDocument(value).toJson(QJsonDocument::Compact).toStdString());
+#else
     throw json_error("Expression: unsupported JSON object ", value);
     return nullptr;
+#endif
   }
 
   std::unique_ptr<ExpressionBase> ExpressionBase::deserialize(const QJsonValue &value)

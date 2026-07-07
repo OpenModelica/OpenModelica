@@ -115,6 +115,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Option<Initial> initial_            "FMI-2.0 initial attribute";
     Option<DAE.ComponentRef> exportVar  "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
     Boolean relativeQuantity            "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
+    Boolean isConnectorFlow             "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
   end SIMVAR;
 end SimVar;
 

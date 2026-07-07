@@ -1516,7 +1516,7 @@ algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
   Print.printBuf("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n");
-  Print.printBuf("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n");
+  Print.printBuf("Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\n");
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
   Print.printBuf("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
   Print.printBuf("\n* Options:\n");
@@ -1928,7 +1928,7 @@ algorithm
     case Flags.BOOL_FLAG() then boolString(flagData.data);
     case Flags.INT_FLAG() then intString(flagData.data);
     case Flags.INT_LIST_FLAG()
-      then List.toString(flagData.data, intString, "", "", ",", "", false);
+      then List.toStringCustom(flagData.data, intString, "", "", ",", "", false);
 
     case Flags.REAL_FLAG() then realString(flagData.data);
     case Flags.STRING_FLAG() then flagData.data;

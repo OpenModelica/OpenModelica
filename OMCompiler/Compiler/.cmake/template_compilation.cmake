@@ -33,7 +33,10 @@ macro(omc_add_template_target)
         # in the current directory only.
         WORKING_DIRECTORY ${source_dir}
 
-        DEPENDS ${template_file} ${depends_on}
+        # ${TPL_EXTRA_DEPENDS} is empty for the C build; in the Rust build
+        # (rust_omc.cmake) it is the rust_susan stamp, so each *.mo is
+        # regenerated after the Susan binary is (re)built.
+        DEPENDS ${template_file} ${depends_on} ${TPL_EXTRA_DEPENDS}
         COMMAND ${OMC_EXE} -d=failtrace ${template_file} > ${output_log_file} || (cat ${output_log_file} && false)
 
         OUTPUT ${output_mo_file}
@@ -118,6 +121,7 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCo
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
@@ -134,6 +138,14 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
+
+omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
@@ -266,11 +278,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.t
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
-
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/TaskSystemDump.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTplTV.mo)

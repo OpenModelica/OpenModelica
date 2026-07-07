@@ -58,8 +58,8 @@ namespace IAEX
   public:
     TextCursorCutText(){}
     virtual ~TextCursorCutText(){}
-    virtual QString commandName(){ return QString("TextCursorCutText"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorCutText"); }
+    void execute() override;
   };
 
   class TextCursorCopyText : public Command
@@ -67,8 +67,8 @@ namespace IAEX
   public:
     TextCursorCopyText(){}
     virtual ~TextCursorCopyText(){}
-    virtual QString commandName(){ return QString("TextCursorCopyText"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorCopyText"); }
+    void execute() override;
   };
 
 
@@ -77,8 +77,8 @@ namespace IAEX
   public:
     TextCursorPasteText(){}
     virtual ~TextCursorPasteText(){}
-    virtual QString commandName(){ return QString("TextCursorPasteText"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorPasteText"); }
+    void execute() override;
   };
 
   class TextCursorChangeFontFamily : public Command
@@ -87,8 +87,8 @@ namespace IAEX
     TextCursorChangeFontFamily(QString family)
       : family_(family){}
     virtual ~TextCursorChangeFontFamily(){}
-    virtual QString commandName(){ return QString("TextCursorChangeFontFamily"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeFontFamily"); }
+    void execute() override;
 
   private:
     QString family_;
@@ -101,8 +101,8 @@ namespace IAEX
     TextCursorChangeFontFace(int face)
       : face_(face){}
     virtual ~TextCursorChangeFontFace(){}
-    virtual QString commandName(){ return QString("TextCursorChangeFontFace"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeFontFace"); }
+    void execute() override;
 
   private:
     int face_;
@@ -115,8 +115,8 @@ namespace IAEX
     TextCursorChangeFontSize(int size)
       : size_(size){}
     virtual ~TextCursorChangeFontSize(){}
-    virtual QString commandName(){ return QString("TextCursorChangeFontSize"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeFontSize"); }
+    void execute() override;
 
   private:
     int size_;
@@ -129,8 +129,8 @@ namespace IAEX
     TextCursorChangeFontStretch(int stretch)
       : stretch_(stretch){}
     virtual ~TextCursorChangeFontStretch(){}
-    virtual QString commandName(){ return QString("TextCursorChangeFontStretch"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeFontStretch"); }
+    void execute() override;
 
   private:
     int stretch_;
@@ -143,8 +143,8 @@ namespace IAEX
     TextCursorChangeFontColor(QColor color)
       : color_(color){}
     virtual ~TextCursorChangeFontColor(){}
-    virtual QString commandName(){ return QString("TextCursorChangeFontColor"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeFontColor"); }
+    void execute() override;
 
   private:
     QColor color_;
@@ -157,8 +157,8 @@ namespace IAEX
     TextCursorChangeTextAlignment(int alignment)
       : alignment_(alignment){}
     virtual ~TextCursorChangeTextAlignment(){}
-    virtual QString commandName(){ return QString("TextCursorChangeTextAlignment"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeTextAlignment"); }
+    void execute() override;
 
   private:
     int alignment_;
@@ -171,8 +171,8 @@ namespace IAEX
     TextCursorChangeVerticalAlignment(int alignment)
       : alignment_(alignment){}
     virtual ~TextCursorChangeVerticalAlignment(){}
-    virtual QString commandName(){ return QString("TextCursorChangeVerticalAlignment"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeVerticalAlignment"); }
+    void execute() override;
 
   private:
     int alignment_;
@@ -185,8 +185,8 @@ namespace IAEX
     TextCursorChangeMargin(int margin)
       : margin_(margin){}
     virtual ~TextCursorChangeMargin(){}
-    virtual QString commandName(){ return QString("TextCursorChangeMargin"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeMargin"); }
+    void execute() override;
 
   private:
     int margin_;
@@ -199,8 +199,8 @@ namespace IAEX
     TextCursorChangePadding(int padding)
       : padding_(padding){}
     virtual ~TextCursorChangePadding(){}
-    virtual QString commandName(){ return QString("TextCursorChangePadding"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangePadding"); }
+    void execute() override;
 
   private:
     int padding_;
@@ -213,8 +213,8 @@ namespace IAEX
     TextCursorChangeBorder(int border)
       : border_(border){}
     virtual ~TextCursorChangeBorder(){}
-    virtual QString commandName(){ return QString("TextCursorChangeBorder"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorChangeBorder"); }
+    void execute() override;
 
   private:
     int border_;
@@ -227,8 +227,8 @@ namespace IAEX
     TextCursorInsertImage(QString filepath, QSize size)
       : filepath_(filepath), height_(size.height()), width_(size.width()){}
     virtual ~TextCursorInsertImage(){}
-    virtual QString commandName(){ return QString("TextCursorInsertImage"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorInsertImage"); }
+    void execute() override;
 
   private:
     QString filepath_;
@@ -243,8 +243,8 @@ namespace IAEX
     TextCursorInsertLink( QString filepath, QTextCursor& cursor_ )
       : filepath_(filepath), cursor(cursor_){}
     virtual ~TextCursorInsertLink(){}
-    virtual QString commandName(){ return QString("TextCursorInsertLink"); }
-    void execute();
+    virtual QString commandName() override { return QString("TextCursorInsertLink"); }
+    void execute() override;
 
   private:
     QString filepath_;

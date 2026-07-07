@@ -1,0 +1,10 @@
+// E2: external "C" output pointers (scalar + string) under wasm-jit.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+
+loadFile("TestScanInteger.mo"); getErrorString();
+simulate(TestScanInteger, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 123
+
+loadFile("TestScanString.mo"); getErrorString();
+simulate(TestScanString, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 42

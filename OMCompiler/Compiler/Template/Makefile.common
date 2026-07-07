@@ -2,7 +2,7 @@
 
 GENERATED_FILES_BOOT_STAGE2=AbsynDumpTpl.mo CodegenUtil.mo DAEDumpTpl.mo ExpressionDumpTpl.mo Unparsing.mo SCodeDumpTpl.mo GenerateAPIFunctionsTpl.mo CodegenCFunctions.mo AbsynToJulia.mo AbsynJLDumpTpl.mo
 GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation.mo CodegenEmbeddedC.mo CodegenFMUCommon.mo \
-CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
+CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenFMU3.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
 CodegenMidToC.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo \
 CodegenXML.mo CodegenJS.mo VisualXMLTpl.mo \
@@ -57,7 +57,7 @@ CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo SimCodeBackendTV.mo Code
 	@echo " ** CodegenFMUCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
-CodegenFMU.mo : CodegenFMU.tpl CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
+CodegenFMU.mo : CodegenFMU.tpl CodegenFMU2.tpl CodegenFMU3.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
@@ -67,6 +67,10 @@ CodegenFMU1.mo : CodegenFMU1.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCod
 	@echo " " && ($(UNUSED) "$@" || true)
 CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU2 template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+CodegenFMU3.mo : CodegenFMU3.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
+	@echo " ** CodegenFMU3 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 CodegenFMUCppOMSI.mo : CodegenFMUCppOMSI.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCppOMSI.tpl  CodegenCppCommon.tpl CodegenFMU.tpl

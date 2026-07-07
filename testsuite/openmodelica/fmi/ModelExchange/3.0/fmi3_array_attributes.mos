@@ -1,0 +1,33 @@
+// name: fmi3_array_attributes
+// keywords: FMI 3.0 export array nominal scalarized
+// status: correct
+// teardown_command: rm -rf fmi3_array_attributes.fmu fmi3_array_attributes.fmutmp/ fmi3_array_attributes.dims fmi3_array_attributes.log fmi3_array_attributes_info.json index.html
+//
+// #15926, FMI 3.0, old backend, scalarized (default), C runtime. A scalarized
+// array element must not be dimensioned in the exported FMU init.
+
+loadString("
+model fmi3_array_attributes
+  parameter Real x_nom[3] = {10.0, 20.0, 30.0};
+  Real x[3](nominal = x_nom, start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y = sum(x);
+equation
+  der(x) = -x;
+end fmi3_array_attributes;
+"); getErrorString();
+
+buildModelFMU(fmi3_array_attributes, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_array_attributes.fmu sources/fmi3_array_attributes_init_fmu.c | grep -n 'numberOfDimensions = [1-9]' > fmi3_array_attributes.dims || true"); getErrorString();
+readFile("fmi3_array_attributes.dims"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_array_attributes.fmu"
+// ""
+// 0
+// ""
+// ""
+// ""
+// endResult

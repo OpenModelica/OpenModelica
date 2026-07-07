@@ -351,6 +351,7 @@ package SimCodeVar
       Option<Initial> initial_ "FMI-2.0 initial attribute";
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
       Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
+      Boolean isConnectorFlow            "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
     end SIMVAR;
   end SimVar;
 
@@ -465,6 +466,9 @@ package SimCode
       list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
       Boolean isAdjoint;
+      Boolean isBidirectional;
+      Integer adjointJacobianIndex;
+      String adjointMatrixName;
     end JAC_MATRIX;
   end JacobianMatrix;
 
@@ -1036,6 +1040,35 @@ package SimCode
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
+  uniontype FmiTerminal
+    record FMI_TERMINAL
+      String name;
+      String terminalKind;
+      Boolean isExpandable;
+      list<FmiTerminalMember> members;
+    end FMI_TERMINAL;
+  end FmiTerminal;
+
+  uniontype FmiTerminalMember
+    record FMI_TERMINAL_MEMBER
+      DAE.ComponentRef variable;
+      String memberName;
+      String variableKind;
+    end FMI_TERMINAL_MEMBER;
+  end FmiTerminalMember;
+
+  uniontype FmiClock
+    record FMI_CLOCK
+      Integer valueReference;
+      String name;
+      String intervalVariability;
+      Boolean supportsFraction;
+      String intervalDecimal;
+      String intervalCounter;
+      String resolution;
+    end FMI_CLOCK;
+  end FmiClock;
+
   uniontype FmiSimulationFlags
     record FMI_SIMULATION_FLAGS
       list<tuple<String,String>> nameValueTuples;
@@ -1343,6 +1376,60 @@ package SimCodeUtil
     output String outValueReference;
   end getValueReference;
 
+  function getFMI3ValueReference
+    input SimCodeVar.SimVar inSimVar;
+    input SimCode.SimCode inSimCode;
+    output String outValueReference;
+  end getFMI3ValueReference;
+
+  function getFMI3ValueReferenceFromFMIIndex
+    input SimCode.SimCode inSimCode;
+    input Integer inFMIIndex;
+    output String outValueReference;
+  end getFMI3ValueReferenceFromFMIIndex;
+
+  function numScalarElems
+    input list<SimCodeVar.SimVar> vars;
+    output Integer n;
+  end numScalarElems;
+
+  function getFMIScalarVRs
+    input SimCodeVar.SimVar var;
+    input SimCode.SimCode simCode;
+    output String out;
+  end getFMIScalarVRs;
+
+  function getFMI3ArrayStart
+    input SimCodeVar.SimVar var;
+    output String out;
+  end getFMI3ArrayStart;
+
+  function getFMI3Terminals
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiTerminal> terminals;
+  end getFMI3Terminals;
+
+  function isFMI3NestableAlias
+    input SimCodeVar.SimVar simVar;
+    output Boolean nestable;
+  end isFMI3NestableAlias;
+
+  function getFMI3VariableAliases
+    input SimCode.SimCode simCode;
+    input DAE.ComponentRef canonical;
+    output list<SimCodeVar.SimVar> aliases;
+  end getFMI3VariableAliases;
+
+  function getFMI3Clocks
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiClock> clocks;
+  end getFMI3Clocks;
+
+  function getFMI3TimeValueReference
+    input SimCode.SimCode inSimCode;
+    output String outValueReference;
+  end getFMI3TimeValueReference;
+
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
     input SimCode.SimCode inSimCode;
@@ -1358,6 +1445,14 @@ package SimCodeUtil
     input String iIndexForUndefinedReferences;
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
+
+  function getVarIndexHeadByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexHeadByMapping;
 
   function getVarIndexByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;

@@ -121,6 +121,14 @@ if(APPLE)
   set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
 
+if(MSVC)
+
+else()
+  # Enable extra compilation warnings, but disable missing-field-initializers
+  # which causes false positives for MMC_TRY_TOP.
+  target_compile_options(OMNotebook PRIVATE -Wall -Wextra -Wno-missing-field-initializers -Wsuggest-override)
+endif()
+
 if(MINGW)
   # Find windeployqt6
   find_program(WINDEPLOYQT_EXECUTABLE
@@ -150,6 +158,3 @@ if(MINGW)
   ")
 endif()
 
-install(FILES stylesheet.xml
-              commands.xml
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)

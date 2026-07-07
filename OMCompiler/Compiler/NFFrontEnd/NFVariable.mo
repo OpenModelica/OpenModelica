@@ -324,6 +324,11 @@ public
     output Boolean b = variable.attributes.direction == Direction.INPUT;
   end isInput;
 
+  function isOutput
+    input Variable variable;
+    output Boolean b = variable.attributes.direction == Direction.OUTPUT;
+  end isOutput;
+
   function isTopLevelInput
     input Variable variable;
     output Boolean topInput = ComponentRef.isTopLevel(variable.name) and

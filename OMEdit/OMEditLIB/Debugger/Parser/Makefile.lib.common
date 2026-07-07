@@ -1,4 +1,4 @@
-ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
+ANTLRCMD=LC_ALL=C.UTF-8 java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 PARSERGEN=GDBMIOutputLexer.c GDBMIOutputLexer.h GDBMIOutputParser.c GDBMIOutputParser.h
 
 all: $(PARSERGEN) libGDBMIParser.a

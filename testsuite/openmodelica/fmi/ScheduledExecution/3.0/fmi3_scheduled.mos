@@ -1,0 +1,41 @@
+// name: fmi3_scheduled.mos
+// keywords: FMI 3.0 export scheduled execution clocks synchronous
+// status: correct
+// teardown_command: rm -rf Mclk.* index.html Mclk_* Mclk.fmutmp/
+//
+// FMI 3.0 Scheduled Execution: a clocked model is exported with a
+// <ScheduledExecution> interface. Its clocks become input clocks (the importer
+// activates the associated model partition via fmi3ActivateModelPartition); the
+// runtime fmi3ActivateModelPartition drives the corresponding clocked partition.
+
+loadString("
+model Mclk
+  Real x(start = 0.0);
+  Real xd;
+equation
+  xd = sample(x, Clock(0.1));
+  der(x) = 1.0 - x;
+end Mclk;
+"); getErrorString();
+
+buildModelFMU(Mclk, version="3.0", fmuType="se"); getErrorString();
+
+// the ScheduledExecution interface element
+system("unzip -cqq Mclk.fmu modelDescription.xml | grep -oE \"<ScheduledExecution\""); getErrorString();
+
+// the clock is an input clock for Scheduled Execution (value reference stripped)
+system("unzip -cqq Mclk.fmu modelDescription.xml | grep -oE \"<Clock[^>]*/>\" | sed \"s/valueReference=\\\"[0-9]*\\\" //\""); getErrorString();
+
+// Result:
+// true
+// ""
+// "Mclk.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// <ScheduledExecution
+// 0
+// ""
+// <Clock name="_D_clock1" causality="input" intervalVariability="constant" intervalDecimal="0.1"/>
+// 0
+// ""
+// endResult

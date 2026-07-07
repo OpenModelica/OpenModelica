@@ -73,8 +73,8 @@ getErrorString();
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
 //     canNotUseMemoryManagementFunctions=\"false\"
-//     canGetAndSetFMUstate=\"false\"
-//     canSerializeFMUstate=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>

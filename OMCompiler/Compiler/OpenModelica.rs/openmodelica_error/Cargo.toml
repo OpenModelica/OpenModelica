@@ -1,0 +1,11 @@
+[package]
+name = "openmodelica_error"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+metamodelica.workspace = true
+anyhow.workspace = true
+const-str.workspace = true
+arcstr.workspace = true
+loop_unwrap.workspace = true

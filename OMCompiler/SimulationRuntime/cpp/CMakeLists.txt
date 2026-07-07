@@ -923,7 +923,14 @@ SET(HS Core/Object/IObject.h
         FMU2/FMU2GlobalSettings.h
         FMU2/FMU2Interface.cpp
         FMU2/FMU2Wrapper.cpp
-        FMU2/FMU2Wrapper.h)
+        FMU2/FMU2Wrapper.h
+        FMU3/fmi3Functions.h
+        FMU3/fmi3FunctionTypes.h
+        FMU3/fmi3PlatformTypes.h
+        FMU3/FMU3GlobalSettings.h
+        FMU3/FMU3Interface.cpp
+        FMU3/FMU3Wrapper.cpp
+        FMU3/FMU3Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
 
 if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")

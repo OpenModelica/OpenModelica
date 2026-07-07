@@ -100,10 +100,13 @@ uniontype JacobianMatrix
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
     Boolean isAdjoint; // true if this jacobian is for adjoint calculation
+    Boolean isBidirectional; // true if part of a bidirectional pair
+    Integer adjointJacobianIndex; // index of adjoint jacobian for bidirectional (-1 if none)
+    String adjointMatrixName; // matrix name of adjoint jacobian for bidirectional
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -759,6 +762,37 @@ public uniontype FmiModelStructure
     FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
+
+/* FMI 3.0 Terminals (terminalsAndIcons.xml) */
+public uniontype FmiTerminal
+  record FMI_TERMINAL
+    String name             "connector instance name, e.g. bus";
+    String terminalKind     "the connector type path (e.g. Modelica....Flange_a), \"\" if unknown";
+    Boolean isExpandable    "true for expandable connectors (matchingRule=bus, else plug)";
+    list<FmiTerminalMember> members;
+  end FMI_TERMINAL;
+end FmiTerminal;
+
+public uniontype FmiTerminalMember
+  record FMI_TERMINAL_MEMBER
+    DAE.ComponentRef variable "exported variable cref; template formats it exactly as in modelDescription.xml (e.g. bus.a)";
+    String memberName       "name within the terminal, e.g. a";
+    String variableKind     "role of the member, derived from causality (input/output/...)";
+  end FMI_TERMINAL_MEMBER;
+end FmiTerminalMember;
+
+/* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
+public uniontype FmiClock
+  record FMI_CLOCK
+    Integer valueReference     "globally unique value reference (clock base-type block)";
+    String name                "clock name as in modelDescription.xml";
+    String intervalVariability "constant | fixed | tunable | changing | countdown | triggered";
+    Boolean supportsFraction   "true for rational (counter/resolution) clocks";
+    String intervalDecimal     "the period for a periodic clock, or \"\" if not constant";
+    String intervalCounter     "rational-clock counter, or \"\"";
+    String resolution          "rational-clock resolution, or \"\"";
+  end FMI_CLOCK;
+end FmiClock;
 
 public uniontype FmiSimulationFlags
   record FMI_SIMULATION_FLAGS

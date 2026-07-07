@@ -2,7 +2,7 @@ ANTLR=../3rdParty/antlr/3.2/libantlr3c-3.2
 #ANTLR=../3rdParty/antlr/3.4/libantlr3c-3.4
 ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
 #ANTLRJAR = $(ANTLR)/../tool/antlr-3.4-complete.jar
-ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
+ANTLRCMD=LC_ALL=C.UTF-8 java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 OMC_CONFIG_INC = ../
 
 CPPFLAGS += -DOM_HAVE_PTHREADS

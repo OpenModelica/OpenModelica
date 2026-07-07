@@ -1,0 +1,14 @@
+[package]
+name = "openmodelica"
+version = "0.1.0"
+edition = "2024"
+
+# This is a *thin launcher*: it contains no compiler code, only a `main` that
+# forwards argv to `omc_cli_run` in `libOpenModelicaCompiler.so`. It has no
+# cargo dependency on that cdylib — build.rs links it as an external prebuilt
+# library found in the cargo profile dir (see build.rs), so the compiler lives
+# in exactly one ~400 MB .so shared with the OMEdit host rather than statically
+# duplicated. libopenmodelica_compiler must be built first; the cmake build
+# orders rust_libopenmodelica before this binary. The wasm-jit engine choice
+# (wasmtime default, or engine-wasmer) is a feature of libopenmodelica_compiler,
+# selected when that crate is built.

@@ -184,11 +184,11 @@ case SIMCODE(__) then
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="true"
     maxOutputDerivativeOrder="1"
-    canRunAsynchronuously = "false"
+    canRunAsynchronuously="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    canGetAndSetFMUstate="true"
+    canSerializeFMUstate="true"
     <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </CoSimulation>

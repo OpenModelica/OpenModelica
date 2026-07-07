@@ -1,0 +1,11 @@
+[package]
+name = "openmodelica_modelica_utilities"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+# libc (dlsym RTLD_NEXT / malloc for the non-simulation forward) is native-only;
+# the wasm build always allocates from the arena.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libc.workspace = true

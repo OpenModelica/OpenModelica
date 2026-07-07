@@ -146,6 +146,7 @@ QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
+QString Helper::loadCompiledModel;
 QString Helper::newCRMLModel;
 QString Helper::newCRMLModelTip;
 QString Helper::newMOSScript;
@@ -478,6 +479,7 @@ void Helper::initHelperVariables()
   Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
+  Helper::loadCompiledModel = tr("Load Compiled Model");
   Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
   Helper::newMOSScript = tr("Modelica Script");

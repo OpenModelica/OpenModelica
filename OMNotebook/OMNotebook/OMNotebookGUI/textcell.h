@@ -64,21 +64,20 @@ namespace IAEX
 
   public:
     TextCell(QWidget *parent = 0);
-    TextCell(TextCell &t);
     virtual ~TextCell();
 
-    QString text();
-    QString textHtml();
-    QTextCursor textCursor();
-    QTextEdit* textEdit();
+    QString text() override;
+    QString textHtml() override;
+    QTextCursor textCursor() override;
+    QTextEdit* textEdit() override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
 
     void clear();
-    virtual void accept(Visitor &v);
-    virtual bool isEditable();
-    virtual void viewExpression(const bool expr);
+    virtual void accept(Visitor &v) override;
+    virtual bool isEditable() const override;
+    virtual void viewExpression(bool expr) override;
 
   signals:
     void textChanged();
@@ -88,16 +87,16 @@ namespace IAEX
 
   public slots:
     void clickEvent();
-    void setText(QString text);
-    void setText(QString text, QTextCharFormat format);
-    void setTextHtml(QString html);
-    void setStyle(const QString &stylename);
-    void setStyle(CellStyle style);
+    void setText(QString text) override;
+    void setText(QString text, QTextCharFormat format) override;
+    void setTextHtml(QString html) override;
+    void setStyle(const QString &stylename) override;
+    void setStyle(CellStyle style) override;
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly);
-    virtual void setFocus(const bool focus);
+    void setReadOnly(bool readonly) override;
+    virtual void setFocus(bool focus) override;
 
 
 
@@ -110,7 +109,7 @@ namespace IAEX
     void charFormatChanged(const QTextCharFormat &);
 
   protected:
-    void resizeEvent(QResizeEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
 
   private:
     void createTextWidget();
