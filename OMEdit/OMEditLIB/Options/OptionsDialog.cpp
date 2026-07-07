@@ -2446,6 +2446,14 @@ void OptionsDialog::saveGlobalSimulationSettings()
     mpSettings->setValue("simulation/targetLanguage", targetLanguage);
   }
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--simCodeTarget=%1").arg(targetLanguage));
+  // The wasm-jit target has no C toolchain, so never try to build/copy a missing
+  // external library from its Resources (autotools) during function elaboration
+  // (e.g. ModelicaStandardTables): that path shells out and aborts translation on
+  // the web. The externals are provided at run time by the wasm side module. This
+  // is re-applied here because translateModel() clears command line options first.
+  if (targetLanguage.compare("wasm-jit") == 0) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=-buildExternalLibs");
+  }
   // save target build
   QString target = mpSimulationPage->getTargetBuildComboBox()->itemData(mpSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
   if (target.compare(OptionsDefaults::Simulation::targetBuild) == 0) {
@@ -2916,7 +2924,9 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("displayUnknownFrames", displayUnknownFrames);
   }
+#if !defined(__EMSCRIPTEN__)
   MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+#endif
 
   bool clearOutputOnNewRun = mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked();
   if (clearOutputOnNewRun == OptionsDefaults::Debugger::clearOutputOnNewRun) {
@@ -5239,7 +5249,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new ComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+#if defined(__EMSCRIPTEN__)
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("wasm-jit"));
+#else
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+#endif
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));

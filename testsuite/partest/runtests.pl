@@ -95,6 +95,8 @@ for(@ARGV){
     print("  -nosavedb      Don't overwrite stored timing data.\n");
     print("  -nocolour      Don't use colours in output.\n");
     print("  -counttests    Don't run the test; only count them.\n");
+    print("  -omcflags=F    Extra flags passed to omc for every test (via RTEST_OMCFLAGS).\n");
+    print("  -simCodeTarget=T Override simCodeTarget for every simulation test, e.g. wasm-jit.\n");
     print("  -partition=M/N M=1..N, partition the tests into N equal shares and run only the Mth partition.\n");
     print("  -printtests    Don't run the test; only print them.\n");
     print("  -with-xml      Output XML log.\n");
@@ -130,6 +132,12 @@ for(@ARGV){
   }
   elsif(/^-counttests$/) {
     $count_tests = 1;
+  }
+  elsif(/^-omcflags=(.*)$/) {
+    $ENV{RTEST_OMCFLAGS} = (defined $ENV{RTEST_OMCFLAGS} ? $ENV{RTEST_OMCFLAGS} . " " : "") . $1;
+  }
+  elsif(/^-simCodeTarget=(.*)$/) {
+    $ENV{OPENMODELICA_TEST_SIMCODETARGET} = $1;
   }
   elsif(/^-printtests$/) {
     $print_tests = 1;

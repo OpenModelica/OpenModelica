@@ -1,0 +1,17 @@
+[package]
+name = "omshell_wgpu"
+version = "0.1.0"
+edition = "2024"
+
+# Shared "flashy" WebGPU demo (an animated raymarched gyroid) behind the OMShell
+# Help -> WebGPU test. Pure wgpu, no windowing: the egui paint callback (native +
+# web) and the dioxus DOM-canvas path (web) share this one renderer; only surface
+# acquisition differs between front-ends. wgpu is pinned to the version egui_wgpu
+# (eframe 0.34) uses, so the same Device/Queue/RenderPass types flow through the
+# egui callback.
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+wgpu = "29"
+bytemuck = { version = "1", features = ["derive"] }

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — Home</title>
+<style>
+  :root { color-scheme: dark; --bg:#1e1e1e; --fg:#d4d4d4; --muted:#808080; --accent:#23afe5; --panel:#252526; --border:#333; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 15px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg); color: var(--fg);
+    display: grid; place-items: center; padding: 32px; overflow-y: auto;
+  }
+  .card { max-width: 620px; width: 100%; text-align: center; }
+  .wordmark { height: 54px; max-width: 100%; margin-bottom: 18px; }
+  h1 { font-size: 28px; margin: 0 0 6px; font-weight: 650; }
+  p.sub { color: var(--muted); margin: 0 0 28px; }
+  .version {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .version .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: 0 0 auto; }
+  .version.ready .dot { background: #4ec9b0; }
+  .version.error .dot { background: #f48771; }
+  .version .val { color: var(--fg); }
+  .version.error .val { color: #f48771; }
+  .hint { margin-top: 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img class="wordmark" src="../icons/openmodelica-logo.svg" alt="OpenModelica" />
+    <h1>OpenModelica on the Web</h1>
+    <p class="sub">The compiler and its clients, running entirely in your browser via WebAssembly.</p>
+    <div class="version" id="version">
+      <span class="dot"></span>
+      <span class="val" id="val">Loading compiler…</span>
+    </div>
+    <p class="hint">Pick a client from the sidebar to get started.</p>
+  </div>
+
+<script type="module">
+import init, { omc_set_env, omc_init, omc_eval } from '../omc/OpenModelicaCompiler.js';
+
+const box = document.getElementById('version');
+const val = document.getElementById('val');
+
+(async () => {
+  await init();
+  omc_set_env('OPENMODELICAHOME', '/usr');
+  if (!omc_init()) throw new Error('omc_init() failed — see the devtools console.');
+  val.textContent = omc_eval('getVersion()');
+  box.classList.add('ready');
+})().catch((e) => { val.textContent = '' + e; box.classList.add('error'); });
+</script>
+</body>
+</html>

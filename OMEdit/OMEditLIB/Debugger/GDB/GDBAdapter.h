@@ -237,7 +237,9 @@ private slots:
   void handleGDBProcessStartedForSimulation();
   void handleGDBProcessStartedForAttach();
   void readGDBErrorOutput();
+#if QT_CONFIG(process)
   void handleGDBProcessError(QProcess::ProcessError error);
+#endif
   void handleGDBProcessFinished(int exitCode);
   void handleGDBProcessFinishedForSimulation(int exitCode);
   void GDBcommandTimeout();

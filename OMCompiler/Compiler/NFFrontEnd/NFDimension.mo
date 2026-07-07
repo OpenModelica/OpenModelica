@@ -508,7 +508,7 @@ public
     input String name = "";
     output String str;
   algorithm
-    str := List.toString(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
+    str := List.toStringCustom(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
   end toFlatStringList;
 
   function endExp

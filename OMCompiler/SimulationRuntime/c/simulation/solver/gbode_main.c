@@ -445,6 +445,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->errest    = malloc(sizeof(double) * gbData->nStates);
   gbData->errtol    = malloc(sizeof(double) * gbData->nStates);
   gbData->err       = malloc(sizeof(double) * gbData->nStates);
+  gbData->nominals  = malloc(sizeof(double) * gbData->nStates);
+  gbData->mins      = malloc(sizeof(double) * gbData->nStates);
+  gbData->maxs      = malloc(sizeof(double) * gbData->nStates);
   // ring buffer for different purposes (extrapolation, etc.)
   gbData->ringBufferSize = 4;
   gbData->errValues      = malloc(sizeof(double) * gbData->ringBufferSize);
@@ -457,6 +460,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->kr             = malloc(gbData->nStates*sizeof(double) * 2);
 
   printButcherTableau(gbData->tableau);
+
+  // perform expensive scalar queries once
+  for (int i = 0; i < gbData->nStates; i++) {
+    gbData->nominals[i] = fmax(fabs(getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i)), 1e-32);
+    gbData->mins[i] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    gbData->maxs[i] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+  }
 
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
@@ -593,7 +603,6 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
 
   /* Free sparsity pattern */
   freeSparsePattern(gbfData->sparsePattern_DIRK);
-  free(gbfData->sparsePattern_DIRK);
 
   /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);
@@ -688,6 +697,9 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   free(gbData->res_const);
   free(gbData->errest);
   free(gbData->errtol);
+  free(gbData->nominals);
+  free(gbData->mins);
+  free(gbData->maxs);
 
   free(gbData);
 
@@ -916,14 +928,14 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     infoStreamPrint(OMC_LOG_GBODE, 1, "Fast states and corresponding nominal values:");
     for (ii = 0; ii < nFastStates; ii++) {
       i = gbData->fastStatesIdx[ii];
-      // Get the nominal values of the fast states
-      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-      gbfData->nlsData->nominal[ii] = fmax(fabs(nominal), 1e-32);
+      gbfData->nlsData->nominal[ii] = gbData->nominals[i];
+      gbfData->nlsData->min[ii] = gbData->mins[i];
+      gbfData->nlsData->max[ii] = gbData->maxs[i];
       infoStreamPrint(OMC_LOG_GBODE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->nominal[ii]);
     }
     messageClose(OMC_LOG_GBODE);
 
-    if (gbfData->nlsData->isPatternAvailable) {
+    if (gbfData->nlsData->sparsePattern) {
       if (gbfData->nlsSolverMethod != GB_NLS_INTERNAL)
       {
         // internal does it by itself
@@ -943,14 +955,14 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
+        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE, !!gbfData->nlsData->sparsePattern);
         break;
       case GB_NLS_KINSOL_B:
         B_nlsKinsolFree(solverData->ordinaryData);
         /* Set NLS user data */
         NLS_USERDATA* B_nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         B_nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
+        solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, !!gbfData->nlsData->sparsePattern);
         break;
       case GB_NLS_INTERNAL:
         // notify internal to update the sparsity + symbolic factorization in the next iteration
@@ -1052,8 +1064,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
-        gbfData->errtol[ii] = Atol * fabs(nominal) + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
+        gbfData->errtol[ii] = Atol * gbData->nominals[ii] + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
         gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
         err += gbfData->err[ii] * gbfData->err[ii];
@@ -1590,8 +1601,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-        gbData->errtol[i] = Atol * fabs(nominal) + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
+        gbData->errtol[i] = Atol * gbData->nominals[i] + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err += gbData->err[i] * gbData->err[i];

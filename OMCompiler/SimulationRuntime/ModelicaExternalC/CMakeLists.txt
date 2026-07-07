@@ -44,7 +44,14 @@ if(UNIX)
   target_link_libraries(ModelicaExternalC_shared PUBLIC m)
 endif()
 
-target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
+# The Rust omc provides its own ModelicaUtilities (the wasm-jit/FFI simulation
+# environment, exported by libOpenModelicaCompiler) and never initialises the C
+# runtime's GC/threadData. So for the Rust target leave the ModelicaUtilities
+# symbols undefined in the ffi .so — resolved at dlopen against the omc process —
+# instead of dragging in libOpenModelicaRuntimeC via DT_NEEDED.
+if(NOT OM_OMC_ENABLE_RUST)
+  target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
+endif()
 
 if(MINGW)
   target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
@@ -72,7 +79,11 @@ set_target_properties(ModelicaMatIO_shared
 
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
-target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
+# See ModelicaExternalC_shared above: decouple the ffi .so from the C runtime for
+# the Rust target so ModelicaUtilities resolves to our own implementation.
+if(NOT OM_OMC_ENABLE_RUST)
+  target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
+endif()
 
 if(MINGW)
   target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)

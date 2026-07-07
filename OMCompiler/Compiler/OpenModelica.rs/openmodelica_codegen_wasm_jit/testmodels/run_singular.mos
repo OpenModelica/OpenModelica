@@ -1,0 +1,11 @@
+// Singular init linear system + a hard init nonlinear system. The default LU
+// solve fails, so rt_linsolve falls back to a total-pivot search (as C's
+// LS_DEFAULT does) and rt_solve_nls falls back to a Levenberg-Marquardt
+// globaliser when damped Newton stalls. Used to bail with "linear system is
+// singular"; now simulates and matches /usr/bin/omc (diffSimulationResults
+// (true,{}), relTol 1e-3, 500 intervals).
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip, stopTime = 1.0, numberOfIntervals = 50); getErrorString();
+val(revolute1.phi, 1.0); // expect ~-3.41892
+val(revolute2.phi, 1.0); // expect ~1.48752

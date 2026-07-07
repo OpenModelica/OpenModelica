@@ -197,6 +197,9 @@ namespace IAEX
 
       event->ignore();
     }
+// wasm: the base class must handle Ctrl+C/X/V for Qt's WebAssembly clipboard to
+// work; the programmatic forwardAction path bypasses it and no-ops.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -224,6 +227,7 @@ namespace IAEX
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
 
     // TAB
     else if( event->key() == Qt::Key_Tab )

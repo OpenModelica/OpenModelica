@@ -1,7 +1,7 @@
 
 add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/GDBMIOutput.g
-    COMMAND ${Java_JAVA_EXECUTABLE}
+    COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C.UTF-8 ${Java_JAVA_EXECUTABLE}
     ARGS -cp ${OMAntlr3_ANTLRJAR}
           org.antlr.Tool -Xconversiontimeout 10000
           -o ${CMAKE_CURRENT_BINARY_DIR}

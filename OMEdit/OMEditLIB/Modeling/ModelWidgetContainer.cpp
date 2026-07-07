@@ -5544,11 +5544,18 @@ QSplitter* WelcomePageWidget::getSplitter()
 void WelcomePageWidget::addLatestNewsListItems()
 {
   mpLatestNewsListWidget->clear();
+#if !defined(__EMSCRIPTEN__)
   /* if show latest news settings is not set then don't fetch the latest news items. */
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
     QUrl newsUrl("https://openmodelica.org/tags/news/index.xml");
     mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
   }
+#else
+  // Cross-origin fetch is CORS-blocked on wasm and the failed XHR crashes the
+  // Qt event dispatcher; skip news on the web build.
+  mpNoLatestNewsLabel->setVisible(true);
+  mpNoLatestNewsLabel->setText(tr("Latest news is unavailable in the web version."));
+#endif
 }
 
 void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)

@@ -466,6 +466,9 @@ package SimCode
       list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
       Boolean isAdjoint;
+      Boolean isBidirectional;
+      Integer adjointJacobianIndex;
+      String adjointMatrixName;
     end JAC_MATRIX;
   end JacobianMatrix;
 
@@ -1442,6 +1445,14 @@ package SimCodeUtil
     input String iIndexForUndefinedReferences;
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
+
+  function getVarIndexHeadByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexHeadByMapping;
 
   function getVarIndexByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;

@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 builtin_functions.mos\
+inlineAttributes15947.mos\
 function_annotation_der.mos\
 function_diff.mos\
 function_partial_der.mos\

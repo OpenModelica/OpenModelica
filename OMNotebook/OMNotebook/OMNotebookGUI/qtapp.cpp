@@ -62,9 +62,15 @@
 #define GC_THREADS
 #endif
 
+#if defined(__EMSCRIPTEN__)
+#include "omc_wasm_compat.h"
+#elif defined(OMC_RUST_ABI)
+#include "omc_rust_embedding.h"
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 }
+#endif
 
 #include <locale.h>
 

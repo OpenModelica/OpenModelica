@@ -30,7 +30,7 @@ simulate(binding_array); getErrorString();
 // true
 // Created Parameter Binding Equations (1):
 // ******************************************
-// 	[ARRY] (5) Cu = ($FUN_1 + $FUN_2) .* 1e7 ($RES_BND_6)
+// 	[ARRY] (5) Cu = ($FUN_1 + $FUN_2) .* 1e7; ($RES_BND_6)
 //
 // ##############################
 //

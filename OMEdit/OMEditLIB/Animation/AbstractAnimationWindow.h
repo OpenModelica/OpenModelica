@@ -49,10 +49,17 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 
+// FMUSettingsDialog pulls in VisualizationFMU (fmilib), unavailable on wasm.
+#if !defined(__EMSCRIPTEN__)
 #include "FMUSettingsDialog.h"
+#endif
 
 class VisualizationAbstract;
+#if defined(OMEDIT_ANIMATION_QUICK3D)
+class Quick3DViewerWidget;
+#else
 class ViewerWidget;
+#endif
 class Label;
 
 class DoubleSpinBoxIndexed : public QDoubleSpinBox
@@ -75,7 +82,9 @@ class AbstractAnimationWindow : public QMainWindow
   Q_OBJECT
 public:
   AbstractAnimationWindow(QWidget *pParent);
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   ViewerWidget* getViewerWidget() {return mpViewerWidget;}
+#endif
   VisualizationAbstract* getVisualization() {return mpVisualization;}
   void openAnimationFile(QString fileName, bool stashCamera=false);
   virtual void createActions();
@@ -91,7 +100,11 @@ protected:
   //stores the data for the visualizers, time management, functionality for updating the values(mat/fmu) etc.
   VisualizationAbstract* mpVisualization;
   //widgets
+#if defined(OMEDIT_ANIMATION_QUICK3D)
+  Quick3DViewerWidget *mpViewerWidget;
+#else
   ViewerWidget *mpViewerWidget;
+#endif
   QToolBar* mpAnimationToolBar;
   QDockWidget* mpAnimationParameterDockerWidget;
   QAction *mpAnimationChooseFileAction;
@@ -110,7 +123,9 @@ protected:
   QAction *mpRotateCameraRightAction;
   QVector<DoubleSpinBoxIndexed*> mSpinBoxVector;
   QVector<QLabel*> mStateLabels;
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   osg::Matrixd mStashedViewMatrix;
+#endif
   bool mCameraInitialized;
   int mSliderRange;
 
@@ -120,7 +135,9 @@ protected:
   void cameraPositionFront();
   void cameraPositionTop();
   double computeDistanceToOrigin();
+#if !defined(__EMSCRIPTEN__)
   void openFMUSettingsDialog(VisualizationFMU *pVisualizationFMU);
+#endif
   void updateControlPanelValues();
   void updateSceneTime(double time);
 

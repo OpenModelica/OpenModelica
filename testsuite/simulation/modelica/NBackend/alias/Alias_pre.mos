@@ -34,9 +34,9 @@ simulate(Alias_pre); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) y = $FUN_1 ($RES_SIM_2)
-// 	[SCAL] (1) y = 3.0 + x ($RES_SIM_3)
-// 	[SCAL] (1) b = x ($RES_SIM_4)
+// 	[SCAL] (1) y = $FUN_1; ($RES_SIM_2)
+// 	[SCAL] (1) y = 3.0 + x; ($RES_SIM_3)
+// 	[SCAL] (1) b = x; ($RES_SIM_4)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -49,7 +49,7 @@ simulate(Alias_pre); getErrorString();
 //
 // [dumprepl] Found But Illegal Alias Replacements (added as equations):
 // ***********************************************************************
-// 	[SCAL] (1) b = (-3.0) + y ($RES_SIM_6)
+// 	[SCAL] (1) b = (-3.0) + y; ($RES_SIM_6)
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:

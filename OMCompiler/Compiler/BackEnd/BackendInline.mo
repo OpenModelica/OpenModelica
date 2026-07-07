@@ -69,6 +69,8 @@ protected
  import InlineArrayEquations;
  import List;
  import ExpressionBasics;
+ import Util;
+ import Absyn;
 
 // =============================================================================
 // late inline functions stuff
@@ -135,10 +137,342 @@ protected function inlineEquationSystem
   input Inline.Functiontuple tpl;
   output BackendDAE.EqSystem oeqs = eqs;
 algorithm
+  // carry the attributes (min/max/nominal/unit/...) declared on the function
+  // inputs/outputs onto the variables bound to them before the calls are
+  // replaced by the function bodies (#15947)
+  oeqs.orderedVars := propagateAttributes(oeqs.orderedVars, oeqs.orderedEqs, tpl);
   inlineVariables(oeqs.orderedVars, tpl);
   inlineEquationArray(oeqs.orderedEqs, tpl);
   inlineEquationArray(oeqs.removedEqs, tpl);
 end inlineEquationSystem;
+
+// =============================================================================
+//        ATTRIBUTE PROPAGATION (min/max/nominal/unit/... see #15947)
+// =============================================================================
+
+protected function propagateAttributes
+  "Carries the attributes declared on the inputs and outputs of the functions
+   that are about to be inlined onto the variables bound to them, so they are not
+   lost when the calls are replaced by the function bodies (#15947)."
+  input output BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  input Inline.Functiontuple tpl;
+algorithm
+  vars := BackendEquation.traverseEquationArray(eqns, function propagateEqnAttributes(tpl = tpl), vars);
+end propagateAttributes;
+
+protected function propagateEqnAttributes
+  "Merges function input/output attributes onto the bound variables for a single
+   equation. The equation is not changed, only the variable attributes are."
+  input output BackendDAE.Equation eqn;
+  input Inline.Functiontuple tpl;
+  input output BackendDAE.Variables vars;
+algorithm
+  // output side: a simple 'cref = fn(...)' or 'fn(...) = cref' equation
+  vars := match eqn
+    local
+      DAE.Exp lhs, rhs;
+      DAE.ComponentRef cr;
+    case BackendDAE.EQUATION(exp = lhs, scalar = rhs)         then propagateOutput(lhs, rhs, tpl, vars);
+    case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs)   then propagateOutput(lhs, rhs, tpl, vars);
+    case BackendDAE.COMPLEX_EQUATION(left = lhs, right = rhs) then propagateOutput(lhs, rhs, tpl, vars);
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = rhs)
+      then propagateOutput(Expression.crefExp(cr), rhs, tpl, vars);
+    else vars;
+  end match;
+  // input side: every cref argument of every inlinable call in the equation
+  // (traverse deeply to also catch nested calls)
+  (_, vars) := BackendEquation.traverseExpsOfEquation(eqn, function propagateInputsExpDeep(tpl = tpl), vars);
+end propagateEqnAttributes;
+
+protected function propagateInputsExpDeep
+  "Deeply traverses a top-level equation expression to reach nested calls."
+  input output DAE.Exp exp;
+  input Inline.Functiontuple tpl;
+  input output BackendDAE.Variables vars;
+algorithm
+  (exp, vars) := Expression.traverseExpBottomUp(exp, function propagateInputsExp(tpl = tpl), vars);
+end propagateInputsExpDeep;
+
+protected function propagateOutput
+  "Carries the (single) output's attributes onto the result variable of a
+   'cref = fn(...)' / 'fn(...) = cref' equation."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input Inline.Functiontuple tpl;
+  input output BackendDAE.Variables vars;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp call_exp;
+  Absyn.Path p;
+  list<DAE.Element> outs;
+algorithm
+  // figure out which side is the result cref and which is the inlinable call
+  if Expression.isCref(lhs) and isInlinableCall(rhs, tpl) then
+    DAE.CREF(componentRef = cr) := lhs;
+    call_exp := rhs;
+  elseif Expression.isCref(rhs) and isInlinableCall(lhs, tpl) then
+    DAE.CREF(componentRef = cr) := rhs;
+    call_exp := lhs;
+  else
+    return;
+  end if;
+
+  DAE.CALL(path = p) := call_exp;
+  try
+    outs := DAEUtil.getFunctionOutputVars(Inline.getFunction(p, tpl));
+    // only single-output functions have a well defined result variable
+    if listLength(outs) == 1 then
+      vars := mergeVarOntoCref(cr, listHead(outs), vars);
+    end if;
+  else
+  end try;
+end propagateOutput;
+
+protected function propagateInputsExp
+  "Traverse with Expression.traverseExpBottomUp; merges declared input
+   attributes onto cref arguments of every inlinable call."
+  input output DAE.Exp exp;
+  input Inline.Functiontuple tpl;
+  input output BackendDAE.Variables vars;
+algorithm
+  vars := match exp
+    local
+      Absyn.Path p;
+      list<DAE.Exp> args;
+      DAE.InlineType it;
+      list<DAE.Element> ins;
+    case DAE.CALL(path = p, expLst = args, attr = DAE.CALL_ATTR(inlineType = it))
+      guard Inline.checkInlineType(it, tpl) algorithm
+      try
+        ins := DAEUtil.getFunctionInputVars(Inline.getFunction(p, tpl));
+        if listLength(ins) == listLength(args) then
+          for t in List.zip(ins, args) loop
+            vars := mergeVarOntoArg(Util.tuple21(t), Util.tuple22(t), vars);
+          end for;
+        end if;
+      else
+      end try;
+    then vars;
+    else vars;
+  end match;
+end propagateInputsExp;
+
+protected function isInlinableCall
+  "True if the expression is a call to a function that will be inlined."
+  input DAE.Exp exp;
+  input Inline.Functiontuple tpl;
+  output Boolean b;
+algorithm
+  b := match exp
+    local
+      DAE.InlineType it;
+    case DAE.CALL(attr = DAE.CALL_ATTR(inlineType = it)) then Inline.checkInlineType(it, tpl);
+    else false;
+  end match;
+end isInlinableCall;
+
+protected function mergeVarOntoArg
+  "Merges the attributes declared on a function input/output element onto the
+   variable bound to the given argument expression (only if it is a cref)."
+  input DAE.Element velem;
+  input DAE.Exp arg;
+  input output BackendDAE.Variables vars;
+algorithm
+  vars := match arg
+    local
+      DAE.ComponentRef cr;
+    case DAE.CREF(componentRef = cr) then mergeVarOntoCref(cr, velem, vars);
+    else vars;
+  end match;
+end mergeVarOntoArg;
+
+protected function mergeVarOntoCref
+  "Merges the attributes of a function input/output element onto the variable
+   referenced by cr."
+  input DAE.ComponentRef cr;
+  input DAE.Element velem;
+  input output BackendDAE.Variables vars;
+protected
+  BackendDAE.Var var;
+  Integer index;
+  Option<DAE.VariableAttributes> src, dst;
+algorithm
+  try
+    (var, index) := BackendVariable.getVarSingle(cr, vars);
+    DAE.VAR(variableAttributesOption = src) := velem;
+    dst := mergeDAEAttributes(BackendVariable.getVariableAttributes(var), src);
+    var := BackendVariable.setVarAttributes(var, dst);
+    vars := BackendVariable.setVarAt(vars, index, var);
+  else
+  end try;
+end mergeVarOntoCref;
+
+protected function mergeDAEAttributes
+  "Merges the source attributes (from a function input/output) into the
+   destination attributes (the model variable). The model variable wins for any
+   attribute that is already set; for min/max the tightest bound wins. Only
+   constant attribute values are propagated."
+  input Option<DAE.VariableAttributes> dstOpt;
+  input Option<DAE.VariableAttributes> srcOpt;
+  output Option<DAE.VariableAttributes> outOpt;
+protected
+  DAE.VariableAttributes dst, src;
+algorithm
+  if isNone(srcOpt) then
+    outOpt := dstOpt;
+    return;
+  end if;
+  src := Util.getOption(srcOpt);
+  // OB stores variables without declared attributes using a default empty
+  // VAR_ATTR_REAL placeholder regardless of the variable's actual type. If the
+  // destination kind does not match the source kind, fall back to an empty
+  // record of the source's kind so e.g. integer min/max can be carried over.
+  dst := match dstOpt
+    case SOME(dst) guard sameAttrKind(dst, src) then dst;
+    else emptyAttrLike(src);
+  end match;
+
+  outOpt := match (dst, src)
+    case (DAE.VAR_ATTR_REAL(), DAE.VAR_ATTR_REAL()) algorithm
+      dst.quantity    := mergeOpt(dst.quantity, attrConst(src.quantity));
+      dst.unit        := mergeOpt(dst.unit, attrConst(src.unit));
+      dst.displayUnit := mergeOpt(dst.displayUnit, attrConst(src.displayUnit));
+      dst.min         := tightestBound(dst.min, attrConst(src.min), true);
+      dst.max         := tightestBound(dst.max, attrConst(src.max), false);
+      dst.start       := mergeOpt(dst.start, attrConst(src.start));
+      dst.fixed       := mergeOpt(dst.fixed, attrConst(src.fixed));
+      dst.nominal     := mergeOpt(dst.nominal, attrConst(src.nominal));
+    then SOME(dst);
+
+    case (DAE.VAR_ATTR_INT(), DAE.VAR_ATTR_INT()) algorithm
+      dst.quantity    := mergeOpt(dst.quantity, attrConst(src.quantity));
+      dst.min         := tightestBound(dst.min, attrConst(src.min), true);
+      dst.max         := tightestBound(dst.max, attrConst(src.max), false);
+      dst.start       := mergeOpt(dst.start, attrConst(src.start));
+      dst.fixed       := mergeOpt(dst.fixed, attrConst(src.fixed));
+    then SOME(dst);
+
+    case (DAE.VAR_ATTR_BOOL(), DAE.VAR_ATTR_BOOL()) algorithm
+      dst.quantity    := mergeOpt(dst.quantity, attrConst(src.quantity));
+      dst.start       := mergeOpt(dst.start, attrConst(src.start));
+      dst.fixed       := mergeOpt(dst.fixed, attrConst(src.fixed));
+    then SOME(dst);
+
+    case (DAE.VAR_ATTR_STRING(), DAE.VAR_ATTR_STRING()) algorithm
+      dst.quantity    := mergeOpt(dst.quantity, attrConst(src.quantity));
+      dst.start       := mergeOpt(dst.start, attrConst(src.start));
+    then SOME(dst);
+
+    case (DAE.VAR_ATTR_ENUMERATION(), DAE.VAR_ATTR_ENUMERATION()) algorithm
+      dst.quantity    := mergeOpt(dst.quantity, attrConst(src.quantity));
+      dst.min         := mergeOpt(dst.min, attrConst(src.min));
+      dst.max         := mergeOpt(dst.max, attrConst(src.max));
+      dst.start       := mergeOpt(dst.start, attrConst(src.start));
+      dst.fixed       := mergeOpt(dst.fixed, attrConst(src.fixed));
+    then SOME(dst);
+
+    else dstOpt;
+  end match;
+end mergeDAEAttributes;
+
+protected function sameAttrKind
+  "True if both attribute records are of the same kind."
+  input DAE.VariableAttributes a;
+  input DAE.VariableAttributes b;
+  output Boolean same;
+algorithm
+  same := match (a, b)
+    case (DAE.VAR_ATTR_REAL(),        DAE.VAR_ATTR_REAL())        then true;
+    case (DAE.VAR_ATTR_INT(),         DAE.VAR_ATTR_INT())         then true;
+    case (DAE.VAR_ATTR_BOOL(),        DAE.VAR_ATTR_BOOL())        then true;
+    case (DAE.VAR_ATTR_STRING(),      DAE.VAR_ATTR_STRING())      then true;
+    case (DAE.VAR_ATTR_ENUMERATION(), DAE.VAR_ATTR_ENUMERATION()) then true;
+    else false;
+  end match;
+end sameAttrKind;
+
+protected function emptyAttrLike
+  "Returns an empty attribute record of the same kind as the given one."
+  input DAE.VariableAttributes attr;
+  output DAE.VariableAttributes empty;
+algorithm
+  empty := match attr
+    case DAE.VAR_ATTR_REAL()        then DAE.emptyVarAttrReal;
+    case DAE.VAR_ATTR_INT()         then DAE.emptyVarAttrInt;
+    case DAE.VAR_ATTR_BOOL()        then DAE.emptyVarAttrBool;
+    case DAE.VAR_ATTR_STRING()      then DAE.emptyVarAttrString;
+    case DAE.VAR_ATTR_ENUMERATION() then DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    else attr;
+  end match;
+end emptyAttrLike;
+
+protected function attrConst
+  "Keeps an attribute value only if it is constant (contains no component
+   references), so that no function-local references leak onto the model var."
+  input Option<DAE.Exp> inOpt;
+  output Option<DAE.Exp> outOpt;
+algorithm
+  outOpt := match inOpt
+    local DAE.Exp e;
+    case SOME(e) guard not Expression.expHasCrefs(e) then inOpt;
+    else NONE();
+  end match;
+end attrConst;
+
+protected function mergeOpt
+  "Keeps dst if it is already set, otherwise takes src."
+  input Option<DAE.Exp> dst;
+  input Option<DAE.Exp> src;
+  output Option<DAE.Exp> res = if isSome(dst) then dst else src;
+end mergeOpt;
+
+protected function tightestBound
+  "Picks the tighter of two bounds when both are constant numbers, otherwise
+   keeps the already present (dst) bound. isMin = true for lower bounds (larger
+   is tighter), false for upper bounds (smaller is tighter)."
+  input Option<DAE.Exp> dst;
+  input Option<DAE.Exp> src;
+  input Boolean isMin;
+  output Option<DAE.Exp> res;
+protected
+  DAE.Exp de, se;
+  Real dv, sv;
+  Boolean dc, sc;
+algorithm
+  if isNone(dst) then
+    res := src;
+  elseif isNone(src) then
+    res := dst;
+  else
+    SOME(de) := dst;
+    SOME(se) := src;
+    (dc, dv) := constNumber(de);
+    (sc, sv) := constNumber(se);
+    if dc and sc then
+      if isMin then
+        res := if sv > dv then src else dst;
+      else
+        res := if sv < dv then src else dst;
+      end if;
+    else
+      res := dst;
+    end if;
+  end if;
+end tightestBound;
+
+protected function constNumber
+  "Returns the value of a constant Real/Integer literal expression."
+  input DAE.Exp exp;
+  output Boolean isConst;
+  output Real value;
+algorithm
+  (isConst, value) := match exp
+    case DAE.RCONST() then (true, exp.real);
+    case DAE.ICONST() then (true, intReal(exp.integer));
+    else (false, 0.0);
+  end match;
+end constNumber;
 
 protected function inlineEquationArray "
 function: inlineEquationArray

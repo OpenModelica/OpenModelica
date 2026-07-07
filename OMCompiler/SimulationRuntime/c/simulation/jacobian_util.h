@@ -44,6 +44,9 @@ void freeJacobianCopy(JACOBIAN* jac);
 
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
+void initBidirectionalRecovery(JACOBIAN* fwd);
+void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);

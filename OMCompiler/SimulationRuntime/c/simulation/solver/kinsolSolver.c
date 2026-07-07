@@ -1028,7 +1028,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     kinsolData->nominalJac = 1;
 
     /* Calculate the scaled Jacobian */
-    if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
+    if (nlsData->sparsePattern && kinsolData->linearSolverMethod == NLS_LS_KLU) {
       if (kinsolData->solved != NLS_SOLVED) {
         kinsolData->nominalJac = 0;
         if (nlsData->analyticalJacobianColumn != NULL) {
@@ -1211,7 +1211,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(OMC_LOG_NLS_V, 0,
                        "KINSOL: Matrix need new factorization. Try again.\n");
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
-        nlsData->isPatternAvailable) {
+        nlsData->sparsePattern) {
       /* Complete symbolic and numeric factorizations */
       flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
                                  kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
@@ -1234,7 +1234,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
                        "KINSOL: The kinls setup routine (lsetup) encountered an error. "
                        "Retry with numerical Jacobian.\n");
     if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      if (nlsData->isPatternAvailable && nlsData->analyticalJacobianColumn != NULL) {
+      if (nlsData->sparsePattern && nlsData->analyticalJacobianColumn != NULL) {
         flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
         checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
         if (flag < 0) {

@@ -1041,7 +1041,7 @@ protected
 
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), "", "", "\n", "\n"));
+      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), List.Style.NEWLINE) + "\n");
       print(ClockedInfo.toString(info));
     end if;
   end partitioningClocked;

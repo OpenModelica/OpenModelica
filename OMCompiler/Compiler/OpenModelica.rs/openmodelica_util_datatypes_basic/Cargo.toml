@@ -1,0 +1,12 @@
+[package]
+name = "openmodelica_util_datatypes_basic"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace=true
+metamodelica.workspace=true
+const-str.workspace=true
+loop_unwrap.workspace=true
+arcstr.workspace=true
+match_deref.workspace=true

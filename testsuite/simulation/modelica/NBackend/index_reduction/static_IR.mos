@@ -48,10 +48,10 @@ simulate(static_IR_2); getErrorString();
 //
 // [stateselection] (4) Selected Dummy States
 // ********************************************
-// 	[DSTA] (1) Real z (StateSelect = never);
-// 	[DSTA] (1) Real $FUN_2;
-// 	[DSTA] (1) Real x (fixed = true, start = 1.0);
-// 	[DSTA] (1) Real $FUN_1;
+// [DSTA] (1) Real z (StateSelect = never)
+// [DSTA] (1) Real $FUN_2
+// [DSTA] (1) Real x (fixed = true, start = 1.0)
+// [DSTA] (1) Real $FUN_1
 //
 // record SimulationResult
 //     resultFile = "static_IR_1_res.mat",
@@ -77,10 +77,10 @@ simulate(static_IR_2); getErrorString();
 //
 // [stateselection] (4) Selected Dummy States
 // ********************************************
-// 	[DSTA] (1) Real z (StateSelect = prefer);
-// 	[DSTA] (1) Real y (StateSelect = prefer);
-// 	[DSTA] (1) Real $FUN_2;
-// 	[DSTA] (1) Real $FUN_1;
+// [DSTA] (1) Real z (StateSelect = prefer)
+// [DSTA] (1) Real y (StateSelect = prefer)
+// [DSTA] (1) Real $FUN_2
+// [DSTA] (1) Real $FUN_1
 //
 // record SimulationResult
 //     resultFile = "static_IR_2_res.mat",

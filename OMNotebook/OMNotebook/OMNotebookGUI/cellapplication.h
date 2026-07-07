@@ -56,11 +56,20 @@
 #include <vector>
 #include <memory>
 
+#if defined(__EMSCRIPTEN__)
+#include "omc_wasm_compat.h"
+#elif defined(OMC_RUST_ABI)
+#include "omc_rust_embedding.h"
+extern "C" {
+#include "omc_config.h"
+}
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 #include "omc_config.h"
 #include "gc.h"
 }
+#endif
 
 namespace IAEX
 {

@@ -140,8 +140,10 @@ MainWindow::MainWindow(QWidget *parent)
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
+#if QT_CONFIG(process)
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+#endif
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   /*! @note The above three lines registers the types for simulaiton threads. Do not remove them. */
   setObjectName("MainWindow");
@@ -191,7 +193,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Initializing"));
+#endif
   // Create an object of MessagesWidget.
   MessagesWidget::create();
   // Create MessagesDockWidget dock
@@ -207,7 +213,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (getExitApplicationStatus()) {
     return;
   }
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Reading Settings"));
+#endif
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
   // create an object of OMSProxy
@@ -215,7 +225,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Loading Widgets"));
+#endif
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
   // Create an object of QProgressBar
@@ -295,6 +309,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSearchDockWidget->setWidget(mpSearchWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
   mpSearchDockWidget->hide();
+#if !defined(__EMSCRIPTEN__)
   // create the GDB adapter instance
   GDBAdapter::create();
   // create stack frames widget
@@ -335,6 +350,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   addDockWidget(Qt::BottomDockWidgetArea, mpGDBLoggerDockWidget);
   // put the GDB logger dock widget and output dock widget as tabbed items.
   tabifyDockWidget(mpGDBLoggerDockWidget, mpTargetOutputDockWidget);
+#endif
   // create an object of DocumentationWidget
   mpDocumentationWidget = new DocumentationWidget(this);
   // Create DocumentationWidget dock
@@ -358,14 +374,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
   // create traceability graph view widget
   //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
+#if !defined(__EMSCRIPTEN__)
   mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
+#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
   //Create Actions, Toolbar and Menus
+#if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::stepMessage(tr("Creating widgets"));
+#endif
   setAcceptDrops(true);
   createActions();
   createToolbars();
@@ -385,7 +407,9 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpOMSensPlugin = 0;
   // create the Git commands instance
   //mpGitCommands = new GitCommands(this);
+#if !defined(__EMSCRIPTEN__)
   GitCommands::create();
+#endif
   // Create a centralwidget for the main window
   mpCentralStackedWidget = new QStackedWidget;
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
@@ -442,12 +466,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     restoreState(pSettings->value("application/windowState").toByteArray());
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     mRestoringState = false;
+#if !defined(__EMSCRIPTEN__)
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
     mpStackFramesWidget->getStackFramesTreeWidget()->header()->restoreState(pSettings->value("stackFramesTreeState").toByteArray());
     mpBreakpointsWidget->getBreakpointsTreeView()->header()->restoreState(pSettings->value("breakPointsTreeState").toByteArray());
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
+#endif
     if (restoreMessagesWidget) {
       if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
         showMessageBrowser();
@@ -799,6 +825,7 @@ void MainWindow::beforeClosingMainWindow()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
+#if !defined(__EMSCRIPTEN__)
   /* delete the TransformationsWidgets */
   const int size = mTransformationsWidgetHash.size();
   int index = 0;
@@ -832,6 +859,7 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("breakPointsTreeState", mpBreakpointsWidget->getBreakpointsTreeView()->header()->saveState());
   pSettings->setValue("localsTreeState", mpLocalsWidget->getLocalsTreeView()->header()->saveState());
   pSettings->endGroup();
+#endif
   /* save OMEdit MainWindow geometry state */
   pSettings->setValue("application/geometry", saveGeometry());
   pSettings->setValue("application/windowState", saveState());
@@ -868,9 +896,13 @@ void MainWindow::beforeClosingMainWindow()
   // delete the OptionsDialog object
   OptionsDialog::destroy();
   // delete the GDBAdapter object
+#if !defined(__EMSCRIPTEN__)
   GDBAdapter::destroy();
+#endif
   // delete the GitCommands object
+#if !defined(__EMSCRIPTEN__)
   GitCommands::destroy();
+#endif
   // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
   delete mpSearchWidget;
   // delete the DocumentationWidget object
@@ -1381,6 +1413,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 
   if (isTranslationSuccessful) {
+#if !defined(__EMSCRIPTEN__)
     // create a FMU compilation window  similar to simulation process
     FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
     MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
@@ -1389,6 +1422,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     } else {
       pFmuExportOutputWidget->compileModelCppRuntime();
     }
+#endif
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Translation of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
                                                                   "Translation Error", Helper::errorLevel));
@@ -1660,6 +1694,12 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(profiling);
+  Q_UNUSED(checkProfilingExists);
+  return nullptr;
+#else
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
     pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
@@ -1672,6 +1712,7 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
+#endif
 }
 
 /*!
@@ -2851,15 +2892,19 @@ void MainWindow::showOpenModelicaCommandPrompt()
 //! Imports the model from FMU
 void MainWindow::importModelFMU()
 {
+#if !defined(__EMSCRIPTEN__)
   ImportFMUDialog *pImportFMUDialog = new ImportFMUDialog(this);
   pImportFMUDialog->exec();
+#endif
 }
 
 //! Imports the model from FMU model description
 void MainWindow::importFMUModelDescription()
 {
+#if !defined(__EMSCRIPTEN__)
   ImportFMUModelDescriptionDialog *pImportFMUModelDescriptionDialog = new ImportFMUModelDescriptionDialog(this);
   pImportFMUModelDescriptionDialog->exec();
+#endif
 }
 
 //! Exports the current model to OMNotebook.
@@ -3173,6 +3218,7 @@ void MainWindow::openTerminal()
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
+#if QT_CONFIG(process)
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -3186,6 +3232,9 @@ void MainWindow::openTerminal()
                           .arg(terminalCommand, arguments, process.errorString());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
+#else
+  Q_UNUSED(arguments); // no local terminal on the web build
+#endif
 }
 
 /*!
@@ -3525,6 +3574,7 @@ void MainWindow::runDebugConfiguration()
   }
 
   if (pAction) {
+#if !defined(__EMSCRIPTEN__)
     DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
     connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
     DebuggerConfigurationPage* pDebuggerConfigurationPage = pDebuggerConfigurationsDialog->getDebuggerConfigurationPage(pAction->text());
@@ -3532,6 +3582,7 @@ void MainWindow::runDebugConfiguration()
       pDebuggerConfigurationsDialog->runConfiguration(pDebuggerConfigurationPage);
     }
     pDebuggerConfigurationsDialog->deleteLater();
+#endif
   }
 }
 
@@ -3763,9 +3814,11 @@ void MainWindow::runCRMLTestsuite()
  */
 void MainWindow::showDebugConfigurationsDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
   connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   pDebuggerConfigurationsDialog->exec();
+#endif
 }
 
 /*!
@@ -3775,8 +3828,10 @@ void MainWindow::showDebugConfigurationsDialog()
  */
 void MainWindow::showAttachToProcessDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   AttachToProcessDialog *pAttachToProcessDialog = new AttachToProcessDialog(this);
   pAttachToProcessDialog->exec();
+#endif
 }
 
 /*!
@@ -3786,10 +3841,12 @@ void MainWindow::showAttachToProcessDialog()
  */
 void MainWindow::createGitRepository()
 {
+#if !defined(__EMSCRIPTEN__)
   QString gitRepositoryPath = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (gitRepositoryPath.isEmpty())
     return;
   GitCommands::instance()->createGitRepository(gitRepositoryPath);
+#endif
 }
 
 /*!
@@ -3799,10 +3856,12 @@ void MainWindow::createGitRepository()
  */
 void MainWindow::logCurrentFile()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3812,10 +3871,12 @@ void MainWindow::logCurrentFile()
  */
 void MainWindow::stageCurrentFileForCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3825,10 +3886,12 @@ void MainWindow::stageCurrentFileForCommit()
  */
 void MainWindow::unstageCurrentFileFromCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
      GitCommands::instance()->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
+#endif
 }
 
 /*!
@@ -3838,8 +3901,10 @@ void MainWindow::unstageCurrentFileFromCommit()
  */
 void MainWindow::commitFiles()
 {
+#if !defined(__EMSCRIPTEN__)
   CommitChangesDialog *pCommitChangesDialog = new CommitChangesDialog(this);
   pCommitChangesDialog->exec();
+#endif
 }
 
 /*!
@@ -3849,8 +3914,10 @@ void MainWindow::commitFiles()
  */
 void MainWindow::revertCommit()
 {
+#if !defined(__EMSCRIPTEN__)
   RevertCommitsDialog *pRevertCommitsDialog = new RevertCommitsDialog(this);
   pRevertCommitsDialog->exec();
+#endif
 }
 
 /*!
@@ -3859,8 +3926,10 @@ void MainWindow::revertCommit()
  */
 void MainWindow::cleanWorkingDirectory()
 {
+#if !defined(__EMSCRIPTEN__)
   CleanDialog *pCleanDialog = new CleanDialog(this);
   pCleanDialog->exec();
+#endif
 //  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
 //  if (pModelWidget) {
 //     mpGitCommands->cleanWorkingDirectory();
@@ -4528,11 +4597,13 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
+#if !defined(__EMSCRIPTEN__)
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
+#endif
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCloseWindowAction);
   pViewWindowsMenu->addAction(mpCloseAllWindowsAction);
@@ -4722,11 +4793,13 @@ void MainWindow::switchToWelcomePerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup(ToolBars::welcomePerspective);
@@ -4770,11 +4843,13 @@ void MainWindow::switchToModelingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
 }
 
 /*!
@@ -4822,11 +4897,13 @@ void MainWindow::switchToPlottingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->hide();
   mpBreakpointsDockWidget->hide();
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#endif
 }
 
 /*!
@@ -4848,11 +4925,13 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryDockWidget);
   }
+#if !defined(__EMSCRIPTEN__)
   mpStackFramesDockWidget->show();
   mpBreakpointsDockWidget->show();
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
+#endif
 }
 
 /*!
@@ -5225,7 +5304,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
+     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
 #if defined(WITHOUT_OSG)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
@@ -5259,9 +5338,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
                                        .arg(url));
   pOMContributorsHeadingLabel->setToolTip("");
 
+#if !defined(__EMSCRIPTEN__)
   NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
   connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readOMContributors(QNetworkReply*)));
   pNetworkAccessManager->get(QNetworkRequest(QUrl("https://api.github.com/repos/OpenModelica/OpenModelica/contributors")));
+#endif
 
   mpOMContributorsLabel = new Label;
   mpOMContributorsLabel->setObjectName("OMContributorsLabel");
@@ -5345,9 +5426,11 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
  */
 void AboutOMEditDialog::showReportIssue()
 {
+#if !defined(__EMSCRIPTEN__)
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
+#endif
 }
 
 /*!

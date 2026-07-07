@@ -4779,7 +4779,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false)), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "")), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, _, _),
@@ -4854,7 +4854,7 @@ algorithm
 
         (allEquations, constantEqns, uniqueEqIndex, tempvars) := getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, tempvars);
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false)), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "")), uniqueEqIndex, tempvars);
 
     else
       algorithm
@@ -5120,7 +5120,7 @@ algorithm
         seedVars := List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
         seedVars := List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false);
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -5226,7 +5226,7 @@ algorithm
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false);
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -8438,12 +8438,12 @@ algorithm
 
     case SimCode.IF_GENERIC_CALL() algorithm
       str := "if generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     case SimCode.WHEN_GENERIC_CALL() algorithm
       str := "when generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     else "";
@@ -8466,14 +8466,14 @@ algorithm
     case SimCode.SIM_BRANCH() algorithm
       b := isSome(branch.condition);
       str := if b then "if " + ExpressionBasics.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, simBranchBodyString, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, simBranchBodyString, List.Style.NEWLINE_INDENT);
       str := if b then str + "end if;" else str;
     then str;
 
     case SimCode.SIM_BRANCH_STMT() algorithm
       b := isSome(branch.condition);
       str := if b then "if " + ExpressionBasics.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, DAEDump.ppStatementStr, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, DAEDump.ppStatementStr, List.Style.NEWLINE_INDENT);
       str := if b then str + "\nend if;" else str;
     then str;
 
@@ -9175,14 +9175,14 @@ algorithm
     case SimCode.SES_GENERIC_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
-        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, "", "{", ", ", "}", true, 10) + "\n";
+        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
     then s;
 
     case SimCode.SES_ENTWINED_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_ENTWINED_ASSIGN)\n";
-        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, "", "{", ", ", "}", true, 10) + "\n";
-        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, "", "\t", "\n", "");
+        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, List.Style.NEWLINE_TAB);
         s := s + "\n";
     then s;
 
@@ -9470,7 +9470,7 @@ algorithm
   print("\nequationsForZeroCrossings:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
   print("\ngeneric calls:\n" + UNDERLINE + "\n");
-  print(List.toString(simCode.generic_loop_calls, simGenericCallString, "", "", "\n", ""));
+  print(List.toString(simCode.generic_loop_calls, simGenericCallString, List.Style.NEWLINE));
   print("\njacobianEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
@@ -10441,32 +10441,13 @@ protected function getMinMaxValues "extract min/max values from BackendDAE.Varia
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
 algorithm
-  (outMinValue, outMaxValue) := matchcontinue inDAELowVar
-    local
-      Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Exp minValue, maxValue;
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-      // true = Expression.isConstValue(maxValue);
-    then (SOME(minValue), SOME(maxValue));
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (SOME(minValue), NONE()) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(minValue);
-    then (SOME(minValue), NONE());
-
-    case BackendDAE.VAR(varType=DAE.T_REAL(), values=dae_var_attr) algorithm
-      (NONE(), SOME(maxValue)) := DAEUtil.getMinMaxValues(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(maxValue);
-    then (NONE(), SOME(maxValue));
-
+  // Real, Integer and enumeration variables can all carry min/max (see #15947).
+  (outMinValue, outMaxValue) := match inDAELowVar.varType
+    case DAE.T_REAL()        then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_INTEGER()     then DAEUtil.getMinMaxValues(inDAELowVar.values);
+    case DAE.T_ENUMERATION() then DAEUtil.getMinMaxValues(inDAELowVar.values);
     else (NONE(), NONE());
-  end matchcontinue;
+  end match;
 end getMinMaxValues;
 
 protected function getStartValue "Extract initial value from BackendDAE.Var, if it has any"
@@ -12116,6 +12097,21 @@ public function getVarIndexListByMapping "author: marcusw
 algorithm
   (oVarIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
 end getVarIndexListByMapping;
+
+public function getVarIndexHeadByMapping "author: phannebohm
+  Return the head of variable indices stored for the given variable in the mapping-table, similar to getVarIndexListByMapping. This function is used by susan."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  input Boolean iColumnMajor;
+  input String iIndexForUndefinedReferences;
+  output String oVarIndex;
+protected
+  list<String> varIndexList;
+algorithm
+  // TODO make this more efficient by not generating the whole varIndexList
+  (varIndexList,_) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
+  oVarIndex := listHead(varIndexList);
+end getVarIndexHeadByMapping;
 
 public function getVarIndexByMapping "author: marcusw
   Return the variable index stored for the given variable in the mapping-table. This function is used by susan."
@@ -16090,10 +16086,13 @@ function getDirectoriesForDLLsFromLinkLibs
   output list<String> outLibs = {};
 algorithm
   for str in libsAndLinkDirs loop
+    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15714
+     * strip exactly the first 2 characters (e.g) -lexternalfuncl to externalfuncl and "-LC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
+    */
     if StringUtil.startsWith(str, "\"-L") then
-      outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
+      outLocations := listAppend({substring(str, 4, stringLength(str)-1)}, outLocations);
     elseif StringUtil.startsWith(str, "-l") then
-      outLibs := listAppend({System.trim(str, "-l")}, outLibs);
+      outLibs := listAppend({substring(str, 3, stringLength(str))}, outLibs);
     end if;
   end for;
   outLocations := listReverse(outLocations);
@@ -16199,9 +16198,10 @@ public function make2CMakeInclude
   input list<String> includes;
   output String cmakecode = "";
 algorithm
+  //strip exactly the first 3 characters (e.g) "-IC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
   for include in includes loop
     cmakecode := cmakecode + "\n                                               " +
-                 "\"" + System.trim(include, "\"-I") + "\"";
+                 "\"" + substring(include, 4, stringLength(include)-1) + "\"";
   end for;
 end make2CMakeInclude;
 

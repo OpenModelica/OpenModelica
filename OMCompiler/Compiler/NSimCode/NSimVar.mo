@@ -417,6 +417,18 @@ public
       oldTpl := (convert(var), b);
     end convertTpl;
 
+    function isOutputSimVar
+      "True if the SimVar is an FMI output (causality OUTPUT), used to collect the
+       output interface variables (the new backend has no top-level-output list)."
+      input SimVar v;
+      output Boolean b;
+    algorithm
+      b := match v.causality
+        case SOME(Causality.OUTPUT) then true;
+        else false;
+      end match;
+    end isOutputSimVar;
+
   protected
     function parseAttributes
       input BackendInfo backendInfo;
@@ -557,18 +569,6 @@ public
         // FIXME: variables that are fixed and are not CALCULATED should have isValueChangeable=true
       end match;
     end parseBinding;
-
-    function isOutputSimVar
-      "True if the SimVar is an FMI output (causality OUTPUT), used to collect the
-       output interface variables (the new backend has no top-level-output list)."
-      input SimVar v;
-      output Boolean b;
-    algorithm
-      b := match v.causality
-        case SOME(Causality.OUTPUT) then true;
-        else false;
-      end match;
-    end isOutputSimVar;
 
     function convertVarKind
       "Usually this function would belong to NFBackendExtension, but we want to

@@ -1,0 +1,18 @@
+[package]
+name = "daskr"
+version = "0.1.0"
+edition = "2024"
+description = "Rust port of the Cdaskr (DASKR/DASSL) DAE solver and its LINPACK/BLAS kernels"
+license = "BSD-3-Clause"
+
+[lib]
+# Pure-Rust, no I/O on the hot path: compiles to wasm32 with no extra toolchain.
+
+[features]
+# `cref` builds the reference C library (OMCompiler/3rdParty/Cdaskr) and enables
+# the bit-exact cross-validation tests in tests/cref.rs. Off by default so the
+# crate stays standalone / wasm-buildable.
+cref = []
+
+[build-dependencies]
+cc = { workspace = true }

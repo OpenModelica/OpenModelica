@@ -287,7 +287,7 @@ public
         // create equations for the introduced alias
 
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
-          + List.toString(sliced_dummies, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "Sliced Dummies:", "\n  ", "\n  ", "\n")});
+          + List.toStringCustom(sliced_dummies, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "Sliced Dummies:", "\n  ", "\n  ", "\n")});
         fail();
       end if;
 
@@ -297,7 +297,7 @@ public
       end if;
       if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(diffArguments.new_vars)) + ") State Derivatives Created by Differentiation"));
-        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, "", "\t", "\n\t", "") + "\n\n");
+        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(dummy_states)) + ") Selected Dummy States"));
         print(Slice.lstToString(dummy_states, BVariable.pointerToString) + "\n\n");
       end if;
@@ -436,16 +436,16 @@ public
         (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations, kind);
 
         if Flags.isSet(Flags.INITIALIZATION) then
-          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+          print(List.toStringCustom(start_eqns, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
         end if;
       else
         error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true);
+          + List.toString(failed_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n";
         if Flags.isSet(Flags.INITIALIZATION) then
           error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
-            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);
+            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), List.Style.NEWLINE_TAB) + "\n";
         else
           error_msg := error_msg + "\nUse -d=initialization for more debug output.";
         end if;

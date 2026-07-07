@@ -43,13 +43,9 @@
 #include <string>
 #include <iostream>
 
-#include <QOpenGLContext> // must be included before OSG headers
 #include <QColor>
 
-#include <osg/Vec3f>
-#include <osg/Matrix>
-#include <osg/Uniform>
-#include <osg/Transform>
+#include "AnimationMath.h"
 
 #include "rapidxml.hpp"
 
@@ -68,23 +64,23 @@ std::ostream& operator<<(std::ostream& os, const QColor color);
 struct rAndT
 {
   rAndT()
-      : _r(osg::Vec3f()),
-        _T(osg::Matrix3())
+      : _r(Vec3()),
+        _T(Mat3())
   {
   }
-  osg::Vec3f _r;
-  osg::Matrix3 _T;
+  Vec3 _r;
+  Mat3 _T;
 };
 
 struct Directions
 {
   Directions()
-      : _lDir(osg::Vec3f()),
-        _wDir(osg::Vec3f())
+      : _lDir(Vec3()),
+        _wDir(Vec3())
   {
   }
-  osg::Vec3f _lDir;
-  osg::Vec3f _wDir;
+  Vec3 _lDir;
+  Vec3 _wDir;
 };
 
 class VisualizerAttribute
@@ -236,15 +232,17 @@ public:
   virtual VisualizerType getVisualizerType() const final {return mVisualizerType;}
   virtual StateSetAction getStateSetAction() const final {return mStateSetAction;}
   virtual void setStateSetAction(const StateSetAction action) final {mStateSetAction = action;}
-  virtual osg::ref_ptr<osg::Transform> getTransformNode() const final {return mTransformNode;}
-  virtual void setTransformNode(const osg::ref_ptr<osg::Transform> transform) final {mTransformNode = transform;}
+  // Opaque handle to the renderer's scene node for this visualizer (an
+  // osg::Transform* in the OSG backend). Owned by the scene graph, not here.
+  virtual void* getTransformNode() const final {return mTransformNode;}
+  virtual void setTransformNode(void* transform) final {mTransformNode = transform;}
 private:
   VisualizerType mVisualizerType;
   StateSetAction mStateSetAction;
-  osg::ref_ptr<osg::Transform> mTransformNode;
+  void* mTransformNode;
 public:
   std::string _id;
-  osg::Matrix _mat;
+  Mat4 _mat;
   VisualizerAttribute _T[9];
   VisualizerAttribute _r[3];
   VisualizerAttribute _color[3];
