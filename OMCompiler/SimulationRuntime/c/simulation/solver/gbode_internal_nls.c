@@ -1274,7 +1274,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   double nrm_delta_prev = 0;
   double theta = 0;
 
-  /* invalidate eta if an event happened */
+  // invalidate eta if an event happened
   if (gbData->eventHappened) *nls->etas = DBL_MAX;
 
   // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
