@@ -2263,6 +2263,9 @@ algorithm
       then
         Values.TUPLE({Values.REAL(startTime), Values.REAL(stopTime), Values.REAL(tolerance), Values.INTEGER(numberOfIntervals), Values.REAL(interval)});
 
+    case ("getModelFigures",{Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then getModelFigures(classpath, SymbolTable.getAbsyn());
+
     case ("getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)})
       then getAnnotationNamedModifiers(classpath, annotationname, SymbolTable.getAbsyn());
 
@@ -8861,6 +8864,290 @@ algorithm
       then (c1, "");
   end match;
 end getComponentitemsName;
+
+function getModelFigures
+  "The figures sub-annotation of Documentation, as Scripting.Figure records."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Option<list<Values.Value>> ofigs;
+  list<Values.Value> figs;
+algorithm
+  cls := ProgramUtil.getPathedClassInProgram(classPath, program);
+  ofigs := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.QUALIFIED("Documentation", Absyn.IDENT("figures")), figuresFromMod);
+  figs := match ofigs case SOME(figs) then figs; else {}; end match;
+  result := ValuesMake.makeArray(figs);
+end getModelFigures;
+
+function figuresFromMod
+  input Option<Absyn.Modification> mod;
+  output list<Values.Value> figures;
+algorithm
+  figures := match mod
+    local
+      Absyn.Exp exp;
+    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp)))
+      then list(figureValue(e) for e in figureExpElements(exp));
+    else {};
+  end match;
+end figuresFromMod;
+
+function figureExpElements
+  "Array elements of a figures/plots/curves value, or the value itself if scalar."
+  input Absyn.Exp exp;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match exp
+    case Absyn.ARRAY() then exp.arrayExp;
+    else {exp};
+  end match;
+end figureExpElements;
+
+function figureValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<Values.Value> plots;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "group", "preferred", "plots", "caption"});
+  plots := match figureArgExp(args, "plots")
+    local Absyn.Exp e;
+    case SOME(e) then list(plotValue(p) for p in figureExpElements(e));
+    else {};
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Figure"),
+    {figureStringArg(args, "title", ""),
+     figureStringArg(args, "identifier", ""),
+     figureStringArg(args, "group", ""),
+     figureBoolArg(args, "preferred", false),
+     ValuesMake.makeArray(plots),
+     figureStringArg(args, "caption", "")},
+    {"title", "identifier", "group", "preferred", "plots", "caption"}, -1);
+end figureValue;
+
+function plotValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<Values.Value> curves;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "curves", "x", "y"});
+  curves := match figureArgExp(args, "curves")
+    local Absyn.Exp e;
+    case SOME(e) then list(curveValue(c) for c in figureExpElements(e));
+    else {};
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Plot"),
+    {figureStringArg(args, "title", ""),
+     figureStringArg(args, "identifier", ""),
+     ValuesMake.makeArray(curves),
+     axisValue(figureArgExp(args, "x")),
+     axisValue(figureArgExp(args, "y"))},
+    {"title", "identifier", "curves", "x", "y"}, -1);
+end plotValue;
+
+function curveValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := figureArgs(exp, {"x", "y", "legend", "zOrder"});
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Curve"),
+    {figureRefArg(args, "x", "time"),
+     figureRefArg(args, "y", ""),
+     figureStringArg(args, "legend", ""),
+     figureIntArg2(args, "zOrder", 0)},
+    {"x", "y", "legend", "zOrder"}, -1);
+end curveValue;
+
+function axisValue
+  input Option<Absyn.Exp> oexp;
+  output Values.Value value;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := match oexp case SOME(_) then figureArgs(Util.getOption(oexp), {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.Axis"),
+    {figureRealBoundArg(args, "min"),
+     figureRealBoundArg(args, "max"),
+     figureStringArg(args, "unit", ""),
+     figureStringArg(args, "label", ""),
+     axisScaleValue(figureArgExp(args, "scale"))},
+    {"min", "max", "unit", "label", "scale"}, -1);
+end axisValue;
+
+function axisScaleValue
+  input Option<Absyn.Exp> oexp;
+  output Values.Value value;
+protected
+  String scaleType = "Linear";
+  Integer base = 10;
+algorithm
+  _ := match oexp
+    local
+      Absyn.ComponentRef cr;
+      Absyn.FunctionArgs fargs;
+    case SOME(Absyn.CALL(function_ = cr, functionArgs = fargs))
+      algorithm
+        scaleType := AbsynUtil.crefIdent(cr);
+        base := figureIntArg(figureArgs(Absyn.CALL(cr, fargs, {}), {"base"}), "base", 10);
+      then ();
+    else ();
+  end match;
+  value := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.AxisScale"),
+    {Values.STRING(scaleType), Values.INTEGER(base)},
+    {"scaleType", "base"}, -1);
+end axisScaleValue;
+
+function figureArgs
+  "Maps a record-constructor call's arguments to (fieldName, exp) pairs;
+   positional args by declared field order, named args by name."
+  input Absyn.Exp exp;
+  input list<String> fieldNames;
+  output list<tuple<String, Absyn.Exp>> args = {};
+protected
+  list<Absyn.Exp> pos;
+  list<Absyn.NamedArg> named;
+  list<String> names = fieldNames;
+  String name;
+algorithm
+  () := match exp
+    case Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = pos, argNames = named))
+      algorithm
+        for e in pos loop
+          name :: names := names;
+          args := (name, e) :: args;
+        end for;
+        for na in named loop
+          args := (na.argName, na.argValue) :: args;
+        end for;
+      then ();
+    else ();
+  end match;
+end figureArgs;
+
+function figureArgExp
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Absyn.Exp> oexp = NONE();
+protected
+  String n;
+  Absyn.Exp e;
+algorithm
+  for a in args loop
+    (n, e) := a;
+    if n == name then
+      oexp := SOME(e);
+      return;
+    end if;
+  end for;
+end figureArgExp;
+
+function figureStringArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    case SOME(Absyn.STRING()) then Values.STRING(figureArgString(args, name, default));
+    else Values.STRING(default);
+  end match;
+end figureStringArg;
+
+function figureArgString
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output String value;
+algorithm
+  value := match figureArgExp(args, name)
+    local String s;
+    case SOME(Absyn.STRING(value = s)) then s;
+    else default;
+  end match;
+end figureArgString;
+
+function figureRefArg
+  "A Curve x/y result reference, serialized as its Modelica source text."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input String default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then Values.STRING(Dump.printExpStr(e));
+    else Values.STRING(default);
+  end match;
+end figureRefArg;
+
+function figureBoolArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Boolean default;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Boolean b;
+    case SOME(Absyn.BOOL(value = b)) then Values.BOOL(b);
+    else Values.BOOL(default);
+  end match;
+end figureBoolArg;
+
+function figureIntArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Integer default;
+  output Integer value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Integer i;
+    case SOME(Absyn.INTEGER(value = i)) then i;
+    else default;
+  end match;
+end figureIntArg;
+
+function figureRealBoundArg
+  "An axis bound: empty Real[:] when absent (auto), length 1 when given."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Values.Value value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then ValuesMake.makeArray({Values.REAL(figureExpReal(e))});
+    else ValuesMake.makeArray({});
+  end match;
+end figureRealBoundArg;
+
+function figureExpReal
+  input Absyn.Exp exp;
+  output Real value;
+algorithm
+  value := match exp
+    local Integer i; String s;
+    case Absyn.INTEGER(value = i) then intReal(i);
+    case Absyn.REAL(value = s) then stringReal(s);
+    case Absyn.UNARY(op = Absyn.UMINUS()) then -figureExpReal(exp.exp);
+    else 0.0;
+  end match;
+end figureExpReal;
+
+function figureIntArg2
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  input Integer default;
+  output Values.Value value;
+algorithm
+  value := Values.INTEGER(figureIntArg(args, name, default));
+end figureIntArg2;
 
 function getAnnotationNamedModifiers
   input Absyn.Path classPath;

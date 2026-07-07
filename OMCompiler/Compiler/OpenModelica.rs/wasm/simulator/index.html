@@ -32,6 +32,8 @@
   }
   button:hover:not(:disabled){ background:#1177bb; }
   button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
+  button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
+  button.ghost:hover:not(:disabled){ background:#2d2d30; }
 
   main { flex:1 1 auto; display:grid; grid-template-columns:minmax(320px,40%) 1fr; min-height:0; }
   .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow:hidden; }
@@ -67,23 +69,39 @@
   .ic-grid .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
   .ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
 
-  .plot-wrap { flex:1 1 auto; min-height:200px; position:relative; padding:8px; }
-  #plot { width:100%; height:100%; display:block; }
-  .plot-empty { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); text-align:center; padding:20px; }
-  #tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
+  /* charts area: one card per plot, scrollable */
+  .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
+  .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
+  .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
+  .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
+  .chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+  .chart-card.solo .plot-wrap { flex:1 1 auto; height:auto; min-height:200px; }
+  .plot-head { color:var(--fg); font-size:13px; margin:1px 2px 4px; }
+  .plot-wrap { position:relative; height:230px; }
+  .plot-wrap svg.plot { width:100%; height:100%; display:block; }
+  .plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
+  .tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
     background:#000c; border:1px solid var(--border); border-radius:5px; padding:6px 8px;
-    font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:60%; }
-  #tooltip .t { color:var(--muted); margin-bottom:2px; }
-  #tooltip .row { display:flex; align-items:center; gap:6px; }
-  #tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
-
-  .legend { flex:0 0 auto; max-height:26%; overflow-y:auto; border-top:1px solid var(--border);
-    background:var(--panel); padding:8px 12px; display:flex; flex-wrap:wrap; gap:7px 14px; }
+    font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:70%; }
+  .tooltip .t { color:var(--muted); margin-bottom:2px; }
+  .tooltip .row { display:flex; align-items:center; gap:6px; }
+  .tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; }
   .legend .item { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; user-select:none; }
   .legend .item.off { opacity:.4; }
   .legend .sw { width:13px; height:13px; border-radius:3px; flex:0 0 auto; }
   .legend .empty { color:var(--muted); }
   .legend .u { color:var(--muted); }
+  .caption { color:var(--muted); font-size:12.5px; white-space:pre-wrap; margin:6px 2px 0; }
+  /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
+  sup { font-size:.7em; line-height:0; }
+  .frac { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.02; }
+  .frac > .fn { border-bottom:1px solid currentColor; padding:0 .25em; }
+  .frac > .fd { padding:0 .25em; }
+  .xlabel { position:absolute; left:0; right:0; bottom:2px; text-align:center; color:var(--muted); font-size:11px; pointer-events:none; }
+  .ylabel { position:absolute; left:0; top:0; bottom:0; width:22px; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:11px; pointer-events:none; }
+  .ylabel > .rot { transform:rotate(-90deg); white-space:nowrap; display:inline-flex; align-items:center; gap:.35em; }
 
   @media (max-width:820px), (orientation:portrait) {
     body { overflow:auto; height:auto; min-height:100vh; }
@@ -92,8 +110,8 @@
     textarea { min-height:180px; }
     .grid2 { grid-template-columns:auto 1fr; }
     #icPanel { max-height:none; }
-    .plot-wrap { min-height:300px; height:56vw; }
-    .legend { max-height:none; }
+    .charts { overflow:visible; }
+    .chart-card.solo .plot-wrap { min-height:300px; height:56vw; }
     header { flex-wrap:wrap; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
   }
@@ -103,6 +121,7 @@
 <header>
   <span class="title">Simulator</span>
   <span class="status" id="status">Loading compiler…</span>
+  <button id="viewToggle" class="ghost" style="display:none"></button>
   <button id="run" disabled>Run</button>
 </header>
 
@@ -136,12 +155,7 @@
   </div>
 
   <div class="right">
-    <div class="plot-wrap">
-      <svg id="plot" preserveAspectRatio="none"></svg>
-      <div id="tooltip"></div>
-      <div class="plot-empty" id="plotEmpty">Run a model to see results.</div>
-    </div>
-    <div class="legend" id="legend"><span class="empty">No variables yet.</span></div>
+    <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Run a model to see results.</div></div>
   </div>
 </main>
 
@@ -154,7 +168,8 @@ import init, {
 
 // Guarded bouncing ball: the `flying` flag makes the ball rest at h=0 once its
 // bounces decay, rather than tunnelling through the floor (a known wasm-jit event
-// gap — see TODO). This is the formulation the OM examples use.
+// gap — see TODO). The figures annotation authors two plots (height, velocity)
+// that the view renders instead of auto-picking variables.
 const DEFAULT_MODEL = `model BouncingBall "A ball bouncing on the ground, losing energy until it rests"
   parameter Real e = 0.8 "Coefficient of restitution (0 = dead stop, 1 = no loss)";
   parameter Real g(unit = "m/s2") = 9.81 "Gravitational acceleration";
@@ -169,7 +184,12 @@ equation
     reinit(v, -e * pre(v));
     flying = -e * pre(v) > 0.05;
   end when;
-  annotation(experiment(StopTime = 3, Interval = 0.002));
+  annotation(experiment(StopTime = 3, Interval = 0.002),
+    Documentation(figures = {
+      Figure(title = "Bouncing ball", preferred = true, plots = {
+        Plot(title = "Height", curves = {Curve(y = h, legend = "height")}),
+        Plot(title = "Velocity", curves = {Curve(y = v, legend = "velocity")})},
+        caption = "Height and velocity of a ball that retains %{e} of its speed at each bounce.")}));
 end BouncingBall;
 `;
 
@@ -178,8 +198,8 @@ const COLORS = ['#4ec9b0','#569cd6','#ce9178','#dcdcaa','#c586c0','#9cdcfe',
 
 const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), srcEl = el('src');
-const legendEl = el('legend'), plotEl = el('plot'), plotEmpty = el('plotEmpty'), tooltip = el('tooltip');
-const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol');
+const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
+const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 
 srcEl.value = DEFAULT_MODEL;
 let tolValue = 1e-6;
@@ -218,12 +238,14 @@ function loadedClassName() {
 function esc(s) { return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t'); }
 
 // --- state ------------------------------------------------------------------
-let seriesMeta = [];          // plotted signals: {name, comment, unit, index, color}
-let hidden = new Set();       // series names the user toggled off (persists across runs)
 let icValues = new Map();     // param name -> input value (string)
 let builtModel = null, lastText = null;
 let running = false, pendingKind = null;
-let plotState = null;         // {time, cols, geom} for the hover crosshair
+let modelFigures = null;      // parsed getModelFigures() for the current model, or null
+let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
+const hidden = new Set();     // "chartKey|label" of series toggled off (persists across runs)
+let colMap = new Map();       // result-variable name -> { values:Float64Array, unit }
+let charts = [];              // live chart states for hover
 
 function overrideFlag() {
   const parts = [];
@@ -254,12 +276,14 @@ async function run(kind) {                       // 'full' | 'resim'
         `simulate(${name}, stopTime=${num(el('stop').value, 1)}, numberOfIntervals=${intervals},`
         + ` method="${method}", tolerance=${tolValue}, simflags="${esc(ov)}")`);
       builtModel = name; lastText = text;
+      modelFigures = getFiguresFor(name);       // annotation is static → fetch once per build
     }
     const info = omc_sim_info();
     if (!info || !info.rows) return fail(omc_eval('getErrorString()').trim() || 'Simulation produced no result.');
     if (kind !== 'resim') buildInitialConditions();
-    buildSeries(); draw();
-    setStatus(`${info.model} — ${info.rows} points, t ∈ [${info.start}, ${info.stop}]`);
+    renderCharts();
+    const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
+    setStatus(`${info.model} — ${info.rows} points, t ∈ [${info.start}, ${info.stop}]${figNote}`);
   } catch (e) { fail('' + e); }
   finally { running = false; runBtn.disabled = false;
     if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); } }
@@ -270,11 +294,25 @@ function seedSettingsFromModel(name) {
   if (m && m.length >= 4) { el('stop').value = +m[1]; tolValue = +m[2]; renderTol(); el('intervals').value = Math.round(+m[3]); }
 }
 
+// getModelFigures() as JSON (via the interactiveDumpFormat config flag) so we can
+// JSON.parse it instead of scraping the textual value dump. The model is already
+// loaded, so no download loop is needed. Returns the figures array, or null.
+function getFiguresFor(model) {
+  try {
+    omc_eval('setCommandLineOptions("--interactiveDumpFormat=json")');
+    const raw = omc_eval(`getModelFigures(${model})`);
+    omc_eval('setCommandLineOptions("--interactiveDumpFormat=default")');
+    const figs = JSON.parse(raw);
+    return Array.isArray(figs) && figs.length ? figs : null;
+  } catch (_) {
+    omc_eval('setCommandLineOptions("--interactiveDumpFormat=default")');
+    return null;
+  }
+}
+
 function fail(msg) {
-  setStatus(msg, 'err'); seriesMeta = []; plotState = null;
-  legendEl.innerHTML = '<span class="empty">—</span>';
-  plotEl.replaceChildren(); tooltip.style.display = 'none';
-  plotEmpty.style.display = 'grid'; plotEmpty.textContent = 'Simulation failed — see the status bar.';
+  setStatus(msg, 'err'); charts = []; modelFigures = null;
+  chartsEl.replaceChildren(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
 }
 
 // --- editable initial conditions -------------------------------------------
@@ -288,36 +326,99 @@ function buildInitialConditions() {
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name; nm.title = p.comment || p.name;
     const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
     inp.addEventListener('change', () => { icValues.set(p.name, inp.value); run('resim'); });
-    const unit = document.createElement('div'); unit.className = 'unit'; unit.textContent = p.unit || '';
+    const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
     icGrid.append(nm, inp, unit);
   }
 }
 
-// --- plotting ---------------------------------------------------------------
-function buildSeries() {
-  const meta = omc_sim_series() || [];
-  seriesMeta = []; let c = 0;
-  meta.forEach((m, i) => {
-    if (m.constant || m.alias) return;           // hide parameters/constants and aliased duplicates
-    seriesMeta.push({ name: m.name, comment: m.comment, unit: m.unit || '', index: i, color: COLORS[c % COLORS.length] });
-    c++;
+// --- result column access ---------------------------------------------------
+function buildColMap() {
+  colMap = new Map();
+  const series = omc_sim_series() || [];
+  series.forEach((m, i) => { const c = omc_sim_column(i); if (c) colMap.set(m.name, { values: c, unit: m.unit || '' }); });
+  const t = omc_sim_time(); if (t) colMap.set('time', { values: t, unit: 's' });
+}
+function finalValue(name) { const c = colMap.get(name); if (!c) return null; const a = c.values; return a.length ? a[a.length - 1] : null; }
+// Expand the spec's variable-reference markup in titles/legends/captions using
+// final simulated values: %{x}, the MSL 4.1 %(variable:x); drop %(plot:id).
+function expandText(s) {
+  if (!s) return s || '';
+  const rep = (n) => { const v = finalValue(n.trim()); return v == null ? n : String(+v.toPrecision(5)); };
+  return s.replace(/%\{([^}]+)\}/g, (_, n) => rep(n))
+          .replace(/%\(variable:([^)]+)\)/g, (_, n) => rep(n))
+          .replace(/%\(plot:[^)]*\)/g, '');
+}
+// Align an x column and a y column to equal length (a constant is length 1).
+function alignXY(xcol, ycol) {
+  let xs = xcol.values, ys = ycol.values;
+  const n = Math.max(xs.length, ys.length);
+  const grow = (a) => a.length === 1 ? new Float64Array(n).fill(a[0]) : a;
+  xs = grow(xs); ys = grow(ys);
+  const L = Math.min(xs.length, ys.length);
+  return { xs: xs.subarray(0, L), ys: ys.subarray(0, L) };
+}
+
+// --- chart rendering --------------------------------------------------------
+function renderCharts() {
+  chartsEl.replaceChildren(); charts = [];
+  buildColMap();
+  const haveFigs = !!(modelFigures && modelFigures.length);
+  toggleBtn.style.display = haveFigs ? '' : 'none';
+  const useFigs = haveFigs && viewMode !== 'all';
+  toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
+  if (useFigs) renderFigures(); else renderAllVariables();
+  if (!charts.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
+    chartsEmpty.textContent = 'No variables to plot.'; }
+}
+
+function renderAllVariables() {
+  const series = omc_sim_series() || [];
+  const time = colMap.get('time');
+  if (!time) return;
+  const curves = [];
+  series.forEach((m, i) => {
+    if (m.constant || m.alias) return;
+    const yc = colMap.get(m.name); if (!yc) return;
+    const { xs, ys } = alignXY(time, yc);
+    curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
   });
-  renderLegend();
+  makeChart({ title: '', curves, xText: 'time', xUnit: 's', solo: true }, 'all');
 }
-function renderLegend() {
-  legendEl.replaceChildren();
-  if (!seriesMeta.length) { legendEl.innerHTML = '<span class="empty">No non-constant variables.</span>'; return; }
-  for (const s of seriesMeta) {
-    const item = document.createElement('div');
-    item.className = 'item' + (hidden.has(s.name) ? ' off' : ''); item.title = s.comment || s.name;
-    item.innerHTML = '<span class="sw" style="background:' + s.color + '"></span>';
-    item.append(s.name + ' ');
-    if (s.unit) { const u = document.createElement('span'); u.className = 'u'; u.textContent = '[' + s.unit + ']'; item.append(u); }
-    item.onclick = () => { if (hidden.has(s.name)) hidden.delete(s.name); else hidden.add(s.name);
-      item.classList.toggle('off', hidden.has(s.name)); draw(); };
-    legendEl.appendChild(item);
-  }
+
+function renderFigures() {
+  modelFigures.forEach((fig, fi) => {
+    const ftitle = expandText(fig.title);
+    if (ftitle) { const h = document.createElement('div'); h.className = 'fig-head'; h.textContent = ftitle; chartsEl.appendChild(h); }
+    (fig.plots || []).forEach((plot, pi) => {
+      const curves = [];
+      (plot.curves || []).forEach((cv) => {
+        const yc = colMap.get(cv.y); if (!yc) return;
+        const xname = cv.x && cv.x !== '' ? cv.x : 'time';
+        const xc = colMap.get(xname) || colMap.get('time'); if (!xc) return;
+        const { xs, ys } = alignXY(xc, yc);
+        curves.push({ label: expandText(cv.legend) || cv.y, unit: yc.unit || '',
+          color: COLORS[curves.length % COLORS.length], xs, ys, xName: xname });
+      });
+      const xAxis = plot.x || {}, yAxis = plot.y || {};
+      const xIsTime = curves.every((c) => c.xName === 'time' || !c.xName);
+      const spec = {
+        title: expandText(plot.title),
+        curves,
+        xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
+        xUnit: xAxis.unit || (xIsTime ? 's' : ''),
+        yText: yAxis.label || '',
+        yUnit: yAxis.unit || '',
+        yMin: bound(yAxis.min), yMax: bound(yAxis.max),
+        yLog: (yAxis.scale && yAxis.scale.scaleType === 'Log'),
+        note: (plot.curves || []).length && !curves.length ? 'Referenced variables are not in the result.' : '',
+      };
+      makeChart(spec, 'f' + fi + 'p' + pi);
+    });
+    const cap = expandText(fig.caption);
+    if (cap) { const c = document.createElement('div'); c.className = 'caption'; c.textContent = cap; chartsEl.appendChild(c); }
+  });
 }
+function bound(arr) { return Array.isArray(arr) && arr.length ? arr[0] : null; }
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 function svg(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
@@ -326,93 +427,161 @@ function niceStep(range, target) { const raw = range / target, mag = Math.pow(10
 function fmt(v) { if (v === 0) return '0'; const a = Math.abs(v);
   return (a >= 1e4 || a < 1e-3) ? v.toExponential(1) : (+v.toPrecision(4)).toString(); }
 
-function draw() {
-  plotEl.replaceChildren(); tooltip.style.display = 'none'; plotState = null;
-  const active = seriesMeta.filter((s) => !hidden.has(s.name));
-  if (!active.length) { plotEmpty.style.display = 'grid'; plotEmpty.textContent = seriesMeta.length ? 'No variables selected.' : 'No variables to plot.'; return; }
-  plotEmpty.style.display = 'none';
-  const time = omc_sim_time();
-  if (!time || time.length < 2) return;
-  const cols = active.map((s) => ({ s, y: omc_sim_column(s.index) })).filter((c) => c.y);
+// --- Modelica unit rendering ------------------------------------------------
+function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+// Parse a Modelica unit ("m/s2", "kg.m/s2", "W/(m.K)", "s-1") into numerator and
+// denominator factors, each with a positive integer exponent. '.' multiplies,
+// '/' starts the denominator, a trailing (signed) integer is the exponent.
+function parseUnit(u) {
+  if (!u) return null;
+  const num = [], den = []; let denom = false;
+  for (const tok of u.split(/([./()])/)) {
+    if (tok === '/') { denom = true; continue; }
+    if (tok === '' || tok === '.' || tok === '(' || tok === ')') continue;
+    const m = tok.match(/^(.*?)([+-]?\d+)$/);
+    let sym = tok, exp = 1;
+    if (m && m[1]) { sym = m[1]; exp = parseInt(m[2], 10); }
+    if (sym === '1') continue;
+    const e = exp * (denom ? -1 : 1);
+    (e < 0 ? den : num).push({ s: sym, e: Math.abs(e) });
+  }
+  return (num.length || den.length) ? { num, den } : null;
+}
+function factorsHTML(list) { return list.map((f) => escapeHtml(f.s) + (f.e !== 1 ? '<sup>' + f.e + '</sup>' : '')).join('·'); }
+// A unit as HTML: superscript exponents, and a stacked fraction when it divides.
+function unitHTML(u) {
+  const p = parseUnit(u); if (!p) return '';
+  if (!p.den.length) return factorsHTML(p.num);
+  return '<span class="frac"><span class="fn">' + (p.num.length ? factorsHTML(p.num) : '1') + '</span>'
+    + '<span class="fd">' + factorsHTML(p.den) + '</span></span>';
+}
+function labelHTML(text, unit) {
+  const u = unit ? unitHTML(unit) : '', t = text ? escapeHtml(text) : '';
+  return t && u ? t + ' ' + u : (t || u);
+}
 
-  const W = plotEl.clientWidth || 800, H = plotEl.clientHeight || 400;
-  plotEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+function makeChart(spec, key) {
+  const card = document.createElement('div'); card.className = 'chart-card' + (spec.solo ? ' solo' : '');
+  if (spec.title) { const h = document.createElement('div'); h.className = 'plot-head'; h.textContent = spec.title; card.appendChild(h); }
+  const wrap = document.createElement('div'); wrap.className = 'plot-wrap';
+  const s = svg('svg', { class: 'plot', preserveAspectRatio: 'none' });
+  const tip = document.createElement('div'); tip.className = 'tooltip';
+  const note = document.createElement('div'); note.className = 'plot-note'; note.style.display = 'none';
+  const xlab = document.createElement('div'); xlab.className = 'xlabel';
+  const ylab = document.createElement('div'); ylab.className = 'ylabel';
+  wrap.append(s, tip, note, xlab, ylab); card.appendChild(wrap);
+  const legend = document.createElement('div'); legend.className = 'legend'; card.appendChild(legend);
+  chartsEl.appendChild(card);
+
+  const chart = { spec, key, svgEl: s, tip, wrap, note, xlabel: xlab, ylabel: ylab, state: null };
+  charts.push(chart);
+
+  legend.replaceChildren();
+  if (!spec.curves.length) { legend.innerHTML = '<span class="empty">—</span>'; }
+  for (const c of spec.curves) {
+    const item = document.createElement('div');
+    const k = key + '|' + c.label;
+    item.className = 'item' + (hidden.has(k) ? ' off' : ''); item.title = c.label;
+    item.innerHTML = '<span class="sw" style="background:' + c.color + '"></span>';
+    item.append(c.label + ' ');
+    if (c.unit) { const u = document.createElement('span'); u.className = 'u'; u.innerHTML = unitHTML(c.unit); item.append(u); }
+    item.onclick = () => { if (hidden.has(k)) hidden.delete(k); else hidden.add(k);
+      item.classList.toggle('off', hidden.has(k)); drawChart(chart); };
+    legend.appendChild(item);
+  }
+  drawChart(chart);
+}
+
+function drawChart(chart) {
+  const { spec, key, svgEl, tip, note } = chart;
+  svgEl.replaceChildren(); tip.style.display = 'none';
+  const active = spec.curves.filter((c) => !hidden.has(key + '|' + c.label));
+  if (!active.length) { note.style.display = 'grid'; note.textContent = spec.note || (spec.curves.length ? 'No variables selected.' : 'No variables to plot.');
+    chart.xlabel.innerHTML = ''; chart.ylabel.innerHTML = ''; chart.state = null; return; }
+  note.style.display = 'none';
+
+  const W = svgEl.clientWidth || 800, H = svgEl.clientHeight || 360;
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const m = { l: 64, r: 14, t: 12, b: 30 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
-  const xMin = time[0], xMax = time[time.length - 1];
-  let yMin = Infinity, yMax = -Infinity;
-  for (const { y } of cols) for (const v of y) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
-  if (!isFinite(yMin)) { yMin = 0; yMax = 1; }
-  if (yMin === yMax) { yMin -= 1; yMax += 1; }
-  const pad = (yMax - yMin) * 0.05; yMin -= pad; yMax += pad;
+  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+  for (const c of active) { for (const v of c.xs) { if (v < xMin) xMin = v; if (v > xMax) xMax = v; }
+    for (const v of c.ys) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }
+  if (!isFinite(xMin)) { xMin = 0; xMax = 1; } if (xMin === xMax) xMax = xMin + 1;
+  if (spec.yMin != null) yMin = spec.yMin; if (spec.yMax != null) yMax = spec.yMax;
+  if (!isFinite(yMin)) { yMin = 0; yMax = 1; } if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const yLog = spec.yLog && yMin > 0 && yMax > 0;
+  if (!yLog) { const pad = (yMax - yMin) * 0.05; yMin -= pad; yMax += pad; }
+  const tY = yLog ? Math.log10 : (y) => y;
+  const yLo = tY(yMin), yHi = tY(yMax);
   const px = (x) => m.l + (x - xMin) / (xMax - xMin) * iw;
-  const py = (y) => m.t + (1 - (y - yMin) / (yMax - yMin)) * ih;
+  const py = (y) => m.t + (1 - (tY(y) - yLo) / (yHi - yLo)) * ih;
 
-  const yStep = niceStep(yMax - yMin, 5);
   const grid = svg('g', {});
-  for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) {
-    const y = py(v);
-    grid.appendChild(svg('line', { x1: m.l, y1: y, x2: W - m.r, y2: y, stroke: '#333', 'stroke-width': 1 }));
-    const t = svg('text', { x: m.l - 6, y: y + 4, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': 'end' }); t.textContent = fmt(v); grid.appendChild(t);
+  const gridline = (x1, y1, x2, y2, stroke) => grid.appendChild(svg('line', { x1, y1, x2, y2, stroke, 'stroke-width': 1 }));
+  const label = (x, y, anchor, txt) => { const t = svg('text', { x, y, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': anchor }); t.textContent = txt; grid.appendChild(t); };
+  if (yLog) {
+    for (let p = Math.floor(Math.log10(yMin)); p <= Math.ceil(Math.log10(yMax)); p++) {
+      const v = Math.pow(10, p); if (v < yMin || v > yMax) continue; const y = py(v);
+      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v));
+    }
+  } else {
+    const yStep = niceStep(yMax - yMin, 5);
+    for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) { const y = py(v);
+      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v)); }
   }
   const xStep = niceStep(xMax - xMin, 6);
-  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) {
-    const x = px(v);
-    grid.appendChild(svg('line', { x1: x, y1: m.t, x2: x, y2: H - m.b, stroke: '#2a2a2a', 'stroke-width': 1 }));
-    const t = svg('text', { x, y: H - m.b + 16, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': 'middle' }); t.textContent = fmt(v); grid.appendChild(t);
-  }
-  plotEl.appendChild(grid);
-  plotEl.appendChild(svg('line', { x1: m.l, y1: m.t, x2: m.l, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-  plotEl.appendChild(svg('line', { x1: m.l, y1: H - m.b, x2: W - m.r, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-  for (const { s, y } of cols) {
+  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) { const x = px(v);
+    gridline(x, m.t, x, H - m.b, '#2a2a2a'); label(x, H - m.b + 16, 'middle', fmt(v)); }
+  svgEl.appendChild(grid);
+  svgEl.appendChild(svg('line', { x1: m.l, y1: m.t, x2: m.l, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
+  svgEl.appendChild(svg('line', { x1: m.l, y1: H - m.b, x2: W - m.r, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
+
+  for (const c of active) {
     let d = '';
-    for (let i = 0; i < time.length && i < y.length; i++) d += (i ? 'L' : 'M') + px(time[i]).toFixed(1) + ' ' + py(y[i]).toFixed(1);
-    plotEl.appendChild(svg('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 1.6 }));
+    for (let i = 0; i < c.xs.length && i < c.ys.length; i++) d += (i ? 'L' : 'M') + px(c.xs[i]).toFixed(1) + ' ' + py(c.ys[i]).toFixed(1);
+    svgEl.appendChild(svg('path', { d, fill: 'none', stroke: c.color, 'stroke-width': 1.6 }));
   }
-  // axis labels: x = time [s]; y = unit if every active series shares one
-  plotEl.appendChild(Object.assign(svg('text', { x: m.l + iw / 2, y: H - 2, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': 'middle' }), { textContent: 'time [s]' }));
-  const units = [...new Set(active.map((s) => s.unit).filter(Boolean))];
-  if (units.length === 1) {
-    const yl = svg('text', { x: 14, y: m.t + ih / 2, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': 'middle', transform: `rotate(-90 14 ${m.t + ih / 2})` });
-    yl.textContent = '[' + units[0] + ']'; plotEl.appendChild(yl);
-  }
-  // crosshair layer
+  // Axis titles are HTML overlays (not SVG text) so units render as stacked fractions.
+  let yUnit = spec.yUnit;
+  if (!yUnit) { const us = [...new Set(active.map((c) => c.unit).filter(Boolean))]; if (us.length === 1) yUnit = us[0]; }
+  chart.xlabel.innerHTML = labelHTML(spec.xText || '', spec.xUnit || '');
+  const yl = labelHTML(spec.yText || '', yUnit || '');
+  chart.ylabel.innerHTML = yl ? '<span class="rot">' + yl + '</span>' : '';
+
   const cursor = svg('g', { style: 'display:none' });
   const vline = svg('line', { y1: m.t, y2: H - m.b, stroke: '#888', 'stroke-width': 1, 'stroke-dasharray': '3 3' });
   cursor.appendChild(vline);
-  const dots = cols.map(({ s }) => svg('circle', { r: 3.5, fill: s.color, stroke: '#1e1e1e', 'stroke-width': 1 }));
+  const dots = active.map((c) => svg('circle', { r: 3.5, fill: c.color, stroke: '#1e1e1e', 'stroke-width': 1 }));
   dots.forEach((d) => cursor.appendChild(d));
-  plotEl.appendChild(cursor);
-  plotState = { time, cols, px, py, geom: { m, W, H, iw }, cursor, vline, dots };
+  svgEl.appendChild(cursor);
+  chart.state = { active, px, py, geom: { m, W, H }, cursor, vline, dots };
 }
 
-// hover → nearest sample; crosshair + value readout ("select a point")
-function onHover(ev) {
-  if (!plotState) return;
-  const { time, cols, px, py, geom, cursor, vline, dots } = plotState;
-  const rect = plotEl.getBoundingClientRect();
+function onHover(ev, chart) {
+  const st = chart.state; if (!st) return;
+  const { active, px, py, geom, cursor, vline, dots } = st;
+  const rect = chart.svgEl.getBoundingClientRect();
   const vbX = (ev.clientX - rect.left) / rect.width * geom.W;
-  if (vbX < geom.m.l || vbX > geom.W - geom.m.r) { cursor.setAttribute('style', 'display:none'); tooltip.style.display = 'none'; return; }
-  // nearest time index by pixel
-  let lo = 0, hi = time.length - 1;
-  const targetX = vbX;
-  for (let i = 0; i < time.length; i++) { if (px(time[i]) >= targetX) { hi = i; lo = Math.max(0, i - 1); break; } }
-  const i = (Math.abs(px(time[lo]) - targetX) <= Math.abs(px(time[hi]) - targetX)) ? lo : hi;
-  const x = px(time[i]);
-  cursor.setAttribute('style', ''); vline.setAttribute('x1', x); vline.setAttribute('x2', x);
-  cols.forEach((c, k) => { dots[k].setAttribute('cx', x); dots[k].setAttribute('cy', py(c.y[i])); });
-  // tooltip
-  let html = '<div class="t">t = ' + (+time[i].toPrecision(6)) + ' s</div>';
-  for (const c of cols) html += '<div class="row"><span class="sw" style="background:' + c.s.color + '"></span>'
-    + c.s.name + ' = ' + (+c.y[i].toPrecision(6)) + (c.s.unit ? ' ' + c.s.unit : '') + '</div>';
-  tooltip.innerHTML = html; tooltip.style.display = 'block';
-  const wrap = plotEl.parentElement.getBoundingClientRect();
+  if (vbX < geom.m.l || vbX > geom.W - geom.m.r) { cursor.setAttribute('style', 'display:none'); chart.tip.style.display = 'none'; return; }
+  const idxNearest = (xs) => { let best = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } } return best; };
+  const i0 = idxNearest(active[0].xs);
+  cursor.setAttribute('style', ''); vline.setAttribute('x1', px(active[0].xs[i0])); vline.setAttribute('x2', px(active[0].xs[i0]));
+  let html = '';
+  active.forEach((c, k) => { const i = c.xs === active[0].xs ? i0 : idxNearest(c.xs);
+    dots[k].setAttribute('cx', px(c.xs[i])); dots[k].setAttribute('cy', py(c.ys[i]));
+    html += '<div class="row"><span class="sw" style="background:' + c.color + '"></span>'
+      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>'; });
+  const xLbl = (chart.spec.xLabel || 'x').replace(/\s*\[.*\]$/, '');
+  chart.tip.innerHTML = '<div class="t">' + xLbl + ' = ' + (+active[0].xs[i0].toPrecision(6)) + '</div>' + html;
+  chart.tip.style.display = 'block';
+  const wrap = chart.wrap.getBoundingClientRect();
   let tx = ev.clientX - wrap.left + 14, ty = ev.clientY - wrap.top + 12;
-  if (tx + tooltip.offsetWidth > wrap.width) tx = ev.clientX - wrap.left - tooltip.offsetWidth - 14;
-  if (ty + tooltip.offsetHeight > wrap.height) ty = wrap.height - tooltip.offsetHeight - 4;
-  tooltip.style.left = tx + 'px'; tooltip.style.top = ty + 'px';
+  if (tx + chart.tip.offsetWidth > wrap.width) tx = ev.clientX - wrap.left - chart.tip.offsetWidth - 14;
+  if (ty + chart.tip.offsetHeight > wrap.height) ty = wrap.height - chart.tip.offsetHeight - 4;
+  chart.tip.style.left = tx + 'px'; chart.tip.style.top = ty + 'px';
 }
-plotEl.addEventListener('mousemove', onHover);
-plotEl.addEventListener('mouseleave', () => { if (plotState) { plotState.cursor.setAttribute('style', 'display:none'); tooltip.style.display = 'none'; } });
+chartsEl.addEventListener('mousemove', (ev) => { const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target)); if (c) onHover(ev, c); });
+chartsEl.addEventListener('mouseleave', () => { for (const c of charts) { if (c.state) c.state.cursor.setAttribute('style', 'display:none'); c.tip.style.display = 'none'; } }, true);
 
 // --- wiring -----------------------------------------------------------------
 let debounce;
@@ -424,7 +593,9 @@ el('tolDn').addEventListener('click', () => stepTol(0.1));
 tolEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); stepTol(10); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepTol(0.1); } });
 tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (isFinite(v) && v > 0) { tolValue = cleanTol(v); } renderTol(); run('full'); });
 runBtn.addEventListener('click', () => run('full'));
-window.addEventListener('resize', () => { if (seriesMeta.length) draw(); });
+toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
+  const info = omc_sim_info(); if (info) setStatus(`${info.model} — ${info.rows} points, t ∈ [${info.start}, ${info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
+window.addEventListener('resize', () => { for (const c of charts) drawChart(c); });
 
 (async () => {
   try {

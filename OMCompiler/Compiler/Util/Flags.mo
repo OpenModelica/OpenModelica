@@ -1411,6 +1411,14 @@ constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
 constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(164, "fmiExtraAnnotations",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Export annotations matching the given regex to extra/org.openmodelica/modelAnnotations.json.");
+constant Integer IDUMP_DEFAULT = 0;
+constant Integer IDUMP_JSON = 1;
+constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(165, "interactiveDumpFormat",
+  NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}),
+  SOME(STRING_OPTION({"default", "json"})),
+  "Selects the format interactive API calls use to print result values.\n"+
+  "default : The OpenModelica textual value format.\n"+
+  "json    : JSON, for programmatic consumers such as the web clients.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
