@@ -18,7 +18,7 @@ dependencies needed to compile OpenModelica.
 - [build-deps-debian-13][2]: Debian 13 (Trixie).
 - [build-deps-ubuntu-22][3]: Ubuntu 22.04 (Jammy).
 - [build-deps-ubuntu-24][4]: Ubuntu 24.04 (Noble).
-- [build-deps-ubuntu-26][5]: Ubuntu 26.04.
+- [build-deps-ubuntu-26][5]: Ubuntu 26.04 (Resolute).
 
 There are two flavors:
 
