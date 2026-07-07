@@ -8,31 +8,30 @@ in our continuous integration.
 
 ## Available Containers
 
-We added three images that are used by the continuous integration used to
-compile or test the pull requests on github.com/OpenModelica/OpenModelica.
+We provide `build-deps` dev containers for the Linux distributions used by the
+continuous integration that compiles and tests the pull requests on
+github.com/OpenModelica/OpenModelica. Each one is based on the matching
+`docker.openmodelica.org/build-deps:*-debug` image and contains all
+dependencies needed to compile OpenModelica.
 
-- [build-deps](./build-deps/devcontainer.json): Default Ubuntu based build
-  container to compile OpenModelica.
-- [build-deps-debian-armhf](./build-deps-debian-armhf/devcontainer.json): Debian
-  based container to compile for `aarch64-linux-gnu` and cross-compile for
-  `arm-linux-gnueabihf`.
+- [build-deps-debian-12][1]: Debian 12 (Bookworm).
+- [build-deps-debian-13][2]: Debian 13 (Trixie).
+- [build-deps-ubuntu-22][3]: Ubuntu 22.04 (Jammy).
+- [build-deps-ubuntu-24][4]: Ubuntu 24.04 (Noble).
+- [build-deps-ubuntu-26][5]: Ubuntu 26.04.
 
-  > [!NOTE]
-  > Running the container on a non-ARM CPU relies on QUEMU for emulation of an
-  > ARM architecture and is very slow.
+There are two flavors:
 
-- [fmuchecker](./fmuchecker/devcontainer.json): Container with FMU checker to
-  test generated FMUs.
-
-  > [!IMPORTANT]
-  > The Docker image is using a too old version of glibs to work with recent
-  > versions of VS Code.
+- `debian-12`, `debian-13` and `ubuntu-22` build a small wrapper `Dockerfile`
+  that creates a non-root user matching your local user name and UID so files
+  created in the container are owned by you.
+- `ubuntu-24` and `ubuntu-26` use the base image directly and connect as the
+  pre-existing `ubuntu` user.
 
 ## Usage in Visual Studio Code
 
 Make sure you have Dev Containers extension
-[ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-and Docker installed and running.
+[ms-vscode-remote.remote-containers][6] and Docker installed and running.
 
 Open command pallet (`Strg+Shift+P`) and run
 `>Dev Containers: Open Folder in Container...`, select the OpenModelica
@@ -40,11 +39,10 @@ directory. Then select a devcontainer.json file to start.
 
 ## New Dev Container
 
-Check directory [../.CI/](./../.CI/) for more Dockerfiles used by Jenkins and
-construct your own dev container in a similar way.
+Check directory [../.CI/][7] for more Dockerfiles used by Jenkins and construct
+your own dev container in a similar way.
 
-For more details check
-[https://containers.dev/implementors/json_reference/](https://containers.dev/implementors/json_reference/).
+For more details check [containers.dev json reference][8].
 
 ## Adding VSCode Extensions
 
@@ -53,7 +51,10 @@ container.
 
 ## Caveats
 
-- The images need an additional Dockerfile to add an non-root user with your
+The following only applies to the `Dockerfile`-based containers
+(`debian-12`, `debian-13`, `ubuntu-22`):
+
+- The images need an additional Dockerfile to add a non-root user with your
   user name and UID.
 - Because on Windows and Unix the environment variable containing the user name
   are different and only one should be set both are added to devcontainer.json:
@@ -63,3 +64,12 @@ container.
   -"${localEnv:USER}${localEnv:USERNAME}"
   +"username"
   ```
+
+[1]: ./build-deps-debian-12/devcontainer.json
+[2]: ./build-deps-debian-13/devcontainer.json
+[3]: ./build-deps-ubuntu-22/devcontainer.json
+[4]: ./build-deps-ubuntu-24/devcontainer.json
+[5]: ./build-deps-ubuntu-26/devcontainer.json
+[6]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+[7]: ./../.CI/
+[8]: https://containers.dev/implementors/json_reference/
