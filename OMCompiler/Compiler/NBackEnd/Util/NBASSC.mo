@@ -328,69 +328,31 @@ public
   end checkSingularity;
 
   function tracebackZeroRows
-    "Reconstructs the sequence of operations that produced each zero row."
+    "Reconstructs the symbolic expression of each zero row and generates a detailed error message for singular systems."
     input list<Pointer<Equation>> eqns;
     input Integer num_eqns, count_zero_row, num_op;
     input array<Integer> op_val1, op_val2, op_val3, op_val4;
   protected
-    list<Integer> traceback;
-    list<list<Integer>> all_tracebacks;
-    Integer current_eq, count = 0;
-    DAE.Exp exp_dae, exp_dae_elem;
-    String eq_str, str_all = "";
-    list<Integer> factors_pivot, factors_update;
+    Integer current_zero_row;
+    DAE.Exp exp_dae;
+    String eq_str = "", str_all = "";
   algorithm
-    // ToDo: switch to new simplify
     if Flags.isSet(Flags.DUMP_ASSC) then
       print("Number of zero rows: "+intString(count_zero_row)+"\n");
     end if;
-    all_tracebacks := {};
-    for zero_row in 1:count_zero_row loop // each zero_row
-      traceback := {};
-      factors_pivot := {};
-      factors_update := {};
-      current_eq := num_eqns - count_zero_row;
-      traceback := current_eq :: traceback;
-      for op in num_op:-1:1 loop // each operation backwards
-        if op_val3[op] == current_eq then
-          traceback := op_val1[op] :: traceback;
-          factors_pivot := op_val2[op] :: factors_pivot;
-          factors_update := op_val4[op] :: factors_update;
-          current_eq := op_val1[op];
-        end if;
+    // process each zero row generated during elimination
+    for zero_row in 1:count_zero_row loop
+      current_zero_row := num_eqns - zero_row;
+      // reconstruct the linear combination that produced the zero row.
+      exp_dae := traceEquation(current_zero_row, num_op, op_val1, op_val2, op_val3, op_val4);
+      if Flags.isSet(Flags.DUMP_ASSC) then
+        print("Reconstructed zero row: "+ExpressionBasics.printExpStr(exp_dae)+"\n");
+      end if;
+      // collect equation information for the error message.
+      for eq in 1:num_eqns loop
+        eq_str :=  eq_str + "("+intString(eq-1)+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns, eq))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns, eq))))) + "\n";
       end for;
-      if Flags.isSet(Flags.DUMP_ASSC) then
-        print("Involved equations: " + List.toString(traceback, intString)+"\n");
-        print("Factors pivot: " + List.toString(factors_pivot, intString)+"\n");
-        print("Factors update: " + List.toString(factors_update, intString)+"\n");
-      end if;
-      all_tracebacks := traceback :: all_tracebacks;
-    end for;
-    count := 1;
-    // trace back how each zero row was created
-    for traceback in all_tracebacks loop
-      exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(listGet(traceback,1))+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-      if Flags.isSet(Flags.DUMP_ASSC) then
-        print("Step-by-step construction of the zero row:\n");
-      end if;
-      eq_str :=  "("+intString(listGet(traceback,1))+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns,1))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns,1))))) + "\n";
-      for eq in 2:listLength(traceback) loop
-        exp_dae_elem := DAE.CREF(DAE.CREF_IDENT("("+intString(listGet(traceback,eq))+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-        exp_dae := DAE.BINARY(DAE.BINARY(DAE.ICONST(listGet(factors_pivot, eq-1)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae_elem),
-                              DAE.SUB(DAE.T_REAL_DEFAULT),
-                              DAE.BINARY(DAE.ICONST(listGet(factors_update, eq-1)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae));
-        if Flags.isSet(Flags.DUMP_ASSC) then
-          print(ExpressionBasics.printExpStr(exp_dae)+"\n");
-        end if;
-        eq_str :=  eq_str + "("+intString(listGet(traceback,eq))+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns,eq))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns,eq))))) + "\n";
-      end for;
-      // all calculations with corresponding equations in one string
-      (exp_dae, _) := ExpressionSimplify.simplify(exp_dae);
-      if Flags.isSet(Flags.DUMP_ASSC) then
-          print("after simplify "+ExpressionBasics.printExpStr(exp_dae)+"\n");
-      end if;
-      str_all := str_all + "The zero row in ("+ intString(num_eqns-count) +") was produced by the following calculation: " + ExpressionBasics.printExpStr(exp_dae) + " with \n" + eq_str + "\n";
-      count := count + 1;
+      str_all := str_all + "The zero row in ("+ intString(current_zero_row) +") was produced by the following calculation: " + ExpressionBasics.printExpStr(exp_dae) + " with \n" + eq_str + "\n";
     end for;
     if Flags.isSet(Flags.DUMP_ASSC) then
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because sparse matrix is singular.\n" + str_all});
@@ -400,6 +362,74 @@ public
       fail();
     end if;
   end tracebackZeroRows;
+
+  function traceEquation
+    "Recursively reconstructs the expression of the given equation."
+    input Integer current_eq, num_op;
+    input array<Integer> op_val1, op_val2, op_val3, op_val4;
+    output DAE.Exp exp_dae;
+  protected
+    list<Integer> predecessors, factors_pivot, factors_update;
+    list<DAE.Exp> expressions;
+  algorithm
+    (predecessors, factors_pivot, factors_update) := getPredecessors(current_eq, num_op, op_val1, op_val2, op_val3, op_val4);
+    if listLength(predecessors) == 0 then
+      exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(current_eq)+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
+      return;
+    end if;
+    expressions := {};
+    for pre_eq in listReverse(predecessors) loop
+      expressions := traceEquation(pre_eq, num_op, op_val1, op_val2, op_val3, op_val4) :: expressions;
+    end for;
+    exp_dae := buildExpression(current_eq, factors_pivot, factors_update, expressions);
+    return;
+  end traceEquation;
+
+  function getPredecessors
+    "Returns the predecessor equations and the associated pivot and update factors of the elimination operations."
+    input Integer current_eq, num_op;
+    input array<Integer> op_val1, op_val2, op_val3, op_val4;
+    output list<Integer> predecessors, factors_pivot, factors_update;
+  algorithm
+    (predecessors, factors_pivot, factors_update) := ({},{},{});
+    // trace back how each zero row was created
+    for op in num_op:-1:1 loop // each operation backwards
+      if op_val3[op] == current_eq then
+        predecessors := op_val1[op] :: predecessors;
+        factors_pivot := op_val2[op] :: factors_pivot;
+        factors_update := op_val4[op] :: factors_update;
+      end if;
+    end for;
+  end getPredecessors;
+
+  function buildExpression
+    "Constructs the symbolic expression of an equation from the recursively reconstructed predecessor expressions."
+    input Integer current_eq;
+    input list<Integer> factors_pivot, factors_update;
+    input list<DAE.Exp> expressions;
+    output DAE.Exp exp_dae;
+  protected
+    DAE.Exp exp_dae_elem;
+  algorithm
+    // ToDo: switch to new simplify
+    exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(current_eq)+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
+    if Flags.isSet(Flags.DUMP_ASSC) then
+      print("Step-by-step construction of the zero row:\n");
+    end if;
+    for eq in 1:listLength(expressions) loop
+      exp_dae_elem := listGet(expressions,eq);
+      exp_dae := DAE.BINARY(DAE.BINARY(DAE.ICONST(listGet(factors_pivot, eq)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae),
+                            DAE.SUB(DAE.T_REAL_DEFAULT),
+                            DAE.BINARY(DAE.ICONST(listGet(factors_update, eq)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae_elem));
+      if Flags.isSet(Flags.DUMP_ASSC) then
+        print(ExpressionBasics.printExpStr(exp_dae)+"\n");
+      end if;
+    end for;
+    (exp_dae, _) := ExpressionSimplify.simplify(exp_dae);
+    if Flags.isSet(Flags.DUMP_ASSC) then
+        print("Simplified expression: "+ExpressionBasics.printExpStr(exp_dae)+"\n");
+    end if;
+  end buildExpression;
 
   function createEquations
     "Creates new equations according to the replacements and resolves cyclic alias equations."
