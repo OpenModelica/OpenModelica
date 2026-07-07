@@ -195,6 +195,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   }
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Initializing"));
 #endif
   // Create an object of MessagesWidget.
   MessagesWidget::create();
@@ -213,6 +215,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   }
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Reading Settings"));
 #endif
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
@@ -223,6 +227,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   OptionsDialog::create();
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::setMessage(tr("Loading Widgets"));
 #endif
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
@@ -379,6 +385,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   //Create Actions, Toolbar and Menus
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
+#else
+  WasmSplash::stepMessage(tr("Creating widgets"));
 #endif
   setAcceptDrops(true);
   createActions();

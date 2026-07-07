@@ -68,6 +68,148 @@ SplashScreen *SplashScreen::instance()
   }
   return mpInstance;
 }
+#else
+#include <emscripten.h>
+#include <QElapsedTimer>
+
+// Return to the browser event loop for one frame so it composites the DOM
+// mutations made just before. A nested QEventLoop cannot do this during startup:
+// the splash runs before qApp->exec(), so there is no Qt loop to suspend and only
+// a raw Asyncify suspend actually yields to the browser (this is exactly how omc's
+// pre-exec worker wait paints its download bar). Safe only pre-exec, which the
+// splash always is (finish() runs before exec()).
+EM_ASYNC_JS(void, wasm_splash_yield, (), {
+  await new Promise(function(resolve) {
+    requestAnimationFrame(function() { setTimeout(resolve, 0); });
+  });
+});
+
+namespace WasmSplash
+{
+  static bool sVisible = false;
+
+  void show()
+  {
+    if (sVisible) {
+      return;
+    }
+    // Pure HTML/DOM, no Qt at all: Qt drawing/resource access before the event
+    // loop stalls the async library install on wasm. The image is referenced by
+    // URL (served beside the page) rather than read through a Qt resource.
+    sVisible = true;
+    EM_ASM({
+      if (document.getElementById('omedit-splash')) return;
+      var style = document.createElement('style');
+      style.id = 'omedit-splash-style';
+      style.textContent =
+        '#omedit-splash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;'
+        + 'align-items:center;justify-content:center;background:#ffffff;font-family:sans-serif;'
+        + 'transition:opacity .4s ease;}'
+        + '#omedit-splash img{max-width:80%;max-height:60%;box-shadow:0 6px 28px rgba(0,0,0,.25);}'
+        + '#omedit-splash .msg{margin-top:20px;font-size:15px;color:#333;min-height:20px;text-align:center;}'
+        + '#omedit-splash .bar{margin-top:16px;width:280px;height:6px;background:#e2e2e2;border-radius:3px;overflow:hidden;}'
+        + '#omedit-splash .bar > div{height:100%;width:40%;background:#e87424;border-radius:3px;'
+        + 'animation:omedit-splash-slide 1.2s ease-in-out infinite;}'
+        // transform (not margin-left) so the compositor animates it smoothly even
+        // while the main thread is blocked building the library tree.
+        + '@keyframes omedit-splash-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}';
+      document.head.appendChild(style);
+      var o = document.createElement('div');
+      o.id = 'omedit-splash';
+      var img = document.createElement('img');
+      img.src = new URL('omedit_splashscreen.png', document.baseURI).href;
+      img.onerror = function() { img.style.display = 'none'; };
+      o.appendChild(img);
+      var msg = document.createElement('div');
+      msg.className = 'msg';
+      msg.id = 'omedit-splash-msg';
+      msg.textContent = 'Starting OMEdit…';
+      o.appendChild(msg);
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.appendChild(document.createElement('div'));
+      o.appendChild(bar);
+      document.body.appendChild(o);
+    });
+  }
+
+  void setMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    EM_ASM({
+      var m = document.getElementById('omedit-splash-msg');
+      if (m) m.textContent = UTF8ToString($0);
+    }, message.toUtf8().constData());
+  }
+
+  void setProgress(int done, int total)
+  {
+    if (!sVisible || total <= 0) {
+      return;
+    }
+    // Callers drive this once per item; painting/yielding every time would dominate
+    // the actual work. Read a monotonic clock (no yield) and only touch the DOM
+    // ~every 300 ms. The first and last step always paint, so a determinate bar
+    // appears immediately (replacing the indeterminate slide) and lands on 100%.
+    int pct = done < 0 ? 0 : (done > total ? 100 : (100 * done) / total);
+    static QElapsedTimer sTimer;
+    static int sLastPct = -1;
+    const bool force = done <= 1 || done >= total;
+    if (!force) {
+      if (pct == sLastPct) {
+        return;
+      }
+      if (sTimer.isValid() && sTimer.elapsed() < 300) {
+        return;
+      }
+    }
+    sTimer.restart();
+    sLastPct = pct;
+    EM_ASM({
+      // Claim the bar: omc's __omcSetStatus fires on every worker reply and would
+      // otherwise keep restoring the indeterminate slide, fighting this update.
+      Module.__omeditSplashDeterminate = true;
+      var f = document.querySelector('#omedit-splash .bar > div');
+      if (f) { f.style.animation = 'none'; f.style.transform = 'none'; f.style.width = $0 + '%'; }
+    }, pct);
+    wasm_splash_yield();
+  }
+
+  void stepMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    setMessage(message);
+    // The widget-creation steps are synchronous and never return to the event
+    // loop, so the message above would not paint until the whole phase ends.
+    wasm_splash_yield();
+  }
+
+  void finish()
+  {
+    if (!sVisible) {
+      return;
+    }
+    sVisible = false;
+    EM_ASM({
+      var o = document.getElementById('omedit-splash');
+      if (o) {
+        o.style.opacity = '0';
+        setTimeout(function() { if (o.parentNode) o.parentNode.removeChild(o); }, 450);
+      }
+      var s = document.getElementById('omedit-splash-style');
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    });
+  }
+
+  bool isVisible()
+  {
+    return sVisible;
+  }
+}
 #endif
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)

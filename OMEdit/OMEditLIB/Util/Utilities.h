@@ -73,6 +73,21 @@
 
 class OMCProxy;
 
+#if defined(__EMSCRIPTEN__)
+// HTML splash overlay drawn straight into the DOM. Qt's QSplashScreen pumps the
+// Qt-for-WebAssembly event dispatcher during early startup, which traps, so on
+// wasm the splash and the startup passes are rendered outside Qt. See Utilities.cpp.
+namespace WasmSplash
+{
+  void show();
+  void setMessage(const QString &message);
+  void stepMessage(const QString &message);
+  void setProgress(int done, int total);
+  void finish();
+  bool isVisible();
+}
+#endif
+
 #if !defined(__EMSCRIPTEN__)
 // Omitted on wasm: showMessage()/repaint() pumps the Qt-for-WebAssembly event
 // dispatcher during early startup, which traps. Uses are guarded at the call sites.
@@ -104,6 +119,13 @@ public slots:
   void showMessage(const QString &message, int timeout = 0)
   {
     QStatusBar::showMessage(message, timeout);
+#if defined(__EMSCRIPTEN__)
+    // While the HTML splash is up (startup) the status bar is not yet on screen,
+    // so mirror its passes (loading libraries, …) onto the splash.
+    if (WasmSplash::isVisible()) {
+      WasmSplash::setMessage(message);
+    }
+#endif
     /* QStatusBar::showMessage calls update() which schedules a paint event for processing when Qt returns to the main event loop
      * so we call repaint() to get the immediate update. Calling repaint() is better than qApp->processEvents() which processes all pending events.
      */

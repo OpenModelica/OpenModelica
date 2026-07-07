@@ -260,14 +260,19 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       break;
     }
   }
-  // Splash Screen. Omitted on wasm: SplashScreen is compiled out (its repaint pumps
-  // the Qt-for-WebAssembly event dispatcher during early startup, which traps).
+  // Splash Screen. On wasm QSplashScreen is compiled out (its repaint pumps the
+  // Qt-for-WebAssembly event dispatcher during early startup, which traps); an HTML
+  // overlay drawn straight into the DOM stands in for it instead.
 #if !defined(__EMSCRIPTEN__)
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
   pSplashScreen->setPixmap(pixmap);
   if (!testsuiteRunning) {
     pSplashScreen->show();
+  }
+#else
+  if (!testsuiteRunning) {
+    WasmSplash::show();
   }
 #endif
   Helper::initHelperVariables();
@@ -389,6 +394,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     // hide the splash screen
 #if !defined(__EMSCRIPTEN__)
     SplashScreen::instance()->finish(pMainwindow);
+#else
+    WasmSplash::finish();
 #endif
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
     //! Fixes issue #7456

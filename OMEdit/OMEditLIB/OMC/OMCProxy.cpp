@@ -132,6 +132,26 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
     return id;
   };
   Module.__omcSetStatus = (p) => {
+    const amt = p ? (p.total > 0 ? Math.round(100 * p.done / p.total) + "%"
+                                 : Math.round(p.done / 1024) + " KiB") : "";
+    // Drive the HTML startup splash bar with the real download progress, if it is
+    // up and the library-tree pass has not yet claimed it (once it has, this fires
+    // on every worker reply and would keep resetting the determinate bar).
+    const sfill = Module.__omeditSplashDeterminate ? null : document.querySelector("#omedit-splash .bar > div");
+    const smsg = Module.__omeditSplashDeterminate ? null : document.getElementById("omedit-splash-msg");
+    if (sfill) {
+      if (p && p.total > 0) {
+        sfill.style.animation = "none";
+        sfill.style.transform = "none";
+        sfill.style.width = (100 * p.done / p.total) + "%";
+      } else {
+        // finished or unknown size: restore the indeterminate slide
+        sfill.style.animation = "";
+        sfill.style.transform = "";
+        sfill.style.width = "40%";
+      }
+    }
+    if (smsg && p) smsg.textContent = "Downloading libraries… " + amt;
     let el = document.getElementById("omcStatus");
     if (!el) {
       el = document.createElement("div");
@@ -141,8 +161,6 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
       document.body.appendChild(el);
     }
     if (!p) { el.style.display = "none"; return; }
-    const amt = p.total > 0 ? Math.round(100 * p.done / p.total) + "%"
-                            : Math.round(p.done / 1024) + " KiB";
     el.textContent = "Downloading " + p.file + "  " + amt;
     el.style.display = "block";
   };

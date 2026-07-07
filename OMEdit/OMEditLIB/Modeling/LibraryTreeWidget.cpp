@@ -1292,6 +1292,9 @@ void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString
   pLibraryTreeItem->setNameStructure(Helper::OMEditInternal);
   // load Modelica System Libraries.
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+#if defined(__EMSCRIPTEN__)
+  WasmSplash::setMessage(tr("Loading system libraries"));
+#endif
   pOMCProxy->loadSystemLibraries(libraries);
   QStringList systemLibs = pOMCProxy->getClassNames();
   foreach (QString systemLib, systemLibs) {
@@ -1299,6 +1302,8 @@ void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString
     if (!pLibraryTreeItem) {
 #if !defined(__EMSCRIPTEN__)
       SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, systemLib), Qt::AlignRight, Qt::white);
+#else
+      WasmSplash::setMessage(QString("%1 %2").arg(Helper::loading, systemLib));
 #endif
       createLibraryTreeItem(systemLib, mpRootLibraryTreeItem, true, true, true);
     }
@@ -2279,7 +2284,15 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       libs.removeFirst();
     }
     LibraryTreeItem *pParentLibraryTreeItem = 0;
+#if defined(__EMSCRIPTEN__)
+    const int totalLibs = libs.size();
+    int doneLibs = 0;
+#endif
     foreach (QString lib, libs) {
+#if defined(__EMSCRIPTEN__)
+      // Drive the startup-splash progress bar; setProgress throttles the repaint.
+      WasmSplash::setProgress(++doneLibs, totalLibs);
+#endif
       /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
       if (lib.contains("$Code")) {
         continue;
