@@ -114,29 +114,54 @@ typedef struct CONTRACTIVE_DEFECT {
  *
  * Uses the stage derivatives from the previous accepted step and the current step.
  * With r = h / h_old, the generated K-space weights form
- *
- *    y_emb = y_n
- *          + h_old * sum_i d_i(r) * K_old_i
- *          + h     * sum_i g_i(r) * K_i,
+ *    y_emb = y_n + h_old * sum_i d_i(r) * K_old_i + h * sum_i g_i(r) * K_i,
  *
  * and the estimator writes abs(mu(r) * (y_{n+1} - y_emb)) directly to errest.
  *
  * The pole-free weights d and g are constructed such that the estimator has a fixed
  * exact order for all r > 0, without degenerate points of higher or lower order.
- * The scalar mu(r) is calibrated from linear test-equation analysis such that the
- * estimator does not underestimate the true local error signal in the important
- * regions of the complex plane: z -> 0, Re(z) < 0, and a small strip into Re(z) > 0.
  *
- * Basically mu(r) eliminates the dependency of the leading non-stiff Taylor
- * error coefficient on the step ratio r, so the estimator starts with the same
- * normalized error term for all r > 0. This avoids step-ratio r dependent
- * under- or overestimation in the non-stiff limit and is chosen to keep the scaled
- * estimator bounded in the stiff limit. (see Gonzalez-Pinto: He changes the step-size controller
- * to achieve similar independence of r, but I argue that the estimate itself should be calibrated correctly.)
+ *    The calibration for the factor mu(r) is done as follows:
  *
- * The tabulated mu(r) assumes the simple estimator tolerance TOL' = TOL^a with
- * a = (q + 1) / (p + 1). The error estimator maps this to GBODE's actual scaled
- * tolerance by multiplying with gbScaledErrorTolerance(...) / TOL^a in twoStepScaleMu().
+ * For the linear test equation, the exact local error of the main method is
+ *    E_exact(z) = abs(R(z) - exp(z)).
+ *
+ * An ideal I-controller based on this exact error would use the feedback signal
+ *    S_exact = (TOL / E_exact(z))^(1 / (p + 1)).
+ *
+ * The two-step estimator gives
+ *    E_est(z,r) = abs(y_{n+1} - y_emb),
+ *
+ * and therefore the controller feedback is
+ *    S_est = (TOL_ref' / (abs(mu(r)) * E_est(z,r)))^(1 / (q + 1)).
+ *
+ * We compare S_est and S_exact with the reference tolerance scaling
+ *    TOL_ref' = TOL^a,  a = (q + 1) / (p + 1),
+ *
+ * so the powers of TOL cancel in S_est / S_exact. This ratio is then studied as
+ * a function of r > 0 and z in the complex plane. Ideally it would be globally constant 1, but
+ * this is impossible; values <= 1 mean that the estimator proposes no larger step than the exact-error controller.
+ *
+ * The scalar mu(r) is calibrated from the non-stiff Taylor expansion of this
+ * controller-feedback ratio. For z -> 0,
+ *    E_exact(z) = abs(C_main * z^(p + 1)) + ...
+ *    E_est(z,r) = abs(C_est(r) * z^(q + 1)) + ...
+ *
+ * and setting S_est / S_exact = target for the leading term gives
+ *    abs(mu(r) * C_est(r)) = abs(C_main)^a / target^(q + 1).
+ *
+ * Hence mu(r) = scale / abs(C_est(r)). If C_est(r) = N(r) / D(r), the generated C table stores this as
+ *    mu(r) = scale * abs(D(r) / N(r)).
+ *
+ * Thus mu(r) removes the step-ratio dependence of the leading non-stiff controller feedback. Gonzalez-Pinto et al.
+ * achieve the same leading cancellation by modifying the error controller. Here we treat it as a property of
+ * the error estimate itself: the estimate is scaled before it is passed to a standard controller.
+ *
+ * The full ratio S_est / S_exact is checked in the relevant complex-plane regions, especially z -> 0, Re(z) < 0,
+ * and a small strip into Re(z) > 0, to detect underestimation away from the leading non-stiff term.
+ *
+ * The tabulated mu(r) is independent of the numerical tolerance. Since GBODE uses another scaled tolerance, twoStepScaleMu()
+ * maps the table value to that runtime convention by multiplying with gbScaledErrorTolerance(...) / TOL_ref'.
  *
  * If no valid previous step is available, e.g. at startup or after events, the
  * one-step fallback estimator is used.

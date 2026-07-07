@@ -260,14 +260,6 @@ int gbContractiveFilterErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_
   return estimator->order;
 }
 
-/**
- * @brief Map the tabulated two-step mu(r) to the runtime tolerance norm and check final mu(r, tol).
- *
- * The tabulated two-step factors are calibrated for the simple tolerance scaling
- * TOL' = TOL^a with a = (estimatorOrder + 1) / (methodOrder + 1).
- * This function maps the tabulated factor to the actual error-norm tolerance:
- *    mu(r, tol) = mu(r) * scaled_tol / tol^a
- */
 static inline double twoStepScaleMu(double tol,
                                     int methodOrder,
                                     int estimatorOrder,
