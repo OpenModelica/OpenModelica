@@ -109,8 +109,8 @@ typedef struct CONTRACTIVE_DEFECT {
 } CONTRACTIVE_DEFECT;
 
 /**
- * @brief Data for variable-step two-step error estimates, in the spirit of
- *        Gonzalez-Pinto et al. "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems".
+ * @brief Data for variable-step two-step error estimates, in the spirit of Gonzalez-Pinto et al.
+ *        "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems".
  *
  * Uses the stage derivatives from the previous accepted step and the current step.
  * With r = h / h_old, the generated K-space weights form
@@ -129,10 +129,14 @@ typedef struct CONTRACTIVE_DEFECT {
  *
  * Basically mu(r) eliminates the dependency of the leading non-stiff Taylor
  * error coefficient on the step ratio r, so the estimator starts with the same
- * normalized error term for all r > 0.  This avoids step-ratio dependent
+ * normalized error term for all r > 0. This avoids step-ratio r dependent
  * under- or overestimation in the non-stiff limit and is chosen to keep the scaled
  * estimator bounded in the stiff limit. (see Gonzalez-Pinto: He changes the step-size controller
  * to achieve similar independence of r, but I argue that the estimate itself should be calibrated correctly.)
+ *
+ * The tabulated mu(r) assumes the simple estimator tolerance TOL' = TOL^a with
+ * a = (q + 1) / (p + 1). The error estimator maps this to GBODE's actual scaled
+ * tolerance by multiplying with gbScaledErrorTolerance(...) / TOL^a in twoStepScaleMu().
  *
  * If no valid previous step is available, e.g. at startup or after events, the
  * one-step fallback estimator is used.
@@ -143,20 +147,6 @@ typedef struct TWO_STEP_ESTIMATOR
    * @brief Callback evaluating d_old(r), g_new(r), and mu(r) for K-space two-step estimates.
    */
   gb_two_step_weights weights;
-
-  /**
-   * @brief Optional tolerance scaling of mu.
-   *
-   * If muTolReference > 0, the final estimator factor is
-   *   mu := mu * (tol / muTolReference)^muTolExponent.
-   *
-   * This is useful for two-step pairs where the estimator order differs from
-   * the main method order by one. Then GBODE uses the user tolerance directly
-   * for step acceptance (no tolerance scaling), so the calibration factor has
-   * to carry the small remaining tolerance dependence.
-   */
-  double muTolReference;
-  double muTolExponent;
 
   /**
    * @brief One-step estimator used when no previous step is available.
@@ -186,7 +176,7 @@ typedef struct GB_ERROR_ESTIMATOR_SET
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
  *
  * Fully implicit Runge–Kutta (FIRK) schemes require solving a coupled system of
- * size (S * N) × (S * N), where S is the number of stages and N is the number
+ * size (S * N) x (S * N), where S is the number of stages and N is the number
  * of ODE states, which is (almost impractically) costly.
  *
  * The T-transformation (T^{-1} * A^{-1} * T = Lambda + L) diagonalizes (L = 0, Lambda = diagonal), block-diagonalizes (L = 0, Lambda contains cmplx blocks),

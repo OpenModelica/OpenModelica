@@ -81,10 +81,6 @@ static inline double evaluateTwoStepMu(double r,
                                        const double *den,
                                        int denSize)
 {
- // argument 'scale' should be inversely proportional to ~ GB_ERROR_TOLERANCE_SAFETY:
- //   if GB_ERROR_TOLERANCE_SAFETY changes at some point, then scale should be modified appropriately for each scheme,
- //   i.e. new_scale = old_scale * OLD_GB_ERROR_TOLERANCE_SAFETY / NEW_GB_ERROR_TOLERANCE_SAFETY
-
   const double n = horner(num, numSize, r);
   const double d = horner(den, denSize, r);
 
@@ -93,32 +89,7 @@ static inline double evaluateTwoStepMu(double r,
     return 1e1;
   }
 
-  double mu = scale * fabs(d) / fabs(n);
-
-  // These cases should not occur for a well-conditioned two-step estimator:
-  //     - num(r) -> 0, then mu(r) -> inf: the raw estimator loses its leading term and becomes locally one order higher than designed
-  //     - den(r) -> 0, then mu(r) -> 0:   the coefficient part already has a pole
-  // in both cases the estiamator is invalid / inadequate
-
-  if (!isfinite(mu))
-  {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is not finite for r=%g - clamping to 1e1.", r);
-    return 1e1;
-  }
-  else if (fabs(mu) < 1e-6)
-  {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r)=%g is below 1e-6 for r=%g - clamping.", mu, r);
-    return 1e-6;
-  }
-  else if (fabs(mu) > 1e1)
-  {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r)=%g is above 1e1 for r=%g - clamping.", mu, r);
-    return 1e1;
-  }
-  else
-  {
-    return mu;
-  }
+  return scale * fabs(d) / fabs(n);
 }
 
 static inline void evaluateTwoStepRationalWeights(int nStages,
@@ -287,17 +258,8 @@ void setTwoStepErrorEstimator(BUTCHER_TABLEAU *tableau, int order, gb_two_step_w
 {
   TWO_STEP_ESTIMATOR *two_step = (TWO_STEP_ESTIMATOR *) malloc(sizeof(TWO_STEP_ESTIMATOR));
   two_step->weights = weights;
-  two_step->muTolReference = 0.0;
-  two_step->muTolExponent = 0.0;
   two_step->fallback = NULL;
   setErrorEstimator(&tableau->error.two_step, GB_ERROR_TWO_STEP, order, gbTwoStepErrorEstimator, two_step);
-}
-
-static void setTwoStepMuToleranceScaling(BUTCHER_TABLEAU *tableau, double reference, double exponent)
-{
-  TWO_STEP_ESTIMATOR *two_step = (TWO_STEP_ESTIMATOR *) tableau->error.two_step.data;
-  two_step->muTolReference = reference;
-  two_step->muTolExponent = exponent;
 }
 
 static const GB_ERROR_ESTIMATOR *bestNonTwoStepEstimator(BUTCHER_TABLEAU *tableau, modelica_boolean internalNLS)
@@ -1266,7 +1228,7 @@ static void twoStepWeights_RADAU_IIA_2(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 1.0, 0.5 };
 
   evaluateTwoStepRationalWeights(2, r, Q, 2, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.04994771313861352060532105221101688741901, MU_NUM, 3, MU_DENOM, 3);
+  *mu = evaluateTwoStepMu(r, 0.2497385656930676030266052610550844370951, MU_NUM, 3, MU_DENOM, 3);
 }
 
 void denseOutput_Radau_IIA_2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1337,7 +1299,7 @@ static void twoStepWeights_RADAU_IIA_3(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 0.0, 0.25, 0.8, 1.0, 0.5333333333333333333333333333333333333333, 0.08333333333333333333333333333333333333333 };
 
   evaluateTwoStepRationalWeights(3, r, Q, 5, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.02919758483286367973631865014150073055584, MU_NUM, 7, MU_DENOM, 7);
+  *mu = evaluateTwoStepMu(r, 0.1459879241643183986815932507075036527792, MU_NUM, 7, MU_DENOM, 7);
 }
 
 void denseOutput_Radau_IIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1420,7 +1382,7 @@ static void twoStepWeights_RADAU_IIA_4(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 0.0, 0.2, 0.7238095238095238095238095238095238095239, 1.0, 0.6095238095238095238095238095238095238095, 0.1333333333333333333333333333333333333333 };
 
   evaluateTwoStepRationalWeights(4, r, Q, 5, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.01911385319651617625282542957970642501178, MU_NUM, 7, MU_DENOM, 7);
+  *mu = evaluateTwoStepMu(r, 0.09556926598258088126412714789853212505889, MU_NUM, 7, MU_DENOM, 7);
 }
 
 void denseOutput_Radau_IIA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1516,7 +1478,7 @@ static void twoStepWeights_RADAU_IIA_5(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 0.0, 0.00144626144562514148077765531812232301808, 0.02457130528545782740199755563958461513806, 0.1609247816931273551212503764224307641833, 0.5269332780547963002194823509915856151862, 0.9575944446492639512485656073112831769457, 1.0, 0.5831060846883837126047988171503521011009, 0.1668461624724201801505519768806103178556, 0.01527917333627414731663942730959218293187 };
 
   evaluateTwoStepRationalWeights(5, r, Q, 9, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.02125922501647793210971786060284720173807, MU_NUM, 11, MU_DENOM, 11);
+  *mu = evaluateTwoStepMu(r, 0.1062961250823896605485893030142360086904, MU_NUM, 11, MU_DENOM, 11);
 }
 
 /* 5-step, order 9(4), L-stable Radau IIA */
@@ -1615,7 +1577,7 @@ static void twoStepWeights_RADAU_IIA_6(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 0.0, 0.004451591255621481687873738066270279666778, 0.05105143382828137538485768449919312386918, 0.2447229611874170997425236742738363658697, 0.6400762712623887318411164191708160384487, 1.0, 0.9557134136520629590602671827806726928811, 0.5441219627572462480571536155432038951819, 0.1672925527657567493270804796021204767848, 0.02083715630820498612577073816949179126539 };
 
   evaluateTwoStepRationalWeights(6, r, Q, 9, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.01691643224226506202489177504618068898171, MU_NUM, 11, MU_DENOM, 11);
+  *mu = evaluateTwoStepMu(r, 0.08458216121132531012445887523090344490856, MU_NUM, 11, MU_DENOM, 11);
 }
 
 /* 6-step, order 11(5), L-stable Radau IIA */
@@ -1717,7 +1679,7 @@ static void twoStepWeights_RADAU_IIA_7(double r, double *d_old, double *g_new, d
   static const double MU_DENOM[] = { 0.0, 0.0, 3.077210871149619065030653496658857964287e-7, 1.535731869406629799072889224507032809787e-5, 0.000322969308030831598262339959424018105482, 0.003766637334860966026868002924008335030029, 0.02701736282043377229799304764781147606895, 0.1249650962134954726882763177574089396614, 0.3803057800524920419469792429732190510184, 0.7636969533118433286396782488726944510267, 1.0, 0.8278807797872157086310855353499212782501, 0.4052800236152375392522372283564110668433, 0.1007983370238747232918023449791992880783, 0.008196717472702965518322816773262084452687 };
 
   evaluateTwoStepRationalWeights(7, r, Q, 13, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.01743791742754258974220864789266340796879, MU_NUM, 15, MU_DENOM, 15);
+  *mu = evaluateTwoStepMu(r, 0.08718958713771294871104323946331703984396, MU_NUM, 15, MU_DENOM, 15);
 }
 
 /* 7-step, order 13(6), L-stable Radau IIA */
@@ -4052,7 +4014,7 @@ static void twoStepWeights_FIRK7_6TS_5L4SA(double r, double *d_old, double *g_ne
   static const double MU_DENOM[] = { 0.0, 0.0, 0.0, 0.005708496515747052854169160958997734207615, 0.05433583283500192530092393325679191187479, 0.2165458487208010317908231502739332983783, 0.5084569938698674845020384783027206823761, 0.8214678273271244987451639643270693921143, 1.0, 0.9814115420166585320479560811868270834009, 0.8416003120066080651514185793073144310002, 0.680639248464314207942174395232521833365, 0.5020088658519110669948293601855913243026, 0.2872409668748240002505816670842017571065, 0.1022446156858984885561356313533076802424, 0.01738205622299522861433137125530164166439, 0.00735981686913062329066732870750464525013, 0.008618512244982444783937859040001503361458, 0.003046531928690826085131491999192191056499 };
 
   evaluateTwoStepRationalWeights(5, r, Q, 16, P, P_size, d_old, g_new);
-  *mu = evaluateTwoStepMu(r, 0.01456879279086725736975989516514291277386, MU_NUM, 19, MU_DENOM, 19);
+  *mu = evaluateTwoStepMu(r, 0.1196165403988029332358825001095436899959, MU_NUM, 19, MU_DENOM, 19);
 }
 
 /* FIRK7(6TS)5L[4]SA constructed by @linuslangenkamp
@@ -4155,7 +4117,6 @@ void getButcherTableau_FIRK7_6TS_5L4SA(BUTCHER_TABLEAU* tableau)
                                real_eig_index, cmplx_eig_index, L, hasL, NULL, NULL);
 
   setTwoStepErrorEstimator(tableau, 6, twoStepWeights_FIRK7_6TS_5L4SA);
-  setTwoStepMuToleranceScaling(tableau, 1.0e-6, 1.0 / 8.0);
 }
 
 /**

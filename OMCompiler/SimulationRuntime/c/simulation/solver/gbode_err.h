@@ -43,7 +43,7 @@ struct GB_ERROR_CONTEXT
   modelica_boolean isFast;
 };
 
-#define GB_ERROR_TOLERANCE_SAFETY 0.2
+#define GB_TOLERANCE_SCALING_SAFETY 0.2
 
 int gbEstimateError(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
 
@@ -53,7 +53,7 @@ int gbContractiveFilterErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_
 int gbTwoStepErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
 int gbRichardsonErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
 
-void gbScaledErrorTolerances(double tol, int methodOrder, int estimatorOrder, modelica_boolean richardson, double *atol, double *rtol);
+double gbScaledErrorTolerance(double tol, int methodOrder, int estimatorOrder, modelica_boolean richardson);
 
 #ifdef __cplusplus
 }

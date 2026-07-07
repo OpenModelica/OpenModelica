@@ -92,21 +92,17 @@ int gbEstimateError(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimat
   return order;
 }
 
-void gbScaledErrorTolerances(double tol, int methodOrder, int estimatorOrder,
-                             modelica_boolean richardson, double *atol, double *rtol)
+double gbScaledErrorTolerance(double tol, int methodOrder, int estimatorOrder, modelica_boolean richardson)
 {
-  if (richardson || estimatorOrder >= methodOrder - 1)
+  if (richardson || estimatorOrder >= methodOrder)
   {
-    *atol = tol;
-    *rtol = tol;
-    return;
+    return tol;
   }
 
   const double order_quot = ((double) estimatorOrder + 1.0) / ((double) methodOrder + 1.0);
-  const double rtol_pred = GB_ERROR_TOLERANCE_SAFETY * pow(tol, order_quot);
+  const double rtol_pred = GB_TOLERANCE_SCALING_SAFETY * pow(tol, order_quot);
 
-  *rtol = fmax(tol, rtol_pred);
-  *atol = *rtol;
+  return fmax(tol, rtol_pred);
 }
 
 static void embeddedErrorEstimate_gb(BUTCHER_TABLEAU *tableau, const double *weights, const double *K, double stepSize, int nStates, double *err)
@@ -264,21 +260,52 @@ int gbContractiveFilterErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_
   return estimator->order;
 }
 
-static void twoStepScaleMu(TWO_STEP_ESTIMATOR *two_step, double tol, double *mu)
+/**
+ * @brief Map the tabulated two-step mu(r) to the runtime tolerance norm and check final mu(r, tol).
+ *
+ * The tabulated two-step factors are calibrated for the simple tolerance scaling
+ * TOL' = TOL^a with a = (estimatorOrder + 1) / (methodOrder + 1).
+ * This function maps the tabulated factor to the actual error-norm tolerance:
+ *    mu(r, tol) = mu(r) * scaled_tol / tol^a
+ */
+static inline double twoStepScaleMu(double tol,
+                                    int methodOrder,
+                                    int estimatorOrder,
+                                    modelica_boolean richardson,
+                                    double *mu)
 {
-  if (two_step->muTolReference > 0.0)
+  const double scaled_tol = gbScaledErrorTolerance(tol, methodOrder, estimatorOrder, richardson);
+  const double order_quot = ((double) estimatorOrder + 1.0) / ((double) methodOrder + 1.0);
+
+  *mu *= scaled_tol / pow(tol, order_quot);
+
+  // These cases should not occur for a well-conditioned two-step estimator:
+  //     - num(r) -> 0, then mu(r) -> inf: the raw estimator loses its leading term and becomes locally one order higher than designed
+  //     - den(r) -> 0, then mu(r) -> 0:   the coefficient part already has a pole
+  // in both cases the estimator is invalid / inadequate
+
+  if (!isfinite(*mu))
   {
-    *mu *= pow(tol / two_step->muTolReference, two_step->muTolExponent);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is not finite - clamping to 1e1.");
+    *mu = 1e1;
+  }
+  else if (fabs(*mu) < 1e-6)
+  {
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is below 1e-6 - clamping.");
+    *mu = 1e-6;
+  }
+  else if (fabs(*mu) > 1e6)
+  {
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is above 1e6 - clamping.");
+    *mu = 1e6;
   }
 }
 
-static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, double tol)
+static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, double tol, int estimatorOrder)
 {
   BUTCHER_TABLEAU *tableau = gbData->tableau;
   double d_old[MAX_GBODE_FIRK_STAGES];
   double g_new[MAX_GBODE_FIRK_STAGES];
-  double factors_old[MAX_GBODE_FIRK_STAGES];
-  double factors_new[MAX_GBODE_FIRK_STAGES];
   double mu;
   double minus_mu;
   int nStages = tableau->nStages;
@@ -291,27 +318,26 @@ static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, 
 
   double r = gbData->stepSize / gbData->lastStepSize;
   two_step->weights(r, d_old, g_new, &mu);
-  twoStepScaleMu(two_step, tol, &mu);
+  twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu);
 
   for (int stage = 0; stage < nStages; stage++)
   {
-    factors_old[stage] = gbData->lastStepSize * d_old[stage];
-    factors_new[stage] = gbData->stepSize * g_new[stage];
+    d_old[stage] *= gbData->lastStepSize;
+    g_new[stage] *= gbData->stepSize;
   }
 
-  /* errest := y_emb = yOld + lastStepSize * KLast * d_old + stepSize * K * g_new */
   dgemv_(&CHAR_NO_TRANS,
          &nStates,
          &nStages,
          &DBL_ONE, gbData->kLast, &nStates,
-         factors_old, &INT_ONE,
+         d_old, &INT_ONE,
          &DBL_ZERO, gbData->errest, &INT_ONE);
 
   dgemv_(&CHAR_NO_TRANS,
          &nStates,
          &nStages,
          &DBL_ONE, gbData->k, &nStates,
-         factors_new, &INT_ONE,
+         g_new, &INT_ONE,
          &DBL_ONE, gbData->errest, &INT_ONE);
 
   daxpy_(&nStates, &DBL_ONE, gbData->yOld, &INT_ONE, gbData->errest, &INT_ONE);
@@ -325,13 +351,11 @@ static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, 
   return 0;
 }
 
-static int twoStepEstimate_gbf(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, DATA_GBODEF *gbfData, double tol)
+static int twoStepEstimate_gbf(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, DATA_GBODEF *gbfData, double tol, int estimatorOrder)
 {
   BUTCHER_TABLEAU *tableau = gbfData->tableau;
   double d_old[MAX_GBODE_FIRK_STAGES];
   double g_new[MAX_GBODE_FIRK_STAGES];
-  double factors_old[MAX_GBODE_FIRK_STAGES];
-  double factors_new[MAX_GBODE_FIRK_STAGES];
   double mu;
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
@@ -344,12 +368,12 @@ static int twoStepEstimate_gbf(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData,
 
   double r = gbfData->stepSize / gbfData->lastStepSize;
   two_step->weights(r, d_old, g_new, &mu);
-  twoStepScaleMu(two_step, tol, &mu);
+  twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu);
 
   for (int stage = 0; stage < nStages; stage++)
   {
-    factors_old[stage] = gbfData->lastStepSize * d_old[stage];
-    factors_new[stage] = gbfData->stepSize * g_new[stage];
+    d_old[stage] *= gbfData->lastStepSize;
+    g_new[stage] *= gbfData->stepSize;
   }
 
   for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
@@ -361,7 +385,7 @@ static int twoStepEstimate_gbf(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData,
       double k_new = gbfData->nlsSolverMethod == GB_NLS_INTERNAL
                    ? gbfData->kCurrPacked[stage * nFastStates + fast_idx]
                    : gbfData->k[stage * nStates + full_idx];
-      y_emb += factors_old[stage] * gbfData->kLast[stage * nFastStates + fast_idx] + factors_new[stage] * k_new;
+      y_emb += d_old[stage] * gbfData->kLast[stage * nFastStates + fast_idx] + g_new[stage] * k_new;
     }
     gbfData->errest[full_idx] = fabs(mu * (gbfData->y[full_idx] - y_emb));
   }
@@ -379,8 +403,8 @@ int gbTwoStepErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR 
   }
 
   const double tol = context->data->simulationInfo->tolerance;
-  int order = context->isFast ? twoStepEstimate_gbf(two_step, context->gbData, context->gbfData, tol)
-                              : twoStepEstimate_gb(two_step, context->gbData, tol);
+  int order = context->isFast ? twoStepEstimate_gbf(two_step, context->gbData, context->gbfData, tol, estimator->order)
+                              : twoStepEstimate_gb(two_step, context->gbData, tol, estimator->order);
   if (order >= 0)
   {
     return estimator->order;

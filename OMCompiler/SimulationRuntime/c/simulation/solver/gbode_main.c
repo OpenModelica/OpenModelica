@@ -885,8 +885,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   double stopTime = data->simulationInfo->stopTime;
 
   double err, eventTime;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
+  double tol = data->simulationInfo->tolerance;
 
   int i, ii, j, jj, l, ll, r, rr;
   int integrator_step_info;
@@ -1058,14 +1057,14 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         continue;
       }
 
-      gbScaledErrorTolerances(data->simulationInfo->tolerance, gbfData->tableau->order_b,
-                              gbfData->currentErrorOrder, gbfData->tableau->richardson, &Atol, &Rtol);
+      tol = gbScaledErrorTolerance(data->simulationInfo->tolerance, gbfData->tableau->order_b,
+                                   gbfData->currentErrorOrder, gbfData->tableau->richardson);
 
       /* use same error estimate (scaled 2-norm) as for the SR case */
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        gbfData->errtol[ii] = Atol * gbData->nominals[ii] + fmax(fabs(gbfData->yOld[ii]), fabs(gbfData->y[ii])) * Rtol;
+        gbfData->errtol[ii] = tol * gbData->nominals[ii] + fmax(fabs(gbfData->yOld[ii]), fabs(gbfData->y[ii])) * tol;
         if (gbfData->tableau->richardson || gbfData->type == MS_TYPE_IMPLICIT) {
           gbfData->errest[ii] = fabs(gbfData->yt[ii]);
         }
@@ -1325,8 +1324,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 
   double stopTime = data->simulationInfo->stopTime;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = Atol;
+  double tol = data->simulationInfo->tolerance;
 
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
@@ -1596,12 +1594,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Calculate error estimators and tolerance scaling for each state variable
       // Compute error tolerance for the i-th state based on relative and absolute tolerances:
       // errtol = Rtol * max(|old state|, |current state|) + Atol * |nominal(state)|
-      gbScaledErrorTolerances(data->simulationInfo->tolerance, gbData->tableau->order_b,
-                              gbData->currentErrorOrder, gbData->tableau->richardson, &Atol, &Rtol);
+      tol = gbScaledErrorTolerance(data->simulationInfo->tolerance, gbData->tableau->order_b,
+                                   gbData->currentErrorOrder, gbData->tableau->richardson);
 
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        gbData->errtol[i] = Atol * gbData->nominals[i] + fmax(fabs(gbData->yOld[i]), fabs(gbData->y[i])) * Rtol;
+        gbData->errtol[i] = tol * gbData->nominals[i] + fmax(fabs(gbData->yOld[i]), fabs(gbData->y[i])) * tol;
         if (gbData->tableau->richardson || gbData->type == MS_TYPE_IMPLICIT) {
           gbData->errest[i] = fabs(gbData->yt[i]);
         }
@@ -1725,9 +1723,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || noConst_intWithErrctrl) {
         if (gbData->multi_rate && gbData->nFastStates>0) {
-          gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
+          gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, tol);
         } else {
-          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, tol);
         }
       }
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1871,7 +1869,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize, -1);
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Refine step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, Rtol), gbData->stepSize);
+                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, tol), gbData->stepSize);
           // run multirate step
           gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
           // synchronize relevant information
@@ -1885,7 +1883,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             memcpy(gbData->kRight, fODE, nStates * sizeof(double));
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Refined step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, Rtol), gbData->stepSize);
+                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, tol), gbData->stepSize);
           if (gb_step_info !=0) {
             // get out of here, if an event has happend!
             messageClose(OMC_LOG_SOLVER);
