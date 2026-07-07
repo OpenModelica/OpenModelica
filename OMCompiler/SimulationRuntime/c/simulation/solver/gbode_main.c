@@ -730,6 +730,8 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   int i;
 
   gbfData->didEventStep = FALSE;
+  gbfData->extrapolationBaseTime = INFINITY;
+  gbfData->extrapolationValid = FALSE;
   slowStateCache_invalidate(gbfData->slowStateCache);
 
   gbfData->time = gbData->time;

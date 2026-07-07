@@ -33,6 +33,7 @@
 #include "gbode_tableau.h"
 #include "gbode_conf.h"
 #include "gbode_err.h"
+#include "simulation_options.h"
 
 #include <float.h>
 #include <math.h>
@@ -967,7 +968,6 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
   if (tableau->richardson) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0,"Richardson extrapolation is not available for multi-step methods");
     tableau->richardson = FALSE;
   }
 
@@ -4422,6 +4422,12 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       break;
     default:
       throwStreamPrint(NULL, "Error: Unknown Runge Kutta method.");
+  }
+
+  if (tableau->error_method == GB_ERROR_RICHARDSON && !tableau->richardson)
+  {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Richardson extrapolation is not available for method %s. Using the default error estimator instead.", GB_METHOD_NAME[method]);
+    tableau->error_method = GB_ERROR_DEFAULT;
   }
 
   return tableau;
