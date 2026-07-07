@@ -951,7 +951,7 @@ void partestStashed(stashName, partition, partitionmodulo) {
 }
 
 void crossBuildFMU() {
-  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04-main')
+  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04')
   deps.pull()
   def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
   deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
