@@ -769,6 +769,39 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 }
 
 /**
+ * @brief Sort row indices within each column of a CSC sparse pattern.
+ *
+ * KLU and printSparseStructure both require that row indices within each
+ * column are in strictly ascending order.  The NBackend-generated
+ * initialResizableAnalyticJacobianA fills entries in equation order which
+ * may not be sorted (e.g. column 0 gets row 10 from one equation and row 0
+ * from another).  Call this function once after the pattern is built and
+ * before it is handed to KLU or the print helpers.
+ *
+ * @param sp    CSC sparse pattern (leadindex and index already filled).
+ * @param nCols Number of columns (== size of sp->leadindex - 1).
+ */
+void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols)
+{
+  if (!sp) return;
+  for (unsigned int c = 0; c < nCols; c++) {
+    unsigned int start = sp->leadindex[c];
+    unsigned int end   = sp->leadindex[c + 1];
+    if (end <= start + 1) continue;
+    /* Insertion sort — columns typically have very few entries. */
+    for (unsigned int i = start + 1; i < end; i++) {
+      unsigned int key = sp->index[i];
+      unsigned int j   = i;
+      while (j > start && sp->index[j - 1] > key) {
+        sp->index[j] = sp->index[j - 1];
+        j--;
+      }
+      sp->index[j] = key;
+    }
+  }
+}
+
+/**
  * @brief Opens sparsity pattern file
  *
  * @param data        Runtime data struct.
