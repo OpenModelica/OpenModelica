@@ -171,9 +171,9 @@ endif()
 #   * mold (RUST_OMC_MOLD, default ON): link with mold when it is found on PATH.
 #     Set OFF if only an old mold is available: mold < 1.7 lacks
 #     --export-dynamic-symbol, which the omc launcher needs to re-export
-#     omc_Error_getCurrentComponent. The Jenkins image installs a current mold
-#     (.CI/cache/rust/Dockerfile); when OFF the fallback is the toolchain default
-#     (rust's bundled lld, itself a fast linker that supports the flag).
+#     omc_Error_getCurrentComponent. The Jenkins image installs a current mold;
+#     when OFF the fallback is the toolchain default (rust's bundled lld, itself
+#     a fast linker that supports the flag).
 #   * RUST_OMC_THREADS (>0): pass nightly rustc's -Zthreads=N to parallelise the
 #     compiler front-end, which dominates the build of the huge generated crates
 #     (their dependency chain is near-linear, so the front-ends sit on the serial

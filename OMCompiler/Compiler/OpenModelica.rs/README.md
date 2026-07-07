@@ -38,7 +38,7 @@ rustup toolchain install nightly-2026-05-31 --profile minimal \
   --target wasm32-unknown-unknown
 # For the web targets:
 rustup target add wasm32-unknown-unknown
-export WASM_BINDGEN_VERSION=0.2.125 # See: ../../../.CI/cache/rust/Dockerfile in case this is stale
+export WASM_BINDGEN_VERSION=0.2.125
 cargo install wasm-bindgen-cli --version "${WASM_BINDGEN_VERSION}"
 # The web wasm-jit ModelicaExternalC side module (modelicaexternalc.wasm) is compiled
 # from C with clang targeting wasm32-wasi (real WASI file I/O via path_open, unlike
@@ -69,8 +69,7 @@ The native cargo builds link with `mold` by default when it is found on `PATH`
 (`RUST_OMC_MOLD=ON`); pass `-DRUST_OMC_MOLD=OFF` to fall back to the toolchain's
 default linker. mold must be reasonably recent — versions before 1.7 (e.g.
 Ubuntu 22.04's 1.0.3) lack `--export-dynamic-symbol`, which the omc launcher
-needs; the Jenkins image installs a pinned current mold for this (see
-`../../../.CI/cache/rust/Dockerfile`).
+needs; the Jenkins image installs a pinned current mold for this.
 
 Add `-DRUST_OMC_THREADS=N` to parallelise the rustc front-end (`-Zthreads=N`,
 nightly only) — useful for the few huge generated crates that bottleneck the

@@ -392,7 +392,7 @@ void buildRustOMC() {
   standardSetup()
   // RUST_OMC_THREADS=4 parallelises the rustc front-end on the (near-serial)
   // generated-crate chain. Linking uses mold (RUST_OMC_MOLD defaults ON); the
-  // image ships a current mold (see .CI/cache/rust/Dockerfile).
+  // image ships a current mold.
   sh """
     cmake -S . -B build_cmake \
       -DCMAKE_BUILD_TYPE=Release \
