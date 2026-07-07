@@ -33,6 +33,7 @@ system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallatio
 system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --suppressPath=true", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
 
+// Result:
 // true
 // ""
 // "simpleLoop.fmu"
@@ -54,3 +55,5 @@ readFile("simpleLoop_me_systemCall.log");
 // info:    Final Statistics for 'simpleLoop.root':
 //          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
 //          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult

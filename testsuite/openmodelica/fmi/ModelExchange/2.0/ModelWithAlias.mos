@@ -62,15 +62,7 @@ readFile("ModelWithAlias_me_systemCall.log");
 //     <Real/>
 //   </ScalarVariable>
 //   </ModelVariables>
-//   <ModelStructure>
-//     <Derivatives>
-//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
-//     </Derivatives>
-//     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
-//     </InitialUnknowns>
-//   </ModelStructure>
-// </fmiModelDescription>"
+// "
 // ""
 // 0
 // ""
