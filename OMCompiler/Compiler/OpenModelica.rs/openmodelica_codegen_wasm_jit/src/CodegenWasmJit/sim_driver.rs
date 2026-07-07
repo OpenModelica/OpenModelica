@@ -9,6 +9,8 @@
 //! `SimEngine` impl (memory access + function calls) plus its own module
 //! compilation and external-"C" import wiring, then hands an engine to [`drive`].
 
+use std::cell::RefCell;
+
 use anyhow::{Result, bail};
 
 use super::{REAL_OFF, ResultKind, SimLayout, SimModel, SolveStats, StateSetInfo, TIME_OFF};
@@ -288,8 +290,34 @@ const HOMOTOPY_STEPS: i32 = 3;
 /// continuation (C's `solveWithGlobalHomotopy`): lambda 0 -> 1 in `HOMOTOPY_STEPS`
 /// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
 /// step seeded by the previous one's solution. Leaves lambda = 1.
+thread_local! {
+    /// Parameter `-override`s for the next run, resolved to `(SimData offset,
+    /// type, value)`. Applied right after `functionParameters` so `-override=h0=2`
+    /// also flows into any start value bound to that parameter (e.g. `h(start=h0)`).
+    /// Set per run by `run_simulation_inner`; independent parameters only (a
+    /// calculated parameter's binding still overwrites it in `functionParameters`).
+    static PARAM_OVERRIDES: RefCell<Vec<(u32, WTy, f64)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Set the parameter overrides applied by the next [`run_initialization`].
+pub(super) fn set_param_overrides(overrides: Vec<(u32, WTy, f64)>) {
+    PARAM_OVERRIDES.with(|o| *o.borrow_mut() = overrides);
+}
+
+fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    let overrides = PARAM_OVERRIDES.with(|o| o.borrow().clone());
+    for (off, wty, val) in overrides {
+        match wty {
+            WTy::F64 => write_f64(e, sim_data + off, val)?,
+            WTy::I32 => write_i32(e, sim_data + off, val as i32)?,
+        }
+    }
+    Ok(())
+}
+
 fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     e.call1("functionParameters", sim_data)?;
+    apply_param_overrides(e, sim_data)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;

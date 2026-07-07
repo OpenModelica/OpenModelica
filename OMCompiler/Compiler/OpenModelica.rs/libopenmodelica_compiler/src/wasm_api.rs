@@ -243,6 +243,85 @@ pub fn omc_abi(request: &str) -> String {
     openmodelica_scripting_qt::scripting_api_qt::omc_abi_dispatch(request)
 }
 
+// ── Direct simulation-result access (no intermediate result file) ─────────────
+//
+// After a `simulate(...)`, the wasm-jit runtime keeps the finished run's signals
+// in memory. These read them straight out — the web simulator plots from these
+// instead of parsing a `.mat`/`_init.xml`. Index order matches between
+// [`omc_sim_series`] and [`omc_sim_column`].
+
+/// Metadata for the last run's signals (excluding `time`): an array of
+/// `{ name, comment, constant, alias }`. `constant` marks parameters/constants and
+/// signals that never change; `alias` marks a signal that reads the *same stored
+/// column* as an earlier one (the `.mat`'s `dataInfo` aliasing — distinct columns
+/// are distinct signals). The plot shows only `!constant && !alias`. Empty if no run.
+#[wasm_bindgen]
+pub fn omc_sim_series() -> JsValue {
+    let arr = js_sys::Array::new();
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        for s in &sim.series {
+            let item = js_sys::Object::new();
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&s.name));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&s.comment));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&s.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("constant"), &JsValue::from_bool(s.constant));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("alias"), &JsValue::from_bool(s.alias));
+            arr.push(&item);
+        }
+    });
+    arr.into()
+}
+
+/// The last run's editable initial conditions (user-settable parameters): an
+/// array of `{ name, comment, unit, value }`. Feed edits back via a
+/// `-override=name=value` in `simflags` on the next `simulate`/resimulate.
+#[wasm_bindgen]
+pub fn omc_sim_parameters() -> JsValue {
+    let arr = js_sys::Array::new();
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        for p in &sim.params {
+            let item = js_sys::Object::new();
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&p.name));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
+            arr.push(&item);
+        }
+    });
+    arr.into()
+}
+
+/// `{ model, start, stop, rows }` for the last run, or `null` if none.
+#[wasm_bindgen]
+pub fn omc_sim_info() -> JsValue {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        let o = js_sys::Object::new();
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("model"), &JsValue::from_str(&sim.model_name));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.time.len() as f64));
+        o.into()
+    })
+    .unwrap_or(JsValue::NULL)
+}
+
+/// The independent `time` column of the last run as a `Float64Array`, or `None`.
+#[wasm_bindgen]
+pub fn omc_sim_time() -> Option<Vec<f64>> {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.time.clone())
+}
+
+/// The values of series `index` (as in [`omc_sim_series`]) as a `Float64Array`.
+/// A time-invariant signal returns a length-1 array. `None` if out of range /
+/// no run.
+#[wasm_bindgen]
+pub fn omc_sim_column(index: usize) -> Option<Vec<f64>> {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        sim.series.get(index).map(|s| s.values.clone())
+    })
+    .flatten()
+}
+
 /// Evaluate one interactive command and return its reply — the same string the
 /// `--interactive=zmq` server returns for a request. Evaluation errors and
 /// panics are returned as `"Error: …"` text rather than thrown, so a REPL can

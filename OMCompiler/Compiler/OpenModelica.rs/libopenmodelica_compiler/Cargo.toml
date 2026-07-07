@@ -35,6 +35,9 @@ libc.workspace = true
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "=0.2.125"
 openmodelica_wasi.workspace = true
+# Read the last simulation's results straight out of the runtime (src/wasm_api.rs
+# omc_sim_*), so the web simulator plots without an intermediate result file.
+openmodelica_codegen_wasm_jit.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C

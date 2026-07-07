@@ -924,6 +924,8 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   if(NOT RUST_OMC_WEB_QT_STANDALONE)
@@ -1031,6 +1033,9 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/home
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/home/index.html ${_web_dir}/home/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/simulator
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/simulator/index.html ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()
