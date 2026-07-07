@@ -220,7 +220,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       omc_useStream[OMC_LOG_SOLVER] = 1;
       CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
-      cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
+      cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
         functions->freeMemory(solverInfo);
