@@ -803,6 +803,16 @@ def shouldWeBuildUCRT() {
   return params.BUILD_MSYS2_UCRT64
 }
 
+def shouldWeBuildEnterpriseLinux() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Enterprise Linux")) {
+      return true
+    }
+  }
+  return params.BUILD_ENTERPRISE_LINUX
+}
+
+
 def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Disable/All")) {

@@ -19,6 +19,7 @@ dependencies needed to compile OpenModelica.
 - [build-deps-ubuntu-22][3]: Ubuntu 22.04 (Jammy).
 - [build-deps-ubuntu-24][4]: Ubuntu 24.04 (Noble).
 - [build-deps-ubuntu-26][5]: Ubuntu 26.04 (Resolute).
+- [build-deps-almalinux-10][6]: Enterprise Linux Almalinux 10.
 
 There are two flavors:
 
@@ -31,7 +32,7 @@ There are two flavors:
 ## Usage in Visual Studio Code
 
 Make sure you have Dev Containers extension
-[ms-vscode-remote.remote-containers][6] and Docker installed and running.
+[ms-vscode-remote.remote-containers][7] and Docker installed and running.
 
 Open command pallet (`Strg+Shift+P`) and run
 `>Dev Containers: Open Folder in Container...`, select the OpenModelica
@@ -39,10 +40,10 @@ directory. Then select a devcontainer.json file to start.
 
 ## New Dev Container
 
-Check directory [../.CI/][7] for more Dockerfiles used by Jenkins and construct
+Check directory [../.CI/][8] for more Dockerfiles used by Jenkins and construct
 your own dev container in a similar way.
 
-For more details check [containers.dev json reference][8].
+For more details check [containers.dev json reference][9].
 
 ## Adding VSCode Extensions
 
@@ -70,6 +71,7 @@ The following only applies to the `Dockerfile`-based containers
 [3]: ./build-deps-ubuntu-22/devcontainer.json
 [4]: ./build-deps-ubuntu-24/devcontainer.json
 [5]: ./build-deps-ubuntu-26/devcontainer.json
-[6]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
-[7]: ./../.CI/
-[8]: https://containers.dev/implementors/json_reference/
+[6]: ./build-deps-almalinux-10/devcontainer.json
+[7]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+[8]: ./../.CI/
+[9]: https://containers.dev/implementors/json_reference/
