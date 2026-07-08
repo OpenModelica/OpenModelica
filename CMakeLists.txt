@@ -138,6 +138,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Installation configurations ###############################################################################
 # Install following GNU conventions (i.e., bin, lib, include, share ...)
+# Force CMAKE_INSTALL_LIBDIR to "lib" instead of letting GNUInstallDirs default to "lib64" on
+# RHEL-based distros (Fedora, AlmaLinux, ...). The compiler hardcodes "<omhome>/lib/..." when
+# generating linker flags for simulated models (see Settings.getInstallationDirectoryPath() usage
+# in OMCompiler/Compiler/Script/CevalScriptBackend.mo), so the install layout must match.
+set(CMAKE_INSTALL_LIBDIR "lib")
 include(GNUInstallDirs)
 
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
