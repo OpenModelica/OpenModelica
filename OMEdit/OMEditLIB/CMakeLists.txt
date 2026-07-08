@@ -392,6 +392,30 @@ if (Qt${OM_QT_MAJOR_VERSION}HttpServer_FOUND)
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::HttpServer)
 endif ()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # Qt6::Svg is a prebuilt system shared library on Linux that itself needs the
+  # system libz.so.1 (SVGZ/gzip decompression - the undefined 'inflateEnd'
+  # symbol). OMSimulator/3rdParty/CMakeLists.txt defines ZLIB::ZLIB as an alias
+  # for our in-tree *static* zlib (zlibstatic) so libzip's find_package(ZLIB)
+  # resolves without a system zlib; since OMSimulator is processed before
+  # OMEdit in the top-level build, that pre-existing ZLIB::ZLIB target makes
+  # Qt6's own find_dependency(ZLIB) (triggered by find_package(Qt6 ... Svg) in
+  # OMEdit/CMakeLists.txt) silently reuse it too (CMake's bundled FindZLIB.cmake
+  # guards with if(NOT TARGET ZLIB::ZLIB)), so Qt6::Svg never gets linked
+  # against the real system libz.so.1 it needs. Link it explicitly instead of
+  # relying on ZLIB::ZLIB, which two different consumers need to mean two
+  # different things here.
+  find_library(OM_SYSTEM_ZLIB_LIB NAMES z)
+
+  if (OM_SYSTEM_ZLIB_LIB)
+    target_link_libraries(OMEditLib PUBLIC ${OM_SYSTEM_ZLIB_LIB})
+  else ()
+    message(WARNING
+      "Could not find the system zlib (libz.so.1). "
+      "Qt6::Svg may fail to link due to unresolved inflateEnd.")
+  endif ()
+endif ()
+
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)
