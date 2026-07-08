@@ -1177,6 +1177,8 @@ template simulationFile_dae(SimCode simCode)
       let modelNamePrefixStr = modelNamePrefix(simCode)
       let initDAEmode =
         match sparsityPattern
+        case SOME(JAC_MATRIX(sparsityMatrix=sparsityMatrix as SPARSITY(), matrixName=matrixName, seedVars=seedVars, crefsHT=crefsHT)) then
+          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
         case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
           '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
         case NONE() then
@@ -4944,6 +4946,78 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   }
   >>
 end initializeDAEmodeData;
+
+template initializeDAEmodeDataResizable(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, Sparsity sparsityMatrix, Integer nCols, Integer nRows, Context context, String modelNamePrefix)
+  "Generates initialization function for daeMode using NBackEnd resizable sparsity pattern."
+::=
+match sparsityMatrix
+  case SPARSITY() then
+    let nAlgVars = listLength(algVars)
+    let algIndexes = genVarIndexes(algVars, "algIndexes")
+    let &preExpC = buffer ""
+    let &varDeclsC = buffer ""
+    let &auxFunctionC = buffer ""
+    let &subC = buffer ""
+    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
+    let &preExpF = buffer ""
+    let &varDeclsF = buffer ""
+    let &auxFunctionF = buffer ""
+    let &subF = buffer ""
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'daeModeData->sparsePattern') ;separator="\n")
+    <<
+    /* initialize the daeMode variables */
+    OMC_DISABLE_OPT
+    int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData)
+    {
+      <%algIndexes%>
+      unsigned int i, nnz;
+      unsigned int col_counts[<%nCols%>];
+      unsigned int col_fill[<%nCols%>];
+      <%varDeclsC%><%varDeclsF%>
+
+      <%preExpC%><%preExpF%>
+      <%auxFunctionC%><%auxFunctionF%>
+
+      daeModeData->nResidualVars = <%nResVars%>;
+      daeModeData->nAlgebraicDAEVars = <%nAlgVars%>;
+      daeModeData->nAuxiliaryVars = <%nAuxVars%>;
+
+      daeModeData->residualVars = (double*) malloc(sizeof(double)*<%nResVars%>);
+      daeModeData->auxiliaryVars = (double*) malloc(sizeof(double)*<%nAuxVars%>);
+
+      /* set the function pointer */
+      daeModeData->evaluateDAEResiduals = <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>;
+
+      /* prepare algebraic indexes */
+      daeModeData->algIndexes = (int*) malloc(sizeof(int)*<%nAlgVars%>);
+      memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
+
+      /* initialize sparse pattern: two-pass CSC construction */
+      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
+      <%countCode%>
+
+      nnz = 0;
+      for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
+      daeModeData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
+
+      daeModeData->sparsePattern->leadindex[0] = 0;
+      for (i = 0; i < <%nCols%>; i++)
+        daeModeData->sparsePattern->leadindex[i + 1] = daeModeData->sparsePattern->leadindex[i] + col_counts[i];
+
+      memcpy(col_fill, daeModeData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
+      <%fillCode%>
+
+      computeColumnColoring(daeModeData->sparsePattern, <%nRows%>, <%nCols%>);
+      sortSparseColumns(daeModeData->sparsePattern, <%nCols%>);
+
+      return 0;
+    }
+    >>
+  else
+    <<
+    int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }
+    >>
+end initializeDAEmodeDataResizable;
 
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePrefix)
   "Generates function in simulation file.
