@@ -209,7 +209,7 @@ public
 
       case ENTWINED_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT, size = " + intString(s) + ")");
-        str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, List.Style.CURLY_SHORT) + "\n";
         str := str + List.toString(comp.entwined_slices, function toString(index = -2), List.Style.NONE);
       then str;
 
