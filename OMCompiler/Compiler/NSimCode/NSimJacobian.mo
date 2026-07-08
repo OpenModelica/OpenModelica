@@ -356,7 +356,7 @@ public
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
             partitionIndex      = 0,
-            numberOfResultVars  = listLength(resVars),
+            numberOfResultVars  = SimVars.numScalarElems(resVars),
             columnEqns          = columnEqns,
             constantEqns        = {},
             columnVars          = tmpVars,
