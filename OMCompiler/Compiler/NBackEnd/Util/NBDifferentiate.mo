@@ -2697,6 +2697,21 @@ public
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 
+      // I-b. differentiate record-type assignment from a function call
+      // e.g. f := Helmholtz(d, T) where f is a record — propagate seeds through
+      // the called function so the derivative record gets populated correctly.
+      // Without this, the derivative variable is left zero-initialised and the
+      // analytical Jacobian for any NLS that calls the outer function is wrong.
+      case diff_stmt as Statement.ASSIGNMENT() guard(
+        Type.isComplex(Expression.typeOf(diff_stmt.lhs)) and
+        Expression.isCall(diff_stmt.rhs)
+      ) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
       // II. delegate differentiation to body and only return differentiated statement
       case diff_stmt as Statement.FOR() algorithm
         (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
