@@ -44,8 +44,21 @@
 #include "OMS/OMSModel.h"
 #include <QObject>
 #include <QElapsedTimer>
+#ifndef __EMSCRIPTEN__
+// The GUI server process is launched via QProcess, unavailable on wasm (no
+// subprocess support in a browser sandbox; Qt-for-WebAssembly's QProcess
+// doesn't define the process-lifecycle nested types this file uses).
 #include <QProcess>
+#endif
 
+/*!
+ * \class GuiRequestSocket
+ * \brief Handles synchronous JSON requests between OMEdit and the OMSimulator Python GUI server.
+ * On wasm this is a permanently-unconnected stub: real ZMQ sockets are unavailable in a
+ * browser sandbox, so sendCommand() always fails and sendZmqCommand() never reaches it
+ * (guarded by mServerReady, which never becomes true when the GUI server process itself
+ * cannot be started - see the __EMSCRIPTEN__ guards around startGuiServer() below).
+ */
 class GuiRequestSocket : public QObject
 {
 public:
@@ -83,16 +96,22 @@ private:
   void logResponse(QString method, QString status, QElapsedTimer *responseTime);
 
   GuiRequestSocket* mpGuiRequestSocket = nullptr;
+  bool mServerReady = false;
+#ifndef __EMSCRIPTEN__
+  // The GUI server subprocess and its lifecycle handling: unavailable on wasm
+  // (no subprocess support in a browser sandbox). mServerReady simply stays
+  // false forever on wasm, which is enough for sendZmqCommand() to fail
+  // gracefully without any of this.
   QProcess* mpGuiProcess = nullptr;
   QString mGuiServerScript;
   void startGuiServer();
-  bool mServerReady = false;
 private slots:
   void guiProcessStarted();
   void guiProcessError(QProcess::ProcessError error);
   void guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void readGuiServerStandardOutput();
   void readGuiServerStandardError();
+#endif
 public:
   static OMSProxy* instance() {
     if (!mpInstance)

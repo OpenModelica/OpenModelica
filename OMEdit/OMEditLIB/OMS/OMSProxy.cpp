@@ -42,7 +42,9 @@
 #include "MainWindow.h"
 #include "Util/Utilities.h"
 #include "OMS/OMSModel.h"
+#ifndef __EMSCRIPTEN__
 #include "zmq.h"
+#endif
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -57,10 +59,7 @@
   command = QString("%1(%2)").arg(command, args.join(",")); \
   logCommand(command);
 
-/*!
- * \class GuiRequestSocket
- * \brief Handles synchronous JSON requests between OMEdit and the OMSimulator Python GUI server.
- */
+#ifndef __EMSCRIPTEN__
 /*!
  * \brief GuiRequestSocket::GuiRequestSocket
  * Creates and binds a ZMQ request socket on a local TCP endpoint.
@@ -156,6 +155,15 @@ bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &repl
   reply = doc.object();
   return true;
 }
+#else // __EMSCRIPTEN__
+// Real ZMQ sockets are unavailable in a browser sandbox. sendZmqCommand() never
+// reaches sendCommand() anyway (mServerReady stays false, since the GUI server
+// process itself cannot be started on wasm - see the guards around
+// startGuiServer() further below), so these just need to exist and stay inert.
+GuiRequestSocket::GuiRequestSocket() {}
+GuiRequestSocket::~GuiRequestSocket() {}
+bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &reply) { return false; }
+#endif // __EMSCRIPTEN__
 
 /*!
  * \class OMSProxy
@@ -191,7 +199,11 @@ OMSProxy::OMSProxy()
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
   mpGuiRequestSocket = new GuiRequestSocket();
+#ifndef __EMSCRIPTEN__
+  // No subprocess support on wasm; mServerReady stays false, so sendZmqCommand()
+  // fails gracefully for every call instead of trying to reach a GUI server.
   startGuiServer();
+#endif
 }
 
 /*!
@@ -200,6 +212,7 @@ OMSProxy::OMSProxy()
  */
 OMSProxy::~OMSProxy()
 {
+#ifndef __EMSCRIPTEN__
   // send graceful shutdown so Python can clean up before we close the socket
   // also check the process state directly — mServerReady can be stale if the process
   // crashed right before the destructor runs and the finished() signal hasn't been processed yet
@@ -218,6 +231,7 @@ OMSProxy::~OMSProxy()
       mpGuiProcess->waitForFinished(1000);
     }
   }
+#endif
 
   // close ZMQ socket and destroy context
   delete mpGuiRequestSocket;
@@ -228,6 +242,7 @@ OMSProxy::~OMSProxy()
   }
 }
 
+#ifndef __EMSCRIPTEN__
 /*!
  * \brief OMSProxy::startGuiServer
  * Starts the OMSimulator Python GUI server process and passes it the ZMQ endpoint.
@@ -338,6 +353,7 @@ void OMSProxy::readGuiServerStandardError()
     emit logGUIMessage(MessageItem(MessageItem::Modelica, error, Helper::scriptingKind, Helper::errorLevel));
   }
 }
+#endif // __EMSCRIPTEN__
 
 /*!
  * \brief OMSProxy::logCommand
