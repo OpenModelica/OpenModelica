@@ -171,20 +171,23 @@ import init, {
 // gap — see TODO). The figures annotation authors two plots (height, velocity)
 // that the view renders instead of auto-picking variables.
 const DEFAULT_MODEL = `model BouncingBall "A ball bouncing on the ground, losing energy until it rests"
-  parameter Real e = 0.8 "Coefficient of restitution (0 = dead stop, 1 = no loss)";
-  parameter Real g(unit = "m/s2") = 9.81 "Gravitational acceleration";
-  parameter Real h0(unit = "m") = 1.0 "Initial height";
-  Real h(unit = "m", start = h0, fixed = true) "Height above ground";
-  Real v(unit = "m/s") "Velocity";
-  Boolean flying(start = true) "True while the ball is in the air";
+  parameter Real e=0.7 "coefficient of restitution";
+  parameter Real g(unit = "m/s2") = 9.81 "gravity acceleration";
+  Real h(unit = "m", fixed=true, start=1) "height of ball";
+  Real v(unit = "m/s", fixed=true) "velocity of ball";
+  Boolean flying(fixed=true, start=true) "true, if ball is flying";
+  Boolean impact;
+  Real v_new(fixed=true);
 equation
-  der(h) = v;
+  impact = h <= 0.0;
   der(v) = if flying then -g else 0;
-  when h <= 0 and v <= 0 then
-    reinit(v, -e * pre(v));
-    flying = -e * pre(v) > 0.05;
+  der(h) = v;
+  when {h <= 0.0 and v <= 0.0,impact} then
+    v_new = if edge(impact) then -e*pre(v) else 0;
+    flying = v_new > 0;
+    reinit(v, v_new);
   end when;
-  annotation(experiment(StopTime = 3, Interval = 0.002),
+  annotation(experiment(StopTime = 3, Interval = 2e-3),
     Documentation(figures = {
       Figure(title = "Bouncing ball", preferred = true, plots = {
         Plot(title = "Height", curves = {Curve(y = h, legend = "height")}),
