@@ -216,7 +216,7 @@ pipeline {
         stage('cmake-alpine-clang') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:alpine-3.22'
+              image 'docker.openmodelica.org/build-deps:alpine-3.24'
               label 'linux'
               alwaysPull true
               args '''

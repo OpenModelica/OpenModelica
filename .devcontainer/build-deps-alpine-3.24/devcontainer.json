@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/alpine
 {
-  "name": "build-deps:alpine-3.22",
+  "name": "build-deps:alpine-3.24",
 
   // Dockerfile
   "build": {

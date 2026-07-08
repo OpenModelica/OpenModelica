@@ -1,4 +1,4 @@
-FROM docker.openmodelica.org/build-deps:alpine-3.22
+FROM docker.openmodelica.org/build-deps:alpine-3.24
 
 ENV SHELL=/bin/bash
 
