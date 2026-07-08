@@ -260,11 +260,11 @@ int gbContractiveFilterErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_
   return estimator->order;
 }
 
-static inline double twoStepScaleMu(double tol,
-                                    int methodOrder,
-                                    int estimatorOrder,
-                                    modelica_boolean richardson,
-                                    double *mu)
+static inline modelica_boolean twoStepScaleMu(double tol,
+                                              int methodOrder,
+                                              int estimatorOrder,
+                                              modelica_boolean richardson,
+                                              double *mu)
 {
   const double scaled_tol = gbScaledErrorTolerance(tol, methodOrder, estimatorOrder, richardson);
   const double order_quot = ((double) estimatorOrder + 1.0) / ((double) methodOrder + 1.0);
@@ -278,19 +278,21 @@ static inline double twoStepScaleMu(double tol,
 
   if (!isfinite(*mu))
   {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is not finite - clamping to 1e1.");
-    *mu = 1e1;
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is not finite - falling back.");
+    return FALSE;
   }
   else if (fabs(*mu) < 1e-6)
   {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is below 1e-6 - clamping.");
-    *mu = 1e-6;
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is below 1e-6 - falling back.");
+    return FALSE;
   }
   else if (fabs(*mu) > 1e6)
   {
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is above 1e6 - clamping.");
-    *mu = 1e6;
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) warningStreamPrint(OMC_LOG_GBODE, 0, "Two-step estimator mu(r) is above 1e6 - falling back.");
+    return FALSE;
   }
+
+  return TRUE;
 }
 
 static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, double tol, int estimatorOrder)
@@ -310,7 +312,10 @@ static int twoStepEstimate_gb(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData, 
 
   double r = gbData->stepSize / gbData->lastStepSize;
   two_step->weights(r, d_old, g_new, &mu);
-  twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu);
+  if (!twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu))
+  {
+    return GB_ERROR_ESTIMATOR_FAILED;
+  }
 
   for (int stage = 0; stage < nStages; stage++)
   {
@@ -360,7 +365,10 @@ static int twoStepEstimate_gbf(TWO_STEP_ESTIMATOR *two_step, DATA_GBODE *gbData,
 
   double r = gbfData->stepSize / gbfData->lastStepSize;
   two_step->weights(r, d_old, g_new, &mu);
-  twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu);
+  if (!twoStepScaleMu(tol, tableau->order_b, estimatorOrder, tableau->richardson, &mu))
+  {
+    return GB_ERROR_ESTIMATOR_FAILED;
+  }
 
   for (int stage = 0; stage < nStages; stage++)
   {
