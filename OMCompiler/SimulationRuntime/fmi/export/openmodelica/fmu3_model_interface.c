@@ -1995,6 +1995,7 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetF
      *       in the whole ringbuffer
      */
     overwriteOldSimulationData(comp->fmuData);
+    comp->_need_update = 1;
     done=1;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -2084,7 +2085,6 @@ fmi3Status internalGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], s
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
-      comp->_need_update = 0;
     }
 
 #if NUMBER_OF_STATES > 0

@@ -1953,6 +1953,7 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFM
      *       in the whole ringbuffer
      */
     overwriteOldSimulationData(comp->fmuData);
+    comp->_need_update = 1;
     done=1;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -2042,7 +2043,6 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
-      comp->_need_update = 0;
     }
 
 #if NUMBER_OF_STATES > 0
