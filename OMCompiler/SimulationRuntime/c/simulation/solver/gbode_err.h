@@ -25,32 +25,38 @@
  *
  */
 
-/*! \file gbode_conf.h
- */
+#ifndef GBODE_ERR_H
+#define GBODE_ERR_H
 
-#ifndef _GBODE_CONF_H_
-#define _GBODE_CONF_H_
-
-#include "../../util/simulation_options.h"
+#include "gbode_main.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Declaration only
-extern modelica_boolean use_fhr;
-extern double use_filter;
+struct GB_ERROR_CONTEXT
+{
+  DATA *data;
+  threadData_t *threadData;
+  DATA_GBODE *gbData;
+  DATA_GBODEF *gbfData;
+  modelica_boolean isFast;
+};
 
-enum GB_METHOD getGB_method(enum _FLAG flag);
-enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
-enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag);
-enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag);
-double getGBRatio(void);
-double getGBCtrlFilterValue(void);
-enum GB_ERROR_METHOD getGBErr(enum _FLAG flag);
+#define GB_TOLERANCE_SCALING_SAFETY 0.2
+
+int gbEstimateError(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+
+int gbEmbeddedErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+int gbContractiveDefectErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+int gbContractiveFilterErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+int gbTwoStepErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+int gbRichardsonErrorEstimator(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+
+double gbScaledErrorTolerance(double tol, int methodOrder, int estimatorOrder, modelica_boolean richardson);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
-#endif  /* _GBODE_CONF_H_ */
+#endif

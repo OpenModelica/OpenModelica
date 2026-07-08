@@ -40,6 +40,7 @@
 
 #include "gbode_conf.h"
 #include "gbode_ctrl.h"
+#include "gbode_err.h"
 #include "gbode_events.h"
 #include "gbode_nls.h"
 #include "gbode_internal_nls.h"
@@ -172,6 +173,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     throwStreamPrint(NULL, "Not handled case for Runge-Kutta method %i", gbfData->type);
   }
 
+  gbfData->nlsSolverMethod = gbfData->isExplicit ? GB_NLS_UNKNOWN : getGB_NLS_method(FLAG_MR_NLS);
+  finalizeButcherTableauError(gbfData->tableau, gbfData->nlsSolverMethod);
+
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Step control factor is set to %g", gbfData->tableau->fac);
 
   gbfData->ctrl_method = getControllerMethod(FLAG_MR_CTRL);
@@ -179,6 +183,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Constant step size not supported for inner integration. Using IController.");
     gbfData->ctrl_method = GB_CTRL_I;
   }
+  gbfData->currentErrorOrder = gbfData->tableau->error_order;
 
   // allocate memory for the generic RK method
   gbfData->y              = malloc(gbData->nStates*sizeof(double));
@@ -262,9 +267,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     if (jacobian->availability == JACOBIAN_AVAILABLE) {
       data->callback->getDAG_JacA(data, threadData, jacobian);
     }
-
-    /* Allocate memory for the nonlinear solver */
-    gbfData->nlsSolverMethod = getGB_NLS_method(FLAG_MR_NLS);
 
     /* Initialize data for the nonlinear solver */
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
@@ -381,9 +383,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->isExplicit = FALSE;
   }
 
+  gbData->nlsSolverMethod = gbData->isExplicit ? GB_NLS_UNKNOWN : getGB_NLS_method(FLAG_SR_NLS);
+  finalizeButcherTableauError(gbData->tableau, gbData->nlsSolverMethod);
+
   // detect controller method
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
-  use_fhr = omc_flag[FLAG_SR_CTRL_FHR];
+  gbData->currentErrorOrder = gbData->tableau->error_order;
+  use_fhr = (modelica_boolean) omc_flag[FLAG_SR_CTRL_FHR];
   use_filter = getGBCtrlFilterValue();
 
    /* define maximum step size gbode is allowed to go */
@@ -494,9 +500,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
                                         " Colored numerical Jacobian will be used.");
       gbData->symJacAvailable = FALSE;
     }
-
-    /* Allocate memory for the nonlinear solver */
-    gbData->nlsSolverMethod = getGB_NLS_method(FLAG_SR_NLS);
 
     /* Initialize data for the nonlinear solver */
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
@@ -727,6 +730,8 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   int i;
 
   gbfData->didEventStep = FALSE;
+  gbfData->extrapolationBaseTime = INFINITY;
+  gbfData->extrapolationValid = FALSE;
   slowStateCache_invalidate(gbfData->slowStateCache);
 
   gbfData->time = gbData->time;
@@ -880,18 +885,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   double stopTime = data->simulationInfo->stopTime;
 
   double err, eventTime;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
+  double tol = data->simulationInfo->tolerance;
 
   int i, ii, j, jj, l, ll, r, rr;
   int integrator_step_info;
-
-  if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
-  {
-    Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbfData->nlsData->solverData)->ordinaryData);
-    Atol = internal_tolerances->atol;
-    Rtol = internal_tolerances->rtol;
-  }
 
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
@@ -1060,12 +1057,17 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         continue;
       }
 
+      tol = gbScaledErrorTolerance(data->simulationInfo->tolerance, gbfData->tableau->order_b,
+                                   gbfData->currentErrorOrder, gbfData->tableau->richardson);
+
       /* use same error estimate (scaled 2-norm) as for the SR case */
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        gbfData->errtol[ii] = Atol * gbData->nominals[ii] + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
-        gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
+        gbfData->errtol[ii] = tol * gbData->nominals[ii] + fmax(fabs(gbfData->yOld[ii]), fabs(gbfData->y[ii])) * tol;
+        if (gbfData->tableau->richardson || gbfData->type == MS_TYPE_IMPLICIT) {
+          gbfData->errest[ii] = fabs(gbfData->yt[ii]);
+        }
         gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
         err += gbfData->err[ii] * gbfData->err[ii];
       }
@@ -1198,7 +1200,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // Store performed stepSize for adjusting the time in case of latter interpolation
     // Call the step size control
     gbfData->lastStepSize = gbfData->stepSize;
-    gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
+    gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->currentErrorOrder, gbfData->ctrl_method);
 
     // debug the changes of the states and derivatives during integration
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -1322,16 +1324,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 
   double stopTime = data->simulationInfo->stopTime;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = Atol;
-
-  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
-  {
-    // use internal tolerances, beneficial for superconvergent methods Gauss, Radau, Lobatto
-    Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData);
-    Atol = internal_tolerances->atol;
-    Rtol = internal_tolerances->rtol;
-  }
+  double tol = data->simulationInfo->tolerance;
 
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
@@ -1523,8 +1516,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_SOLVER_V);
       }
 
-      // Perform one integration step, producing two approximations:
-      // the updated states in gbData->y and a second approximation in gbData->yt.
+      // Perform one integration step. New error estimators write |error| directly to errest;
+      // Richardson and MS methods still write a signed error estimate to yt.
       // Choose the integration method based on the tableau:
       // - If Richardson extrapolation is enabled, use gbode_richardson.
       // - Otherwise, use the default step function stored in gbData->step_fun.
@@ -1538,7 +1531,11 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
         infoStreamPrint(OMC_LOG_GBODE, 1, "Approximations after step calculation:");
         printVector_gb(OMC_LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
-        printVector_gb(OMC_LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
+        if (gbData->tableau->richardson || gbData->type == MS_TYPE_IMPLICIT) {
+          printVector_gb(OMC_LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
+        } else {
+          printVector_gb(OMC_LOG_GBODE, "errest", gbData->errest, nStates, gbData->time + gbData->stepSize);
+        }
         messageClose(OMC_LOG_GBODE);
       }
 
@@ -1596,13 +1593,16 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Calculate error estimators and tolerance scaling for each state variable
       // Compute error tolerance for the i-th state based on relative and absolute tolerances:
-      // errtol = Rtol * max(|current state|, |previous state|) + Atol * |nominal(state)|
-      // TODO: make errtol and errest local variables
+      // errtol = Rtol * max(|old state|, |current state|) + Atol * |nominal(state)|
+      tol = gbScaledErrorTolerance(data->simulationInfo->tolerance, gbData->tableau->order_b,
+                                   gbData->currentErrorOrder, gbData->tableau->richardson);
 
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        gbData->errtol[i] = Atol * gbData->nominals[i] + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
-        gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
+        gbData->errtol[i] = tol * gbData->nominals[i] + fmax(fabs(gbData->yOld[i]), fabs(gbData->y[i])) * tol;
+        if (gbData->tableau->richardson || gbData->type == MS_TYPE_IMPLICIT) {
+          gbData->errest[i] = fabs(gbData->yt[i]);
+        }
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err += gbData->err[i] * gbData->err[i];
       }
@@ -1723,9 +1723,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || noConst_intWithErrctrl) {
         if (gbData->multi_rate && gbData->nFastStates>0) {
-          gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
+          gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, tol);
         } else {
-          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, tol);
         }
       }
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1839,7 +1839,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->lastStepSize = gbData->stepSize;  // Save the current step size before updating
       // Calculate a new step size based on recent error and step size history,
       // the method’s error order, and the control method in use
-      gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
+      gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->currentErrorOrder, gbData->ctrl_method);
 
       // Ensure the new step size does not exceed the user-defined maximum step size (if set)
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
@@ -1869,7 +1869,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize, -1);
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Refine step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, Rtol), gbData->stepSize);
+                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, tol), gbData->stepSize);
           // run multirate step
           gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
           // synchronize relevant information
@@ -1883,7 +1883,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             memcpy(gbData->kRight, fODE, nStates * sizeof(double));
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Refined step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, Rtol), gbData->stepSize);
+                          gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, tol), gbData->stepSize);
           if (gb_step_info !=0) {
             // get out of here, if an event has happend!
             messageClose(OMC_LOG_SOLVER);

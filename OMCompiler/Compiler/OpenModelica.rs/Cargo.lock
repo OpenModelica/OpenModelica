@@ -4788,6 +4788,7 @@ dependencies = [
  "libc",
  "metamodelica",
  "openmodelica_backend_main",
+ "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
  "openmodelica_modelica_utilities",
  "openmodelica_script_util",

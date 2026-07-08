@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- axes -->
+  <path d="M9 6 V39 H42" stroke="#8a8a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- green sine wave -->
+  <path d="M9 22 C13 10, 21 10, 25 22 C29 34, 37 34, 41 22"
+        stroke="#4caf50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- red polynomial trajectory (a rising-then-falling parabola) -->
+  <path d="M9 36 Q25 5, 41 33"
+        stroke="#f24d4d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

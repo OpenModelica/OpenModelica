@@ -431,7 +431,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SIM_CODE_SCALARIZE,
   Flags.EXECUTE_COMMAND,
   Flags.MOO_DYNAMIC_OPTIMIZATION,
-  Flags.FMI_EXTRA_ANNOTATIONS
+  Flags.FMI_EXTRA_ANNOTATIONS,
+  Flags.INTERACTIVE_DUMP_FORMAT
 };
 
 public function new

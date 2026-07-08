@@ -1305,6 +1305,53 @@ record CheckSettingsResult
 annotation(preferredView="text");
 end CheckSettingsResult;
 
+record AxisScale
+  "Scale of a figure axis, from the figures annotation."
+  String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
+  Integer base = 10 "for Log; ignored otherwise";
+annotation(preferredView="text");
+end AxisScale;
+
+record Axis
+  "One axis of a figure plot, from the figures annotation."
+  Real[:] min = fill(0.0, 0) "empty = auto; length 1 = lower bound";
+  Real[:] max = fill(0.0, 0) "empty = auto; length 1 = upper bound";
+  String unit = "";
+  String label = "";
+  AxisScale scale = AxisScale();
+annotation(preferredView="text");
+end Axis;
+
+record Curve
+  "One curve of a figure plot, from the figures annotation."
+  String x = "time" "result reference";
+  String y "result reference";
+  String legend = "";
+  Integer zOrder = 0;
+annotation(preferredView="text");
+end Curve;
+
+record Plot
+  "One plot of a figure, from the figures annotation."
+  String title = "";
+  String identifier = "";
+  Curve[:] curves;
+  Axis x = Axis();
+  Axis y = Axis();
+annotation(preferredView="text");
+end Plot;
+
+record Figure
+  "One figure, from the figures sub-annotation of Documentation."
+  String title = "";
+  String identifier = "";
+  String group = "";
+  Boolean preferred = false;
+  Plot[:] plots;
+  String caption = "";
+annotation(preferredView="text");
+end Figure;
+
 package Internal
   "Internal definitions."
 
@@ -5073,6 +5120,14 @@ function getSimulationOptions
 external "builtin";
 annotation(preferredView="text");
 end getSimulationOptions;
+
+function getModelFigures
+  "Returns the figures defined in the class' figures sub-annotation of Documentation."
+  input TypeName name;
+  output Figure[:] figures;
+external "builtin";
+annotation(preferredView="text");
+end getModelFigures;
 
 function getAnnotationNamedModifiers
   "Returns the names of the modifiers in the given annotation."

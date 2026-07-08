@@ -410,6 +410,23 @@ struct SimModel {
     /// without state sets. The driver evaluates each set's Jacobian
     /// (`functionStateSetJacobians`), pivots, and rebuilds `A` between steps.
     state_sets: Vec<StateSetInfo>,
+    /// User-settable initial conditions (parameters with `isValueChangeable`):
+    /// name/unit/slot, so a host can list them and `-override` them by name.
+    editable_params: Vec<EditableParam>,
+    /// Result-variable display name -> unit (e.g. `h` -> `m`), for a host to label
+    /// plotted signals. Empty units are omitted.
+    var_units: HashMap<String, String>,
+}
+
+/// A user-settable parameter (an editable initial condition): its display name,
+/// unit, and `SimData` slot so an `-override=name=value` can write it.
+#[derive(Clone)]
+struct EditableParam {
+    name: String,
+    comment: String,
+    unit: String,
+    off: u32,
+    wty: WTy,
 }
 
 /// Process-wide table of prepared models, keyed by file-name prefix. Populated
@@ -418,6 +435,136 @@ struct SimModel {
 fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
     static MODELS: OnceLock<Mutex<HashMap<String, Arc<SimModel>>>> = OnceLock::new();
     MODELS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// One captured result signal: its name/description and the resolved value over
+/// the run (one f64 per output row; length 1 for a time-invariant signal).
+pub struct SimSeries {
+    pub name: String,
+    pub comment: String,
+    pub unit: String,
+    /// Time-invariant (parameter/constant) or constant over the whole run — the
+    /// web simulator hides these from the default plot ("all non-constant vars").
+    pub constant: bool,
+    /// This signal aliases the same underlying data as an earlier series (e.g.
+    /// `der(h)` and `v` when `v = der(h)`): plotting one of them suffices.
+    pub alias: bool,
+    pub values: Vec<f64>,
+}
+
+/// A parameter's value after the run, with the metadata a host needs to show it
+/// as an editable initial condition.
+pub struct CapturedParam {
+    pub name: String,
+    pub comment: String,
+    pub unit: String,
+    pub value: f64,
+}
+
+/// The last run's results, resolved from the model's [`RunResult`] into per-signal
+/// value arrays so a host (the web simulator) can read them directly, without the
+/// intermediate `.mat` file. `time` is the independent column; `series` excludes
+/// `time`.
+pub struct CapturedSim {
+    pub model_name: String,
+    pub start_time: f64,
+    pub stop_time: f64,
+    pub time: Vec<f64>,
+    pub series: Vec<SimSeries>,
+    pub params: Vec<CapturedParam>,
+}
+
+fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
+    static LAST: OnceLock<Mutex<Option<CapturedSim>>> = OnceLock::new();
+    LAST.get_or_init(|| Mutex::new(None))
+}
+
+/// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
+/// (reusing the result-var metadata the `.mat` writer uses) and stash it for the
+/// host to read directly.
+fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
+    let n_reals = run.n_reals as usize;
+    let n_rows = if n_reals == 0 { 0 } else { run.rows.len() / n_reals };
+    let column = |col: usize, negate: bool| -> Vec<f64> {
+        (0..n_rows)
+            .map(|r| {
+                let v = run.rows[r * n_reals + col];
+                if negate { -v } else { v }
+            })
+            .collect()
+    };
+    let is_const_col = |vals: &[f64]| vals.iter().all(|&v| v == vals.first().copied().unwrap_or(0.0));
+
+    let unit_of = |name: &str| model.var_units.get(name).cloned().unwrap_or_default();
+    let mut time = Vec::new();
+    let mut series = Vec::new();
+    let mut param_idx = 0usize;
+    // A signal aliases an earlier one when it reads the same underlying data: the
+    // same result column, or the same parameter slot (the `.mat`'s `dataInfo`
+    // aliasing — several names, one stored column). Distinct columns are distinct
+    // signals even when an equation keeps them near-equal (`der(h) = v` differs at
+    // event rows), so both are plotted. First occurrence is canonical.
+    let mut seen_cols = HashSet::new();
+    let mut seen_param_offs = HashSet::new();
+    let mut param_value_by_off: HashMap<u32, f64> = HashMap::new();
+    for v in &model.result_vars {
+        match &v.kind {
+            ResultKind::Time => time = column(0, false),
+            ResultKind::Column { col, negate } => {
+                let values = column(*col as usize, *negate);
+                let constant = is_const_col(&values);
+                let alias = !seen_cols.insert(*col);
+                series.push(SimSeries { name: v.name.clone(), comment: v.comment.clone(), unit: unit_of(&v.name), constant, alias, values });
+            }
+            ResultKind::Param { off, negate, .. } => {
+                let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
+                param_idx += 1;
+                param_value_by_off.entry(*off).or_insert(raw);
+                let value = if *negate { -raw } else { raw };
+                let alias = !seen_param_offs.insert(*off);
+                series.push(SimSeries {
+                    name: v.name.clone(),
+                    comment: v.comment.clone(),
+                    unit: unit_of(&v.name),
+                    constant: true,
+                    alias,
+                    values: vec![value],
+                });
+            }
+            ResultKind::Const { value } => series.push(SimSeries {
+                name: v.name.clone(),
+                comment: v.comment.clone(),
+                unit: unit_of(&v.name),
+                constant: true,
+                alias: false,
+                values: vec![*value],
+            }),
+        }
+    }
+    let params = model
+        .editable_params
+        .iter()
+        .map(|p| CapturedParam {
+            name: p.name.clone(),
+            comment: p.comment.clone(),
+            unit: p.unit.clone(),
+            value: param_value_by_off.get(&p.off).copied().unwrap_or(0.0),
+        })
+        .collect();
+    *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
+        model_name: model.model_name.clone(),
+        start_time: model.start_time,
+        stop_time: model.stop_time,
+        time,
+        series,
+        params,
+    });
+}
+
+/// Run `f` with the last captured simulation results, if any. Lets a host read
+/// signal data directly out of the runtime instead of parsing a result file.
+pub fn with_last_sim<R>(f: impl FnOnce(&CapturedSim) -> R) -> Option<R> {
+    last_sim().lock().unwrap_or_else(|e| e.into_inner()).as_ref().map(f)
 }
 
 /// Write `bytes` to `path`: the OS filesystem natively, or the in-memory VFS on
@@ -605,6 +752,24 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 // output — Modelica `Streams.print`, `ModelicaMessage`, …) alongside the result.
 // Capturing keeps that output out of the process stdout (the browser console on
 // the web target) so the caller can fold it into the simulation log.
+/// Parse `-override=name=value,...` tokens out of `simflags` and resolve each to
+/// its editable parameter's `SimData` slot. Unknown names / unparsable values are
+/// skipped (an unknown override is a no-op, as in the C runtime).
+fn resolve_overrides(model: &SimModel, simflags: &str) -> Vec<(u32, WTy, f64)> {
+    let mut out = Vec::new();
+    for tok in simflags.split_whitespace() {
+        let Some(list) = tok.strip_prefix("-override=") else { continue };
+        for item in list.split(',') {
+            let Some((name, value)) = item.split_once('=') else { continue };
+            let Ok(val) = value.trim().parse::<f64>() else { continue };
+            if let Some(p) = model.editable_params.iter().find(|p| p.name == name.trim()) {
+                out.push((p.off, p.wty, val));
+            }
+        }
+    }
+    out
+}
+
 fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Result<()>, String) {
     let model = sim_models()
         .lock()
@@ -616,6 +781,9 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
+    // `-override=name=value,...`: resolve each editable parameter to its SimData
+    // slot and hand the list to the driver (applied after `functionParameters`).
+    sim_driver::set_param_overrides(resolve_overrides(&model, simflags));
     openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
     let res = (|| -> Result<()> {
@@ -629,6 +797,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
         if log_stats {
             extra.push_str(&run.stats.log_stats_block());
         }
+        capture_last_sim(&model, &run);
         if fmt == "mat" {
             write_mat4(&model, result_file, &run.rows, run.n_reals, &run.params)?;
         }
@@ -850,7 +1019,7 @@ fn col_to_off(col: u32, layout: &SimLayout) -> u32 {
 fn build_var_map(
     vars: &SimCodeVar::SimVars,
     layout: &SimLayout,
-) -> Result<(SimVarMap, Vec<ResultVar>)> {
+) -> Result<(SimVarMap, Vec<ResultVar>, Vec<EditableParam>)> {
     let mut map = SimVarMap {
         vars: HashMap::new(),
         starts: HashMap::new(),
@@ -870,6 +1039,21 @@ fn build_var_map(
         zctol_off: layout.zctol_off,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
+    // User-settable parameters (isValueChangeable), collected as they are laid out.
+    let mut editable: Vec<EditableParam> = Vec::new();
+    let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: u32, wty: WTy| {
+        if sv.isValueChangeable && is_result_output(sv) {
+            if let Some(disp) = result_name(name) {
+                editable.push(EditableParam {
+                    name: disp,
+                    comment: sv.comment.to_string(),
+                    unit: sv.unit.to_string(),
+                    off,
+                    wty,
+                });
+            }
+        }
+    };
 
     // time — result signal 0.
     result_vars.push(ResultVar {
@@ -931,7 +1115,9 @@ fn build_var_map(
     // (they are not captured per row); strings get slots only.
     for (k, sv) in lst(&vars.paramVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.rparam_off + (k as u32) * 8, WTy::F64, false, name)?;
+        let off = layout.rparam_off + (k as u32) * 8;
+        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::F64, false, name.clone())?;
+        push_editable(sv, &name, off, WTy::F64);
     }
     for (i, sv) in lst(&vars.intAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
@@ -939,7 +1125,9 @@ fn build_var_map(
     }
     for (k, sv) in lst(&vars.intParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.iparam_off + (k as u32) * 4, WTy::I32, false, name)?;
+        let off = layout.iparam_off + (k as u32) * 4;
+        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.boolAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
@@ -947,7 +1135,9 @@ fn build_var_map(
     }
     for (k, sv) in lst(&vars.boolParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.bparam_off + (k as u32) * 4, WTy::I32, false, name)?;
+        let off = layout.bparam_off + (k as u32) * 4;
+        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
         insert_var(&mut map, sv, layout.str_off + (i as u32) * 4, WTy::I32, true)?;
@@ -1055,7 +1245,7 @@ fn build_var_map(
     }
 
     finalize_array_groups(&mut map)?;
-    Ok((map, result_vars))
+    Ok((map, result_vars, editable))
 }
 
 /// Register one variable's slot (by canonical cref key) and its start value. If
@@ -1357,7 +1547,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         has_homotopy,
     );
 
-    let (mut var_map, result_vars) = build_var_map(vars, &layout)?;
+    let (mut var_map, result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let var_units = collect_var_units(vars)?;
     // Sample event index -> its slot `k` (position in `samples`), for the
     // `sample(index,…)` builtin and the driver's per-sample state.
     let sample_map: HashMap<i32, u32> =
@@ -1855,7 +2046,46 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         method: settings.method.to_string(),
         tolerance: settings.tolerance.into_inner(),
         state_sets,
+        editable_params,
+        var_units,
     })
+}
+
+/// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
+/// the derivative var's unit), for a host to label plotted signals. Empty units
+/// are skipped. Names match [`build_var_map`]'s result-variable names.
+fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, String>> {
+    let mut units = HashMap::new();
+    let mut add = |name: String, sv: &SimCodeVar::SimVar| {
+        if !sv.unit.is_empty() {
+            units.insert(name, sv.unit.to_string());
+        }
+    };
+    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
+    for sv in &states {
+        add(cref_display(&sv.name)?, sv);
+    }
+    for (i, sv) in lst(&vars.derivativeVars).enumerate() {
+        let name = match states.get(i) {
+            Some(s) => format!("der({})", cref_display(&s.name)?),
+            None => cref_display(&sv.name)?,
+        };
+        add(name, sv);
+    }
+    for sv in lst(&vars.algVars)
+        .chain(lst(&vars.discreteAlgVars))
+        .chain(lst(&vars.paramVars))
+        .chain(lst(&vars.intAlgVars))
+        .chain(lst(&vars.intParamVars))
+        .chain(lst(&vars.boolAlgVars))
+        .chain(lst(&vars.boolParamVars))
+    {
+        add(cref_display(&sv.name)?, sv);
+    }
+    for av in lst(&vars.aliasVars).chain(lst(&vars.intAliasVars)).chain(lst(&vars.boolAliasVars)) {
+        add(cref_display(&av.name)?, av);
+    }
+    Ok(units)
 }
 
 /// Build the [`openmodelica_sim_meta::SimMeta`] embedded in the model module
