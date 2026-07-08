@@ -68,7 +68,7 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
     int numVars = jac->sizeCols;
     int numFuncs = jac->sizeRows;
     SPARSE_PATTERN* sp = jac->sparsePattern;
-    int numColors = sp->maxColors;
+    int numColors = sp->nColors;
 
     // 1. build adjacency list: which variables affect which functions
     std::vector<std::vector<int>> adj(numFuncs);
@@ -102,10 +102,9 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
 
     // 4. build color groups :: TODO: implement this in OpenModelica for the JACOBIAN
     std::vector<std::vector<int>> colorCols(numColors);
-    for (int col = 0; col < numVars; col++) {
-        int c = sp->colorCols[col];
-        if (c > 0) {
-            colorCols[c - 1].push_back(col);
+    for (int color = 0; color < numColors; ++color) {
+        for (int ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+            colorCols[color].push_back(sp->color_index[ci]);
         }
     }
 

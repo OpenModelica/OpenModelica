@@ -154,12 +154,12 @@ typedef enum
 typedef struct SPARSE_PATTERN
 {
   /* Primary CSC/CSR representation */
-  unsigned int nnz;               /* Number of non-zero elements in matrix, length of array index */
-  unsigned int* leadindex;        /* Array with column/row indices, size nCols+1/nRows+1 */
-  unsigned int* index;            /* Array with number of non-zeros indices */
-  unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
-                                   * Length of array is nCols/nRows */
-  unsigned int maxColors;         /* Number of colors */
+  unsigned int nnz;               /* Number of non-zero elements in matrix */
+  unsigned int* leadindex;        /* Array with column/row indices, size: nCols+1/nRows+1 */
+  unsigned int* index;            /* Array with number of non-zeros indices, size: nnz */
+  unsigned int nColors;           /* Number of colors */
+  unsigned int* color_leadindex;  /* Array with start indices for color, size: nColors+1 */
+  unsigned int* color_index;      /* Array with column/row indices, size: nCols/nRows */
 } SPARSE_PATTERN;
 
 /* NONLINEAR_PATTERN
@@ -206,8 +206,8 @@ typedef struct JACOBIAN
                                            uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
   /* Bidirectional (star bicoloring) support */
   modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
-  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
-  unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
+  JACOBIAN* adjointJacobian;            /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  unsigned char* recoverMask;           /* Per-nonzero boolean: TRUE=extract from this direction, FALSE=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
 } JACOBIAN;
 
