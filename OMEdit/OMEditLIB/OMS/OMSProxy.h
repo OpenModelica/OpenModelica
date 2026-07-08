@@ -44,6 +44,7 @@
 #include "OMS/OMSModel.h"
 #include <QObject>
 #include <QElapsedTimer>
+#include <QProcess>
 
 class GuiRequestSocket : public QObject
 {

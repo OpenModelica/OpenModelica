@@ -394,6 +394,7 @@ endif ()
 
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
+target_link_libraries(OMEditLib PUBLIC omc::3rd::libzmq)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 if(OM_OMEDIT_ANIMATION_QUICK3D)
