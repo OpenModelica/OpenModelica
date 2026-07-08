@@ -803,6 +803,15 @@ def shouldWeBuildUCRT() {
   return params.BUILD_MSYS2_UCRT64
 }
 
+def shouldWeBuildAlpine() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Alpine")) {
+      return true
+    }
+  }
+  return params.BUILD_ALPINE
+}
+
 def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Disable/All")) {

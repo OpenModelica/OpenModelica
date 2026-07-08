@@ -118,7 +118,6 @@ typedef void* iconv_t;
 #include <dirent.h>
 #include <sys/ioctl.h>
 #include <sys/param.h> /* MAXPATHLEN */
-#include <sys/unistd.h>
 #include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
 #include <stdlib.h>
