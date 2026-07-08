@@ -56,6 +56,18 @@
   }
   .brand { display: flex; align-items: center; height: 100%; cursor: pointer; flex: 0 0 auto; }
   .brand img { height: 20px; display: block; }
+  .brand img.narrow { display: none; height: 19px; }
+
+  /* Hamburger toggles the sidebar drawer on narrow screens. */
+  .hamburger {
+    display: none; align-items: center; justify-content: center;
+    width: 34px; height: 34px; padding: 0; flex: 0 0 auto;
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); cursor: pointer;
+  }
+  .hamburger:hover { background: #2d2d30; }
+  .hamburger svg { width: 18px; height: 18px; }
+  .nav-backdrop { display: none; }
   .topbar .name { font-weight: 600; color: var(--teal); white-space: nowrap; }
   .topbar .sep { width: 1px; height: 22px; background: var(--border); }
   .variants { display: flex; gap: 4px; }
@@ -88,17 +100,51 @@
   .overlay .box { max-width: 460px; }
   .overlay h2 { color: var(--fg); margin: 0 0 8px; font-weight: 600; }
   .overlay code { color: #ce9178; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  /* --- Mobile: sidebar becomes a slide-in drawer behind a hamburger ---- */
+  @media (max-width: 640px) {
+    body { grid-template-columns: 1fr; }
+    aside {
+      position: fixed; top: 0; bottom: 0; left: 0; width: 240px; z-index: 30;
+      padding: 8px; transform: translateX(-100%); transition: transform .2s ease;
+      box-shadow: 2px 0 14px #0007;
+    }
+    body.nav-open aside { transform: none; }
+    .nav-backdrop {
+      display: block; position: fixed; inset: 0; z-index: 20;
+      background: #0007; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+    /* Wider drawer → horizontal rows read better than the desktop rail. */
+    .nav-btn { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 12px; }
+    .nav-btn .ic { width: 24px; height: 24px; }
+    .nav-btn .lbl { font-size: 14px; width: auto; text-align: left; }
+    .nav-btn.active::before { left: 0; }
+
+    .hamburger { display: inline-flex; }
+    .brand img.wide { display: none; }
+    .brand img.narrow { display: block; }
+    .topbar { gap: 8px; padding: 0 8px; }
+    /* "Open in new tab" shrinks to just its icon. */
+    .tool .lbl { display: none; }
+    .tool { padding: 6px; }
+  }
 </style>
 </head>
 <body>
+<div class="nav-backdrop" id="navBackdrop"></div>
 <aside id="sidebar">
   <nav id="nav"></nav>
 </aside>
 
 <main>
   <div class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <a class="brand" href="#" title="OpenModelica — home" data-home>
-      <img src="icons/openmodelica-logo.svg" alt="OpenModelica" />
+      <img class="wide" src="icons/openmodelica-logo.svg" alt="OpenModelica" />
+      <img class="narrow" src="icons/om.svg" alt="OpenModelica" />
     </a>
     <span class="sep"></span>
     <span class="name" id="clientName"></span>
@@ -106,7 +152,7 @@
     <span class="spacer"></span>
     <a class="tool" id="openTab" target="_blank" rel="noopener" title="Open this client in a new tab" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-      Open in new tab
+      <span class="lbl">Open in new tab</span>
     </a>
   </div>
 
@@ -192,11 +238,17 @@ function parseHash() {
 }
 
 function go(id, variant) {
+  closeNav();                                // collapse the mobile drawer on pick
   let hash = '#' + id;
   if (variant) hash += '/' + variant;
   if (location.hash === hash) render();      // same link → just (re)render
   else location.hash = hash;                 // triggers hashchange → render
 }
+
+// --- Mobile drawer ---------------------------------------------------------
+const closeNav = () => document.body.classList.remove('nav-open');
+document.getElementById('hamburger').onclick = () => document.body.classList.toggle('nav-open');
+document.getElementById('navBackdrop').onclick = closeNav;
 
 async function render() {
   const { id, variant } = parseHash();

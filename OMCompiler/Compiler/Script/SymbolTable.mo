@@ -220,6 +220,87 @@ algorithm
   update(table);
 end setAbsynClass;
 
+function setAbsynLoaded
+  "Sets the Absyn program like setAbsyn, but for loadString: when the SCode is
+   cached and the loaded classes are top-level, it refreshes only those classes
+   in the SCode instead of dropping the whole cache. This keeps a loadString of
+   one class from re-exploding the entire loaded library. Falls back to full
+   invalidation if the merge changed the program in any other way (e.g. a
+   `uses` clause pulled in extra libraries)."
+  input Absyn.Program ast      "the full program after merging";
+  input Absyn.Program loaded   "the just-parsed classes, with their within";
+protected
+  SymbolTable table;
+  list<SCode.Element> sp;
+  SCode.Element se;
+  Boolean found, topLevel;
+
+  function update_element
+    input SCode.Element oldElement;
+    input output SCode.Element newElement;
+  algorithm
+    newElement := SCodeUtil.setElementPrefixes(SCodeUtil.elementPrefixes(oldElement), newElement);
+  end update_element;
+algorithm
+  table := get();
+  if referenceEq(table.ast, ast) then
+    return;
+  end if;
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  topLevel := match loaded.within_ case Absyn.TOP() then true; else false; end match;
+
+  if topLevel and isSome(table.explodedAst) then
+    SOME(sp) := table.explodedAst;
+    for cls in loaded.classes loop
+      se := AbsynToSCode.translateClass(cls);
+      (sp, found) := SCodeUtil.transformPathedElementInProgram(Absyn.IDENT(cls.name),
+        function update_element(newElement = se), sp);
+      if not found then
+        sp := se :: sp;
+      end if;
+    end for;
+    // Only trust the incremental SCode if it accounts for exactly the program's
+    // top-level classes; otherwise the merge did more than we tracked.
+    table.explodedAst := if listLength(sp) == listLength(ast.classes) then SOME(sp) else NONE();
+  elseif isSome(table.explodedAst) then
+    table.explodedAst := NONE();
+  end if;
+
+  update(table);
+end setAbsynLoaded;
+
+function setAbsynDeleted
+  "Sets the Absyn program like setAbsyn after a class was deleted, but when the
+   SCode is cached and a top-level class was removed, drops just that class from
+   the SCode instead of invalidating the whole cache."
+  input Absyn.Program ast;
+  input Absyn.Path path;
+protected
+  SymbolTable table;
+  list<SCode.Element> sp;
+  String name;
+  Boolean topLevel;
+algorithm
+  table := get();
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  (topLevel, name) := match path case Absyn.IDENT(name) then (true, name); else (false, ""); end match;
+
+  if isSome(table.explodedAst) then
+    if topLevel then
+      SOME(sp) := table.explodedAst;
+      table.explodedAst := SOME(list(e for e guard not SCodeUtil.isElementNamed(name, e) in sp));
+    else
+      table.explodedAst := NONE();
+    end if;
+  end if;
+
+  update(table);
+end setAbsynDeleted;
+
 function getSCode
   output SCode.Program ast;
 protected
