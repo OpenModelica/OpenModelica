@@ -812,6 +812,15 @@ def shouldWeBuildEnterpriseLinux() {
   return params.BUILD_ENTERPRISE_LINUX
 }
 
+def shouldWeBuildFedora() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Fedora")) {
+      return true
+    }
+  }
+  return params.BUILD_FEDORA
+}
+
 
 def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
