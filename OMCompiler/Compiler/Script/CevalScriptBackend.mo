@@ -570,7 +570,8 @@ algorithm
   start_time := Expression.toReal(options.startTime);
   stop_time := Expression.toReal(options.stopTime);
   options.stepSize := DAE.RCONST(interval);
-  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval));
+  // Round to nearest integer
+  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval + 0.5));
 end setSimulationOptionsInterval;
 
 protected function simOptionsAsString
