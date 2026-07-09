@@ -29,33 +29,33 @@ buildModel(tornNLSJacobianRows); getErrorString();
 //
 // ### Seeds (col vars) ###
 // --------------------------
-// {y, x}
+// {x, y}
 //
 // ### Partials (row vars) ###
 // -----------------------------
-// {$RES_SIM_0, $RES_SIM_1}
+// {$RES_SIM_1, $RES_SIM_0}
 //
 // ### Columns ###
 // -----------------
-// (y)	 affects:	{$RES_SIM_0,$RES_SIM_1}
 // (x)	 affects:	{$RES_SIM_0,$RES_SIM_1}
+// (y)	 affects:	{$RES_SIM_0,$RES_SIM_1}
 //
 // ##### Rows #####
 // ------------------
-// ($RES_SIM_0)	 depends on:	{x,y}
 // ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_SIM_0)	 depends on:	{x,y}
 //
 // =====================
 //   Sparsity Coloring
 // =====================
 // Column Color (1)
-//   - Column: {y}
-// Column Color (2)
 //   - Column: {x}
+// Column Color (2)
+//   - Column: {y}
 // Row Color (1)
-//   - Row:    {$RES_SIM_0}
-// Row Color (2)
 //   - Row:    {$RES_SIM_1}
+// Row Color (2)
+//   - Row:    {$RES_SIM_0}
 //
 // =============================
 //   Sparsity Pattern (nnz: 4)
@@ -63,33 +63,33 @@ buildModel(tornNLSJacobianRows); getErrorString();
 //
 // ### Seeds (col vars) ###
 // --------------------------
-// {y, x}
+// {x, y}
 //
 // ### Partials (row vars) ###
 // -----------------------------
-// {$RES_SIM_2, $RES_SIM_1}
+// {$RES_SIM_1, $RES_SIM_2}
 //
 // ### Columns ###
 // -----------------
-// (y)	 affects:	{$RES_SIM_1,$RES_SIM_2}
 // (x)	 affects:	{$RES_SIM_1,$RES_SIM_2}
+// (y)	 affects:	{$RES_SIM_1,$RES_SIM_2}
 //
 // ##### Rows #####
 // ------------------
-// ($RES_SIM_2)	 depends on:	{x,y}
 // ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_SIM_2)	 depends on:	{x,y}
 //
 // =====================
 //   Sparsity Coloring
 // =====================
 // Column Color (1)
-//   - Column: {y}
-// Column Color (2)
 //   - Column: {x}
+// Column Color (2)
+//   - Column: {y}
 // Row Color (1)
-//   - Row:    {$RES_SIM_2}
-// Row Color (2)
 //   - Row:    {$RES_SIM_1}
+// Row Color (2)
+//   - Row:    {$RES_SIM_2}
 //
 // {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
 // ""

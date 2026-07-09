@@ -240,17 +240,12 @@ public
     output list<Module.tearingInterface> funcs;
   protected
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
-    function isNotGuruVar extends BVariable.checkVar;
-      input Boolean init;
-    algorithm
-      b := BVariable.hasTearingSelect(var_ptr, NFBackendExtension.TearingSelect.PREFER, intLt);
-    end isNotGuruVar;
   algorithm
     funcs := match flag
-      case "minimalTearing" then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize};
-      case "cellier"        then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
-      case "omcTearing"     then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
-      case "guruTearing"    then {function initialize(varFunc = isNotGuruVar, eqnFunc = noFilterEqn), guru, finalize};
+      case "minimalTearing" then {minimal, finalize};
+      case "cellier"        then {minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "omcTearing"     then {minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "guruTearing"    then {guru, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -323,75 +318,32 @@ protected
     new_partitions := listReverse(new_partitions);
   end tearingTraverser;
 
-  function noFilterVar extends BVariable.checkVar;
-    input Boolean init;
-  algorithm
-    b := true;
-  end noFilterVar;
-
-  function noFilterEqn extends BEquation.checkEqn;
-  algorithm
-    b := true;
-  end noFilterEqn;
-
-  function initialize
-    extends Module.tearingInterface;
-    input checkVarInit varFunc = noFilterVar;
-    input BEquation.checkEqn eqnFunc = noFilterEqn;
-    partial function checkVarInit extends BVariable.checkVar;
-      input Boolean init;
-    end checkVarInit;
-  protected
-    Tearing strict;
-    list<ComponentRef> vars_lst, eqns_lst;
-    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    constant Boolean init = Partition.kindIsInitial(kind);
-  algorithm
-    (comp, full, index) := match comp
-      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-        index := index + 1;
-        comp.idx := index;
-
-        // filter variables and equations appropriately
-        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard varFunc(Slice.getT(var), init) in strict.iteration_vars);
-        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard eqnFunc(Slice.getT(eqn)) in strict.residual_eqns);
-
-        // the set of all loop variables used to determine solvability
-        vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
-
-        // the sets of variables and equations
-        v := UnorderedMap.subMap(variables.map, vars_lst);
-        e := UnorderedMap.subMap(equations.map, eqns_lst);
-
-        // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
-        comp.linear := checkLinearity(full, v, e);
-      then (comp, full, index);
-      else (comp, full, index);
-    end match;
-  end initialize;
-
   function finalize extends Module.tearingInterface;
   protected
     Tearing strict;
     list<list<Slice<EquationPointer>>> acc;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
-    comp := match comp
+    (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        if comp.idx < 0 then
+          index := index + 1;
+          comp.idx := index;
+        end if;
+
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
         strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
         comp.strict := strict;
+        comp.linear := isLinearTearingSet(strict, funcMap, kind);
 
         if Flags.isSet(Flags.TEARING_DUMP) then
           print(StringUtil.headline_2("[" + Partition.Partition.kindToString(kind) + "] Tearing Result " + intString(comp.idx)) + "\n" + StrongComponent.toString(comp) + "\n");
         end if;
-      then comp;
-      else comp;
+      then (comp, index);
+      else (comp, index);
     end match;
   end finalize;
 
@@ -401,7 +353,6 @@ protected
     Tearing strict;
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
-    Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
     Adjacency.Matrix adj;
     Matching matching;
@@ -421,9 +372,6 @@ protected
         implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in disc_eqns));
         disc_vars := UnorderedSet.unique_list(listAppend(disc_vars, implied_vars), BVariable.hash, BVariable.equalName);
         cont_vars := UnorderedSet.difference_list(cont_vars, implied_vars, BVariable.hash, BVariable.equalName);
-
-        num_vars := sum(BVariable.size(var) for var in disc_vars);
-        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
         // do nothing if there are no discrete equations
         if not listEmpty(disc_eqns) then
@@ -622,6 +570,43 @@ protected
       then fail();
     end match;
   end checkLinearity;
+
+  function isLinearTearingSet
+    input Tearing strict;
+    input UnorderedMap<Path, Function> funcMap;
+    input Partition.Kind kind;
+    output Boolean linear;
+  protected
+    VariablePointers variables;
+    EquationPointers equations;
+    UnorderedSet<ComponentRef> vars_set;
+    UnorderedMap<ComponentRef, Integer> v, e;
+    Adjacency.Matrix local_full;
+    list<Pointer<Variable>> iteration_vars, inner_vars, vars_lst;
+    list<Pointer<Equation>> residual_eqns, inner_eqns, eqns_lst;
+    constant Boolean init = Partition.kindIsInitial(kind);
+  algorithm
+    iteration_vars := list(Slice.getT(var) for var guard BVariable.isContinuous(Slice.getT(var), init) in strict.iteration_vars);
+    residual_eqns := list(Slice.getT(eqn) for eqn guard Equation.isContinuous(Slice.getT(eqn)) in strict.residual_eqns);
+    inner_vars := listAppend(list(var for var guard BVariable.isContinuous(var, init) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+    inner_eqns := listAppend(list(eqn for eqn guard Equation.isContinuous(eqn) in StrongComponent.getEquations(comp)) for comp in strict.innerEquations);
+
+    vars_lst := UnorderedSet.unique_list(listAppend(iteration_vars, inner_vars), BVariable.hash, BVariable.equalName);
+    eqns_lst := UnorderedSet.unique_list(listAppend(residual_eqns, inner_eqns), Equation.hash, Equation.equalName);
+
+    if listEmpty(vars_lst) or listEmpty(eqns_lst) then
+      linear := false;
+    else
+      variables := VariablePointers.fromList(vars_lst);
+      equations := EquationPointers.fromList(eqns_lst);
+      vars_set := UnorderedSet.fromList(list(BVariable.getVarName(var) for var in vars_lst), ComponentRef.hash, ComponentRef.isEqual);
+      v := variables.map;
+      e := equations.map;
+      local_full := Adjacency.Matrix.createFull(variables, equations, kind);
+      local_full := Adjacency.Matrix.refine(local_full, funcMap, v, e, variables, equations, vars_set, init);
+      linear := checkLinearity(local_full, v, e);
+    end if;
+  end isLinearTearingSet;
 
   function filterDiscreteVariables
     "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
