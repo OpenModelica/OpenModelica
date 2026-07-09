@@ -5965,7 +5965,7 @@ match row
             else depsCode
           else depsCode
     ;separator="\n")
-    let scNames = (solved_crefs |> sc => escapeCComments(crefStr(sc)) ;separator=", ")
+    let scNames = (solved_crefs |> sc => System.stringReplace(System.stringReplace(crefStrNoUnderscore(sc), "/*", ""), "*/", "") ;separator=", ")
     if bodyCode then
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] count */
@@ -5979,7 +5979,7 @@ end resizableSparsityRowCount;
 template resizableColCount(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
-  let seedComment = '/* <%escapeCComments(crefStr(seed))%> */'
+  let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
@@ -6051,7 +6051,7 @@ match row
     let bodyCode = (solved_crefs |> sc hasindex k =>
       resizableFillDepsForRow(row, k, sc, context, &preExp, &varDecls, &auxFunction, spPattern)
     ;separator="\n")
-    let scNames = (solved_crefs |> sc => escapeCComments(crefStr(sc)) ;separator=", ")
+    let scNames = (solved_crefs |> sc => System.stringReplace(System.stringReplace(crefStrNoUnderscore(sc), "/*", ""), "*/", "") ;separator=", ")
     if bodyCode then
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] fill */
@@ -6131,7 +6131,7 @@ end resizableFillDepsForRow;
 template resizableColFill(ComponentRef seed, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
-  let seedComment = '/* <%escapeCComments(crefStr(seed))%> */'
+  let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
