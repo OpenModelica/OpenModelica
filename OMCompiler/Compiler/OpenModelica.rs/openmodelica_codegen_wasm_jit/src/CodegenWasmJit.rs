@@ -181,6 +181,15 @@ struct SimLayout {
     /// (evaluate fresh + store), 2 = initialization (fresh everywhere incl. NLS).
     /// `rt_solve_nls` forces held (0) around its residual evals unless mode 2.
     rel_fresh_off: u32,
+    /// Held relation snapshot (one i32 per relation): the hysteresis *direction* read
+    /// by `compile_relation_hyst` and the crossing function. The driver refreshes it
+    /// from `relations[]` at init and around each event, and holds it fixed for the
+    /// duration of one event's discrete update.
+    stored_rel_off: u32,
+    /// `relationsPre` (one i32 per relation): the value a held relation returns, so
+    /// it stays fixed while an NLS Newton solve varies the unknowns. The driver
+    /// refreshes it from `relations[]` at init and each event-iteration pass.
+    relations_pre_off: u32,
     /// Base of the state-set Jacobian scratch region (f64): the seed inputs and
     /// column result outputs of every `$STATESET` analytic Jacobian, so
     /// `functionStateSetJacobians` can evaluate a column into memory the driver
@@ -244,8 +253,12 @@ impl SimLayout {
         // the relation-mode flag.
         let relations_off = zc_off + n_zc * 8;
         let rel_fresh_off = relations_off + n_rel * 4;
+        // `storedRelations` snapshot (one i32 per relation), after the mode flag.
+        let stored_rel_off = rel_fresh_off + 4;
+        // `relationsPre` (one i32 per relation), the held-mode values.
+        let relations_pre_off = stored_rel_off + n_rel * 4;
         // State-set Jacobian scratch (f64), 8-aligned after the relation region.
-        let stateset_off = (rel_fresh_off + 4 + 7) & !7;
+        let stateset_off = (relations_pre_off + n_rel * 4 + 7) & !7;
         // 2-slot pad: C's `_event_mod_real` writes `pre[index+2]`, past its 2
         // reserved slots.
         let mathevents_off = stateset_off + n_stateset_f64 * 8;
@@ -257,7 +270,7 @@ impl SimLayout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off, bool_off, bparam_off,
             str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off,
-            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stateset_off, n_math, mathevents_off, zctol_off, total,
+            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, n_math, mathevents_off, zctol_off, total,
         }
     }
 
@@ -910,6 +923,10 @@ struct SimVarMap {
     relations_off: u32,
     /// `SimData` byte offset of the relation-evaluation-mode flag.
     rel_fresh_off: u32,
+    /// `SimData` byte offset of the held relation snapshot (`SimLayout::stored_rel_off`).
+    stored_rel_off: u32,
+    /// `SimData` byte offset of `relationsPre` (`SimLayout::relations_pre_off`).
+    relations_pre_off: u32,
     /// Number of indexed relations (bounds the `relations[]` region).
     n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
@@ -1032,6 +1049,8 @@ fn build_var_map(
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
         rel_fresh_off: layout.rel_fresh_off,
+        stored_rel_off: layout.stored_rel_off,
+        relations_pre_off: layout.relations_pre_off,
         n_relations: layout.n_rel,
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math,
@@ -1780,7 +1799,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     // Equation functions.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
     bodies.push(build_eq_fn_with_prelude("parameterEquations", &param_bindings, param_eqs, &var_map, &eq_index, &by_name, &mut literals, &[], &stateset_diag)?);
-    bodies.push(build_eq_fn("initialEquations", initial_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
+    // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
+    // path skips the host `run_initialization`).
+    let init_save: Vec<(u32, u32, u32)> = if layout.n_rel > 0 {
+        vec![(layout.relations_pre_off, layout.relations_off, layout.n_rel * 4)]
+    } else {
+        Vec::new()
+    };
+    bodies.push(build_eq_fn_with_prelude("initialEquations", &[], initial_eqs, &var_map, &eq_index, &by_name, &mut literals, &init_save, &[])?);
     bodies.push(build_eq_fn("odeEquations", ode_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
     bodies.push(build_eq_fn_with_prelude("algebraicEquations", &[], algebraic_eqs, &var_map, &eq_index, &by_name, &mut literals, &save_pre, &[])?);
     // The integrator loop.
@@ -2273,6 +2299,8 @@ fn build_eq_fn_with_prelude(
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,
         rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
@@ -2321,6 +2349,8 @@ fn build_init_sample_fn(
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,
         rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
@@ -2362,6 +2392,8 @@ fn build_zero_crossings_fn(
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,
         rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
@@ -2762,6 +2794,8 @@ fn build_nls_fns(
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,
         rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
         n_relations: var_map.n_relations,
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,

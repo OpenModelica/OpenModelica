@@ -456,7 +456,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -970,6 +970,11 @@ pub(crate) struct SimCtx {
     pub(crate) relations_off: u32,
     /// `SimData` byte offset of the relation-evaluation-mode flag.
     pub(crate) rel_fresh_off: u32,
+    /// `SimData` byte offset of the held relation snapshot — the hysteresis
+    /// *direction* source, held fixed across an event's discrete update.
+    pub(crate) stored_rel_off: u32,
+    /// `SimData` byte offset of `relationsPre` (held-mode relation values).
+    pub(crate) relations_pre_off: u32,
     /// Number of indexed relations.
     pub(crate) n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
@@ -3901,10 +3906,16 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
         && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
     let data = ctx.sim()?.data_local;
     let rel_off = ctx.sim()?.relations_off + index as u32 * 4;
+    // Held mode returns the frozen `relationsPre[index]`; the fresh branches store
+    // the live `relations[index]`.
+    let pre_off = ctx.sim()?.relations_pre_off + index as u32 * 4;
+    // The hysteresis band's direction is the held relation snapshot, not the live
+    // `relations[]` that an event's discrete update rewrites.
+    let dir_off = ctx.sim()?.stored_rel_off + index as u32 * 4;
     let fresh_off = ctx.sim()?.rel_fresh_off;
     if ctx.sim()?.zc_context {
         if real_ineq {
-            compile_relation_hyst(ctx, e1, op, e2, rel_off)?;
+            compile_relation_hyst(ctx, e1, op, e2, dir_off)?;
         } else {
             compile_relation_fresh(ctx, e1, op, e2)?;
         }
@@ -3924,7 +3935,7 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
         ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
         compile_relation_fresh(ctx, e1, op, e2)?;
         ctx.emit(we::Instruction::Else);
-        compile_relation_hyst(ctx, e1, op, e2, rel_off)?;
+        compile_relation_hyst(ctx, e1, op, e2, dir_off)?;
         ctx.emit(we::Instruction::End);
     } else {
         compile_relation_fresh(ctx, e1, op, e2)?;
@@ -3935,16 +3946,16 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
     ctx.emit(we::Instruction::I32Store(mem_arg(rel_off, 2)));
     ctx.emit(we::Instruction::LocalGet(v));
     ctx.emit(we::Instruction::Else);
-    ctx.emit(we::Instruction::LocalGet(data)); // held: relations[index]
-    ctx.emit(we::Instruction::I32Load(mem_arg(rel_off, 2)));
+    ctx.emit(we::Instruction::LocalGet(data)); // held: relationsPre[index]
+    ctx.emit(we::Instruction::I32Load(mem_arg(pre_off, 2)));
     ctx.emit(we::Instruction::End);
     Ok(WTy::I32)
 }
 
-/// Emit a Real inequality with C's zero-crossing hysteresis band, leaving an i32
+/// Emit a Real inequality with a zero-crossing hysteresis band, leaving an i32
 /// boolean on the stack. The comparison boundary is offset by
 /// ±`eps = tolZC * (max(|a|,|b|) + max(nominal(a), nominal(b)))` in the direction
-/// that resists a flip, using the held `relations[]` value at `rel_off` as the
+/// that resists a flip, using the held relation snapshot at `dir_off` as the
 /// current side: once true the relation stays true until the operand clears the
 /// band, and vice versa. `tolZC` is read from `SimData` (`zctol_off`).
 fn compile_relation_hyst(
@@ -3952,7 +3963,7 @@ fn compile_relation_hyst(
     e1: &DAE::Exp,
     op: &DAE::Operator,
     e2: &DAE::Exp,
-    rel_off: u32,
+    dir_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
@@ -3989,9 +4000,9 @@ fn compile_relation_hyst(
     ctx.emit(I::F64Sub);
     ctx.emit(I::LocalSet(diff));
 
-    // relations[rel_off] chooses which band edge applies.
+    // The held snapshot at `dir_off` chooses which band edge applies.
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Load(mem_arg(rel_off, 2)));
+    ctx.emit(I::I32Load(mem_arg(dir_off, 2)));
     ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
     emit_hyst_cmp(ctx, op, diff, eps, true)?;
     ctx.emit(I::Else);

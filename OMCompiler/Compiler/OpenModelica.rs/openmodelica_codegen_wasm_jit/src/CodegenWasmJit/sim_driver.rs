@@ -283,13 +283,6 @@ fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()>
 /// Number of equidistant homotopy steps (C's `init_lambda_steps`).
 const HOMOTOPY_STEPS: i32 = 3;
 
-/// Solve the initial system: `functionParameters`, then `functionInitialEquations`
-/// with the relations fresh (init mode). Tries directly first (lambda = 1, so
-/// `homotopy(a, s)` = a); if that leaves a non-converged nonlinear system and the
-/// model uses `homotopy()`, fall back to the global equidistant homotopy
-/// continuation (C's `solveWithGlobalHomotopy`): lambda 0 -> 1 in `HOMOTOPY_STEPS`
-/// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
-/// step seeded by the previous one's solution. Leaves lambda = 1.
 thread_local! {
     /// Parameter `-override`s for the next run, resolved to `(SimData offset,
     /// type, value)`. Applied right after `functionParameters` so `-override=h0=2`
@@ -315,7 +308,20 @@ fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     Ok(())
 }
 
+/// Solve the initial system: `functionParameters`, then `functionInitialEquations`
+/// with the relations fresh (init mode). Tries directly first (lambda = 1, so
+/// `homotopy(a, s)` = a); if that leaves a non-converged nonlinear system and the
+/// model uses `homotopy()`, fall back to the global equidistant homotopy
+/// continuation (C's `solveWithGlobalHomotopy`): lambda 0 -> 1 in `HOMOTOPY_STEPS`
+/// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
+/// step seeded by the previous one's solution. Leaves lambda = 1, then seeds
+/// `relationsPre` for the continuous phase's held relations.
 fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    run_initialization_impl(e, sim_data, layout)?;
+    update_relations_pre(e, sim_data, layout)
+}
+
+fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     e.call1("functionParameters", sim_data)?;
     apply_param_overrides(e, sim_data)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
@@ -392,6 +398,31 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// Upper bound on discrete-update iterations at one event (C's `maxEventIterations`).
 const MAX_EVENT_ITER: usize = 20;
 
+/// Copy `relations[]` into the held relation snapshot at `stored_rel_off`. The
+/// hysteresis band and the zero-crossing function read the snapshot as their
+/// *direction*. It is refreshed at init and around each event, and left untouched
+/// during an event's discrete update so the band edge stays fixed while
+/// `iterate_discrete` rewrites `relations[]`.
+fn store_relations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_rel == 0 {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; (layout.n_rel * 4) as usize];
+    e.read_bytes(sim_data + layout.relations_off, &mut buf)?;
+    e.write_bytes(sim_data + layout.stored_rel_off, &buf)
+}
+
+/// Copy `relations[]` into `relationsPre`. Freezing it before an event-iteration
+/// pass keeps held relations fixed while that pass's NLS solve runs.
+fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_rel == 0 {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; (layout.n_rel * 4) as usize];
+    e.read_bytes(sim_data + layout.relations_off, &mut buf)?;
+    e.write_bytes(sim_data + layout.relations_pre_off, &buf)
+}
+
 /// Snapshot of the discrete state — boolean/integer algebraics and held relations
 /// — used to detect when an event's discrete update has reached a fixed point.
 fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
@@ -404,17 +435,25 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     Ok(buf)
 }
 
-/// Run the discrete update to a fixed point: re-run `functionAlgebraics` (which
-/// fires edge-detected when-bodies and saves pre-values) until the discrete state
-/// stops changing. A single pass leaves conditions evaluated against the *pre*-event
-/// operands — after a `reinit` flips a state, the guarding relation must be
-/// recomputed and its pre refreshed, or the next crossing sees a stale edge (a
-/// bouncing ball then never settles). Assumes `functionODE` and the event time have
-/// already been written.
+/// Run the discrete update to a fixed point: re-evaluate the whole system —
+/// `functionODE` (relations in the continuous equations) then `functionAlgebraics`
+/// (algebraic relations, edge-detected when-bodies, pre-values) — until the discrete
+/// state stops changing. Re-running both each pass lets relations guarding the
+/// derivative equations re-settle after a when-body flips a discrete variable or
+/// `reinit`s a state; evaluating only the algebraic half leaves those relations at
+/// their pre-event value, so two mutually-triggering crossings never reach a
+/// consistent set and chatter on the integrator instead. Assumes the event time is
+/// already written.
 fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
+    // this pass's relations; the discrete state settles across passes.
+    update_relations_pre(e, sim_data, layout)?;
+    e.call1("functionODE", sim_data)?;
     e.call1("functionAlgebraics", sim_data)?;
     let mut prev = discrete_snapshot(e, sim_data, layout)?;
     for _ in 1..MAX_EVENT_ITER {
+        update_relations_pre(e, sim_data, layout)?;
+        e.call1("functionODE", sim_data)?;
         e.call1("functionAlgebraics", sim_data)?;
         let cur = discrete_snapshot(e, sim_data, layout)?;
         if cur == prev {
@@ -1041,6 +1080,8 @@ fn run_dassl_events(
     // the initial row, so `relations[]` is populated before the states loop starts
     // holding it) and `initSample` are handled inside run_initialization.
     run_initialization(e, sim_data, layout)?;
+    // Seed the hysteresis direction from the initial relations.
+    store_relations(e, sim_data, layout)?;
 
     let n_states = layout.n_states as usize;
     let states_base = sim_data + REAL_OFF;
@@ -1066,6 +1107,7 @@ fn run_dassl_events(
     // A sample scheduled exactly at the start time fires before row 0.
     if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
         samp.fire(e, sim_data, start)?;
+        store_relations(e, sim_data, layout)?;
         stats.time_events += 1;
     }
     emit_row(e, &mut rows, start)?;
@@ -1090,6 +1132,7 @@ fn run_dassl_events(
                 // event landing on the grid point covers this row.
                 emit_row(e, &mut rows, te)?;
                 samp.fire(e, sim_data, te)?;
+                store_relations(e, sim_data, layout)?;
                 stats.time_events += 1;
                 emit_row(e, &mut rows, te)?;
                 if terminated(e, sim_data, layout)? {
@@ -1230,11 +1273,16 @@ fn run_dassl_events(
                     // real pre-region before the discrete update fires.
                     save_pre_real(e, sim_data, layout)?;
                     write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
+                    // Freeze the hysteresis direction at the pre-event relations for
+                    // the whole discrete update.
+                    store_relations(e, sim_data, layout)?;
                     // Post-event row from the discrete update run to a fixed point.
                     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
                     write_f64(e, sim_data + TIME_OFF, troot)?;
-                    e.call1("functionODE", sim_data)?;
                     iterate_discrete(e, sim_data, layout)?;
+                    // Advance the direction to the settled relations for the next
+                    // continuous phase.
+                    store_relations(e, sim_data, layout)?;
                     check_nls(e, sim_data, layout)?;
                     capture_row(e, &mut rows, sim_data, layout)?;
                     if terminated(e, sim_data, layout)? {
@@ -1262,6 +1310,7 @@ fn run_dassl_events(
                 emit_row(e, &mut rows, te)?; // pre-event row (held)
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
+                store_relations(e, sim_data, layout)?; // advance the hysteresis direction
                 stats.time_events += 1;
                 emit_row(e, &mut rows, te)?;
                 if terminated(e, sim_data, layout)? {
