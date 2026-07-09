@@ -5979,16 +5979,21 @@ end resizableSparsityRowCount;
 template resizableColCount(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
-match context
+  let seedComment = '/* <%escapeCComments(crefStr(seed))%> */'
+  match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
     case v as SIMVAR() then
       match crefSubs(seed)
         case {} then
-          'col_counts[<%v.index%>]++;'
+          <<
+          <%seedComment%>
+          col_counts[<%v.index%>]++;
+          >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
           <<
+          <%seedComment%>
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
@@ -6001,6 +6006,7 @@ match context
           let nSlice = tempDecl("modelica_integer", &varDecls)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
           <<
+          <%seedComment%>
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
@@ -6016,6 +6022,7 @@ match context
               case {} then '0'
               else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
             <<
+            <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
@@ -6025,7 +6032,10 @@ match context
             >>
           else
             let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
-            'col_counts[<%v.index%> + (<%offset%>)]++;'
+            <<
+            <%seedComment%>
+            col_counts[<%v.index%> + (<%offset%>)]++;
+            >>
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
 end resizableColCount;
@@ -6121,16 +6131,21 @@ end resizableFillDepsForRow;
 template resizableColFill(ComponentRef seed, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
-match context
+  let seedComment = '/* <%escapeCComments(crefStr(seed))%> */'
+  match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
     case v as SIMVAR() then
       match crefSubs(seed)
         case {} then
-          '<%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;'
+          <<
+          <%seedComment%>
+          <%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;
+          >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
           <<
+          <%seedComment%>
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
@@ -6143,6 +6158,7 @@ match context
           let nSlice = tempDecl("modelica_integer", &varDecls)
           let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
           <<
+          <%seedComment%>
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
@@ -6158,6 +6174,7 @@ match context
               case {} then '0'
               else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
             <<
+            <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
@@ -6167,7 +6184,10 @@ match context
             >>
           else
             let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
-            '<%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;'
+            <<
+            <%seedComment%>
+            <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;
+            >>
     else '/* resizableColFill: seed not found in jacHT */'
   else ''
 end resizableColFill;
