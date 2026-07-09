@@ -235,3 +235,11 @@ pub extern "C" fn omc_compiler_free_string(s: *mut c_char) {
         }
     }
 }
+
+/// Request cancellation of a running in-process wasm-jit simulation (cross-thread —
+/// an OMEdit Cancel button, a Ctrl-C handler). `simulate` then returns a "cancelled"
+/// error, leaving omc consistent.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_request_cancel() {
+    capi::request_cancel();
+}

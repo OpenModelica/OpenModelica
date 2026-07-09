@@ -94,6 +94,17 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
   url.search = "v=" + UTF8ToString(ver);
   const w = new Worker(url, { type: "module" });
   Module.__omcWorker = w;
+  // Cooperative simulation cancel: a shared flag the omc driver polls per step (needs
+  // cross-origin isolation for SharedArrayBuffer). simulate() blocks the worker, so
+  // cancel can't be a message — the main thread writes this flag, the worker reads it.
+  Module.__omcCancelView = null;
+  try {
+    if (typeof SharedArrayBuffer !== "undefined" && self.crossOriginIsolated) {
+      const cbuf = new SharedArrayBuffer(4);
+      Module.__omcCancelView = new Int32Array(cbuf);
+      w.postMessage({ cmd: "cancelBuf", buf: cbuf });
+    }
+  } catch (e) { Module.__omcCancelView = null; }
   Module.__omcPending = null;
   Module.__omcMsgId = 0;
   Module.__omcCallId = 0;
@@ -227,6 +238,18 @@ EM_ASYNC_JS(void, omedit_await_call, (int id), {
 });
 
 EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
+
+// Cooperative simulation cancel flag (shared with the omc worker). Available only
+// when cross-origin isolated (SharedArrayBuffer); omedit_cancel_available reports it.
+EM_JS(int, omedit_cancel_available, (), {
+  return Module.__omcCancelView ? 1 : 0;
+});
+EM_JS(void, omedit_cancel_sim, (), {
+  if (Module.__omcCancelView) Atomics.store(Module.__omcCancelView, 0, 1);
+});
+EM_JS(void, omedit_clear_cancel, (), {
+  if (Module.__omcCancelView) Atomics.store(Module.__omcCancelView, 0, 0);
+});
 
 static QVarLengthArray<QEventLoop *> g_omcWaitStack;
 static bool g_omcWakeInstalled = false;

@@ -43,6 +43,13 @@ import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
 
+// Cooperative simulation cancel (OMEdit-wasm): simulate() blocks here, so the main
+// thread writes a shared SharedArrayBuffer flag and the omc driver polls it per step
+// through this global (bound by omc_enable_cancel_poll). Null-safe until the main
+// thread hands over the buffer (`cancelBuf`).
+let cancelView = null;
+globalThis.__omcPollCancel = () => (cancelView ? Atomics.load(cancelView, 0) : 0);
+
 // Read a whole file from the worker store through the WASI preview1 flow
 // (path_open → fd_read → fd_close). Returns a Uint8Array or undefined if absent.
 function wasiReadFile(path) {
@@ -152,6 +159,10 @@ async function doInit(installMsl) {
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
   }
+  // Point the omc driver's cancel poll at __omcPollCancel (feature-detected).
+  if (typeof OmcModule.omc_enable_cancel_poll === "function") {
+    OmcModule.omc_enable_cancel_poll();
+  }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only
   // surfaces its diagnostics, it does not stop the shell from starting. A client
@@ -199,6 +210,12 @@ async function doEval(src, keepErrors) {
 
 self.onmessage = async (e) => {
   const msg = e.data;
+  // One-way setup message (no reply): store the shared cancel view. Before
+  // `await ready` so it is in place before the first simulate.
+  if (msg.cmd === "cancelBuf") {
+    try { cancelView = msg.buf ? new Int32Array(msg.buf) : null; } catch (_) { cancelView = null; }
+    return;
+  }
   await ready;
   try {
     if (msg.cmd === "init") {

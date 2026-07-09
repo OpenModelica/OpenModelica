@@ -32,6 +32,8 @@
   }
   button:hover:not(:disabled){ background:#1177bb; }
   button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
+  button.cancel{ background:#a1260d; }
+  button.cancel:hover:not(:disabled){ background:#c42b0e; }
   button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
   button.ghost:hover:not(:disabled){ background:#2d2d30; }
   button.ghost.icon-only { padding:6px 9px; display:inline-flex; align-items:center; }
@@ -453,7 +455,7 @@ function seedFromOptions(o) {
 
 async function run(kind) {                       // 'full' | 'resim'
   if (running) { pendingKind = pendingKind === 'full' ? 'full' : kind; return; }
-  running = true; runBtn.disabled = true;
+  running = true; setRunUI(true);
   log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
 
@@ -471,6 +473,7 @@ async function run(kind) {                       // 'full' | 'resim'
     if (kind === 'resim' && builtModel && builtWorker) {
       jobWorker = builtWorker;
       const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov });
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       snap = r;
     } else if (mode === 'librarycopy' && pendingMods.length) {
@@ -487,6 +490,7 @@ async function run(kind) {                       // 'full' | 'resim'
       pendingMods = [];
       if (src != null) { srcEl.value = unquote(src); lastText = srcEl.value; }
       const r = await call(worker, 'simulate', { name: copyName, override: '', ...settings });
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       builtModel = copyName; builtWorker = worker; snap = r;   // figures/doc unchanged by a tweak
     } else {
@@ -509,6 +513,7 @@ async function run(kind) {                       // 'full' | 'resim'
       if (lm.figures !== undefined) modelFigures = lm.figures || null;
       if (lm.doc !== undefined) { modelDoc = lm.doc || ''; renderDoc(); }
       const r = await call(worker, 'simulate', { name: lm.name, override: ov, ...settings });
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       builtModel = lm.name; builtWorker = worker; lastText = text; snap = r;
     }
@@ -520,11 +525,31 @@ async function run(kind) {                       // 'full' | 'resim'
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
     setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
-  } catch (e) { log('run failed', e); fail('' + e); }
+  } catch (e) {
+    log('run failed', e); fail('' + e);
+  }
   finally {
-    running = false; runBtn.disabled = false; jobWorker = null; retireW1();
+    running = false; setRunUI(false); jobWorker = null; retireW1();
     if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
   }
+}
+
+// Run ↔ Cancel: while a job is running the button turns into a red Cancel.
+function setRunUI(busy) {
+  runBtn.textContent = busy ? 'Cancel' : 'Run';
+  runBtn.classList.toggle('cancel', busy);
+  runBtn.disabled = false;
+}
+
+// Cooperative cancel: the worker yields to its message loop every ~150ms, so this
+// message lands and the in-flight simulate resolves {cancelled:true} — worker (MSL +
+// JIT) and the built model survive for a re-run.
+function cancelRun() {
+  if (!running || !jobWorker) return;
+  pendingKind = null;
+  log('cancel: requesting', jobWorker._tag);
+  setStatus('Cancelling…', 'busy');
+  jobWorker.postMessage({ cmd: 'cancelSim' });
 }
 
 // --- examples ---------------------------------------------------------------
@@ -881,7 +906,7 @@ el('tolUp').addEventListener('click', () => stepTol(10));
 el('tolDn').addEventListener('click', () => stepTol(0.1));
 tolEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); stepTol(10); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepTol(0.1); } });
 tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (isFinite(v) && v > 0) { tolValue = cleanTol(v); } renderTol(); run('full'); });
-runBtn.addEventListener('click', () => run('full'));
+runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('full'); });
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
 window.addEventListener('resize', () => { for (const c of charts) drawChart(c); });

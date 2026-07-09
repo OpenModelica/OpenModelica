@@ -51,6 +51,12 @@ pub fn eval(command: ArcStr) -> Result<(bool, ArcStr)> {
     Main::handleCommand(command)
 }
 
+/// Request cancellation of a running in-process wasm-jit simulation (cross-thread;
+/// `simulate` then returns a "cancelled" error, leaving omc consistent).
+pub fn request_cancel() {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::request_cancel();
+}
+
 /// `simulate` against the builtin graph only; empty/non-positive args use its defaults.
 pub fn simulate(
     class_name: ArcStr,

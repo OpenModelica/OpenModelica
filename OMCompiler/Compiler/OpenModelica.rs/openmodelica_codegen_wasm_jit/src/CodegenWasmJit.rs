@@ -821,6 +821,190 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
 }
 
 // ===========================================================================
+// Resumable / cancellable simulation session
+// ===========================================================================
+//
+// `runSimulation` runs a prepared model in one blocking call. For cooperative
+// cancellation the run is split into a persistent session: `sim_start` builds the
+// engine + driver (init + row 0), `sim_advance(budget_ms)` integrates a time-bounded
+// chunk and returns, `sim_free` drops it. A run short enough to finish in one
+// `advance` never yields. See HANDOFF-sim-cancel.md.
+
+/// Status of a resumable simulation session.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SimStatus {
+    /// More rows remain; call `sim_advance` again.
+    Running,
+    /// Reached `stopTime`; results captured, `.mat` written, session freed.
+    Done,
+    /// `terminate()` ended it early; results captured, session freed.
+    Terminated,
+    /// Cancelled; externals freed, session dropped, no results captured.
+    Cancelled,
+}
+
+/// Request cancellation of the running simulation (native, cross-thread).
+#[cfg(feature = "jit")]
+pub fn request_cancel() {
+    sim_driver::request_cancel();
+}
+#[cfg(not(feature = "jit"))]
+pub fn request_cancel() {}
+
+/// Install the wasm wall-clock (`performance.now`) for the chunk budget; wasm-only.
+#[cfg(all(feature = "jit", target_arch = "wasm32"))]
+pub fn set_clock(f: fn() -> f64) {
+    sim_driver::set_clock(f);
+}
+
+/// Install a host cancel poll (a cross-thread `SharedArrayBuffer` flag read) so a
+/// blocking wasm `simulate()` can be cancelled from another thread — OMEdit-wasm.
+#[cfg(all(feature = "jit", target_arch = "wasm32"))]
+pub fn set_cancel_poll(f: fn() -> bool) {
+    sim_driver::set_cancel_poll(f);
+}
+
+#[cfg(feature = "jit")]
+mod session {
+    use super::*;
+
+    /// A resumable, cancellable simulation. Owns the JIT engine + driver across
+    /// `advance` calls. One per thread (omc is single-threaded per process).
+    pub(super) struct SimSession {
+        model: Arc<SimModel>,
+        engine: Box<dyn sim_driver::SimEngine + 'static>,
+        driver: Box<dyn sim_driver::Driver>,
+        sim_data: u32,
+        result_file: String,
+    }
+
+    thread_local! {
+        static SIM_SESSION: std::cell::RefCell<Option<SimSession>> = const { std::cell::RefCell::new(None) };
+    }
+
+    /// Start a resumable run of a model already prepared by `buildModel`
+    /// (`translateModel` + `finishCompile`). Mirrors `run_simulation_inner`'s setup
+    /// but stops before integrating. One session at a time — any prior one is freed.
+    pub fn sim_start(prefix: &str, result_file: &str, simflags: &str) -> Result<()> {
+        sim_free();
+        let model = sim_models()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(prefix)
+            .cloned()
+            .ok_or_else(|| anyhow!("no prepared wasm-jit model for `{prefix}` (translateModel not run?)"))?;
+        let fmt = model.output_format.as_str();
+        if fmt != "mat" && fmt != "empty" {
+            bail!("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got `{fmt}`)");
+        }
+        sim_driver::set_param_overrides(resolve_overrides(&model, simflags));
+        sim_driver::clear_cancel();
+        openmodelica_wasi::wasi::start_stdout_capture();
+        // Build engine + driver (instantiate, init, emit row 0). An init trap is
+        // usually a failed `assert()`; route it to the Error buffer.
+        let built = (|| -> Result<(Box<dyn sim_driver::SimEngine + 'static>, u32, Box<dyn sim_driver::Driver>)> {
+            let (mut engine, sim_data) = sim_runtime::build_engine(&model)?;
+            let (driver, _label) = sim_driver::make_driver(&mut *engine, &model, sim_data, model.method.as_str())
+                .map_err(|err| sim_driver::enrich_trap(&mut *engine, err))?;
+            Ok((engine, sim_data, driver))
+        })();
+        let (engine, sim_data, driver) = match built {
+            Ok(v) => v,
+            Err(e) => {
+                let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                record_error(format!("wasm-jit simulation failed: {e:#}"));
+                return Err(e);
+            }
+        };
+        SIM_SESSION.with(|s| {
+            *s.borrow_mut() = Some(SimSession { model, engine, driver, sim_data, result_file: result_file.to_string() })
+        });
+        Ok(())
+    }
+
+    /// Integrate for about `budget_ms` of wall-clock, then return. On completion
+    /// finalizes exactly as `run_simulation_inner` (capture results for the
+    /// `omc_sim_*` getters + write the `.mat`) and frees the session.
+    pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
+        SIM_SESSION.with(|s| {
+            let mut guard = s.borrow_mut();
+            let Some(sess) = guard.as_mut() else {
+                bail!("no active simulation session");
+            };
+            let adv = sess
+                .driver
+                .advance(&mut *sess.engine, &sess.model, budget_ms)
+                .map_err(|err| sim_driver::enrich_trap(&mut *sess.engine, err));
+            let adv = match adv {
+                Ok(a) => a,
+                Err(e) => {
+                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    record_error(format!("wasm-jit simulation failed: {e:#}"));
+                    *guard = None;
+                    return Err(e);
+                }
+            };
+            match adv {
+                sim_driver::Advance::Running => Ok(SimStatus::Running),
+                sim_driver::Advance::Cancelled => {
+                    // Free external objects so the cancelled run leaks nothing.
+                    let _ = sim_driver::finalize_run(&mut *sess.engine, &sess.model, sess.sim_data);
+                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    *guard = None;
+                    Ok(SimStatus::Cancelled)
+                }
+                done => {
+                    let rows = sess.driver.take_rows();
+                    let params = sim_driver::finalize_run(&mut *sess.engine, &sess.model, sess.sim_data)?;
+                    let run = sim_driver::RunResult {
+                        rows,
+                        n_reals: sess.model.layout.n_row_total(),
+                        params,
+                        stats: SolveStats::default(),
+                    };
+                    capture_last_sim(&sess.model, &run);
+                    if sess.model.output_format == "mat" {
+                        write_mat4(&sess.model, &sess.result_file, &run.rows, run.n_reals, &run.params)?;
+                    }
+                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    let st = if matches!(done, sim_driver::Advance::Terminated) {
+                        SimStatus::Terminated
+                    } else {
+                        SimStatus::Done
+                    };
+                    *guard = None;
+                    Ok(st)
+                }
+            }
+        })
+    }
+
+    /// Drop the active session, freeing its external objects. Safe to call with no
+    /// session (the cancel path and `sim_start`'s reset both use it).
+    pub fn sim_free() {
+        SIM_SESSION.with(|s| {
+            if let Some(mut sess) = s.borrow_mut().take() {
+                let _ = sim_driver::finalize_run(&mut *sess.engine, &sess.model, sess.sim_data);
+            }
+        });
+    }
+}
+
+#[cfg(feature = "jit")]
+pub use session::{sim_advance, sim_free, sim_start};
+
+#[cfg(not(feature = "jit"))]
+pub fn sim_start(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
+    anyhow::bail!("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+}
+#[cfg(not(feature = "jit"))]
+pub fn sim_advance(_budget_ms: f64) -> Result<SimStatus> {
+    anyhow::bail!("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+}
+#[cfg(not(feature = "jit"))]
+pub fn sim_free() {}
+
+// ===========================================================================
 // Standalone WASI command-module export (native only)
 // ===========================================================================
 

@@ -616,6 +616,29 @@ fn read_side_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, off: u3
 
 pub(super) fn run(model: &SimModel) -> Result<sim_driver::RunResult> {
     let bench = std::env::var("OMC_WASM_SIM_BENCH").is_ok();
+    let (mut engine, sim_data) = build_engine(model)?;
+    // `OMC_WASM_SIM_DRIVER=host` forces the native Euler loop over the in-wasm one.
+    let host_driven = std::env::var("OMC_WASM_SIM_DRIVER").map(|v| v == "host").unwrap_or(false);
+    let n_steps = model.n_intervals;
+    let n_rows = n_steps + 1;
+    let t0 = Instant::now();
+    let (result, driver_label) =
+        sim_driver::drive(&mut *engine, model, sim_data, model.method.as_str(), host_driven, bench)?;
+    if bench {
+        let elapsed = t0.elapsed();
+        eprintln!(
+            "wasm-jit sim [{}]: integrate {:?} ({} intervals, {:.2} us/interval)",
+            driver_label, elapsed, n_steps, elapsed.as_secs_f64() * 1e6 / (n_rows.max(1) as f64),
+        );
+    }
+    Ok(result)
+}
+
+/// Build the engine (compile/join modules, instantiate, allocate `SimData`), boxed
+/// with the `SimData` pointer; owned by the session across `advance` calls, reused
+/// by [`run`] one-shot.
+pub(super) fn build_engine(model: &SimModel) -> Result<(Box<dyn sim_driver::SimEngine + 'static>, u32)> {
+    let bench = std::env::var("OMC_WASM_SIM_BENCH").is_ok();
     let engine = sim_engine();
 
     // Phase 1: obtain the compiled modules. The runtime module is compiled once
@@ -675,29 +698,15 @@ pub(super) fn run(model: &SimModel) -> Result<sim_driver::RunResult> {
     let rt_alloc: wasmer::TypedFunction<u32, u32> = wt(rt_inst.exports.get_typed_function(&store, "rt_alloc"))?;
 
     let layout = &model.layout;
-    let n_steps = model.n_intervals;
-    let n_rows = n_steps + 1;
 
     // Allocate the shared SimData block.
     let sim_data = wt(rt_alloc.call(&mut store, layout.total))?;
 
-    // Hand the instance to the engine-independent drivers (select integrator,
-    // integrate, free external objects, read parameters). `OMC_WASM_SIM_DRIVER=host`
-    // forces the native Euler loop over the in-wasm one for `method="euler"`.
-    let host_driven = std::env::var("OMC_WASM_SIM_DRIVER").map(|v| v == "host").unwrap_or(false);
-    let mut engine = WasmerEngine { store, memory, instance, funcs: HashMap::new() };
-    let t0 = Instant::now();
-    let (result, driver_label) =
-        sim_driver::drive(&mut engine, model, sim_data, model.method.as_str(), host_driven, bench)?;
-    let elapsed = t0.elapsed();
     if bench {
-        eprintln!(
-            "wasm-jit sim [{}]: compile {:?} | instantiate {:?} | integrate {:?} ({} intervals, {:.2} us/interval)",
-            driver_label, compile_time, inst_time, elapsed, n_steps,
-            elapsed.as_secs_f64() * 1e6 / (n_rows.max(1) as f64),
-        );
+        eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
     }
-    Ok(result)
+    let engine = WasmerEngine { store, memory, instance, funcs: HashMap::new() };
+    Ok((Box::new(engine), sim_data))
 }
 
 /// wasmer backend for the [`sim_driver::SimEngine`] drivers: owns the store, the
