@@ -3318,16 +3318,12 @@ match sparsity
     }
     >>
   case SPARSITY() then
-    let &preExpC = buffer ""
-    let &varDeclsC = buffer ""
-    let &auxFunctionC = buffer ""
-    let &subC = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
-    let &preExpF = buffer ""
-    let &varDeclsF = buffer ""
-    let &auxFunctionF = buffer ""
-    let &subF = buffer ""
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'inSysData->sparsePattern') ;separator="\n")
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
+    let &sub = buffer ""
+    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExp, &varDecls, &auxFunction, &sub, 'inSysData->sparsePattern') ;separator="\n")
     <<
 
     OMC_DISABLE_OPT
@@ -3336,10 +3332,10 @@ match sparsity
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
       unsigned int col_fill[<%nCols%>];
-      <%varDeclsC%><%varDeclsF%>
+      <%varDecls%>
 
-      <%preExpC%><%preExpF%>
-      <%auxFunctionC%><%auxFunctionF%>
+      <%preExp%>
+      <%auxFunction%>
 
       /* Phase 1: count non-zeros per column */
       memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
@@ -5864,16 +5860,12 @@ match sparsity
     }
     >>
   case SPARSITY() then
-    let &preExpC = buffer ""
-    let &varDeclsC = buffer ""
-    let &auxFunctionC = buffer ""
-    let &subC = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExpC, &varDeclsC, &auxFunctionC, &subC) ;separator="\n")
-    let &preExpF = buffer ""
-    let &varDeclsF = buffer ""
-    let &auxFunctionF = buffer ""
-    let &subF = buffer ""
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExpF, &varDeclsF, &auxFunctionF, &subF, 'jacobian->sparsePattern') ;separator="\n")
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
+    let &sub = buffer ""
+    let countCode = (rows |> row => resizableSparsityRowCount(row, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, context, &preExp, &varDecls, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
     let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     let tmpvarsSize = (columns |> JAC_COLUMN() => listLength(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
@@ -5887,10 +5879,10 @@ match sparsity
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
       unsigned int col_fill[<%nCols%>];
-      <%varDeclsC%><%varDeclsF%>
+      <%varDecls%>
 
-      <%preExpC%><%preExpF%>
-      <%auxFunctionC%><%auxFunctionF%>
+      <%preExp%>
+      <%auxFunction%>
 
       initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
 
