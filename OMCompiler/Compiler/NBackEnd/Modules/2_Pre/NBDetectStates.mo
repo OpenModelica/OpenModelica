@@ -661,8 +661,10 @@ protected
   end stateOrder;
 
   function promotePreferStates
-    "Promotes StateSelect.prefer variables to states if their derivative already exists in variables.
-    Called after natural state collection to handle prefer-variables whose der() exists."
+    "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
+    Only relevant for variables that have StateSelect.prefer but do NOT occur inside der()
+    calls — those that do occur are already promoted by natural state collection and removed
+    from algebraics before this function runs."
     input output VariablePointers variables;
     input output VariablePointers unknowns;
     input output VariablePointers knowns;
@@ -673,34 +675,38 @@ protected
   protected
     list<Pointer<Variable>> acc_prefer_states = {};
     list<Pointer<Variable>> acc_prefer_ders = {};
-    ComponentRef der_cref, stripped_der_cref;
-    Pointer<Variable> der_ptr;
+    ComponentRef der_cref;
+    Pointer<Variable> der_var;
   algorithm
-    for alg_ptr in VariablePointers.toList(algebraics) loop
-      if BVariable.isStateSelect(alg_ptr, StateSelect.PREFER) then
-        (der_cref, _) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr));
-        stripped_der_cref := ComponentRef.stripSubscriptsAll(der_cref);
-        if VariablePointers.containsCref(stripped_der_cref, variables) then
-          der_ptr := VariablePointers.getVarSafe(variables, stripped_der_cref);
-          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(der_ptr), false));
-          BVariable.setStateDerKind(der_ptr, alg_ptr);
+    // only promote if the model is dynamic (has at least one der() call)
+    if VariablePointers.size(states) > 0 then
+      for alg_ptr in VariablePointers.toList(algebraics) loop
+        if BVariable.isStateSelect(alg_ptr, StateSelect.PREFER) then
+          // this variable has StateSelect.prefer but is not inside any der() call;
+          // create its derivative and promote it to a state
+          (der_cref, der_var) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr), variables.scalarized);
+          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(der_var), false));
           acc_prefer_states := alg_ptr :: acc_prefer_states;
-          acc_prefer_ders := der_ptr :: acc_prefer_ders;
+          acc_prefer_ders := der_var :: acc_prefer_ders;
         end if;
-      end if;
-    end for;
+      end for;
 
-    if not listEmpty(acc_prefer_states) then
-      unknowns    := VariablePointers.removeList(acc_prefer_states, unknowns);
-      algebraics  := VariablePointers.removeList(acc_prefer_states, algebraics);
-      knowns      := VariablePointers.addList(acc_prefer_states, knowns);
-      states      := VariablePointers.addList(acc_prefer_states, states);
-      algebraics  := VariablePointers.removeList(acc_prefer_ders, algebraics);
-      derivatives := VariablePointers.addList(acc_prefer_ders, derivatives);
+      if not listEmpty(acc_prefer_states) then
+        // update state variable arrays
+        states     := VariablePointers.addList(acc_prefer_states, states);
+        unknowns   := VariablePointers.removeList(acc_prefer_states, unknowns);
+        algebraics := VariablePointers.removeList(acc_prefer_states, algebraics);
 
-      if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
-        print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_prefer_states)) + ") Forced states by StateSelect.PREFER:"));
-        print(List.toString(acc_prefer_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
+        // update derivative variable arrays (newly created — not yet in any array)
+        variables    := VariablePointers.addList(acc_prefer_ders, variables);
+        unknowns     := VariablePointers.addList(acc_prefer_ders, unknowns);
+        initials     := VariablePointers.addList(acc_prefer_ders, initials);
+        derivatives  := VariablePointers.addList(acc_prefer_ders, derivatives);
+
+        if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+          print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_prefer_states)) + ") Forced states by StateSelect.PREFER:"));
+          print(List.toString(acc_prefer_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
+        end if;
       end if;
     end if;
   end promotePreferStates;

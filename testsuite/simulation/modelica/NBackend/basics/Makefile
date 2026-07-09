@@ -14,6 +14,7 @@ minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
 partitioning.mos \
+promotePreferStates.mos \
 simpleForLoop.mos \
 simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
