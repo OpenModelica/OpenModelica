@@ -61,6 +61,20 @@ void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, v
 /**
  * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
  *
+ * Used in row-wise (adjoint) evaluation where setElement is called as
+ * setElement(currentIndex=col, j=row, nth, value, jac, nRows).
+ * Writes value at: jac[col * nRows + row] = value.
+ * nth is unused.
+ */
+void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows)
+{
+  (void)nth;
+  ((modelica_real*)jac)[col * nRows + row] = value;
+}
+
+/**
+ * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
+ *
  * Writes value at: jac[col * nRows + row] = value.
  * nth is unused.
  */
@@ -182,10 +196,15 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
   jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
   if (isDense) {
     // dense column-major
+    // Row-eval scatter calls setElement(currentIndex=col, j=row, ...) so needs the row-eval setter.
+    // Column-eval scatter calls setElement(currentIndex=row, j=col, ...) so uses the standard setter.
+    setJacElementFunc setter = jacobian->isRowEval
+        ? setJacElementRawDenseColumnMajorRowEval
+        : setJacElementRawDenseColumnMajor;
     memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
-    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawDenseColumnMajor, cleanup);
+    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setter, cleanup);
   } else {
-    // sparse
+    // sparse: setter only uses nth, argument order does not matter
     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse, cleanup);
   }
 }
@@ -218,7 +237,7 @@ void evalJacobianCleanupRowEval(JACOBIAN* jac)
 void evalJacobianOneColor(DATA* data, threadData_t* threadData,
                            JACOBIAN* jacobian, JACOBIAN* parentJac,
                            const SPARSE_PATTERN* sp, int color,
-                           int isRowEval, unsigned int activeDim, int nRows,
+                           unsigned int activeDim, int nRows,
                            void* matrixA, setJacElementFunc setElement,
                            jacobianColumn_func_ptr evalFunc,
                            jacobianCleanup_func_ptr cleanupFunc)
@@ -232,18 +251,19 @@ void evalJacobianOneColor(DATA* data, threadData_t* threadData,
 
   evalFunc(data, threadData, jacobian, parentJac);
 
-  /* Scatter results */
+  /* Scatter results.
+   * Convention: setElement(currentIndex, j, nth, value, matrixA, nRows)
+   * where j is the active (seeded) index and currentIndex is the passive index.
+   * For column eval: j=col, currentIndex=row  => setElement(row, col, nth, ...)
+   * For row eval:    j=row, currentIndex=col  => setElement(col, row, nth, ...)
+   * The caller selects a setter that interprets its arguments accordingly.
+   */
   for (j = 0; j < (int)activeDim; j++) {
     if ((int)sp->colorCols[j] - 1 == color) {
       nth = (int)sp->leadindex[j];
       while (nth < (int)sp->leadindex[j + 1]) {
         currentIndex = (int)sp->index[nth];
-        if (isRowEval)
-          /* j is active row, currentIndex is column */
-          setElement(j, currentIndex, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
-        else
-          /* j is active column, currentIndex is row */
-          setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
+        setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
         nth++;
       }
       jacobian->seedVars[j] = 0.0;
@@ -262,11 +282,11 @@ void evalJacobianOneColor(DATA* data, threadData_t* threadData,
  *
  * Column-wise (isRowEval == FALSE):
  *   - Seeds are set on columns; sparsePattern is CSC.
- *   - setElement called as (row, activeCol, nz, resultVars[row], ...).
+ *   - setElement called as (currentIndex=row, j=col, nz, resultVars[row], ...).
  *
  * Row-wise (isRowEval == TRUE):
  *   - Seeds are set on rows; sparsePattern is CSR.
- *   - setElement called as (activeRow, col, nz, resultVars[col], ...).
+ *   - setElement called as (currentIndex=col, j=row, nz, resultVars[col], ...).
  *   - cleanupFunc should be evalJacobianCleanupRowEval to reset state between colors.
  *
  * The caller is responsible for zeroing matrixA before this call if needed.
@@ -297,7 +317,7 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
 
   for (color = 0; color < (int)sp->maxColors; color++) {
     evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
-                         isRowEval, activeDim, nRows, matrixA, setElement,
+                         activeDim, nRows, matrixA, setElement,
                          jacobian->evalColumn, cleanupFunc);
   }
 }

@@ -89,6 +89,15 @@ void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, 
 void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows);
 
 /**
+ * @brief setJacElementFunc-compatible setter for row-eval dense column-major output.
+ *
+ * Used in row-wise (adjoint) evaluation where setElement is called as
+ * setElement(currentIndex=col, j=row, nth, value, jac, nRows).
+ * Writes jac[col * nRows + row] = value.  nth is unused.
+ */
+void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows);
+
+/**
  * @brief setJacElementFunc-compatible setter: writes jac[row*nCols+col] = value (dense row-major raw buffer).
  */
 void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols);
@@ -109,18 +118,21 @@ void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void
  * @param parentJac   Parent Jacobian; pass NULL in the parallel path.
  * @param sp          Sparse pattern (CSC for column eval, CSR for row eval).
  * @param color       0-based color index to process.
- * @param isRowEval   Non-zero for row-wise (adjoint) evaluation.
  * @param activeDim   jacobian->sizeRows (row eval) or jacobian->sizeCols (column eval).
- * @param nRows       (int)jacobian->sizeRows, for the setElement nRows argument.
+ * @param nRows       (int)jacobian->sizeRows, passed through to the setter.
  * @param matrixA     Opaque output matrix; forwarded to setElement.
- * @param setElement  Setter: (row, col, nz_index, value, matrixA, nRows).
+ * @param setElement  Orientation-aware setter called as setElement(currentIndex, j, nth, value, matrixA, nRows),
+ *                    where j is the active (seeded) index and currentIndex is the passive index.
+ *                    For column eval pass setJacElementRawDenseColumnMajor (receives row, col).
+ *                    For row eval pass setJacElementRawDenseColumnMajorRowEval (receives col, row).
+ *                    For sparse either direction works with setJacElementRawSparse.
  * @param evalFunc    Function that evaluates the Jacobian for the current seed vector.
  * @param cleanupFunc Called after scatter to reset intermediate state; NULL is a no-op.
  */
 void evalJacobianOneColor(DATA* data, threadData_t* threadData,
                            JACOBIAN* jacobian, JACOBIAN* parentJac,
                            const SPARSE_PATTERN* sp, int color,
-                           int isRowEval, unsigned int activeDim, int nRows,
+                           unsigned int activeDim, int nRows,
                            void* matrixA, setJacElementFunc setElement,
                            jacobianColumn_func_ptr evalFunc,
                            jacobianCleanup_func_ptr cleanupFunc);

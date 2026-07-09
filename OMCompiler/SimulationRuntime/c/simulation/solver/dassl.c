@@ -1056,7 +1056,7 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
   }
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
-                                           data, threadData, &setJacElementRawDenseColumnMajor); // TODO: row or column major here?
+                                           data, threadData, &setJacElementRawDenseColumnMajorRowEval); // TODO: row or column major here?
 
 
   return 0;

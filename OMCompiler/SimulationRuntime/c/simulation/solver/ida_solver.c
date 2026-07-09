@@ -380,6 +380,41 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
 
+  /* For adjoint method: also initialize adjoint Jacobian and build CSR-to-CSC mapping */
+  if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
+    JACOBIAN* adjJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    data->callback->initialAnalyticJacobianADJ(data, threadData, adjJac);
+    if (adjJac->availability == JACOBIAN_AVAILABLE || adjJac->availability == JACOBIAN_ONLY_SPARSITY) {
+      infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized adjoint Jacobian:");
+      infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", adjJac->sizeCols, adjJac->sizeRows);
+      infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", adjJac->sparsePattern->nnz, adjJac->sparsePattern->maxColors);
+      messageClose(OMC_LOG_SIMULATION);
+    }
+    /* Build CSR-to-CSC index map so we can scatter adjoint results into the
+     * SUNDIALS CSC sparse matrix. The forward Jacobian (CSC) and adjoint
+     * Jacobian (CSR) share the same nonzero structure; for each CSR entry
+     * we locate its twin in the CSC column lists. */
+    if (adjJac->csrToCscMap == NULL
+        && adjJac->sparsePattern  != NULL
+        && jacobian->sparsePattern != NULL) {
+      const SPARSE_PATTERN* fwdsp = jacobian->sparsePattern;
+      const SPARSE_PATTERN* adjsp = adjJac->sparsePattern;
+      const unsigned int nnz      = adjsp->nnz;
+      adjJac->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
+      for (unsigned int i = 0; i < adjJac->sizeRows; i++) {
+        for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
+          const unsigned int j = adjsp->index[nz]; /* column index in CSR */
+          for (unsigned int k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j + 1]; k++) {
+            if (fwdsp->index[k] == i) { /* row matches → found CSC twin */
+              adjJac->csrToCscMap[nz] = k;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
   /* Set NNZ */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
@@ -450,11 +485,17 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case NUMJAC:
     case COLOREDSYMJAC:
     case COLOREDNUMJAC:
+    case COLOREDSYMJACADJ:
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
+      if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
+        /* Parallel adjoint evaluation uses thread-local copies of INDEX_JAC_ADJ */
+        allocateThreadLocalJacobiansAdj(data, &(idaData->jacColumns));
+      } else {
+        allocateThreadLocalJacobians(data, &(idaData->jacColumns));
+      }
       idaData->allocatedParMem = 1;   /* TRUE */
       if (omc_flag[FLAG_IDA_SCALING]) {
         idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
@@ -474,10 +515,15 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case NUMJAC:
     case COLOREDSYMJAC:
     case COLOREDNUMJAC:
+    case COLOREDSYMJACADJ:
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
+      if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
+        allocateThreadLocalJacobiansAdj(data, &(idaData->jacColumns));
+      } else {
+        allocateThreadLocalJacobians(data, &(idaData->jacColumns));
+      }
       idaData->allocatedParMem = 1;   /* TRUE */
 #endif
       break;
@@ -1595,6 +1641,69 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   return 0;
 }
 
+
+/**
+ * @brief Evaluate the adjoint (row-wise) symbolic Jacobian into a dense
+ *        SUNDIALS matrix using coloring.
+ *
+ * Row seeds are set, the adjoint evaluator fills resultVars[col], and each
+ * (row, col) result is written directly to the dense matrix element.
+ */
+int jacColoredSymbolicalDenseAdj(double currentTime, double cj,
+                                        N_Vector yy, N_Vector yp, N_Vector rr,
+                                        SUNMatrix Jac, IDA_SOLVER* idaData)
+{
+  DATA*         data       = idaData->userData->data;
+  threadData_t* threadData = idaData->userData->threadData;
+
+  const int adjIndex = data->callback->INDEX_JAC_ADJ;
+  JACOBIAN* jac      = &(data->simulationInfo->analyticJacobians[adjIndex]);
+  jac->dae_cj        = cj;
+
+#ifdef USE_PARJAC
+  JACOBIAN* t_jac = &(idaData->jacColumns[omc_get_thread_num()]);
+#else
+  JACOBIAN* t_jac = jac;
+#endif
+
+  const SPARSE_PATTERN* adjsp = jac->sparsePattern; /* CSR */
+  const unsigned int nRows    = jac->sizeRows;
+  const unsigned int nCols    = jac->sizeCols;
+  int color, row, col;
+  unsigned int nz;
+
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);
+
+  if (jac->constantEqns != NULL) {
+    jac->constantEqns(data, threadData, jac, NULL);
+  }
+
+  for (color = 0; color < (int)adjsp->maxColors; color++) {
+    for (row = 0; row < (int)nRows; row++) {
+      if ((int)adjsp->colorCols[row] - 1 == color)
+        t_jac->seedVars[row] = 1.0;
+    }
+
+    data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
+
+    for (row = 0; row < (int)nRows; row++) {
+      if ((int)adjsp->colorCols[row] - 1 == color) {
+        for (nz = adjsp->leadindex[row]; nz < adjsp->leadindex[row + 1]; nz++) {
+          col = (int) adjsp->index[nz];
+          infoStreamPrint(OMC_LOG_JAC, 0, "### adj symbolic jacobian at [%d,%d] = %f ###",
+                          row, col, t_jac->resultVars[col]);
+          SM_ELEMENT_D(Jac, row, col) = t_jac->resultVars[col];
+        }
+        t_jac->seedVars[row] = 0.0;
+      }
+    }
+    evalJacobianCleanupRowEval(t_jac);
+  }
+
+  unsetContext(data);
+  return 0;
+}
+
 /**
  * @brief Compute colored Jacobian matrix of ODE/DAE system.
  *
@@ -1635,6 +1744,10 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   else if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
     retVal = jacColoredSymbolicalDense(tt, cj, yy, yp, rr, Jac, idaData);
+  }
+  else if (idaData->jacobianMethod == COLOREDSYMJACADJ)
+  {
+    retVal = jacColoredSymbolicalDenseAdj(tt, cj, yy, yp, rr, Jac, idaData);
   }
   else
   {
@@ -1823,6 +1936,99 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
 }
 
 /*
+ * Context passed as the opaque `matrixA` argument when evaluating the adjoint
+ * (row-wise) sparse Jacobian.  The CSR-to-CSC map translates each CSR
+ * nonzero index produced by the row evaluator into the corresponding CSC
+ * index expected by the SUNDIALS sparse matrix.
+ */
+typedef struct {
+  SUNMatrix           Jac;
+  const unsigned int* csrToCscMap;
+} IDA_SPARSE_ADJ_CTX;
+
+/**
+ * @brief setJacElementFunc for the adjoint sparse IDA Jacobian.
+ *
+ * In row-eval mode evalJacobianOneColor calls:
+ *   setElement(currentIndex=col, j=row, nth_csr, resultVars[col], matrixA, nRows)
+ * We remap the CSR position nth_csr → nth_csc via csrToCscMap and forward
+ * to setJacElementSundialsSparse which writes into the SUNDIALS CSC matrix.
+ */
+void setJacElementSundialsSparseRowEval(int col, int row, int nth_csr,
+                                               double value, void* ctx, int nRows)
+{
+  const IDA_SPARSE_ADJ_CTX* c = (const IDA_SPARSE_ADJ_CTX*) ctx;
+  int nth_csc = (int) c->csrToCscMap[nth_csr];
+  setJacElementSundialsSparse(row, col, nth_csc, value, c->Jac, nRows);
+}
+
+/**
+ * @brief Evaluate the adjoint (row-wise) symbolic Jacobian into a sparse CSC
+ *        SUNDIALS matrix using coloring.
+ *
+ * The adjoint Jacobian (INDEX_JAC_ADJ) stores a CSR sparse pattern and seeds
+ * rows instead of columns.  Its csrToCscMap translates CSR nonzero positions
+ * to the matching CSC positions of the forward Jacobian (INDEX_JAC_A), which
+ * defines the structure of the SUNDIALS CSC sparse matrix.
+ *
+ * Calls genericColoredSymbolicJacobianEvaluation via
+ * setJacElementSundialsSparseRowEval so that the row-eval scatter is handled
+ * uniformly through the existing coloring infrastructure.
+ */
+int jacColoredSymbolicalSparseAdj(double currentTime, N_Vector yy,
+                                         N_Vector yp, N_Vector rr,
+                                         SUNMatrix Jac, double cj,
+                                         void *userData)
+{
+  IDA_SOLVER*    idaData    = (IDA_SOLVER*) userData;
+  DATA*          data       = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
+  threadData_t*  threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
+
+  /* Adjoint Jacobian: CSR pattern, row coloring, isRowEval = TRUE */
+  const int adjIndex = data->callback->INDEX_JAC_ADJ;
+  JACOBIAN* jac      = &(data->simulationInfo->analyticJacobians[adjIndex]);
+  jac->dae_cj        = cj;
+
+  /* Forward Jacobian: CSC pattern, needed for SUNDIALS matrix structure */
+  const int fwdIndex  = data->callback->INDEX_JAC_A;
+  JACOBIAN* fwdJac    = &(data->simulationInfo->analyticJacobians[fwdIndex]);
+
+#ifdef USE_PARJAC
+  JACOBIAN* t_jac = (idaData->jacColumns);
+#else
+  JACOBIAN* t_jac = jac;
+#endif
+
+  SPARSE_PATTERN* adjsp = jac->sparsePattern;   /* CSR */
+  unsigned int rows     = jac->sizeRows;
+  unsigned int columns  = jac->sizeCols;
+
+  /* Reset the SUNDIALS matrix (zeros data; structure is rebuilt below) */
+  SUNMatZero(Jac);
+
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);
+
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+    jac->constantEqns(data, threadData, jac, NULL);
+  }
+
+  /* Establish CSC column structure (column pointers + row indices) on the
+   * SUNDIALS matrix from the forward CSC pattern.  Values are filled in by
+   * setJacElementSundialsSparseRowEval during genericColoredSymbolicJacobianEvaluation. */
+  setSundialsSparsePattern(fwdJac, Jac);
+
+  IDA_SPARSE_ADJ_CTX ctx = { Jac, jac->csrToCscMap };
+  genericColoredSymbolicJacobianEvaluation(rows, columns, adjsp, &ctx, t_jac,
+                                           data, threadData,
+                                           setJacElementSundialsSparseRowEval);
+
+  finishSparseColPtr(Jac, adjsp->nnz);
+  unsetContext(data);
+  return 0;
+}
+
+/*
  * This function calculates the jacobian matrix symbolically while exploiting coloring.
  * ToDo: backend: generate seeds for der(x)
          here: always set der(x) seeds to cj when setting seed for x
@@ -1892,6 +2098,10 @@ static int callSparseJacobian(double currentTime, double cj,
   if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
     jacColoredSymbolicalSparse(currentTime, yy, yp, rr, Jac, cj, user_data);
+  }
+  else if (idaData->jacobianMethod == COLOREDSYMJACADJ)
+  {
+    jacColoredSymbolicalSparseAdj(currentTime, yy, yp, rr, Jac, cj, user_data);
   }
   else if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
   {

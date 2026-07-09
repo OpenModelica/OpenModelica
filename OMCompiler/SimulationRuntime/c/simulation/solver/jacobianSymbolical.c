@@ -83,7 +83,7 @@ static void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
 #pragma omp for
   for (color = 0; color < spp->maxColors; color++) {
     evalJacobianOneColor(data, threadData, t_jac, NULL, spp, (int)color,
-                         isRowEval, activeDim, nRows, matrixA, setElement, evalFunc, cleanupFunc);
+                         activeDim, nRows, matrixA, setElement, evalFunc, cleanupFunc);
   }
 } // omp parallel
 }
@@ -173,6 +173,54 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
   evalJacobianColoredParallel(data, threadData, jacColumns, spp, matrixA, setJacElement);
 #endif
 }
+
+#ifdef USE_PARJAC
+/**
+ * @brief Allocate thread local Jacobians for adjoint (row-wise) symbolic Jacobian.
+ *
+ * Like allocateThreadLocalJacobians but uses INDEX_JAC_ADJ and marks each
+ * thread-local Jacobian with isRowEval = TRUE so that evalJacobianColoredParallel
+ * dispatches to functionJacADJ_column instead of functionJacA_column.
+ */
+void allocateThreadLocalJacobiansAdj(DATA* data, JACOBIAN** jacColumns)
+{
+  int maxTh = omc_get_max_threads();
+  *jacColumns = (JACOBIAN*) malloc(maxTh * sizeof(JACOBIAN));
+  const int index = data->callback->INDEX_JAC_ADJ;
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
+
+  unsigned int columns     = jac->sizeCols;
+  unsigned int rows        = jac->sizeRows;
+  unsigned int sizeTmpVars = jac->sizeTmpVars;
+
+  unsigned int i;
+
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, index) shared(sparsePattern, jacColumns, i)
+  {
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
+  }
+
+#pragma omp for schedule(runtime)
+  for (i = 0; i < maxTh; ++i) {
+    (*jacColumns)[i].sizeCols    = columns;
+    (*jacColumns)[i].sizeRows    = rows;
+    (*jacColumns)[i].sizeTmpVars = sizeTmpVars;
+    (*jacColumns)[i].tmpVars     = (double*) calloc(sizeTmpVars, sizeof(double));
+    (*jacColumns)[i].resultVars  = (double*) calloc(rows,        sizeof(double));
+    (*jacColumns)[i].seedVars    = (double*) calloc(columns,     sizeof(double));
+    (*jacColumns)[i].sparsePattern = sparsePattern;
+    (*jacColumns)[i].isRowEval   = TRUE;  /* adjoint: seed rows, read column results */
+  }
+  }
+}
+#endif
 
 #ifdef USE_PARJAC
 /** Free JACOBIAN struct */

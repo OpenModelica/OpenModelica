@@ -36,6 +36,7 @@
 #include "../jacobian_util.h"  /* setJacElementFunc is defined here */
 
 void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns);
+void allocateThreadLocalJacobiansAdj(DATA* data, JACOBIAN** jacColumns);
 
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
                                               void* matrixA, JACOBIAN* jacColumns,
