@@ -161,10 +161,6 @@ typedef struct SPARSE_PATTERN
                                    * Length of array is nCols/nRows */
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
-/* Backward-compatible aliases */
-#define sizeofIndex nnz
-#define numberOfNonZeros nnz
-#define nDiscreteReal nDiscreteRealArray
 
 /* NONLINEAR_PATTERN
  *
