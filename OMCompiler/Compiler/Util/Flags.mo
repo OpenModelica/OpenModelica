@@ -162,6 +162,11 @@ public constant Integer FMI_INTERNAL = 2;
 public constant Integer FMI_PROTECTED = 3;
 public constant Integer FMI_BLACKBOX = 4;
 
+// FMI version enum flags
+public constant Integer FMI_VERSION_10 = 10;
+public constant Integer FMI_VERSION_20 = 20;
+public constant Integer FMI_VERSION_30 = 30;
+
 constant String collapseArrayExpressionsText = "Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).";
 
 // DEBUG FLAGS
@@ -1416,6 +1421,19 @@ constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(165, "interactiveDumpF
   "Selects the format interactive API calls use to print result values.\n"+
   "default : The OpenModelica textual value format.\n"+
   "json    : JSON, for programmatic consumers such as the web clients.");
+constant ConfigFlag EXPORT_FMU = CONFIG_FLAG(166, "export-fmu",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Export the model as an FMU after loading. Combine with --fmuType and --fmuPlatforms to configure the export.");
+constant ConfigFlag FMU_TYPE = CONFIG_FLAG(167, "fmuType",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({"me"}), NONE(),
+  "FMI type for FMU export: me, cs, me_cs, se.");
+constant ConfigFlag FMU_PLATFORMS = CONFIG_FLAG(168, "fmuPlatforms",
+  NONE(), EXTERNAL(), STRING_FLAG("static"), NONE(),
+  "Platforms for FMU export, comma-separated (e.g. static,dynamic).");
+constant ConfigFlag FMU_VERSION = CONFIG_FLAG(169, "fmiVersion",
+  NONE(), EXTERNAL(), ENUM_FLAG(FMI_VERSION_20, {("1.0", FMI_VERSION_10), ("2.0", FMI_VERSION_20), ("3.0", FMI_VERSION_30)}),
+  SOME(STRING_OPTION({"1.0", "2.0", "3.0"})),
+  "FMI version for FMU export: 1.0, 2.0, 3.0.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

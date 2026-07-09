@@ -433,7 +433,11 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EXECUTE_COMMAND,
   Flags.MOO_DYNAMIC_OPTIMIZATION,
   Flags.FMI_EXTRA_ANNOTATIONS,
-  Flags.INTERACTIVE_DUMP_FORMAT
+  Flags.INTERACTIVE_DUMP_FORMAT,
+  Flags.EXPORT_FMU,
+  Flags.FMU_TYPE,
+  Flags.FMU_PLATFORMS,
+  Flags.FMU_VERSION
 };
 
 public function new
@@ -1552,6 +1556,8 @@ algorithm
   Print.printBuf("  omc Script.mos           will run the commands from Script.mos.\n");
   Print.printBuf("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n");
   Print.printBuf("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n");
+  Print.printBuf("  omc --export-fmu -i MyPackage.Examples.Hello --fmiVersion=2.0\n                           ./MyPackage/package.mo\n                           will load the local package and export the model as an FMU.\n");
+  Print.printBuf("  omc --export-fmu -i MyModel --fmiVersion=2.0 MyModel.mo Modelica\n                           will load MyModel.mo and the Modelica Standard Library,\n                           then export MyModel as an FMU.\n");
   Print.printBuf("  *.mo (Modelica files)\n");
   //Print.printBuf("\t*.mof (Flat Modelica files)\n");
   Print.printBuf("  *.mos (Modelica Script files)\n\n");

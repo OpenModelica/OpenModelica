@@ -4668,7 +4668,7 @@ algorithm
   end if;
 end buildModelFMU;
 
-protected function callBuildModelFMU
+public function callBuildModelFMU
  " Author: Frenkel TUD
    Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
