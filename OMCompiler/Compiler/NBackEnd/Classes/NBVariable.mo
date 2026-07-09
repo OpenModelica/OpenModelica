@@ -979,12 +979,12 @@ function isJacobianResultVar
     // FIXME use VariableAttributes.isFixed()?
     b := match var.backendinfo.attributes
       local
-        Expression fixed;
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(fixed);
+        Binding fixed;
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
       else false;
     end match;
   end isFixed;
