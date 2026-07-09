@@ -5965,7 +5965,7 @@ match row
             else depsCode
           else depsCode
     ;separator="\n")
-    let scNames = (solved_crefs |> sc => crefStr(sc) ;separator=", ")
+    let scNames = (solved_crefs |> sc => escapeCComments(crefStr(sc)) ;separator=", ")
     if bodyCode then
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] count */
@@ -6041,7 +6041,7 @@ match row
     let bodyCode = (solved_crefs |> sc hasindex k =>
       resizableFillDepsForRow(row, k, sc, context, &preExp, &varDecls, &auxFunction, spPattern)
     ;separator="\n")
-    let scNames = (solved_crefs |> sc => crefStr(sc) ;separator=", ")
+    let scNames = (solved_crefs |> sc => escapeCComments(crefStr(sc)) ;separator=", ")
     if bodyCode then
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] fill */
