@@ -350,9 +350,36 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+  /* When the user explicitly requests the adjoint Jacobian method we must
+   * initialize INDEX_JAC_ADJ first so that setJacobianMethod sees the correct
+   * availability.  Initializing INDEX_JAC_A first would yield
+   * JACOBIAN_NOT_AVAILABLE (if only the adjoint was compiled) and force a
+   * fallback to INTERNALNUMJAC. */
+  int _adjRequested = 0;
+  if (omc_flag[FLAG_JACOBIAN]) {
+    for (int _m = 1; _m < JAC_MAX; _m++) {
+      if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[_m])) {
+        _adjRequested = (_m == COLOREDSYMJACADJ);
+        break;
+      }
+    }
+  }
+
+  JACOBIAN* jacobian;
+  if (_adjRequested) {
+    /* Use adjoint Jacobian availability to drive method selection */
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
+    /* Also initialize forward Jacobian – needed for csrToCscMap when available */
+    data->callback->initialAnalyticJacobianA(data, threadData,
+        &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]));
+  } else {
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  }
+  sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
+
+  if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
@@ -380,44 +407,83 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
 
-  /* For adjoint method: also initialize adjoint Jacobian and build CSR-to-CSC mapping */
+  /* For adjoint method: build CSR-to-CSC index map.
+   *
+   * When the forward Jacobian (CSC) is also available we locate each CSR entry
+   * by searching the corresponding CSC column – O(nnz * avg_col_length).
+   *
+   * When only the adjoint CSR Jacobian was compiled (forward not available),
+   * we derive the map purely from the CSR pattern: process rows in order so
+   * that within each column the rows are assigned ascending CSC positions. */
   if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
     JACOBIAN* adjJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-    data->callback->initialAnalyticJacobianADJ(data, threadData, adjJac);
+    /* If we used adjJac as the primary Jacobian above it is already initialized;
+     * otherwise (should not normally happen) initialize it now. */
+    if (adjJac->availability == JACOBIAN_UNKNOWN) {
+      data->callback->initialAnalyticJacobianADJ(data, threadData, adjJac);
+    }
     if (adjJac->availability == JACOBIAN_AVAILABLE || adjJac->availability == JACOBIAN_ONLY_SPARSITY) {
       infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized adjoint Jacobian:");
       infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", adjJac->sizeCols, adjJac->sizeRows);
       infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", adjJac->sparsePattern->nnz, adjJac->sparsePattern->maxColors);
       messageClose(OMC_LOG_SIMULATION);
     }
-    /* Build CSR-to-CSC index map so we can scatter adjoint results into the
-     * SUNDIALS CSC sparse matrix. The forward Jacobian (CSC) and adjoint
-     * Jacobian (CSR) share the same nonzero structure; for each CSR entry
-     * we locate its twin in the CSC column lists. */
-    if (adjJac->csrToCscMap == NULL
-        && adjJac->sparsePattern  != NULL
-        && jacobian->sparsePattern != NULL) {
-      const SPARSE_PATTERN* fwdsp = jacobian->sparsePattern;
+
+    if (adjJac->csrToCscMap == NULL && adjJac->sparsePattern != NULL) {
       const SPARSE_PATTERN* adjsp = adjJac->sparsePattern;
       const unsigned int nnz      = adjsp->nnz;
+      const unsigned int nRows    = adjJac->sizeRows;
+      const unsigned int nCols    = adjJac->sizeCols;
       adjJac->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
-      for (unsigned int i = 0; i < adjJac->sizeRows; i++) {
-        for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
-          const unsigned int j = adjsp->index[nz]; /* column index in CSR */
-          for (unsigned int k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j + 1]; k++) {
-            if (fwdsp->index[k] == i) { /* row matches → found CSC twin */
-              adjJac->csrToCscMap[nz] = k;
-              break;
+
+      JACOBIAN* fwdJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      if (fwdJac->sparsePattern != NULL) {
+        /* Fast path: use forward CSC column lists to locate each CSR entry. */
+        const SPARSE_PATTERN* fwdsp = fwdJac->sparsePattern;
+        for (unsigned int i = 0; i < nRows; i++) {
+          for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
+            const unsigned int j = adjsp->index[nz];
+            for (unsigned int k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j + 1]; k++) {
+              if (fwdsp->index[k] == i) {
+                adjJac->csrToCscMap[nz] = k;
+                break;
+              }
             }
           }
         }
+      } else {
+        /* Fallback: only CSR available – derive CSC positions from row-major
+         * traversal order (rows processed 0..nRows-1 → ascending row indices
+         * within each column → correct CSC ordering). */
+        unsigned int* colHead = (unsigned int*) calloc(nCols, sizeof(unsigned int));
+        /* Count nnz per column */
+        for (unsigned int nz = 0; nz < nnz; nz++)
+          colHead[adjsp->index[nz]]++;
+        /* Exclusive prefix sum → CSC column start positions */
+        unsigned int cum = 0;
+        for (unsigned int j = 0; j < nCols; j++) {
+          unsigned int tmp = colHead[j];
+          colHead[j] = cum;
+          cum += tmp;
+        }
+        /* Assign CSC positions in row-major order */
+        for (unsigned int i = 0; i < nRows; i++) {
+          for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
+            const unsigned int j = adjsp->index[nz];
+            adjJac->csrToCscMap[nz] = colHead[j]++;
+          }
+        }
+        free(colHead);
       }
     }
   }
 
-  /* Set NNZ */
+  /* Set NNZ – prefer adjoint pattern when only ADJ was compiled */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
+  } else if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
+    JACOBIAN* adjJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    idaData->NNZ = adjJac->sparsePattern->nnz;
   } else {
     idaData->NNZ = jacobian->sparsePattern->nnz;
   }
@@ -1989,10 +2055,6 @@ int jacColoredSymbolicalSparseAdj(double currentTime, N_Vector yy,
   JACOBIAN* jac      = &(data->simulationInfo->analyticJacobians[adjIndex]);
   jac->dae_cj        = cj;
 
-  /* Forward Jacobian: CSC pattern, needed for SUNDIALS matrix structure */
-  const int fwdIndex  = data->callback->INDEX_JAC_A;
-  JACOBIAN* fwdJac    = &(data->simulationInfo->analyticJacobians[fwdIndex]);
-
 #ifdef USE_PARJAC
   JACOBIAN* t_jac = (idaData->jacColumns);
 #else
@@ -2003,7 +2065,11 @@ int jacColoredSymbolicalSparseAdj(double currentTime, N_Vector yy,
   unsigned int rows     = jac->sizeRows;
   unsigned int columns  = jac->sizeCols;
 
-  /* Reset the SUNDIALS matrix (zeros data; structure is rebuilt below) */
+  /* Reset the SUNDIALS matrix.  Column structure (column pointers + row
+   * indices) is rebuilt element-by-element via setJacElementSundialsSparse
+   * inside setJacElementSundialsSparseRowEval – no separate structure setup
+   * call is needed and calling setSundialsSparsePattern would crash when only
+   * the adjoint Jacobian was compiled (forward sparsePattern is NULL). */
   SUNMatZero(Jac);
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);
@@ -2012,11 +2078,6 @@ int jacColoredSymbolicalSparseAdj(double currentTime, N_Vector yy,
   if (jac->constantEqns != NULL) {
     jac->constantEqns(data, threadData, jac, NULL);
   }
-
-  /* Establish CSC column structure (column pointers + row indices) on the
-   * SUNDIALS matrix from the forward CSC pattern.  Values are filled in by
-   * setJacElementSundialsSparseRowEval during genericColoredSymbolicJacobianEvaluation. */
-  setSundialsSparsePattern(fwdJac, Jac);
 
   IDA_SPARSE_ADJ_CTX ctx = { Jac, jac->csrToCscMap };
   genericColoredSymbolicJacobianEvaluation(rows, columns, adjsp, &ctx, t_jac,

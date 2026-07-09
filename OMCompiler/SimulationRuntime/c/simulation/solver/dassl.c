@@ -369,6 +369,9 @@ int dassl_initial(DATA* data, threadData_t *threadData,
 
   dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability);
 
+  // debug print jacobianMethod
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "Jacobian method: %s", JACOBIAN_METHOD_NAME[dasslData->dasslJacobian]);
+
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;
 

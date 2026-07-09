@@ -876,6 +876,7 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
     for (int method=1; method < JAC_MAX; method++) {
       if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
         jacobianMethod = (JACOBIAN_METHOD) method;
+        infoStreamPrint(OMC_LOG_STDOUT, 1, "Jacobian method in if: %s", JACOBIAN_METHOD_NAME[jacobianMethod]);
         break;
       }
     }
