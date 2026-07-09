@@ -8,7 +8,7 @@ simulate(ModelicaTest.Media.TestOnly.IdealGasN2Mix, fileNamePrefix="ModelicaTest
 
 setCommandLineOptions("--newBackend"); getErrorString();
 simulate(ModelicaTest.Media.TestOnly.IdealGasN2Mix); getErrorString();
-diffSimulationResults("ModelicaTest.Media.TestOnly.IdealGasN2Mix_res.mat", "ModelicaTest.Media.TestOnly.IdealGasN2Mix_ref_res.mat", "ModelicaTest.Media.TestOnly.IdealGasN2Mix_diff.csv", 1e-4);
+diffSimulationResults("ModelicaTest.Media.TestOnly.IdealGasN2Mix_res.mat", "ModelicaTest.Media.TestOnly.IdealGasN2Mix_ref_res.mat", "ModelicaTest.Media.TestOnly.IdealGasN2Mix_diff.csv", 1e-8);
 
 // Result:
 // true
