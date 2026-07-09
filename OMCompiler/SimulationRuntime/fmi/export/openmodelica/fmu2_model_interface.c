@@ -1493,6 +1493,16 @@ fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
     }
   }
 
+  // After restoring the FMU state, the internal solver (CVODE/Euler) has
+  // outdated step history, Jacobians, and time.  Reinitialize it so that the
+  // next fmi2DoStep starts from a clean solver state (#12260).
+  if (status == fmi2OK && isCoSimulation(comp) && comp->solverInfo) {
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetFMUstate: reinitialising solver")
+    FMI2CS_deInitializeSolverData(comp);
+    FMI2CS_initializeSolverData(comp);
+    comp->solverInfo->currentTime = comp->fmuData->localData[0]->timeValue;
+  }
+
 cleanup:
   free(savedRealParam);
   free(savedIntParam);
