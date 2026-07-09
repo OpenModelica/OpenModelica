@@ -32,7 +32,7 @@
 #include "gbode_util.h"
 
 #include "model_help.h"
-#include "omc_error.h"
+#include "../../util/omc_error.h"
 #include "simulation_data.h"
 #include "solver_main.h"
 
@@ -152,7 +152,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
       }
     }
   }
-  assertStreamPrint(threadData, i == sizeCols, "not all columns were colored");
+  assertStreamPrint(NULL, i == sizeCols, "not all columns were colored");
   sparsePattern->color_leadindex[nColors] = sizeCols;
 
   // free memory allocation for the transposed sprasity pattern
