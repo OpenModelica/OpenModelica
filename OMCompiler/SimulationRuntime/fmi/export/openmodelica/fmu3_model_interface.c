@@ -289,6 +289,28 @@ static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
   va_end(args);
 }
 
+static void omc_terminate_fmi(FILE_INFO info, const char *msg, ...)
+{
+  va_list ap;
+  va_start(ap,msg);
+  printInfo(stderr, info);
+  fputs("Modelica Terminate: ", stderr);
+  vfprintf(stderr,msg,ap);
+  fputs("!\n", stderr);
+  va_end(ap);
+  fflush(NULL);
+
+  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  if (threadData) {
+    ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
+    if (c) {
+      c->_terminate_simulation_requested = 1;
+    }
+  }
+
+  MMC_THROW();
+}
+
 // ---------------------------------------------------------------------------
 // Private helpers functions
 // ---------------------------------------------------------------------------
@@ -434,6 +456,15 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
   if (done) {
     return fmi3OK;
   }
+
+  if (comp->_terminate_simulation_requested) {
+    comp->_terminate_simulation_requested = 0;
+    eventInfo->newDiscreteStatesNeeded = fmi3False;
+    eventInfo->terminateSimulation = fmi3True;
+    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "internalEventUpdate: terminate simulation requested by the model.")
+    return fmi3OK;
+  }
+
   FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "internalEventUpdate: terminated by an assertion.")
   comp->_need_update = 1;
   return fmi3Error;
@@ -665,6 +696,7 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
 #endif
   omc_assert = omc_assert_fmi;
   omc_assert_warning = omc_assert_fmi_warning;
+  omc_terminate = omc_terminate_fmi;
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);
   comp->type = fmuType;
@@ -2025,6 +2057,13 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, 
   if (done) {
     return fmi3OK;
   }
+  if (comp->_terminate_simulation_requested) {
+    comp->_terminate_simulation_requested = 0;
+    *terminateSimulation = fmi3True;
+    FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "%s: terminate simulation requested by the model.", func)
+    return fmi3OK;
+  }
+
   FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
   return fmi3Error;
 }
@@ -2412,6 +2451,11 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
 #endif
 
   status = internalEventIteration(c, &eventInfo);
+  if (eventInfo.terminateSimulation) {
+    term = fmi3True;
+    done = 1;
+    goto doStep_cleanup;
+  }
   if (status != fmi3OK) goto doStep_cleanup;
 
   /* Integration loop */
@@ -2521,6 +2565,11 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
 
     /* signal completed integrator step */
     status = internal_CompletedIntegratorStep(c, "fmi3DoStep", fmi3True, &enterEventMode, &terminateSimulation);
+    if (terminateSimulation) {
+      term = fmi3True;
+      done = 1;
+      goto doStep_cleanup;
+    }
     if (status != fmi3OK) goto doStep_cleanup;
 
     /* check for events */
@@ -2569,6 +2618,11 @@ static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicat
       eventInfo.nextEventTimeDefined              = fmi3False;
       eventInfo.nextEventTime                     = 0.0;
       status = internalEventIteration(c, &eventInfo);
+      if (eventInfo.terminateSimulation) {
+        term = fmi3True;
+        done = 1;
+        goto doStep_cleanup;
+      }
       if (status != fmi3OK) goto doStep_cleanup;
 
       if (eventInfo.valuesOfContinuousStatesChanged)
@@ -2614,8 +2668,12 @@ doStep_cleanup:
 
   if (!done)
   {
-    if (status == fmi3OK)
-    {
+    if (comp->_terminate_simulation_requested) {
+      comp->_terminate_simulation_requested = 0;
+      term = fmi3True;
+      FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "fmi3DoStep: terminate simulation requested by the model.")
+      status = fmi3OK;
+    } else if (status == fmi3OK) {
       FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3DoStep: terminated by an assertion.")
       status = fmi3Error;
     }
