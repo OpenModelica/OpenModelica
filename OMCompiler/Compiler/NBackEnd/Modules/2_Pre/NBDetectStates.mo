@@ -57,7 +57,7 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFBackendExtension.VariableKind;
+  import NFBackendExtension.{StateSelect, VariableKind};
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -210,6 +210,9 @@ protected
     EquationPointers.mapExp(equations, function resolveGeneralDer(acc_states = acc_states, acc_derivatives = acc_derivatives, acc_aux_equations = acc_aux_equations, uniqueIndex = uniqueIndex, diffArgs = diffArgs));
     // move stuff to their correct arrays
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
+
+    // promote StateSelect.prefer variables if their derivative already exists
+    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := promotePreferStates(variables, unknowns, knowns, initials, states, derivatives, algebraics);
 
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
@@ -656,6 +659,57 @@ protected
       else ();
     end match;
   end stateOrder;
+
+  function promotePreferStates
+    "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
+    Only relevant for variables that have StateSelect.prefer but do NOT occur inside der()
+    calls — those that do occur are already promoted by natural state collection and removed
+    from algebraics before this function runs."
+    input output VariablePointers variables;
+    input output VariablePointers unknowns;
+    input output VariablePointers knowns;
+    input output VariablePointers initials;
+    input output VariablePointers states;
+    input output VariablePointers derivatives;
+    input output VariablePointers algebraics;
+  protected
+    list<Pointer<Variable>> acc_prefer_states = {};
+    list<Pointer<Variable>> acc_prefer_ders = {};
+    ComponentRef der_cref;
+    Pointer<Variable> der_var;
+  algorithm
+    // only promote if the model is dynamic (has at least one der() call)
+    if VariablePointers.size(states) > 0 then
+      for alg_ptr in VariablePointers.toList(algebraics) loop
+        if BVariable.isStateSelect(alg_ptr, StateSelect.PREFER) then
+          // this variable has StateSelect.prefer but is not inside any der() call;
+          // create its derivative and promote it to a state
+          (der_cref, der_var) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr), variables.scalarized);
+          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(der_var), false));
+          acc_prefer_states := alg_ptr :: acc_prefer_states;
+          acc_prefer_ders := der_var :: acc_prefer_ders;
+        end if;
+      end for;
+
+      if not listEmpty(acc_prefer_states) then
+        // update state variable arrays
+        states     := VariablePointers.addList(acc_prefer_states, states);
+        unknowns   := VariablePointers.removeList(acc_prefer_states, unknowns);
+        algebraics := VariablePointers.removeList(acc_prefer_states, algebraics);
+
+        // update derivative variable arrays (newly created — not yet in any array)
+        variables    := VariablePointers.addList(acc_prefer_ders, variables);
+        unknowns     := VariablePointers.addList(acc_prefer_ders, unknowns);
+        initials     := VariablePointers.addList(acc_prefer_ders, initials);
+        derivatives  := VariablePointers.addList(acc_prefer_ders, derivatives);
+
+        if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+          print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_prefer_states)) + ") Forced states by StateSelect.PREFER:"));
+          print(List.toString(acc_prefer_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
+        end if;
+      end if;
+    end if;
+  end promotePreferStates;
 
   function updateStateOrder
     input ComponentRef lhs;

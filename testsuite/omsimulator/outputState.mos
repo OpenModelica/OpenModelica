@@ -1,5 +1,5 @@
 // status: correct
-// teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
+// teardown_command: rm -rf outputState.py outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log
 
 loadString("
 model outputState
@@ -17,35 +17,37 @@ end sink;
 buildModelFMU(outputState, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 buildModelFMU(sink, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-writeFile("outputState.lua", "
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp-outputState/\")
+writeFile("outputState.py", "
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"test\")
-oms_addSystem(\"test.root\", oms_system_sc)
-oms_addSubModel(\"test.root.A\", \"outputState.fmu\")
-oms_addSubModel(\"test.root.B\", \"sink.fmu\")
-oms_addConnection(\"test.root.A.y\", \"test.root.B.u\")
-oms_setResultFile(\"test\", \"\")
+Settings.suppressPath = True
 
-oms_instantiate(\"test\")
-oms_setReal(\"test.root.A.y_start\", 1.5)
+model = SSP()
+model.addResource('outputState.fmu', new_name='resources/outputState.fmu')
+model.addResource('sink.fmu', new_name='resources/sink.fmu')
+model.addComponent(CRef('default', 'A'), 'resources/outputState.fmu')
+model.addComponent(CRef('default', 'B'), 'resources/sink.fmu')
+model.addConnection(CRef('default', 'A', 'y'), CRef('default', 'B', 'u'))
 
-oms_initialize(\"test\")
-print(\"info:    Initialization\")
-print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
-print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('')
+instantiated_model.setValue(CRef('default', 'A', 'y_start'), 1.5)
 
-oms_simulate(\"test\")
-print(\"info:    Simulation\")
-print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
-print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:      A.y: {instantiated_model.getValue(CRef('default', 'A', 'y'))}\")
+print(f\"info:      B.u: {instantiated_model.getValue(CRef('default', 'B', 'u'))}\")
 
-oms_terminate(\"test\")
-oms_delete(\"test\")
+instantiated_model.simulate()
+print(f\"info:    Simulation\")
+print(f\"info:      A.y: {instantiated_model.getValue(CRef('default', 'A', 'y'))}\")
+print(f\"info:      B.u: {instantiated_model.getValue(CRef('default', 'B', 'u'))}\")
+
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua", "outputState_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 outputState.py", "outputState_systemCall.log");
 readFile("outputState_systemCall.log");
 
 // Result:
@@ -58,16 +60,16 @@ readFile("outputState_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // info:    Initialization
 // info:      A.y: 1.5
 // info:      B.u: 1.5
 // info:    Simulation
-// info:      A.y: 0.50000000000006
-// info:      B.u: 0.50000000000006
-// info:    Final Statistics for 'test.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// info:      A.y: 0.5000000000000554
+// info:      B.u: 0.5000000000000554
 // "
 // endResult

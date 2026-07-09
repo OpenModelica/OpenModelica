@@ -112,9 +112,11 @@ list(APPEND OMEDITLIB_SOURCES
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/om_format.c
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu/d2s.c
   ${CMAKE_CURRENT_SOURCE_DIR}/wasm_stubs.cpp
-  # OMS C API (OMSimulator has no wasm build) + the excluded sim/OMS-sim output
-  # widgets' moc-referenced methods: no-op definitions so the app links/loads.
-  ${CMAKE_CURRENT_SOURCE_DIR}/oms_stubs.cpp
+  # The excluded sim/OMS-sim output widgets' moc-referenced methods: no-op
+  # definitions so the app links/loads. (OMSProxy no longer calls the raw
+  # oms_* C API - it talks to the GUI server over ZMQ/QProcess instead, which
+  # are themselves guarded out under __EMSCRIPTEN__ in OMSProxy.h/.cpp - so
+  # there is nothing left to stub here for the OMSimulator C API.)
   ${CMAKE_CURRENT_SOURCE_DIR}/sim_widget_stubs.cpp
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
   ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp)
@@ -158,14 +160,13 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
 # OMEDIT_ANIMATION_QUICK3D guards in Animation/, not via WITHOUT_OSG.
 target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI OMEDIT_ANIMATION_QUICK3D)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
-# Headers for subsystems whose libs aren't linked on wasm (OMSimulator, antlr/
-# OMParser, open62541) compile fine for the static lib; the symbols are deferred.
+# Headers for subsystems whose libs aren't linked on wasm (antlr/OMParser,
+# open62541) compile fine for the static lib; the symbols are deferred.
 target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
   ${CMAKE_BINARY_DIR}
   ${OM_ROOT}/OMEdit
   ${RUST_OMC}/libopenmodelica_compiler/include
   ${OM_ROOT}/OMCompiler/SimulationRuntime/c
-  ${OM_ROOT}/OMSimulator/include
   ${OM_ROOT}/OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
   ${OM_ROOT}/OMParser
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu

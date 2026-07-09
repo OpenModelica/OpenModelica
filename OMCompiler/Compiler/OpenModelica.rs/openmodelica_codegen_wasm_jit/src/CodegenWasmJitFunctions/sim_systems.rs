@@ -343,17 +343,11 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Add);
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // time at SimData offset 0
-    // relation-mode flag address: `rt_solve_nls` forces held relations around the
-    // solve (C's `solveContinuous`) so the residual stays smooth.
+    // relation-mode flag address: the solver holds relations around the Newton
+    // solve so the residual stays smooth.
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
-    // relations base + count: the event iteration re-evaluates them fresh and
-    // detects when the discrete state has stabilized.
-    ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Const(ctx.sim()?.relations_off as i32));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::I32Const(ctx.sim()?.n_relations as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

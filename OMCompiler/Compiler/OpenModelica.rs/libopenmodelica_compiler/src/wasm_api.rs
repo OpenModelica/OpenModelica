@@ -338,3 +338,33 @@ pub fn omc_eval(command: &str) -> String {
         },
     }
 }
+
+/// `simulate(...)` without the string command's O(program) env build; errors returned as `"Error: …"`.
+#[wasm_bindgen]
+pub fn omc_simulate(
+    class_name: &str,
+    stop_time: f64,
+    number_of_intervals: i32,
+    tolerance: f64,
+    method: &str,
+    simflags: &str,
+) -> String {
+    LAST_PANIC.with(|p| *p.borrow_mut() = None);
+    let run = || {
+        capi::simulate(
+            ArcStr::from(class_name),
+            stop_time,
+            number_of_intervals,
+            tolerance,
+            ArcStr::from(method),
+            ArcStr::from(simflags),
+        )
+    };
+    match catch_unwind(AssertUnwindSafe(run)) {
+        Ok(reply) => reply.to_string(),
+        Err(_) => match LAST_PANIC.with(|p| p.borrow_mut().take()) {
+            Some(msg) => format!("Error: simulation panicked: {msg}"),
+            None => "Error: simulation panicked".to_owned(),
+        },
+    }
+}

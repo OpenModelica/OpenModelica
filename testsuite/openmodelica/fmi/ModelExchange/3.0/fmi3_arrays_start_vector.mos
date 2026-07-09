@@ -30,10 +30,7 @@ readFile("fmi3_arrays_start_vector.xml"); getErrorString();
 // true
 // ""
 // "fmi3_arrays_start_vector.fmu"
-// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
-// 	Available keys: x, $DER.x
-// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
-// "
+// ""
 // 0
 // ""
 // 0

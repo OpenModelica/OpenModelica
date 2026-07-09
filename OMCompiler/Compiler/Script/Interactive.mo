@@ -54,6 +54,7 @@ encapsulated package Interactive
 import Absyn;
 import ProgramUtil;
 import AbsynUtil;
+import Builtin;
 import ConnectionGraph;
 import DAE;
 import FCore;
@@ -713,6 +714,40 @@ algorithm
     outString := "";
   end try;
 end evaluateExprToStr;
+
+public function simulateModel
+  "simulate() against the builtin graph, not the O(program-size) env; empty/non-positive args dropped."
+  input String className;
+  input Real stopTime;
+  input Integer numberOfIntervals;
+  input Real tolerance;
+  input String method;
+  input String simflags;
+  output String result;
+protected
+  list<Absyn.NamedArg> nargs = {};
+  Absyn.Exp callExp;
+  FCore.Graph env;
+  FCore.Cache cache;
+  DAE.Exp sexp;
+  Values.Value value;
+algorithm
+  try
+    if not stringEmpty(simflags) then nargs := Absyn.NAMEDARG("simflags", Absyn.STRING(simflags)) :: nargs; end if;
+    if not stringEmpty(method) then nargs := Absyn.NAMEDARG("method", Absyn.STRING(method)) :: nargs; end if;
+    if tolerance > 0.0 then nargs := Absyn.NAMEDARG("tolerance", Absyn.REAL(realString(tolerance))) :: nargs; end if;
+    if numberOfIntervals > 0 then nargs := Absyn.NAMEDARG("numberOfIntervals", Absyn.INTEGER(numberOfIntervals)) :: nargs; end if;
+    if stopTime > 0.0 then nargs := Absyn.NAMEDARG("stopTime", Absyn.REAL(realString(stopTime))) :: nargs; end if;
+    callExp := Absyn.CALL(Absyn.CREF_IDENT("simulate", {}),
+      Absyn.FUNCTIONARGS({Absyn.CREF(AbsynUtil.pathToCref(Parser.stringPath(className)))}, nargs), {});
+    (_, env) := Builtin.initialGraph(FCore.emptyCache());
+    (cache, sexp, _) := StaticScript.elabExp(FCore.emptyCache(), env, callExp, true, true, DAE.NOPRE(), Absyn.dummyInfo);
+    (_, value) := CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(Absyn.dummyInfo), 0);
+    result := ValuesDump.valString(value);
+  else
+    result := "";
+  end try;
+end simulateModel;
 
 protected function makeTupleCrefs
   input list<Absyn.Exp> inCrefs;

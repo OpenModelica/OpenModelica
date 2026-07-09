@@ -41,8 +41,7 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "OMSimulator/OMSimulator.h"
-
+#include "OMS/OMSModel.h"
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
@@ -141,8 +140,8 @@ public:
   QString getZfr() {return mZfr;}
   void setAlpha(QString alpha) {mAlpha = alpha;}
   QString getAlpha() {return mAlpha;}
-  void setOMSConnectionType(oms_connection_type_enu_t connectionType) {mOMSConnectionType = connectionType;}
-  oms_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
+  void setOMSConnectionType(OMSModel::ConnectionType connectionType) {mOMSConnectionType = connectionType;}
+  OMSModel::ConnectionType getOMSConnectionType() {return mOMSConnectionType;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable) override;
@@ -151,7 +150,6 @@ public:
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();
-  void showOMSConnection();
   void updateTransistion();
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 
@@ -181,7 +179,7 @@ private:
   QString mZf;
   QString mZfr;
   QString mAlpha;
-  oms_connection_type_enu_t mOMSConnectionType;
+  OMSModel::ConnectionType mOMSConnectionType;
   bool mActiveState;
   QVector<Element*> mCollidingConnectorElements;
   QVector<LineAnnotation*> mCollidingConnections;

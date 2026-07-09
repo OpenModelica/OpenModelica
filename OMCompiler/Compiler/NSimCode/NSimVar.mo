@@ -1285,6 +1285,19 @@ public
       end match;
     end getStrongComponentVars;
 
+  public
+    function numScalarElems
+      "Total scalar element count across a list of SimVars, independent of the
+       codegen target.  Unlike listScalarSize, always returns the product of
+       dimension sizes (not listLength).  Used by NBackEnd Jacobian generation
+       to compute the correct number of columns/rows when --simCodeScalarize=false
+       yields array SimVars (e.g. x[100] is one SimVar with numArrayElement=[100])."
+      input list<SimVar> vars;
+      output Integer n;
+    algorithm
+      n := sum(product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) for v in vars);
+    end numScalarElems;
+
   protected
     function getVars
       input Pointer<Variable> var;

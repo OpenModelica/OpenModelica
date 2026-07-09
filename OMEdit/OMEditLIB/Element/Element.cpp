@@ -41,11 +41,11 @@
 #include "Element.h"
 #include "ElementProperties.h"
 #include "OMS/ElementPropertiesDialog.h"
+#include "OMS/OMSModel.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Modeling/ElementTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
-#include "OMS/BusDialog.h"
 #include "Util/ResourceCache.h"
 #include "Options/OptionsDialog.h"
 
@@ -339,7 +339,6 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
   mTransformationString = mpReferenceElement->getTransformationString();
-  mpBusComponent = mpReferenceElement->getBusComponent();
   drawInheritedElementsAndShapes();
   mTransformation = Transformation(mpReferenceElement->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -349,7 +348,7 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   updateToolTip();
-  setVisible(!mpReferenceElement->isInBus());
+  setVisible(true);
 }
 
 /*!
@@ -1170,24 +1169,11 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
  */
 void Element::handleOMSElementDoubleClick()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector()) {
-    AddBusDialog *pAddBusDialog = new AddBusDialog(QList<Element*>(), mpLibraryTreeItem, mpGraphicsView);
-    pAddBusDialog->exec();
-  } else if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+  if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->getOMSModelConnector())) {
     showElementPropertiesDialog();
   }
 }
 
-/*!
- * \brief Element::setBusComponent
- * Sets the bus component.
- * \param pBusElement
- */
-void Element::setBusComponent(Element *pBusElement)
-{
-  mpBusComponent = pBusElement;
-  setVisible(!isInBus());
-}
 
 /*!
  * \brief Element::reDrawConnector
@@ -1338,7 +1324,7 @@ void Element::drawModelicaElement()
  */
 void Element::drawOMSElement()
 {
-  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
@@ -1349,59 +1335,53 @@ void Element::drawOMSElement()
       Element *pNewElement = new Element(pElement, this, getRootParentElement());
       mElementsList.append(pNewElement);
     }
-  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+  } else if (mpLibraryTreeItem->getOMSModelConnector()) { // if component is a signal i.e., input/output
+    if (mpLibraryTreeItem->getOMSModelConnector()->isInput()) {
       PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
       QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pInputPolygonAnnotation->setPoints(points);
       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
+      switch (mpLibraryTreeItem->getOMSModelConnector()->getSignalType()) {
+        case OMSModel::SignalType::oms_signal_type_integer:
+        case OMSModel::SignalType::oms_signal_type_enum:
           pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
           pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
           break;
-        case oms_signal_type_boolean:
+        case OMSModel::SignalType::oms_signal_type_boolean:
           pInputPolygonAnnotation->setLineColor(QColor(255,0,255));
           pInputPolygonAnnotation->setFillColor(QColor(255,0,255));
           break;
-        case oms_signal_type_string:
+        case OMSModel::SignalType::oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
           break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
+        case OMSModel::SignalType::oms_signal_type_real:
         default:
           pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
           pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
           break;
       }
       mShapesList.append(pInputPolygonAnnotation);
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+    } else if (mpLibraryTreeItem->getOMSModelConnector()->isOutput()) {
       PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
       QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pOutputPolygonAnnotation->setPoints(points);
       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
+      switch (mpLibraryTreeItem->getOMSModelConnector()->getSignalType()) {
+        case OMSModel::SignalType::oms_signal_type_integer:
+        case OMSModel::SignalType::oms_signal_type_enum:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
-        case oms_signal_type_boolean:
+        case OMSModel::SignalType::oms_signal_type_boolean:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
-        case oms_signal_type_string:
+        case OMSModel::SignalType::oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
           break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
+        case OMSModel::SignalType::oms_signal_type_real:
         default:
           pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
@@ -1409,15 +1389,6 @@ void Element::drawOMSElement()
       }
       mShapesList.append(pOutputPolygonAnnotation);
     }
-  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
-    RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
-    QVector<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
-    pBusRectangleAnnotation->setExtents(extents);
-    pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
-    mShapesList.append(pBusRectangleAnnotation);
   }
 }
 
@@ -1581,10 +1552,8 @@ void Element::createResizerItems()
   bool isElementMode = mpGraphicsView->getModelWidget()->isElementMode();
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->isSSP()
-                         && mpLibraryTreeItem->getOMSConnector());
-  bool isOMSBusConnecor = (mpLibraryTreeItem
-                           && mpLibraryTreeItem->isSSP()
-                           && mpLibraryTreeItem->getOMSBusConnector());
+                         && mpLibraryTreeItem->getOMSModelConnector());
+  bool isOMSBusConnecor = false;
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1788,8 +1757,8 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
-      ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
+    if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent())) {
+      OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
       QPointF extent2 = extent.at(1);
@@ -1797,22 +1766,19 @@ void Element::updatePlacementAnnotation()
       extent1.setY(extent1.y() + mTransformation.getOrigin().y());
       extent2.setX(extent2.x() + mTransformation.getOrigin().x());
       extent2.setY(extent2.y() + mTransformation.getOrigin().y());
-      elementGeometry.x1 = extent1.x();
-      elementGeometry.y1 = extent1.y();
-      elementGeometry.x2 = extent2.x();
-      elementGeometry.y2 = extent2.y();
-      elementGeometry.rotation = mTransformation.getRotateAngle();
-      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
-    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector()
-                                     || mpLibraryTreeItem->getOMSBusConnector())) {
-      ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
-      if (mpLibraryTreeItem->getOMSConnector()) {
-        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
-      } else if (mpLibraryTreeItem->getOMSBusConnector()) {
-        OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
-      }
+      elementGeometry.setX1(extent1.x());
+      elementGeometry.setY1(extent1.y());
+      elementGeometry.setX2(extent2.x());
+      elementGeometry.setY2(extent2.y());
+      elementGeometry.setRotation(mTransformation.getRotateAngle());
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry);
+      mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
+    } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelConnector()) {
+      OMSModel::ConnectorGeometry connectorGeometry;
+      connectorGeometry.setX(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1));
+      connectorGeometry.setY(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1));
+      OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), connectorGeometry);
+      mpLibraryTreeItem->getOMSModelConnector()->setGeometry(connectorGeometry);
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.
        */
@@ -2283,7 +2249,8 @@ void Element::openClass()
 void Element::showElementPropertiesDialog()
 {
   if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()
-      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()
+          || mpLibraryTreeItem->getOMSModelConnector())) {
     ElementPropertiesDialog *pElementPropertiesDialog = new ElementPropertiesDialog(this, MainWindow::instance());
     pElementPropertiesDialog->exec();
   }

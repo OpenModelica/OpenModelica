@@ -34,12 +34,18 @@ val(der(x), {0.0,1.0}, "helloWorldOMSU_res.mat");
 // "
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
+// "info:    *** FMU Simulation Info ***
+//           - model:     helloWorldOMSU (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'helloWorldOMSU.root': 0.002000
 // info:    Result file: helloWorldOMSU_res.mat (bufferSize=1)
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 505 NumRhsEvals  = 510 NumLinSolvSetups = 31
-//          NumNonlinSolvIters = 509 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// info:    Final Statistics for 'helloWorldOMSU.root':
+//          NumSteps = 504 NumRhsEvals  = 509 NumLinSolvSetups = 29
+//          NumNonlinSolvIters = 508 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // "
-// {1.0, 7.389140829126241}
-// {2.0, 14.778281658252482}
+// {1.0, 7.389143677178315}
+// {2.0, 14.77828735435663}
 // endResult

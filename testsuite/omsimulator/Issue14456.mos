@@ -1,14 +1,14 @@
 // name: Issue14456.mos
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf roomM370*.c roomM370*.h
+// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370*.log roomM370*.mat roomM370*.fmu roomM370_systemCall.log temp-roomM370/
 
 loadFile("roomM370.mo"); getErrorString();
 buildModelFMU(roomM370, version="2.0", platforms=["dynamic"]); getErrorString();
 
-loadModel(Modelica); getErrorString();
-loadFile(importFMU("roomM370.fmu")); getErrorString();
-simulate(roomM370_me_FMU); getErrorString();
+// this should be later replaced by a call to the OMSimulatorPython DualMassOscillator.fmu  when command line interface is implemented with oms3
+system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu --suppressPath=true", "roomM370_systemCall.log");
+readFile("roomM370_systemCall.log");
 
 
 
@@ -18,13 +18,17 @@ simulate(roomM370_me_FMU); getErrorString();
 // {"roomM370.fmu"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// true
-// ""
-// record SimulationResult
-//     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 8000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'roomM370_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Failed to build model: roomM370_me_FMU"
-// end SimulationResult;
-// "[omsimulator/roomM370_me_FMU.mo:11:3-11:135:writable] Error: Class Modelica.Blocks.Interfaces.IntegerInput not found in scope roomM370_me_FMU.
+// 0
+// "info:    *** FMU Simulation Info ***
+//           - model:     roomM370 (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  8000.000000
+//           - tolerance: 0.000001
+//           - stepSize:  1.000000
+// info:    maximum step size for 'roomM370.root': 1.000000
+// info:    Result file: roomM370_res.mat (bufferSize=10)
+// info:    Final Statistics for 'roomM370.root':
+//          NumSteps = 8004 NumRhsEvals  = 8005 NumLinSolvSetups = 404
+//          NumNonlinSolvIters = 8004 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

@@ -1,55 +1,57 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf DualMassOscillator_me.lua DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_me_systemCall.log temp-DualMassOscillator_me/
+// teardown_command: rm -rf DualMassOscillator_me.py DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_me_systemCall.log temp-DualMassOscillator_me/
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 
 buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="me", fileNamePrefix="DualMassOscillator.System1", platforms={"static"}); getErrorString();
 buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me", fileNamePrefix="DualMassOscillator.System2", platforms={"static"}); getErrorString();
 
-writeFile("DualMassOscillator_me.lua", "
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp-DualMassOscillator_me/\")
+writeFile("DualMassOscillator_me.py", "
+from OMSimulator import SSP, Settings, CRef
+Settings.suppressPath = True
 
-oms_newModel(\"DualMassOscillator\")
-oms_addSystem(\"DualMassOscillator.root\", oms_system_sc)
-oms_addSubModel(\"DualMassOscillator.root.system1\", \"DualMassOscillator.System1.fmu\")
-oms_addSubModel(\"DualMassOscillator.root.system2\", \"DualMassOscillator.System2.fmu\")
+model = SSP()
+model.addResource('DualMassOscillator.System1.fmu', new_name='resources/DualMassOscillator.System1.fmu')
+model.addResource('DualMassOscillator.System2.fmu', new_name='resources/DualMassOscillator.System2.fmu')
+model.activeVariant.stopTime = 0.1
 
-oms_addConnection(\"DualMassOscillator.root.system1.F\", \"DualMassOscillator.root.system2.F\")
-oms_addConnection(\"DualMassOscillator.root.system1.s1\", \"DualMassOscillator.root.system2.s1\")
-oms_addConnection(\"DualMassOscillator.root.system1.v1\", \"DualMassOscillator.root.system2.v1\")
-oms_addConnection(\"DualMassOscillator.root.system1.a1\", \"DualMassOscillator.root.system2.a1\")
+model.addComponent(CRef('default', 'system1'), 'resources/DualMassOscillator.System1.fmu')
+model.addComponent(CRef('default', 'system2'), 'resources/DualMassOscillator.System2.fmu')
 
-oms_setResultFile(\"DualMassOscillator\", \"\")
-oms_setStopTime(\"DualMassOscillator\", 0.1)
-oms_setVariableStepSize(\"DualMassOscillator.root\", 1e-12, 1e-12, 1e-3)
-oms_setTolerance(\"DualMassOscillator.root\", 1e-6, 1e-6)
+model.addConnection(CRef('default', 'system1', 'F'), CRef('default', 'system2', 'F'))
+model.addConnection(CRef('default', 'system1', 's1'), CRef('default', 'system2', 's1'))
+model.addConnection(CRef('default', 'system1', 'v1'), CRef('default', 'system2', 'v1'))
+model.addConnection(CRef('default', 'system1', 'a1'), CRef('default', 'system2', 'a1'))
 
-oms_instantiate(\"DualMassOscillator\")
-oms_setReal(\"DualMassOscillator.root.system2.s2_start\", 2.5)
+solver1 = {'name' : 'solver1',  'method': 'cvode', 'relativeTolerance': 1e-6, 'initialStepSize': 1e-12, 'minimumStepSize': 1e-12, 'maximumStepSize': 1e-3}
+model.newSolver(solver1)
 
-oms_initialize(\"DualMassOscillator\")
-print(\"info:    Initialization\")
-print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
-print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
+model.setSolver(CRef('default', 'system1'), 'solver1')
+model.setSolver(CRef('default', 'system2'), 'solver1')
 
-oms_simulate(\"DualMassOscillator\")
-print(\"info:    Simulation\")
-print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
-print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('')
+instantiated_model.setValue(CRef('default', 'system2', 's2_start'), 2.5)
 
-oms_terminate(\"DualMassOscillator\")
-oms_delete(\"DualMassOscillator\")
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:      system1.s1: {instantiated_model.getValue(CRef('default', 'system1', 's1'))}\")
+print(f\"info:      system2.s2: {instantiated_model.getValue(CRef('default', 'system2', 's2'))}\")
+
+instantiated_model.simulate()
+print(f\"info:    Simulation\")
+print(f\"info:      system1.s1: {instantiated_model.getValue(CRef('default', 'system1', 's1'))}\")
+print(f\"info:      system2.s2: {instantiated_model.getValue(CRef('default', 'system2', 's2'))}\")
+
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator_me.lua", "DualMassOscillator_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 DualMassOscillator_me.py", "DualMassOscillator_me_systemCall.log");
 readFile("DualMassOscillator_me_systemCall.log");
 
 
-simulate(DualMassOscillator.CoupledSystem, stopTime=0.1, simflags="-override=system2.s2_start=2.5"); getErrorString();
-val(system1.s1, {0.0,0.1});
-val(system2.s2, {0.0,0.1});
 
 // Result:
 // true
@@ -64,26 +66,16 @@ val(system2.s2, {0.0,0.1});
 // true
 // ""
 // 0
-// "info:    maximum step size for 'DualMassOscillator.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1230 NumRhsEvals  = 1468 NumLinSolvSetups = 125
+//          NumNonlinSolvIters = 1467 NumNonlinSolvConvFails = 0 NumErrTestFails = 45
 // info:    Initialization
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.91153010887923
-// info:      system2.s2: 1.9553626027155
-// info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 18242 NumRhsEvals  = 20006 NumLinSolvSetups = 1341
-//          NumNonlinSolvIters = 20005 NumNonlinSolvConvFails = 0 NumErrTestFails = 256
+// info:      system1.s1: 0.9112809433500815
+// info:      system2.s2: 1.9556325804043238
 // "
-// record SimulationResult
-//     resultFile = "DualMassOscillator.CoupledSystem_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DualMassOscillator.CoupledSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=system2.s2_start=2.5'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// ""
-// {1.0, 0.9112766780030248}
-// {2.5, 1.9556371286597514}
 // endResult

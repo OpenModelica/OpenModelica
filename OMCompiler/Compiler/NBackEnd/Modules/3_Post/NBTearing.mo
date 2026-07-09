@@ -194,6 +194,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
@@ -206,6 +207,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
@@ -218,6 +220,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
+        index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
@@ -399,8 +402,8 @@ protected
     // only extracts discrete variables to be solved as inner equations
   protected
     Tearing strict;
-    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars;
-    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
+    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
+    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
     Adjacency.Matrix adj;
@@ -416,47 +419,64 @@ protected
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
         (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, Partition.kindIsInitial(kind));
         (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
+        // extract continuous algorithm equations; they have implied inner variables and cannot be residuals
+        (alg_eqns, cont_eqns) := List.splitOnTrue(cont_eqns, Equation.isAlgorithm);
 
-        // get the implied vars by algorithms and tuples
-        implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in disc_eqns));
+        // get the implied vars by algorithms and tuples (from both alg_eqns and disc_eqns)
+        implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in listAppend(alg_eqns, disc_eqns)));
         disc_vars := UnorderedSet.unique_list(listAppend(disc_vars, implied_vars), BVariable.hash, BVariable.equalName);
         cont_vars := UnorderedSet.difference_list(cont_vars, implied_vars, BVariable.hash, BVariable.equalName);
 
         num_vars := sum(BVariable.size(var) for var in disc_vars);
-        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
+        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns) + sum(Equation.size(eqn) for eqn in alg_eqns);
 
-        // do nothing if there are no discrete equations
-        if not listEmpty(disc_eqns) then
+        // do nothing if there are no discrete or algorithm equations
+        if not (listEmpty(disc_eqns) and listEmpty(alg_eqns)) then
           comp.mixed := true;
+          inner_comps := {};
 
-          // the sets of discrete variables and discrete equations
-          v := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
-          e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
-
-          // match the discretes to create inner components
-          adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
-          matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
-
-          // get matched vars and remove them from the iteration variable list
-          (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
-          // build the matched variables set
-          for var in matched_vars loop
-            UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+          // algorithm equations: create MULTI_COMPONENTs directly with ALL outputs as inner variables
+          // (they cannot be residuals and have multiple outputs, so standard 1:1 matching is wrong)
+          for alg_eqn in alg_eqns loop
+            alg_implied := getImpliedInnerVars(alg_eqn);
+            for var in alg_implied loop
+              UnorderedSet.add(BVariable.getVarName(var), matched_set);
+            end for;
+            inner_comps := StrongComponent.MULTI_COMPONENT(
+              list(Slice.SLICE(var, {}) for var in alg_implied),
+              Slice.SLICE(alg_eqn, {}),
+              NBSolve.Status.UNPROCESSED
+            ) :: inner_comps;
           end for;
 
-          // only take variables that are not in the set
+          if not listEmpty(disc_eqns) then
+            // the sets of discrete variables (exclude alg-implied vars already handled) and discrete equations
+            v := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var guard(not UnorderedSet.contains(BVariable.getVarName(var), matched_set)) in disc_vars));
+            e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
+
+            // match the discretes to create inner components
+            adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
+            matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
+
+            // get matched vars and build the matched variables set
+            (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
+            for var in matched_vars loop
+              UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+            end for;
+
+            // upgrade adjacency matrix and sort the system creating inner equation components
+            adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
+            inner_comps := listAppend(Sorting.tarjan(adj, matching, variables, equations), inner_comps);
+          end if;
+
+          // only take variables that are not in the matched set
           for var in strict.iteration_vars loop
             if not UnorderedSet.contains(BVariable.getVarName(Slice.getT(var)), matched_set) then
               iteration_vars := var :: iteration_vars;
             end if;
           end for;
 
-          // upgrade adjacency matrix and sort the system creating inner equation components
-          adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
-          inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
-
-          // create residuals equations and iteration variables
           strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
           strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
@@ -686,8 +706,9 @@ protected
         Algorithm alg;
         Expression tpl;
 
-      case Equation.ALGORITHM(alg = alg)
-      then list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
+      case Equation.ALGORITHM(alg = alg) algorithm
+        vars := list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
+      then vars;
 
       case Equation.RECORD_EQUATION(lhs = tpl as Expression.TUPLE()) algorithm
       then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr in UnorderedSet.toList(Expression.extractCrefs(tpl)));

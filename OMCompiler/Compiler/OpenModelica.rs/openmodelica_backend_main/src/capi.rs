@@ -50,3 +50,22 @@ pub fn init(args: &[ArcStr]) -> Result<()> {
 pub fn eval(command: ArcStr) -> Result<(bool, ArcStr)> {
     Main::handleCommand(command)
 }
+
+/// `simulate` against the builtin graph only; empty/non-positive args use its defaults.
+pub fn simulate(
+    class_name: ArcStr,
+    stop_time: f64,
+    number_of_intervals: i32,
+    tolerance: f64,
+    method: ArcStr,
+    simflags: ArcStr,
+) -> ArcStr {
+    crate::Interactive::simulateModel(
+        class_name,
+        metamodelica::OrderedFloat(stop_time),
+        number_of_intervals,
+        metamodelica::OrderedFloat(tolerance),
+        method,
+        simflags,
+    )
+}

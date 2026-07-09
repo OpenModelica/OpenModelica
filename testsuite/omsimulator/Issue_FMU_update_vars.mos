@@ -1,7 +1,7 @@
 // name:  Issue_FMU_update_vars
 // keywords: FMI 2.0 fmi2setReal OMSimulator
 // status: correct
-// teardown_command: rm -rf temp_Issue_FMU_update_vars/ Issue_FMU_update_vars.mat Issue_FMU_update_vars_info.json Issue_FMU_update_vars.lua Issue_FMU_update_vars_systemCall.log Issue_FMU_update_vars.fmu Issue_FMU_update_vars.log
+// teardown_command: rm -rf temp_Issue_FMU_update_vars/ Issue_FMU_update_vars.mat Issue_FMU_update_vars_info.json Issue_FMU_update_vars.py Issue_FMU_update_vars.ssp Issue_FMU_update_vars_systemCall.log Issue_FMU_update_vars.fmu Issue_FMU_update_vars.log
 
 loadString("model Issue_FMU_update_vars
   Real var;
@@ -16,45 +16,46 @@ buildModelFMU(Issue_FMU_update_vars, version="2.0", fmuType="me_cs", platforms={
 getErrorString();
 
 // Simulate with OMSimulator
-writeFile("Issue_FMU_update_vars.lua", "
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp_Issue_FMU_update_vars/\")
+writeFile("Issue_FMU_update_vars.py", "
 
-oms_newModel(\"model\")
+from OMSimulator import SSP, Settings, CRef
+Settings.suppressPath = True
 
-oms_addSystem(\"model.root\", oms_system_sc)
+model = SSP()
+model.addResource('Issue_FMU_update_vars.fmu', new_name='resources/Issue_FMU_update_vars.fmu')
+model.addComponent(CRef('default', 'fmuvar'), 'resources/Issue_FMU_update_vars.fmu')
 
-oms_addSubModel(\"model.root.fmuvar\", \"Issue_FMU_update_vars.fmu\")
+print(f\"info:    Virgin settings\")
+model.setValue(CRef('default', 'fmuvar', 'var'), -4.0)
+model.setValue(CRef('default', 'fmuvar', 'x'), -30.0)
 
-oms_setResultFile(\"model\", \"Issue_FMU_update_vars.mat\")
+print(f\"info:      model.root.fmuvar.var     : {model.getValue(CRef('default', 'fmuvar', 'var'))}\")
+print(f\"info:      model.root.fmuvar.x       : {model.getValue(CRef('default', 'fmuvar', 'x'))}\")
 
-print(\"info:    Virgin settings\")
-oms_setReal(\"model.root.fmuvar.var\", -4.0)
-oms_setReal(\"model.root.fmuvar.x\", -30.0)
+model.export('Issue_FMU_update_vars.ssp')
 
-print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
-print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
+model2 = SSP('Issue_FMU_update_vars.ssp')
+instantiated_model = model2.instantiate()
+instantiated_model.setResultFile('Issue_FMU_update_vars.mat')
+instantiated_model.setValue(CRef('default', 'fmuvar', 'var'), -3.0)
+instantiated_model.setValue(CRef('default', 'fmuvar', 'x'), -40.0)
 
-oms_instantiate(\"model\")
-oms_setReal(\"model.root.fmuvar.var\", -3.0)
-oms_setReal(\"model.root.fmuvar.x\", -40.0)
+print(f\"info:    Instantiate settings\")
+print(f\"info:      model.root.fmuvar.var     : {instantiated_model.getValue(CRef('default', 'fmuvar', 'var'))}\")
+print(f\"info:      model.root.fmuvar.x       : {instantiated_model.getValue(CRef('default', 'fmuvar', 'x'))}\")
 
-print(\"info:    Instantiate settings\")
-print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
-print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
+instantiated_model.initialize()
 
-oms_initialize(\"model\")
+print(f\"info:    Initialize settings\")
+print(f\"info:      model.root.fmuvar.var     : {instantiated_model.getValue(CRef('default', 'fmuvar', 'var'))}\")
+print(f\"info:      model.root.fmuvar.x       : {instantiated_model.getValue(CRef('default', 'fmuvar', 'x'))}\")
+instantiated_model.simulate()
 
-print(\"info:    Initialize settings\")
-print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
-print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
-oms_simulate(\"model\")
-
-oms_terminate(\"model\")
-oms_delete(\"model\")
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Issue_FMU_update_vars.lua", "Issue_FMU_update_vars_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Issue_FMU_update_vars.py", "Issue_FMU_update_vars_systemCall.log");
 readFile("Issue_FMU_update_vars_systemCall.log");
 
 // Result:
@@ -66,19 +67,15 @@ readFile("Issue_FMU_update_vars_systemCall.log");
 // true
 // ""
 // 0
-// "info:    Virgin settings
+// "info:    Result file: Issue_FMU_update_vars.mat (bufferSize=10)
+// info:    Virgin settings
 // info:      model.root.fmuvar.var     : -4.0
 // info:      model.root.fmuvar.x       : -30.0
 // info:    Instantiate settings
 // info:      model.root.fmuvar.var     : -3.0
 // info:      model.root.fmuvar.x       : -40.0
-// info:    maximum step size for 'model.root': 0.001000
-// info:    Result file: Issue_FMU_update_vars.mat (bufferSize=1)
 // info:    Initialize settings
 // info:      model.root.fmuvar.var     : -3.0
 // info:      model.root.fmuvar.x       : -40.0
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

@@ -828,6 +828,7 @@ public
         Equation new_eqn;
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
+        Algorithm alg;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -855,11 +856,15 @@ public
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
       // reduce the body of algorithms
-      case Equation.ALGORITHM() algorithm
-        stmts := removeWhenEquationAlgorithmBody(eqn.alg.statements);
+      case Equation.ALGORITHM(alg = alg) algorithm
+        stmts := removeWhenEquationAlgorithmBody(alg.statements);
         if not listEmpty(stmts) then
-          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
-          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+          // update alg in-place to preserve original equation kind: re-evaluating via
+          // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
+          alg.statements := stmts;
+          eqn.alg := Algorithm.setInputsOutputs(alg);
+          eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+          new_eqn := eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
