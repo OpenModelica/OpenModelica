@@ -2812,6 +2812,10 @@ int FMI3CS_initializeSolverData(ModelInstance* comp)
         return -1;
         retValue = -1;
       } else {
+        /* FMI 3.0 has no memory callbacks, so plain free matches the calloc
+         * above. Must be set: cvode_solver_deinitial frees the struct through
+         * this pointer, which calloc left NULL. */
+        cvodeData->freeSolverMemory = free;
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free */
       }
       solverInfo->solverData = cvodeData;

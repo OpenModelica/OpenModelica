@@ -774,7 +774,11 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
   CVodeFree(&cvodeData->cvode_mem);
   free(cvodeData->simData);
 
+#ifdef OMC_FMI_RUNTIME
+  cvodeData->freeSolverMemory(cvodeData);
+#else
   free(cvodeData);
+#endif
 
   /* Log cvode_solver_deinitial */
   infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### Finished deinitialization of CVODE solver successfully ###");
