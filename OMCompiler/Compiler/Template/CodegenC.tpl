@@ -3738,6 +3738,13 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
     Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
     "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ true, true /* No optimization */, /* initial? */ false)
+  let extObjsSub = match simCode
+    case SIMCODE(extObjInfo = extObjInfo as EXTOBJINFO(__)) then
+      (extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) =>
+        'if (data->simulationInfo->extObjs && <%cref(var.name, &sub)%>) { omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>); }'
+      ; separator="\n")
+    else ""
+  end match
   <<
   <%eqFuncs%>
   OMC_DISABLE_OPT
@@ -3753,6 +3760,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
           'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
+    <%extObjsSub%>
     <%fncalls%>
     return 0;
   }
