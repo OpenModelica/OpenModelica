@@ -52,7 +52,7 @@ protected
   //NF imports
   import Attributes = NFAttributes;
   import NFBinding.Binding;
-  import NFBinding;
+  import NFBinding.Source;
   import Call = NFCall;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
@@ -65,7 +65,6 @@ protected
   import NFPrefixes.{Direction, Variability};
   import NFInstNode.InstNode;
   import Type = NFType;
-  import Util;
   import Variable = NFVariable;
 
   // Util imports
@@ -601,7 +600,7 @@ public
         end for;
         fixedExp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(fixedExp), NFPrefixes.Purity.PURE, fixedExp, listReverse(iterators)));
       end if;
-      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, NFBinding.Source.GENERATED);
+      fixedBinding := Binding.makeFlat(fixedExp, Variability.CONSTANT, Source.GENERATED);
 
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.fixed)) algorithm
@@ -651,7 +650,7 @@ public
     protected
       Binding startBinding;
     algorithm
-      startBinding := Binding.makeFlat(start, Expression.variability(start), NFBinding.Source.GENERATED);
+      startBinding := Binding.makeFlat(start, Expression.variability(start), Source.GENERATED);
       attributes := match attributes
         case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(startBinding);
@@ -1666,7 +1665,7 @@ public
 
     function expToGeneratedBinding
       input Expression exp;
-      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, NFBinding.Source.GENERATED);
+      output Binding binding = Binding.makeFlat(exp, Variability.CONSTANT, Source.GENERATED);
     end expToGeneratedBinding;
   end VariableAttributes;
 
