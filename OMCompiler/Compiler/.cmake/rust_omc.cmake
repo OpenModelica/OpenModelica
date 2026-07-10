@@ -1026,6 +1026,36 @@ function(omc_rust_setup_wasm)
   if(_host STREQUAL "web")
     set(_wasm_pkgdir ${_web_dir}/omc)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/index.html)
+
+    # three.js is large minified vendor code, not kept in git. Download and cache
+    # it at configure time, pinned to r169 (matching the vendored OrbitControls.js)
+    # with an integrity hash. Cached in the build tree; re-download only if absent.
+    set(_three_js ${CMAKE_BINARY_DIR}/downloads/three.module.min.js)
+    if(NOT EXISTS ${_three_js})
+      message(STATUS "Downloading three.module.min.js (r169)…")
+      file(DOWNLOAD
+           https://unpkg.com/three@0.169.0/build/three.module.min.js ${_three_js}
+           EXPECTED_HASH SHA256=f7cee3c7533449a1505cc12cb5128b89e3d4fd3d7ea62b05f9f5464a217472ee
+           TLS_VERIFY ON STATUS _three_dl)
+      list(GET _three_dl 0 _three_dl_code)
+      if(NOT _three_dl_code EQUAL 0)
+        file(REMOVE ${_three_js})
+        message(FATAL_ERROR "Failed to download three.module.min.js: ${_three_dl}")
+      endif()
+    endif()
+
+    # Static page sources copied into the bundle. Listed as DEPENDS below so an
+    # edit to any of them re-assembles the bundle (the wasm itself need not change).
+    set(_web_launcher_deps
+        ${RUST_OMC_DIR}/wasm/omc-terminal/index.html
+        ${RUST_OMC_DIR}/wasm/home/index.html
+        ${RUST_OMC_DIR}/wasm/simulator/index.html
+        ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
+        ${RUST_OMC_DIR}/wasm/simulator/animation.js
+        ${RUST_OMC_DIR}/wasm/simulator/OrbitControls.js
+        ${RUST_OMC_DIR}/wasm/simulator/config.json
+        ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
+        ${_three_js})
     set(_web_launcher_extra
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -1036,12 +1066,19 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/simulator
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/simulator/index.html
-                ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js ${_web_dir}/simulator/
+                ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
+                ${RUST_OMC_DIR}/wasm/simulator/animation.js
+                ${RUST_OMC_DIR}/wasm/simulator/OrbitControls.js
+                ${RUST_OMC_DIR}/wasm/simulator/config.json
+                ${_three_js} ${_web_dir}/simulator/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()
     set(_wasm_pkgdir ${_web_dir}/pkg-nodejs)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/omc-cli.js)
+    set(_web_launcher_deps "")
   endif()
 
   # Release size optimisation, only if binaryen is available.
@@ -1081,7 +1118,7 @@ function(omc_rust_setup_wasm)
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     ${_web_launcher_extra}
-    DEPENDS ${_wasm_artifact} rust_wasm_cargo
+    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
   add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)

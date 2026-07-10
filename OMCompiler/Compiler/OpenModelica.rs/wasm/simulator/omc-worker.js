@@ -11,6 +11,7 @@ import init, {
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
+  omc_anim_scene, omc_anim_all_frames, omc_anim_stride, omc_dxf_mesh,
 } from '../omc/OpenModelicaCompiler.js';
 
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
@@ -163,6 +164,12 @@ self.onmessage = async (ev) => {
         await init();
         omc_set_env('OPENMODELICAHOME', '/usr');
         if (!omc_init()) throw new Error('omc_init() failed');
+        // Emit the MultiBody visualization scene (<model>_visual.xml) for every
+        // simulation, so any model with animatable shapes shows a 3D view by
+        // default. copyClass'd library examples carry no annotation of their own,
+        // so this API call is how the option gets set (models may still opt in via
+        // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
+        omc_eval('setCommandLineOptions("-d=visxml")');
         reply({ ok: true, version: omc_eval('getVersion()') });
         break;
       }
@@ -204,6 +211,21 @@ self.onmessage = async (ev) => {
         // figures/doc annotations, so those come from the copy itself.
         if ((await evalWithDownloads(`copyClass(${a.from}, "${a.name}")`, status)).trim() !== 'true')
           return reply(simError('copyClass failed for ' + a.from));
+        // Optionally curate the plots via a figures annotation the library class
+        // lacks. addClassAnnotation replaces the whole Documentation annotation,
+        // so re-inject the class's existing info alongside the figures to keep the
+        // model's own documentation intact.
+        if (a.figures) {
+          let infoAttr = '';
+          try {
+            const arr = JSON.parse(withJsonDump(() => oeval(`getDocumentationAnnotation(${a.name})`)));
+            const info = Array.isArray(arr) ? (arr[0] || '') : '';
+            if (info) infoAttr = `info="${esc(info)}", `;
+          } catch (_) {}
+          const annotate = `Documentation(${infoAttr}figures={${a.figures}})`;
+          if (omc_eval(`addClassAnnotation(${a.name}, annotate=${annotate})`).trim() !== 'true')
+            wlog('addClassAnnotation failed: ' + omc_eval('getErrorString()').trim());
+        }
         reply({ ok: true, name: a.name, source: omc_eval(`list(${a.name})`),
                 figures: figuresFor(a.name), doc: documentationFor(a.name) });
         break;
@@ -238,6 +260,34 @@ self.onmessage = async (ev) => {
         const s = snapshot();
         if (!s) return reply(simError('Re-simulation produced no result.'));
         reply(s.snap, s.transfer);
+        break;
+      }
+      case 'anim': {
+        // MultiBody animation for the last run: the shape scene (present only if
+        // the model enabled `-d=visxml`, e.g. via __OpenModelica_commandLineOptions)
+        // plus the flat per-frame transform buffer the JS renderer plays back.
+        const scene = omc_anim_scene();
+        if (!scene || !scene.shapes || !scene.shapes.length) { reply({ available: false }); break; }
+        const times = omc_sim_time();
+        const data = omc_anim_all_frames();
+        if (!times || !data) { reply({ available: false }); break; }
+        const transfer = [times.buffer, data.buffer];
+        // Load real geometry for CAD shapes (dxf): resolve the modelica:// URI to
+        // a VFS file and parse it (in Rust) into a triangle mesh the client renders.
+        for (const s of scene.shapes) {
+          if (s.kind !== 9 || !/\.dxf$/i.test(s.type || '')) continue;   // 9 = ShapeKind::Cad
+          try {
+            const path = unquote(omc_eval(`uriToFilename("${esc(s.type)}")`));
+            const bytes = path && wasiReadFile(path);
+            if (!bytes) continue;
+            const mesh = omc_dxf_mesh(new TextDecoder().decode(bytes));
+            if (mesh && mesh.positions && mesh.positions.length) {
+              s.mesh = mesh;
+              transfer.push(mesh.positions.buffer, mesh.normals.buffer, mesh.colors.buffer);
+            }
+          } catch (e) { wlog('dxf load failed for ' + s.type + ': ' + e); }
+        }
+        reply({ available: true, scene, times, data, stride: omc_anim_stride() }, transfer);
         break;
       }
       case 'eval':

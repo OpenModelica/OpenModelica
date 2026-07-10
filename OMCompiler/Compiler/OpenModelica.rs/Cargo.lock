@@ -4787,6 +4787,7 @@ dependencies = [
  "js-sys",
  "libc",
  "metamodelica",
+ "openmodelica_animation",
  "openmodelica_backend_main",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
@@ -6033,6 +6034,13 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "openmodelica"
 version = "0.1.0"
+
+[[package]]
+name = "openmodelica_animation"
+version = "0.1.0"
+dependencies = [
+ "roxmltree",
+]
 
 [[package]]
 name = "openmodelica_ast"

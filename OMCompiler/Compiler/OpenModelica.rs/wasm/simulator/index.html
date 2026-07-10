@@ -107,8 +107,35 @@
   .ic-item .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
   .ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
 
+  /* 3D animation view: sits above the charts (both visible). Canvas fills the
+     pane, a control bar pinned below it, view presets overlaid top-right. */
+  .anim { flex:0 0 46%; display:flex; flex-direction:column; min-height:200px;
+    border-bottom:1px solid var(--border); }
+  .anim[hidden] { display:none; }
+  .anim-view { flex:1 1 auto; min-height:0; position:relative; background:#1e1e1e; overflow:hidden; }
+  .anim-views { position:absolute; top:6px; right:8px; z-index:2; display:flex; gap:4px; }
+  .anim-views button { background:#0009; border:1px solid var(--border); color:var(--fg);
+    padding:3px 8px; font-size:12px; border-radius:4px; cursor:pointer; }
+  .anim-views button:hover { background:#000c; border-color:var(--accent); }
+  .anim-bar { flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:8px 12px;
+    border-top:1px solid var(--border); background:var(--panel); }
+  .anim-bar input[type=range] { flex:1 1 auto; width:auto; padding:0; accent-color:var(--accent); }
+  .anim-bar .t { color:var(--muted); font:12.5px ui-monospace,Menlo,Consolas,monospace; min-width:5.5em; text-align:right; }
+  .anim-bar select { width:auto; font-size:13px; padding:4px 6px; }
+  .anim-speed-wrap { display:inline-flex; align-items:center; gap:2px; }
+  .anim-bar input.anim-speed { width:5em; font-size:13px; padding:4px 6px; text-align:right; }
+  .anim-speed-x { color:var(--muted); font-size:13px; }
+  /* Play and repeat share one neutral scheme so they read as a matched pair. */
+  .anim-play, .anim-loop { background:transparent; border:1px solid var(--border); color:var(--fg);
+    border-radius:4px; height:30px; min-width:34px; padding:0 10px; font-size:14px; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+  .anim-play:hover:not(:disabled), .anim-loop:hover { background:#2d2d30; border-color:var(--accent); color:var(--fg); }
+  .anim-loop svg { width:16px; height:16px; display:block; }
+  .anim-loop.active { color:var(--accent); border-color:var(--accent); }
+
   /* charts area: one card per plot, scrollable */
   .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
+  .charts[hidden] { display:none; }
   .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
   .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
   .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
@@ -150,6 +177,8 @@
     .grid2 { grid-template-columns:auto 1fr; }
     #icPanel { max-height:none; }
     .charts { overflow:visible; }
+    .anim { flex:none; height:auto; }
+    .anim-view { height:70vw; min-height:320px; }
     .chart-card.solo .plot-wrap { min-height:300px; height:56vw; }
     header { flex-wrap:wrap; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
@@ -163,8 +192,10 @@
     body.docs-hidden .docs-head .doc-toggle svg { transform:rotate(180deg); }
   }
 
-  /* Wide screens: add a third column for the model documentation. */
-  @media (min-width:1300px) {
+  /* Landscape screens: a third column for the model documentation. Always at
+     least a thin rail with a reopen chevron, so it never vanishes entirely — it
+     just starts collapsed on the narrower widths (see autoDocs). */
+  @media (min-width:821px) and (orientation:landscape) {
     main { grid-template-columns:minmax(320px,30%) 1fr minmax(260px,22%); }
     .docs { display:flex; }
     /* Collapsed: the column becomes a thin rail with a reopen chevron. */
@@ -174,6 +205,9 @@
       justify-content:center; width:100%; padding:10px 0; }
   }
 </style>
+<script type="importmap">
+{ "imports": { "three": "./three.module.min.js" } }
+</script>
 </head>
 <body>
 <header>
@@ -202,6 +236,36 @@
   </div>
 
   <div class="right">
+    <div class="anim" id="anim" hidden>
+      <div class="anim-view" id="animView">
+        <div class="anim-views" id="animViews">
+          <button data-view="iso" title="Isometric">Iso</button>
+          <button data-view="side" title="Side (look −Z; x→ right, y↑ up)">Side</button>
+          <button data-view="front" title="Front (look −X)">Front</button>
+          <button data-view="top" title="Top (look −Y)">Top</button>
+          <button data-view="fit" title="Reset view">Fit</button>
+        </div>
+      </div>
+      <div class="anim-bar">
+        <button class="anim-play" id="animPlay" title="Play/pause">▶</button>
+        <button class="anim-loop" id="animLoop" title="Repeat" aria-label="Repeat" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+        <input type="range" id="animSeek" min="0" max="1000" value="0" step="1" aria-label="Time" />
+        <span class="t" id="animTime">0.000 s</span>
+        <span class="anim-speed-wrap" title="Playback speed: simulated seconds per real second (any positive number, e.g. 1e-9 or 1e6)">
+          <input id="animSpeed" class="anim-speed" list="speedPresets" type="text" inputmode="decimal"
+                 value="1" aria-label="Playback speed (simulated seconds per real second)" />
+          <span class="anim-speed-x">×</span>
+        </span>
+        <datalist id="speedPresets">
+          <option value="1e-9"></option><option value="1e-6"></option><option value="1e-3"></option>
+          <option value="0.25"></option><option value="0.5"></option><option value="1"></option>
+          <option value="2"></option><option value="4"></option><option value="10"></option>
+          <option value="100"></option><option value="1e3"></option><option value="1e6"></option>
+        </datalist>
+      </div>
+    </div>
     <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Run a model to see results.</div></div>
   </div>
 
@@ -243,47 +307,22 @@
 </div>
 
 <script type="module">
+import { Animator } from './animation.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
 // ready fast, and a second that installs the MSL in the background and takes
 // over once ready (so library examples like PID_Controller can run).
 
-// Guarded bouncing ball: the `flying` flag makes the ball rest at h=0 once its
-// bounces decay, rather than tunnelling through the floor (a known wasm-jit event
-// gap — see TODO). The figures annotation authors two plots (height, velocity)
-// that the view renders instead of auto-picking variables.
-const DEFAULT_MODEL = `model BouncingBall "A ball bouncing on the ground, losing energy until it rests"
-  parameter Real e=0.7 "coefficient of restitution";
-  parameter Real g(unit = "m/s2") = 9.81 "gravity acceleration";
-  Real h(unit = "m", fixed=true, start=1) "height of ball";
-  Real v(unit = "m/s", fixed=true) "velocity of ball";
-  Boolean flying(fixed=true, start=true) "true, if ball is flying";
-  Boolean impact;
-  Real v_new(fixed=true);
-equation
-  impact = h <= 0.0;
-  der(v) = if flying then -g else 0;
-  der(h) = v;
-  when {h <= 0.0 and v <= 0.0,impact} then
-    v_new = if edge(impact) then -e*pre(v) else 0;
-    flying = v_new > 0;
-    reinit(v, v_new);
-  end when;
-  annotation(experiment(StopTime = 3, Interval = 2e-3),
-    Documentation(figures = {
-      Figure(title = "Bouncing ball", preferred = true, plots = {
-        Plot(title = "Height", curves = {Curve(y = h, legend = "height")}),
-        Plot(title = "Velocity", curves = {Curve(y = v, legend = "velocity")})},
-        caption = "Height and velocity of a ball that retains %{e} of its speed at each bounce.")}));
-end BouncingBall;
-`;
-
-// Selectable examples. Inline ones load into the editor and run on any worker;
-// `library` ones are classes inside the MSL and need the MSL worker.
-const EXAMPLES = [
-  { id: 'bouncing', label: 'Bouncing ball', source: DEFAULT_MODEL },
-  { id: 'pid', label: 'PID controller (MSL)', library: 'Modelica.Blocks.Examples.PID_Controller' },
-];
+// Selectable examples come from ./config.json (shipped alongside this page), so a
+// host can curate their own set without touching the code. Each entry is either
+// inline (`source` text, or `sourceFile` fetched lazily) run on any worker, or a
+// `library` class inside the MSL (needs the MSL worker) with an optional `figures`
+// annotation that curates the plotted variables. Populated by loadConfig().
+let EXAMPLES = [];
+// Minimal safety net if config.json is missing or invalid — the app still runs.
+const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: [
+  { id: 'demo', label: 'Demo',
+    source: 'model Demo\n  Real x(start = 1, fixed = true);\nequation\n  der(x) = -x;\nend Demo;\n' } ] };
 
 // Categorical series palette, validated for the dark chart surface (#252526):
 // eight distinct hues in a fixed, CVD-optimized order (dataviz reference palette).
@@ -297,18 +336,37 @@ const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 const exSel = el('examples'), docBody = el('docBody');
 const settingsBtn = el('settingsBtn'), settingsBackdrop = el('settingsBackdrop'), settingsClose = el('settingsClose');
+const animEl = el('anim'), animView = el('animView'), animPlay = el('animPlay'), animLoop = el('animLoop');
+const animSeek = el('animSeek'), animTime = el('animTime'), animSpeed = el('animSpeed'), animViews = el('animViews');
+let animLoopOn = false;   // repeat preference, persisted across runs
 
 // Documentation collapse/expand, driven from inside the widget: a chevron in the
 // doc header hides it; when collapsed it leaves a thin rail (desktop) or header
 // strip (mobile) whose chevron reopens it. Collapsing widens the charts.
-function toggleDocs() {
-  document.body.classList.toggle('docs-hidden');
+let docsUserToggled = false;   // once the user decides, stop auto-collapsing
+function reflowDocs() {
   for (const c of charts) drawChart(c);            // chart width changed
+  if (animator && !animEl.hidden) animator.resize();
+}
+function toggleDocs() {
+  docsUserToggled = true;
+  document.body.classList.toggle('docs-hidden');
+  reflowDocs();
+}
+// Landscape screens narrower than the full 3-column layout start with the doc
+// column collapsed to its rail (the chevron stays, so it's never lost) rather
+// than vanishing. Wide screens start expanded; the user's choice overrides both.
+function autoDocs() {
+  if (docsUserToggled) return;
+  const landscape = window.matchMedia('(orientation:landscape)').matches && window.innerWidth >= 821;
+  const wantHidden = landscape && window.innerWidth < 1300;
+  if (document.body.classList.contains('docs-hidden') === wantHidden) return;
+  document.body.classList.toggle('docs-hidden', wantHidden);
+  reflowDocs();
 }
 el('docCollapse').addEventListener('click', toggleDocs);
 el('docExpand').addEventListener('click', toggleDocs);
 
-srcEl.value = DEFAULT_MODEL;
 let tolValue = 1e-6;
 // Round to 6 significant figures so `1e-6 * 10` shows as `1e-5`, not `9.999…e-6`.
 const cleanTol = (v) => Number(v.toPrecision(6));
@@ -327,6 +385,7 @@ const log = (...a) => { if (DEBUG) console.log('[sim ' + tstamp() + ']', ...a); 
 if (DEBUG) window.__sim = {
   get snap() { return snap; }, get mode() { return mode; },
   get builtModel() { return builtModel; }, get figures() { return modelFigures; },
+  get anim() { return animInfo; }, get animator() { return animator; },
   finalValue: (n) => { const c = snap && snap.cols && snap.cols[n]; return c ? c[c.length - 1] : null; },
 };
 
@@ -425,7 +484,7 @@ let colMap = new Map();       // result-variable name -> { values:Float64Array, 
 let charts = [];              // live chart states for hover
 let snap = null;              // last simulation snapshot from a worker
 let modelDoc = '';            // current model's documentation HTML (persists across re-sims)
-let currentExample = EXAMPLES[0];
+let currentExample = null;
 let mode = 'inline';          // 'inline' | 'librarycopy'
 let builtWorker = null;       // worker that holds the current built model (for resim)
 let mslDone = false;          // true once the MSL worker has finished install+load
@@ -434,6 +493,8 @@ let copyName = null;          // top-level name of the current library copy (cop
 let pendingMods = [];         // [{element, value}] parameter tweaks to apply to the copy before the next rebuild
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
+let animator = null;          // the three.js Animator (lazily created on first use)
+let animInfo = null;          // last run's {scene,times,data,stride,start,stop} or null
 
 function overrideFlag() {
   const parts = [];
@@ -517,6 +578,7 @@ async function run(kind) {                       // 'full' | 'resim'
     if (kind !== 'resim' && snap.options) { seedFromOptions(snap.options); freshModel = false; }
     if (kind !== 'resim') buildInitialConditions();   // docs already rendered pre-simulation
     renderCharts();
+    await fetchAnim(builtWorker);      // 3D scene, if the model enabled -d=visxml
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
     setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
@@ -536,6 +598,7 @@ function showBuilding() {
   charts = []; chartsEl.replaceChildren(chartsEmpty);
   chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
   docBody.className = 'doc-body empty'; docBody.textContent = '…';
+  animInfo = null; if (animator) animator.pause(); animEl.hidden = true;
 }
 
 async function selectExample(ex) {
@@ -553,7 +616,7 @@ async function selectExample(ex) {
     let worker;
     try { if (!mslDone) statusFocus = w2; worker = await mslReady; } catch (e) { return fail('' + e); } finally { statusFocus = null; }
     let cc;
-    try { cc = await call(worker, 'copyClass', { from: ex.library, name: copyName }); } catch (e) { return fail('' + e); }
+    try { cc = await call(worker, 'copyClass', { from: ex.library, name: copyName, figures: ex.figures }); } catch (e) { return fail('' + e); }
     if (!cc.ok) return fail(cc.error);
     srcEl.value = unquote(cc.source);
     modelFigures = cc.figures || null; modelDoc = cc.doc || ''; renderDoc();   // docs before simulating
@@ -561,8 +624,39 @@ async function selectExample(ex) {
     run('full');
   } else {
     mode = 'inline'; copyName = null;
-    srcEl.value = ex.source;
+    if (ex.source == null && ex.sourceFile) {
+      try { ex.source = await fetchText(ex.sourceFile); } catch (e) { return fail('Could not load ' + ex.sourceFile + ': ' + e); }
+    }
+    srcEl.value = ex.source || '';
     run('full');
+  }
+}
+
+// Fetch a text asset shipped with the page (example .mo files, config).
+async function fetchText(path) {
+  const r = await fetch(path, { cache: 'no-cache' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.text();
+}
+
+// Load ./config.json: title, example list, default example. Falls back to a
+// minimal built-in config so the page still works if it is missing.
+async function loadConfig() {
+  let cfg;
+  try { cfg = await (await fetch('./config.json', { cache: 'no-cache' })).json(); }
+  catch (e) { log('config.json load failed, using fallback', e); cfg = FALLBACK_CONFIG; }
+  if (cfg.title) { document.title = 'OpenModelica — ' + cfg.title; const t = document.querySelector('header .title'); if (t) t.textContent = cfg.title; }
+  EXAMPLES = Array.isArray(cfg.examples) && cfg.examples.length ? cfg.examples : FALLBACK_CONFIG.examples;
+  exSel.replaceChildren();
+  for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
+  currentExample = EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
+  exSel.value = currentExample.id;
+  // Pre-fill the editor with an inline default's source so it shows while the
+  // compiler boots; library examples fill in after copyClass.
+  if (!currentExample.library) {
+    try { if (currentExample.source == null && currentExample.sourceFile) currentExample.source = await fetchText(currentExample.sourceFile); }
+    catch (e) { log('default source load failed', e); }
+    if (currentExample.source) srcEl.value = currentExample.source;
   }
 }
 
@@ -660,7 +754,7 @@ function renderAllVariables() {
     const { xs, ys } = alignXY(time, yc);
     curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
   });
-  makeChart({ title: '', curves, xText: 'time', xUnit: 's', solo: true }, 'all');
+  makeChart({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
 }
 
 function renderFigures() {
@@ -682,6 +776,7 @@ function renderFigures() {
       const spec = {
         title: expandText(plot.title),
         curves,
+        xIsTime,
         xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
         xUnit: xAxis.unit || (xIsTime ? 's' : ''),
         yText: yAxis.label || '',
@@ -860,6 +955,106 @@ function onHover(ev, chart) {
 }
 chartsEl.addEventListener('mousemove', (ev) => { const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target)); if (c) onHover(ev, c); });
 chartsEl.addEventListener('mouseleave', () => { for (const c of charts) { if (c.state) c.state.cursor.setAttribute('style', 'display:none'); c.tip.style.display = 'none'; } }, true);
+// Click a time-based chart to jump the animation (and the shared cursor) to that time.
+chartsEl.addEventListener('click', (ev) => {
+  if (!animator || !animInfo) return;
+  const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target));
+  if (!c || !c.state || !c.spec.xIsTime || !c.state.active.length) return;
+  const st = c.state, xs = st.active[0].xs;
+  const vbX = (ev.clientX - c.svgEl.getBoundingClientRect().left) / c.svgEl.clientWidth * st.geom.W;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < xs.length; i++) { const d = Math.abs(st.px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } }
+  animator.pause(); animator.seek(xs[best]); animPlay.textContent = '▶';
+});
+
+// --- 3D animation (shown alongside the charts) ------------------------------
+// Ask the worker for the last run's MultiBody scene. Present only when the model
+// produced a visxml scene with shapes; otherwise the 3D pane stays hidden and the
+// charts take the whole column.
+async function fetchAnim(worker) {
+  animInfo = null;
+  try {
+    const r = await call(worker, 'anim');
+    if (r && r.available) animInfo = { ...r };
+  } catch (e) { log('anim fetch failed', e); }
+  if (animInfo) { animEl.hidden = false; loadAnimator(); }
+  else { if (animator) animator.pause(); animEl.hidden = true; }
+}
+
+function loadAnimator() {
+  if (!animInfo) return;
+  if (!animator) { animator = new Animator(animView); animator.onTime = reflectAnimTime; }
+  animator.setData(animInfo.scene, animInfo.times, animInfo.data, animInfo.stride);
+  animator.speed = readSpeed();
+  animator.loop = animLoopOn;
+  animPlay.textContent = '▶';
+  requestAnimationFrame(() => animator.resize());   // size now that the pane is visible
+  reflectAnimTime(animInfo.times && animInfo.times.length ? animInfo.times[0] : 0);
+}
+
+function animTimeRange() {
+  const T = animInfo && animInfo.times;
+  return T && T.length ? [T[0], T[T.length - 1]] : [0, 1];
+}
+// Playback callback: keep the timeline UI in sync and draw the matching time
+// marker on the (time-based) charts, so the plotted values line up with the pose.
+function reflectAnimTime(t) {
+  animTime.textContent = (+t).toFixed(3) + ' s';
+  const [s, e] = animTimeRange();
+  animSeek.value = String(e > s ? Math.round((t - s) / (e - s) * 1000) : 0);
+  if (animator) animPlay.textContent = animator.playing ? '❚❚' : '▶';
+  setChartsCursor(t);
+}
+
+// --- synchronized time cursor on the charts ---------------------------------
+function nearestByX(xs, xv) { let b = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(xs[i] - xv); if (d < bd) { bd = d; b = i; } } return b; }
+
+// Place a chart's hover-style cursor (vertical line, dots, tooltip) at sample i0.
+function placeCursor(chart, i0) {
+  const st = chart.state; if (!st) return;
+  const { active, px, py, geom, cursor, vline, dots } = st;
+  const cx = px(active[0].xs[i0]);
+  cursor.setAttribute('style', ''); vline.setAttribute('x1', cx); vline.setAttribute('x2', cx);
+  let html = '';
+  active.forEach((c, k) => {
+    const i = c.xs === active[0].xs ? i0 : nearestByX(c.xs, active[0].xs[i0]);
+    dots[k].setAttribute('cx', px(c.xs[i])); dots[k].setAttribute('cy', py(c.ys[i]));
+    html += '<div class="row"><span class="sw" style="background:' + c.color + '"></span>'
+      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>';
+  });
+  const xLbl = (chart.spec.xText || 't').replace(/\s*\[.*\]$/, '');
+  chart.tip.innerHTML = '<div class="t">' + xLbl + ' = ' + (+active[0].xs[i0].toPrecision(6)) + '</div>' + html;
+  chart.tip.style.display = 'block';
+  const sw = chart.svgEl.clientWidth || geom.W, ww = chart.wrap.clientWidth || sw;
+  let tx = cx / geom.W * sw + 12;
+  if (tx + chart.tip.offsetWidth > ww) tx = cx / geom.W * sw - chart.tip.offsetWidth - 12;
+  chart.tip.style.left = Math.max(2, tx) + 'px'; chart.tip.style.top = '6px';
+}
+
+// Move the cursor of every time-based chart to time t (driven by playback/scrub).
+function setChartsCursor(t) {
+  for (const chart of charts) {
+    if (!chart.spec.xIsTime || !chart.state || !chart.state.active.length) continue;
+    placeCursor(chart, nearestByX(chart.state.active[0].xs, t));
+  }
+}
+
+animPlay.addEventListener('click', () => { if (animator) { animator.toggle(); animPlay.textContent = animator.playing ? '❚❚' : '▶'; } });
+animLoop.addEventListener('click', () => {
+  animLoopOn = !animLoopOn;
+  animLoop.classList.toggle('active', animLoopOn);
+  animLoop.setAttribute('aria-pressed', String(animLoopOn));
+  if (animator) { animator.loop = animLoopOn; if (animLoopOn && !animator.playing) { animator.play(); animPlay.textContent = '❚❚'; } }
+});
+animSeek.addEventListener('input', () => { if (!animator) return; const [s, e] = animTimeRange(); animator.pause(); animator.seek(s + (e - s) * (+animSeek.value / 1000)); animPlay.textContent = '▶'; });
+// Playback speed = simulated seconds per real second; any positive value (1e-9
+// for picosecond models, 1e6 for year-scale). Invalid input falls back to 1×.
+function readSpeed() { const s = parseFloat(animSpeed.value); return (isFinite(s) && s > 0) ? s : 1; }
+animSpeed.addEventListener('change', () => { const s = readSpeed(); animSpeed.value = String(s); if (animator) animator.speed = s; });
+animViews.addEventListener('click', (e) => {
+  const v = e.target && e.target.dataset && e.target.dataset.view; if (!v || !animator) return;
+  if (v === 'fit') animator.fit(); else animator.setView(v);
+});
 
 // --- settings dialog --------------------------------------------------------
 function openSettings() { settingsBackdrop.hidden = false; }
@@ -884,14 +1079,15 @@ tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (
 runBtn.addEventListener('click', () => run('full'));
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
-window.addEventListener('resize', () => { for (const c of charts) drawChart(c); });
+window.addEventListener('resize', () => { autoDocs(); for (const c of charts) drawChart(c); });
+autoDocs();
 
-for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
-exSel.value = currentExample.id;
 exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
 
 (async () => {
   try {
+    await loadConfig();                             // examples + title, before the first run
+
     w1 = makeWorker('w1');
     w2 = makeWorker('w2-msl');
     primaryWorker = w1;
@@ -910,7 +1106,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     runBtn.disabled = false;
     setStatus('Ready. ' + v.version);
-    run('full');                                   // default = bouncing ball on w1
+    selectExample(currentExample);                  // run the configured default example
   } catch (e) { log('startup error', e); setStatus('Startup error: ' + e, 'err'); }
 })();
 </script>

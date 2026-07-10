@@ -38,6 +38,9 @@ openmodelica_wasi.workspace = true
 # Read the last simulation's results straight out of the runtime (src/wasm_api.rs
 # omc_sim_*), so the web simulator plots without an intermediate result file.
 openmodelica_codegen_wasm_jit.workspace = true
+# MultiBody visualization: parse the `-d=visxml` XML and resolve per-frame shape
+# transforms for the web animation view (src/wasm_anim.rs).
+openmodelica_animation.workspace = true
 # Result values (Values.ARRAY/REAL) decoded when rendering plots (src/wasm_plot.rs).
 openmodelica_frontend_types.workspace = true
 # Unzip a library archive in-wasm and populate the VFS (pure-Rust deflate, no C

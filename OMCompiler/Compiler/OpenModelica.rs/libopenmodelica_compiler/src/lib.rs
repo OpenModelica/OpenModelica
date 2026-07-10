@@ -45,6 +45,11 @@ mod wasm_api;
 #[cfg(target_arch = "wasm32")]
 mod wasm_plot;
 
+// MultiBody animation: parses the `-d=visxml` scene and resolves per-frame shape
+// transforms for the web simulator's 3D view (omc_anim_*).
+#[cfg(target_arch = "wasm32")]
+mod wasm_anim;
+
 // SimulationRuntime metadata tables OMEdit reads (FLAG_*, *_METHOD_*,
 // OMC_LOG_STREAM_*); generated from the C runtime by gen/gen-sim-tables.sh so
 // OMEdit needs no OpenModelica C runtime library for them.
