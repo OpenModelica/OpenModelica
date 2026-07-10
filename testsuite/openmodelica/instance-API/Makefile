@@ -56,6 +56,7 @@ GetModelInstanceDim3.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
+GetModelInstanceEnum3.mos \
 GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExp2.mos \
