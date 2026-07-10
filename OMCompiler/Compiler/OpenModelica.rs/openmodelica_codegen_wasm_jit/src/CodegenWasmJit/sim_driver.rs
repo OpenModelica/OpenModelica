@@ -300,35 +300,16 @@ fn past_deadline(deadline: f64) -> bool {
     deadline.is_finite() && now_ms() >= deadline
 }
 
-static CANCEL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// Request cancellation of the running simulation (native, cross-thread).
-pub fn request_cancel() {
-    CANCEL.store(true, std::sync::atomic::Ordering::Relaxed);
-}
-/// Clear the cancel flag; called at the start of each new run.
-pub fn clear_cancel() {
-    CANCEL.store(false, std::sync::atomic::Ordering::Relaxed);
-}
-
-// wasm: the blocked worker can't get a cancel message, so a cross-origin-isolated
-// host (OMEdit-wasm) polls a `SharedArrayBuffer` flag through an injected fn ptr.
-// Unset for hosts that cancel another way (the simulator frees its session).
+// The cancel primitive now lives in the shared `metamodelica::cancel` crate so
+// the frontend/loader/backend can use the same flag. These re-exports keep the
+// existing `CodegenWasmJit::{request_cancel,clear_cancel,set_cancel_poll}`
+// callers (wasm_api, capi) working unchanged.
+pub use metamodelica::cancel::{clear_cancel, request_cancel};
 #[cfg(target_arch = "wasm32")]
-thread_local! {
-    static CANCEL_POLL: std::cell::Cell<Option<fn() -> bool>> = const { std::cell::Cell::new(None) };
-}
-#[cfg(target_arch = "wasm32")]
-pub fn set_cancel_poll(f: fn() -> bool) {
-    CANCEL_POLL.with(|c| c.set(Some(f)));
-}
+pub use metamodelica::cancel::set_cancel_poll;
 
 fn cancel_requested() -> bool {
-    #[cfg(target_arch = "wasm32")]
-    if CANCEL_POLL.with(|c| c.get()).map(|f| f()).unwrap_or(false) {
-        return true;
-    }
-    CANCEL.load(std::sync::atomic::Ordering::Relaxed)
+    metamodelica::cancel::check_cancel()
 }
 
 /// Read one little-endian i32 from linear memory at byte address `addr`.

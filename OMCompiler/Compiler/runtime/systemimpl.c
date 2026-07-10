@@ -178,6 +178,16 @@ static int usesCardinality = 1;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 
+/* Cooperative cancellation + progress, mirrors metamodelica::cancel in the Rust
+ * port. The flag is set from another context (an OMEdit Cancel button) and
+ * polled at the frontend/backend chokepoints via System_isCancelled. */
+static volatile int cancelRequested = 0;
+static volatile int progressPermille = -1;
+static volatile int progressPhase = 0;
+/* Host event-pump invoked at each cancel check; keeps an in-process GUI live
+ * during a long call. NULL for the CLI. */
+static void (*pumpCallback)(void) = NULL;
+
 
 /* TODO: Unused functions referenced by the bootstrapping sources.
  *       Remove when the sources have been updated. */

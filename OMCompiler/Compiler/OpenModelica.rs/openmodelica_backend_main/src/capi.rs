@@ -51,10 +51,24 @@ pub fn eval(command: ArcStr) -> Result<(bool, ArcStr)> {
     Main::handleCommand(command)
 }
 
-/// Request cancellation of a running in-process wasm-jit simulation (cross-thread;
-/// `simulate` then returns a "cancelled" error, leaving omc consistent).
+/// Request cancellation of any running in-process op — simulation, or a long
+/// frontend/loader/backend call (cross-thread; the op then returns a "cancelled"
+/// error, leaving omc consistent). Routes to the shared `metamodelica::cancel`
+/// flag every phase polls (the sim driver reads the same flag).
 pub fn request_cancel() {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::request_cancel();
+    metamodelica::cancel::request_cancel();
+}
+
+/// Clear the cancel flag; call at the start of each new cancellable op.
+pub fn clear_cancel() {
+    metamodelica::cancel::clear_cancel();
+}
+
+/// Register the host event-pump callback invoked at every cancel check (or clear
+/// with `None`). Lets an in-process GUI host keep its event loop alive during a
+/// long call so the Cancel button stays clickable. See `metamodelica::cancel`.
+pub fn set_pump_callback(f: Option<extern "C" fn()>) {
+    metamodelica::cancel::set_pump_callback(f);
 }
 
 /// `simulate` against the builtin graph only; empty/non-positive args use its defaults.

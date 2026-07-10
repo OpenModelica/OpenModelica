@@ -31,6 +31,7 @@ pub use num_traits::Float;
 use std::rc::Rc;
 use std::cell::RefCell;
 pub mod gc;
+pub mod cancel;
 
 /// MetaModelica `array<T>`. See module-level docs for rationale.
 pub type Array<A> = Rc<RefCell<Vec<A>>>;

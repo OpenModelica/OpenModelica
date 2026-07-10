@@ -21,10 +21,15 @@ extern "C" {
     // Wall-clock (ms) for the simulation chunk budget; wasm has no `Instant`.
     #[wasm_bindgen(js_namespace = performance, js_name = now)]
     fn perf_now() -> f64;
-    // Host cancel poll (a cross-thread `SharedArrayBuffer` flag, OMEdit-wasm). Only
-    // called after `omc_enable_cancel_poll`, so the global need not exist otherwise.
+    // Host cancel poll (control block index 0, a cross-thread `SharedArrayBuffer`
+    // flag, OMEdit-wasm). Only called after `omc_enable_cancel_poll`, so the
+    // global need not exist otherwise.
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcPollCancel)]
     fn omc_poll_cancel_js() -> i32;
+    // Host progress sink (control block indices 1/2). Only called after
+    // `omc_enable_progress_sink`, so the global need not exist otherwise.
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcReportProgress)]
+    fn omc_report_progress_js(permille: i32, phase: i32);
 }
 
 fn wall_ms() -> f64 {
@@ -35,12 +40,25 @@ fn poll_cancel() -> bool {
     omc_poll_cancel_js() != 0
 }
 
-/// Enable the cross-thread cancel poll for the blocking `simulate()` path. The
-/// worker must define `globalThis.__omcPollCancel` first (OMEdit-wasm); the
-/// simulator cancels via `omc_sim_free` instead and doesn't call this.
+fn report_progress(permille: i32, phase: i32) {
+    omc_report_progress_js(permille, phase);
+}
+
+/// Enable the cross-thread cancel poll for any blocking omc call (simulate, and
+/// the frontend/loader/backend chokepoints). The worker must define
+/// `globalThis.__omcPollCancel` first (OMEdit-wasm); the standalone simulator
+/// cancels via `omc_sim_free` instead and doesn't call this.
 #[wasm_bindgen]
 pub fn omc_enable_cancel_poll() {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_cancel_poll(poll_cancel);
+    metamodelica::cancel::set_cancel_poll(poll_cancel);
+}
+
+/// Enable live progress reporting out of a blocking omc call: the runtime writes
+/// permille + phase into the shared control block via `globalThis.__omcReportProgress`
+/// (which the worker defines). The UI thread reads the block on its own timer.
+#[wasm_bindgen]
+pub fn omc_enable_progress_sink() {
+    metamodelica::cancel::set_progress_sink(report_progress);
 }
 
 // The compiler emits stdout/stderr in fragments (a `print` call need not end on

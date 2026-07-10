@@ -32,6 +32,7 @@ metamodelica/src/array/mod.rs
 metamodelica/src/array/static_array.rs
 metamodelica/src/assert.rs
 metamodelica/src/boolean.rs
+metamodelica/src/cancel.rs
 metamodelica/src/ext.rs
 metamodelica/src/gc.rs
 metamodelica/src/host_io.rs

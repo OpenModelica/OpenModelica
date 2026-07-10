@@ -1260,6 +1260,24 @@ public function threadWorkFailed "Exits the current thread with a failure."
   external "C" System_threadFail(OpenModelica.threadData());
 end threadWorkFailed;
 
+public function isCancelled "True if the user has requested cancellation of the running operation."
+  output Boolean cancelled;
+  external "C" cancelled = System_isCancelled() annotation(Library = "omcruntime");
+end isCancelled;
+
+public function checkCancel "Fails if cancellation was requested. A coarse chokepoint for the frontend/backend driver loops."
+algorithm
+  if isCancelled() then
+    fail();
+  end if;
+end checkCancel;
+
+public function reportProgress "Report progress of the running operation to the host UI. permille is 0..1000 or -1 (indeterminate); phase is one of the metamodelica::cancel PHASE_* constants (2 parse, 3 instantiate, 4 backend, 5 simulate)."
+  input Integer permille;
+  input Integer phase;
+  external "C" System_reportProgress(permille, phase) annotation(Library = "omcruntime");
+end reportProgress;
+
 public function getMemorySize
   output Real memory(unit="MB");
 external "C" memory=System_getMemorySize() annotation(Library = {"omcruntime"});

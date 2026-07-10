@@ -236,10 +236,28 @@ pub extern "C" fn omc_compiler_free_string(s: *mut c_char) {
     }
 }
 
-/// Request cancellation of a running in-process wasm-jit simulation (cross-thread —
-/// an OMEdit Cancel button, a Ctrl-C handler). `simulate` then returns a "cancelled"
-/// error, leaving omc consistent.
+/// Request cancellation of any running in-process op — a wasm-jit simulation, or
+/// a long frontend/loader/backend call (cross-thread — an OMEdit Cancel button, a
+/// Ctrl-C handler). The op then returns a "cancelled" error, leaving omc
+/// consistent.
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_compiler_request_cancel() {
     capi::request_cancel();
+}
+
+/// Clear the cancel flag; call before starting a new cancellable op so a stale
+/// request from a previous op does not abort it immediately.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_clear_cancel() {
+    capi::clear_cancel();
+}
+
+/// Register a host event-pump callback invoked at every cancel check (pass NULL
+/// to clear). An in-process GUI host (OMEdit) points this at a rate-limited
+/// `processEvents` so a long compile keeps the UI live and the Cancel button
+/// clickable; the host must disable all UI but Cancel while a call is in flight
+/// (the compiler is not reentrant).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_set_pump_callback(cb: Option<extern "C" fn()>) {
+    capi::set_pump_callback(cb);
 }

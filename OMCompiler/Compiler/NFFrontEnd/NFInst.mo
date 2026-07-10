@@ -435,6 +435,7 @@ function instantiate
   input InstContext.Type context;
   input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
+  System.reportProgress(-1, 3) "PHASE_INSTANTIATE";
   node := expand(node, context);
 
   if instPartial or not InstNode.isPartial(node) or
@@ -1110,6 +1111,7 @@ protected
   Class cls;
   Modifier outer_mod;
 algorithm
+  System.checkCancel();
   cls := InstNode.getClass(node);
   outer_mod := Class.getModifier(cls);
 

@@ -186,6 +186,13 @@ pub fn parse(
     _libraryPath: ArcStr,
     _lveInstance: Option<i32>,
 ) -> Result<Absyn::Program> {
+    // Loader cancel chokepoint: loadModel/loadFile/installPackage parse each file
+    // through here, so a per-file check makes the whole parse phase cancellable.
+    metamodelica::cancel::bail_if_cancelled()?;
+    metamodelica::cancel::report_progress(
+        metamodelica::cancel::PROGRESS_INDETERMINATE,
+        metamodelica::cancel::PHASE_PARSE,
+    );
     // The Rust parser operates on UTF-8 `&str` directly.  Anything else
     // would need transcoding via the `encoding_rs` crate; bail explicitly
     // rather than silently misinterpreting the bytes.
