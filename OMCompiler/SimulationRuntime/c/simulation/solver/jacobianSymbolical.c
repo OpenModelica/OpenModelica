@@ -91,114 +91,30 @@ static void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
 
 
 #ifdef USE_PARJAC
-/** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
- *
- * (symbolical only), used in IDA and Dassl.
- */
-// ToDo: Make this usable without OpenMP and use it as default!
-void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns)
-{
-  int maxTh = omc_get_max_threads();
-  *jacColumns = (JACOBIAN*) malloc(maxTh*sizeof(JACOBIAN));
-  const int index = data->callback->INDEX_JAC_A;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-  SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
-
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
-
-  unsigned int i;
-
-#ifdef USE_PARJAC
-  GC_allow_register_threads();
-#endif
-
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, index) shared(sparsePattern, jacColumns, i)
-  /* Benchmarks indicate that it is beneficial to initialize and malloc the jacColumns using a parallel for loop. */
-  {
-  /* Register omp-thread in GC */
-  if(!GC_thread_is_registered()) {
-     struct GC_stack_base sb;
-     memset (&sb, 0, sizeof(sb));
-     GC_get_stack_base(&sb);
-     GC_register_my_thread (&sb);
-  }
-
-#pragma omp for schedule(runtime)
-  for (i = 0; i < maxTh; ++i) {
-    (*jacColumns)[i].sizeCols = columns;
-    (*jacColumns)[i].sizeRows = rows;
-    (*jacColumns)[i].sizeTmpVars = sizeTmpVars;
-    (*jacColumns)[i].tmpVars    = (double*) calloc(sizeTmpVars, sizeof(double));
-    (*jacColumns)[i].resultVars = (double*) calloc(rows, sizeof(double));
-    (*jacColumns)[i].seedVars   = (double*) calloc(columns, sizeof(double));
-    (*jacColumns)[i].sparsePattern = sparsePattern;
-  }
-  }
-}
-#endif
-
-
 /**
- * \brief Generic parallel computation of the colored Jacobian.
+ * @brief Allocate thread-local Jacobians for OpenMP-parallel Jacobian evaluation.
  *
- * Exploiting coloring and sparse structure. Used from DASSL and IDA solvers.
- * Only matrix storing format differs for them and therefore setJacElement function
- * is used to access matrix A.
+ * Creates one JACOBIAN copy per thread, sharing dimensions and sparsePattern
+ * from source. source->isRowEval is propagated so adjoint jacColumns work correctly
+ * with evalJacobianColoredParallel without extra setup.
  *
- * \param rows                Number of rows of jacobian.
- * \param columns             Number of columns of jacobian.
- * \param spp                 Pointer to sparse pattern.
- * \param matrixA             Internal data of solvers to store jacobian.
- * \param jacColumns          Analytic Jacobian.
- * \param data                Runtime data struct.
- * \param threadData          Thread data for error handling
- * \param setJacElement       Function to set element (i,j) in matrix A.
+ * @param source     Template Jacobian (INDEX_JAC_A for forward, INDEX_JAC_ADJ for adjoint).
+ * @param jacColumns Output: array of maxTh JACOBIAN copies.
  */
-void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, JACOBIAN* jacColumns, DATA* data,
-                                              threadData_t* threadData,
-                                              setJacElementFunc setJacElement)
-{
-  (void)rows; (void)columns;
-
-#ifndef USE_PARJAC
-  {
-    jacobianCleanup_func_ptr cleanup = jacColumns->isRowEval
-        ? evalJacobianCleanupRowEval : NULL;
-    evalJacobianColored(data, threadData, jacColumns, NULL, matrixA, setJacElement, cleanup);
-  }
-#else
-  evalJacobianColoredParallel(data, threadData, jacColumns, spp, matrixA, setJacElement);
-#endif
-}
-
-#ifdef USE_PARJAC
-/**
- * @brief Allocate thread local Jacobians for adjoint (row-wise) symbolic Jacobian.
- *
- * Like allocateThreadLocalJacobians but uses INDEX_JAC_ADJ and marks each
- * thread-local Jacobian with isRowEval = TRUE so that evalJacobianColoredParallel
- * dispatches to functionJacADJ_column instead of functionJacA_column.
- */
-void allocateThreadLocalJacobiansAdj(DATA* data, JACOBIAN** jacColumns)
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
 {
   int maxTh = omc_get_max_threads();
   *jacColumns = (JACOBIAN*) malloc(maxTh * sizeof(JACOBIAN));
-  const int index = data->callback->INDEX_JAC_ADJ;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-  SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
-
-  unsigned int columns     = jac->sizeCols;
-  unsigned int rows        = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
-
+  SPARSE_PATTERN* sparsePattern = source->sparsePattern;
+  unsigned int columns     = source->sizeCols;
+  unsigned int rows        = source->sizeRows;
+  unsigned int sizeTmpVars = source->sizeTmpVars;
+  modelica_boolean isRowEval = source->isRowEval;
   unsigned int i;
 
   GC_allow_register_threads();
 
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, index) shared(sparsePattern, jacColumns, i)
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval) shared(sparsePattern, jacColumns, i)
   {
   if (!GC_thread_is_registered()) {
     struct GC_stack_base sb;
@@ -206,21 +122,95 @@ void allocateThreadLocalJacobiansAdj(DATA* data, JACOBIAN** jacColumns)
     GC_get_stack_base(&sb);
     GC_register_my_thread(&sb);
   }
-
 #pragma omp for schedule(runtime)
   for (i = 0; i < maxTh; ++i) {
-    (*jacColumns)[i].sizeCols    = columns;
-    (*jacColumns)[i].sizeRows    = rows;
-    (*jacColumns)[i].sizeTmpVars = sizeTmpVars;
-    (*jacColumns)[i].tmpVars     = (double*) calloc(sizeTmpVars, sizeof(double));
-    (*jacColumns)[i].resultVars  = (double*) calloc(rows,        sizeof(double));
-    (*jacColumns)[i].seedVars    = (double*) calloc(columns,     sizeof(double));
+    (*jacColumns)[i].sizeCols      = columns;
+    (*jacColumns)[i].sizeRows      = rows;
+    (*jacColumns)[i].sizeTmpVars   = sizeTmpVars;
+    (*jacColumns)[i].tmpVars       = (double*) calloc(sizeTmpVars, sizeof(double));
+    (*jacColumns)[i].resultVars    = (double*) calloc(rows,        sizeof(double));
+    (*jacColumns)[i].seedVars      = (double*) calloc(columns,     sizeof(double));
     (*jacColumns)[i].sparsePattern = sparsePattern;
-    (*jacColumns)[i].isRowEval   = TRUE;  /* adjoint: seed rows, read column results */
+    (*jacColumns)[i].isRowEval     = isRowEval;
   }
   }
 }
 #endif
+
+
+/**
+ * @brief Evaluate a symbolic Jacobian using the specified method.
+ *
+ * Dispatches forward (COLOREDSYMJAC/SYMJAC), adjoint (COLOREDSYMJACADJ), and
+ * bidirectional (BICOLOREDSYMJAC) evaluation.  All three paths use jac->sparsePattern
+ * and the provided setter(s) to write results into outputMatrix.
+ *
+ * Caller responsibilities before calling:
+ *   - set jac->dae_cj if needed
+ *   - call setContext / unsetContext around this function
+ *   - zero outputMatrix if the format requires it (e.g. sparse SUNDIALS matrix)
+ *
+ * @param method        COLOREDSYMJAC, SYMJAC, COLOREDSYMJACADJ, or BICOLOREDSYMJAC.
+ * @param data          Runtime data.
+ * @param threadData    Thread data.
+ * @param jac           Primary Jacobian for the method (INDEX_JAC_A or INDEX_JAC_ADJ).
+ * @param t_jac         Thread-local copy for parallel eval (equals jac in serial mode).
+ * @param outputMatrix  Opaque output buffer forwarded to setFwd / setAdj.
+ * @param setFwd        Setter for forward (column) evaluation; also used for BICOLOREDSYMJAC scatter.
+ * @param setAdj        Setter for adjoint (row) evaluation; may be NULL for non-adjoint methods.
+ */
+void evalJacobianByMethod(JACOBIAN_METHOD method,
+                          DATA* data, threadData_t* threadData,
+                          JACOBIAN* jac, JACOBIAN* t_jac,
+                          void* outputMatrix,
+                          setJacElementFunc setFwd,
+                          setJacElementFunc setAdj)
+{
+  switch (method)
+  {
+  case COLOREDSYMJAC:
+  case SYMJAC:
+#ifndef USE_PARJAC
+    evalJacobianColored(data, threadData, t_jac, NULL, outputMatrix, setFwd, NULL);
+#else
+    evalJacobianColoredParallel(data, threadData, t_jac, jac->sparsePattern, outputMatrix, setFwd);
+#endif
+    break;
+
+  case COLOREDSYMJACADJ:
+#ifndef USE_PARJAC
+    evalJacobianColored(data, threadData, t_jac, NULL, outputMatrix, setAdj, evalJacobianCleanupRowEval);
+#else
+    evalJacobianColoredParallel(data, threadData, t_jac, jac->sparsePattern, outputMatrix, setAdj);
+#endif
+    break;
+
+  case BICOLOREDSYMJAC: {
+    const SPARSE_PATTERN* sp = jac->sparsePattern;
+    unsigned int col, nz;
+    double* buf = (double*) malloc(sp->nnz * sizeof(double));
+    if (!buf) {
+      throwStreamPrint(threadData, "evalJacobianByMethod: out of memory (nnz=%u)", sp->nnz);
+      return;
+    }
+    evalJacobianBidirectional(data, threadData, jac, NULL, buf, 0 /* sparse CSC */);
+    // scatter into dense?
+    for (col = 0; col < jac->sizeCols; col++) {
+      for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+        setFwd((int)sp->index[nz], (int)col, (int)nz, buf[nz], outputMatrix, (int)jac->sizeRows);
+      }
+    }
+    free(buf);
+    break;
+  }
+
+  default:
+    throwStreamPrint(threadData, "evalJacobianByMethod: unsupported method %d", (int)method);
+    break;
+  }
+}
+
+
 
 #ifdef USE_PARJAC
 /** Free JACOBIAN struct */

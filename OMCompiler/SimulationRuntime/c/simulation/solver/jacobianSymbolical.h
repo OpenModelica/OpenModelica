@@ -35,14 +35,14 @@
 #include "util/parallel_helper.h"
 #include "../jacobian_util.h"  /* setJacElementFunc is defined here */
 
-void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns);
-void allocateThreadLocalJacobiansAdj(DATA* data, JACOBIAN** jacColumns);
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns);
 
-void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, JACOBIAN* jacColumns,
-                                              DATA* data,
-                                              threadData_t* threadData,
-                                              setJacElementFunc setJacElement);
+void evalJacobianByMethod(JACOBIAN_METHOD method,
+                          DATA* data, threadData_t* threadData,
+                          JACOBIAN* jac, JACOBIAN* t_jac,
+                          void* outputMatrix,
+                          setJacElementFunc setFwd,
+                          setJacElementFunc setAdj);
 
 void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 
