@@ -5945,6 +5945,24 @@ match row
               >>
             else depsCode
           else depsCode
+        case {SLICE(exp=sliceExp)} then
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case SIMVAR() then
+              let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+              let nSlice = tempDecl("modelica_integer", &varDecls)
+              let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+              <<
+              {
+                unsigned int _wr<%k%>;
+                for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
+                  <%depsCode%>
+                }
+              }
+              >>
+            else depsCode
+          else depsCode
         else
           match listReverse(crefSubs(sc))
           case WHOLEDIM() :: _ then
@@ -6081,6 +6099,25 @@ match row
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
                 unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                <%depsWhole%>
+              }
+            }
+            >>
+          else ''
+        else ''
+      case {SLICE(exp=sliceExp)} then
+        match context
+        case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+          match simVarFromHT(crefStripSubs(sc), jacHT)
+          case v as SIMVAR() then
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            <<
+            {
+              unsigned int _wr<%k%>;
+              for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
+                unsigned int row_<%k%> = <%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
                 <%depsWhole%>
               }
             }
