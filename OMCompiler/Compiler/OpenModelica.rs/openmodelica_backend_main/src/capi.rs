@@ -71,6 +71,17 @@ pub fn set_pump_callback(f: Option<extern "C" fn()>) {
     metamodelica::cancel::set_pump_callback(f);
 }
 
+/// Last reported progress permille (0..=1000, or negative for indeterminate) for
+/// an in-process host to fill a progress bar from its pump callback.
+pub fn progress_permille() -> i32 {
+    metamodelica::cancel::progress_permille()
+}
+
+/// Last reported progress phase (a `metamodelica::cancel::PHASE_*` value).
+pub fn progress_phase() -> i32 {
+    metamodelica::cancel::progress_phase()
+}
+
 /// `simulate` against the builtin graph only; empty/non-positive args use its defaults.
 pub fn simulate(
     class_name: ArcStr,

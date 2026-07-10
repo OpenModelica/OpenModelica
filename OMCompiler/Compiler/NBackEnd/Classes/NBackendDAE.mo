@@ -369,7 +369,7 @@ public
   algorithm
     System.reportProgress(-1, 4) "PHASE_BACKEND";
     for module in modules loop
-      System.checkCancel();
+      Error.checkCancel();
       (func, name) := module;
       if  Flags.isSet(Flags.FAILTRACE) then
         debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;

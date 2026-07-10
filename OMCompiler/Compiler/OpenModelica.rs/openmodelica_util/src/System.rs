@@ -2389,13 +2389,6 @@ pub fn isCancelled() -> bool {
     metamodelica::cancel::check_cancel()
 }
 
-pub fn checkCancel() -> Result<()> {
-    if isCancelled() {
-        return Err(metamodelica::cancel::cancelled_error());
-    }
-    Ok(())
-}
-
 pub fn reportProgress(permille: i32, phase: i32) {
     metamodelica::cancel::report_progress(permille, phase);
 }

@@ -313,7 +313,7 @@ extern void System_setUsesCardinality(int b)
 }
 
 /* Cooperative cancellation. System_isCancelled is polled by the compiler
- * (System.checkCancel); System_requestCancel/System_clearCancel are the host
+ * (Error.checkCancel); System_requestCancel/System_clearCancel are the host
  * (OMEdit) side. Progress is one-way, compiler → host. */
 extern int System_isCancelled()
 {

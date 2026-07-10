@@ -261,3 +261,18 @@ pub extern "C" fn omc_compiler_clear_cancel() {
 pub extern "C" fn omc_compiler_set_pump_callback(cb: Option<extern "C" fn()>) {
     capi::set_pump_callback(cb);
 }
+
+/// Last reported progress permille (0..=1000, or negative for an indeterminate
+/// spinner). An in-process host reads this from its pump callback to fill a
+/// progress bar during a long compile.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_permille() -> c_int {
+    capi::progress_permille()
+}
+
+/// Last reported progress phase (see the compiler's `PHASE_*` constants:
+/// 0 idle, 1 download, 2 parse, 3 instantiate, 4 backend, 5 simulate).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_phase() -> c_int {
+    capi::progress_phase()
+}

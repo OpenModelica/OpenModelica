@@ -3703,7 +3703,11 @@ void MainWindow::setOmcOperationRunning(bool running)
       mpAutoSaveTimer->start();
     }
   }
-  showCancelOperationButton(running);
+  // The button is revealed by OmcBusyScope's delayed timer so quick commands
+  // don't flash it; here we only guarantee it is hidden once the op ends.
+  if (!running) {
+    showCancelOperationButton(false);
+  }
 }
 
 /*!

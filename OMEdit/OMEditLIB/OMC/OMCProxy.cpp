@@ -69,15 +69,32 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #if !defined(__EMSCRIPTEN__) && defined(OMC_RUST_ABI)
 void omc_compiler_clear_cancel();                       // Rust in-process: reset the cancel flag per op
 void omc_compiler_set_pump_callback(void (*cb)(void));  // register the event-pump callback
+int omc_compiler_progress_permille();                   // 0..1000, or <0 for indeterminate
+int omc_compiler_progress_phase();                      // PHASE_* (0 idle)
 #elif !defined(__EMSCRIPTEN__)
 void System_clearCancel();                              // classic C omc runtime
 void System_setPumpCallback(void (*cb)(void));
+int System_progressPermille();
+int System_progressPhase();
 #endif
 }
 
 #include <QMessageBox>
 #include <QStringBuilder>
 #include <QCoreApplication>
+
+// Progress phase (compiler PHASE_* / metamodelica::cancel) → user-facing label.
+// Shared by the wasm worker-wait UI and the native pump-driven progress bar.
+static QString omcPhaseLabel(int phase) {
+  switch (phase) {
+    case 1: return QObject::tr("Downloading…");
+    case 2: return QObject::tr("Parsing…");
+    case 3: return QObject::tr("Instantiating…");
+    case 4: return QObject::tr("Compiling model…");
+    case 5: return QObject::tr("Simulating…");
+    default: return QString();
+  }
+}
 
 #if defined(__EMSCRIPTEN__)
 #include <cstdlib>
@@ -292,22 +309,10 @@ static void ensureWakeInstalled() {
   g_omcWakeInstalled = true;
 }
 
-// Progress phase (metamodelica::cancel PHASE_*) → user-facing label.
-static QString omcPhaseLabel(int phase) {
-  switch (phase) {
-    case 1: return QObject::tr("Downloading…");
-    case 2: return QObject::tr("Parsing…");
-    case 3: return QObject::tr("Instantiating…");
-    case 4: return QObject::tr("Compiling model…");
-    case 5: return QObject::tr("Simulating…");
-    default: return QString();
-  }
-}
-
 // Read the worker's progress control block and reflect it on the main-window
 // status bar while a blocking call is in flight. Sets ownsBar when it is the
 // one that made the bar visible, so the wait can restore it on completion.
-static void omcDriveProgressUi(bool &ownsBar) {
+static void omcDriveProgressUi(bool &ownsBar, bool &ownsCancel) {
   int phase = omedit_progress_phase();
   if (phase == 0) return; // PHASE_IDLE — nothing running to report
   MainWindow *w = MainWindow::instance();
@@ -328,17 +333,23 @@ static void omcDriveProgressUi(bool &ownsBar) {
     bar->setRange(0, 1000);
     bar->setValue(permille);
   }
+  ownsCancel = true;
   w->showCancelOperationButton(true);
   w->getStatusBar()->showMessage(omcPhaseLabel(phase));
 }
 
-static void omcClearProgressUi() {
+// Restore whatever this wait made visible. The bar and cancel button are
+// tracked separately: a wait may show the Cancel button while another widget
+// already owns the progress bar, and must still hide the button on completion.
+static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
   MainWindow *w = MainWindow::instance();
   if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
-  w->showCancelOperationButton(false);
-  w->hideProgressBar();
-  w->getProgressBar()->setRange(0, 100);
-  w->getStatusBar()->clearMessage();
+  if (ownsCancel) w->showCancelOperationButton(false);
+  if (ownsBar) {
+    w->hideProgressBar();
+    w->getProgressBar()->setRange(0, 100);
+    w->getStatusBar()->clearMessage();
+  }
 }
 
 void omcWorkerWaitReply(int id) {
@@ -366,16 +377,17 @@ void omcWorkerWaitReply(int id) {
   g_omcWaitStack.append(&loop);
   QTimer progressTimer;
   bool ownsBar = false;
+  bool ownsCancel = false;
   if (outermost && omedit_cancel_available()) {
-    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&ownsBar]() {
-      omcDriveProgressUi(ownsBar);
+    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&ownsBar, &ownsCancel]() {
+      omcDriveProgressUi(ownsBar, ownsCancel);
     });
     progressTimer.start(100);
   }
   while (!omedit_call_ready(id)) loop.exec();
   progressTimer.stop();
   g_omcWaitStack.removeLast();
-  if (ownsBar) omcClearProgressUi();
+  if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
   if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
 }
 
@@ -491,6 +503,47 @@ bool omcWorkerStageFile(const char *path) {
 // thread back to Qt so the Cancel click is delivered (flipping the flag omc then
 // reads) and progress repaints. Rate-limited — checkCancel fires per class.
 // Reentering omc is prevented by OmcBusyScope disabling all UI but Cancel.
+// Reflect the compiler's last-reported progress (read via the backend getters)
+// on the status bar while an in-process op is in flight. Tracks whether it was
+// the one that made the bar visible so OmcBusyScope can restore it on completion.
+static bool g_omcNativeOwnsBar = false;
+static void omcDriveNativeProgress()
+{
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+#if defined(OMC_RUST_ABI)
+  int phase = omc_compiler_progress_phase();
+  int permille = omc_compiler_progress_permille();
+#else
+  int phase = System_progressPhase();
+  int permille = System_progressPermille();
+#endif
+  if (phase == 0) return; // nothing reported yet
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    g_omcNativeOwnsBar = true;
+    w->showProgressBar();
+  }
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+}
+
+static void omcClearNativeProgress()
+{
+  if (!g_omcNativeOwnsBar) return;
+  g_omcNativeOwnsBar = false;
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  w->hideProgressBar();
+  w->getProgressBar()->setRange(0, 100);
+  w->getStatusBar()->clearMessage();
+}
+
 extern "C" void omedit_pump_events()
 {
   static QElapsedTimer sLastPump;
@@ -498,6 +551,7 @@ extern "C" void omedit_pump_events()
     return;
   }
   sLastPump.restart();
+  omcDriveNativeProgress();
   QCoreApplication::processEvents();
 }
 
@@ -519,6 +573,10 @@ namespace {
 int g_omcCommandDepth = 0;
 struct OmcBusyScope {
   bool outer;
+  // Reveal Cancel only if the op runs past this; quick commands (the vast
+  // majority) finish first and never flash the button. The UI-disable itself
+  // is immediate — the pump can fire mid-op, so reentrancy must be blocked now.
+  QTimer showButtonTimer;
   OmcBusyScope() : outer(g_omcCommandDepth == 0) {
     g_omcCommandDepth++;
     if (outer) {
@@ -528,11 +586,20 @@ struct OmcBusyScope {
       System_clearCancel();
 #endif
       if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(true);
+      showButtonTimer.setSingleShot(true);
+      QObject::connect(&showButtonTimer, &QTimer::timeout, []() {
+        if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
+      });
+      showButtonTimer.start(100);
     }
   }
   ~OmcBusyScope() {
     g_omcCommandDepth--;
-    if (outer && MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(false);
+    if (outer) {
+      showButtonTimer.stop();
+      omcClearNativeProgress();
+      if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(false);
+    }
   }
 };
 }

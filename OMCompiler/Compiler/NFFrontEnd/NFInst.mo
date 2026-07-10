@@ -1111,7 +1111,7 @@ protected
   Class cls;
   Modifier outer_mod;
 algorithm
-  System.checkCancel();
+  Error.checkCancel();
   cls := InstNode.getClass(node);
   outer_mod := Class.getModifier(cls);
 

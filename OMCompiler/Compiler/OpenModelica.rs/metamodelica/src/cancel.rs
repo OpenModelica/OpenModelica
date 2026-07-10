@@ -11,7 +11,7 @@
 //! [`cancelled_error`] so the op fails like any other error and leaves omc
 //! consistent (the caller must roll back partial state).
 
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 
 // ── Phases (control block index 2; see HANDOFF-coi-consolidation.md) ──────────
 pub const PHASE_IDLE: i32 = 0;
@@ -31,9 +31,12 @@ pub fn request_cancel() {
     CANCEL.store(true, Ordering::Relaxed);
 }
 
-/// Clear the cancel flag; call at the start of each new cancellable op.
+/// Clear the cancel flag; call at the start of each new cancellable op. Also
+/// resets progress to idle so a stale phase can't leak into the next op.
 pub fn clear_cancel() {
     CANCEL.store(false, Ordering::Relaxed);
+    PROGRESS_PERMILLE.store(PROGRESS_INDETERMINATE, Ordering::Relaxed);
+    PROGRESS_PHASE.store(PHASE_IDLE, Ordering::Relaxed);
 }
 
 // wasm: the blocked worker can't get a cancel message, so a cross-origin-isolated
@@ -117,19 +120,34 @@ pub fn set_progress_sink(f: fn(i32, i32)) {
     PROGRESS_SINK.with(|c| c.set(Some(f)));
 }
 
+// Last reported progress, readable by an in-process host (OMEdit) from its pump
+// callback to fill a status-bar progress bar. Kept on all targets so the cdylib
+// getters compile uniformly; on wasm the host reads the shared control block (fed
+// by the sink) instead, but storing here too is harmless.
+static PROGRESS_PERMILLE: AtomicI32 = AtomicI32::new(PROGRESS_INDETERMINATE);
+static PROGRESS_PHASE: AtomicI32 = AtomicI32::new(PHASE_IDLE);
+
 /// Report progress of the current op: `permille` in 0..=1000 (or
-/// [`PROGRESS_INDETERMINATE`]) and one of the `PHASE_*` constants. No-op unless a
-/// sink is installed (native, or a wasm host that didn't opt in).
+/// [`PROGRESS_INDETERMINATE`]) and one of the `PHASE_*` constants. wasm also
+/// forwards to the host sink; [`progress_permille`]/[`progress_phase`] read it back.
 #[inline]
 pub fn report_progress(permille: i32, phase: i32) {
+    PROGRESS_PERMILLE.store(permille, Ordering::Relaxed);
+    PROGRESS_PHASE.store(phase, Ordering::Relaxed);
     #[cfg(target_arch = "wasm32")]
     if let Some(f) = PROGRESS_SINK.with(|c| c.get()) {
         f(permille, phase);
     }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let _ = (permille, phase);
-    }
+}
+
+/// Last reported permille (0..=1000 or [`PROGRESS_INDETERMINATE`]).
+pub fn progress_permille() -> i32 {
+    PROGRESS_PERMILLE.load(Ordering::Relaxed)
+}
+
+/// Last reported phase (a `PHASE_*` constant).
+pub fn progress_phase() -> i32 {
+    PROGRESS_PHASE.load(Ordering::Relaxed)
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
