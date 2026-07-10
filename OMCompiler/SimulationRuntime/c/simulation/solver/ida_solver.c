@@ -429,52 +429,36 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       messageClose(OMC_LOG_SIMULATION);
     }
 
-    if (adjJac->csrToCscMap == NULL && adjJac->sparsePattern != NULL) {
+    // for adjoint Jacobian we need to build a map from CSR to CSC to set elements correctly in the CSC matrix
+    if (adjJac->csrToCscMap == NULL) {
       const SPARSE_PATTERN* adjsp = adjJac->sparsePattern;
       const unsigned int nnz      = adjsp->nnz;
       const unsigned int nRows    = adjJac->sizeRows;
       const unsigned int nCols    = adjJac->sizeCols;
       adjJac->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
 
-      JACOBIAN* fwdJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-      if (fwdJac->sparsePattern != NULL) {
-        /* Fast path: use forward CSC column lists to locate each CSR entry. */
-        const SPARSE_PATTERN* fwdsp = fwdJac->sparsePattern;
-        for (unsigned int i = 0; i < nRows; i++) {
-          for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
-            const unsigned int j = adjsp->index[nz];
-            for (unsigned int k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j + 1]; k++) {
-              if (fwdsp->index[k] == i) {
-                adjJac->csrToCscMap[nz] = k;
-                break;
-              }
-            }
-          }
-        }
-      } else {
-        /* Fallback: only CSR available – derive CSC positions from row-major
-         * traversal order (rows processed 0..nRows-1 → ascending row indices
-         * within each column → correct CSC ordering). */
-        unsigned int* colHead = (unsigned int*) calloc(nCols, sizeof(unsigned int));
-        /* Count nnz per column */
-        for (unsigned int nz = 0; nz < nnz; nz++)
-          colHead[adjsp->index[nz]]++;
-        /* Exclusive prefix sum → CSC column start positions */
-        unsigned int cum = 0;
-        for (unsigned int j = 0; j < nCols; j++) {
-          unsigned int tmp = colHead[j];
-          colHead[j] = cum;
-          cum += tmp;
-        }
-        /* Assign CSC positions in row-major order */
-        for (unsigned int i = 0; i < nRows; i++) {
-          for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
-            const unsigned int j = adjsp->index[nz];
-            adjJac->csrToCscMap[nz] = colHead[j]++;
-          }
-        }
-        free(colHead);
+      /*  derive CSC positions from row-major
+        * traversal order (rows processed 0..nRows-1 → ascending row indices
+        * within each column → correct CSC ordering). */
+      unsigned int* colHead = (unsigned int*) calloc(nCols, sizeof(unsigned int));
+      /* Count nnz per column */
+      for (unsigned int nz = 0; nz < nnz; nz++)
+        colHead[adjsp->index[nz]]++;
+      /* Exclusive prefix sum → CSC column start positions */
+      unsigned int cumulative_sum = 0;
+      for (unsigned int j = 0; j < nCols; j++) {
+        unsigned int tmp = colHead[j];
+        colHead[j] = cumulative_sum;
+        cumulative_sum += tmp;
       }
+      /* Assign CSC positions in row-major order */
+      for (unsigned int i = 0; i < nRows; i++) {
+        for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
+          const unsigned int j = adjsp->index[nz];
+          adjJac->csrToCscMap[nz] = colHead[j]++;
+        }
+      }
+      free(colHead);
     }
   }
 
