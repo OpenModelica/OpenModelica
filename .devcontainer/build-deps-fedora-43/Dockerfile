@@ -1,5 +1,4 @@
-FROM build-deps:fedora-43
-# FROM docker.openmodelica.org/build-deps:fedora-43
+FROM docker.openmodelica.org/build-deps:fedora-43
 
 ENV SHELL=/bin/bash
 
