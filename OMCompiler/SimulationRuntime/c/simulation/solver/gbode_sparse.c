@@ -169,7 +169,9 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   SPARSE_PATTERN* sparsePattern_DIRK;
 
   /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[
+    gbData->useAdjJacobian ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A]);
   SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
 
   int sizeRows = jacobian->sizeRows;

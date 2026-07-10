@@ -246,7 +246,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         messageClose(OMC_LOG_SOLVER);
       }
       else {
-        throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
+        throwStreamPrint(threadData, "##GBODEF## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
 
       JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
@@ -476,8 +476,29 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+    /* When the user explicitly requests the adjoint Jacobian method we must
+     * initialize INDEX_JAC_ADJ first so that setJacobianMethod sees the correct
+     * availability. Initializing INDEX_JAC_A first would yield
+     * JACOBIAN_NOT_AVAILABLE (if only the adjoint was compiled) and force a
+     * fallback to INTERNALNUMJAC. */
+    int _adjRequested = 0;
+    if (omc_flag[FLAG_JACOBIAN]) {
+      for (int _m = 1; _m < JAC_MAX; _m++) {
+        if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[_m])) {
+          _adjRequested = (_m == COLOREDSYMJACADJ);
+          break;
+        }
+      }
+    }
+    gbData->useAdjJacobian = _adjRequested;
+
+    if (_adjRequested) {
+      jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+      data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
+    } else {
+      jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+    }
     if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
       infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
       infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
@@ -651,7 +672,8 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
  */
 void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 {
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[
+    gbData->useAdjJacobian ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A]);
   freeJacobian(jacobian);
 
   /* Free non-linear system data */

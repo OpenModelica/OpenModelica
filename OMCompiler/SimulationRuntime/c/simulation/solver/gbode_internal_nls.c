@@ -450,7 +450,8 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 #endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[
+    (!nls->multirate && gbData->useAdjJacobian) ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A]);
 
   if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
@@ -795,7 +796,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   double *scal = nls->scal;
 
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=(nls->multirate ? (void *) gbData->gbfData : (void *) gbData)};
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[
+    gbData->useAdjJacobian ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A].sparsePattern);
 
   const int flag = 1;
   modelica_boolean jac_called = FALSE;
@@ -1197,7 +1199,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[
+    gbData->useAdjJacobian ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A].sparsePattern);
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
   modelica_boolean jac_called = FALSE;
@@ -1491,7 +1494,9 @@ void *gbInternalNlsAllocate(int size,
   BUTCHER_TABLEAU *tabl = (isFast ? ((DATA_GBODEF *) userData->solverData)->tableau
                                   : ((DATA_GBODE *) userData->solverData)->tableau);
   T_TRANSFORM *transform = tabl->t_transform;
-  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
+  modelica_boolean _useAdj = !isFast && ((DATA_GBODE *) userData->solverData)->useAdjJacobian;
+  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[
+    _useAdj ? userData->data->callback->INDEX_JAC_ADJ : userData->data->callback->INDEX_JAC_A]);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
 

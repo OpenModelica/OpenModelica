@@ -188,6 +188,7 @@ typedef struct DATA_GBODE{
   modelica_boolean eventHappened;                   /* True if an event happened in the last iteration - will be reset to FALSE on successful step */
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
+  modelica_boolean useAdjJacobian;                  /* TRUE if the adjoint Jacobian (INDEX_JAC_ADJ) was selected via -jacobian flag */
   gm_step_function step_fun;                        /* Step function of the integrator */
 
   /* statistics */
