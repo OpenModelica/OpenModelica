@@ -586,7 +586,7 @@ constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   "Sets the target compiler to use.");
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
   ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA), ("PDEModelica", PDEMODELICA)}),
-  SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica", "Optimica", "PDEModelica"})),
+  NONE(),
   "Sets the grammar and semantics to accept.");
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
   NONE(), EXTERNAL(), STRING_FLAG("3.x"), SOME(STRING_OPTION({"1.x", "2.x", "3.x"})),
@@ -595,7 +595,7 @@ constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL()
   ENUM_FLAG(1000,
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33),
      ("3.4", 34), ("3.5", 35), ("3.6", 36), ("latest",1000), ("experimental", 9999)}),
-  SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "latest", "experimental"})),
+  NONE(),
   "Sets the language standard that should be used.");
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -950,7 +950,7 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
   })),
   "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)");
 constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(61, "symSolver",
-  NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), SOME(STRING_OPTION({"none", "impEuler", "expEuler"})),
+  NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), NONE(),
   "Activates symbolic implicit solver (original system is not changed).");
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(62, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
@@ -1077,8 +1077,7 @@ constant ConfigFlag DAE_MODE = CONFIG_FLAG(87, "daeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver SUNDIALS/IDA and no algebraic solver is involved in the simulation process.");
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(88, "inlineMethod",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}),
-  SOME(STRING_OPTION({"replace", "append"})),
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}), NONE(),
   "Sets the inline method to use.\n"+
                "replace : This method inlines by replacing in place all expressions. Might lead to very long expression.\n"+
                "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system.");
@@ -1307,8 +1306,7 @@ constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "export
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "exports clocks in modeldescription.xml for fmus, The default is false.");
 constant ConfigFlag LINK_TYPE = CONFIG_FLAG(145, "linkType",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}),
-  SOME(STRING_OPTION({"dynamic", "static"})),
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}), NONE(),
   "Sets the link type for the simulation executable.\n"+
                "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
                "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n");
@@ -1414,8 +1412,7 @@ constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(164, "fmiExtraAnnotation
 constant Integer IDUMP_DEFAULT = 0;
 constant Integer IDUMP_JSON = 1;
 constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(165, "interactiveDumpFormat",
-  NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}),
-  SOME(STRING_OPTION({"default", "json"})),
+  NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}), NONE(),
   "Selects the format interactive API calls use to print result values.\n"+
   "default : The OpenModelica textual value format.\n"+
   "json    : JSON, for programmatic consumers such as the web clients.");

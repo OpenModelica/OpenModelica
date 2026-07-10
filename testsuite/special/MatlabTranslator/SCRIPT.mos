@@ -22,6 +22,8 @@ files := {
   "../../../OMCompiler/Compiler/Util/StringUtil.mo",
   "../../../OMCompiler/Compiler/Util/Flags.mo",
   "../../../OMCompiler/Compiler/Util/FlagsUtil.mo",
+  "../../../OMCompiler/Compiler/Util/IOStream.mo",
+  "../../../OMCompiler/Compiler/Util/IOStreamExt.mo",
   "../../../OMCompiler/Compiler/Global/Global.mo",
   "../../../OMCompiler/Compiler/Util/Config.mo",
   "../../../OMCompiler/Compiler/Util/Debug.mo",
