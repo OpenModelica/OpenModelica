@@ -14,6 +14,7 @@ github.com/OpenModelica/OpenModelica. Each one is based on the matching
 `docker.openmodelica.org/build-deps:*-debug` image and contains all
 dependencies needed to compile OpenModelica.
 
+- [build-deps-alpine-3.22][0]: Alpine 3.22.
 - [build-deps-debian-12][1]: Debian 12 (Bookworm).
 - [build-deps-debian-13][2]: Debian 13 (Trixie).
 - [build-deps-ubuntu-22][3]: Ubuntu 22.04 (Jammy).
@@ -25,10 +26,10 @@ dependencies needed to compile OpenModelica.
 
 There are two flavors:
 
-- `debian-12`, `debian-13`, `ubuntu-22`, `almalinux-10`, `fedora-43` and
-  `fedora-44` build a small wrapper `Dockerfile` that creates a non-root user
-  matching your local user name and UID so files created in the container are
-  owned by you.
+- `alpine-3.22`, `debian-12`, `debian-13`, `ubuntu-22`, `almalinux-10`,
+  `fedora-43` and `fedora-44` build a small wrapper `Dockerfile` that creates a
+  non-root user matching your local user name and UID so files created in the
+  container are owned by you.
 - `ubuntu-24` and `ubuntu-26` use the base image directly and connect as the
   pre-existing `ubuntu` user.
 
@@ -56,8 +57,8 @@ container.
 ## Caveats
 
 The following only applies to the `Dockerfile`-based containers
-(`debian-12`, `debian-13`, `ubuntu-22`, `almalinux-10`, `fedora-43`,
-`fedora-44`):
+(`alpine-3.22`, `debian-12`, `debian-13`, `ubuntu-22`, `almalinux-10`,
+`fedora-43`, `fedora-44`):
 
 - The images need an additional Dockerfile to add a non-root user with your
   user name and UID.
@@ -70,6 +71,7 @@ The following only applies to the `Dockerfile`-based containers
   +"username"
   ```
 
+[0]: ./build-deps-alpine-3.22/devcontainer.json
 [1]: ./build-deps-debian-12/devcontainer.json
 [2]: ./build-deps-debian-13/devcontainer.json
 [3]: ./build-deps-ubuntu-22/devcontainer.json

@@ -73,7 +73,6 @@ extern "C" {
 #include <ctype.h>
 #include <dirent.h>
 #include <sys/param.h> /* MAXPATHLEN */
-#include <sys/unistd.h>
 #include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
 #include <dlfcn.h>

@@ -76,6 +76,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{StateSelect, TearingSelect};
   import NFBackendExtension.VariableKind;
+  import NFBinding.Binding;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -1302,36 +1303,36 @@ protected
   function optionMinMax
     "Collects min and max attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_min, attr_max;
+    input Option<Binding> attr_min, attr_max;
     input output AttributeCollector attrcollector;
   protected
-    Expression min_val, max_val;
+    Binding min_b, max_b;
   algorithm
     if isSome(attr_min) then
-      min_val := Util.getOption(attr_min);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
+      SOME(min_b) := attr_min;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(min_b), attrcollector.min_val_map);
     end if;
     if isSome(attr_max) then
-      max_val := Util.getOption(attr_max);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
+      SOME(max_b) := attr_max;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(max_b), attrcollector.max_val_map);
     end if;
   end optionMinMax;
 
   function optionStartFixed
     "Collects start and fixed attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_start, attr_fixed;
+    input Option<Binding> attr_start, attr_fixed;
     input output AttributeCollector attrcollector;
   protected
-    Expression start_val, fixed_val;
+    Binding start_b, fixed_b;
   algorithm
     if isSome(attr_start) then
-      start_val := Util.getOption(attr_start);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
+      SOME(start_b) := attr_start;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
     end if;
     if isSome(attr_fixed) then
-      fixed_val := Util.getOption(attr_fixed);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
+      SOME(fixed_b) := attr_fixed;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(fixed_b), attrcollector.fixed_map);
     end if;
   end optionStartFixed;
 
@@ -1361,7 +1362,7 @@ protected
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
         attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
         if isSome(attr.nominal) then
-          nominal_val := Util.getOption(attr.nominal);
+          nominal_val := Binding.getTypedExp(Util.getOption(attr.nominal));
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
         end if;
         if isSome(attr.stateSelect) then

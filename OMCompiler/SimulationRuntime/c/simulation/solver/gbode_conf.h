@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 // Declaration only
-extern unsigned int use_fhr;
+extern modelica_boolean use_fhr;
 extern double use_filter;
 
 enum GB_METHOD getGB_method(enum _FLAG flag);
@@ -47,7 +47,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag);
 enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag);
 double getGBRatio(void);
 double getGBCtrlFilterValue(void);
-enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag);
+enum GB_ERROR_METHOD getGBErr(enum _FLAG flag);
 
 #ifdef __cplusplus
 };

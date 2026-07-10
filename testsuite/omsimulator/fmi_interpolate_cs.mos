@@ -1,6 +1,6 @@
 // keywords: fmu export
 // status: correct
-// teardown_command: rm -rf fmi_interpolate_cs.lua fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
+// teardown_command: rm -rf fmi_interpolate_cs.py fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
 // cflags: -d=fmuExperimental
 
 loadString("
@@ -20,31 +20,32 @@ end fmu2;
 buildModelFMU(fmu1, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
 buildModelFMU(fmu2, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
 
-writeFile("fmi_interpolate_cs.lua", "
-oms_setCommandLineOption(\"--suppressPath=true --inputExtrapolation=true\")
-oms_setTempDirectory(\"./temp-fmi_interpolate_cs/\")
+writeFile("fmi_interpolate_cs.py", "
+from OMSimulator import SSP, Settings, CRef
+from OMSimulator.capi import Capi
 
-oms_newModel(\"fmi_interpolate_cs\")
-oms_addSystem(\"fmi_interpolate_cs.root\", oms_system_wc)
-oms_addSubModel(\"fmi_interpolate_cs.root.fmu1\", \"fmu1.fmu\")
-oms_addSubModel(\"fmi_interpolate_cs.root.fmu2\", \"fmu2.fmu\")
+Settings.suppressPath = True
+Capi.setCommandLineOption('--inputExtrapolation=true')
 
-oms_addConnection(\"fmi_interpolate_cs.root.fmu1.y\", \"fmi_interpolate_cs.root.fmu2.u\")
+model = SSP()
+model.addResource('fmu1.fmu', new_name='resources/fmu1.fmu')
+model.addResource('fmu2.fmu', new_name='resources/fmu2.fmu')
+model.activeVariant.stopTime = 5
 
-oms_setStopTime(\"fmi_interpolate_cs\", 5)
-oms_setFixedStepSize(\"fmi_interpolate_cs.root\", 0.1)
+model.addComponent(CRef('default', 'fmu1'), 'resources/fmu1.fmu')
+model.addComponent(CRef('default', 'fmu2'), 'resources/fmu2.fmu')
+model.addConnection(CRef('default', 'fmu1', 'y'), CRef('default', 'fmu2', 'u'))
 
-oms_instantiate(\"fmi_interpolate_cs\")
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('fmi_interpolate_cs_res.mat')
 
-oms_initialize(\"fmi_interpolate_cs\")
-
-oms_simulate(\"fmi_interpolate_cs\")
-
-oms_terminate(\"fmi_interpolate_cs\")
-oms_delete(\"fmi_interpolate_cs\")
+instantiated_model.initialize()
+instantiated_model.simulate()
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator fmi_interpolate_cs.lua", "fmi_interpolate_cs_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmi_interpolate_cs.py", "fmi_interpolate_cs_systemCall.log");
 readFile("fmi_interpolate_cs_systemCall.log");
 
 // Result:

@@ -114,7 +114,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
       case RK_SIRK6_5_7L4SA:
       case RK_SIRK6_5_8L4SA:
       case RK_SIRK5_4_7L5SA:
-      case RK_FIRK7_6_5L4SA:
+      case RK_FIRK7_6TS_5L4SA:
       case RK_RADAU_IA_2:
       case RK_RADAU_IA_3:
       case RK_RADAU_IA_4:
@@ -316,31 +316,31 @@ double getGBRatio(void)
 }
 
 /**
- * @brief Get extrapolation method from user flag.
+ * @brief Get error method from user flag.
  *
  * Reads flag FLAG_SR_ERR, FLAG_MR_ERR.
- * Defaults to GB_EXT_DEFAULT.
+ * Defaults to GB_ERROR_DEFAULT.
  *
  * @param flag                      Flag specifying error estimation.
  *                                  Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
- * @return enum GB_EXTRAPOL_METHOD  Extrapolation method.
+ * @return enum GB_ERROR_METHOD  Error method.
  */
-enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag)
+enum GB_ERROR_METHOD getGBErr(enum _FLAG flag)
 {
-  enum GB_EXTRAPOL_METHOD method;
+  enum GB_ERROR_METHOD method;
   const char *flag_value;
-  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input to getGBErr. Expected FLAG_SR_ERR or FLAG_MR_ERR ");
+  assertStreamPrint(NULL, flag == FLAG_SR_ERR || flag == FLAG_MR_ERR, "Illegal input to getGBErr. Expected FLAG_SR_ERR or FLAG_MR_ERR ");
 
   if (omc_flag[flag]) {
     flag_value = omc_flagValue[flag];
-    for (method = GB_EXT_UNKNOWN; method < GB_EXT_MAX; method++) {
-      if (strcmp(flag_value, GB_EXTRAPOL_METHOD_NAME[method]) == 0) {
+    for (method = GB_ERROR_DEFAULT; method < GB_ERROR_MAX; method++) {
+      if (strcmp(flag_value, GB_ERROR_METHOD_NAME[method]) == 0) {
         return method;
       }
     }
-    dumpOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_ERROR_METHOD_NAME + GB_ERROR_DEFAULT, GB_ERROR_MAX - GB_ERROR_DEFAULT);
     omc_throw(NULL);
   }
 
-  return GB_EXT_DEFAULT;
+  return GB_ERROR_DEFAULT;
 }

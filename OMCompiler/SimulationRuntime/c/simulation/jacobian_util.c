@@ -688,6 +688,120 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
 }
 
 /**
+ * @brief Greedy distance-1 column coloring of a CSC sparse pattern.
+ *
+ * Two columns may share a color only if they have no non-zero row in common.
+ * Uses the existing csc_to_csr helper to build the row→columns map, then
+ * assigns the smallest available color to each column in order.
+ *
+ * Needed for the resizable analytic Jacobian path: the C sparsity pattern
+ * is built at runtime from WHOLEDIM loops that over-approximate array
+ * equations as dense blocks, so the compile-time coloring (derived from the
+ * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
+ * it here guarantees correctness.
+ *
+ * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
+ * @param nRows  Number of rows in the Jacobian.
+ * @param nCols  Number of columns (== size of sp->colorCols).
+ */
+void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
+{
+  if (!sp || nCols == 0) return;
+
+  SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
+  if (!csr) {
+    /* Fallback: trivial one-column-per-color coloring. */
+    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
+    sp->maxColors = nCols;
+    return;
+  }
+
+  /* forbidden[k] == 1 if color k is already used by an adjacent column.
+   * Index 0 unused; colors are 1-based, max is nCols. */
+  unsigned char* forbidden = (unsigned char*) calloc(nCols + 2, sizeof(unsigned char));
+  /* Track which forbidden slots were set so we can reset without a full memset. */
+  unsigned int* setColors  = (unsigned int*)  malloc(nCols * sizeof(unsigned int));
+
+  if (!forbidden || !setColors) {
+    free(forbidden); free(setColors);
+    freeSparsePattern(csr);
+    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
+    sp->maxColors = nCols;
+    return;
+  }
+
+  unsigned int maxColor = 0;
+
+  for (unsigned int c = 0; c < nCols; c++) {
+    unsigned int nSet = 0;
+
+    /* Mark colors of already-colored columns that share a row with c. */
+    for (unsigned int nz = sp->leadindex[c]; nz < sp->leadindex[c + 1]; nz++) {
+      const unsigned int row = sp->index[nz];
+      if (row >= nRows) continue;
+      for (unsigned int nz2 = csr->leadindex[row]; nz2 < csr->leadindex[row + 1]; nz2++) {
+        const unsigned int c2 = csr->index[nz2];
+        if (c2 < c) {
+          const unsigned int used = sp->colorCols[c2];
+          if (used > 0 && used <= nCols && !forbidden[used]) {
+            forbidden[used] = 1;
+            setColors[nSet++] = used;
+          }
+        }
+      }
+    }
+
+    /* Smallest color not forbidden. */
+    unsigned int color = 1;
+    while (color <= nCols && forbidden[color]) color++;
+    sp->colorCols[c] = color;
+    if (color > maxColor) maxColor = color;
+
+    /* Reset forbidden markers for next iteration. */
+    for (unsigned int k = 0; k < nSet; k++) forbidden[setColors[k]] = 0;
+  }
+
+  sp->maxColors = maxColor;
+
+  free(setColors);
+  free(forbidden);
+  freeSparsePattern(csr);
+}
+
+/**
+ * @brief Sort row indices within each column of a CSC sparse pattern.
+ *
+ * KLU and printSparseStructure both require that row indices within each
+ * column are in strictly ascending order.  The NBackend-generated
+ * initialResizableAnalyticJacobianA fills entries in equation order which
+ * may not be sorted (e.g. column 0 gets row 10 from one equation and row 0
+ * from another).  Call this function once after the pattern is built and
+ * before it is handed to KLU or the print helpers.
+ *
+ * @param sp    CSC sparse pattern (leadindex and index already filled).
+ * @param nCols Number of columns (== size of sp->leadindex - 1).
+ */
+void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols)
+{
+  if (!sp) return;
+  for (unsigned int c = 0; c < nCols; c++) {
+    unsigned int start = sp->leadindex[c];
+    unsigned int end   = sp->leadindex[c + 1];
+    if (end <= start + 1) continue;
+    /* Insertion sort — columns typically have very few entries. */
+    for (unsigned int i = start + 1; i < end; i++) {
+      unsigned int key = sp->index[i];
+      unsigned int j   = i;
+      while (j > start && sp->index[j - 1] > key) {
+        sp->index[j] = sp->index[j - 1];
+        j--;
+      }
+      sp->index[j] = key;
+    }
+  }
+}
+
+/**
  * @brief Opens sparsity pattern file
  *
  * @param data        Runtime data struct.

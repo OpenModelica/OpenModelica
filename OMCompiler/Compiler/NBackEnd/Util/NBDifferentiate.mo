@@ -2243,8 +2243,16 @@ public
       else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
     end match;
 
-    // only add inputs as its the only relevant part for pre-defined function derivatives
+    // add all interface nodes of func (inputs, locals, outputs) since all have been
+    // differentiated to produce der_func; this prevents re-differentiation of func.outputs
+    // that became locals in der_func when creating higher-order derivatives
     for node in func.inputs loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.locals loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.outputs loop
       UnorderedSet.add(node, diffInfo);
     end for;
 
@@ -2432,6 +2440,7 @@ public
           new_nodes := d_node :: new_nodes;
           // add to skipped nodes if differentiated again because the derivative now already exists
           UnorderedSet.add(node, diffInfo);
+        else
         end if;
       end if;
     end for;
@@ -2682,6 +2691,21 @@ public
       case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
         // In reverse mode the assignment LHS is the destination; traverse it without
         // collecting into adjoint_map to avoid artificial self-contributions.
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
+      // I-b. differentiate record-type assignment from a function call
+      // e.g. f := Helmholtz(d, T) where f is a record — propagate seeds through
+      // the called function so the derivative record gets populated correctly.
+      // Without this, the derivative variable is left zero-initialised and the
+      // analytical Jacobian for any NLS that calls the outer function is wrong.
+      case diff_stmt as Statement.ASSIGNMENT() guard(
+        Type.isComplex(Expression.typeOf(diff_stmt.lhs)) and
+        Expression.isCall(diff_stmt.rhs)
+      ) algorithm
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;

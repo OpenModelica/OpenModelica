@@ -177,7 +177,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // ************************
 //   (0)[PRMT] (1) Integer plant.N = 5
 //
-// Residual Variables (25)
+// Residual Variables (28)
 // *************************
 //   (0)[RES-] (1) Real $RES_SIM_10[1]
 //   (1)[RES-] (1) Real $RES_SIM_10[2]
@@ -204,46 +204,49 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //   (22)[RES-] (1) Real $RES_SIM_14[3]
 //   (23)[RES-] (1) Real $RES_SIM_14[4]
 //   (24)[RES-] (1) Real $RES_SIM_14[5]
+//   (25)[RES-] (1) Real $RES_SIM_5
+//   (26)[RES-] (1) Real $RES_BND_21
+//   (27)[RES-] (1) Real $RES_SIM_2
 //
 // Initial Partition (Lambda = 0)
 // --------------------------------
-//   (36) plant.w := 1.0
-//   (35) plant.wfg := 1.0
-//   (34) Alias of 18
-//   (33) Alias of 17
-//   (32) resizable call [index  1]
-//   (31) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
+//   (48) plant.w := 1.0
+//   (47) plant.wfg := 1.0
+//   (46) Alias of 27
+//   (45) Alias of 26
+//   (44) resizable call [index  1]
+//   (43) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{plant.T[2], plant.T[3], plant.T[4], plant.T[5], plant.T[6], plant.Q[1], plant.Q[2], plant.Q[3], plant.Q[4], plant.Q[5], ...}
-//   --(28) For-Loop-Residual:
+//   --(37) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
 //   --end for;
-//   --(29) For-Loop-Residual:
+//   --(38) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
 //   --end for;
-//   --(30) For-Loop-Residual:
+//   --(39) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
 //   --end for;
-//   (27) plant.TIT := plant.T[6]
-//   (26) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
-//   (25) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
-//   (24) plant.TIP := plant.p[6]
-//   (23) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
-//   (22) plant.Ts := plant.Tfg[6]
-//   (21) Alias of 3
-//   (20) Alias of 2
-//   (19) Alias of 1
+//   (36) plant.TIT := plant.T[6]
+//   (35) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
+//   (34) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
+//   (33) plant.TIP := plant.p[6]
+//   (32) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
+//   (31) plant.Ts := plant.Tfg[6]
+//   (30) Alias of 3
+//   (29) Alias of 2
+//   (28) Alias of 1
 //
 // Initial Partition
 // -------------------
-//   (18) plant.T[1] := 300.0
-//   (17) plant.Tfg[1] := 800.0
-//   (16) plant.Ts := plant.Tsnom
-//   (15) plant.Tfg[6] := plant.Ts
-//   (14) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
-//   (13) Nonlinear System (size = 25, homotopy = true, mixed = false, torn = true)
+//   (27) plant.T[1] := 300.0
+//   (26) plant.Tfg[1] := 800.0
+//   (25) plant.Ts := plant.Tsnom
+//   (24) plant.Tfg[6] := plant.Ts
+//   (23) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
+//   (22) Nonlinear System (size = 25, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{plant.w, plant.wfg, plant.Tfg[2], plant.Tfg[3], plant.Tfg[4], plant.Tfg[5], plant.TIT, plant.TIP, plant.p[6], $FUN_1, ...}
 //   --(4) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
@@ -272,14 +275,36 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (44) Alias of 17
-//   (43) plant.Ts := plant.Tsnom
-//   (42) Alias of 15
-//   (41) plant.P := plant.Pnom * load
-//   (40) Alias of 18
-//   (39) Alias of 13
-//   (38) Alias of 3
-//   (37) Alias of 2
+//   (77) Alias of 26
+//   (76) Alias of 27
+//   (75) Nonlinear System (size = 28, homotopy = true, mixed = false, torn = true)
+//   --Iteration Vars:{plant.wfg, plant.w, plant.TIT, $FUN_1, plant.p[6], plant.TIP, plant.P, plant.T[2], plant.T[3], plant.T[4], ...}
+//   --(51) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
+//   --end for;
+//   --(52) 0 = plant.T[6] - plant.TIT
+//   --(53) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
+//   --(54) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
+//   --(55) 0 = plant.p[6] - plant.TIP
+//   --(56) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
+//   --(57) 0 = plant.Pnom * load - plant.P
+//   --(58) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
+//   --end for;
+//   --(59) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[$i1];
+//   --end for;
+//   --(60) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
+//   --end for;
+//   --(61) 0 = plant.Tfg[6] - plant.Ts
+//   --(62) 0 = plant.Tsnom - plant.Ts
+//   (50) Alias of 3
+//   (49) Alias of 2
 //
 // Event Partition
 // -----------------
@@ -291,45 +316,268 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //   (1) [SNGL]: {{$i1 | start:1, step:1, stop:5, size: 5}}
 // 	plant.G[$i1] = (0.2 * plant.NTU) * plant.w ^ 0.8
 //
+// =========================================================
+//   SimCode Jacobian INI_LS_JAC_1(idx = 0, partition = 0)
+// =========================================================
+//
+// SeedVars (size = 33)
+// **********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.w
+//   (1)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.wfg
+//   (2)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[1]
+//   (3)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[2]
+//   (4)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[3]
+//   (5)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[4]
+//   (6)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[5]
+//   (7)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[6]
+//   (8)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.TIT
+//   (9)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.TIP
+//   (10)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[1]
+//   (11)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[2]
+//   (12)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[3]
+//   (13)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[4]
+//   (14)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[5]
+//   (15)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[6]
+//   (16)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_1
+//   (17)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[1]
+//   (18)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[2]
+//   (19)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[3]
+//   (20)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[4]
+//   (21)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[5]
+//   (22)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[1]
+//   (23)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[2]
+//   (24)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[3]
+//   (25)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[4]
+//   (26)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[5]
+//   (27)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[6]
+//   (28)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[1]
+//   (29)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[2]
+//   (30)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[3]
+//   (31)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[4]
+//   (32)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[5]
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 25)
+// ************************
+//
+// Column Equations (size = 9)
+// -----------------------------
+//   (21) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := (plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1])) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (20) $pDER_ALG_LS_JAC_1.$RES_BND_20 := $SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT
+//   (19) $pDER_ALG_LS_JAC_1.$RES_SIM_6 := $SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))
+//   (18) $pDER_ALG_LS_JAC_1.$RES_BND_22 := $SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP
+//   (17) $pDER_ALG_LS_JAC_1.$RES_SIM_7 := (($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w
+//   (16) $pDER_ALG_LS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_ALG_LS_JAC_1.$FUN_1
+//   (15) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := (plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1])) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (14) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := ((0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (13) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w) - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_10 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_10[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.wfg, {}, false)}
+// $RES_BND_20 ... {$pDER_ALG_LS_JAC_1.$RES_BND_20} ... {($SEED_ALG_LS_JAC_1.plant.TIT, {}, false), ($SEED_ALG_LS_JAC_1.plant.T[6], {}, false)}
+// $RES_SIM_6 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_6} ... {($SEED_ALG_LS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false), ($SEED_ALG_LS_JAC_1.plant.TIT, {}, false)}
+// $RES_BND_22 ... {$pDER_ALG_LS_JAC_1.$RES_BND_22} ... {($SEED_ALG_LS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_LS_JAC_1.plant.p[6], {}, false)}
+// $RES_SIM_7 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_7} ... {($SEED_ALG_LS_JAC_1.plant.w, {}, false), ($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.plant.p[6], {}, false)}
+// $RES_AUX_24 ... {$pDER_ALG_LS_JAC_1.$RES_AUX_24} ... {($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.plant.TIT, {}, true)}
+// $RES_SIM_8 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_8[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_12 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_12[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
+// $RES_SIM_14 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_14[:]} ... {($SEED_ALG_LS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false)}
+//
+// ===========================================================
+//   SimCode Jacobian INI_0_LS_JAC_1(idx = 1, partition = 1)
+// ===========================================================
+//
+// SeedVars (size = 17)
+// **********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[1]
+//   (1)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[2]
+//   (2)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[3]
+//   (3)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[4]
+//   (4)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[5]
+//   (5)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[6]
+//   (6)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[1]
+//   (7)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[2]
+//   (8)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[3]
+//   (9)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[4]
+//   (10)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[5]
+//   (11)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[1]
+//   (12)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[2]
+//   (13)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[3]
+//   (14)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[4]
+//   (15)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[5]
+//   (16)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[6]
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 15)
+// ************************
+//
+// Column Equations (size = 3)
+// -----------------------------
+//   (42) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (41) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (40) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_12 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_12[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
+// $RES_SIM_8 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_8[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false)}
+// $RES_SIM_10 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_10[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false)}
+//
+// =========================================================
+//   SimCode Jacobian ALG_LS_JAC_1(idx = 2, partition = 2)
+// =========================================================
+//
+// SeedVars (size = 35)
+// **********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.wfg
+//   (1)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.w
+//   (2)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.TIT
+//   (3)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_1
+//   (4)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[1]
+//   (5)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[2]
+//   (6)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[3]
+//   (7)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[4]
+//   (8)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[5]
+//   (9)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.p[6]
+//   (10)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.TIP
+//   (11)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.P
+//   (12)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[1]
+//   (13)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[2]
+//   (14)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[3]
+//   (15)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[4]
+//   (16)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[5]
+//   (17)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.T[6]
+//   (18)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[1]
+//   (19)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[2]
+//   (20)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[3]
+//   (21)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[4]
+//   (22)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.G[5]
+//   (23)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[1]
+//   (24)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[2]
+//   (25)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[3]
+//   (26)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[4]
+//   (27)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Q[5]
+//   (28)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[1]
+//   (29)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[2]
+//   (30)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[3]
+//   (31)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[4]
+//   (32)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[5]
+//   (33)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Tfg[6]
+//   (34)[SEED] (1) Real $SEED_ALG_LS_JAC_1.plant.Ts
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 28)
+// ************************
+//
+// Column Equations (size = 12)
+// ------------------------------
+//   (74) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := (plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1])) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (73) $pDER_ALG_LS_JAC_1.$RES_BND_20 := $SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT
+//   (72) $pDER_ALG_LS_JAC_1.$RES_AUX_24 := (0.5 / (plant.TIT / plant.Tnom) ^ 0.5) * (($SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom) / plant.Tnom ^ 2.0) - $SEED_ALG_LS_JAC_1.$FUN_1
+//   (71) $pDER_ALG_LS_JAC_1.$RES_SIM_7 := (($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt) * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w
+//   (70) $pDER_ALG_LS_JAC_1.$RES_BND_22 := $SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP
+//   (69) $pDER_ALG_LS_JAC_1.$RES_SIM_6 := ($SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (((plant.gamma - 1.0) / plant.gamma) * (plant.TOP / plant.TIP) ^ ((-1.0) + (plant.gamma - 1.0) / plant.gamma) * ((plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP) / plant.TIP ^ 2.0))) - $SEED_ALG_LS_JAC_1.plant.P
+//   (68) $pDER_ALG_LS_JAC_1.$RES_SIM_5 := -$SEED_ALG_LS_JAC_1.plant.P
+//   (67) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := ((0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (66) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := (0.2 * plant.NTU) * (0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w) - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//   (65) Algorithm
+//   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := (plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1])) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//   (64) $pDER_ALG_LS_JAC_1.$RES_BND_21 := $SEED_ALG_LS_JAC_1.plant.Tfg[6] - $SEED_ALG_LS_JAC_1.plant.Ts
+//   (63) $pDER_ALG_LS_JAC_1.$RES_SIM_2 := -$SEED_ALG_LS_JAC_1.plant.Ts
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_10 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_10[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.wfg, {}, false)}
+// $RES_BND_20 ... {$pDER_ALG_LS_JAC_1.$RES_BND_20} ... {($SEED_ALG_LS_JAC_1.plant.TIT, {}, false), ($SEED_ALG_LS_JAC_1.plant.T[6], {}, false)}
+// $RES_AUX_24 ... {$pDER_ALG_LS_JAC_1.$RES_AUX_24} ... {($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.plant.TIT, {}, true)}
+// $RES_SIM_7 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_7} ... {($SEED_ALG_LS_JAC_1.plant.w, {}, false), ($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.plant.p[6], {}, false)}
+// $RES_BND_22 ... {$pDER_ALG_LS_JAC_1.$RES_BND_22} ... {($SEED_ALG_LS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_LS_JAC_1.plant.p[6], {}, false)}
+// $RES_SIM_6 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_6} ... {($SEED_ALG_LS_JAC_1.plant.P, {}, false), ($SEED_ALG_LS_JAC_1.plant.TIP, {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false), ($SEED_ALG_LS_JAC_1.plant.TIT, {}, false)}
+// $RES_SIM_5 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_5} ... {($SEED_ALG_LS_JAC_1.plant.P, {}, false)}
+// $RES_SIM_12 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_12[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1], {}, false)}
+// $RES_SIM_14 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_14[:]} ... {($SEED_ALG_LS_JAC_1.plant.G[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false)}
+// $RES_SIM_8 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_8[:]} ... {($SEED_ALG_LS_JAC_1.plant.Q[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.T[$i1], {}, false), ($SEED_ALG_LS_JAC_1.plant.w, {}, false)}
+// $RES_BND_21 ... {$pDER_ALG_LS_JAC_1.$RES_BND_21} ... {($SEED_ALG_LS_JAC_1.plant.Ts, {}, false), ($SEED_ALG_LS_JAC_1.plant.Tfg[6], {}, false)}
+// $RES_SIM_2 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_2} ... {($SEED_ALG_LS_JAC_1.plant.Ts, {}, false)}
+//
 // ======================================================
-//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+//   [EMPTY] SimCode Jacobian A(idx = 3, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+//   [EMPTY] SimCode Jacobian B(idx = 5, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+//   [EMPTY] SimCode Jacobian C(idx = 6, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+//   [EMPTY] SimCode Jacobian D(idx = 7, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+//   [EMPTY] SimCode Jacobian F(idx = 8, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+//   [EMPTY] SimCode Jacobian H(idx = 9, partition = 0)
 // ======================================================
 //
 // ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+//   [EMPTY] SimCode Jacobian ADJ(idx = 4, partition = 0)
 // ========================================================
 //
-// ============================================================
-//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
-// ============================================================
+// =============================================================
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 10, partition = 0)
+// =============================================================
+//
+// =============================================================
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 11, partition = 0)
+// =============================================================
 //
 // ============================================================
-//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 8, partition = 0)
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 12, partition = 0)
 // ============================================================
-//
-// ===========================================================
-//   [EMPTY] SimCode Jacobian OPT_R0(idx = 9, partition = 0)
-// ===========================================================
 //
 //
 //
@@ -341,14 +589,51 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // allEquations:
 // ========================================
 //
-// 44: alias of 17
-// 43: plant.Ts=plant.Tsnom [Real]
-// 42: alias of 15
-// 41: plant.P=plant.Pnom * load [Real]
-// 40: alias of 18
-// 39: alias of 13
-// 38: alias of 3
-// 37: alias of 2
+// 77: alias of 26
+// 76: alias of 27
+// 75:  (NONLINEAR) index:2 jacobian: true
+// crefs: plant.wfg , plant.w , plant.TIT , $FUN_1 , plant.p[6] , plant.TIP , plant.P , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6] , plant.Ts
+// 	51: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	52: plant.T[6] - plant.TIT (RESIDUAL)
+// 	53: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	54: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	55: plant.p[6] - plant.TIP (RESIDUAL)
+// 	56: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	57: plant.Pnom * load - plant.P (RESIDUAL)
+// 	58: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	59: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	60: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	61: plant.Tfg[6] - plant.Ts (RESIDUAL)
+// 	62: plant.Tsnom - plant.Ts (RESIDUAL)
+// 	Jacobian idx: 2
+// 	74:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	73: $pDER_ALG_LS_JAC_1.$RES_BND_20=$SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT [Real]
+// 	72: $pDER_ALG_LS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	71: $pDER_ALG_LS_JAC_1.$RES_SIM_7=($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w [Real]
+// 	70: $pDER_ALG_LS_JAC_1.$RES_BND_22=$SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP [Real]
+// 	69: $pDER_ALG_LS_JAC_1.$RES_SIM_6=$SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	68: $pDER_ALG_LS_JAC_1.$RES_SIM_5=-$SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	67:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	66:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+// 	65:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	64: $pDER_ALG_LS_JAC_1.$RES_BND_21=$SEED_ALG_LS_JAC_1.plant.Tfg[6] - $SEED_ALG_LS_JAC_1.plant.Ts [Real]
+// 	63: $pDER_ALG_LS_JAC_1.$RES_SIM_2=-$SEED_ALG_LS_JAC_1.plant.Ts [Real]
+//
+//
+// 50: alias of 3
+// 49: alias of 2
 // ========================================
 //
 //
@@ -361,14 +646,51 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 44: alias of 17
-// 43: plant.Ts=plant.Tsnom [Real]
-// 42: alias of 15
-// 41: plant.P=plant.Pnom * load [Real]
-// 40: alias of 18
-// 39: alias of 13
-// 38: alias of 3
-// 37: alias of 2
+// 77: alias of 26
+// 76: alias of 27
+// 75:  (NONLINEAR) index:2 jacobian: true
+// crefs: plant.wfg , plant.w , plant.TIT , $FUN_1 , plant.p[6] , plant.TIP , plant.P , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6] , plant.Ts
+// 	51: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	52: plant.T[6] - plant.TIT (RESIDUAL)
+// 	53: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	54: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	55: plant.p[6] - plant.TIP (RESIDUAL)
+// 	56: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	57: plant.Pnom * load - plant.P (RESIDUAL)
+// 	58: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	59: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	60: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	61: plant.Tfg[6] - plant.Ts (RESIDUAL)
+// 	62: plant.Tsnom - plant.Ts (RESIDUAL)
+// 	Jacobian idx: 2
+// 	74:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	73: $pDER_ALG_LS_JAC_1.$RES_BND_20=$SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT [Real]
+// 	72: $pDER_ALG_LS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	71: $pDER_ALG_LS_JAC_1.$RES_SIM_7=($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w [Real]
+// 	70: $pDER_ALG_LS_JAC_1.$RES_BND_22=$SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP [Real]
+// 	69: $pDER_ALG_LS_JAC_1.$RES_SIM_6=$SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	68: $pDER_ALG_LS_JAC_1.$RES_SIM_5=-$SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	67:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	66:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+// 	65:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	64: $pDER_ALG_LS_JAC_1.$RES_BND_21=$SEED_ALG_LS_JAC_1.plant.Tfg[6] - $SEED_ALG_LS_JAC_1.plant.Ts [Real]
+// 	63: $pDER_ALG_LS_JAC_1.$RES_SIM_2=-$SEED_ALG_LS_JAC_1.plant.Ts [Real]
+//
+//
+// 50: alias of 3
+// 49: alias of 2
 // ========================================
 //
 //
@@ -380,12 +702,12 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // initialEquations: (9)
 // ========================================
-// 18: plant.T[1]=300.0 [Real]
-// 17: plant.Tfg[1]=800.0 [Real]
-// 16: plant.Ts=plant.Tsnom [Real]
-// 15: plant.Tfg[6]=plant.Ts [Real]
-// 14: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
-// 13:  (NONLINEAR) index:0 jacobian: false
+// 27: plant.T[1]=300.0 [Real]
+// 26: plant.Tfg[1]=800.0 [Real]
+// 25: plant.Ts=plant.Tsnom [Real]
+// 24: plant.Tfg[6]=plant.Ts [Real]
+// 23: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
+// 22:  (NONLINEAR) index:0 jacobian: true
 // crefs: plant.w , plant.wfg , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.TIT , plant.TIP , plant.p[6] , $FUN_1 , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5]
 // 	4: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
 // 	5: plant.T[6] - plant.TIT (RESIDUAL)
@@ -396,6 +718,29 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // 	10: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
 // 	11: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
 // 	12: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	Jacobian idx: 0
+// 	21:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	20: $pDER_ALG_LS_JAC_1.$RES_BND_20=$SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT [Real]
+// 	19: $pDER_ALG_LS_JAC_1.$RES_SIM_6=$SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
+// 	18: $pDER_ALG_LS_JAC_1.$RES_BND_22=$SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP [Real]
+// 	17: $pDER_ALG_LS_JAC_1.$RES_SIM_7=($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w [Real]
+// 	16: $pDER_ALG_LS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	15:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	14:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	13:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+//
 //
 // 3:  (SES_RESIZABLE_ASSIGN)  call index: 0
 //
@@ -407,27 +752,41 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // initialEquations_lambda0: (15)
 // ========================================
-// 36: plant.w=1.0 [Real]
-// 35: plant.wfg=1.0 [Real]
-// 34: alias of 18
-// 33: alias of 17
-// 32:  (SES_RESIZABLE_ASSIGN)  call index: 1
+// 48: plant.w=1.0 [Real]
+// 47: plant.wfg=1.0 [Real]
+// 46: alias of 27
+// 45: alias of 26
+// 44:  (SES_RESIZABLE_ASSIGN)  call index: 1
 //
-// 31:  (NONLINEAR) index:1 jacobian: false
+// 43:  (NONLINEAR) index:1 jacobian: true
 // crefs: plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6]
-// 	28: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	29: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	30: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	37: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	38: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	39: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	Jacobian idx: 1
+// 	42:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
 //
-// 27: plant.TIT=plant.T[6] [Real]
-// 26: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
-// 25: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
-// 24: plant.TIP=plant.p[6] [Real]
-// 23: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
-// 22: plant.Ts=plant.Tfg[6] [Real]
-// 21: alias of 3
-// 20: alias of 2
-// 19: alias of 1
+// 	41:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	40:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+//
+//
+// 36: plant.TIT=plant.T[6] [Real]
+// 35: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
+// 34: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
+// 33: plant.TIP=plant.p[6] [Real]
+// 32: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
+// 31: plant.Ts=plant.Tfg[6] [Real]
+// 30: alias of 3
+// 29: alias of 2
+// 28: alias of 1
 //
 // removedInitialEquations:
 // ========================================
@@ -468,24 +827,87 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
+// 	21:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	20: $pDER_ALG_LS_JAC_1.$RES_BND_20=$SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT [Real]
+// 	19: $pDER_ALG_LS_JAC_1.$RES_SIM_6=$SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP / plant.TIP ^ 2.0 [Real]
+// 	18: $pDER_ALG_LS_JAC_1.$RES_BND_22=$SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP [Real]
+// 	17: $pDER_ALG_LS_JAC_1.$RES_SIM_7=($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w [Real]
+// 	16: $pDER_ALG_LS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	15:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	14:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	13:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+//
+// 	Jacobian idx: 1
+// 	42:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	41:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	40:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
 //
 // 	Jacobian idx: 2
+// 	74:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_10[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) + plant.cp * plant.wfg * ($SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1] - $SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1]) - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	73: $pDER_ALG_LS_JAC_1.$RES_BND_20=$SEED_ALG_LS_JAC_1.plant.T[6] - $SEED_ALG_LS_JAC_1.plant.TIT [Real]
+// 	72: $pDER_ALG_LS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_ALG_LS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	71: $pDER_ALG_LS_JAC_1.$RES_SIM_7=($SEED_ALG_LS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_ALG_LS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.w [Real]
+// 	70: $pDER_ALG_LS_JAC_1.$RES_BND_22=$SEED_ALG_LS_JAC_1.plant.p[6] - $SEED_ALG_LS_JAC_1.plant.TIP [Real]
+// 	69: $pDER_ALG_LS_JAC_1.$RES_SIM_6=$SEED_ALG_LS_JAC_1.plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) + plant.TIT * plant.cp * plant.w * (plant.gamma - 1.0) / plant.gamma * (plant.TOP / plant.TIP) ^ (-1.0 + (plant.gamma - 1.0) / plant.gamma) * plant.TOP * $SEED_ALG_LS_JAC_1.plant.TIP / plant.TIP ^ 2.0 - $SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	68: $pDER_ALG_LS_JAC_1.$RES_SIM_5=-$SEED_ALG_LS_JAC_1.plant.P [Real]
+// 	67:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_ALG_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_ALG_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_ALG_LS_JAC_1.plant.T[1 + $i1] + $SEED_ALG_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] + (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * $SEED_ALG_LS_JAC_1.plant.G[$i1] - $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	66:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_LS_JAC_1.plant.w - $SEED_ALG_LS_JAC_1.plant.G[$i1];
+//   end for;
+//
+// 	65:   for $i1 in 1:5 loop
+//     $pDER_ALG_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * $SEED_ALG_LS_JAC_1.plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.cp * plant.w * ($SEED_ALG_LS_JAC_1.plant.T[$i1] - $SEED_ALG_LS_JAC_1.plant.T[1 + $i1]) + $SEED_ALG_LS_JAC_1.plant.Q[$i1];
+//   end for;
+//
+// 	64: $pDER_ALG_LS_JAC_1.$RES_BND_21=$SEED_ALG_LS_JAC_1.plant.Tfg[6] - $SEED_ALG_LS_JAC_1.plant.Ts [Real]
+// 	63: $pDER_ALG_LS_JAC_1.$RES_SIM_2=-$SEED_ALG_LS_JAC_1.plant.Ts [Real]
 //
 // 	Jacobian idx: 3
-//
-// 	Jacobian idx: 4
 //
 // 	Jacobian idx: 5
 //
 // 	Jacobian idx: 6
-//
-// 	Jacobian idx: 1
 //
 // 	Jacobian idx: 7
 //
 // 	Jacobian idx: 8
 //
 // 	Jacobian idx: 9
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 10
+//
+// 	Jacobian idx: 11
+//
+// 	Jacobian idx: 12
 //
 //
 // modelInfo:
@@ -553,10 +975,198 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // 	functionArguments:
 // 	variableDeclarations: isInitialLambda0 (Boolean, )  ,
 // record SimulationResult
-//     resultFile = "TestInversePlant.BackwardOffDesignHomotopy_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestInversePlant.BackwardOffDesignHomotopy', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+//     messages = "Simulation execution failed for model: TestInversePlant.BackwardOffDesignHomotopy
+// LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_STDOUT        | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00101919)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -1.87452 should be >= 0
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.400557 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.94433e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000297471)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00340673)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000585541)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00101919)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.112091)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.00057906)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.0638838)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
+// LOG_ASSERT        | debug   | Solving non-linear system 22 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | error   | Failed to solve the initialization problem with global homotopy with equidistant step size.
+// LOG_ASSERT        | debug   | Unable to solve initialization problem.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// double free or corruption (!prev)
+// Aborted (core dumped)
 // "
 // end SimulationResult;
 // ""

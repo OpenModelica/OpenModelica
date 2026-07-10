@@ -1,6 +1,6 @@
 // keywords: fmu export
 // status: correct
-// teardown_command: rm -rf fmiprotected.lua fmiprotected_res.mat fmi_attributes_12.fmu fmiprotected_fmi_attributes_12.log fmi_attributes_12_info fmiprotected_systemCall.log temp-fmiprotected/
+// teardown_command: rm -rf fmiprotected.py fmiprotected_res.mat fmi_attributes_12.fmu fmiprotected_fmi_attributes_12.log fmi_attributes_12_info fmiprotected_systemCall.log temp-fmiprotected/
 
 loadString("
 model fmi_attributes_12
@@ -26,24 +26,25 @@ end fmi_attributes_12;
 setCommandLineOptions("--fmiFilter=protected"); getErrorString();
 buildModelFMU(fmi_attributes_12, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
-writeFile("fmiprotected.lua", "
-oms_setTempDirectory(\"./temp-fmiprotected/\")
+writeFile("fmiprotected.py", "
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"fmiprotected\")
-oms_addSystem(\"fmiprotected.root\", oms_system_sc)
-oms_addSubModel(\"fmiprotected.root.fmi_attributes_12\", \"fmi_attributes_12.fmu\")
+Settings.suppressPath = True
 
-oms_instantiate(\"fmiprotected\")
+model = SSP()
+model.addResource('fmi_attributes_12.fmu', new_name='resources/fmi_attributes_12.fmu')
+model.addComponent(CRef('default', 'fmi_attributes_12'), 'resources/fmi_attributes_12.fmu')
 
-oms_initialize(\"fmiprotected\")
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('fmiprotected_res.mat')
 
-oms_simulate(\"fmiprotected\")
-
-oms_terminate(\"fmiprotected\")
-oms_delete(\"fmiprotected\")
+instantiated_model.initialize()
+instantiated_model.simulate()
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiprotected.lua", "fmiprotected_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmiprotected.py", "fmiprotected_systemCall.log");
 readFile("fmiprotected_systemCall.log");
 
 // Result:
@@ -56,10 +57,6 @@ readFile("fmiprotected_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'fmiprotected.root': 0.001000
-// info:    Result file: fmiprotected_res.mat (bufferSize=10)
-// info:    Final Statistics for 'fmiprotected.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "info:    Result file: fmiprotected_res.mat (bufferSize=10)
 // "
 // endResult

@@ -1,5 +1,6 @@
 def common
 def shouldWeBuildUCRT
+def shouldWeBuildAlpine_value
 def shouldWeBuildEnterpriseLinux_value
 def shouldWeBuildFedora_value
 def shouldWeDisableAllCMakeBuilds_value
@@ -18,6 +19,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
+    booleanParam(name: 'BUILD_ALPINE', defaultValue: false, description: 'Build with Alpine (musl libc) using CMake')
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
@@ -48,6 +50,8 @@ pipeline {
           print "isPR: ${isPR}"
           shouldWeBuildUCRT = common.shouldWeBuildUCRT()
           print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
+          shouldWeBuildAlpine_value = common.shouldWeBuildAlpine()
+          print "shouldWeBuildAlpine: ${shouldWeBuildAlpine_value}"
           shouldWeBuildEnterpriseLinux_value = common.shouldWeBuildEnterpriseLinux()
           print "shouldWeBuildEnterpriseLinux: ${shouldWeBuildEnterpriseLinux_value}"
           shouldWeBuildFedora_value = common.shouldWeBuildFedora()
@@ -214,6 +218,36 @@ pipeline {
                                       )
                 sh "build/bin/omc --version"
               }
+            }
+          }
+        }
+        stage('cmake-alpine-clang') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:alpine-3.24'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeBuildAlpine_value }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build"
+                                        + " -DCMAKE_C_COMPILER=clang"
+                                        + " -DCMAKE_CXX_COMPILER=clang++")
             }
           }
         }

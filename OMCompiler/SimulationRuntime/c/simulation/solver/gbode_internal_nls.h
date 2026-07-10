@@ -28,6 +28,8 @@
 #ifndef GBODE_INTERNAL_NLS_H
 #define GBODE_INTERNAL_NLS_H
 
+#include "gbode_tableau.h"
+
 #include "simulation_data.h"
 #include "nonlinearSystem.h"
 
@@ -36,14 +38,6 @@ extern "C" {
 #endif
 
 typedef struct DATA_GBODE DATA_GBODE;
-
-typedef struct Tolerances
-{
-    double atol;
-    double rtol;
-} Tolerances;
-
-Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr);
 
 void gbInternalScheduleFastStatesUpdate(void *nls_ptr);
 
@@ -66,14 +60,12 @@ void gbInternalContractiveDefect(DATA *data,
                                  threadData_t *threadData,
                                  NONLINEAR_SYSTEM_DATA *nonlinsys,
                                  DATA_GBODE *gbData,
+                                 CONTRACTIVE_DEFECT *contractive,
                                  double *err);
 
-void gbInternalContractiveFilter(DATA *data,
-                                 threadData_t *threadData,
-                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
-                                 DATA_GBODE *gbData,
-                                 double *y,
-                                 double *yt);
+void gbInternalContractiveFilterError(NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                      DATA_GBODE *gbData,
+                                      double *err);
 
 void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     int active_stage,

@@ -1035,7 +1035,8 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/home/index.html ${_web_dir}/home/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/simulator
         COMMAND ${CMAKE_COMMAND} -E copy
-                ${RUST_OMC_DIR}/wasm/simulator/index.html ${_web_dir}/simulator/
+                ${RUST_OMC_DIR}/wasm/simulator/index.html
+                ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()

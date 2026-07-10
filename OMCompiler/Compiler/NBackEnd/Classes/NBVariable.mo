@@ -685,6 +685,7 @@ function isJacobianResultVar
     end match;
   end isJacobianResultVarPDer;
 
+
   function isDummyState
     extends checkVar;
   algorithm
@@ -979,12 +980,12 @@ function isJacobianResultVar
     // FIXME use VariableAttributes.isFixed()?
     b := match var.backendinfo.attributes
       local
-        Expression fixed;
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(fixed);
+        Binding fixed;
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
       else false;
     end match;
   end isFixed;
@@ -1203,6 +1204,19 @@ function isJacobianResultVar
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
     Pointer.update(varPointer, var);
   end setStateDerivativeVar;
+
+  function setStateDerKind
+    "Updates a variable pointer to STATE_DER kind, linking it to its state.
+    Used when an existing frontend derivative variable is promoted to STATE_DER."
+    input Pointer<Variable> varPointer;
+    input Pointer<Variable> statePointer;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
+    Pointer.update(varPointer, var);
+  end setStateDerKind;
 
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.

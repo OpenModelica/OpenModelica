@@ -803,6 +803,15 @@ def shouldWeBuildUCRT() {
   return params.BUILD_MSYS2_UCRT64
 }
 
+def shouldWeBuildAlpine() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Alpine")) {
+      return true
+    }
+  }
+  return params.BUILD_ALPINE
+}
+
 def shouldWeBuildEnterpriseLinux() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build Enterprise Linux")) {
@@ -820,7 +829,6 @@ def shouldWeBuildFedora() {
   }
   return params.BUILD_FEDORA
 }
-
 
 def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {

@@ -1,7 +1,7 @@
 // name:  testDirectionalDerivatives
 // keywords: FMI 2.0 fmi2GetDirectionalDerivative OMSimulator
 // status: correct
-// teardown_command: rm -rf temp_testDirectionalDerivatives/ test_res.mat directionalDerivatives.csv directionalDerivatives.lua directionalDerivatives_systemCall.log Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu Modelica_Electrical_Analog_Examples_CauerLowPassAnalog.log
+// teardown_command: rm -rf temp_testDirectionalDerivatives/ test_res.mat directionalDerivatives.csv directionalDerivatives.py directionalDerivatives.ssp directionalDerivatives_systemCall.log Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu Modelica_Electrical_Analog_Examples_CauerLowPassAnalog.log
 //
 // Test initialization, simulation with fmi2GetDirectionalDerivative and deinitialization of FMU with OMSimulator
 
@@ -17,31 +17,34 @@ getErrorString();
 
 // Simulate with OMSimulator
 
-writeFile("directionalDerivatives.lua","
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp_testDirectionalDerivatives/\")
+writeFile("directionalDerivatives.py","
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"test\")
-oms_addSystem(\"test.root\", oms_system_sc)
-oms_addSubModel(\"test.root.system1\", \"Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu\")
+Settings.suppressPath = True
 
-oms_setResultFile(\"test\", \"directionalDerivatives.csv\")
+model = SSP()
+model.addResource('Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu', new_name='resources/Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu')
+model.addComponent(CRef('default', 'system1'), 'resources/Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu')
 
-oms_instantiate(\"test\")
+model.export('directionalDerivatives.ssp')
 
-oms_initialize(\"test\")
-print(\"info:    Initialization\")
-print(\"info:    system1.C1.v: \" .. oms_getReal(\"test.root.system1.C1.v\"))
+model2 = SSP('directionalDerivatives.ssp')
+instantiated_model = model2.instantiate()
+instantiated_model.setResultFile('directionalDerivatives.csv')
 
-oms_simulate(\"test\")
-print(\"info:    Simulation\")
-print(\"info:    system1.C1.v: \" .. oms_getReal(\"test.root.system1.C1.v\"))
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:    system1.C1.v: {instantiated_model.getValue(CRef('default', 'system1', 'C1.v'))}\")
 
-oms_terminate(\"test\");
-oms_delete(\"test\");
+instantiated_model.simulate()
+print(f\"info:    Simulation\")
+print(f\"info:    system1.C1.v: {instantiated_model.getValue(CRef('default', 'system1', 'C1.v'))}\")
+
+instantiated_model.terminate();
+instantiated_model.delete();
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator directionalDerivatives.lua", "directionalDerivatives_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 directionalDerivatives.py", "directionalDerivatives_systemCall.log");
 readFile("directionalDerivatives_systemCall.log");
 
 
@@ -55,14 +58,10 @@ readFile("directionalDerivatives_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.001000
-// info:    Result file: directionalDerivatives.csv (bufferSize=1)
+// "info:    Result file: directionalDerivatives.csv (bufferSize=10)
 // info:    Initialization
 // info:    system1.C1.v: 0.0
 // info:    Simulation
 // info:    system1.C1.v: 0.0
-// info:    Final Statistics for 'test.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

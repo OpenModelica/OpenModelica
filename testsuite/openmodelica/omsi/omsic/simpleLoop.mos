@@ -59,9 +59,15 @@ compareSimulationResults("simpleLoop_OMS_res.mat",
 // ""
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
+// "info:    *** FMU Simulation Info ***
+//           - model:     simpleLoop (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'simpleLoop.root': 0.002000
 // info:    Result file: simpleLoop_OMS_res.mat (bufferSize=1)
-// info:    Final Statistics for 'model.root':
+// info:    Final Statistics for 'simpleLoop.root':
 //          NumSteps = 502 NumRhsEvals  = 505 NumLinSolvSetups = 27
 //          NumNonlinSolvIters = 504 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

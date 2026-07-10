@@ -1194,10 +1194,24 @@ protected
     input Boolean createEqn;
   protected
     Boolean failed = true;
+    Expression original_exp;
   algorithm
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(exp) then
+      original_exp := exp;
       (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, eqn, funcMap, createEqn);
+      // SINGLE time events from RELATION expressions (e.g. time > 0.5) must also register a
+      // StateEvent (zero-crossing) so that root-finding solvers like IDA can detect the
+      // discontinuity via IDARootInit.  The old backend always generated both a TimeEvent
+      // and a zero-crossing for such relations; replicate that behaviour here.
+      if not failed then
+        _ := match original_exp
+          case Expression.RELATION() algorithm
+            (_, bucket) := StateEvent.create(original_exp, bucket, iter, eqn, createEqn);
+          then ();
+          else ();
+        end match;
+      end if;
     else
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createEqn);
     end if;
