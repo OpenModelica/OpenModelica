@@ -1251,6 +1251,20 @@ public function launchParallelTasks "Takes a list of inputs and produces a list 
 external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
 end launchParallelTasks;
 
+public function launchParallelTasksThreaded "Like launchParallelTasks, but only for call sites whose task input/output are safe to move across OS threads. In the classic runtime this is an alias for launchParallelTasks; the Rust port uses it to opt a call site into real (rayon) threading."
+  input Integer numThreads;
+  input list<AnyInput> inData;
+  input ForkFunction func;
+  output list<AnyOutput> result;
+  partial function ForkFunction
+    input AnyInput inData;
+    output AnyOutput outData;
+  end ForkFunction;
+  replaceable type AnyInput subtypeof Any;
+  replaceable type AnyOutput subtypeof Any;
+external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
+end launchParallelTasksThreaded;
+
 public function exit "Exits the compiler at this point with the given exit status."
   input Integer status;
 external "C" exit(status) annotation(Include = "#include <stdlib.h>");

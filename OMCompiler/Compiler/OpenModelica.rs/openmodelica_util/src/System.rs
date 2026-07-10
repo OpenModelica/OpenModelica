@@ -2372,6 +2372,78 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
     Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
 }
 
+// A process-wide pool, sized on first use to the requested thread count and
+// reused across calls — rebuilding one per call would churn OS threads. The
+// count is stable in practice (min(8, numProcs)).
+#[cfg(not(target_arch = "wasm32"))]
+fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
+    use std::sync::OnceLock;
+    static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
+    POOL.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(n).build().ok())
+        .as_ref()
+}
+
+// Real-threaded map, opted into per call site. The `Send` bounds reject the
+// non-`Send` payloads the other `launchParallelTasks` sites carry.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+    numThreads: i32,
+    inData: Arc<List<AnyInput>>,
+    func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
+) -> Result<Arc<List<AnyOutput>>> {
+    use rayon::prelude::*;
+
+    let items: Vec<AnyInput> = (&*inData).into_iter().cloned().collect();
+    if numThreads <= 1 || items.len() < 2 {
+        let results: Result<Vec<AnyOutput>> = items.into_iter().map(|x| func(x)).collect();
+        return Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()));
+    }
+
+    struct SendSync<T>(T);
+    // SAFETY: the func is always a zero-capture top-level `fnptr!` (already
+    // `Send + Sync`); this re-attaches the marker the `Arc<dyn Fn>` cast drops.
+    unsafe impl<T> Send for SendSync<T> {}
+    unsafe impl<T> Sync for SendSync<T> {}
+
+    struct MergeGuard;
+    impl Drop for MergeGuard {
+        fn drop(&mut self) {
+            openmodelica_error::ErrorExt::end_parallel_merge();
+        }
+    }
+
+    let n = (numThreads as usize).min(items.len());
+    let func = SendSync(func);
+    openmodelica_error::ErrorExt::begin_parallel_merge();
+    let _guard = MergeGuard;
+    let results: Vec<Result<AnyOutput>> = match parallel_pool(n) {
+        // `let f = &func` captures the whole SendSync wrapper, not the bare
+        // `func.0` field (disjoint capture drops the Send + Sync markers).
+        Some(pool) => pool.install(|| {
+            items.into_par_iter().map(|x| { let f = &func; (f.0)(x) }).collect()
+        }),
+        None => items.into_iter().map(|x| (func.0)(x)).collect(),
+    };
+
+    let mut out = Vec::with_capacity(results.len());
+    for r in results {
+        out.push(r?);
+    }
+    Ok(Arc::new(out.into_iter().collect::<List<AnyOutput>>()))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+    _numThreads: i32,
+    inData: Arc<List<AnyInput>>,
+    func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
+) -> Result<Arc<List<AnyOutput>>> {
+    // wasm32-unknown-unknown has no OS threads; run serially.
+    let results: Result<Vec<AnyOutput>> =
+        (&*inData).into_iter().map(|x| func(x.clone())).collect();
+    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+}
+
 pub fn exit(status: i32) -> Result<()> {
     std::process::exit(status);
 }

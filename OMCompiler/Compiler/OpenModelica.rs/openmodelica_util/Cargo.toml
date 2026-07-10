@@ -32,6 +32,8 @@ nalgebra = { version = "0.33", default-features = false, features = ["std"], opt
 # feature-off fallback that reports the interactive ZMQ mode unavailable).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 zmq = { workspace = true, optional = true }
+# System::launchParallelTasksThreaded; absent on wasm32 (no OS threads).
+rayon.workspace = true
 
 # Lapack_nalgebra.rs implements the LAPACK builtins over nalgebra's pure-Rust
 # decompositions (LU/SVD/QR/eigen). Used unconditionally where there is no
