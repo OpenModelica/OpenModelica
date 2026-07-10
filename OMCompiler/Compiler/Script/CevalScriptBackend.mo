@@ -3748,6 +3748,10 @@ algorithm
     case (_, _)
       guard Error.getNumErrorMessages() == numError
       algorithm
+        // A user cancel unwinds with its message rolled back by the failed
+        // speculation above; re-emit it here (the accepted branch) so it is not
+        // masked by the generic "no error message" below.
+        Error.checkCancel();
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Instantiation of " + AbsynUtil.pathString(className) + " failed with no error message."});
         FlagsUtil.set(Flags.SCODE_INST, nf_inst_actual);

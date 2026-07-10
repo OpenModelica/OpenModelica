@@ -7642,6 +7642,7 @@ algorithm
 
   execStat("pre-optimization done (n="+String(daeSize(dae))+")");
   // transformation phase (matching and sorting using index reduction method)
+  Error.checkCancel();
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   execStat("matching and sorting (n="+String(daeSize(dae))+")");
 
@@ -7662,9 +7663,11 @@ algorithm
   end if;
 
   //generate Jacobian for StateSets for initial state selection
+  Error.checkCancel();
   dae := SymbolicJacobian.calculateStateSetsJacobians(dae);
 
   // generate system for initialization
+  Error.checkCancel();
   (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(outInitDAE);
@@ -7734,6 +7737,9 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+  // A user cancel unwinds through this checkpoint like a failure; report it as
+  // such (after the rollback, so the message survives) rather than as overflow.
+  Error.checkCancel();
   Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
@@ -7766,6 +7772,7 @@ protected
 algorithm
   execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
+    Error.checkCancel();
     (optModule, moduleStr) := preOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
@@ -8017,6 +8024,7 @@ protected
 algorithm
   execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
+    Error.checkCancel();
     (optModule, moduleStr) := postOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
