@@ -710,8 +710,9 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
   if (!csr) {
     /* Fallback: trivial one-column-per-color coloring. */
-    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
-    sp->maxColors = nCols;
+    sp->nColors = nCols;
+    for (unsigned int c = 0; c < sp->nColors + 1; c++) sp->color_leadindex[c] = c;
+    for (unsigned int c = 0; c < nCols; c++) sp->color_index[c] = c;
     return;
   }
 
@@ -724,12 +725,14 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   if (!forbidden || !setColors) {
     free(forbidden); free(setColors);
     freeSparsePattern(csr);
-    for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
-    sp->maxColors = nCols;
+    sp->nColors = nCols;
+    for (unsigned int c = 0; c < sp->nColors + 1; c++) sp->color_leadindex[c] = c;
+    for (unsigned int c = 0; c < nCols; c++) sp->color_index[c] = c;
     return;
   }
 
   unsigned int maxColor = 0;
+  unsigned int* colorCols  = (unsigned int*)  malloc(nCols * sizeof(unsigned int));
 
   for (unsigned int c = 0; c < nCols; c++) {
     unsigned int nSet = 0;
@@ -741,7 +744,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
       for (unsigned int nz2 = csr->leadindex[row]; nz2 < csr->leadindex[row + 1]; nz2++) {
         const unsigned int c2 = csr->index[nz2];
         if (c2 < c) {
-          const unsigned int used = sp->colorCols[c2];
+          const unsigned int used = colorCols[c2];
           if (used > 0 && used <= nCols && !forbidden[used]) {
             forbidden[used] = 1;
             setColors[nSet++] = used;
@@ -753,15 +756,26 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
     /* Smallest color not forbidden. */
     unsigned int color = 1;
     while (color <= nCols && forbidden[color]) color++;
-    sp->colorCols[c] = color;
+    colorCols[c] = color;
     if (color > maxColor) maxColor = color;
 
     /* Reset forbidden markers for next iteration. */
     for (unsigned int k = 0; k < nSet; k++) forbidden[setColors[k]] = 0;
   }
 
-  sp->maxColors = maxColor;
+  sp->nColors = maxColor;
+  // Convert to coloring storage
+  unsigned int i = 0;
+  for (size_t color = 0; color < sp->nColors; ++color) {
+    sp->color_leadindex[color] = i;
+    for (size_t col = 0; col < nCols; ++col) {
+      if (colorCols[col] - 1 == color) {
+        sp->color_index[i++] = col;
+      }
+    }
+  }
 
+  free(colorCols);
   free(setColors);
   free(forbidden);
   freeSparsePattern(csr);
