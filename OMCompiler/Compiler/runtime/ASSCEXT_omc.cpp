@@ -47,8 +47,6 @@
 #include "ASSCEXT.cpp"
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include "errorext.h"
 
 #ifdef __cplusplus
@@ -88,41 +86,6 @@ void ASSC_setMatrixDebug(int* dense, int nv_, int ne_){
   ne = ne_;
   nv = nv_;
   nnz = nnz_;
-}
-
-// function to shuffle array
-void randperm(int *array, int n) {
-  if (n > 1) {
-    for (int i = 0; i < n - 1; i++) {
-      // j is random index such that i <= j < n
-      int j = i + rand() / (RAND_MAX / (n - i) + 1);
-
-      // swap array[i] and array[j]
-      int temp = array[j];
-      array[j] = array[i];
-      array[i] = temp;
-    }
-  }
-}
-
-int main() {
-int n = 10;
-int arr[10];
-
-// initialize array with 0 to n-1
-for(int i = 0; i < n; i++) arr[i] = i;
-
-// seed the random number generator
-srand(time(NULL));
-
-// generate permutation
-randperm(arr, n);
-
-// print result
-for(int i = 0; i < n; i++) printf("%d ", arr[i]);
-printf("\n");
-
-return 0;
 }
 
 extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype adj, modelica_metatype val)

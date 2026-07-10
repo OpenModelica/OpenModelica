@@ -75,15 +75,17 @@ ASSC_OPERATION* save_operation;
 
 void* allocAsscElement(const void* data)
 {
+  (void)data;
   void* new_element = malloc(sizeof(ASSC_ELEMENT));
-  assertStreamPrint(NULL, new_element != NULL, "ASSC_ELEMENT out of memory.");
+  assert(new_element != NULL);
   return new_element;
 };
 
 void* allocAsscOperation(const void* data)
 {
+  (void)data;
   void* new_element = malloc(sizeof(ASSC_OPERATION));
-  assertStreamPrint(NULL, new_element != NULL, "ASSC_OPERATION out of memory.");
+  assert(new_element != NULL);
   return new_element;
 };
 
@@ -253,9 +255,7 @@ void bareiss()
   LIST_NODE* next_elem_update_row_node;
   ASSC_ELEMENT* next_elem_update_row;
   int n = min(ne,nv);
-  int no_prev_pivot;
   int pivot_ind;
-  int val;
   int new_val;
   int shift = 0;
   DEBUG_PRINT("mapping ");
