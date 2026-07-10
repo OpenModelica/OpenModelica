@@ -260,6 +260,7 @@ wasm/omc-cli.js
 wasm/home/index.html
 wasm/omc-terminal/index.html
 wasm/simulator/index.html
+wasm/simulator/omc-worker.js
 wasm/icons/om.svg
 wasm/icons/omshell.svg
 wasm/icons/omnotebook.svg

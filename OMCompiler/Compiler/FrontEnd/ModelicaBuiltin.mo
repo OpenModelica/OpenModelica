@@ -5630,7 +5630,7 @@ annotation(preferredView="text",Documentation(info="<html>
 end reverseLookup;
 
 // OMSimulator API calls
-type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
+type oms_system = enumeration(oms_system_none, oms_system_wc, oms_system_sc, oms_system_sc3) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
 type oms_signal_type = enumeration (oms_signal_type_real,
   oms_signal_type_integer,

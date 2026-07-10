@@ -3068,16 +3068,6 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/commandLineOptions", commandLineOptions);
   }
-  // first clear all the command line options and then set the new
-  OMSProxy::instance()->setCommandLineOption("--clearAllOptions");
-  OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
-  // set working directory
-  const QString workingDirectory = mpGeneralSettingsPage->getWorkingDirectory();
-  if (workingDirectory.isEmpty()) {
-    OMSProxy::instance()->setWorkingDirectory(OptionsDefaults::GeneralSettings::workingDirectory);
-  } else {
-    OMSProxy::instance()->setWorkingDirectory(workingDirectory);
-  }
   // set logging level
   int loggingLevel = mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
   if (loggingLevel == OptionsDefaults::OMSimulator::loggingLevel) {
@@ -3085,7 +3075,8 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
   }
-  OMSProxy::instance()->setLoggingLevel(loggingLevel);
+  // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
+  // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
 }
 
 /*!

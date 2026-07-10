@@ -21,34 +21,6 @@ buildModel(numericJacobianRows); getErrorString();
 // ""
 // true
 // ""
-// =============================
-//   Sparsity Pattern (nnz: 1)
-// =============================
-//
-// ### Seeds (col vars) ###
-// --------------------------
-// {x}
-//
-// ### Partials (row vars) ###
-// -----------------------------
-// {$DER.x}
-//
-// ### Columns ###
-// -----------------
-// (x)	 affects:	{$DER.x}
-//
-// ##### Rows #####
-// ------------------
-// ($DER.x)	 depends on:	{x}
-//
-// =====================
-//   Sparsity Coloring
-// =====================
-// Column Color (1)
-//   - Column: {x}
-// Row Color (1)
-//   - Row:    {$DER.x}
-//
 // {"numericJacobianRows", "numericJacobianRows_init.xml"}
 // ""
 // endResult

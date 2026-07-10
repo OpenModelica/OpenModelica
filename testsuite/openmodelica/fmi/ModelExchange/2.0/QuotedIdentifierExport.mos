@@ -165,9 +165,15 @@ readFile("QuotedIdentifier_me_systemCall.log");
 // "
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
+// "info:    *** FMU Simulation Info ***
+//           - model:     QuotedIdentifier (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'QuotedIdentifier.root': 0.002000
 // info:    Result file: QuotedIdentifier_dynamic_res.mat (bufferSize=1)
-// info:    Final Statistics for 'model.root':
+// info:    Final Statistics for 'QuotedIdentifier.root':
 //          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
 //          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

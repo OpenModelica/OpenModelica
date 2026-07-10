@@ -1570,8 +1570,11 @@ algorithm
       algorithm
         p := SymbolTable.getAbsyn();
         absynClass := ProgramUtil.getPathedClassInProgram(classpath, p);
-        p := copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
-        SymbolTable.setAbsyn(p);
+        within_ := InteractiveUtil.parseWithinPath(path);
+        p := copyClass(absynClass, name, within_, classpath, p);
+        absynClass := ProgramUtil.getPathedClassInProgram(
+          match within_ case Absyn.WITHIN() then ProgramUtil.joinPaths(name, within_.path); else Absyn.IDENT(name); end match, p);
+        SymbolTable.setAbsynLoaded(p, Absyn.PROGRAM({absynClass}, within_));
       then
         Values.BOOL(true);
 
@@ -2723,7 +2726,11 @@ algorithm
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
         (p, b) := InteractiveUtil.setElementModifier(classpath, path, mod, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        if b then
+          SymbolTable.setAbsynClass(p, ProgramUtil.getPathedClassInProgram(classpath, p), classpath);
+        else
+          SymbolTable.setAbsyn(p);
+        end if;
       then
         Values.BOOL(b);
 
@@ -3325,7 +3332,7 @@ algorithm
     case ("deleteClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (b, p) := Interactive.deleteClass(classpath, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynDeleted(p, classpath);
       then
         ValuesMake.makeBoolean(b);
 

@@ -364,8 +364,6 @@ pub extern "C" fn rt_solve_nls(
     hist_addr: u32,
     time: f64,
     rel_fresh_addr: u32,
-    relations_addr: u32,
-    n_relations: u32,
 ) -> i32 {
     let n = n as usize;
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -423,62 +421,36 @@ pub extern "C" fn rt_solve_nls(
         }
     }
 
-    // Held snapshot of the indexed relations, for the event-iteration fixpoint.
-    let n_rel = n_relations as usize;
-    let snapshot = || -> alloc::vec::Vec<u32> {
-        let mut v = vec![0u32; n_rel];
-        for (i, s) in v.iter_mut().enumerate() {
-            *s = unsafe { load_u32(relations_addr + (i * 4) as u32) };
-        }
-        v
-    };
-
     let mut scratch = vec![0.0f64; n];
     let mut x = guess.clone();
-    let mut converged;
-    let mut first = true;
-    const MAX_MIXED_ITER: i32 = 20;
-    let mut mixed_iter = 0;
-    loop {
-        if saved_rel_fresh != 2 {
-            unsafe { store_u32(rel_fresh_addr, 0) }; // hold relations across Newton
-        }
+    // At an event, refresh the inner relations at the guess before the held solve so
+    // a branch switch reaches `relations[]` for the driver's event loop.
+    if saved_rel_fresh == 1 {
+        unsafe { store_u32(rel_fresh_addr, 1) };
+        eval(&x, &mut scratch);
+    }
+    // Hold relations while Newton varies the unknowns (fresh at init, mode 2).
+    if saved_rel_fresh != 2 {
+        unsafe { store_u32(rel_fresh_addr, 0) };
+    }
+    let mut converged = newton_solve(n, &mut x, &mut eval);
+    if !converged {
+        // Second start value, then a trust-region globaliser from each start.
+        x.copy_from_slice(&warm);
         converged = newton_solve(n, &mut x, &mut eval);
-        if !converged && first {
-            // Second start value: the plain warm start.
-            x.copy_from_slice(&warm);
-            converged = newton_solve(n, &mut x, &mut eval);
-            // Trust-region globaliser (C's hybrd/homotopy analogue) when Newton
-            // stalls from both guesses.
-            if !converged {
-                x.copy_from_slice(&guess);
-                converged = lm_solve(n, &mut x, &mut eval);
-            }
-            if !converged {
-                x.copy_from_slice(&warm);
-                converged = lm_solve(n, &mut x, &mut eval);
-            }
-        }
-        first = false;
         if !converged {
-            break;
+            x.copy_from_slice(&guess);
+            converged = lm_solve(n, &mut x, &mut eval);
         }
-        if saved_rel_fresh == 1 {
-            // Event: re-evaluate the discrete relations fresh at the solution; a
-            // threshold crossing flips them, so re-solve the new branch until stable.
-            let before = snapshot();
-            unsafe { store_u32(rel_fresh_addr, 1) };
-            eval(&x, &mut scratch);
-            mixed_iter += 1;
-            if snapshot() == before || mixed_iter >= MAX_MIXED_ITER {
-                break;
-            }
-        } else {
-            // Continuous (held) / init (fresh): one final eval leaves slots + torn
-            // variables consistent at the solution.
-            eval(&x, &mut scratch);
-            break;
+        if !converged {
+            x.copy_from_slice(&warm);
+            converged = lm_solve(n, &mut x, &mut eval);
         }
+    }
+    if converged {
+        // Leave the slots + torn variables at the solution (held/init mode, so an
+        // event keeps the fresh-at-guess relations).
+        eval(&x, &mut scratch);
     }
 
     let ret = if converged {

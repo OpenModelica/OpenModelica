@@ -711,7 +711,7 @@ algorithm
       list<Values.Value> vals, cvars;
       Absyn.Path path,classpath,className,parentClass;
       SCode.Program sp;
-      Absyn.Program p,newp;
+      Absyn.Program p,newp,parsed;
       list<Absyn.Program> newps;
       DAE.Type ty;
       list<DAE.Type> tys;
@@ -1478,10 +1478,10 @@ algorithm
     case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
-        newp := Parser.parsestring(str,name);
-        newp := checkUsesAndUpdateProgram(newp, SymbolTable.getAbsyn(), b,
+        parsed := Parser.parsestring(str,name);
+        newp := checkUsesAndUpdateProgram(parsed, SymbolTable.getAbsyn(), b,
           Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, mergeAST);
-        SymbolTable.setAbsyn(newp);
+        SymbolTable.setAbsynLoaded(newp, parsed);
         outCache := FCore.emptyCache();
       then
         Values.BOOL(true);

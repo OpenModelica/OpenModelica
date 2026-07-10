@@ -49,7 +49,6 @@ public
   import Events = NBEvents;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
-  import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
   import NBPartition;
@@ -82,6 +81,7 @@ protected
   import Variable = NFVariable;
 
   // New Backend imports
+  import Adjacency = NBAdjacency;
   import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
@@ -131,9 +131,7 @@ public
     JacobianType jacType              "type of jacobian";
     VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
-    //Adjacency.Matrix sparsity         "new sparsity pattern";
-    SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
-    SparsityColoring sparsityColoring "Coloring information";
+    Adjacency.Matrix sparsity         "new sparsity pattern";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
@@ -180,7 +178,7 @@ public
         for i in 1:arrayLength(bdae.comps) loop
           tmp := tmp + StrongComponent.toString(bdae.comps[i], i) + "\n";
         end for;
-        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern) + "\n" + SparsityColoring.toString(bdae.sparsityColoring);
+        tmp := tmp + Adjacency.Matrix.toString(bdae.sparsity);
       then tmp;
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
@@ -597,6 +595,7 @@ protected
         local
           Boolean natural;
           Pointer<Variable> der_ptr;
+          ComponentRef der_cref;
 
         // do nothing for size 0 variables, they get removed
         // Note: record elements need to exist in the full
@@ -616,11 +615,24 @@ protected
 
         case VariableKind.STATE(natural = natural) algorithm
           if not natural then
-            (_, der_ptr) := BVariable.makeDerVar(BVariable.getVarName(lowVar_ptr));
+            // Check if a frontend $DER variable already exists in variables.
+            // If so, reuse it (promote to STATE_DER) to avoid a pointer identity
+            // mismatch: equation dep_crefs are lowered to point to the frontend
+            // variable, but makeDerVar would create a separate new pointer.
+            (der_cref, der_ptr) := BVariable.makeDerVar(BVariable.getVarName(lowVar_ptr));
+            if VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(der_cref), variables) then
+              der_ptr := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(der_cref), NONE());
+              // Promote the existing frontend variable to STATE_DER.
+              // It is already in unknowns_lst/initials_lst from its ALGEBRAIC dispatch;
+              // it will be filtered out of algebraics_lst after the loop.
+              BVariable.setStateDerKind(der_ptr, lowVar_ptr);
+            else
+              variables := VariablePointers.add(der_ptr, variables);
+              unknowns_lst := der_ptr :: unknowns_lst;
+              initials_lst := der_ptr :: initials_lst;
+            end if;
             BVariable.setStateDerivativeVar(lowVar_ptr, der_ptr);
             derivatives_lst := der_ptr :: derivatives_lst;
-            unknowns_lst := der_ptr :: unknowns_lst;
-            initials_lst := der_ptr :: initials_lst;
             forced_states := lowVar_ptr :: forced_states;
           end if;
 
@@ -691,6 +703,10 @@ protected
 
       end match;
     end for;
+
+    // Remove any variables that were promoted from ALGEBRAIC to STATE_DER during
+    // the dispatch loop (e.g. frontend $DER.x variables for StateSelect.prefer states).
+    algebraics_lst := list(p for p guard(not BVariable.isStateDerivative(p)) in algebraics_lst);
 
     // create pointer arrays
     unknowns        := VariablePointers.fromList(unknowns_lst, scalarized);

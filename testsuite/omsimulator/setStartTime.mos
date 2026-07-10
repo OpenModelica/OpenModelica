@@ -25,7 +25,7 @@ end setstartTime;
 
 buildModelFMU(setstartTime, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator setstartTime.fmu --startTime=2.5 --stopTime=5 -r=start_time_res.mat", "setstartTime_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator setstartTime.fmu --startTime=2.5 --stopTime=5 -r=start_time_res.mat --suppressPath=true", "setstartTime_systemCall.log");
 readFile("setstartTime_systemCall.log");
 
 val(t, 2.5, "start_time_res.mat");
@@ -39,12 +39,18 @@ val(u, 2.5, "start_time_res.mat");
 // "setstartTime.fmu"
 // ""
 // 0
-// "info:    maximum step size for 'model.root': 0.002000
+// "info:    *** FMU Simulation Info ***
+//           - model:     setstartTime (model-exchange)
+//           - startTime: 2.500000
+//           - stopTime:  5.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'setstartTime.root': 0.002000
 // info:    Result file: start_time_res.mat (bufferSize=1)
-// info:    Parameter model.root.setstartTime.scheme.delimiter will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.setstartTime.scheme.fileName will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.setstartTime.scheme.tableName will not be stored in the result file, because the signal type is not supported
-// info:    Final Statistics for 'model.root':
+// info:    Parameter setstartTime.root.setstartTime.scheme.delimiter will not be stored in the result file, because the signal type is not supported
+// info:    Parameter setstartTime.root.setstartTime.scheme.fileName will not be stored in the result file, because the signal type is not supported
+// info:    Parameter setstartTime.root.setstartTime.scheme.tableName will not be stored in the result file, because the signal type is not supported
+// info:    Final Statistics for 'setstartTime.root':
 //          NumSteps = 1252 NumRhsEvals  = 1255 NumLinSolvSetups = 65
 //          NumNonlinSolvIters = 1254 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

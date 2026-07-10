@@ -121,6 +121,10 @@ typedef struct CVODE_SOLVER
   /* CVODE internal data */
   void *cvode_mem;            /* Internal CVODE memory block */
   CVODE_USERDATA *simData;
+
+#ifdef OMC_FMI_RUNTIME
+  void (*freeSolverMemory)(void*); /* How to free this struct: FMI callback (FMI2) or plain free (FMI3/no callback) */
+#endif
 } CVODE_SOLVER;
 
 #else /* WITH_SUNDIALS */

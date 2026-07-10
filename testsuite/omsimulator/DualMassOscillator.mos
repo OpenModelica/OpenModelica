@@ -1,6 +1,6 @@
 // name:     DualMassOscillator.mos
 // status:   correct
-// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu
+// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator.py DualMassOscillator.ssp DualMassOscillator_systemCall.log
 
 setCommandLineOptions("-g=MetaModelica");
 
@@ -11,6 +11,15 @@ buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me_cs", fileNa
 
 echo(false);
 
+/*
+ * This test still drives the old oms2-style embedded C API directly
+ * (loadOMSimulator/oms_* calls below) instead of the oms3 Python API used by
+ * DualMassOscillator_cs.mos and DualMassOscillator_me.mos. Unlike the Python
+ * API's SSP.addConnection(), the raw C API does not auto-correct connection
+ * causality direction, so the caller must specify the true output->input
+ * order itself (see the connection order fix below). All new modelling
+ * should go through oms3 Python; this test should be removed in future
+ */
 loadOMSimulator();
 oms_setCommandLineOption("--suppressPath=true");
 oms_setTempDirectory("./temp_dualmassoscillator/");
@@ -23,7 +32,9 @@ oms_addSubModel("DualMassOscillator.root.system1", "DualMassOscillator.System1.f
 oms_addSubModel("DualMassOscillator.root.system2", "DualMassOscillator.System2.fmu");
 
 //add connections
-oms_addConnection("DualMassOscillator.root.system1.F", "DualMassOscillator.root.system2.F");
+// system2.F is the true output and system1.F the true input (see DualMassOscillator.mo);
+// the raw C API won't auto-correct a backwards connection like oms3's Python API does.
+oms_addConnection("DualMassOscillator.root.system2.F", "DualMassOscillator.root.system1.F");
 oms_addConnection("DualMassOscillator.root.system1.s1", "DualMassOscillator.root.system2.s1");
 oms_addConnection("DualMassOscillator.root.system1.v1", "DualMassOscillator.root.system2.v1");
 oms_addConnection("DualMassOscillator.root.system1.a1", "DualMassOscillator.root.system2.a1");
@@ -54,6 +65,7 @@ oms_terminate("DualMassOscillator");
 oms_delete("DualMassOscillator");
 unloadOMSimulator();
 
+
 // Result:
 // true
 // true
@@ -71,9 +83,9 @@ unloadOMSimulator();
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.9169316895219363
-// info:      system2.s2: 1.9495200849017982
+// info:      system1.s1: 0.9105865844406983
+// info:      system2.s2: 1.9563560848915662
 // info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 3930 NumRhsEvals  = 4788 NumLinSolvSetups = 489
-//          NumNonlinSolvIters = 4787 NumNonlinSolvConvFails = 0 NumErrTestFails = 164
+//          NumSteps = 610 NumRhsEvals  = 895 NumLinSolvSetups = 124
+//          NumNonlinSolvIters = 894 NumNonlinSolvConvFails = 0 NumErrTestFails = 63
 // endResult
