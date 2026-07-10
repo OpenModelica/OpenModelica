@@ -14,15 +14,15 @@ github.com/OpenModelica/OpenModelica. Each one is based on the matching
 `docker.openmodelica.org/build-deps:*-debug` image and contains all
 dependencies needed to compile OpenModelica.
 
-- [build-deps-alpine-3.22][0]: Alpine 3.22.
-- [build-deps-debian-12][1]: Debian 12 (Bookworm).
-- [build-deps-debian-13][2]: Debian 13 (Trixie).
-- [build-deps-ubuntu-22][3]: Ubuntu 22.04 (Jammy).
-- [build-deps-ubuntu-24][4]: Ubuntu 24.04 (Noble).
-- [build-deps-ubuntu-26][5]: Ubuntu 26.04 (Resolute).
-- [build-deps-almalinux-10][6]: Enterprise Linux Almalinux 10.
-- [build-deps-fedora-43][10]: Fedora 43.
-- [build-deps-fedora-44][11]: Fedora 44.
+- [build-deps-alpine-3.22][alpine-3.22-dev]: Alpine 3.22.
+- [build-deps-debian-12][debian-bookworm-dev]: Debian 12 (Bookworm).
+- [build-deps-debian-13][debian-trixie-dev]: Debian 13 (Trixie).
+- [build-deps-ubuntu-22][ubuntu-jammy-dev]: Ubuntu 22.04 (Jammy).
+- [build-deps-ubuntu-24][ubuntu-noble-dev]: Ubuntu 24.04 (Noble).
+- [build-deps-ubuntu-26][ubuntu-resolute-dev]: Ubuntu 26.04 (Resolute).
+- [build-deps-almalinux-10][el-10-dev]: Enterprise Linux Almalinux 10.
+- [build-deps-fedora-43][fedora-43-dev]: Fedora 43.
+- [build-deps-fedora-44][fedora-44-dev]: Fedora 44.
 
 There are two flavors:
 
@@ -36,7 +36,8 @@ There are two flavors:
 ## Usage in Visual Studio Code
 
 Make sure you have Dev Containers extension
-[ms-vscode-remote.remote-containers][7] and Docker installed and running.
+[ms-vscode-remote.remote-containers][remote-containers-url] and Docker installed
+and running.
 
 Open command pallet (`Strg+Shift+P`) and run
 `>Dev Containers: Open Folder in Container...`, select the OpenModelica
@@ -44,10 +45,10 @@ directory. Then select a devcontainer.json file to start.
 
 ## New Dev Container
 
-Check directory [../.CI/][8] for more Dockerfiles used by Jenkins and construct
-your own dev container in a similar way.
+Check directory [../.CI/][ci-dir] for more Dockerfiles used by Jenkins and
+construct your own dev container in a similar way.
 
-For more details check [containers.dev json reference][9].
+For more details check [containers.dev json reference][dev-json-ref-url].
 
 ## Adding VSCode Extensions
 
@@ -71,15 +72,15 @@ The following only applies to the `Dockerfile`-based containers
   +"username"
   ```
 
-[0]: ./build-deps-alpine-3.22/devcontainer.json
-[1]: ./build-deps-debian-12/devcontainer.json
-[2]: ./build-deps-debian-13/devcontainer.json
-[3]: ./build-deps-ubuntu-22/devcontainer.json
-[4]: ./build-deps-ubuntu-24/devcontainer.json
-[5]: ./build-deps-ubuntu-26/devcontainer.json
-[6]: ./build-deps-almalinux-10/devcontainer.json
-[7]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
-[8]: ./../.CI/
-[9]: https://containers.dev/implementors/json_reference/
-[10]: ./build-deps-fedora-43/devcontainer.json
-[11]: ./build-deps-fedora-44/devcontainer.json
+[alpine-3.22-dev]: ./build-deps-alpine-3.22/devcontainer.json
+[debian-bookworm-dev]: ./build-deps-debian-12/devcontainer.json
+[debian-trixie-dev]: ./build-deps-debian-13/devcontainer.json
+[ubuntu-jammy-dev]: ./build-deps-ubuntu-22/devcontainer.json
+[ubuntu-noble-dev]: ./build-deps-ubuntu-24/devcontainer.json
+[ubuntu-resolute-dev]: ./build-deps-ubuntu-26/devcontainer.json
+[el-10-dev]: ./build-deps-almalinux-10/devcontainer.json
+[fedora-43-dev]: ./build-deps-fedora-43/devcontainer.json
+[fedora-44-dev]: ./build-deps-fedora-44/devcontainer.json
+[remote-containers-url]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+[ci-dir]: ./../.CI/
+[dev-json-ref-url]: https://containers.dev/implementors/json_reference/

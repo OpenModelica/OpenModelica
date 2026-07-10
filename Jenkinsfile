@@ -277,7 +277,9 @@ pipeline {
                                         + " -DOM_USE_CCACHE=OFF"
                                         + " -DCMAKE_INSTALL_PREFIX=build"
                                         + " -DCMAKE_C_COMPILER=gcc"
-                                        + " -DCMAKE_CXX_COMPILER=g++")
+                                        + " -DCMAKE_CXX_COMPILER=g++"
+                                        + " -DOM_OMEDIT_ANIMATION_QUICK3D=ON" // Almalinux-10 has no OpenSceneGraph, switch to Quick3D
+              )
               sh "build/bin/omc --version"
             }
           }
