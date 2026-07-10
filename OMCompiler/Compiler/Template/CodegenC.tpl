@@ -6421,14 +6421,14 @@ template genSPColors(list<list<Integer>> colorList, String leadindexArray, Strin
   let nColors = listLength(colorList)
   let nElements = lengthListElements(colorList)
   <<
-  const size_t colorSizes[<%nColors%> + 1] = {0,<%(colorList |> color => listLength(color); separator=",")%>};
+  const unsigned int colorSizes[<%nColors%> + 1] = {0,<%(colorList |> color => listLength(color); separator=",")%>};
   <%leadindexArray%>[0] = 0;
   for (size_t i = 0; i < <%nColors%>; ++i) {
     <%leadindexArray%>[i+1] = <%leadindexArray%>[i] + colorSizes[i];
   }
 
-  const size_t index[<%nElements%>] = {<%(colorList |> color => (color |> i => i; separator=","); separator=",")%>};
-  memcpy(<%indexArray%>, index, <%nElements%> * sizeof(size_t));
+  const unsigned int index[<%nElements%>] = {<%(colorList |> color => (color |> i => i; separator=","); separator=",")%>};
+  memcpy(<%indexArray%>, index, <%nElements%> * sizeof(unsigned int));
   >>
 end genSPColors;
 

@@ -53,7 +53,7 @@ void freeSparsePattern(SPARSE_PATTERN *spp);
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols);
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
-void readSparsePatternColoring(threadData_t* threadData, FILE * pFile, size_t nColors, size_t maxIndex, size_t* leadindex, size_t* index);
+void readSparsePatternColoring(threadData_t* threadData, FILE * pFile, unsigned int nColors, unsigned int maxIndex, unsigned int* leadindex, unsigned int* index);
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability);
 
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);

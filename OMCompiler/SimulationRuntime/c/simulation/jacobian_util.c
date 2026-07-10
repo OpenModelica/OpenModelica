@@ -851,20 +851,20 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
  * @param leadindex     Array of color sizes.
  * @param index         Array of color indices.
  */
-void readSparsePatternColoring(threadData_t* threadData, FILE * pFile, size_t nColors, size_t maxIndex, size_t* leadindex, size_t* index)
+void readSparsePatternColoring(threadData_t* threadData, FILE * pFile, unsigned int nColors, unsigned int maxIndex, unsigned int* leadindex, unsigned int* index)
 {
   size_t count;
 
   /* read coloring lead index */
   count = omc_fread(leadindex, sizeof(unsigned int), nColors + 1, pFile, FALSE);
-  if (count != nColors + 1) {
-    throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern coloring. Expected %zu, got %zu", nColors + 1, count);
+  if (count != (size_t)nColors + 1) {
+    throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern coloring. Expected %u, got %zu", nColors + 1, count);
   }
 
   /* read coloring index */
   count = omc_fread(index, sizeof(unsigned int), maxIndex, pFile, FALSE);
-  if (count != maxIndex) {
-    throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern coloring. Expected %zu, got %zu", maxIndex, count);
+  if (count != (size_t)maxIndex) {
+    throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern coloring. Expected %u, got %zu", maxIndex, count);
   }
 }
 
