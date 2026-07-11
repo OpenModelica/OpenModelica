@@ -826,6 +826,9 @@ algorithm
                                 Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0}),
                                 Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.STRING("")});
 
+    case ("getClassInformationList",{Values.ARRAY(valueLst=vals)})
+      then ValuesMake.makeArray(list(getClassInformationRecord(v) for v in vals));
+
     case ("getTransitions",{Values.CODE(Absyn.C_TYPENAME(className))})
       algorithm
         false := Interactive.existClass(className, SymbolTable.getAbsyn());
@@ -8219,6 +8222,42 @@ algorithm
     Values.STRING(revisionId)
   });
 end getClassInformation;
+
+protected function getClassInformationRecord
+  input Values.Value className;
+  output Values.Value res;
+protected
+  Absyn.Path path;
+  String str;
+  list<Values.Value> fields;
+algorithm
+  Values.STRING(str) := className;
+  path := Parser.stringPath(str);
+  // Keep one record per input, so the result stays aligned with the query even
+  // when a name is not a class (getClassInformation fails on those).
+  fields := matchcontinue path
+    local
+      list<Values.Value> f;
+    case _
+      algorithm
+        Values.TUPLE(f) := getClassInformation(path, SymbolTable.getAbsyn());
+      then f;
+    else {Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.BOOL(false),Values.BOOL(false),
+          Values.STRING(""),Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),
+          Values.INTEGER(0),ValuesMake.makeArray({}),Values.BOOL(false),Values.BOOL(false),Values.STRING(""),
+          Values.STRING(""),Values.BOOL(false),Values.STRING(""),Values.STRING(""),Values.STRING(""),
+          Values.STRING(""),Values.STRING("")};
+  end matchcontinue;
+  res := Values.RECORD(
+    Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.QUALIFIED("getClassInformationList", Absyn.IDENT("ClassInformation")))),
+    fields,
+    {"restriction","comment","partialPrefix","finalPrefix","encapsulatedPrefix","fileName","fileReadOnly",
+     "lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","dimensions","isProtectedClass",
+     "isDocumentationClass","version","preferredView","state","access","versionDate","versionBuild",
+     "dateModified","revisionId"},
+    -1
+  );
+end getClassInformationRecord;
 
 function getClassDimensions
 "return the dimensions of a class
