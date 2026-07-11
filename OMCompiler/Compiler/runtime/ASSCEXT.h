@@ -46,7 +46,7 @@
 extern "C" {
 #endif
 
-LIST** ASSC_fromDense(int* dense, int nv_, int ne_, int* nnz = nullptr);
+LIST** ASSC_fromDense(int* dense, int nv_, int ne_, int* nnz);
 void* allocAsscElement(const void* data);
 bool isEqualAsscMatrixDebug(LIST **mref, int *mappingref, int ne);
 void ASSC_setMatrixDebug(int* dense, int nv_, int ne_);
@@ -74,5 +74,11 @@ typedef struct {
 
 
 #ifdef __cplusplus
+}
+
+/* C++ convenience overload: omit nnz when the count is not needed */
+inline LIST** ASSC_fromDense(int* dense, int nv_, int ne_)
+{
+  return ASSC_fromDense(dense, nv_, ne_, nullptr);
 }
 #endif

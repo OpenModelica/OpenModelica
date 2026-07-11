@@ -95,7 +95,6 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
   nnz = nz;
 
   int i=0;
-  int j=0;
   mmc_sint_t adj_i, val_i;
 
   // initialize rows
@@ -129,7 +128,6 @@ extern void ASSC_getMatrix(modelica_metatype adj, modelica_metatype val)
 {
   mmc_uint_t len_adj = MMC_HDRSLOTS(MMC_GETHDR(adj));
   for (int i = 0; i <= len_adj-1; i++) {
-    int length = listLen(rows[mapping[i]]);
     modelica_metatype adj_col = MMC_STRUCTDATA(adj)[i];
     modelica_metatype val_col = MMC_STRUCTDATA(val)[i];
     if (!listEmptyTest(rows[mapping[i]])) {
