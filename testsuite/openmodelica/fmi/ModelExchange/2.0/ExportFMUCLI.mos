@@ -1,0 +1,43 @@
+// name:     ExportFMUCLI
+// keywords: fmu export cli
+// status: correct
+// teardown_command: rm -rf ExportFMUCLI.fmu ExportFMUCLI_* export_fmu_test_*.mo export_fmu_output*.log ExportFMUCLI3.fmu ExportFMUCLI3_*
+// cflags: -d=-newInst
+//
+// Tests the --export-fmu CLI option.
+
+// Write a model file to test with
+writeFile("export_fmu_test_ExportFMUCLI.mo", "
+model ExportFMUCLI
+  Real x(start=1);
+  parameter Real a=2;
+equation
+  der(x) = a * x;
+end ExportFMUCLI;
+"); getErrorString();
+
+// Test 1: Basic --export-fmu with --fmiVersion=2.0 (Model Exchange, default type)
+cd := getInstallationDirectoryPath();
+system(cd + "/bin/omc --export-fmu --fmiVersion=2.0 export_fmu_test_ExportFMUCLI.mo", "export_fmu_output1.log");
+getErrorString();
+regularFileExists("ExportFMUCLI.fmu");
+getErrorString();
+
+// Test 2: --export-fmu with --fmiVersion=3.0 and --fmuType=cs (Co-Simulation)
+system(cd + "/bin/omc --export-fmu --fmiVersion=3.0 --fmuType=cs export_fmu_test_ExportFMUCLI.mo", "export_fmu_output2.log");
+getErrorString();
+regularFileExists("ExportFMUCLI.fmu");
+getErrorString();
+
+// Result:
+// true
+// ""
+// 0
+// ""
+// true
+// ""
+// 0
+// ""
+// true
+// ""
+// endResult

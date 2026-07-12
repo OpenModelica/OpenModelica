@@ -50,6 +50,7 @@ TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \
 EnumerationTest.mos \
+ExportFMUCLI.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
