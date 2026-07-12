@@ -423,6 +423,12 @@ struct SimModel {
     /// without state sets. The driver evaluates each set's Jacobian
     /// (`functionStateSetJacobians`), pivots, and rebuilds `A` between steps.
     state_sets: Vec<StateSetInfo>,
+    /// ODE state Jacobian ∂f/∂x ("A") sparsity + coloring for the colored-FD path;
+    /// `None` ⇒ daskr's own numerical Jacobian.
+    jac_a: Option<JacAInfo>,
+    /// Per-state nominal magnitude `max(|nominal|, 1e-32)` (integrator order) for the
+    /// per-state atol `tol·nominal[i]`; constant-folded, `1.0` if absent.
+    state_nominals: Vec<f64>,
     /// User-settable initial conditions (parameters with `isValueChangeable`):
     /// name/unit/slot, so a host can list them and `-override` them by name.
     editable_params: Vec<EditableParam>,
@@ -2256,9 +2262,59 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         method: settings.method.to_string(),
         tolerance: settings.tolerance.into_inner(),
         state_sets,
+        jac_a: build_jac_a_info(sim_code, n_states),
+        state_nominals: lst(&vars.stateVars)
+            .take(n_states as usize)
+            .map(|sv| const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32))
+            .collect(),
         editable_params,
         var_units,
     })
+}
+
+/// ODE state Jacobian ("A" = ∂f/∂x) sparsity + coloring, extracted from
+/// `SimCode.jacobianMatrices`. Column/row indices are 0-based and correspond
+/// directly to the integrator state order (same convention the C runtime's
+/// `jacA_numColored` relies on). Data only — the finite-difference itself runs
+/// in the driver via the existing residual machinery, so no wasm code is emitted.
+#[derive(Clone, Debug)]
+pub(crate) struct JacAInfo {
+    pub n: usize,
+    /// Each color: the 0-based column (state) indices perturbed together.
+    pub colors: Vec<Vec<u32>>,
+    /// `rows_by_col[col]` = 0-based rows nonzero in column `col` (CSC).
+    pub rows_by_col: Vec<Vec<u32>>,
+}
+
+fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAInfo> {
+    if n_states == 0 {
+        return None;
+    }
+    let n = n_states as usize;
+    let jac = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A")?;
+    // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
+    // column (empty columns carry an empty row list).
+    let rows_by_col: Vec<Vec<u32>> = lst(&jac.sparsity)
+        .map(|(_, rows)| lst(rows).map(|r| *r as u32).collect())
+        .collect();
+    // coloredCols: each color → its 0-based column indices.
+    let colors: Vec<Vec<u32>> = lst(&jac.coloredCols)
+        .map(|grp| lst(grp).map(|c| *c as u32).collect())
+        .collect();
+    // Only usable when the pattern covers exactly the n states, the coloring is
+    // present, and every index is in range; otherwise fall back to numerical.
+    if rows_by_col.len() != n
+        || colors.is_empty()
+        || colors.iter().flatten().any(|&c| c as usize >= n)
+        || rows_by_col.iter().flatten().any(|&r| r as usize >= n)
+    {
+        return None;
+    }
+    if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
+        let nnz: usize = rows_by_col.iter().map(|r| r.len()).sum();
+        eprintln!("wasm-jit jac-A: n={n} colors={} nnz={nnz}", colors.len());
+    }
+    Some(JacAInfo { n, colors, rows_by_col })
 }
 
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->

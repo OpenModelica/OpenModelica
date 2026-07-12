@@ -13,7 +13,7 @@ use std::cell::RefCell;
 
 use anyhow::{Result, bail};
 
-use super::{REAL_OFF, ResultKind, SimLayout, SimModel, SolveStats, StateSetInfo, TIME_OFF};
+use super::{JacAInfo, REAL_OFF, ResultKind, SimLayout, SimModel, SolveStats, StateSetInfo, TIME_OFF};
 use crate::CodegenWasmJitFunctions::WTy;
 
 /// Persistent pivoting state for one `$STATESET` across integration steps (C's
@@ -712,7 +712,10 @@ pub(super) fn drive(
     };
     stats.method = label;
     if bench {
-        eprintln!("wasm-jit sim [{label}]: {} steps, {} residual evals", stats.steps, stats.res_evals);
+        eprintln!(
+            "wasm-jit sim [{label}]: {} steps, {} residual evals, {} jacobian evals",
+            stats.steps, stats.res_evals, stats.jac_evals
+        );
     }
 
     let params = finalize_run(e, model, sim_data)?;
@@ -866,6 +869,17 @@ struct ResCtx {
     /// A wasm trap / memory error captured inside the callback, surfaced after
     /// `ddaskr` returns (the C-style callback cannot return a `Result`).
     err: Option<anyhow::Error>,
+    /// ODE Jacobian sparsity+coloring for the colored-FD `jacd`; null ⇒ the
+    /// analytic path is off and daskr's own numerical Jacobian is used.
+    jac: *const JacAInfo,
+    /// Scratch reused across `dassl_jac` colors (sized `n_states`): perturbed
+    /// residual, saved states, reciprocal steps, and the der read buffer.
+    jac_gp: Vec<f64>,
+    jac_ysave: Vec<f64>,
+    jac_del: Vec<f64>,
+    jac_ders: Vec<u8>,
+    /// Jacobian evaluations (colors summed over all Jacobian assemblies).
+    nje: u64,
 }
 
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
@@ -896,15 +910,12 @@ unsafe fn dassl_rt(
         // next checked evaluation by clearing the flag around this probe.
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
-        for i in 0..ctx.n_states {
-            write_f64(e, ctx.states_base + (i as u32) * 8, unsafe { *y.add(i) })?;
-        }
+        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
+        e.write_bytes(ctx.states_base, y_bytes)?;
         e.call1("functionODE", ctx.sim_data)?;
         e.call1("functionZeroCrossings", ctx.sim_data)?;
-        for i in 0..ctx.n_zc {
-            let g = read_f64(e, ctx.sim_data + ctx.zc_off + (i as u32) * 8)?;
-            unsafe { *rval.add(i) = g };
-        }
+        let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
+        e.read_bytes(ctx.sim_data + ctx.zc_off, rval_bytes)?;
         Ok(())
     })();
     if let Err(err) = run {
@@ -953,13 +964,14 @@ unsafe fn dassl_res(
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
-        for i in 0..n {
-            write_f64(e, ctx.states_base + (i as u32) * 8, unsafe { *y.add(i) })?;
-        }
+        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+        e.write_bytes(ctx.states_base, y_bytes)?;
         e.call1("functionODE", ctx.sim_data)?;
+        // delta := yprime - f
+        let delta_bytes = unsafe { core::slice::from_raw_parts_mut(delta as *mut u8, n * 8) };
+        e.read_bytes(ctx.ders_base, delta_bytes)?;
         for i in 0..n {
-            let f = read_f64(e, ctx.ders_base + (i as u32) * 8)?;
-            unsafe { *delta.add(i) = *yprime.add(i) - f };
+            unsafe { *delta.add(i) = *yprime.add(i) - *delta.add(i) };
         }
         Ok(())
     })();
@@ -979,6 +991,105 @@ unsafe fn dassl_res(
     }
 }
 
+/// DASSL direct-method Jacobian (`INFO(5)=1`, dense `mtype 1`): fill the iteration
+/// matrix `∂G/∂y + cj·∂G/∂y'` (G = y' − f) by a colored numerical FD, one
+/// `functionODE` per color, mirroring the C runtime's `jacA_numColored`.
+///
+/// Argument order follows the `dmatd` call site (`jacd(t,y,yprime,delta,wm,…)`),
+/// not the misleadingly-named `JacFn` params: `base` is the current residual, `pd`
+/// the dense column-major matrix daskr zeroed for us to fill.
+unsafe fn dassl_jac(
+    t: *mut f64,
+    y: *mut f64,
+    yprime: *mut f64,
+    base: *mut f64,
+    pd: *mut f64,
+    cj: *mut f64,
+    h: *mut f64,
+    wt: *mut f64,
+    _rpar: *mut f64,
+    _ipar: *mut i32,
+) {
+    let ctx = RES_CTX.with(|c| c.get());
+    if ctx.is_null() {
+        return;
+    }
+    let ctx = unsafe { &mut *ctx };
+    if ctx.jac.is_null() {
+        return;
+    }
+    let jac = unsafe { &*ctx.jac };
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    let cj = unsafe { *cj };
+    let h = unsafe { *h };
+    let sqrt_uround = f64::EPSILON.sqrt();
+    ctx.jac_ders.resize(n * 8, 0);
+    let run = (|| -> Result<()> {
+        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        for color in &jac.colors {
+            // Perturb every column in this color; record 1/del and the base value.
+            for &col in color {
+                let ci = col as usize;
+                let yi = unsafe { *y.add(ci) };
+                let ypi = unsafe { *yprime.add(ci) };
+                let d6 = (h * ypi).abs();
+                let mag = (sqrt_uround * yi.abs().max(d6)).max(1.0 / unsafe { *wt.add(ci) });
+                let mut del = if h * ypi >= 0.0 { mag } else { -mag };
+                del = yi + del - yi; // floating-point rounding, as in the C runtime
+                if del == 0.0 {
+                    del = sqrt_uround;
+                }
+                ctx.jac_ysave[ci] = yi;
+                ctx.jac_del[ci] = 1.0 / del;
+                unsafe { *y.add(ci) = yi + del };
+            }
+            // One residual evaluation at the perturbed point.
+            write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+            let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+            e.write_bytes(ctx.states_base, y_bytes)?;
+            e.call1("functionODE", ctx.sim_data)?;
+            e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
+            for row in 0..n {
+                let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
+                ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+            }
+            ctx.nje += 1;
+            // Scatter the finite difference into the affected rows, restore y.
+            for &col in color {
+                let ci = col as usize;
+                let inv_del = ctx.jac_del[ci];
+                for &row in &jac.rows_by_col[ci] {
+                    let ri = row as usize;
+                    let val = (ctx.jac_gp[ri] - unsafe { *base.add(ri) }) * inv_del;
+                    unsafe { *pd.add(ci * n + ri) = val };
+                }
+                unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+            }
+        }
+        // cj·∂G/∂y' = cj·I — the diagonal the ∂G/∂y difference above does not carry.
+        for col in 0..n {
+            unsafe { *pd.add(col * n + col) += cj };
+        }
+        // Restore the base states in SimData.
+        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+        e.write_bytes(ctx.states_base, y_bytes)?;
+        Ok(())
+    })();
+    if let Err(err) = run {
+        ctx.err = Some(err);
+    }
+}
+
+/// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`
+/// (`state_nominals` is already floored). Length ≥ 1 so daskr never sees an empty array.
+fn dassl_tolerances(tol: f64, state_nominals: &[f64], n_states: usize) -> (Vec<f64>, Vec<f64>) {
+    let n = n_states.max(1);
+    let rtol = vec![tol; n];
+    let atol = (0..n).map(|i| tol * state_nominals.get(i).copied().unwrap_or(1.0)).collect();
+    (rtol, atol)
+}
+
 /// Resumable DASSL (daskr) driver, event-free path. Owns the DASKR work arrays
 /// and `y`/`yp` across chunks so an `advance` resumes the exact same
 /// continuation — the trajectory is identical to running the whole loop at once.
@@ -992,8 +1103,8 @@ struct DasslDriver {
     y: Vec<f64>,
     yp: Vec<f64>,
     info: [i32; 24],
-    rtol: [f64; 1],
-    atol: [f64; 1],
+    rtol: Vec<f64>,
+    atol: Vec<f64>,
     rwork: Vec<f64>,
     iwork: Vec<i32>,
     rpar: [f64; 1],
@@ -1014,6 +1125,11 @@ struct DasslDriver {
     /// `terminate()` fired at the initial point; the first `advance` reports it.
     pending_terminate: bool,
     finished: bool,
+    /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
+    /// daskr's own numerical Jacobian.
+    jac_a: Option<JacAInfo>,
+    /// Jacobian evaluation count, accumulated across chunks (for the bench line).
+    nje: u64,
 }
 
 impl DasslDriver {
@@ -1061,6 +1177,19 @@ impl DasslDriver {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
         let liw = (40 + neq + 64) as usize;
+        // Analytic (colored numerical-FD) Jacobian when the backend gave us the "A"
+        // sparsity+coloring: INFO(5)=1 selects daskr's dense user-Jacobian path.
+        let jac_a = if std::env::var("OMC_WASM_NO_ANALYTIC_JAC").is_ok() { None } else { model.jac_a.clone() };
+        let mut info = [0i32; 24];
+        if jac_a.is_some() {
+            info[4] = 1;
+        }
+        // Per-state tolerances scaled by nominal, matching the C runtime
+        // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
+        let (rtol, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        if n_states > 0 {
+            info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
+        }
         Ok(DasslDriver {
             sim_data,
             n_states,
@@ -1069,11 +1198,12 @@ impl DasslDriver {
             row: 1,
             y,
             yp,
-            // all defaults: dense direct method, numerical Jac, scalar tolerances,
-            // interpolating output, no IC calc.
-            info: [0i32; 24],
-            rtol: [tol],
-            atol: [tol],
+            // dense direct method, per-state nominal-scaled tolerances,
+            // interpolating output, no IC calc; INFO(5) set above when the
+            // analytic Jacobian is available.
+            info,
+            rtol,
+            atol,
             rwork: vec![0.0f64; lrw],
             iwork: vec![0i32; liw],
             rpar: [0.0f64],
@@ -1088,6 +1218,8 @@ impl DasslDriver {
             work_retries: 0,
             pending_terminate,
             finished: false,
+            jac_a,
+            nje: 0,
         })
     }
 }
@@ -1147,6 +1279,8 @@ impl Driver for DasslDriver {
         // raw pointer to `*e`, live only across the `ddaskr` calls below (`e` is not
         // used directly meanwhile); the guard clears the thread-local on any exit.
         // `nfe` carries over between chunks.
+        let jac_ptr = self.jac_a.as_ref().map_or(std::ptr::null(), |j| j as *const JacAInfo);
+        let jacfn: solver::JacFn = if jac_ptr.is_null() { solver::dummy_jacd } else { dassl_jac };
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             sim_data,
@@ -1158,6 +1292,12 @@ impl Driver for DasslDriver {
             zc_off: 0,
             n_zc: 0,
             err: None,
+            jac: jac_ptr,
+            jac_gp: vec![0.0; n_states],
+            jac_ysave: vec![0.0; n_states],
+            jac_del: vec![0.0; n_states],
+            jac_ders: Vec::new(),
+            nje: self.nje,
         };
         let _guard = ResCtxGuard;
         RES_CTX.with(|c| c.set(&mut ctx as *mut ResCtx));
@@ -1187,11 +1327,12 @@ impl Driver for DasslDriver {
                     dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(),
                     &mut tout, self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(),
                     &mut self.idid, self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
-                    self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), solver::dummy_jacd, solver::dummy_jack,
+                    self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn, solver::dummy_jack,
                     solver::dummy_psol, solver::dummy_rt, nrt, self.jroot.as_mut_ptr(),
                 );
             }
             self.nfe = ctx.nfe;
+            self.nje = ctx.nje;
             // Surface a wasm error captured in the callback, then DASSL failures.
             if let Some(err) = ctx.err.take() {
                 return Err(err.context(format!("in DASSL residual at t={}", self.t)));
@@ -1247,7 +1388,7 @@ impl Driver for DasslDriver {
         let nst = self.iwork.get(10).copied().unwrap_or(0);
         stats.steps = nst.max(0) as u64;
         stats.res_evals = self.nfe;
-        stats.jac_evals = self.iwork.get(12).copied().unwrap_or(0).max(0) as u64;
+        stats.jac_evals = if self.jac_a.is_some() { self.nje } else { self.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
         stats.err_test_fails = self.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
         stats.conv_test_fails = self.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
     }
@@ -1279,8 +1420,8 @@ struct DasslEventsDriver {
     y: Vec<f64>,
     yp: Vec<f64>,
     info: [i32; 24],
-    rtol: [f64; 1],
-    atol: [f64; 1],
+    rtol: Vec<f64>,
+    atol: Vec<f64>,
     rwork: Vec<f64>,
     iwork: Vec<i32>,
     rpar: [f64; 1],
@@ -1302,6 +1443,11 @@ struct DasslEventsDriver {
     time_events: u64,
     pending_terminate: bool,
     finished: bool,
+    /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
+    /// daskr's own numerical Jacobian.
+    jac_a: Option<JacAInfo>,
+    /// Jacobian evaluation count, accumulated across chunks (for the bench line).
+    nje: u64,
 }
 
 impl DasslEventsDriver {
@@ -1349,6 +1495,16 @@ impl DasslEventsDriver {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
         let liw = (40 + neq + 64) as usize;
+        let jac_a = if std::env::var("OMC_WASM_NO_ANALYTIC_JAC").is_ok() { None } else { model.jac_a.clone() };
+        let mut info = [0i32; 24];
+        if jac_a.is_some() {
+            info[4] = 1; // INFO(5)=1: dense user (colored numerical-FD) Jacobian
+        }
+        // Per-state nominal-scaled tolerances (see `dassl_tolerances`).
+        let (rtol, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        if n_states > 0 {
+            info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
+        }
         Ok(DasslEventsDriver {
             sim_data,
             n_states,
@@ -1357,9 +1513,9 @@ impl DasslEventsDriver {
             row: 1,
             y,
             yp,
-            info: [0i32; 24],
-            rtol: [tol],
-            atol: [tol],
+            info,
+            rtol,
+            atol,
             rwork: vec![0.0f64; lrw],
             iwork: vec![0i32; liw],
             rpar: [0.0f64],
@@ -1379,6 +1535,8 @@ impl DasslEventsDriver {
             time_events,
             pending_terminate,
             finished: false,
+            jac_a,
+            nje: 0,
         })
     }
 }
@@ -1457,6 +1615,8 @@ impl Driver for DasslEventsDriver {
         let lrw = self.rwork.len();
         let liw = self.iwork.len();
 
+        let jac_ptr = self.jac_a.as_ref().map_or(std::ptr::null(), |j| j as *const JacAInfo);
+        let jacfn: solver::JacFn = if jac_ptr.is_null() { solver::dummy_jacd } else { dassl_jac };
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             sim_data,
@@ -1468,6 +1628,12 @@ impl Driver for DasslEventsDriver {
             zc_off: layout.zc_off,
             n_zc: layout.n_zc as usize,
             err: None,
+            jac: jac_ptr,
+            jac_gp: vec![0.0; n_states],
+            jac_ysave: vec![0.0; n_states],
+            jac_del: vec![0.0; n_states],
+            jac_ders: Vec::new(),
+            nje: self.nje,
         };
         let _guard = ResCtxGuard;
         RES_CTX.with(|c| c.set(&mut ctx as *mut ResCtx));
@@ -1528,12 +1694,13 @@ impl Driver for DasslEventsDriver {
                                 dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(), &mut tt,
                                 self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
                                 self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
-                                self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), solver::dummy_jacd,
+                                self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
                                 solver::dummy_jack, solver::dummy_psol, rt_fn, nrt,
                                 self.jroot.as_mut_ptr(),
                             );
                         }
                         self.nfe = ctx.nfe;
+                        self.nje = ctx.nje;
                         did_step = true;
                         if ctx.err.is_some() {
                             break;
@@ -1661,7 +1828,7 @@ impl Driver for DasslEventsDriver {
         let nst = self.iwork.get(10).copied().unwrap_or(0);
         stats.steps = nst.max(0) as u64;
         stats.res_evals = self.nfe;
-        stats.jac_evals = self.iwork.get(12).copied().unwrap_or(0).max(0) as u64;
+        stats.jac_evals = if self.jac_a.is_some() { self.nje } else { self.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
         stats.err_test_fails = self.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
         stats.conv_test_fails = self.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
         stats.state_events = self.state_events;
