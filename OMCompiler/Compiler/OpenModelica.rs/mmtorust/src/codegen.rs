@@ -332,6 +332,13 @@ struct GenCtx {
     /// types such as `Arc<T>`. Cleared / updated in `emit_stmt` alongside
     /// `fn_env_vars`; saved and restored around nested-function emissions.
     uninit_arrays: HashSet<String>,
+    /// Function-input `Array<T>` params whose cell borrow is hoisted to a single
+    /// `let __ab_<name> = <name>.borrow[_mut]();` at function entry, reused for
+    /// every element access instead of re-borrowing per subscript (see
+    /// [`array_hoistable`]). Maps the source name to whether the hoisted borrow
+    /// is shared (`borrow`) or exclusive (`borrow_mut`). Saved/restored around
+    /// nested-function emissions like `fn_env_vars`.
+    hoisted_arrays: HashMap<String, BorrowKind>,
     /// Variables in scope at the enclosing function level: inputs, outputs,
     /// and protected locals. Used to seed the per-arm `LocalEnv` when entering
     /// a match-expression case body, so assignments to function-level outputs
@@ -683,6 +690,7 @@ impl GenCtx {
             fn_type_vars,
             qmode: QMode::Function,
             uninit_arrays: HashSet::new(),
+            hoisted_arrays: HashMap::new(),
             fn_env_vars: HashMap::new(),
             fn_input_names: HashSet::new(),
             fn_scope_vars: HashSet::new(),
@@ -4880,6 +4888,241 @@ fn pat_reads_name(_pat: &TypedPat, _name: &str) -> bool {
     false
 }
 
+/// How a hoisted array's cell is borrowed for the duration of a function body.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BorrowKind {
+    /// Read-only: `let __ab_A = A.borrow();`.
+    Shared,
+    /// Subscript-written: `let mut __ab_A = A.borrow_mut();`.
+    Mut,
+}
+
+/// Running state of the "borrow once" occurrence analysis (see
+/// [`array_hoistable`]). `ok` is cleared the moment any disqualifying use of the
+/// candidate is seen; `written` records whether a subscript write was found (so
+/// the caller picks `borrow_mut` over `borrow`).
+struct HoistScan {
+    ok: bool,
+    written: bool,
+    /// Whether any valid subscript access of the candidate was seen. A param
+    /// never referenced in the body is not hoisted (the borrow would be unused).
+    used: bool,
+}
+
+/// The Rust local bound to a hoisted array's held borrow. `name` is the raw
+/// MetaModelica identifier; the `__ab_` prefix guarantees a valid non-keyword
+/// identifier without needing `escape_ident` (which would inject a `r#`).
+fn hoisted_binding_name(name: &str) -> String {
+    format!("__ab_{name}")
+}
+
+/// Decide whether the function-input array `name` may have its cell borrow
+/// hoisted to a single `borrow[_mut]()` at function entry. Returns the borrow
+/// kind (`Shared` for read-only, `Mut` when any element is subscript-written),
+/// or `None` if any occurrence would fight a hoisted borrow.
+///
+/// Hoisting is legal only when **every** occurrence of `name` in the body is a
+/// single-segment subscript element access `name[idx]` — as a read, or as the
+/// base of a `name[idx] := v` assignment. Any *bare* use (passed as a call
+/// argument, whole-reassigned, iterated with `for x in name`, or bound/shadowed
+/// by a pattern) disqualifies it, because that use either moves the array or
+/// needs its own borrow, which would alias the held one. See
+/// `HANDOFF-borrow-once.md` for the full rationale and the fail-loud safety
+/// property (a wrong hoist panics on the `RefCell` flag, never miscompiles).
+fn array_hoistable(
+    stmts: &[typedexp::TypedStmt],
+    init_exps: &[typedexp::TypedExp],
+    name: &str,
+) -> Option<BorrowKind> {
+    let mut scan = HoistScan { ok: true, written: false, used: false };
+    hoist_scan_stmts(stmts, name, &mut scan);
+    // Output/protected-local initialisers (`protected Integer N = arrayLength(ass);`)
+    // live outside `stmts` but are still part of the body — a bare use there
+    // (e.g. `arrayLength(ass)`) must disqualify the hoist just the same.
+    for e in init_exps {
+        hoist_scan_exp(e, name, &mut scan);
+    }
+    if scan.ok && scan.used {
+        Some(if scan.written { BorrowKind::Mut } else { BorrowKind::Shared })
+    } else {
+        None
+    }
+}
+
+/// True iff `exp` is exactly a bare reference to `name` (no subscripts, no
+/// further segments) — the shape that appears as the base of `name[i] := v`.
+fn is_bare_var(exp: &typedexp::TypedExp, name: &str) -> bool {
+    let typedexp::TypedExp::Var { name: n, segments, .. } = exp else { return false };
+    match segments.as_slice() {
+        [] => n == name,
+        [seg] => seg.name == name && seg.subscripts.is_empty(),
+        _ => false,
+    }
+}
+
+/// True iff `name` appears anywhere in the pattern — as a binding or inside an
+/// `Index`/`FieldAccess` base/index expression. Used to reject any LHS shape
+/// other than the clean `name[idx]` write.
+fn pat_mentions_name(pat: &typedexp::TypedPat, name: &str) -> bool {
+    use typedexp::TypedPat as P;
+    match pat {
+        P::Var(n) => n == name,
+        P::As { var, pat } => var == name || pat_mentions_name(pat, name),
+        P::Some_(p) => pat_mentions_name(p, name),
+        P::Cons { head, tail } => pat_mentions_name(head, name) || pat_mentions_name(tail, name),
+        P::Tuple(ps) => ps.iter().any(|p| pat_mentions_name(p, name)),
+        P::Constructor { fields, named_fields, .. } =>
+            fields.iter().any(|p| pat_mentions_name(p, name))
+                || named_fields.iter().any(|(_, p)| pat_mentions_name(p, name)),
+        P::Index { base, index } => exp_reads_name(base, name) || exp_reads_name(index, name),
+        P::FieldAccess { base, .. } => pat_mentions_name(base, name),
+        P::Wildcard | P::Lit(_) | P::EmptyList | P::None_ | P::Todo(_) => false,
+    }
+}
+
+fn hoist_scan_stmts(stmts: &[typedexp::TypedStmt], name: &str, scan: &mut HoistScan) {
+    for s in stmts {
+        if !scan.ok { return; }
+        hoist_scan_stmt(s, name, scan);
+    }
+}
+
+fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan) {
+    use typedexp::TypedStmt as S;
+    use typedexp::TypedPat as P;
+    if !scan.ok { return; }
+    match stmt {
+        S::Assign { lhs, rhs } => {
+            if let P::Index { base, index } = lhs {
+                if is_bare_var(base, name) {
+                    // `name[idx] := v` — a subscript write; needs borrow_mut.
+                    scan.written = true;
+                    scan.used = true;
+                    hoist_scan_exp(index, name, scan);
+                } else if exp_reads_name(base, name) {
+                    // `name` appears in the write target in a non-simple way
+                    // (e.g. `other[name[i]] := v` writes `other`, reads name —
+                    // that read is fine; but `name[i][j] := v` is not the clean
+                    // single-subscript form). Be conservative.
+                    scan.ok = false;
+                } else {
+                    hoist_scan_exp(base, name, scan);
+                    hoist_scan_exp(index, name, scan);
+                }
+            } else if pat_mentions_name(lhs, name) {
+                // Whole-reassignment (`name := …`), pattern binding, or a nested
+                // reference — none compatible with a single hoisted borrow.
+                scan.ok = false;
+            }
+            hoist_scan_exp(rhs, name, scan);
+        }
+        S::NoRetCall { call } => hoist_scan_exp(call, name, scan),
+        S::If { cond, then_, elseif, else_ } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_stmts(then_, name, scan);
+            for (c, b) in elseif {
+                hoist_scan_exp(c, name, scan);
+                hoist_scan_stmts(b, name, scan);
+            }
+            hoist_scan_stmts(else_, name, scan);
+        }
+        S::For { var, range, body } => {
+            if var == name { scan.ok = false; return; }
+            hoist_scan_exp(range, name, scan);
+            hoist_scan_stmts(body, name, scan);
+        }
+        S::While { cond, body } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_stmts(body, name, scan);
+        }
+        S::Try { body, else_body } => {
+            hoist_scan_stmts(body, name, scan);
+            hoist_scan_stmts(else_body, name, scan);
+        }
+        S::Failure { body } => hoist_scan_stmts(body, name, scan),
+        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+    }
+}
+
+fn hoist_scan_exp(exp: &typedexp::TypedExp, name: &str, scan: &mut HoistScan) {
+    use typedexp::TypedExp as E;
+    if !scan.ok { return; }
+    match exp {
+        E::Lit(_) | E::Todo(_) => {}
+        E::Var { name: n, segments, .. } => {
+            let head = segments.first().map(|s| s.name.as_str()).unwrap_or(n.as_str());
+            if head == name {
+                // Only a single-segment subscript element access is allowed.
+                let valid = segments.len() == 1 && !segments[0].subscripts.is_empty();
+                if valid { scan.used = true; } else { scan.ok = false; }
+            }
+            // Recurse into every subscript expression (they may nest `name[..]`
+            // reads or read `name` bare inside another var's subscript).
+            for seg in segments {
+                for sub in &seg.subscripts {
+                    hoist_scan_exp(sub, name, scan);
+                }
+            }
+        }
+        E::BinOp { lhs, rhs, .. } => {
+            hoist_scan_exp(lhs, name, scan);
+            hoist_scan_exp(rhs, name, scan);
+        }
+        E::UnOp { operand, .. } => hoist_scan_exp(operand, name, scan),
+        E::Call { args, named_args, .. }
+        | E::Constructor { args, named_args, .. }
+        | E::PartEval { args, named_args, .. } => {
+            for a in args { hoist_scan_exp(a, name, scan); }
+            for (_, v) in named_args { hoist_scan_exp(v, name, scan); }
+        }
+        E::If { cond, then_, elseif, else_, .. } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_exp(then_, name, scan);
+            for (c, b) in elseif {
+                hoist_scan_exp(c, name, scan);
+                hoist_scan_exp(b, name, scan);
+            }
+            hoist_scan_exp(else_, name, scan);
+        }
+        E::Cons { head, tail, .. } => {
+            hoist_scan_exp(head, name, scan);
+            hoist_scan_exp(tail, name, scan);
+        }
+        E::Tuple(es) => for e in es { hoist_scan_exp(e, name, scan); },
+        E::Array { elems, .. } => for e in elems { hoist_scan_exp(e, name, scan); },
+        E::Range { start, step, stop, .. } => {
+            hoist_scan_exp(start, name, scan);
+            if let Some(s) = step { hoist_scan_exp(s, name, scan); }
+            hoist_scan_exp(stop, name, scan);
+        }
+        E::Match { input, cases, as_binding, .. } => {
+            hoist_scan_exp(input, name, scan);
+            if as_binding.as_deref() == Some(name) { scan.ok = false; return; }
+            for c in cases {
+                if typedexp::pat_bindings(&c.pattern).iter().any(|(n, _)| n == name) {
+                    scan.ok = false;
+                    return;
+                }
+                if let Some(g) = &c.guard { hoist_scan_exp(g, name, scan); }
+                for (ln, _, d, _) in &c.locals {
+                    if ln == name { scan.ok = false; return; }
+                    if let Some(d) = d { hoist_scan_exp(d, name, scan); }
+                }
+                hoist_scan_stmts(&c.stmts, name, scan);
+                hoist_scan_exp(&c.result, name, scan);
+            }
+        }
+        E::Reduction { body, iterators, .. } => {
+            for it in iterators {
+                if it.name == name { scan.ok = false; return; }
+                hoist_scan_exp(&it.range, name, scan);
+                if let Some(g) = &it.guard { hoist_scan_exp(g, name, scan); }
+            }
+            hoist_scan_exp(body, name, scan);
+        }
+    }
+}
+
 fn exp_reads_name(exp: &typedexp::TypedExp, name: &str) -> bool {
     use typedexp::TypedExp as E;
     match exp {
@@ -7230,6 +7473,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         let saved_fn_outputs = ctx.fn_outputs.clone();
         let saved_fn_outputs_no_default = ctx.fn_outputs_no_default.clone();
         let saved_uninit_arrays = ctx.uninit_arrays.clone();
+        let saved_hoisted_arrays = ctx.hoisted_arrays.clone();
         for member in parent_members.iter() {
             if let MM::ClassMember::ClassDef(cdm) = member
                 && matches!(&cdm.class_def.restriction, Absyn::Restriction::R_FUNCTION { .. })
@@ -7279,6 +7523,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         ctx.fn_outputs = saved_fn_outputs;
         ctx.fn_outputs_no_default = saved_fn_outputs_no_default;
         ctx.uninit_arrays = saved_uninit_arrays;
+        ctx.hoisted_arrays = saved_hoisted_arrays;
     }
 
     // Open the tail-call loop *before* the output/protected-local declarations
@@ -7296,6 +7541,47 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         ctx.tail_self_short = name.to_owned();
     }
     let body_indent = if loop_lowered { format!("{orig_body_indent}    ") } else { orig_body_indent.clone() };
+
+    // "Borrow once": for each `Array<T>` input parameter that is never an
+    // output and whose every occurrence is a plain `name[idx]` element access
+    // (see [`array_hoistable`]), hoist its cell borrow to a single binding here
+    // and reuse it for every access, instead of re-`borrow()`ing per subscript.
+    // Loop-lowered functions are skipped: a tail self-call passes its arrays as
+    // bare args (which `array_hoistable` already rejects), and holding a borrow
+    // across param reassignment would be unsound. The bindings must dominate the
+    // whole body, including output/protected initialisers below, so emit them
+    // first and populate `ctx.hoisted_arrays` before anything reads it.
+    ctx.hoisted_arrays.clear();
+    if !loop_lowered {
+        let output_names: HashSet<&str> = env.outputs.iter().map(|s| s.as_str()).collect();
+        // Typed initialiser expressions of the outputs/protected locals — part
+        // of the body for the purpose of the bare-use check in `array_hoistable`.
+        let init_exps: Vec<typedexp::TypedExp> = outputs.iter().chain(protected.iter())
+            .filter_map(|(_, _, modif, _)| extract_default_exp(modif))
+            .map(|exp| typedexp::infer_exp(exp, &infer_env, top_level, &pkg_prefix, &all_type_vars))
+            .collect();
+        for inp in fn_inputs_eff.iter() {
+            if !matches!(inp.ty, Ty::Array(_)) { continue; }
+            if output_names.contains(inp.name.as_str()) { continue; }
+            if let Some(kind) = array_hoistable(&typed_stmts, &init_exps, &inp.name) {
+                ctx.hoisted_arrays.insert(inp.name.clone(), kind);
+            }
+        }
+        // Emit in a stable order so codegen is deterministic.
+        let mut hoisted: Vec<(&String, &BorrowKind)> = ctx.hoisted_arrays.iter().collect();
+        hoisted.sort_by(|a, b| a.0.cmp(b.0));
+        for (nm, kind) in hoisted {
+            // The binding uses the raw name (the `__ab_` prefix already makes it
+            // a non-keyword, valid identifier); the borrowed param is referenced
+            // through `escape_ident` since a keyword param is declared `r#kw`.
+            let bind = hoisted_binding_name(nm);
+            let esc = escape_ident(nm);
+            match kind {
+                BorrowKind::Shared => writeln!(out, "{body_indent}let {bind} = {esc}.borrow();").unwrap(),
+                BorrowKind::Mut => writeln!(out, "{body_indent}let mut {bind} = {esc}.borrow_mut();").unwrap(),
+            }
+        }
+    }
 
     for (n, t, modif, is_const_local) in outputs.iter().chain(protected.iter()) {
         // The output `n` is consumed by the tail-call lowering: its declaration
@@ -11467,9 +11753,18 @@ fn emit_var<'a>(
     let base_name = if real_segments.is_empty() {
         name_str.clone()
     } else {
-        let mut base = escape_ident(&real_segments[0].name);
+        // A hoisted input array (see the "borrow once" pass in `emit_function`)
+        // reuses the single `__ab_<name>` borrow held for the whole body — no
+        // per-access `.borrow()` and no scoping guard.
+        let hoisted = real_segments.len() == 1
+            && ctx.hoisted_arrays.contains_key(&real_segments[0].name);
+        let mut base = if hoisted {
+            hoisted_binding_name(&real_segments[0].name)
+        } else {
+            escape_ident(&real_segments[0].name)
+        };
         if !real_segments[0].subscripts.is_empty() {
-            if matches!(ctx.fn_env_vars.get(&real_segments[0].name), Some(Ty::Array(_))) {
+            if !hoisted && matches!(ctx.fn_env_vars.get(&real_segments[0].name), Some(Ty::Array(_))) {
                 base = format!("{base}.borrow()");
                 has_borrow_guard = true;
             }
@@ -20087,7 +20382,21 @@ fn emit_stmt<'a>(
                         let n = *fresh; *fresh += 1;
                         let tmp = format!("__cell{n}");
                         let idx_tmp = format!("__idx{n}");
-                        let base_str = emit_exp(base, /*is_const=*/false, ctx, top_level);
+                        // A hoisted input array holds a single `borrow_mut()`
+                        // (`__ab_<name>`) for the whole body; write through it
+                        // directly. The RHS/subscript temps read the same held
+                        // borrow (RefMut derefs to `&` for reads) with no aliasing
+                        // panic, so the temp hoisting only preserves eval order.
+                        let hoisted_bind: Option<String> = match base {
+                            TypedExp::Var { name, .. } if ctx.hoisted_arrays.contains_key(name.as_str()) =>
+                                Some(hoisted_binding_name(name)),
+                            _ => None,
+                        };
+                        let base_str = if hoisted_bind.is_some() {
+                            String::new()
+                        } else {
+                            emit_exp(base, /*is_const=*/false, ctx, top_level)
+                        };
                         // Check if the base array is uninitialised (from arrayCreateNoInit).
                         // If so, use ptr::write via arrayInitSlot to avoid dropping garbage bytes.
                         let base_is_uninit = matches!(
@@ -20097,7 +20406,9 @@ fn emit_stmt<'a>(
                         writeln!(out, "{indent}{{").unwrap();
                         writeln!(out, "{indent}    let {tmp} = {scrut_expr};").unwrap();
                         writeln!(out, "{indent}    let {idx_tmp} = {idx_str};").unwrap();
-                        if base_is_uninit {
+                        if let Some(bind) = hoisted_bind {
+                            writeln!(out, "{indent}    {bind}[({idx_tmp}-1) as usize] = {tmp};").unwrap();
+                        } else if base_is_uninit {
                             writeln!(out, "{indent}    unsafe {{ metamodelica::Dangerous::arrayInitSlot({base_str}.clone(), {idx_tmp}, {tmp}); }}").unwrap();
                         } else {
                             writeln!(out, "{indent}    {base_str}.borrow_mut()[({idx_tmp}-1) as usize] = {tmp};").unwrap();

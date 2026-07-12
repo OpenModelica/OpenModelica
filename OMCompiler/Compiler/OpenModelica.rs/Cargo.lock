@@ -6853,6 +6853,7 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
+ "rayon",
  "regex",
  "roxmltree",
  "zip",
