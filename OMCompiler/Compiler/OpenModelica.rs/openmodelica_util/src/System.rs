@@ -83,10 +83,11 @@ struct SysState {
     rng: u64,
 }
 
-#[derive(Clone, Copy)]
-enum RtSlot {
-    Running { start: u64, accumulated_ns: u128, ntick: i32 },
-    Stopped { accumulated_ns: u128, ntick: i32 },
+#[derive(Clone, Copy, Default)]
+struct RtSlot {
+    tick: Option<u64>,
+    accumulated_ns: u128,
+    ntick: i32,
 }
 
 thread_local! {
@@ -1527,13 +1528,14 @@ pub fn getuid() -> i32 {
 // ───────────────────────────────── realtime stopwatches ──────────────────────
 
 fn rt_slot_mut(s: &mut SysState, idx: i32) -> &mut RtSlot {
-    s.rt.entry(idx).or_insert(RtSlot::Stopped { accumulated_ns: 0, ntick: 0 })
+    s.rt.entry(idx).or_default()
 }
 
 pub fn realtimeTick(clockIndex: i32) -> Result<()> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        *slot = RtSlot::Running { start: openmodelica_wasi::monotonic_nanos(), accumulated_ns: 0, ntick: 0 };
+        slot.tick = Some(openmodelica_wasi::monotonic_nanos());
+        slot.ntick += 1;
     });
     Ok(())
 }
@@ -1549,13 +1551,9 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
     // version's garbage value.
     let nanos = with(|s| -> u128 {
         let slot = rt_slot_mut(s, clockIndex);
-        match slot {
-            RtSlot::Running { start, ntick, .. } => {
-                let elapsed = openmodelica_wasi::monotonic_nanos().saturating_sub(*start) as u128;
-                *ntick += 1;
-                elapsed
-            }
-            RtSlot::Stopped { accumulated_ns, .. } => *accumulated_ns,
+        match slot.tick {
+            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
+            None => slot.accumulated_ns,
         }
     });
     Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
@@ -1563,7 +1561,9 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
 
 pub fn realtimeClear(clockIndex: i32) -> Result<()> {
     with(|s| {
-        s.rt.insert(clockIndex, RtSlot::Stopped { accumulated_ns: 0, ntick: 0 });
+        let slot = rt_slot_mut(s, clockIndex);
+        slot.accumulated_ns = 0;
+        slot.ntick = 0;
     });
     Ok(())
 }
@@ -1571,37 +1571,24 @@ pub fn realtimeClear(clockIndex: i32) -> Result<()> {
 pub fn realtimeAccumulate(clockIndex: i32) -> Result<metamodelica::Real> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        match *slot {
-            RtSlot::Running { start, accumulated_ns, ntick } => {
-                let new_acc = accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128;
-                *slot = RtSlot::Stopped { accumulated_ns: new_acc, ntick: ntick + 1 };
-                Ok(metamodelica::OrderedFloat(new_acc as f64 / 1.0e9))
-            }
-            RtSlot::Stopped { accumulated_ns, .. } => {
-                Ok(metamodelica::OrderedFloat(accumulated_ns as f64 / 1.0e9))
-            }
-        }
+        let diff = match slot.tick {
+            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
+            None => 0,
+        };
+        slot.accumulated_ns += diff;
+        Ok(metamodelica::OrderedFloat(diff as f64 / 1.0e9))
     })
 }
 
 pub fn realtimeAccumulated(clockIndex: i32) -> Result<metamodelica::Real> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        let nanos = match *slot {
-            RtSlot::Running { start, accumulated_ns, .. } => accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
-            RtSlot::Stopped { accumulated_ns, .. } => accumulated_ns,
-        };
-        Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
+        Ok(metamodelica::OrderedFloat(slot.accumulated_ns as f64 / 1.0e9))
     })
 }
 
 pub fn realtimeNtick(clockIndex: i32) -> Result<i32> {
-    with(|s| {
-        let slot = rt_slot_mut(s, clockIndex);
-        Ok(match *slot {
-            RtSlot::Running { ntick, .. } | RtSlot::Stopped { ntick, .. } => ntick,
-        })
-    })
+    with(|s| Ok(rt_slot_mut(s, clockIndex).ntick))
 }
 
 // ───────────────────────────────── single-instance timer ─────────────────────
