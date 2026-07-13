@@ -184,7 +184,7 @@ pipeline {
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
                 "-DOM_QT_MAJOR_VERSION=5",            // Use Qt5 on old macOS machines
-                "-DOM_OMC_ENABLE_COLPACK=OFF"])       // Disable ColPack missing OpenMP
+                "-DOM_OMC_ENABLE_COLPACK=OFF"])       // Disable ColPack (missing OpenMP)
             }
           }
         }
