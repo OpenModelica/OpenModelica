@@ -1,5 +1,4 @@
-FROM build-deps:almalinux-10
-# FROM docker.openmodelica.org/build-deps:almalinux-10
+FROM docker.openmodelica.org/build-deps:almalinux-10
 
 ENV SHELL=/bin/bash
 

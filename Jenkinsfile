@@ -180,8 +180,8 @@ pipeline {
             script {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build")
+                                  + " -DOM_USE_CCACHE=OFF"
+                                  + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
@@ -206,15 +206,15 @@ pipeline {
               withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
                 sh "echo PATH: $PATH"
                 common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                          + " -DOM_USE_CCACHE=OFF"
-                                          + " -DCMAKE_INSTALL_PREFIX=build"
-                                          // Look in /opt/local first to prefer the macports libraries
-                                          // over others in the system.
-                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
-                                          // Always specify the compilers explicilty for macOS
-                                          + " -DCMAKE_C_COMPILER=gcc"
-                                          + " -DCMAKE_CXX_COMPILER=g++"
-                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
+                                    + " -DOM_USE_CCACHE=OFF"
+                                    + " -DCMAKE_INSTALL_PREFIX=build"
+                                    // Look in /opt/local first to prefer the macports libraries
+                                    // over others in the system.
+                                    + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                    // Always specify the compilers explicilty for macOS
+                                    + " -DCMAKE_C_COMPILER=gcc"
+                                    + " -DCMAKE_CXX_COMPILER=g++"
+                                    + " -DCMAKE_Fortran_COMPILER=gfortran"
                                       )
                 sh "build/bin/omc --version"
               }
@@ -244,10 +244,11 @@ pipeline {
             script {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build"
-                                        + " -DCMAKE_C_COMPILER=clang"
-                                        + " -DCMAKE_CXX_COMPILER=clang++")
+                                  + " -DOM_USE_CCACHE=OFF"
+                                  + " -DCMAKE_INSTALL_PREFIX=build"
+                                  + " -DCMAKE_C_COMPILER=clang"
+                                  + " -DCMAKE_CXX_COMPILER=clang++")
+              sh "build/bin/omc --version"
             }
           }
         }
@@ -274,11 +275,11 @@ pipeline {
             script {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build"
-                                        + " -DCMAKE_C_COMPILER=gcc"
-                                        + " -DCMAKE_CXX_COMPILER=g++"
-                                        + " -DOM_OMEDIT_ANIMATION_QUICK3D=ON" // Almalinux-10 has no OpenSceneGraph, switch to Quick3D
+                                  + " -DOM_USE_CCACHE=OFF"
+                                  + " -DCMAKE_INSTALL_PREFIX=build"
+                                  + " -DCMAKE_C_COMPILER=gcc"
+                                  + " -DCMAKE_CXX_COMPILER=g++"
+                                  + " -DOM_OMEDIT_ANIMATION_QUICK3D=ON" // Almalinux-10 has no OpenSceneGraph, switch to Quick3D
               )
               sh "build/bin/omc --version"
             }
@@ -307,10 +308,10 @@ pipeline {
             script {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build"
-                                        + " -DCMAKE_C_COMPILER=gcc"
-                                        + " -DCMAKE_CXX_COMPILER=g++")
+                                  + " -DOM_USE_CCACHE=OFF"
+                                  + " -DCMAKE_INSTALL_PREFIX=build"
+                                  + " -DCMAKE_C_COMPILER=gcc"
+                                  + " -DCMAKE_CXX_COMPILER=g++")
               sh "build/bin/omc --version"
             }
           }
@@ -335,8 +336,8 @@ pipeline {
                 bat "echo PATH: %PATH%"
                 common.cloneOMDev()
                 common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
-                                        + ' -DCMAKE_INSTALL_PREFIX=build'
-                                        + ' -G "MSYS Makefiles"'
+                                    + ' -DCMAKE_INSTALL_PREFIX=build'
+                                    + ' -G "MSYS Makefiles"'
                                       )
               }
             }
