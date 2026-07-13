@@ -207,6 +207,27 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
     // sparse: setter only uses nth, argument order does not matter
     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse, cleanup);
   }
+
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
+    if (isDense) {
+      const unsigned int nRows = jacobian->sizeRows;
+      const unsigned int nCols = jacobian->sizeCols;
+      infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (dense %ux%u, column-major):", nRows, nCols);
+      for (unsigned int col = 0; col < nCols; col++) {
+        for (unsigned int row = 0; row < nRows; row++) {
+          infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u,%u] = %g", row, col, jac[col * nRows + row]);
+        }
+      }
+      messageClose(OMC_LOG_JAC);
+    } else {
+      const unsigned int nnz = jacobian->sparsePattern->nnz;
+      infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (sparse, nnz=%u):", nnz);
+      for (unsigned int k = 0; k < nnz; k++) {
+        infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u] = %g", k, jac[k]);
+      }
+      messageClose(OMC_LOG_JAC);
+    }
+  }
 }
 
 /**
@@ -264,6 +285,8 @@ void evalJacobianOneColor(DATA* data, threadData_t* threadData,
       while (nth < (int)sp->leadindex[j + 1]) {
         currentIndex = (int)sp->index[nth];
         setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
+        throwStreamPrint(threadData, "evalJacobianOneColor: color=%d, j=%d, nth=%d, currentIndex=%d, value=%g\n",
+              color, j, nth, currentIndex, jacobian->resultVars[currentIndex]);
         nth++;
       }
       jacobian->seedVars[j] = 0.0;
@@ -1021,3 +1044,29 @@ unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx)
   return row;
 }
 
+
+
+// JACOBIAN* initializeSymbolicJacobian(threadData_t* threadData, DATA* data, JACOBIAN_METHOD method)
+// {
+//   JACOBIAN* jacobian;
+//   switch (method)
+//   {
+//   case COLOREDSYMJAC:
+//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+//     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+//     break;
+//   case COLOREDSYMJACADJ:
+//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+//     data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
+//     break;
+//   // if bidirectional then the adjoint Jacobian and the bidirectional eval is initialized inside the initialAnalyticJacobianA function
+//   case BICOLOREDSYMJAC:
+//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+//     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+//     break;
+//   default:
+//     throwStreamPrint(threadData, "Unhandled case in initializeSymbolicJacobian. Jacobian method was given: %s", JACOBIAN_METHOD_NAME[method]);
+//     break;
+//   }
+//   return jacobian;
+// }
