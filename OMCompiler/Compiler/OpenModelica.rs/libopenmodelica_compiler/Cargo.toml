@@ -29,6 +29,11 @@ arcstr.workspace = true
 # `mmc_mk_*` use malloc/strdup, so the shims free them with the same allocator).
 libc.workspace = true
 
+# Optional global allocators (native only; see the `mimalloc`/`jemalloc` features).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+mimalloc = { version = "0.1", optional = true }
+tikv-jemallocator = { version = "0.6", optional = true }
+
 # wasm build: the JS bindings (src/wasm_api.rs). Pinned to match the
 # wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);
 # since wasmer 7.2 this is the same recent wasm-bindgen the OMShell GUIs use.
@@ -68,6 +73,14 @@ codegen_c = ["openmodelica_backend_main/codegen_c"]
 codegen_fmu = ["openmodelica_backend_main/codegen_fmu"]
 susan = ["openmodelica_backend_main/susan"]
 scripting_api = ["dep:openmodelica_scripting_qt"]
+
+# Select the process global allocator (native only). The whole compiler is
+# statically linked into this cdylib, so its `#[global_allocator]` governs every
+# Rust allocation the omc launcher drives. Both off by default; enable one to
+# A/B the backend allocation-bound phases (matching/sorting, loadModel).
+# `jemalloc` wins if both are set, so there is never a duplicate allocator.
+mimalloc = ["dep:mimalloc"]
+jemalloc = ["dep:tikv-jemallocator"]
 
 # Forward the wasm-jit engine choice (default wasmtime; see
 # openmodelica_codegen_wasm_jit).
