@@ -3,6 +3,10 @@ def isWindows() {
   return !isUnix()
 }
 
+def isMac() {
+  return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
 
@@ -324,14 +328,13 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
       sanityCheck('build', true)
     }
   }
-  else {
-    def uname = sh script: 'uname', returnStdout: true
-    def isMac = uname.startsWith("Darwin")
-    def envOverrides = isMac ? ["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"] : []
-    withEnv (envOverrides) {
-      if (isMac) {
-        sh "echo PATH: $PATH"
-      }
+  else if (isMac()) {
+    // /opt/local/bin (MacPorts) must come first so "gcc"/"g++"/"gfortran" resolve
+    // to the real GCC toolchain implied by -DCMAKE_PREFIX_PATH=/opt/local, rather
+    // than falling through to Apple Clang's /usr/bin/gcc wrapper (which lacks
+    // OpenMP support / omp.h).
+    withEnv (["PATH=/opt/local/bin:/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+      sh "echo PATH: $PATH"
       sh "mkdir ./build_cmake"
       sh "${cmake_exe} --version"
       sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
@@ -339,6 +342,15 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
       sh "build/bin/omc --version"
     }
+    sanityCheck('build', true)
+  }
+  else {
+    sh "mkdir ./build_cmake"
+    sh "${cmake_exe} --version"
+    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+    sh "build/bin/omc --version"
     sanityCheck('build', true)
   }
 }
