@@ -1,13 +1,14 @@
 def common
-def shouldWeBuildUCRT
-def shouldWeBuildAlpine_value
-def shouldWeBuildEnterpriseLinux_value
-def shouldWeBuildFedora_value
-def shouldWeDisableAllCMakeBuilds_value
-def shouldWeEnableMacOSCMakeBuild_value
-def shouldWeEnableUCRTCMakeBuild_value
-def shouldWeRunTests
 def isPR
+def shouldWeBuildAlpine
+def shouldWeBuildEnterpriseLinux
+def shouldWeBuildFedora
+def shouldWeBuildUCRT
+def shouldWeDisableAllCMakeBuilds
+def shouldWeEnableMacOSCMakeBuild
+def shouldWeEnableUCRTCMakeBuild
+def shouldWeRunTests
+
 pipeline {
   agent none
   options {
@@ -46,26 +47,17 @@ pipeline {
             milestone(buildNumber)
           }
           common = load("${env.workspace}/.CI/common.groovy")
-          isPR = common.isPR()
-          print "isPR: ${isPR}"
-          shouldWeBuildUCRT = common.shouldWeBuildUCRT()
-          print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
-          shouldWeBuildAlpine_value = common.shouldWeBuildAlpine()
-          print "shouldWeBuildAlpine: ${shouldWeBuildAlpine_value}"
-          shouldWeBuildEnterpriseLinux_value = common.shouldWeBuildEnterpriseLinux()
-          print "shouldWeBuildEnterpriseLinux: ${shouldWeBuildEnterpriseLinux_value}"
-          shouldWeBuildFedora_value = common.shouldWeBuildFedora()
-          print "shouldWeBuildFedora: ${shouldWeBuildFedora_value}"
-          shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
-          print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
-          shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
-          print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
-          shouldWeEnableUCRTCMakeBuild_value = common.shouldWeEnableUCRTCMakeBuild()
-          print "shouldWeEnableUCRTCMakeBuild: ${shouldWeEnableUCRTCMakeBuild_value}"
-          shouldWeRunTests = common.shouldWeRunTests()
-          print "shouldWeRunTests: ${shouldWeRunTests}"
-          shouldWeRunRustTests = shouldWeRunTests && common.shouldWeRunRustTests()
-          print "shouldWeRunRustTests: ${shouldWeRunRustTests}"
+          def buildFlags = common.evaluateBuildFlags()
+          isPR = buildFlags.isPR
+          shouldWeBuildAlpine = buildFlags.shouldWeBuildAlpine
+          shouldWeBuildEnterpriseLinux = buildFlags.shouldWeBuildEnterpriseLinux
+          shouldWeBuildFedora = buildFlags.shouldWeBuildFedora
+          shouldWeBuildUCRT = buildFlags.shouldWeBuildUCRT
+          shouldWeDisableAllCMakeBuilds = buildFlags.shouldWeDisableAllCMakeBuilds
+          shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
+          shouldWeEnableUCRTCMakeBuild = buildFlags.shouldWeEnableUCRTCMakeBuild
+          shouldWeRunRustTests = buildFlags.shouldWeRunRustTests
+          shouldWeRunTests = buildFlags.shouldWeRunTests
         }
       }
     }
@@ -87,7 +79,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value }
+            expression { !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -171,19 +163,17 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value }
+            expression { !shouldWeDisableAllCMakeBuilds }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build"])
-              sh "build/bin/omc --version"
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
@@ -196,26 +186,21 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableMacOSCMakeBuild}
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
-              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
-                sh "echo PATH: $PATH"
-                common.buildOMC_CMake([
-                  "-DCMAKE_BUILD_TYPE=Release",
-                  "-DOM_USE_CCACHE=OFF",
-                  "-DCMAKE_INSTALL_PREFIX=build",
-                  "-DCMAKE_PREFIX_PATH=/opt/local", // Look in /opt/local first to prefer the macports libraries over others in the system.
-                  "-DCMAKE_C_COMPILER=gcc",         // Always specify the compilers explicitly for macOS
-                  "-DCMAKE_CXX_COMPILER=g++",
-                  "-DCMAKE_Fortran_COMPILER=gfortran"])
-                sh "build/bin/omc --version"
-              }
+              common.buildOMC_CMake([
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DOM_USE_CCACHE=OFF",
+                "-DCMAKE_INSTALL_PREFIX=build",
+                "-DCMAKE_PREFIX_PATH=/opt/local", // Look in /opt/local first to prefer the macports libraries over others in the system.
+                "-DCMAKE_C_COMPILER=gcc",         // Always specify the compilers explicitly for macOS
+                "-DCMAKE_CXX_COMPILER=g++",
+                "-DCMAKE_Fortran_COMPILER=gfortran"])
             }
           }
         }
@@ -233,21 +218,19 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeBuildAlpine_value }
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildAlpine }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
                 "-DCMAKE_C_COMPILER=clang",
                 "-DCMAKE_CXX_COMPILER=clang++"])
-              sh "build/bin/omc --version"
             }
           }
         }
@@ -265,14 +248,13 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeBuildEnterpriseLinux_value }
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildEnterpriseLinux }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
@@ -281,7 +263,6 @@ pipeline {
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DOM_OMEDIT_ANIMATION_QUICK3D=ON" // Almalinux-10 has no OpenSceneGraph, switch to Quick3D
               ])
-              sh "build/bin/omc --version"
             }
           }
         }
@@ -299,21 +280,19 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeBuildFedora_value }
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildFedora }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
                 "-DCMAKE_C_COMPILER=gcc",
                 "-DCMAKE_CXX_COMPILER=g++"])
-              sh "build/bin/omc --version"
             }
           }
         }
@@ -325,22 +304,17 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableUCRTCMakeBuild}
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
-              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}}tools\\msys\\usr\\bin;${env.OMDEV}}tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-                bat "echo PATH: %PATH%"
-                common.cloneOMDev()
-                common.buildOMC_CMake([
-                  '-DCMAKE_BUILD_TYPE=Release',
-                  '-DCMAKE_INSTALL_PREFIX=build',
-                  '-G "MSYS Makefiles"'])
-              }
+              common.buildOMC_CMake([
+                '-DCMAKE_BUILD_TYPE=Release',
+                '-DCMAKE_INSTALL_PREFIX=build',
+                '-G "MSYS Makefiles"'])
             }
           }
         }
@@ -388,7 +362,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -415,7 +389,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -442,7 +416,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -645,7 +619,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -671,7 +645,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -695,7 +669,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -719,7 +693,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -968,7 +942,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds_value }
+            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script { common.assembleWeb() }
@@ -1195,12 +1169,7 @@ pipeline {
   post {
     failure {
       script {
-        if (common.cacheBranch()=="master") {
-          emailext subject: '$DEFAULT_SUBJECT',
-          body: '$DEFAULT_CONTENT',
-          replyTo: '$DEFAULT_REPLYTO',
-          to: '$DEFAULT_TO'
-        }
+        common.notifyOnFailure()
       }
     }
   }
