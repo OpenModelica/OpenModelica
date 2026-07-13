@@ -61,6 +61,7 @@ protected
   import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
+  import Subscript = NFSubscript;
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -401,16 +402,20 @@ protected
   function minimal extends Module.tearingInterface;
     // only extracts discrete variables to be solved as inner equations
   protected
-    Tearing strict;
+    Tearing strict, innerStrict;
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
     Adjacency.Matrix adj;
+    Adjacency.Mapping inner_adj_mapping;
     Matching matching;
-    list<StrongComponent> inner_comps;
+    list<StrongComponent> inner_comps, broken_comps, processed_inner_comps;
     UnorderedMap<ComponentRef, Integer> v, e;
     UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    Integer g_arr_e, g_scal_e_start, eqn_len, scal_off, var_scal_idx_first, var_arr_idx_first;
+    list<ComponentRef> iter_names;
+    ComponentRef base_cref, iter_var_cref;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -432,7 +437,11 @@ protected
 
         // do nothing if there are no discrete or algorithm equations
         if not (listEmpty(disc_eqns) and listEmpty(alg_eqns)) then
-          comp.mixed := true;
+          // only mark as mixed if there are also continuous variables or equations;
+          // purely discrete loops keep comp.mixed = false (solved by event iteration, not NLS)
+          if not listEmpty(cont_vars) or not listEmpty(cont_eqns) then
+            comp.mixed := true;
+          end if;
           inner_comps := {};
 
           // algorithm equations: create MULTI_COMPONENTs directly with ALL outputs as inner variables
@@ -467,6 +476,59 @@ protected
             // upgrade adjacency matrix and sort the system creating inner equation components
             adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
             inner_comps := listAppend(Sorting.tarjan(adj, matching, variables, equations), inner_comps);
+
+            // For purely discrete loops: break inner ALGEBRAIC_LOOPs into individual components.
+            // Discrete algebraic cycles are solved by event iteration, not NLS.
+            // NLS cannot handle Boolean/Integer iteration variables.
+            if listEmpty(cont_vars) and listEmpty(cont_eqns) then
+              SOME(inner_adj_mapping) := Adjacency.Matrix.getMappingOpt(adj);
+              processed_inner_comps   := {};
+              for ic in inner_comps loop
+                () := match ic
+                  case StrongComponent.ALGEBRAIC_LOOP(strict = innerStrict, mixed = false) algorithm
+                    broken_comps := {};
+                    for eqn_sl in innerStrict.residual_eqns loop
+                      g_arr_e := UnorderedMap.getSafe(Equation.getEqnName(Slice.getT(eqn_sl)), e, sourceInfo());
+                      (g_scal_e_start, eqn_len) := inner_adj_mapping.eqn_AtS[g_arr_e];
+                      if Equation.isForEquation(Slice.getT(eqn_sl)) then
+                        // Keep for-equations whole and use iterator subscript ($i1) as var_cref.
+                        // A constant subscript [1] would mismatch the body's [$i1], causing
+                        // solveUnique to fail and fall into differentiation of Boolean (false-false).
+                        var_scal_idx_first := matching.eqn_to_var[g_scal_e_start];
+                        var_arr_idx_first  := inner_adj_mapping.var_StA[var_scal_idx_first];
+                        (iter_names, _, _) := BEquation.Iterator.getFrames(Equation.getForIterator(Pointer.access(Slice.getT(eqn_sl))));
+                        base_cref     := BVariable.getVarName(VariablePointers.getVarAt(variables, var_arr_idx_first));
+                        iter_var_cref := ComponentRef.mergeSubscripts(
+                          {Subscript.INDEX(Expression.fromCref(listHead(iter_names)))},
+                          base_cref, true, true);
+                        broken_comps := StrongComponent.SLICED_COMPONENT(
+                          iter_var_cref,
+                          Slice.SLICE(VariablePointers.getVarAt(variables, var_arr_idx_first), {}),
+                          eqn_sl,
+                          NBSolve.Status.UNPROCESSED
+                        ) :: broken_comps;
+                      else
+                        // Scalar equations: one component per scalar
+                        if listEmpty(eqn_sl.indices) then
+                          for scal_off in 0 : eqn_len - 1 loop
+                            broken_comps := StrongComponent.createPseudoScalar({g_scal_e_start + scal_off}, matching.eqn_to_var, inner_adj_mapping, variables, equations) :: broken_comps;
+                          end for;
+                        else
+                          for scal_off in eqn_sl.indices loop
+                            broken_comps := StrongComponent.createPseudoScalar({g_scal_e_start + scal_off}, matching.eqn_to_var, inner_adj_mapping, variables, equations) :: broken_comps;
+                          end for;
+                        end if;
+                      end if;
+                    end for;
+                    processed_inner_comps := listAppend(listReverse(broken_comps), processed_inner_comps);
+                  then ();
+                  else algorithm
+                    processed_inner_comps := ic :: processed_inner_comps;
+                  then ();
+                end match;
+              end for;
+              inner_comps := listReverse(processed_inner_comps);
+            end if;
           end if;
 
           // only take variables that are not in the matched set

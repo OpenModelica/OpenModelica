@@ -859,6 +859,13 @@ public
           res_idx := res_idx + listLength(slice.indices);
         then tmp;
 
+        // WHEN equations can appear as residuals in event-iteration algebraic loops.
+        // They are evaluated (not minimized) during the iteration — create a WHEN block.
+        // res_idx is NOT incremented since this is not a numerical residual.
+        case (BEquation.WHEN_EQUATION(), _) algorithm
+          (tmp, simCodeIndices) := createWhenBody(eqn.body, eqn.source, eqn.attr, simCodeIndices);
+        then tmp;
+
         // ToDo: add all other cases!
 
         else algorithm

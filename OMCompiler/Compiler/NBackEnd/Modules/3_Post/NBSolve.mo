@@ -298,12 +298,16 @@ public
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
           for index in arrayLength(strict.innerEquations):-1:1 loop
-            // ToDo: fail for non explicit inner equations?
             (tmp, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcMap, kind, implicit_index, slicing_map, varData, eqData);
             inner_comps := listAppend(tmp, inner_comps);
             for elem in tmp loop
               if StrongComponent.getSolveStatus(elem) <> NBSolve.Status.EXPLICIT then
-                failed_inner := elem :: failed_inner;
+                // Pure discrete algebraic loops (mixed=false) are solved by event iteration —
+                // they are allowed to remain implicit as inner equations of a mixed block.
+                () := match elem
+                  case StrongComponent.ALGEBRAIC_LOOP(mixed = false) then ();
+                  else algorithm failed_inner := elem :: failed_inner; then ();
+                end match;
               end if;
             end for;
           end for;

@@ -270,12 +270,20 @@ public
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
   algorithm
+    // Pure-discrete tearing sets (all iteration variables are discrete/boolean) have no
+    // continuous derivatives and contribute zero to the Jacobian — return an empty set.
+    if not listEmpty(tearing.iteration_vars) and
+       List.all(list(Slice.getT(var) for var in tearing.iteration_vars),
+                function BVariable.isDiscontinuous(staticAsContinuous = false)) then
+      diff_tearing := Tearing.TEARING_SET({}, {}, listArray({}), NONE());
+      return;
+    end if;
+
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
-    // filter discretes?
-    inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie in tearing.innerEquations));
+    // Only differentiate continuous inner equations; discrete ones contribute zero to the Jacobian.
+    inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie guard(not StrongComponent.isDiscrete(ie)) in arrayList(tearing.innerEquations)));
 
-    // diff jac?
     diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
   end differentiateTearing;
 

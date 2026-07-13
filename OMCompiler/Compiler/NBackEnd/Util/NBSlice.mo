@@ -1493,7 +1493,7 @@ protected
     end for;
     scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
     // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
-    if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
+    if scal_size > 0 and (size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0)) then
       shift := 0;
       for i in 1:size/scal_size loop
         for scal in scalarized loop
@@ -1503,11 +1503,16 @@ protected
           end for;
         end for;
       end for;
-    else
+    elseif scal_size > 0 and scal_size < size then
+      // partial out-of-bounds: some frame values produce invalid subscripts (e.g. $i1-1 at $i1=1).
+      // evaluate each frame combination individually and assign deps to the correct equation row only.
+      resolveAllRegularPartial(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, map, m, mapping, modes);
+    elseif scal_size > size then
       // undetected full dependency caused by non-evaluable subscripts, this can happen by inlining functions
       // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
       resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
     end if;
+    // scal_size == 0: all frame values are out-of-bounds, no real dependency — do nothing
   end resolveAllRegular;
 
   function resolveMixed
@@ -1648,6 +1653,109 @@ protected
       end for;
     end for;
   end resolveAllReduced;
+
+  function resolveAllRegularPartial
+    "II.1 partial out-of-bounds variant: some frame values produce invalid (out-of-bounds) subscripts.
+    Evaluates each frame combination individually and assigns each valid scalar index to the
+    equation row that corresponds to that frame value only.  Rows whose frame value maps to an
+    out-of-bounds subscript receive no dependency entry."
+    input ComponentRef cref;
+    input ComponentRef original_cref;
+    input ComponentRef eqn_name;
+    input Integer skip_idx, size, iter_size;
+    input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
+    input UnorderedMap<ComponentRef, Integer> map;
+    input array<list<Integer>> m;
+    input Mapping mapping;
+    input UnorderedMap<Mode.Key, Mode> modes;
+  protected
+    Mode mode;
+    ComponentRef final_cref;
+    Integer var_arr_idx, var_start;
+    list<Integer> sizes;
+    list<Expression> subs;
+    Integer body_size;
+    Pointer<Integer> row;
+    UnorderedMap<ComponentRef, Expression> replacements;
+  algorithm
+    mode          := Mode.create(eqn_name, {original_cref}, false);
+    (final_cref, var_arr_idx) := getVarArrIdx(cref, mapping, map);
+    (var_start, _)            := mapping.var_AtS[var_arr_idx];
+    sizes         := ComponentRef.sizes(final_cref, false, true);
+    subs          := ComponentRef.subscriptsToExpression(cref, true);
+    body_size     := intDiv(size, iter_size);
+    row           := Pointer.create(skip_idx);
+    replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    resolveFrames(frames, sizes, subs, var_start, replacements, true, m, modes, mode, body_size, row);
+  end resolveAllRegularPartial;
+
+  function resolveFrames
+    "Recursively iterates over all frame combinations (one per equation row) and assigns
+    each valid scalar index to the corresponding equation row.  Advances the row counter
+    for every frame combination regardless of whether the subscript is valid."
+    input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
+    input list<Integer> sizes;
+    input list<Expression> subs;
+    input Integer var_start;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input Boolean resize;
+    input array<list<Integer>> m;
+    input UnorderedMap<Mode.Key, Mode> modes;
+    input Mode mode;
+    input Integer body_size;
+    input Pointer<Integer> row;
+  algorithm
+    () := match frames
+      local
+        ComponentRef iterator;
+        Expression range;
+        Option<Iterator> fmap;
+        list<tuple<ComponentRef, Expression, Option<Iterator>>> rest;
+        Integer start, step, stop, sub_idx, r;
+        list<list<Integer>> values;
+        list<Expression> iterator_exps;
+        list<Integer> iterator_lst;
+
+      // leaf: all frame iterators bound — evaluate subscript and assign to current row
+      case {} algorithm
+        r      := Pointer.access(row);
+        values := resolveDimensionsSubscripts(sizes, subs, replacements, resize);
+        for v in listReverse(values) loop
+          addMatrixEntry(m, modes, r, locationToIndex(sizes, v, var_start), mode);
+        end for;
+        Pointer.update(row, r + body_size);
+      then ();
+
+      // recurse over iterator range
+      case (iterator, range, fmap) :: rest algorithm
+        iterator_lst := match range
+          case Expression.RANGE() algorithm
+            (start, step, stop) := Expression.getIntegerRange(range, resize);
+          then List.intRange3(start, step, stop);
+          case Expression.ARRAY() algorithm
+            iterator_exps := list(Expression.map(e, function Replacements.applySimpleExp(replacements = replacements)) for e in range.elements);
+            iterator_lst  := list(Expression.integerValue(SimplifyExp.simplifyDump(e, true, getInstanceName())) for e in iterator_exps);
+          then iterator_lst;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to parse iterator range: "
+              + ComponentRef.toString(iterator) + " in " + Expression.toString(range)});
+          then fail();
+        end match;
+
+        sub_idx := 1;
+        for index in iterator_lst loop
+          UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
+          Iterator.createMappedLocationReplacement(fmap, sub_idx, replacements);
+          resolveFrames(rest, sizes, subs, var_start, replacements, resize, m, modes, mode, body_size, row);
+          sub_idx := sub_idx + 1;
+        end for;
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end resolveFrames;
 
   function resolveEquationDimensions
     "a component reference in a list of equation dimensions. The second argument to the tuple
@@ -1932,8 +2040,8 @@ protected
       local
         Integer start, step, stop;
 
-      // just a single element
-      case Expression.INTEGER() then {rep.value};
+      // just a single element; filter out-of-bounds values (Modelica arrays are 1-indexed)
+      case Expression.INTEGER() then if rep.value >= 1 and rep.value <= size then {rep.value} else {};
       case Expression.ENUM_LITERAL() then {rep.index};
 
       // build list from range
