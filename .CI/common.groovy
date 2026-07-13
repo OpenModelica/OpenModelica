@@ -276,8 +276,16 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   sanityCheck('build', buildCpp)
 }
 
-void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
+/**
+ * Configure and build OMC via CMake and run sanity check.
+ *
+ * @param cmake_args list of individual CMake "-DFOO=BAR"-style arguments
+ * @param cmake_exe  the cmake executable to invoke.
+ */
+void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
   standardSetup()
+
+  def cmake_args_str = cmake_args.join(' ')
 
   if (isWindows()) {
     bat (label: 'build', script: """
@@ -291,7 +299,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
       echo set -ex
       echo mkdir build_cmake
       echo ${cmake_exe} --version
-      echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
+      echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
       echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
       ) > buildOMCWindows.sh
 
@@ -303,7 +311,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   else {
     sh "mkdir ./build_cmake"
     sh "${cmake_exe} --version"
-    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}"
+    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }

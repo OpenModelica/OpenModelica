@@ -39,21 +39,16 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
                 sh "echo PATH: $PATH"
-                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                          + " -DCMAKE_INSTALL_PREFIX=build"
-                                          // Look in /opt/local first to prefer the macports libraries
-                                          // over others in the system.
-                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
-                                          // Always specify the compilers explicilty for macOS
-                                          + " -DCMAKE_C_COMPILER=gcc"
-                                          + " -DCMAKE_CXX_COMPILER=g++"
-                                          // Disable fortran (and ipopt) for this build because
-                                          // we build a pkg from it and we do not want to depend
-                                          // on Fortran for now.
-                                          + " -DOM_OMC_ENABLE_FORTRAN=OFF"
-                                          + " -DOM_OMC_ENABLE_OPTIMIZATION=OFF"
-                                          + " -DOM_OMC_ENABLE_MOO=OFF"
-                                      )
+                common.buildOMC_CMake([
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DCMAKE_INSTALL_PREFIX=build",
+                  "-DCMAKE_PREFIX_PATH=/opt/local",    // Look in /opt/local first to prefer the macports libraries over others in the system.
+                  "-DCMAKE_C_COMPILER=gcc",            // Always specify the compilers explicitly for macOS
+                  "-DCMAKE_CXX_COMPILER=g++",
+                  "-DOM_OMC_ENABLE_FORTRAN=OFF",       // Disable fortran (and ipopt) for this build because we build a pkg from it and we do not want to depend on Fortran for now.
+                  "-DOM_OMC_ENABLE_OPTIMIZATION=OFF",
+                  "-DOM_OMC_ENABLE_MOO=OFF"
+                  ])
                 sh "build/bin/omc --version"
                 // Create a product build package
                 sh "cd build_cmake && cpack -G productbuild"
