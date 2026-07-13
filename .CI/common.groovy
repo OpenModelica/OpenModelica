@@ -321,6 +321,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         set MSYS2_PATH_TYPE=inherit
         %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
       """)
+      sanityCheck('build', true)
     }
   }
   else {
@@ -338,9 +339,8 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
       sh "build/bin/omc --version"
     }
+    sanityCheck('build', true)
   }
-
-  sanityCheck('build', true)
 }
 
 // sccache config for the cargo builds: a shared S3 (MinIO) compile cache at

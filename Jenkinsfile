@@ -191,10 +191,11 @@ pipeline {
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_PREFIX_PATH=/opt/local", // Look in /opt/local first to prefer the macports libraries over others in the system.
-                "-DCMAKE_C_COMPILER=gcc",         // Always specify the compilers explicitly for macOS
+                "-DCMAKE_PREFIX_PATH=/opt/local",     // Look in /opt/local first to prefer the macports libraries over others in the system.
+                "-DCMAKE_C_COMPILER=gcc",             // Always specify the compilers explicitly for macOS
                 "-DCMAKE_CXX_COMPILER=g++",
-                "-DCMAKE_Fortran_COMPILER=gfortran"])
+                "-DCMAKE_Fortran_COMPILER=gfortran",
+                "-DOM_QT_MAJOR_VERSION=5"])           //Use Qt5 on old macOS machines
             }
           }
         }
