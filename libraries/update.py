@@ -65,7 +65,8 @@ desired = {
     "3.1.0-master"
   },
   "ThermoSysPro": {
-    "3.2.0"
+    "3.2.0",
+    "4.0.0"
   },
   "WasteWater": {
     "2.1.0"

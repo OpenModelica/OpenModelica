@@ -1,0 +1,270 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows
+// ==========================================================================
+//
+//
+// OrderedVariables (5)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 5: q0:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (5, 5)
+// ========================================
+// 1/1 (1): q0 = 100.0   [binding |0|0|0|0|]
+// 2/2 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 5/5 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 1
+//
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: q0: (1/1): (1): q0 = 100.0
+// 4: Q1: (2/2): (1): Q1 = q0
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: q0:VARIABLE()  type: Real
+//
+//
+// Binding equations:(1)
+// ============================================================
+//
+// 5: q0: (1/1): (1): q0 = 100.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 4: Q1: (2/2): (1): Q1 = q0
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// Procedure success
+//
+// >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// Procedure success
+//
+// >>>4: Q1: (2/2): (1): Q1 = q0
+// q0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (5)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 5: q0:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (5, 5)
+// ========================================
+// 1/1 (1): Q1 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): q0 = 100.0   [binding |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 5/5 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 1
+// var 5 is solved in eqn 2
+//
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: q0: (2/2): (1): q0 = 100.0
+// 4: Q1: (1/1): (1): Q1 = 0.0
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: q0:VARIABLE()  type: Real
+//
+//
+// Binding equations:(2)
+// ============================================================
+//
+// 5: q0: (2/2): (1): q0 = 100.0
+// 4: Q1: (1/1): (1): Q1 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// Procedure success
+//
+// >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {5, 4, 3}
+// SET_S: {}
+//
+//
+// SET_C (3, 3)
+// ========================================
+// 1/1 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4} (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{5, 4, 3}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{3, 4, 2, 1} (4)
+// ========================================
+// 1: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 3: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 4: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:3 equations < 4 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult

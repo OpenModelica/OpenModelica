@@ -1,0 +1,7 @@
+Variable Names;Measured Value-x;HalfWidthConfidenceInterval
+singularPressureLoss1.Q;100.3;1.96
+singularPressureLoss1.T;290;6
+singularPressureLoss1.Pm;3E5;6E4
+singularPressureLoss2.Q;99.3;1.91
+singularPressureLoss2.T;295;6
+singularPressureLoss2.Pm;2.8E5;6E4

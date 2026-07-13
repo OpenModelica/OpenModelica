@@ -1,0 +1,297 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/Splitter0_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/Splitter0_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0
+// ==========================================================================
+//
+//
+// OrderedVariables (7)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 5: Q2_0:VARIABLE(unit = "kg/s" )  type: Real
+// 6: Q3_0:VARIABLE(unit = "kg/s" )  type: Real
+// 7: T1_0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  type: Real
+//
+//
+// OrderedEquation (7, 7)
+// ========================================
+// 1/1 (1): Q2_0 = 5.0   [binding |0|0|0|0|]
+// 2/2 (1): Q3_0 = 5.0   [binding |0|0|0|0|]
+// 3/3 (1): T1_0 = 293.15   [binding |0|0|0|0|]
+// 4/4 (1): T1 = T1_0   [dynamic |0|0|0|0|]
+// 5/5 (1): Q2 = Q2_0   [dynamic |0|0|0|0|]
+// 6/6 (1): Q3 = Q3_0   [dynamic |0|0|0|0|]
+// 7/7 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 7 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 6
+// var 3 is solved in eqn 5
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 1
+// var 6 is solved in eqn 2
+// var 7 is solved in eqn 3
+//
+// Standard BLT of the original model:(7)
+// ============================================================
+//
+// 7: T1_0: (3/3): (1): T1_0 = 293.15
+// 6: Q3_0: (2/2): (1): Q3_0 = 5.0
+// 5: Q2_0: (1/1): (1): Q2_0 = 5.0
+// 4: Q1: (7/7): (1): Q1 = Q2 + Q3
+// 3: Q2: (5/5): (1): Q2 = Q2_0
+// 2: Q3: (6/6): (1): Q3 = Q3_0
+// 1: T1: (4/4): (1): T1 = T1_0
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (3)
+// ========================================
+// 1: Q2_0:VARIABLE(unit = "kg/s" )  type: Real
+// 2: Q3_0:VARIABLE(unit = "kg/s" )  type: Real
+// 3: T1_0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  type: Real
+//
+//
+// Binding equations:(3)
+// ============================================================
+//
+// 7: T1_0: (3/3): (1): T1_0 = 293.15
+// 6: Q3_0: (2/2): (1): Q3_0 = 5.0
+// 5: Q2_0: (1/1): (1): Q2_0 = 5.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 1: T1: (4/4): (1): T1 = T1_0
+// 2: Q3: (6/6): (1): Q3 = Q3_0
+// 3: Q2: (5/5): (1): Q2 = Q2_0
+// 4: Q1: (7/7): (1): Q1 = Q2 + Q3
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: T1: (4/4): (1): T1 = T1_0
+// T1_0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>2: Q3: (6/6): (1): Q3 = Q3_0
+// Q3_0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>3: Q2: (5/5): (1): Q2 = Q2_0
+// Q2_0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>4: Q1: (7/7): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (7)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 5: Q2_0:VARIABLE(unit = "kg/s" )  type: Real
+// 6: Q3_0:VARIABLE(unit = "kg/s" )  type: Real
+// 7: T1_0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  type: Real
+//
+//
+// OrderedEquation (7, 7)
+// ========================================
+// 1/1 (1): T1 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Q3 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): Q2 = 0.0   [binding |0|0|0|0|]
+// 4/4 (1): Q2_0 = 5.0   [binding |0|0|0|0|]
+// 5/5 (1): Q3_0 = 5.0   [binding |0|0|0|0|]
+// 6/6 (1): T1_0 = 293.15   [binding |0|0|0|0|]
+// 7/7 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 7 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 4
+// var 6 is solved in eqn 5
+// var 7 is solved in eqn 6
+//
+// Standard BLT of the original model:(7)
+// ============================================================
+//
+// 7: T1_0: (6/6): (1): T1_0 = 293.15
+// 6: Q3_0: (5/5): (1): Q3_0 = 5.0
+// 5: Q2_0: (4/4): (1): Q2_0 = 5.0
+// 4: Q1: (7/7): (1): Q1 = Q2 + Q3
+// 3: Q2: (3/3): (1): Q2 = 0.0
+// 2: Q3: (2/2): (1): Q3 = 0.0
+// 1: T1: (1/1): (1): T1 = 0.0
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (3)
+// ========================================
+// 1: Q2_0:VARIABLE(unit = "kg/s" )  type: Real
+// 2: Q3_0:VARIABLE(unit = "kg/s" )  type: Real
+// 3: T1_0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  type: Real
+//
+//
+// Binding equations:(6)
+// ============================================================
+//
+// 7: T1_0: (6/6): (1): T1_0 = 293.15
+// 6: Q3_0: (5/5): (1): Q3_0 = 5.0
+// 5: Q2_0: (4/4): (1): Q2_0 = 5.0
+// 3: Q2: (3/3): (1): Q2 = 0.0
+// 2: Q3: (2/2): (1): Q3 = 0.0
+// 1: T1: (1/1): (1): T1 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 4: Q1: (7/7): (1): Q1 = Q2 + Q3
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>4: Q1: (7/7): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {7}
+// SET_S: {}
+//
+//
+// SET_C (1, 1)
+// ========================================
+// 1/1 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4} (4)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{7}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{1} (1)
+// ========================================
+// 1: T1:VARIABLE(min = 0.0 start = 273.15 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_C has known variables:{2, 3, 4} (3)
+// ========================================
+// 1: Q3:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+// 3: Q1:VARIABLE(start = 1000.0 unit = "kg/s" uncertain=Uncertainty.refine)  type: Real
+//
+//
+// -SET_S has known variables:{} (0)
+// ========================================
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 4 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/Splitter0_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// "
+// endResult

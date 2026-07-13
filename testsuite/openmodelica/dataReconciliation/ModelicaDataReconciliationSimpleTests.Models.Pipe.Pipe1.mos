@@ -1,0 +1,228 @@
+// name:     ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("ModelicaDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv
+//
+// ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1
+// ==========================================================================
+//
+//
+// OrderedVariables (3)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: p:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (3, 3)
+// ========================================
+// 1/1 (1): Q1 = Q2   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = p   [dynamic |0|0|0|0|]
+// 3/3 (1): p = 2.0   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+//
+// Standard BLT of the original model:(3)
+// ============================================================
+//
+// 3: p: (3/3): (1): p = 2.0
+// 2: Q1: (2/2): (1): Q1 = p
+// 1: Q2: (1/1): (1): Q1 = Q2
+//
+//
+// Variables of interest (2)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: p:VARIABLE()  type: Real
+//
+//
+// Binding equations:(1)
+// ============================================================
+//
+// 3: p: (3/3): (1): p = 2.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(2)
+// ============================================================
+//
+// 1: Q2: (1/1): (1): Q1 = Q2
+// 2: Q1: (2/2): (1): Q1 = p
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: Q2: (1/1): (1): Q1 = Q2
+// Procedure success
+//
+// >>>2: Q1: (2/2): (1): Q1 = p
+// p is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (3)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: p:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (3, 3)
+// ========================================
+// 1/1 (1): Q1 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Q1 = Q2   [dynamic |0|0|0|0|]
+// 3/3 (1): p = 2.0   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+// Standard BLT of the original model:(3)
+// ============================================================
+//
+// 3: p: (3/3): (1): p = 2.0
+// 2: Q1: (1/1): (1): Q1 = 0.0
+// 1: Q2: (2/2): (1): Q1 = Q2
+//
+//
+// Variables of interest (2)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: p:VARIABLE()  type: Real
+//
+//
+// Binding equations:(2)
+// ============================================================
+//
+// 3: p: (3/3): (1): p = 2.0
+// 2: Q1: (1/1): (1): Q1 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 1: Q2: (2/2): (1): Q1 = Q2
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: Q2: (2/2): (1): Q1 = Q2
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {2}
+// SET_S: {}
+//
+//
+// SET_C (1, 1)
+// ========================================
+// 1/1 (1): Q1 = Q2   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2} (2)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{2}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{1, 2} (2)
+// ========================================
+// 1: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 2 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult

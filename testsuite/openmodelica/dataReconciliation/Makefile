@@ -1,64 +1,89 @@
 TEST = ../../rtest -v
 BASELINE = ../../rtest -b
 
+TESTMODELS = \
+ModelicaDataReconciliationSimpleTests.Models.DistillationTower \
+ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe1 \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe2 \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe3 \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe4 \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe5 \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.Pipe6 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter1 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter2 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter3 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter4 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5a \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5e \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5f \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter6 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter7 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter9 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows1 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows10 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows2 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows3 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows4 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe1 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe10 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe11 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe7 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter1 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter2 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter3 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter4 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_WithHARE \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE
+
+# These are generated from annotations too, but are not passing tests yet:
+# - PipeCorrelation reports a solveSystemFstar failure and unstable warning text.
+# - Remaining TSP models either fail to build, fail at execution, or report
+#   data reconciliation errors.
+FAILINGTESTMODELS = \
+ModelicaDataReconciliationSimpleTests.Models.Pipe.PipeCorrelation \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter0 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5 \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5b \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5d \
+ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8 \
+ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example \
+ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows5 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows8 \
+TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows9 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe12 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe2 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe4 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe5 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe6 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe8 \
+TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter6 \
+TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter8 \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR \
+TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR
+
+GENERATED_TESTFILES = $(addsuffix .mos,$(TESTMODELS))
+GENERATED_FAILINGTESTFILES = $(addsuffix .mos,$(FAILINGTESTMODELS))
+
 TESTFILES = \
-DistillationTower.mos\
-VDI2048Exple.mos\
-Pipe1.mos\
-Pipe2.mos\
-Pipe3.mos\
-Pipe4.mos\
-Pipe5.mos\
-Pipe6.mos\
-Splitter.mos\
-Splitter1.mos\
-Splitter2.mos\
-Splitter3.mos\
-Splitter4.mos\
-Splitter5c.mos\
-Splitter5d.mos\
-Splitter5e.mos\
-Splitter5f.mos\
-Splitter5g.mos\
-Splitter5h.mos\
-stateEstimation.mos\
-stateEstimation2.mos\
-FourFlows.mos\
-TSP_Pipe.mos\
-TSP_Pipe1.mos\
-TSP_Pipe4.mos\
-TSP_Pipe7.mos\
-TSP_Pipe8.mos\
-TSP_Pipe9.mos\
-TSP_Pipe10.mos\
-TSP_Pipe11.mos\
-TSP_Splitter1.mos\
-TSP_Splitter2.mos\
-TSP_Splitter3.mos\
-TSP_Splitter4.mos\
-TSP_Splitter5.mos\
-TSP_Splitter7.mos\
-TSP_FourFlows.mos\
-TSP_FourFlows1.mos\
-TSP_FourFlows3.mos\
-TSP_FourFlows8.mos\
+$(GENERATED_TESTFILES)
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
-TSP_FourFlows2.mos\
-TSP_FourFlows4.mos\
-TSP_FourFlows5.mos\
-TSP_FourFlows6.mos\
-TSP_FourFlows7.mos\
-TSP_FourFlows9.mos\
-TSP_FourFlows11.mos\
-TSP_Pipe6.mos\
-TSP_Pipe5.mos\
-TSP_FourFlows10.mos\
-TSP_Pipe3.mos\
-TSP_Splitter6.mos\
-TSP_Pipe2.mos\
+FAILINGTESTFILES = \
+$(GENERATED_FAILINGTESTFILES)
 
 
 # Dependency files that are not .mo .mos or Makefile
@@ -69,12 +94,22 @@ DEPENDENCIES = \
 *.csv  \
 *.txt   \
 *.html   \
+*.py \
 Makefile
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test clean getdeps failingtest
+.PHONY : test clean getdeps failingtest generateModelicaDataReconciliationMos testModelicaDataReconciliation baselineModelicaDataReconciliation
+
+generateModelicaDataReconciliationMos:
+	@./generateModelicaDataReconciliationMos.py $(TESTMODELS) $(FAILINGTESTMODELS)
+
+testModelicaDataReconciliation: generateModelicaDataReconciliationMos
+	@$(TEST) $(GENERATED_TESTFILES)
+
+baselineModelicaDataReconciliation: generateModelicaDataReconciliationMos
+	@$(BASELINE) $(GENERATED_TESTFILES)
 
 test:
 	@echo
@@ -95,6 +130,7 @@ failtestbaseline:
 	@echo Running baseline for failing tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(MAKE) generateModelicaDataReconciliationMos
 	@$(BASELINE) $(FAILINGTESTFILES)
 
 # Cleans all files that are not listed as dependencies
@@ -118,4 +154,5 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
+	@$(MAKE) generateModelicaDataReconciliationMos
 	@$(TEST) $(FAILINGTESTFILES)

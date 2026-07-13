@@ -1,0 +1,1243 @@
+// name:     TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe9_Inputs.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+loadFile("TSP_DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+AnnotationNamedModifiers:=getAnnotationNamedModifiers(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9, "__OpenModelica_simulationFlags");
+
+simFlags:="-reconcile ";
+for i in 1:size(AnnotationNamedModifiers, 1) loop
+  simFlags:=simFlags+ " -"+AnnotationNamedModifiers[i]+"="+getAnnotationModifierValue(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9, "__OpenModelica_simulationFlags", AnnotationNamedModifiers[i]);
+end for;
+print("simFlags: "+simFlags);
+
+simulate(TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9, simflags=simFlags);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// {"lv", "eps", "s", "sx"}
+// "-reconcile "
+//
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe9_Inputs.csv
+//
+// ModelInfo: TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9
+// ==========================================================================
+//
+//
+// OrderedVariables (68)
+// ========================================
+// 1: sinkP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 2: sinkP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 3: sinkP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 4: sinkP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 5: sinkP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 6: sinkP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 7: sinkP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 8: sinkP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 9: sinkP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 10: sinkP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 11: sinkP1.T:VARIABLE(min = 0.0 start = 310.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 12: sinkP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 13: sinkP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 14: sourceP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 15: sourceP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 16: sourceP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 17: sourceP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 18: sourceP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 19: sourceP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 20: sourceP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 21: sourceP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 22: sourceP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 23: sourceP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 24: sourceP1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 25: sourceP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 26: sourceP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 27: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 28: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 29: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 30: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 31: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 34: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 35: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 36: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 37: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 38: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 39: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 40: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 41: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 42: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 43: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 44: singularPressureLoss2.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 45: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 46: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 47: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 48: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 49: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 50: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 51: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 52: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 53: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 54: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 55: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 56: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 57: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 58: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 59: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 60: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 61: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 62: singularPressureLoss1.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 63: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 64: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 65: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 66: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 67: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 68: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// OrderedEquation (68, 68)
+// ========================================
+// 1/1 (1): sourceP1.P0 = 3e5   [binding |0|0|0|0|]
+// 2/2 (1): sourceP1.T0 = 290.0   [binding |0|0|0|0|]
+// 3/3 (1): sourceP1.h0 = 1e5   [binding |0|0|0|0|]
+// 4/4 (1): sinkP1.P0 = 1e5   [binding |0|0|0|0|]
+// 5/5 (1): sinkP1.T0 = 290.0   [binding |0|0|0|0|]
+// 6/6 (1): sinkP1.h0 = 1e5   [binding |0|0|0|0|]
+// 7/7 (1): sourceP1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
+// 8/8 (1): sourceP1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 9/9 (1): sourceP1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
+// 10/10 (1): sourceP1.C.b = singularPressureLoss1.C1.b   [dynamic |0|0|0|0|]
+// 11/11 (1): sourceP1.C.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 12/12 (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol   [dynamic |0|0|0|0|]
+// 13/13 (1): singularPressureLoss2.C2.P = sinkP1.C.P   [dynamic |0|0|0|0|]
+// 14/14 (1): singularPressureLoss2.C2.Q = sinkP1.C.Q   [dynamic |0|0|0|0|]
+// 15/15 (1): singularPressureLoss2.C2.a = sinkP1.C.a   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss2.C2.b = sinkP1.C.b   [dynamic |0|0|0|0|]
+// 17/17 (1): singularPressureLoss2.C2.h = sinkP1.C.h   [dynamic |0|0|0|0|]
+// 18/18 (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P   [dynamic |0|0|0|0|]
+// 20/20 (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 21/21 (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a   [dynamic |0|0|0|0|]
+// 22/22 (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b   [dynamic |0|0|0|0|]
+// 23/23 (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 24/24 (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol   [dynamic |0|0|0|0|]
+// 25/25 (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP   [dynamic |0|0|0|0|]
+// 26/26 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 28/28 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 29/29 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 30/30 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 31/31 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
+// 32/32 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
+// 33/33 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 34/34 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 35/35 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic |0|0|0|0|]
+// 36/36 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 37/37 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 38/38 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 39/39 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 40/40 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 41/41 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
+// 42/42 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
+// 43/43 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 44/44 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 45/45 (1): sourceP1.C.P = sourceP1.P   [dynamic |0|0|0|0|]
+// 46/46 (1): sourceP1.C.Q = sourceP1.Q   [dynamic |0|0|0|0|]
+// 47/47 (1): sourceP1.C.h_vol = sourceP1.h   [dynamic |0|0|0|0|]
+// 48/48 (1): sourceP1.IPressure.signal = sourceP1.P0   [dynamic |0|0|0|0|]
+// 49/49 (1): sourceP1.P = sourceP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 50/50 (1): sourceP1.ITemperature.signal = sourceP1.T0   [dynamic |0|0|0|0|]
+// 51/51 (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0   [dynamic |0|0|0|0|]
+// 52/52 (1): sourceP1.T = sourceP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 53/53 (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)   [dynamic |0|0|0|0|]
+// 54/54 (1): sinkP1.C.P = sinkP1.P   [dynamic |0|0|0|0|]
+// 55/55 (1): sinkP1.C.Q = sinkP1.Q   [dynamic |0|0|0|0|]
+// 56/56 (1): sinkP1.C.h_vol = sinkP1.h   [dynamic |0|0|0|0|]
+// 57/57 (1): sinkP1.IPressure.signal = sinkP1.P0   [dynamic |0|0|0|0|]
+// 58/58 (1): sinkP1.P = sinkP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 59/59 (1): sinkP1.ITemperature.signal = sinkP1.T0   [dynamic |0|0|0|0|]
+// 60/60 (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0   [dynamic |0|0|0|0|]
+// 61/61 (1): sinkP1.T = sinkP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 62/62 (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)   [dynamic |0|0|0|0|]
+// 63/63 (1): singularPressureLoss1.C1.a = true   [binding |0|0|0|0|]
+// 64/64 (1): singularPressureLoss1.C2.b = true   [binding |0|0|0|0|]
+// 65/65 (1): singularPressureLoss2.C1.a = true   [binding |0|0|0|0|]
+// 66/66 (1): singularPressureLoss2.C2.b = true   [binding |0|0|0|0|]
+// 67/67 (1): sourceP1.C.b = true   [binding |0|0|0|0|]
+// 68/68 (1): sinkP1.C.a = true   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 68 variables and equations
+// var 1 is solved in eqn 59
+// var 2 is solved in eqn 16
+// var 3 is solved in eqn 68
+// var 4 is solved in eqn 17
+// var 5 is solved in eqn 14
+// var 6 is solved in eqn 56
+// var 7 is solved in eqn 54
+// var 8 is solved in eqn 60
+// var 9 is solved in eqn 57
+// var 10 is solved in eqn 62
+// var 11 is solved in eqn 61
+// var 12 is solved in eqn 55
+// var 13 is solved in eqn 58
+// var 14 is solved in eqn 50
+// var 15 is solved in eqn 67
+// var 16 is solved in eqn 9
+// var 17 is solved in eqn 11
+// var 18 is solved in eqn 8
+// var 19 is solved in eqn 47
+// var 20 is solved in eqn 45
+// var 21 is solved in eqn 51
+// var 22 is solved in eqn 48
+// var 23 is solved in eqn 53
+// var 24 is solved in eqn 52
+// var 25 is solved in eqn 46
+// var 26 is solved in eqn 49
+// var 27 is solved in eqn 66
+// var 28 is solved in eqn 15
+// var 29 is solved in eqn 37
+// var 30 is solved in eqn 36
+// var 31 is solved in eqn 18
+// var 32 is solved in eqn 13
+// var 33 is solved in eqn 22
+// var 34 is solved in eqn 65
+// var 35 is solved in eqn 23
+// var 36 is solved in eqn 20
+// var 37 is solved in eqn 40
+// var 38 is solved in eqn 35
+// var 39 is solved in eqn 38
+// var 40 is solved in eqn 42
+// var 41 is solved in eqn 43
+// var 42 is solved in eqn 44
+// var 43 is solved in eqn 39
+// var 44 is solved in eqn 41
+// var 45 is solved in eqn 64
+// var 46 is solved in eqn 21
+// var 47 is solved in eqn 27
+// var 48 is solved in eqn 26
+// var 49 is solved in eqn 24
+// var 50 is solved in eqn 19
+// var 51 is solved in eqn 10
+// var 52 is solved in eqn 63
+// var 53 is solved in eqn 30
+// var 54 is solved in eqn 29
+// var 55 is solved in eqn 12
+// var 56 is solved in eqn 7
+// var 57 is solved in eqn 28
+// var 58 is solved in eqn 32
+// var 59 is solved in eqn 33
+// var 60 is solved in eqn 34
+// var 61 is solved in eqn 31
+// var 62 is solved in eqn 25
+// var 63 is solved in eqn 1
+// var 64 is solved in eqn 2
+// var 65 is solved in eqn 3
+// var 66 is solved in eqn 4
+// var 67 is solved in eqn 5
+// var 68 is solved in eqn 6
+//
+// Standard BLT of the original model:(68)
+// ============================================================
+//
+// 68: sinkP1.h0: (6/6): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (5/5): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (4/4): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (3/3): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (2/2): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (1/1): (1): sourceP1.P0 = 3e5
+// 62: singularPressureLoss1.deltaP: (25/25): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+// 60: singularPressureLoss1.rho: (34/34): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 59: singularPressureLoss1.T: (33/33): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 57: singularPressureLoss1.h: (28/28): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
+// 56: singularPressureLoss1.C1.P: (7/7): (1): sourceP1.C.P = singularPressureLoss1.C1.P
+// 55: singularPressureLoss1.C1.h_vol: (12/12): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
+// 54: singularPressureLoss1.C1.Q: (29/29): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// 53: singularPressureLoss1.C1.h: (30/30): (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 51: singularPressureLoss1.C1.b: (10/10): (1): sourceP1.C.b = singularPressureLoss1.C1.b
+// 50: singularPressureLoss1.C2.P: (19/19): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
+// 49: singularPressureLoss1.C2.h_vol: (24/24): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
+// 48: singularPressureLoss1.C2.Q: (26/26): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 47: singularPressureLoss1.C2.h: (27/27): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
+// 46: singularPressureLoss1.C2.a: (21/21): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 44: singularPressureLoss2.deltaP: (41/41): (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho
+// 43: singularPressureLoss2.Q: (39/39): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// 42: singularPressureLoss2.rho: (44/44): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 41: singularPressureLoss2.T: (43/43): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 39: singularPressureLoss2.h: (38/38): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
+// 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 37: singularPressureLoss2.C1.h_vol: (40/40): (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol
+// 36: singularPressureLoss2.C1.Q: (20/20): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 35: singularPressureLoss2.C1.h: (23/23): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 33: singularPressureLoss2.C1.b: (22/22): (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b
+// 32: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 31: singularPressureLoss2.C2.h_vol: (18/18): (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol
+// 30: singularPressureLoss2.C2.Q: (36/36): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
+// 29: singularPressureLoss2.C2.h: (37/37): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
+// 28: singularPressureLoss2.C2.a: (15/15): (1): singularPressureLoss2.C2.a = sinkP1.C.a
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 26: sourceP1.P: (49/49): (1): sourceP1.P = sourceP1.IPressure.signal
+// 25: sourceP1.Q: (46/46): (1): sourceP1.C.Q = sourceP1.Q
+// 24: sourceP1.T: (52/52): (1): sourceP1.T = sourceP1.ITemperature.signal
+// 23: sourceP1.h: (53/53): (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)
+// 22: sourceP1.IPressure.signal: (48/48): (1): sourceP1.IPressure.signal = sourceP1.P0
+// 21: sourceP1.ISpecificEnthalpy.signal: (51/51): (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0
+// 20: sourceP1.C.P: (45/45): (1): sourceP1.C.P = sourceP1.P
+// 19: sourceP1.C.h_vol: (47/47): (1): sourceP1.C.h_vol = sourceP1.h
+// 18: sourceP1.C.Q: (8/8): (1): sourceP1.C.Q = singularPressureLoss1.C1.Q
+// 17: sourceP1.C.h: (11/11): (1): sourceP1.C.h = singularPressureLoss1.C1.h
+// 16: sourceP1.C.a: (9/9): (1): sourceP1.C.a = singularPressureLoss1.C1.a
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 14: sourceP1.ITemperature.signal: (50/50): (1): sourceP1.ITemperature.signal = sourceP1.T0
+// 13: sinkP1.P: (58/58): (1): sinkP1.P = sinkP1.IPressure.signal
+// 12: sinkP1.Q: (55/55): (1): sinkP1.C.Q = sinkP1.Q
+// 11: sinkP1.T: (61/61): (1): sinkP1.T = sinkP1.ITemperature.signal
+// 10: sinkP1.h: (62/62): (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)
+// 9: sinkP1.IPressure.signal: (57/57): (1): sinkP1.IPressure.signal = sinkP1.P0
+// 8: sinkP1.ISpecificEnthalpy.signal: (60/60): (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0
+// 7: sinkP1.C.P: (54/54): (1): sinkP1.C.P = sinkP1.P
+// 6: sinkP1.C.h_vol: (56/56): (1): sinkP1.C.h_vol = sinkP1.h
+// 5: sinkP1.C.Q: (14/14): (1): singularPressureLoss2.C2.Q = sinkP1.C.Q
+// 4: sinkP1.C.h: (17/17): (1): singularPressureLoss2.C2.h = sinkP1.C.h
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 2: sinkP1.C.b: (16/16): (1): singularPressureLoss2.C2.b = sinkP1.C.b
+// 1: sinkP1.ITemperature.signal: (59/59): (1): sinkP1.ITemperature.signal = sinkP1.T0
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 2: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 3: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 4: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+//
+// Boundary conditions (6)
+// ========================================
+// 1: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 2: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 3: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 4: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 5: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 6: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// Binding equations:(12)
+// ============================================================
+//
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 68: sinkP1.h0: (6/6): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (5/5): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (4/4): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (3/3): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (2/2): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (1/1): (1): sourceP1.P0 = 3e5
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 43: singularPressureLoss2.Q: (39/39): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// 58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>40: singularPressureLoss2.Pm: (42/42): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 32: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 7: sinkP1.C.P: (54/54): (1): sinkP1.C.P = sinkP1.P
+// 13: sinkP1.P: (58/58): (1): sinkP1.P = sinkP1.IPressure.signal
+// 9: sinkP1.IPressure.signal: (57/57): (1): sinkP1.IPressure.signal = sinkP1.P0
+// sinkP1.P0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>43: singularPressureLoss2.Q: (39/39): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// 36: singularPressureLoss2.C1.Q: (20/20): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 48: singularPressureLoss1.C2.Q: (26/26): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 54: singularPressureLoss1.C1.Q: (29/29): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// Procedure success
+//
+// >>>58: singularPressureLoss1.Pm: (32/32): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 56: singularPressureLoss1.C1.P: (7/7): (1): sourceP1.C.P = singularPressureLoss1.C1.P
+// 20: sourceP1.C.P: (45/45): (1): sourceP1.C.P = sourceP1.P
+// 26: sourceP1.P: (49/49): (1): sourceP1.P = sourceP1.IPressure.signal
+// 22: sourceP1.IPressure.signal: (48/48): (1): sourceP1.IPressure.signal = sourceP1.P0
+// sourceP1.P0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+// 62: singularPressureLoss1.deltaP: (25/25): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
+// 50: singularPressureLoss1.C2.P: (19/19): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
+// 38: singularPressureLoss2.C1.P: (35/35): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 32: singularPressureLoss2.C2.P: (13/13): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 7: sinkP1.C.P: (54/54): (1): sinkP1.C.P = sinkP1.P
+// 13: sinkP1.P: (58/58): (1): sinkP1.P = sinkP1.IPressure.signal
+// 9: sinkP1.IPressure.signal: (57/57): (1): sinkP1.IPressure.signal = sinkP1.P0
+// sinkP1.P0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (68)
+// ========================================
+// 1: sinkP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 2: sinkP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 3: sinkP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 4: sinkP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 5: sinkP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 6: sinkP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 7: sinkP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 8: sinkP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 9: sinkP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 10: sinkP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 11: sinkP1.T:VARIABLE(min = 0.0 start = 310.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 12: sinkP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 13: sinkP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 14: sourceP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 15: sourceP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 16: sourceP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 17: sourceP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 18: sourceP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 19: sourceP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 20: sourceP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 21: sourceP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 22: sourceP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 23: sourceP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 24: sourceP1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 25: sourceP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 26: sourceP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 27: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 28: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 29: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 30: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 31: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 34: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 35: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 36: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 37: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 38: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 39: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 40: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 41: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 42: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 43: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 44: singularPressureLoss2.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 45: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 46: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 47: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 48: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 49: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 50: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 51: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 52: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 53: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 54: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 55: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 56: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 57: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 58: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 59: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 60: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 61: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 62: singularPressureLoss1.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 63: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 64: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 65: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 66: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 67: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 68: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// OrderedEquation (68, 68)
+// ========================================
+// 1/1 (1): singularPressureLoss2.Pm = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): singularPressureLoss1.Pm = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): sourceP1.P0 = 3e5   [binding |0|0|0|0|]
+// 4/4 (1): sourceP1.T0 = 290.0   [binding |0|0|0|0|]
+// 5/5 (1): sourceP1.h0 = 1e5   [binding |0|0|0|0|]
+// 6/6 (1): sinkP1.P0 = 1e5   [binding |0|0|0|0|]
+// 7/7 (1): sinkP1.T0 = 290.0   [binding |0|0|0|0|]
+// 8/8 (1): sinkP1.h0 = 1e5   [binding |0|0|0|0|]
+// 9/9 (1): sourceP1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
+// 10/10 (1): sourceP1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 11/11 (1): sourceP1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
+// 12/12 (1): sourceP1.C.b = singularPressureLoss1.C1.b   [dynamic |0|0|0|0|]
+// 13/13 (1): sourceP1.C.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 14/14 (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol   [dynamic |0|0|0|0|]
+// 15/15 (1): singularPressureLoss2.C2.P = sinkP1.C.P   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss2.C2.Q = sinkP1.C.Q   [dynamic |0|0|0|0|]
+// 17/17 (1): singularPressureLoss2.C2.a = sinkP1.C.a   [dynamic |0|0|0|0|]
+// 18/18 (1): singularPressureLoss2.C2.b = sinkP1.C.b   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss2.C2.h = sinkP1.C.h   [dynamic |0|0|0|0|]
+// 20/20 (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol   [dynamic |0|0|0|0|]
+// 21/21 (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P   [dynamic |0|0|0|0|]
+// 22/22 (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 23/23 (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a   [dynamic |0|0|0|0|]
+// 24/24 (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b   [dynamic |0|0|0|0|]
+// 25/25 (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 26/26 (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP   [dynamic |0|0|0|0|]
+// 28/28 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 29/29 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 30/30 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 31/31 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 32/32 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 33/33 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
+// 34/34 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
+// 35/35 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 36/36 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 37/37 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic |0|0|0|0|]
+// 38/38 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 39/39 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 40/40 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 41/41 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 42/42 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 43/43 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
+// 44/44 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
+// 45/45 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 46/46 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 47/47 (1): sourceP1.C.P = sourceP1.P   [dynamic |0|0|0|0|]
+// 48/48 (1): sourceP1.C.Q = sourceP1.Q   [dynamic |0|0|0|0|]
+// 49/49 (1): sourceP1.C.h_vol = sourceP1.h   [dynamic |0|0|0|0|]
+// 50/50 (1): sourceP1.P = sourceP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 51/51 (1): sourceP1.ITemperature.signal = sourceP1.T0   [dynamic |0|0|0|0|]
+// 52/52 (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0   [dynamic |0|0|0|0|]
+// 53/53 (1): sourceP1.T = sourceP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 54/54 (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)   [dynamic |0|0|0|0|]
+// 55/55 (1): sinkP1.C.P = sinkP1.P   [dynamic |0|0|0|0|]
+// 56/56 (1): sinkP1.C.Q = sinkP1.Q   [dynamic |0|0|0|0|]
+// 57/57 (1): sinkP1.C.h_vol = sinkP1.h   [dynamic |0|0|0|0|]
+// 58/58 (1): sinkP1.P = sinkP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 59/59 (1): sinkP1.ITemperature.signal = sinkP1.T0   [dynamic |0|0|0|0|]
+// 60/60 (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0   [dynamic |0|0|0|0|]
+// 61/61 (1): sinkP1.T = sinkP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 62/62 (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)   [dynamic |0|0|0|0|]
+// 63/63 (1): singularPressureLoss1.C1.a = true   [binding |0|0|0|0|]
+// 64/64 (1): singularPressureLoss1.C2.b = true   [binding |0|0|0|0|]
+// 65/65 (1): singularPressureLoss2.C1.a = true   [binding |0|0|0|0|]
+// 66/66 (1): singularPressureLoss2.C2.b = true   [binding |0|0|0|0|]
+// 67/67 (1): sourceP1.C.b = true   [binding |0|0|0|0|]
+// 68/68 (1): sinkP1.C.a = true   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 68 variables and equations
+// var 1 is solved in eqn 59
+// var 2 is solved in eqn 18
+// var 3 is solved in eqn 68
+// var 4 is solved in eqn 19
+// var 5 is solved in eqn 16
+// var 6 is solved in eqn 20
+// var 7 is solved in eqn 55
+// var 8 is solved in eqn 60
+// var 9 is solved in eqn 58
+// var 10 is solved in eqn 57
+// var 11 is solved in eqn 61
+// var 12 is solved in eqn 56
+// var 13 is solved in eqn 62
+// var 14 is solved in eqn 51
+// var 15 is solved in eqn 67
+// var 16 is solved in eqn 11
+// var 17 is solved in eqn 13
+// var 18 is solved in eqn 10
+// var 19 is solved in eqn 49
+// var 20 is solved in eqn 9
+// var 21 is solved in eqn 52
+// var 22 is solved in eqn 50
+// var 23 is solved in eqn 54
+// var 24 is solved in eqn 53
+// var 25 is solved in eqn 48
+// var 26 is solved in eqn 47
+// var 27 is solved in eqn 66
+// var 28 is solved in eqn 17
+// var 29 is solved in eqn 39
+// var 30 is solved in eqn 38
+// var 31 is solved in eqn 42
+// var 32 is solved in eqn 15
+// var 33 is solved in eqn 24
+// var 34 is solved in eqn 65
+// var 35 is solved in eqn 25
+// var 36 is solved in eqn 41
+// var 37 is solved in eqn 26
+// var 38 is solved in eqn 44
+// var 39 is solved in eqn 40
+// var 40 is solved in eqn 1
+// var 41 is solved in eqn 45
+// var 42 is solved in eqn 46
+// var 43 is solved in eqn 43
+// var 44 is solved in eqn 37
+// var 45 is solved in eqn 64
+// var 46 is solved in eqn 23
+// var 47 is solved in eqn 29
+// var 48 is solved in eqn 22
+// var 49 is solved in eqn 32
+// var 50 is solved in eqn 21
+// var 51 is solved in eqn 12
+// var 52 is solved in eqn 63
+// var 53 is solved in eqn 30
+// var 54 is solved in eqn 28
+// var 55 is solved in eqn 14
+// var 56 is solved in eqn 34
+// var 57 is solved in eqn 36
+// var 58 is solved in eqn 2
+// var 59 is solved in eqn 35
+// var 60 is solved in eqn 33
+// var 61 is solved in eqn 31
+// var 62 is solved in eqn 27
+// var 63 is solved in eqn 3
+// var 64 is solved in eqn 4
+// var 65 is solved in eqn 5
+// var 66 is solved in eqn 6
+// var 67 is solved in eqn 7
+// var 68 is solved in eqn 8
+//
+// Standard BLT of the original model:(68)
+// ============================================================
+//
+// 68: sinkP1.h0: (8/8): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (7/7): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (6/6): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (5/5): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (4/4): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (3/3): (1): sourceP1.P0 = 3e5
+// 62: singularPressureLoss1.deltaP: (27/27): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// 60: singularPressureLoss1.rho: (33/33): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+// 59: singularPressureLoss1.T: (35/35): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 58: singularPressureLoss1.Pm: (2/2): (1): singularPressureLoss1.Pm = 0.0
+// 57: singularPressureLoss1.h: (36/36): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 56: singularPressureLoss1.C1.P: (34/34): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 55: singularPressureLoss1.C1.h_vol: (14/14): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
+// 54: singularPressureLoss1.C1.Q: (28/28): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 53: singularPressureLoss1.C1.h: (30/30): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 51: singularPressureLoss1.C1.b: (12/12): (1): sourceP1.C.b = singularPressureLoss1.C1.b
+// 50: singularPressureLoss1.C2.P: (21/21): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
+// 49: singularPressureLoss1.C2.h_vol: (32/32): (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol
+// 48: singularPressureLoss1.C2.Q: (22/22): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 47: singularPressureLoss1.C2.h: (29/29): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
+// 46: singularPressureLoss1.C2.a: (23/23): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 44: singularPressureLoss2.deltaP: (37/37): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 43: singularPressureLoss2.Q: (43/43): (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho
+// 42: singularPressureLoss2.rho: (46/46): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 41: singularPressureLoss2.T: (45/45): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 40: singularPressureLoss2.Pm: (1/1): (1): singularPressureLoss2.Pm = 0.0
+// 39: singularPressureLoss2.h: (40/40): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
+// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 37: singularPressureLoss2.C1.h_vol: (26/26): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
+// 36: singularPressureLoss2.C1.Q: (41/41): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// 35: singularPressureLoss2.C1.h: (25/25): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 33: singularPressureLoss2.C1.b: (24/24): (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b
+// 32: singularPressureLoss2.C2.P: (15/15): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 31: singularPressureLoss2.C2.h_vol: (42/42): (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol
+// 30: singularPressureLoss2.C2.Q: (38/38): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
+// 29: singularPressureLoss2.C2.h: (39/39): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
+// 28: singularPressureLoss2.C2.a: (17/17): (1): singularPressureLoss2.C2.a = sinkP1.C.a
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 26: sourceP1.P: (47/47): (1): sourceP1.C.P = sourceP1.P
+// 25: sourceP1.Q: (48/48): (1): sourceP1.C.Q = sourceP1.Q
+// 24: sourceP1.T: (53/53): (1): sourceP1.T = sourceP1.ITemperature.signal
+// 23: sourceP1.h: (54/54): (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)
+// 22: sourceP1.IPressure.signal: (50/50): (1): sourceP1.P = sourceP1.IPressure.signal
+// 21: sourceP1.ISpecificEnthalpy.signal: (52/52): (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0
+// 20: sourceP1.C.P: (9/9): (1): sourceP1.C.P = singularPressureLoss1.C1.P
+// 19: sourceP1.C.h_vol: (49/49): (1): sourceP1.C.h_vol = sourceP1.h
+// 18: sourceP1.C.Q: (10/10): (1): sourceP1.C.Q = singularPressureLoss1.C1.Q
+// 17: sourceP1.C.h: (13/13): (1): sourceP1.C.h = singularPressureLoss1.C1.h
+// 16: sourceP1.C.a: (11/11): (1): sourceP1.C.a = singularPressureLoss1.C1.a
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 14: sourceP1.ITemperature.signal: (51/51): (1): sourceP1.ITemperature.signal = sourceP1.T0
+// 13: sinkP1.P: (62/62): (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)
+// 12: sinkP1.Q: (56/56): (1): sinkP1.C.Q = sinkP1.Q
+// 11: sinkP1.T: (61/61): (1): sinkP1.T = sinkP1.ITemperature.signal
+// 10: sinkP1.h: (57/57): (1): sinkP1.C.h_vol = sinkP1.h
+// 9: sinkP1.IPressure.signal: (58/58): (1): sinkP1.P = sinkP1.IPressure.signal
+// 8: sinkP1.ISpecificEnthalpy.signal: (60/60): (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0
+// 7: sinkP1.C.P: (55/55): (1): sinkP1.C.P = sinkP1.P
+// 6: sinkP1.C.h_vol: (20/20): (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol
+// 5: sinkP1.C.Q: (16/16): (1): singularPressureLoss2.C2.Q = sinkP1.C.Q
+// 4: sinkP1.C.h: (19/19): (1): singularPressureLoss2.C2.h = sinkP1.C.h
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 2: sinkP1.C.b: (18/18): (1): singularPressureLoss2.C2.b = sinkP1.C.b
+// 1: sinkP1.ITemperature.signal: (59/59): (1): sinkP1.ITemperature.signal = sinkP1.T0
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 2: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 3: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 4: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+//
+// Boundary conditions (6)
+// ========================================
+// 1: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 2: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 3: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 4: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 5: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 6: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// Binding equations:(14)
+// ============================================================
+//
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 68: sinkP1.h0: (8/8): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (7/7): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (6/6): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (5/5): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (4/4): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (3/3): (1): sourceP1.P0 = 3e5
+// 58: singularPressureLoss1.Pm: (2/2): (1): singularPressureLoss1.Pm = 0.0
+// 40: singularPressureLoss2.Pm: (1/1): (1): singularPressureLoss2.Pm = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(2)
+// ============================================================
+//
+// 43: singularPressureLoss2.Q: (43/43): (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho
+// 61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>43: singularPressureLoss2.Q: (43/43): (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho
+// 44: singularPressureLoss2.deltaP: (37/37): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 32: singularPressureLoss2.C2.P: (15/15): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 7: sinkP1.C.P: (55/55): (1): sinkP1.C.P = sinkP1.P
+// 13: sinkP1.P: (62/62): (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)
+// 10: sinkP1.h: (57/57): (1): sinkP1.C.h_vol = sinkP1.h
+// 6: sinkP1.C.h_vol: (20/20): (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol
+// 31: singularPressureLoss2.C2.h_vol: (42/42): (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol
+// 29: singularPressureLoss2.C2.h: (39/39): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
+// 35: singularPressureLoss2.C1.h: (25/25): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
+// 47: singularPressureLoss1.C2.h: (29/29): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
+// 53: singularPressureLoss1.C1.h: (30/30): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
+// 57: singularPressureLoss1.h: (36/36): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 60: singularPressureLoss1.rho: (33/33): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+// 62: singularPressureLoss1.deltaP: (27/27): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
+// 50: singularPressureLoss1.C2.P: (21/21): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
+// 38: singularPressureLoss2.C1.P: (44/44): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 56: singularPressureLoss1.C1.P: (34/34): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 37: singularPressureLoss2.C1.h_vol: (26/26): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
+// 49: singularPressureLoss1.C2.h_vol: (32/32): (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol
+// 55: singularPressureLoss1.C1.h_vol: (14/14): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
+// 19: sourceP1.C.h_vol: (49/49): (1): sourceP1.C.h_vol = sourceP1.h
+// 23: sourceP1.h: (54/54): (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)
+// 24: sourceP1.T: (53/53): (1): sourceP1.T = sourceP1.ITemperature.signal
+// 14: sourceP1.ITemperature.signal: (51/51): (1): sourceP1.ITemperature.signal = sourceP1.T0
+// sourceP1.T0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>61: singularPressureLoss1.Q: (31/31): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// 54: singularPressureLoss1.C1.Q: (28/28): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 48: singularPressureLoss1.C2.Q: (22/22): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 36: singularPressureLoss2.C1.Q: (41/41): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// Procedure success
+//
+// Extraction procedure failed for iteration count: 2, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (68)
+// ========================================
+// 1: sinkP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 2: sinkP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 3: sinkP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 4: sinkP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 5: sinkP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 6: sinkP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 7: sinkP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 8: sinkP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 9: sinkP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 10: sinkP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 11: sinkP1.T:VARIABLE(min = 0.0 start = 310.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 12: sinkP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 13: sinkP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 14: sourceP1.ITemperature.signal:VARIABLE(flow=false )  type: Real
+// 15: sourceP1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 16: sourceP1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 17: sourceP1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 18: sourceP1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 19: sourceP1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 20: sourceP1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 21: sourceP1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
+// 22: sourceP1.IPressure.signal:VARIABLE(flow=false )  type: Real
+// 23: sourceP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
+// 24: sourceP1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 25: sourceP1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
+// 26: sourceP1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 27: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 28: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 29: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 30: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 31: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 34: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 35: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 36: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 37: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 38: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 39: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 40: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 41: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 42: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 43: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 44: singularPressureLoss2.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 45: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 46: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 47: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 48: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 49: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 50: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 51: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 52: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
+// 53: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 54: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+// 55: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 56: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 57: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 58: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 59: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
+// 60: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
+// 61: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 62: singularPressureLoss1.deltaP:VARIABLE()  "Singular pressure loss" type: Real
+// 63: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 64: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 65: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 66: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 67: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 68: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// OrderedEquation (68, 68)
+// ========================================
+// 1/1 (1): singularPressureLoss2.Q = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): singularPressureLoss2.Pm = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): singularPressureLoss1.Pm = 0.0   [binding |0|0|0|0|]
+// 4/4 (1): sourceP1.P0 = 3e5   [binding |0|0|0|0|]
+// 5/5 (1): sourceP1.T0 = 290.0   [binding |0|0|0|0|]
+// 6/6 (1): sourceP1.h0 = 1e5   [binding |0|0|0|0|]
+// 7/7 (1): sinkP1.P0 = 1e5   [binding |0|0|0|0|]
+// 8/8 (1): sinkP1.T0 = 290.0   [binding |0|0|0|0|]
+// 9/9 (1): sinkP1.h0 = 1e5   [binding |0|0|0|0|]
+// 10/10 (1): sourceP1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
+// 11/11 (1): sourceP1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 12/12 (1): sourceP1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
+// 13/13 (1): sourceP1.C.b = singularPressureLoss1.C1.b   [dynamic |0|0|0|0|]
+// 14/14 (1): sourceP1.C.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 15/15 (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss2.C2.P = sinkP1.C.P   [dynamic |0|0|0|0|]
+// 17/17 (1): singularPressureLoss2.C2.Q = sinkP1.C.Q   [dynamic |0|0|0|0|]
+// 18/18 (1): singularPressureLoss2.C2.a = sinkP1.C.a   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss2.C2.b = sinkP1.C.b   [dynamic |0|0|0|0|]
+// 20/20 (1): singularPressureLoss2.C2.h = sinkP1.C.h   [dynamic |0|0|0|0|]
+// 21/21 (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol   [dynamic |0|0|0|0|]
+// 22/22 (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P   [dynamic |0|0|0|0|]
+// 23/23 (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 24/24 (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a   [dynamic |0|0|0|0|]
+// 25/25 (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b   [dynamic |0|0|0|0|]
+// 26/26 (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol   [dynamic |0|0|0|0|]
+// 28/28 (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP   [dynamic |0|0|0|0|]
+// 29/29 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 30/30 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 31/31 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 32/32 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 33/33 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 34/34 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
+// 35/35 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
+// 36/36 (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 37/37 (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 38/38 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic |0|0|0|0|]
+// 39/39 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 40/40 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 41/41 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 42/42 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 43/43 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 44/44 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
+// 45/45 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
+// 46/46 (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 47/47 (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)   [dynamic |0|0|0|0|]
+// 48/48 (1): sourceP1.C.P = sourceP1.P   [dynamic |0|0|0|0|]
+// 49/49 (1): sourceP1.C.Q = sourceP1.Q   [dynamic |0|0|0|0|]
+// 50/50 (1): sourceP1.C.h_vol = sourceP1.h   [dynamic |0|0|0|0|]
+// 51/51 (1): sourceP1.P = sourceP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 52/52 (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0   [dynamic |0|0|0|0|]
+// 53/53 (1): sourceP1.T = sourceP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 54/54 (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)   [dynamic |0|0|0|0|]
+// 55/55 (1): sinkP1.C.P = sinkP1.P   [dynamic |0|0|0|0|]
+// 56/56 (1): sinkP1.C.Q = sinkP1.Q   [dynamic |0|0|0|0|]
+// 57/57 (1): sinkP1.C.h_vol = sinkP1.h   [dynamic |0|0|0|0|]
+// 58/58 (1): sinkP1.P = sinkP1.IPressure.signal   [dynamic |0|0|0|0|]
+// 59/59 (1): sinkP1.ITemperature.signal = sinkP1.T0   [dynamic |0|0|0|0|]
+// 60/60 (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0   [dynamic |0|0|0|0|]
+// 61/61 (1): sinkP1.T = sinkP1.ITemperature.signal   [dynamic |0|0|0|0|]
+// 62/62 (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)   [dynamic |0|0|0|0|]
+// 63/63 (1): singularPressureLoss1.C1.a = true   [binding |0|0|0|0|]
+// 64/64 (1): singularPressureLoss1.C2.b = true   [binding |0|0|0|0|]
+// 65/65 (1): singularPressureLoss2.C1.a = true   [binding |0|0|0|0|]
+// 66/66 (1): singularPressureLoss2.C2.b = true   [binding |0|0|0|0|]
+// 67/67 (1): sourceP1.C.b = true   [binding |0|0|0|0|]
+// 68/68 (1): sinkP1.C.a = true   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 68 variables and equations
+// var 1 is solved in eqn 59
+// var 2 is solved in eqn 19
+// var 3 is solved in eqn 68
+// var 4 is solved in eqn 20
+// var 5 is solved in eqn 17
+// var 6 is solved in eqn 57
+// var 7 is solved in eqn 16
+// var 8 is solved in eqn 60
+// var 9 is solved in eqn 58
+// var 10 is solved in eqn 62
+// var 11 is solved in eqn 61
+// var 12 is solved in eqn 56
+// var 13 is solved in eqn 55
+// var 14 is solved in eqn 53
+// var 15 is solved in eqn 67
+// var 16 is solved in eqn 12
+// var 17 is solved in eqn 14
+// var 18 is solved in eqn 11
+// var 19 is solved in eqn 15
+// var 20 is solved in eqn 10
+// var 21 is solved in eqn 52
+// var 22 is solved in eqn 51
+// var 23 is solved in eqn 50
+// var 24 is solved in eqn 54
+// var 25 is solved in eqn 49
+// var 26 is solved in eqn 48
+// var 27 is solved in eqn 66
+// var 28 is solved in eqn 18
+// var 29 is solved in eqn 40
+// var 30 is solved in eqn 39
+// var 31 is solved in eqn 21
+// var 32 is solved in eqn 45
+// var 33 is solved in eqn 25
+// var 34 is solved in eqn 65
+// var 35 is solved in eqn 26
+// var 36 is solved in eqn 42
+// var 37 is solved in eqn 43
+// var 38 is solved in eqn 38
+// var 39 is solved in eqn 41
+// var 40 is solved in eqn 2
+// var 41 is solved in eqn 46
+// var 42 is solved in eqn 47
+// var 43 is solved in eqn 1
+// var 44 is solved in eqn 44
+// var 45 is solved in eqn 64
+// var 46 is solved in eqn 24
+// var 47 is solved in eqn 30
+// var 48 is solved in eqn 23
+// var 49 is solved in eqn 27
+// var 50 is solved in eqn 22
+// var 51 is solved in eqn 13
+// var 52 is solved in eqn 63
+// var 53 is solved in eqn 31
+// var 54 is solved in eqn 29
+// var 55 is solved in eqn 33
+// var 56 is solved in eqn 35
+// var 57 is solved in eqn 37
+// var 58 is solved in eqn 3
+// var 59 is solved in eqn 36
+// var 60 is solved in eqn 34
+// var 61 is solved in eqn 32
+// var 62 is solved in eqn 28
+// var 63 is solved in eqn 4
+// var 64 is solved in eqn 5
+// var 65 is solved in eqn 6
+// var 66 is solved in eqn 7
+// var 67 is solved in eqn 8
+// var 68 is solved in eqn 9
+//
+// Standard BLT of the original model:(68)
+// ============================================================
+//
+// 68: sinkP1.h0: (9/9): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (8/8): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (7/7): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (6/6): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (5/5): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (4/4): (1): sourceP1.P0 = 3e5
+// 62: singularPressureLoss1.deltaP: (28/28): (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP
+// 61: singularPressureLoss1.Q: (32/32): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// 60: singularPressureLoss1.rho: (34/34): (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * singularPressureLoss1.Q * abs(singularPressureLoss1.Q) / singularPressureLoss1.rho
+// 59: singularPressureLoss1.T: (36/36): (1): singularPressureLoss1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 58: singularPressureLoss1.Pm: (3/3): (1): singularPressureLoss1.Pm = 0.0
+// 57: singularPressureLoss1.h: (37/37): (1): singularPressureLoss1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, 1, singularPressureLoss1.mode, 0.0, 0.0, 0.0, 0.0)
+// 56: singularPressureLoss1.C1.P: (35/35): (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)
+// 55: singularPressureLoss1.C1.h_vol: (33/33): (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol
+// 54: singularPressureLoss1.C1.Q: (29/29): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 53: singularPressureLoss1.C1.h: (31/31): (1): singularPressureLoss1.h = singularPressureLoss1.C1.h
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 51: singularPressureLoss1.C1.b: (13/13): (1): sourceP1.C.b = singularPressureLoss1.C1.b
+// 50: singularPressureLoss1.C2.P: (22/22): (1): singularPressureLoss1.C2.P = singularPressureLoss2.C1.P
+// 49: singularPressureLoss1.C2.h_vol: (27/27): (1): singularPressureLoss1.C2.h_vol = singularPressureLoss2.C1.h_vol
+// 48: singularPressureLoss1.C2.Q: (23/23): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 47: singularPressureLoss1.C2.h: (30/30): (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h
+// 46: singularPressureLoss1.C2.a: (24/24): (1): singularPressureLoss1.C2.a = singularPressureLoss2.C1.a
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 44: singularPressureLoss2.deltaP: (44/44): (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * singularPressureLoss2.Q * abs(singularPressureLoss2.Q) / singularPressureLoss2.rho
+// 43: singularPressureLoss2.Q: (1/1): (1): singularPressureLoss2.Q = 0.0
+// 42: singularPressureLoss2.rho: (47/47): (1): singularPressureLoss2.rho = ThermoSysPro.Properties.Fluid.Density_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 41: singularPressureLoss2.T: (46/46): (1): singularPressureLoss2.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, 1, singularPressureLoss2.mode, 0.0, 0.0, 0.0, 0.0)
+// 40: singularPressureLoss2.Pm: (2/2): (1): singularPressureLoss2.Pm = 0.0
+// 39: singularPressureLoss2.h: (41/41): (1): singularPressureLoss2.h = singularPressureLoss2.C1.h
+// 38: singularPressureLoss2.C1.P: (38/38): (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP
+// 37: singularPressureLoss2.C1.h_vol: (43/43): (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol
+// 36: singularPressureLoss2.C1.Q: (42/42): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// 35: singularPressureLoss2.C1.h: (26/26): (1): singularPressureLoss1.C2.h = singularPressureLoss2.C1.h
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 33: singularPressureLoss2.C1.b: (25/25): (1): singularPressureLoss1.C2.b = singularPressureLoss2.C1.b
+// 32: singularPressureLoss2.C2.P: (45/45): (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)
+// 31: singularPressureLoss2.C2.h_vol: (21/21): (1): singularPressureLoss2.C2.h_vol = sinkP1.C.h_vol
+// 30: singularPressureLoss2.C2.Q: (39/39): (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q
+// 29: singularPressureLoss2.C2.h: (40/40): (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h
+// 28: singularPressureLoss2.C2.a: (18/18): (1): singularPressureLoss2.C2.a = sinkP1.C.a
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 26: sourceP1.P: (48/48): (1): sourceP1.C.P = sourceP1.P
+// 25: sourceP1.Q: (49/49): (1): sourceP1.C.Q = sourceP1.Q
+// 24: sourceP1.T: (54/54): (1): sourceP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sourceP1.P, sourceP1.T, 0)
+// 23: sourceP1.h: (50/50): (1): sourceP1.C.h_vol = sourceP1.h
+// 22: sourceP1.IPressure.signal: (51/51): (1): sourceP1.P = sourceP1.IPressure.signal
+// 21: sourceP1.ISpecificEnthalpy.signal: (52/52): (1): sourceP1.ISpecificEnthalpy.signal = sourceP1.h0
+// 20: sourceP1.C.P: (10/10): (1): sourceP1.C.P = singularPressureLoss1.C1.P
+// 19: sourceP1.C.h_vol: (15/15): (1): sourceP1.C.h_vol = singularPressureLoss1.C1.h_vol
+// 18: sourceP1.C.Q: (11/11): (1): sourceP1.C.Q = singularPressureLoss1.C1.Q
+// 17: sourceP1.C.h: (14/14): (1): sourceP1.C.h = singularPressureLoss1.C1.h
+// 16: sourceP1.C.a: (12/12): (1): sourceP1.C.a = singularPressureLoss1.C1.a
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 14: sourceP1.ITemperature.signal: (53/53): (1): sourceP1.T = sourceP1.ITemperature.signal
+// 13: sinkP1.P: (55/55): (1): sinkP1.C.P = sinkP1.P
+// 12: sinkP1.Q: (56/56): (1): sinkP1.C.Q = sinkP1.Q
+// 11: sinkP1.T: (61/61): (1): sinkP1.T = sinkP1.ITemperature.signal
+// 10: sinkP1.h: (62/62): (1): sinkP1.h = ThermoSysPro.Properties.WaterSteam.IF97.SpecificEnthalpy_PT(sinkP1.P, sinkP1.T, 0)
+// 9: sinkP1.IPressure.signal: (58/58): (1): sinkP1.P = sinkP1.IPressure.signal
+// 8: sinkP1.ISpecificEnthalpy.signal: (60/60): (1): sinkP1.ISpecificEnthalpy.signal = sinkP1.h0
+// 7: sinkP1.C.P: (16/16): (1): singularPressureLoss2.C2.P = sinkP1.C.P
+// 6: sinkP1.C.h_vol: (57/57): (1): sinkP1.C.h_vol = sinkP1.h
+// 5: sinkP1.C.Q: (17/17): (1): singularPressureLoss2.C2.Q = sinkP1.C.Q
+// 4: sinkP1.C.h: (20/20): (1): singularPressureLoss2.C2.h = sinkP1.C.h
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 2: sinkP1.C.b: (19/19): (1): singularPressureLoss2.C2.b = sinkP1.C.b
+// 1: sinkP1.ITemperature.signal: (59/59): (1): sinkP1.ITemperature.signal = sinkP1.T0
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 2: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 3: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 4: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+//
+// Boundary conditions (6)
+// ========================================
+// 1: sourceP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Source pressure" type: Real
+// 2: sourceP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Source temperature (active if option_temperature=1)" type: Real
+// 3: sourceP1.h0:VARIABLE(unit = "J/kg" )  "Source specific enthalpy (active if option_temperature=2)" type: Real
+// 4: sinkP1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Sink pressure" type: Real
+// 5: sinkP1.T0:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Sink temperature (active if option_temperature=1)" type: Real
+// 6: sinkP1.h0:VARIABLE(unit = "J/kg" )  "Sink specific enthalpy (active if option_temperature=2)" type: Real
+//
+//
+// Binding equations:(15)
+// ============================================================
+//
+// 3: sinkP1.C.a: (68/68): (1): sinkP1.C.a = true
+// 15: sourceP1.C.b: (67/67): (1): sourceP1.C.b = true
+// 27: singularPressureLoss2.C2.b: (66/66): (1): singularPressureLoss2.C2.b = true
+// 34: singularPressureLoss2.C1.a: (65/65): (1): singularPressureLoss2.C1.a = true
+// 45: singularPressureLoss1.C2.b: (64/64): (1): singularPressureLoss1.C2.b = true
+// 52: singularPressureLoss1.C1.a: (63/63): (1): singularPressureLoss1.C1.a = true
+// 68: sinkP1.h0: (9/9): (1): sinkP1.h0 = 1e5
+// 67: sinkP1.T0: (8/8): (1): sinkP1.T0 = 290.0
+// 66: sinkP1.P0: (7/7): (1): sinkP1.P0 = 1e5
+// 65: sourceP1.h0: (6/6): (1): sourceP1.h0 = 1e5
+// 64: sourceP1.T0: (5/5): (1): sourceP1.T0 = 290.0
+// 63: sourceP1.P0: (4/4): (1): sourceP1.P0 = 3e5
+// 58: singularPressureLoss1.Pm: (3/3): (1): singularPressureLoss1.Pm = 0.0
+// 40: singularPressureLoss2.Pm: (2/2): (1): singularPressureLoss2.Pm = 0.0
+// 43: singularPressureLoss2.Q: (1/1): (1): singularPressureLoss2.Q = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 61: singularPressureLoss1.Q: (32/32): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>61: singularPressureLoss1.Q: (32/32): (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q
+// 54: singularPressureLoss1.C1.Q: (29/29): (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q
+// 48: singularPressureLoss1.C2.Q: (23/23): (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q
+// 36: singularPressureLoss2.C1.Q: (42/42): (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 3
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {32}
+// SET_S: {42, 23, 29}
+//
+//
+// SET_C (1, 1)
+// ========================================
+// 1/1 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3, 3)
+// ========================================
+// 1/1 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss1.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (3)
+// ========================================
+//
+// 1: singularPressureLoss2.C1.Q type: Real
+// 2: singularPressureLoss1.C1.Q type: Real
+// 3: singularPressureLoss1.C2.Q type: Real
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{40, 43, 58, 61} (4)
+// ========================================
+// 1: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 2: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+// 3: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 4: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+// -SET_C:{32}
+// -SET_S:{42, 23, 29}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{58, 40} (2)
+// ========================================
+// 1: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 2: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+//
+//
+// -SET_C has known variables:{61} (1)
+// ========================================
+// 1: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+//
+// -SET_S has known variables:{43} (1)
+// ========================================
+// 1: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 4 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{54} (1)
+// ========================================
+// 1: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{54} (1)
+// ========================================
+// 1: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square"
+// ==========================================================================
+// -Passed
+//  Set_S has 3 equations and 3 variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe9_Inputs.csv'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe9
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceP.mo:29:3-30:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SinkP.mo:29:3-30:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// "
+// endResult
