@@ -131,12 +131,17 @@ ELSE(WIN32)
 	ELSE()
 		SET(Boost_LIBS_ ${Boost_Library_folder})
 	ENDIF()
-	IF("${Boost_INCLUDE_DIR}" STREQUAL "" OR
-	   "${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
+	IF(NOT "${Boost_INCLUDE_DIR}" STREQUAL "" AND NOT "${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
 		# standard /usr/include collides with cross compilation
-		SET(Boost_INCLUDE_ ".")
-	ELSE()
 		SET(Boost_INCLUDE_ ${Boost_INCLUDE_DIR})
+	ELSEIF(NOT "${Boost_INCLUDE_DIRS}" STREQUAL "")
+		# Boost_INCLUDE_DIR (singular) is only reliably set by CMake's legacy
+		# Module-mode FindBoost.cmake, which CMake >= 3.30 no longer ships.
+		# Config-mode discovery (Boost's own exported BoostConfig.cmake, e.g.
+		# from Homebrew) only sets Boost_INCLUDE_DIRS (plural); fall back to it.
+		list(GET Boost_INCLUDE_DIRS 0 Boost_INCLUDE_)
+	ELSE()
+		SET(Boost_INCLUDE_ ".")
 	ENDIF()
 	IF("${SUNDIALS_LIBS}" STREQUAL "")
 		SET(SUNDIALS_LIBS_ ".")

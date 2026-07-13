@@ -337,7 +337,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
       sh "build/bin/omc --version"
-    sanityCheck('build', true)
+      sanityCheck('build', true)
     }
   }
   else {
