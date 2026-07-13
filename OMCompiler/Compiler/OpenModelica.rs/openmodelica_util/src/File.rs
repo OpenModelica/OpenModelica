@@ -46,7 +46,7 @@ use std::fs::OpenOptions;
 use std::io::{Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
-use anyhow::{bail, Result};
+use metamodelica::Result;
 use arcstr::{literal, ArcStr};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -96,14 +96,14 @@ impl FileInner {
             match self.file.as_mut() {
                 Some(f) => f
                     .write_all(bytes)
-                    .map_err(|e| anyhow::anyhow!("File.{what}: write to {}: {}", self.name, e)),
-                None => bail!("File.{what}: Failed to write to file: {} (not open)", self.name),
+                    .map_err(|e| "File.{what}: write to {}: {}"),
+                None => return Err("File.{what}: Failed to write to file: {} (not open)"),
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             if self.mode != Some(Mode::Write) {
-                bail!("File.{what}: Failed to write to file: {} (not open)", self.name);
+                return Err("File.{what}: Failed to write to file: {} (not open)");
             }
             let end = self.pos + bytes.len();
             if self.buf.len() < end {
@@ -191,10 +191,7 @@ impl File {
             }),
             Some(id) => FILE_REGISTRY.with(|r| {
                 r.borrow().get(&id).cloned().ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "File.constructor: opaque file reference {id} is not registered \
-                         (already released, or created on another thread)"
-                    )
+                    "error"
                 })
             }),
         }
@@ -229,7 +226,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
                 .truncate(true)
                 .open(filename.as_str()),
         }
-        .map_err(|e| anyhow::anyhow!("File.open: Failed to open file {filename} with mode {mode:?}: {e}"))?;
+        .map_err(|e| "File.open: Failed to open file {filename} with mode {mode:?}: {e}")?;
         guard.file = Some(handle);
         guard.name = filename;
         Ok(())
@@ -241,7 +238,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         match mode {
             Mode::Read => {
                 let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    anyhow::anyhow!("File.open: Failed to open file {filename} with mode {mode:?}: no such file")
+                    "File.open: Failed to open file {filename} with mode {mode:?}: no such file"
                 })?;
                 guard.buf = bytes;
             }
@@ -431,7 +428,7 @@ pub fn releaseReference(file: File) -> Result<()> {
         }
     });
     if !released {
-        bail!("File.releaseReference: file is not registered (double release?)");
+        return Err("File.releaseReference: file is not registered (double release?)");
     }
     Ok(())
 }

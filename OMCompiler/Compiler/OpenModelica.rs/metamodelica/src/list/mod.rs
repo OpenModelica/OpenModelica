@@ -2,7 +2,7 @@
 //! Construction/field macros live in [`macros`].
 
 use std::sync::Arc;
-use anyhow::{Result, bail};
+use crate::Result;
 
 #[macro_use]
 mod macros;
@@ -169,7 +169,7 @@ impl<T: Clone> List<T> {
     pub fn get(self: &Arc<List<T>>, index: i32) -> Result<T> {
         (&**self).into_iter().nth((index - 1) as usize)
             .cloned()
-            .ok_or_else(|| anyhow::anyhow!("Index {} out of bounds for list of length {}", index, self.len()))
+            .ok_or_else(|| "Index {} out of bounds for list of length {}")
     }
     pub fn prepend_reverse(self: &Arc<List<T>>, prefix: &Arc<List<T>>) -> Arc<List<T>> {
         let mut result = self.clone();
@@ -181,7 +181,7 @@ impl<T: Clone> List<T> {
     /// Deletes the element at the given 1-based index. O(index).
     pub fn delete(self: &Arc<List<T>>, index: i32) -> Result<Arc<List<T>>> {
         if index < 1 {
-            bail!("Index must be positive, got {}", index);
+            return Err("Index must be positive, got {}");
         }
         if index == 1 {
             return self.rest();
@@ -192,7 +192,7 @@ impl<T: Clone> List<T> {
         loop {
             cur_index -= 1;
             let (head,tail) = match &**iter {
-                Nil => bail!("Index {} out of bounds for list", index),
+                Nil => return Err("Index {} out of bounds for list"),
                 Cons{head, tail} => (head, tail)
             };
             iter = tail;
@@ -215,7 +215,7 @@ impl<T: Clone> List<T> {
     /// Fails if the list is empty.
     pub fn head(self: &Arc<List<T>>) -> Result<&T> {
         match &**self {
-            Nil => bail!("Cannot get head of empty list"),
+            Nil => return Err("Cannot get head of empty list"),
             Cons{head, ..} => Ok(head),
         }
     }
@@ -223,7 +223,7 @@ impl<T: Clone> List<T> {
     /// Fails if the list is empty.
     pub fn rest(self: &Arc<List<T>>) -> Result<Arc<List<T>>> {
         match &**self {
-            Nil => bail!("Cannot get rest of empty list"),
+            Nil => return Err("Cannot get rest of empty list"),
             Cons{tail, ..} => Ok(tail.clone()),
         }
     }
@@ -267,7 +267,7 @@ pub fn listMember<T: Clone+PartialEq>(element: T, lst: Arc<List<T>>) -> bool {
 }
 
 pub fn listHead<T: Clone>(lst: Arc<List<T>>) -> Result<T> {
-    let Cons{head, ..} = &*lst else {bail!("Cannot get head of empty list")};
+    let Cons{head, ..} = &*lst else {return Err("Cannot get head of empty list")};
     Ok(head.clone())
 }
 
@@ -285,7 +285,7 @@ pub fn listDelete<T: Clone>(lst: Arc<List<T>>, index: i32) -> Result<Arc<List<T>
 
 pub fn listRest<T: Clone>(lst: Arc<List<T>>) -> Result<Arc<List<T>>> {
     match &*lst {
-        Nil => bail!("Cannot get rest of empty list"),
+        Nil => return Err("Cannot get rest of empty list"),
         Cons{tail, ..} => Ok(tail.clone()),
     }
 }

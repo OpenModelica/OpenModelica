@@ -22,7 +22,7 @@
 //! dedicated multi-MiB stack, because the port only lowers self-tail-calls and
 //! deep traversals can overflow the default 8 MiB).
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::ArcStr;
 use std::sync::Arc;
 

@@ -39,6 +39,6 @@ macro_rules! omc_assert {
     ($($arg:tt)*) => {{
         let __msg: ::std::string::String = ::std::format!($($arg)*);
         $crate::reportAssert(&__msg);
-        ::anyhow::bail!(__msg)
+        return ::std::result::Result::Err("assertion failed")
     }};
 }

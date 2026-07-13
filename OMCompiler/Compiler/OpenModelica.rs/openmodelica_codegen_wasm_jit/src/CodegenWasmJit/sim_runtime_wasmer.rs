@@ -18,7 +18,7 @@
 //
 // All drivers share the same generated model module and `SimData` layout.
 
-use anyhow::{Result, anyhow, bail};
+use metamodelica::Result;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -107,7 +107,7 @@ pub(super) fn runtime_module() -> Result<&'static wasmer::Module> {
     MODULE
         .get_or_init(|| load_or_compile_runtime().map_err(|e| format!("{e:?}")))
         .as_ref()
-        .map_err(|e| anyhow!("CodegenWasmJit: obtaining runtime module: {e}"))
+        .map_err(|e| "CodegenWasmJit: obtaining runtime module: {e}")
 }
 
 /// Path of the on-disk AOT cache for the runtime module. Keyed by a hash of the
@@ -145,7 +145,7 @@ fn load_or_compile_runtime() -> Result<wasmer::Module> {
     // the in-memory OnceLock already caches the compiled module for the session,
     // so compile straight from the embedded bytes.
     #[cfg(target_arch = "wasm32")]
-    return wasmer::Module::from_binary(engine, RUNTIME_WASM).map_err(|e| anyhow!("{e:?}"));
+    return wasmer::Module::from_binary(engine, RUNTIME_WASM).map_err(|e| "{e:?}");
     #[cfg(not(target_arch = "wasm32"))]
     {
     let path = runtime_cache_path();
@@ -160,7 +160,7 @@ fn load_or_compile_runtime() -> Result<wasmer::Module> {
         // Incompatible/corrupt cache (e.g. wasmer upgrade): fall through to
         // recompile and overwrite it below.
     }
-    let module = wasmer::Module::from_binary(engine, RUNTIME_WASM).map_err(|e| anyhow!("{e:?}"))?;
+    let module = wasmer::Module::from_binary(engine, RUNTIME_WASM).map_err(|e| "{e:?}")?;
     // Best-effort: persist the compiled artifact for the next process. Write to
     // a temp sibling then rename, so a concurrent reader never sees a partial file.
     if let Ok(bytes) = module.serialize() {
@@ -177,7 +177,7 @@ fn load_or_compile_runtime() -> Result<wasmer::Module> {
 /// background thread from `translateModel` (overlapping the rest of the OMC
 /// pipeline) or inline from `run` as a fallback.
 pub(super) fn compile_model_module(wasm: &[u8]) -> Result<wasmer::Module> {
-    wasmer::Module::from_binary(sim_engine(), wasm).map_err(|e| anyhow!("{e:?}"))
+    wasmer::Module::from_binary(sim_engine(), wasm).map_err(|e| "{e:?}")
 }
 
 /// Begin compiling the fixed runtime module on a background thread, once per
@@ -212,13 +212,13 @@ pub(super) fn take_compiled_model(model: &SimModel) -> Result<wasmer::Module> {
         #[cfg(not(target_arch = "wasm32"))]
         Some(handle) => match handle.join() {
             Ok(Ok(m)) => Ok(m),
-            Ok(Err(e)) => bail!("CodegenWasmJit: background model-module compile failed: {e}"),
-            Err(_) => bail!("CodegenWasmJit: background model-module compile thread panicked"),
+            Ok(Err(e)) => return Err("CodegenWasmJit: background model-module compile failed: {e}"),
+            Err(_) => return Err("CodegenWasmJit: background model-module compile thread panicked"),
         },
         #[cfg(target_arch = "wasm32")]
         Some(Ok(m)) => Ok(m),
         #[cfg(target_arch = "wasm32")]
-        Some(Err(e)) => bail!("CodegenWasmJit: model-module compile failed: {e}"),
+        Some(Err(e)) => return Err("CodegenWasmJit: model-module compile failed: {e}"),
         None => compile_model_module(&model.wasm),
     }
 }
@@ -229,7 +229,7 @@ type Store = wasmer::Store;
 /// — `RuntimeError`, `InstantiationError`, `MemoryAccessError`, … — do not share
 /// a single anyhow-convertible type, so we format via `Debug`).
 fn wt<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> Result<T> {
-    r.map_err(|e| anyhow!("{e:?}"))
+    r.map_err(|e| "{e:?}")
 }
 
 /// Read a NUL-terminated C string from wasm memory at `ptr` (bounded).
@@ -247,7 +247,7 @@ fn read_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, ptr: u32) ->
 
 fn read_u32_mem(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, addr: u32) -> Result<u32> {
     let mut b = [0u8; 4];
-    mem.view(store).read(addr as u64, &mut b).map_err(|e| anyhow!("CodegenWasmJit: mem read: {e}"))?;
+    mem.view(store).read(addr as u64, &mut b).map_err(|e| "CodegenWasmJit: mem read: {e}")?;
     Ok(u32::from_le_bytes(b))
 }
 
@@ -301,17 +301,12 @@ fn define_external_imports(
     use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
 
     if EXTERNAL_C_WASM.is_empty() {
-        bail!(
-            "CodegenWasmJit: this model uses external \"C\" functions (e.g. table blocks, \
-             string scanning), which need the ModelicaExternalC side module — unavailable in \
-             this web build (build.rs could not compile modelicaexternalc.wasm; install the \
-             apt packages `clang`, `lld`, `wasi-libc`, and `libclang-rt-dev-wasm32`)"
-        );
+        return Err("error");
     }
 
     // Instantiate the side module with its `env.Modelica*Error`/`usertab`/
     // `ModelicaAllocateString` imports.
-    let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM).map_err(|e| anyhow!("{e:?}"))?;
+    let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM).map_err(|e| "{e:?}")?;
     let err_env = FunctionEnv::new(&mut *store, SideErrEnv { mem: None });
     let modelica_error = Function::new_typed_with_env(
         &mut *store, &err_env,
@@ -403,7 +398,7 @@ fn define_external_imports(
     let side_inst = wt(wasmer::Instance::new(&mut *store, &side_module, &side_imports))?;
 
     let side_mem = side_inst.exports.get_memory("memory")
-        .map_err(|e| anyhow!("CodegenWasmJit: modelicaexternalc.wasm has no `memory`: {e:?}"))?.clone();
+        .map_err(|e| "CodegenWasmJit: modelicaexternalc.wasm has no `memory`: {e:?}")?.clone();
     // Let the error hooks + WASI calls read/write the side module's memory.
     err_env.as_mut(&mut *store).mem = Some(side_mem.clone());
     wasi_env.as_mut(&mut *store).set_memory(side_mem.clone());
@@ -419,7 +414,7 @@ fn define_external_imports(
     for sig in &model.ext_imports {
         let name = &sig.name;
         let func = side_inst.exports.get_function(name)
-            .map_err(|e| anyhow!("CodegenWasmJit: ModelicaExternalC side module has no `{name}`: {e:?}"))?
+            .map_err(|e| "CodegenWasmJit: ModelicaExternalC side module has no `{name}`: {e:?}")?
             .clone();
         let functype = FunctionType::new(
             sig.wasm_params().iter().map(|s| valtype(s.wty())).collect::<Vec<_>>(),
@@ -492,8 +487,8 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
         // array outputs are pre-allocated on the wasm side and marshalled by the
         // `Array` arm below (passed by pointer, copied back after the call).
         if *is_out && !matches!(ty, SigTy::Array { .. }) {
-            let cell = malloc.call(&mut store, 8).map_err(|e| anyhow!("{e:?}"))?;
-            side_mem.view(&store).write(cell as u64, &[0u8; 8]).map_err(|e| anyhow!("{e}"))?;
+            let cell = malloc.call(&mut store, 8).map_err(|e| "{e:?}")?;
+            side_mem.view(&store).write(cell as u64, &[0u8; 8]).map_err(|e| "{e}")?;
             temps.push(cell);
             out_cells.push((ty.clone(), cell));
             call_args.push(Value::I32(cell as i32));
@@ -502,31 +497,31 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
         let v = &args[in_i];
         in_i += 1;
         match ty {
-            SigTy::Real => call_args.push(Value::F64(v.f64().ok_or_else(|| anyhow!("expected f64 arg {in_i}"))?)),
+            SigTy::Real => call_args.push(Value::F64(v.f64().ok_or_else(|| "expected f64 arg {in_i}")?)),
             SigTy::Int | SigTy::Bool | SigTy::Ptr => {
-                call_args.push(Value::I32(v.i32().ok_or_else(|| anyhow!("expected i32 arg {in_i}"))?))
+                call_args.push(Value::I32(v.i32().ok_or_else(|| "expected i32 arg {in_i}")?))
             }
             SigTy::Str => {
-                let off = v.i32().ok_or_else(|| anyhow!("expected i32 String handle arg {in_i}"))? as u32;
+                let off = v.i32().ok_or_else(|| "expected i32 String handle arg {in_i}")? as u32;
                 let len = read_u32_mem(&sim_mem, &store, off + 4)? as usize;
                 let mut buf = vec![0u8; len + 1]; // + NUL
-                sim_mem.view(&store).read((off + 8) as u64, &mut buf[..len]).map_err(|e| anyhow!("{e}"))?;
-                let dst = malloc.call(&mut store, (len + 1) as u32).map_err(|e| anyhow!("{e:?}"))?;
-                side_mem.view(&store).write(dst as u64, &buf).map_err(|e| anyhow!("{e}"))?;
+                sim_mem.view(&store).read((off + 8) as u64, &mut buf[..len]).map_err(|e| "{e}")?;
+                let dst = malloc.call(&mut store, (len + 1) as u32).map_err(|e| "{e:?}")?;
+                side_mem.view(&store).write(dst as u64, &buf).map_err(|e| "{e}")?;
                 temps.push(dst);
                 call_args.push(Value::I32(dst as i32));
             }
             SigTy::Array { elem, .. } => {
-                let off = v.i32().ok_or_else(|| anyhow!("expected i32 array handle arg {in_i}"))? as u32;
+                let off = v.i32().ok_or_else(|| "expected i32 array handle arg {in_i}")? as u32;
                 let ndims = read_u32_mem(&sim_mem, &store, off + 8)?;
                 let total = read_u32_mem(&sim_mem, &store, off + 12)? as usize;
                 let elem_size = if matches!(**elem, SigTy::Real) { 8 } else { 4 };
                 let data_off = (16 + ndims * 4 + 7) & !7;
                 let bytes = total * elem_size;
                 let mut buf = vec![0u8; bytes];
-                sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|e| anyhow!("{e}"))?;
-                let dst = malloc.call(&mut store, bytes as u32).map_err(|e| anyhow!("{e:?}"))?;
-                side_mem.view(&store).write(dst as u64, &buf).map_err(|e| anyhow!("{e}"))?;
+                sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|e| "{e}")?;
+                let dst = malloc.call(&mut store, bytes as u32).map_err(|e| "{e:?}")?;
+                side_mem.view(&store).write(dst as u64, &buf).map_err(|e| "{e}")?;
                 temps.push(dst);
                 call_args.push(Value::I32(dst as i32));
                 // An output array is filled by the callee in side memory; copy it
@@ -535,27 +530,27 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                     out_arrays.push((off, dst, bytes, data_off));
                 }
             }
-            other => bail!("input argument type {other:?} not marshalled for the web target"),
+            other => return Err("input argument type {other:?} not marshalled for the web target"),
         }
     }
 
-    let rets = func.call(&mut store, &call_args).map_err(|e| anyhow!("{e:?}"))?;
+    let rets = func.call(&mut store, &call_args).map_err(|e| "{e:?}")?;
 
     // Copy each output array back from the side module's memory into its
     // pre-allocated wasm array (the callee filled the side scratch in place).
     for (woff, dst, bytes, data_off) in &out_arrays {
         let mut buf = vec![0u8; *bytes];
-        side_mem.view(&store).read(*dst as u64, &mut buf).map_err(|e| anyhow!("{e}"))?;
-        sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|e| anyhow!("{e}"))?;
+        side_mem.view(&store).read(*dst as u64, &mut buf).map_err(|e| "{e}")?;
+        sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|e| "{e}")?;
     }
 
     // Build an in-wasm String (in the sim memory) from a NUL-terminated `char*` at
     // `coff` in the side module's memory; returns its sim-memory offset.
     let mut make_string = |store: &mut wasmer::StoreMut, coff: u32| -> Result<u32> {
         let bytes = read_side_cstr(&side_mem, &*store, coff)?;
-        let soff = rt_str_new.call(&mut *store, bytes.len() as u32).map_err(|e| anyhow!("{e:?}"))?;
-        let doff = rt_str_data.call(&mut *store, soff).map_err(|e| anyhow!("{e:?}"))?;
-        sim_mem.view(&*store).write(doff as u64, &bytes).map_err(|e| anyhow!("{e}"))?;
+        let soff = rt_str_new.call(&mut *store, bytes.len() as u32).map_err(|e| "{e:?}")?;
+        let doff = rt_str_data.call(&mut *store, soff).map_err(|e| "{e:?}")?;
+        sim_mem.view(&*store).write(doff as u64, &bytes).map_err(|e| "{e}")?;
         Ok(soff)
     };
     let result_val = |store: &mut wasmer::StoreMut, ty: &SigTy, raw: [u8; 8],
@@ -564,7 +559,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
             SigTy::Real => Value::F64(f64::from_le_bytes(raw)),
             SigTy::Int | SigTy::Bool | SigTy::Ptr => Value::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
             SigTy::Str => Value::I32(make(store, u32::from_le_bytes(raw[..4].try_into().unwrap()))? as i32),
-            other => bail!("output type {other:?} not marshalled for the web target"),
+            other => return Err("output type {other:?} not marshalled for the web target"),
         })
     };
 
@@ -572,9 +567,9 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     if let Some(ret_ty) = &sig.ret {
         // The C return value (from the wasm export's own result).
         let raw = match ret_ty {
-            SigTy::Real => rets.first().and_then(|v| v.f64()).ok_or_else(|| anyhow!("expected f64 return"))?.to_le_bytes(),
+            SigTy::Real => rets.first().and_then(|v| v.f64()).ok_or_else(|| "expected f64 return")?.to_le_bytes(),
             _ => {
-                let x = rets.first().and_then(|v| v.i32()).ok_or_else(|| anyhow!("expected i32 return"))?;
+                let x = rets.first().and_then(|v| v.i32()).ok_or_else(|| "expected i32 return")?;
                 let mut b = [0u8; 8];
                 b[..4].copy_from_slice(&x.to_le_bytes());
                 b
@@ -584,7 +579,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     }
     for (ty, cell) in &out_cells {
         let mut raw = [0u8; 8];
-        side_mem.view(&store).read(*cell as u64, &mut raw).map_err(|e| anyhow!("{e}"))?;
+        side_mem.view(&store).read(*cell as u64, &mut raw).map_err(|e| "{e}")?;
         results.push(result_val(&mut store, ty, raw, &mut make_string)?);
     }
 
@@ -606,7 +601,7 @@ fn read_side_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, off: u3
     let mut a = off as u64;
     loop {
         let mut b = [0u8; 1];
-        view.read(a, &mut b).map_err(|e| anyhow!("{e}"))?;
+        view.read(a, &mut b).map_err(|e| "{e}")?;
         if b[0] == 0 { break; }
         out.push(b[0]);
         a += 1;
@@ -680,7 +675,7 @@ pub(super) fn build_engine(model: &SimModel) -> Result<(Box<dyn sim_driver::SimE
     let memory = rt_inst
         .exports
         .get_memory("memory")
-        .map_err(|e| anyhow!("CodegenWasmJit: runtime has no `memory` export: {e:?}"))?
+        .map_err(|e| "CodegenWasmJit: runtime has no `memory` export: {e:?}")?
         .clone();
 
     // External "C" functions (`ext.*`): resolved by the ModelicaExternalC WASI side
@@ -732,10 +727,10 @@ impl WasmerEngine {
 
 impl sim_driver::SimEngine for WasmerEngine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
-        self.memory.view(&self.store).read(addr as u64, buf).map_err(|e| anyhow!("CodegenWasmJit: mem read: {e}"))
+        self.memory.view(&self.store).read(addr as u64, buf).map_err(|e| "CodegenWasmJit: mem read: {e}")
     }
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
-        self.memory.view(&self.store).write(addr as u64, buf).map_err(|e| anyhow!("CodegenWasmJit: mem write: {e}"))
+        self.memory.view(&self.store).write(addr as u64, buf).map_err(|e| "CodegenWasmJit: mem write: {e}")
     }
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
         let f = self.func(name)?;

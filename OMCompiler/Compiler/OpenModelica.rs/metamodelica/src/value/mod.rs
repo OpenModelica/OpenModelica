@@ -4,7 +4,7 @@
 
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
-use anyhow::Result;
+use crate::Result;
 use crate::Real;
 
 pub mod reference_eq;

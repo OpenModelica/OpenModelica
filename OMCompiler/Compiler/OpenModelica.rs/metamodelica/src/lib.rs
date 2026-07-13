@@ -30,6 +30,13 @@ pub use num_traits::Float;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+
+/// The MetaModelica failure type. MetaModelica exceptions carry no payload
+/// (all diagnostics go through the `Error` message buffer), so the failure
+/// channel is a zero-allocation `&'static str` — a debug breadcrumb, never
+/// surfaced to the user.
+pub type Result<T, E = &'static str> = ::core::result::Result<T, E>;
+
 pub mod gc;
 pub mod cancel;
 
@@ -101,7 +108,7 @@ pub use misc::*;
 macro_rules! fnptr {
     // Zero-argument form.
     ($f:path) => {
-        || -> ::anyhow::Result<_> { ::std::result::Result::Ok($f()) }
+        || -> $crate::Result<_> { ::std::result::Result::Ok($f()) }
     };
     // 1+ argument form. The argument *types* must be supplied at the call
     // site so the closure's signature is unambiguous to the type system
@@ -127,23 +134,23 @@ macro_rules! fnptr {
 #[doc(hidden)]
 macro_rules! __fnptr_dispatch {
     ($f:path, $t1:ty) =>
-        { |a1: $t1| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1)) } };
+        { |a1: $t1| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1)) } };
     ($f:path, $t1:ty, $t2:ty) =>
-        { |a1: $t1, a2: $t2| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2)) } };
+        { |a1: $t1, a2: $t2| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3)) } };
+        { |a1: $t1, a2: $t2, a3: $t3| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty, $t6:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty, $t6:ty, $t7:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty, $t6:ty, $t7:ty, $t8:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty, $t6:ty, $t7:ty, $t8:ty, $t9:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8, a9: $t9| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8, a9)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8, a9: $t9| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8, a9)) } };
     ($f:path, $t1:ty, $t2:ty, $t3:ty, $t4:ty, $t5:ty, $t6:ty, $t7:ty, $t8:ty, $t9:ty, $t10:ty) =>
-        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8, a9: $t9, a10: $t10| -> ::anyhow::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)) } };
+        { |a1: $t1, a2: $t2, a3: $t3, a4: $t4, a5: $t5, a6: $t6, a7: $t7, a8: $t8, a9: $t9, a10: $t10| -> $crate::Result<_> { ::std::result::Result::Ok($f(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)) } };
 }

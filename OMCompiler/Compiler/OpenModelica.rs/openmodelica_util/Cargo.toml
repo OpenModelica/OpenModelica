@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 openmodelica_wasi.workspace = true
-anyhow.workspace=true
 metamodelica.workspace=true
 openmodelica_error.workspace=true
 const-str.workspace=true

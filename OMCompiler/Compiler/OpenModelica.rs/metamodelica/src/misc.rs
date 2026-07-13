@@ -1,6 +1,6 @@
 //! Option predicates and miscellaneous builtins.
 
-use anyhow::{Result, bail};
+use crate::Result;
 
 /// Returns true if the Option is NONE.
 pub fn isNone<A>(opt: Option<A>) -> bool {
@@ -33,7 +33,7 @@ pub fn isPresent<T>(_ident: &T) -> Result<bool> {
 
 /// Fail function - unconditionally raises an error.
 pub fn fail() -> Result<()> {
-    bail!("fail() was called - unrecoverable error")
+    return Err("fail() was called - unrecoverable error")
 }
 
 #[cfg(test)]

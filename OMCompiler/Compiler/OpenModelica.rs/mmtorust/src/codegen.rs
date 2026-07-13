@@ -1239,7 +1239,7 @@ impl GenCtx {
             "this OpenModelica build was compiled without the '{feature}' code generation target"
         );
         let off = if self.current_fn_fallible {
-            format!("bail!({what:?})")
+            format!("return Err({what:?})")
         } else {
             format!("panic!({what:?})")
         };
@@ -1262,7 +1262,7 @@ impl GenCtx {
             "this OpenModelica build was compiled without the '{feature}' code generation target"
         );
         let body = if self.current_fn_fallible {
-            format!("bail!({what:?})")
+            format!("return Err({what:?})")
         } else {
             format!("panic!({what:?})")
         };
@@ -2427,7 +2427,7 @@ fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<S
     writeln!(out, "#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]").unwrap();
     writeln!(out, "
 use std::sync::Arc;
-use anyhow::{{Result, bail}};
+use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::*; // Built-in types and functions
 use const_str;
@@ -10312,9 +10312,9 @@ fn emit_diverging_fail(msg: &str, is_const: bool, ctx: &GenCtx) -> String {
     }
     match &ctx.qmode {
         QMode::TryBlock(label) => {
-            format!("break {label} Err::<_, _>(anyhow::anyhow!(\"{msg}\"))")
+            format!("break {label} Err::<_, _>(\"{msg}\")")
         }
-        QMode::Function if ctx.current_fn_fallible => format!("bail!(\"{msg}\")"),
+        QMode::Function if ctx.current_fn_fallible => format!("return Err(\"{msg}\")"),
         _ => format!("panic!(\"{msg}\")"),
     }
 }
@@ -10515,7 +10515,7 @@ fn emit_reduction<'a>(
                 Some(id) => format!("__acc.unwrap_or({id})"),
                 // No identity for this element type: an empty reduction stays a
                 // runtime error, surfaced as Result via the caller's qmode.
-                None => ctx.q(&format!("__acc.ok_or_else(|| anyhow::anyhow!(\"empty {func} reduction\"))")),
+                None => ctx.q(&format!("__acc.ok_or_else(|| \"empty {func} reduction\")")),
             };
             (
                 format!("let mut __acc: Option<{elem_ty}> = None;"),
@@ -10606,7 +10606,7 @@ fn emit_reduction<'a>(
                         format!("let mut __acc: Option<{acc_ty}> = None;"),
                         update,
                         ctx.q(&format!(
-                            "__acc.ok_or_else(|| anyhow::anyhow!(\"empty {func} reduction\"))"
+                            "__acc.ok_or_else(|| \"empty {func} reduction\")"
                         )),
                     )
                 }
@@ -10956,9 +10956,9 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // an Err instead.
             match &ctx.qmode {
                 QMode::TryBlock(label) => {
-                    Ok(format!("break {label} Err::<_, _>(anyhow::anyhow!(\"fail\"))"))
+                    Ok(format!("break {label} Err::<_, _>(\"fail\")"))
                 }
-                _ => Ok("bail!(\"fail\")".to_owned()),
+                _ => Ok("return Err(\"fail\")".to_owned()),
             }
         },
         // setGlobalRoot(index, value)
@@ -11067,7 +11067,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
                     // resulting `Result` per the current `QMode` (`?`, `.unwrap()`,
                     // or `unwrap_break_err!` inside a `try` block).
                     let read = format!(
-                        "{var_path}.with(|__root| __root.borrow().clone()).ok_or_else(|| anyhow::anyhow!(\"getGlobalRoot: empty slot {}\"))",
+                        "{var_path}.with(|__root| __root.borrow().clone()).ok_or_else(|| \"getGlobalRoot: empty slot {}\")",
                         grc.const_name,
                     );
                     return Ok(ctx.q(&read));
@@ -15016,7 +15016,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // too: a value-typed `Err(…)` would not unify with the
                 // `!`-typed arms (and the `loop` body must stay `()`/`!`).
                 if active_tail.is_some() && ctx.current_fn_fallible {
-                    ",\n        _ => return Err(anyhow::anyhow!(\"match: no arm matched\"))".to_owned()
+                    ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
                 } else {
                     ",\n        _ => unreachable!(\"tail-call lowered match: no arm matched\")".to_owned()
                 }
@@ -15027,7 +15027,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // semantics that wouldn't typecheck in every callsite.
                 ",\n        _ => unreachable!(\"match_deref! exhaustiveness placeholder\")".to_owned()
             } else if ctx.current_fn_fallible {
-                ",\n        _ => bail!(\"match: no arm matched\")".to_owned()
+                ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
             } else {
                 // A non-fallible function can't `bail!`; a runtime miss of a
                 // non-exhaustive match panics instead (the typical source is an
@@ -15279,7 +15279,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     if parts.is_empty() {
                         String::new()
                     } else {
-                        format!("            if !({}) {{ bail!(\"guard\") }}\n", parts.join(" && "))
+                        format!("            if !({}) {{ return Err(\"guard\") }}\n", parts.join(" && "))
                     }
                 };
 
@@ -15586,7 +15586,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     s.push_str(&body.replace("            ", "                    "));
                     s.push_str(&format!("                    Ok({result})\n"));
                     s.push_str("                }\n");
-                    s.push_str("                _ => bail!(\"nomatch\"),\n");
+                    s.push_str("                _ => return Err(\"nomatch\"),\n");
                     s.push_str("            }}\n");
                 } else {
                     if bind_arc_directly {
@@ -15597,11 +15597,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         let mut_prefix = if true { "mut " } else { "" };
                         s.push_str(&format!("            let {mut_prefix}{var_name} = __mc_input.clone();\n"));
                     } else if mc_uses_tuple_rewrite {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
                     } else if input_is_arc {
-                        s.push_str(&format!("            let {pat} = __mc_input.as_ref() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.as_ref() else {{ return Err(\"nomatch\") }};\n"));
                     } else {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
                     }
                     s.push_str(&guard_check);
                     s.push_str(&body);
@@ -17812,10 +17812,10 @@ fn emit_pat_assign<'a>(
                     // rather than bailing out of a possibly-infallible function.
                     _ => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                 };
                 writeln!(out, "{indent}let {tmp} = ({scrut_expr});").unwrap();
@@ -17999,10 +17999,10 @@ fn emit_pat_assign<'a>(
                     // break can never escape across a closure.
                     FailureMode::Function | FailureMode::TryArm => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
                     FailureMode::IfLetElse(else_code) => {
@@ -18150,10 +18150,10 @@ fn emit_pat_assign<'a>(
                     // possibly-infallible function.
                     FailureMode::Function | FailureMode::TryArm => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
                     FailureMode::IfLetElse(_) => unreachable!(),
@@ -20804,7 +20804,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
+                writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
                 writeln!(out, "{indent}}}.is_err() {{").unwrap();
                 let mut eenv = env.clone();
                 emit_stmts(out, &format!("{indent}    "), else_body, fail_mode, ctx, &mut eenv, top_level, fresh);
@@ -20823,7 +20823,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
+                writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
                 writeln!(out, "{indent}}} {{").unwrap();
                 writeln!(out, "{indent}    Ok(()) => {{}}").unwrap();
                 writeln!(out, "{indent}    {err_pat} => {{").unwrap();
@@ -20863,7 +20863,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<_, anyhow::Error>({yield_tuple})").unwrap();
+                writeln!(out, "{indent}    Ok::<_, &'static str>({yield_tuple})").unwrap();
                 writeln!(out, "{indent}}} {{").unwrap();
                 writeln!(out, "{indent}    Ok({temp_pat}) => {{").unwrap();
                 for (v, t) in escaped_vars.iter().zip(temp_names.iter()) {
@@ -20898,8 +20898,8 @@ fn emit_stmt<'a>(
             ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                 emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut fenv, top_level, fresh);
             });
-            writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
-            writeln!(out, "{indent}}}.is_ok() {{ bail!(\"failure(): body succeeded\") }}").unwrap();
+            writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
+            writeln!(out, "{indent}}}.is_ok() {{ return Err(\"failure(): body succeeded\") }}").unwrap();
         }
         S::Return => {
             // Expand `return;` into the same shape that emit_function produces

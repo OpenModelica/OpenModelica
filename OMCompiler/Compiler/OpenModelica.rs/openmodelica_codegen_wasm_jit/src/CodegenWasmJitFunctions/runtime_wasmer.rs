@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use anyhow::{Context, Result, anyhow, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
 
@@ -21,7 +21,7 @@ use super::SigTy;
 /// — `RuntimeError`, `InstantiationError`, `ExportError`, … — do not share a
 /// single anyhow-convertible type, so we format via `Debug`).
 fn wt<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> Result<T> {
-    r.map_err(|e| anyhow!("{e:?}"))
+    r.map_err(|e| "{e:?}")
 }
 
 /// The static linear-memory runtime, precompiled from
@@ -90,7 +90,7 @@ struct Sig {
 
 fn read_sig(path: &str) -> Result<Sig> {
     let text = openmodelica_wasi::fs::read_to_string(path)
-        .with_context(|| format!("CodegenWasmJit: cannot read sidecar {path}"))?;
+        .map_err(|_| "CodegenWasmJit: cannot read sidecar {path}")?;
     let mut lines = text.lines();
     let parse = |line: Option<&str>| -> Result<Vec<SigTy>> {
         super::parse_sig_types(line.unwrap_or(""))
@@ -171,7 +171,7 @@ fn value_as_f64(v: &Values::Value) -> Result<f64> {
         Values::Value::INTEGER { integer } => *integer as f64,
         Values::Value::BOOL { boolean } => *boolean as i64 as f64,
         Values::Value::ENUM_LITERAL { index, .. } => *index as f64,
-        other => bail!("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
     })
 }
 
@@ -182,7 +182,7 @@ fn value_as_i32(v: &Values::Value) -> Result<i32> {
         Values::Value::BOOL { boolean } => *boolean as i32,
         Values::Value::ENUM_LITERAL { index, .. } => *index,
         Values::Value::REAL { real } => real.into_inner() as i32,
-        other => bail!("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
     })
 }
 
@@ -194,7 +194,7 @@ pub(super) fn load_and_execute(
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
     let bytes = openmodelica_wasi::fs::read(&wasm_path)
-        .with_context(|| format!("CodegenWasmJit: cannot read module {wasm_path}"))?;
+        .map_err(|_| "CodegenWasmJit: cannot read module {wasm_path}")?;
 
     // Reuse the shared engine and the per-content compiled module. Each call
     // gets a fresh store + runtime instance (its own heap/linear memory); the
@@ -215,7 +215,7 @@ pub(super) fn load_and_execute(
     let memory = rt_inst
         .exports
         .get_memory("memory")
-        .map_err(|e| anyhow!("CodegenWasmJit: runtime has no `memory` export: {e:?}"))?
+        .map_err(|e| "CodegenWasmJit: runtime has no `memory` export: {e:?}")?
         .clone();
     let rt = RtFns {
         mem: memory,
@@ -234,13 +234,13 @@ pub(super) fn load_and_execute(
     let func = instance
         .exports
         .get_function("main")
-        .map_err(|e| anyhow!("CodegenWasmJit: module has no `main` export: {e:?}"))?
+        .map_err(|e| "CodegenWasmJit: module has no `main` export: {e:?}")?
         .clone();
 
     // Marshal the arguments according to the input signature.
     let argv: Vec<&Arc<Values::Value>> = (&**args).into_iter().collect();
     if argv.len() != sig.inputs.len() {
-        bail!("CodegenWasmJit: function expects {} arguments, got {}", sig.inputs.len(), argv.len());
+        return Err("CodegenWasmJit: function expects {} arguments, got {}");
     }
     let mut params: Vec<wasmer::Value> = Vec::with_capacity(argv.len());
     for (a, ty) in argv.iter().zip(sig.inputs.iter()) {
@@ -264,12 +264,12 @@ pub(super) fn load_and_execute(
                 report_pending_assert(&mut store, &rt, &pa)?;
                 return Ok(Arc::new(Values::Value::META_FAIL));
             }
-            return Err(anyhow!("{e:?}"));
+            return Err("{e:?}");
         }
     };
 
     if results.len() != sig.outputs.len() {
-        bail!("CodegenWasmJit: wasm returned {} values but signature has {}", results.len(), sig.outputs.len());
+        return Err("CodegenWasmJit: wasm returned {} values but signature has {}");
     }
 
     let mut out: Vec<Arc<Values::Value>> = Vec::with_capacity(results.len());
@@ -291,7 +291,7 @@ fn read_rt_str(store: &mut Store, rt: &RtFns, handle: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, handle))? as usize;
     let data = wt(rt.str_data.call(&mut *store, handle))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.view(&*store).read(data as u64, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: {e}"))?;
+    rt.mem.view(&*store).read(data as u64, &mut buf).map_err(|e| "CodegenWasmJit: {e}")?;
     Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
@@ -347,7 +347,7 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
         SigTy::Str => wasmer::Value::I32(str_to_handle(store, rt, v)?),
         SigTy::Array { elem, rank } => wasmer::Value::I32(array_to_handle(store, rt, elem, *rank, v)?),
         SigTy::Record { fields, .. } => wasmer::Value::I32(record_to_handle(store, rt, fields, v)?),
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
     })
 }
 
@@ -357,7 +357,7 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
 /// is self-describing for release/copy.
 fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v: &Values::Value) -> Result<i32> {
     let Values::Value::RECORD { orderd, comp, .. } = v else {
-        bail!("CodegenWasmJit: expected a record argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a record argument, got {v:?}");
     };
     let layout = super::record_layout(fields);
     let obj = wt(rt.rec_new.call(&mut *store, layout.heap.len() as i32, layout.size as i32))?;
@@ -375,7 +375,7 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
     for (i, (fname, fty)) in fields.iter().enumerate() {
         let fv = by_name
             .get(fname.as_str())
-            .ok_or_else(|| anyhow!("CodegenWasmJit: record argument missing field `{fname}`"))?;
+            .ok_or_else(|| "CodegenWasmJit: record argument missing field `{fname}`")?;
         let addr = obj as usize + layout.data_off as usize + layout.field_off[i] as usize;
         write_elem(store, rt, fty, addr, fv)?;
     }
@@ -385,12 +385,12 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
 /// Materialize a `Values.STRING` into a fresh runtime string, returning its handle.
 fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32> {
     let Values::Value::STRING { string } = v else {
-        bail!("CodegenWasmJit: expected a String argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a String argument, got {v:?}");
     };
     let b = string.as_bytes();
     let h = wt(rt.str_new.call(&mut *store, b.len() as i32))?;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
-    rt.mem.view(&*store).write(d as u64, b).map_err(|e| anyhow!("CodegenWasmJit: memory write: {e}"))?;
+    rt.mem.view(&*store).write(d as u64, b).map_err(|e| "CodegenWasmJit: memory write: {e}")?;
     Ok(h)
 }
 
@@ -399,11 +399,11 @@ fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32
 /// dimension; the leaves are flattened row-major and written into the object.
 fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &Values::Value) -> Result<i32> {
     let Values::Value::ARRAY { dimLst, .. } = v else {
-        bail!("CodegenWasmJit: expected an array argument, got {v:?}");
+        return Err("CodegenWasmJit: expected an array argument, got {v:?}");
     };
     let dims: Vec<i32> = (&**dimLst).into_iter().copied().collect();
     if dims.len() as u32 != rank {
-        bail!("CodegenWasmJit: array argument has {} dimensions, expected rank {rank}", dims.len());
+        return Err("CodegenWasmJit: array argument has {} dimensions, expected rank {rank}");
     }
     let total: i32 = dims.iter().product();
     let obj = wt(rt.arr_new.call(&mut *store, elem.elem_kind() as i32, rank as i32, total))?;
@@ -414,7 +414,7 @@ fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &V
     let mut leaves = Vec::new();
     flatten_values(v, &mut leaves);
     if leaves.len() as i32 != total {
-        bail!("CodegenWasmJit: array argument has {} elements but dimensions imply {total}", leaves.len());
+        return Err("CodegenWasmJit: array argument has {} elements but dimensions imply {total}");
     }
     for (k, leaf) in leaves.iter().enumerate() {
         let addr = wt(rt.arr_elem_ptr.call(&mut *store, obj, k as i32 + 1))? as usize;
@@ -453,40 +453,40 @@ fn write_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize, v: &Valu
             let h = record_to_handle(store, rt, fields, v)?;
             write_bytes(store, rt, addr, &h.to_le_bytes())?;
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
     }
     Ok(())
 }
 
 fn write_bytes(store: &mut Store, rt: &RtFns, addr: usize, bytes: &[u8]) -> Result<()> {
-    rt.mem.view(&*store).write(addr as u64, bytes).map_err(|e| anyhow!("CodegenWasmJit: memory write: {e}"))
+    rt.mem.view(&*store).write(addr as u64, bytes).map_err(|e| "CodegenWasmJit: memory write: {e}")
 }
 
 /// Build a `Values.Value` from a wasm result of the given Modelica type.
 fn marshal_out(store: &mut Store, rt: &RtFns, ty: &SigTy, val: &wasmer::Value) -> Result<Values::Value> {
     Ok(match ty {
         SigTy::Int => Values::Value::INTEGER {
-            integer: val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 result"))?,
+            integer: val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 result")?,
         },
         SigTy::Bool => Values::Value::BOOL {
-            boolean: val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 result"))? != 0,
+            boolean: val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 result")? != 0,
         },
         SigTy::Real => Values::Value::REAL {
-            real: metamodelica::Real::from(val.f64().ok_or_else(|| anyhow!("CodegenWasmJit: expected f64 result"))?),
+            real: metamodelica::Real::from(val.f64().ok_or_else(|| "CodegenWasmJit: expected f64 result")?),
         },
         SigTy::Str => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 string handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 string handle result")?;
             Values::Value::STRING { string: ArcStr::from(read_string(store, rt, h)?.as_str()) }
         }
         SigTy::Array { elem, .. } => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 array handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 array handle result")?;
             read_array(store, rt, elem, h)?
         }
         SigTy::Record { path, fields } => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 record handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 record handle result")?;
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
     })
 }
 
@@ -526,8 +526,8 @@ fn read_string(store: &mut Store, rt: &RtFns, h: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, h))? as usize;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.view(&*store).read(d as u64, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: memory read: {e}"))?;
-    String::from_utf8(buf).map_err(|e| anyhow!("CodegenWasmJit: non-utf8 result string: {e}"))
+    rt.mem.view(&*store).read(d as u64, &mut buf).map_err(|e| "CodegenWasmJit: memory read: {e}")?;
+    String::from_utf8(buf).map_err(|e| "CodegenWasmJit: non-utf8 result string: {e}")
 }
 
 /// Read a runtime array handle into a (nested) `Values.ARRAY` of element type
@@ -567,13 +567,13 @@ fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result
             let h = i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?);
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
     })
 }
 
 fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Result<[u8; N]> {
     let mut buf = [0u8; N];
-    rt.mem.view(&*store).read(addr as u64, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: memory read: {e}"))?;
+    rt.mem.view(&*store).read(addr as u64, &mut buf).map_err(|e| "CodegenWasmJit: memory read: {e}")?;
     Ok(buf)
 }
 

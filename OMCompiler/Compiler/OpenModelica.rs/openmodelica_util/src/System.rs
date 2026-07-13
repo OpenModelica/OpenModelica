@@ -25,7 +25,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{Context, Result, bail};
+use metamodelica::Result;
 use arcstr::{ArcStr, literal};
 
 use metamodelica::List;
@@ -129,7 +129,7 @@ pub fn trimWhitespace(inString: ArcStr) -> ArcStr {
 
 pub fn trimChar(inString1: ArcStr, inString2: ArcStr) -> Result<ArcStr> {
     if inString2.chars().count() != 1 {
-        bail!("System.trimChar: second argument must be exactly one character");
+        return Err("System.trimChar: second argument must be exactly one character");
     }
     let c = inString2.chars().next().unwrap();
     Ok(ArcStr::from(inString1.trim_matches(c)))
@@ -442,7 +442,7 @@ pub fn strncmp(inString1: ArcStr, inString2: ArcStr, len: i32) -> i32 {
 
 pub fn stringReplace(r#str: ArcStr, source: ArcStr, target: ArcStr) -> Result<ArcStr> {
     if source.is_empty() {
-        bail!("System.stringReplace: source pattern must be non-empty");
+        return Err("System.stringReplace: source pattern must be non-empty");
     }
     Ok(ArcStr::from(r#str.replace(source.as_str(), target.as_str())))
 }
@@ -642,21 +642,21 @@ pub fn freeLibrary(inLibHandle: i32, inPrintDebug: bool) -> Result<()> {
 
 pub fn writeFile(fileNameToWrite: ArcStr, stringToBeWritten: ArcStr) -> Result<()> {
     openmodelica_wasi::fs::write(fileNameToWrite.as_str(), stringToBeWritten.as_bytes())
-        .with_context(|| format!("System.writeFile: cannot write {}", fileNameToWrite))?;
+        .map_err(|_| "System.writeFile: cannot write {}")?;
     Ok(())
 }
 
 pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
     openmodelica_wasi::fs::append(file.as_str(), data.as_bytes())
-        .with_context(|| format!("System.appendFile: cannot append to {file}"))?;
+        .map_err(|_| "System.appendFile: cannot append to {file}")?;
     Ok(())
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
     let bytes = openmodelica_wasi::fs::read(inString.as_str())
-        .with_context(|| format!("System.readFile: cannot read {inString}"))?;
+        .map_err(|_| "System.readFile: cannot read {inString}")?;
     let s = String::from_utf8(bytes)
-        .with_context(|| format!("System.readFile: {inString} is not valid UTF-8"))?;
+        .map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
     Ok(ArcStr::from(s))
 }
 
@@ -883,7 +883,7 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
             return Ok(ArcStr::from(candidate));
         }
     }
-    bail!("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}")
+    return Err("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}")
 }
 
 pub fn pwd() -> ArcStr {
@@ -916,7 +916,7 @@ pub fn readEnv(inString: ArcStr) -> Result<ArcStr> {
     }
     match std::env::var(inString.as_str()) {
         Ok(v) => Ok(ArcStr::from(v)),
-        Err(_) => bail!("System.readEnv: variable {inString} not set"),
+        Err(_) => return Err("System.readEnv: variable {inString} not set"),
     }
 }
 
@@ -1208,7 +1208,7 @@ pub fn getLoadModelPath(
             return Ok((e.dir.clone(), ArcStr::from(e.file.clone()), e.file_is_dir));
         }
     }
-    bail!("System.getLoadModelPath: no match for {className} on the MODELICAPATH")
+    return Err("System.getLoadModelPath: no match for {className} on the MODELICAPATH")
 }
 
 pub fn time() -> metamodelica::Real {
@@ -1836,7 +1836,7 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         let (name, path) = split_name_path(rest);
         if name.is_empty() {
             add_scripting_error("Modelica URI lacks classname: %s", &uri);
-            bail!("Modelica URI lacks classname: {uri}");
+            return Err("Modelica URI lacks classname: {uri}");
         }
         return Ok((literal!("modelica://"), ArcStr::from(name), ArcStr::from(path)));
     }
@@ -1844,16 +1844,16 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         let (name, path) = split_name_path(rest);
         if path.is_empty() {
             add_scripting_error("File URI has no path: %s", &uri);
-            bail!("File URI has no path: {uri}");
+            return Err("File URI has no path: {uri}");
         }
         if !name.is_empty() {
             add_scripting_error("File URI using hostnames is not supported: %s", &uri);
-            bail!("File URI using hostnames is not supported: {uri}");
+            return Err("File URI using hostnames is not supported: {uri}");
         }
         return Ok((literal!("file://"), literal!(""), ArcStr::from(path)));
     }
     add_scripting_error("Unknown uri: %s", &uri);
-    bail!("Unknown uri: {uri}")
+    return Err("Unknown uri: {uri}")
 }
 
 pub fn modelicaPlatform() -> ArcStr {
@@ -2091,7 +2091,7 @@ pub fn snprintff(format: ArcStr, maxlen: i32, val: metamodelica::Real) -> Result
     // and fall back to `{:?}` for anything else. The C runtime truncates
     // to maxlen-1 bytes; we mirror that.
     let formatted = c_format_double(format.as_str(), val.into_inner())
-        .with_context(|| format!("System.snprintff: unsupported format {format}"))?;
+        .ok_or("System.snprintff: unsupported format")?;
     let cap = (maxlen.max(0) as usize).saturating_sub(1);
     let truncated: String = formatted.chars().take(cap).collect();
     Ok(ArcStr::from(truncated))
@@ -2099,7 +2099,7 @@ pub fn snprintff(format: ArcStr, maxlen: i32, val: metamodelica::Real) -> Result
 
 pub fn sprintff(format: ArcStr, val: metamodelica::Real) -> Result<ArcStr> {
     let s = c_format_double(format.as_str(), val.into_inner())
-        .with_context(|| format!("System.sprintff: unsupported format {format}"))?;
+        .ok_or("System.sprintff: unsupported format")?;
     Ok(ArcStr::from(s))
 }
 
@@ -2265,7 +2265,7 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let canon = fs::canonicalize(path.as_str())
-            .with_context(|| format!("System.realpath: cannot resolve {path}"))?;
+            .map_err(|_| "System.realpath: cannot resolve {path}")?;
         Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
     }
 }
@@ -2313,8 +2313,8 @@ pub fn fileIsNewerThan(file1: ArcStr, file2: ArcStr) -> Result<bool> {
         let _ = &file2;
         Ok(openmodelica_wasi::fs::is_file(file1.as_str()))
     } else {
-        let t1 = openmodelica_wasi::fs::modified(file1.as_str()).with_context(|| format!("stat {file1}"))?;
-        let t2 = openmodelica_wasi::fs::modified(file2.as_str()).with_context(|| format!("stat {file2}"))?;
+        let t1 = openmodelica_wasi::fs::modified(file1.as_str()).map_err(|_| "stat {file1}")?;
+        let t2 = openmodelica_wasi::fs::modified(file2.as_str()).map_err(|_| "stat {file2}")?;
         Ok(t1 > t2)
     }
 }
@@ -2614,7 +2614,7 @@ impl StringAllocator {
     pub fn new(sz: i32) -> Result<StringAllocator> {
         // `StringAllocator_constructor` throws (MMC_THROW) on a negative size.
         if sz < 0 {
-            bail!("StringAllocator: negative size {sz}");
+            return Err("StringAllocator: negative size {sz}");
         }
         Ok(StringAllocator {
             buf: Arc::new(std::sync::Mutex::new(vec![0u8; sz as usize])),

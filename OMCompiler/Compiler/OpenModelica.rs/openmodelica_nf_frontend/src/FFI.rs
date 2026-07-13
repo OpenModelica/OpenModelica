@@ -43,7 +43,7 @@
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use libffi::middle::{Cif, Type as MiddleType};
 
@@ -288,7 +288,7 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
             let ctype = type_ctype(ty);
             (ctype, Alignment { size: size_of_type(ty), align: ctype.align(), ..Default::default() })
         }
-        _ => bail!("FFI.callFunction: unsupported argument expression"),
+        _ => return Err("FFI.callFunction: unsupported argument expression"),
     })
 }
 
@@ -333,7 +333,7 @@ unsafe fn write_exp_value(
             }
             Expression::NFExpression::STRING { value } => {
                 let c = CString::new(value.as_bytes())
-                    .map_err(|_| anyhow::anyhow!("FFI.callFunction: string argument contains NUL"))?;
+                    .map_err(|_| "FFI.callFunction: string argument contains NUL")?;
                 (ptr as *mut *const libc::c_char).write_unaligned(c.as_ptr());
                 strings.push(c);
                 ptr.add(8)
@@ -391,7 +391,7 @@ unsafe fn mk_string_exp(ptr: *const u8) -> Result<Arc<Expression::NFExpression>>
     let s = unsafe { (ptr as *const *const libc::c_char).read_unaligned() };
     if s.is_null() {
         // The C version would crash here; fail instead.
-        bail!("FFI.callFunction: external function returned a NULL string");
+        return Err("FFI.callFunction: external function returned a NULL string");
     }
     let value = ArcStr::from(unsafe { CStr::from_ptr(s) }.to_string_lossy().as_ref());
     Ok(Arc::new(Expression::NFExpression::STRING { value }))
@@ -405,10 +405,10 @@ unsafe fn mk_enum_exp(
 ) -> Result<Arc<Expression::NFExpression>> {
     let index = unsafe { (ptr as *const i32).read_unaligned() };
     let Type::NFType::ENUMERATION { literals, .. } = &**enum_ty else {
-        bail!("FFI.callFunction: expected an enumeration type");
+        return Err("FFI.callFunction: expected an enumeration type");
     };
     if index < 1 {
-        bail!("FFI.callFunction: enumeration index {index} out of range");
+        return Err("FFI.callFunction: enumeration index {index} out of range");
     }
     let mut cur = literals;
     let mut i = 1;
@@ -423,14 +423,14 @@ unsafe fn mk_enum_exp(
         i += 1;
         cur = tail;
     }
-    bail!("FFI.callFunction: enumeration index {index} out of range")
+    return Err("FFI.callFunction: enumeration index {index} out of range")
 }
 
 /// `mk_array_exp` / `mk_array_exp_2`: deserialise a contiguous C array into
 /// a (possibly nested) ARRAY expression of the given array type.
 unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Expression::NFExpression>> {
     let Type::NFType::ARRAY { elementType, dimensions } = &**ty else {
-        bail!("FFI.callFunction: expected an array type");
+        return Err("FFI.callFunction: expected an array type");
     };
     let dim_count = list_len(dimensions);
     let elem_count = array_scalar_count(ty);
@@ -446,7 +446,7 @@ unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Exp
                 Type::NFType::REAL => unsafe { mk_real_exp(p) },
                 Type::NFType::STRING => unsafe { mk_string_exp(p) }?,
                 Type::NFType::ENUMERATION { .. } => unsafe { mk_enum_exp(p, elementType) }?,
-                _ => bail!("FFI.callFunction: unsupported array element type"),
+                _ => return Err("FFI.callFunction: unsupported array element type"),
             });
         }
         v
@@ -479,7 +479,7 @@ unsafe fn mk_record_exp(
     align: &Alignment,
 ) -> Result<Arc<Expression::NFExpression>> {
     let Expression::NFExpression::RECORD { path, ty, elements } = arg else {
-        bail!("FFI.callFunction: expected a record expression");
+        return Err("FFI.callFunction: expected a record expression");
     };
     let mut out: Vec<Arc<Expression::NFExpression>> = Vec::with_capacity(align.fields.len());
     let mut cur = elements;
@@ -537,7 +537,7 @@ unsafe fn mk_exp_from_arg(
         Expression::NFExpression::ARRAY { ty, .. } => unsafe { mk_array_exp(ptr, ty) }?,
         Expression::NFExpression::RECORD { .. } => unsafe { mk_record_exp(ptr, arg, align) }?,
         Expression::NFExpression::EMPTY { ty } => unsafe { mk_exp_from_type(ty, ptr) }?,
-        _ => bail!("FFI.callFunction: unsupported argument expression"),
+        _ => return Err("FFI.callFunction: unsupported argument expression"),
     })
 }
 
@@ -574,7 +574,7 @@ pub fn callFunction(
     let args_vec: Vec<Arc<Expression::NFExpression>> = args.borrow().clone();
     let specs_vec: Vec<ArgSpec> = specs.borrow().clone();
     if args_vec.len() != specs_vec.len() {
-        bail!("FFI.callFunction: argument/spec count mismatch");
+        return Err("FFI.callFunction: argument/spec count mismatch");
     }
 
     // Marshal the arguments. String storage must outlive both the call and
@@ -617,7 +617,7 @@ pub fn callFunction(
     if caught != 0 {
         // Same as the C version's catch-all: the call failed, make the
         // surrounding evaluation fail (NFEvalFunction reports it).
-        bail!("FFI.callFunction: external function threw an exception");
+        return Err("FFI.callFunction: external function threw an exception");
     }
 
     // Read back the OUTPUT arguments, in declaration order.

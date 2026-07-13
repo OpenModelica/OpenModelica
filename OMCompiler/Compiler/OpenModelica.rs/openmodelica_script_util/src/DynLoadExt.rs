@@ -29,7 +29,7 @@
 use std::ffi::{CStr, CString, c_char, c_void};
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
 
@@ -124,9 +124,9 @@ struct MmcAlloc {
 impl MmcAlloc {
     fn resolve() -> Result<Self> {
         let mk_box_arr = dynload::runtime_symbol("mmc_mk_box_arr")
-            .ok_or_else(|| anyhow::anyhow!("runtime symbol `mmc_mk_box_arr` not found"))?;
+            .ok_or_else(|| "runtime symbol `mmc_mk_box_arr` not found")?;
         let mk_rcon = dynload::runtime_symbol("mmc_mk_rcon")
-            .ok_or_else(|| anyhow::anyhow!("runtime symbol `mmc_mk_rcon` not found"))?;
+            .ok_or_else(|| "runtime symbol `mmc_mk_rcon` not found")?;
         Ok(MmcAlloc {
             mk_box_arr: unsafe { std::mem::transmute::<usize, extern "C" fn(isize, usize, *const usize) -> usize>(mk_box_arr) },
             mk_rcon: unsafe { std::mem::transmute::<usize, extern "C" fn(f64) -> usize>(mk_rcon) },
@@ -189,7 +189,7 @@ fn value_to_desc(rt: &MmcAlloc, v: &Values::Value, store: &mut ArgStorage) -> Re
         Values::Value::RECORD { index, .. } if *index != -1 => Ok(TypeDesc::scalar(TD_MMC, value_to_mmc(rt, v)? as u64)),
         Values::Value::RECORD { record_, orderd, comp, .. } => record_to_desc(rt, record_, orderd, comp, store),
         Values::Value::ARRAY { valueLst, dimLst } => array_to_desc(rt, valueLst, dimLst, store),
-        other => bail!("DynLoad.executeFunction: marshalling argument {other:?} not yet supported"),
+        other => return Err("DynLoad.executeFunction: marshalling argument {other:?} not yet supported"),
     }
 }
 
@@ -233,7 +233,7 @@ fn value_to_mmc(rt: &MmcAlloc, v: &Values::Value) -> Result<usize> {
             }
             rt.mk_box((*index as i64 + 3) as usize, &slots)
         }
-        other => bail!("DynLoad.executeFunction: cannot marshal {other:?} into MetaModelica data"),
+        other => return Err("DynLoad.executeFunction: cannot marshal {other:?} into MetaModelica data"),
     })
 }
 
@@ -254,11 +254,11 @@ fn leak_record_description(path: &Arc<Absyn::Path>, field_names: &List<ArcStr>) 
 fn leak_record_description_raw(mangled_path: &str, dotted_name: &str, field_names: &[&str]) -> Result<usize> {
     let fields: Vec<*const c_char> = field_names
         .iter()
-        .map(|f| Ok(CString::new(*f)?.into_raw() as *const c_char))
+        .map(|f| Ok(CString::new(*f).map_err(|_| "DynLoad: NUL byte in field name")?.into_raw() as *const c_char))
         .collect::<Result<_>>()?;
     let desc = RecordDescription {
-        path: CString::new(mangled_path)?.into_raw(),
-        name: CString::new(dotted_name)?.into_raw(),
+        path: CString::new(mangled_path).map_err(|_| "DynLoad: NUL byte in path")?.into_raw(),
+        name: CString::new(dotted_name).map_err(|_| "DynLoad: NUL byte in name")?.into_raw(),
         field_names: Box::leak(fields.into_boxed_slice()).as_ptr(),
     };
     Ok(Box::into_raw(Box::new(desc)) as usize)
@@ -278,16 +278,16 @@ fn record_to_desc(
     let names: Vec<*const c_char> = field_names
         .into_iter()
         .map(|n| {
-            let c = CString::new(n.as_str())?;
+            let c = CString::new(n.as_str()).map_err(|_| "DynLoad: NUL byte in field name")?;
             let p = c.as_ptr();
             store.cstrings.push(c);
             Ok(p)
         })
         .collect::<Result<_>>()?;
     if elems.len() != names.len() {
-        bail!("DynLoad.executeFunction: record argument has {} fields but {} field names", elems.len(), names.len());
+        return Err("DynLoad.executeFunction: record argument has {} fields but {} field names");
     }
-    let record_name = CString::new(AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)?.as_str())?;
+    let record_name = CString::new(AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)?.as_str()).map_err(|_| "DynLoad: NUL byte in record name")?;
     let d0 = record_name.as_ptr() as u64;
     store.cstrings.push(record_name);
     let elems = elems.into_boxed_slice();
@@ -308,7 +308,7 @@ fn array_element_tag(values: &List<Arc<Values::Value>>) -> Result<i32> {
         Some(Values::Value::BOOL { .. }) => Ok(TD_BOOL_ARRAY),
         Some(Values::Value::STRING { .. }) => Ok(TD_STRING_ARRAY),
         Some(Values::Value::ARRAY { valueLst, .. }) => array_element_tag(valueLst),
-        Some(other) => bail!("DynLoad.executeFunction: array argument of {other:?} not supported"),
+        Some(other) => return Err("DynLoad.executeFunction: array argument of {other:?} not supported"),
     }
 }
 
@@ -320,7 +320,7 @@ fn flatten_array(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, depth: usize,
         match (&**v, depth) {
             (Values::Value::ARRAY { valueLst, .. }, 2..) => flatten_array(rt, valueLst, depth - 1, out)?,
             (scalar, 1) => out(scalar)?,
-            (other, _) => bail!("DynLoad.executeFunction: ragged or mixed array argument at {other:?}"),
+            (other, _) => return Err("DynLoad.executeFunction: ragged or mixed array argument at {other:?}"),
         }
     }
     Ok(())
@@ -333,7 +333,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
     let dims: Box<[i64]> = dim_lst.into_iter().map(|d| *d as i64).collect();
     let ndims = dims.len();
     if ndims == 0 {
-        bail!("DynLoad.executeFunction: array argument without dimensions");
+        return Err("DynLoad.executeFunction: array argument without dimensions");
     }
     let expected: i64 = dims.iter().product();
 
@@ -350,7 +350,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
                     buf.push(*index as i64);
                     Ok(())
                 },
-                other => bail!("DynLoad.executeFunction: expected Integer array element, got {other:?}"),
+                other => return Err("DynLoad.executeFunction: expected Integer array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
             let r = (buf.len(), buf.as_ptr() as u64);
@@ -364,7 +364,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
                     buf.push(real.into_inner());
                     Ok(())
                 },
-                other => bail!("DynLoad.executeFunction: expected Real array element, got {other:?}"),
+                other => return Err("DynLoad.executeFunction: expected Real array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
             let r = (buf.len(), buf.as_ptr() as u64);
@@ -378,7 +378,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
                     buf.push(*boolean as i32);
                     Ok(())
                 },
-                other => bail!("DynLoad.executeFunction: expected Boolean array element, got {other:?}"),
+                other => return Err("DynLoad.executeFunction: expected Boolean array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
             let r = (buf.len(), buf.as_ptr() as u64);
@@ -392,7 +392,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
                     buf.push(make_c_string(string)?);
                     Ok(())
                 },
-                other => bail!("DynLoad.executeFunction: expected String array element, got {other:?}"),
+                other => return Err("DynLoad.executeFunction: expected String array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
             let r = (buf.len(), buf.as_ptr() as u64);
@@ -402,7 +402,7 @@ fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &Lis
         _ => unreachable!("array_element_tag returns array tags only"),
     };
     if count as i64 != expected {
-        bail!("DynLoad.executeFunction: array argument has {count} elements but dimensions {dims:?}");
+        return Err("DynLoad.executeFunction: array argument has {count} elements but dimensions {dims:?}");
     }
     let d1 = dims.as_ptr() as u64;
     store.dims.push(dims);
@@ -450,12 +450,12 @@ fn underscore_name_to_path(name: &str) -> Arc<Absyn::Path> {
 /// region; the object header is 8 bytes before it and the tagged pointer adds 3.
 fn make_c_string(s: &str) -> Result<usize> {
     let mk = dynload::runtime_symbol("mmc_mk_scon_len_ret_ptr")
-        .ok_or_else(|| anyhow::anyhow!("runtime symbol `mmc_mk_scon_len_ret_ptr` not found"))?;
+        .ok_or_else(|| "runtime symbol `mmc_mk_scon_len_ret_ptr` not found")?;
     let mk: extern "C" fn(usize) -> *mut u8 = unsafe { std::mem::transmute(mk) };
     let bytes = s.as_bytes();
     let data = mk(bytes.len());
     if data.is_null() {
-        bail!("DynLoad.executeFunction: string allocation failed");
+        return Err("DynLoad.executeFunction: string allocation failed");
     }
     unsafe {
         std::ptr::copy_nonoverlapping(bytes.as_ptr(), data, bytes.len());
@@ -467,7 +467,7 @@ fn make_c_string(s: &str) -> Result<usize> {
 /// Read a NUL-terminated C string the generated code handed us.
 fn read_c_str(p: *const c_char) -> Result<String> {
     if p.is_null() {
-        bail!("DynLoad.executeFunction: NULL string in result description");
+        return Err("DynLoad.executeFunction: NULL string in result description");
     }
     Ok(unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned())
 }
@@ -485,7 +485,7 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
             let n = d.d0 as usize;
             let elems = d.d1 as *const TypeDesc;
             if n != 0 && elems.is_null() {
-                bail!("DynLoad.executeFunction: malformed result tuple");
+                return Err("DynLoad.executeFunction: malformed result tuple");
             }
             let mut vals: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
             for i in 0..n {
@@ -502,7 +502,7 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
             let names = d.d2 as *const *const c_char;
             let elems = d.d3 as *const TypeDesc;
             if n != 0 && (names.is_null() || elems.is_null()) {
-                bail!("DynLoad.executeFunction: malformed result record");
+                return Err("DynLoad.executeFunction: malformed result record");
             }
             let mut vals: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
             let mut comps: Vec<ArcStr> = Vec::with_capacity(n);
@@ -521,7 +521,7 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
         // `modelica_string` is itself a boxed MMC string metatype.
         TD_STRING => decode_metatype(d.d0 as usize),
         TD_MMC => decode_metatype(d.d0 as usize),
-        other => bail!("DynLoad.executeFunction: unsupported result type_description tag {other}"),
+        other => return Err("DynLoad.executeFunction: unsupported result type_description tag {other}"),
     }
 }
 
@@ -533,11 +533,11 @@ fn desc_array_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
     let dim_size = d.d1 as *const i64;
     let data = d.d2 as *const u8;
     if ndims < 1 || dim_size.is_null() {
-        bail!("DynLoad.executeFunction: malformed result array");
+        return Err("DynLoad.executeFunction: malformed result array");
     }
     let dims: Vec<i64> = (0..ndims as usize).map(|i| unsafe { *dim_size.add(i) }).collect();
     if data.is_null() && dims.iter().product::<i64>() != 0 {
-        bail!("DynLoad.executeFunction: result array without data");
+        return Err("DynLoad.executeFunction: result array without data");
     }
     let mut cursor = data;
     decode_array_level(d.tag, &dims, &mut cursor)
@@ -618,7 +618,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
                     break;
                 }
                 if h != MMC_CONSHDR {
-                    bail!("DynLoad.executeFunction: malformed list");
+                    return Err("DynLoad.executeFunction: malformed list");
                 }
                 items.push(decode_metatype(unsafe { slot(b, 1) })?);
                 cur = unsafe { slot(b, 2) };
@@ -665,7 +665,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
                 index: c as i32 - 3,
             }))
         }
-        _ => bail!("DynLoad.executeFunction: unsupported MMC header {hdr:#x}"),
+        _ => return Err("DynLoad.executeFunction: unsupported MMC header {hdr:#x}"),
     }
 }
 
@@ -766,7 +766,7 @@ fn sync_flags_global_root(rt: &MmcAlloc, thread_data: *mut c_void) -> Result<()>
         rt.mk_box(MMC_ARRAY_CTOR, &config),
     ]);
     let set_root = dynload::runtime_symbol("boxptr_setGlobalRoot")
-        .ok_or_else(|| anyhow::anyhow!("runtime symbol `boxptr_setGlobalRoot` not found"))?;
+        .ok_or_else(|| "runtime symbol `boxptr_setGlobalRoot` not found")?;
     let set_root: extern "C" fn(*mut c_void, usize, usize) = unsafe { std::mem::transmute(set_root) };
     set_root(thread_data, mmc_immediate(openmodelica_util::Global::flagsIndex as i64), flags_box);
     Ok(())

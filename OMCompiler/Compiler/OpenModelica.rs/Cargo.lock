@@ -5163,7 +5163,6 @@ dependencies = [
 name = "metamodelica"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "metamodelica_derive",
  "num-traits",
@@ -6553,7 +6552,6 @@ dependencies = [
 name = "openmodelica_error"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",

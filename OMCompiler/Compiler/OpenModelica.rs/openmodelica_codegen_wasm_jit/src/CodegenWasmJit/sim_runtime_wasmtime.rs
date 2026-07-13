@@ -18,7 +18,7 @@
 //
 // All drivers share the same generated model module and `SimData` layout.
 
-use anyhow::{Result, anyhow, bail};
+use metamodelica::Result;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Instant;
@@ -66,7 +66,7 @@ pub(super) fn runtime_module() -> Result<&'static wasmtime::Module> {
     MODULE
         .get_or_init(|| load_or_compile_runtime().map_err(|e| format!("{e:?}")))
         .as_ref()
-        .map_err(|e| anyhow!("CodegenWasmJit: obtaining runtime module: {e}"))
+        .map_err(|e| "CodegenWasmJit: obtaining runtime module: {e}")
 }
 
 /// Path of the on-disk AOT cache for the runtime module. Keyed by a hash of the
@@ -110,7 +110,7 @@ fn load_or_compile_runtime() -> Result<wasmtime::Module> {
         // Incompatible/corrupt cache (e.g. wasmtime upgrade): fall through to
         // recompile and overwrite it below.
     }
-    let module = wasmtime::Module::new(engine, RUNTIME_WASM).map_err(|e| anyhow!("{e:?}"))?;
+    let module = wasmtime::Module::new(engine, RUNTIME_WASM).map_err(|e| "{e:?}")?;
     // Best-effort: persist the compiled artifact for the next process. Write to
     // a temp sibling then rename, so a concurrent reader never sees a partial file.
     if let Ok(bytes) = module.serialize() {
@@ -126,7 +126,7 @@ fn load_or_compile_runtime() -> Result<wasmtime::Module> {
 /// background thread from `translateModel` (overlapping the rest of the OMC
 /// pipeline) or inline from `run` as a fallback.
 pub(super) fn compile_model_module(wasm: &[u8]) -> Result<wasmtime::Module> {
-    wasmtime::Module::new(sim_engine(), wasm).map_err(|e| anyhow!("{e:?}"))
+    wasmtime::Module::new(sim_engine(), wasm).map_err(|e| "{e:?}")
 }
 
 /// Begin compiling the fixed runtime module on a background thread, once per
@@ -150,8 +150,8 @@ pub(super) fn take_compiled_model(model: &SimModel) -> Result<wasmtime::Module> 
     match job {
         Some(handle) => match handle.join() {
             Ok(Ok(m)) => Ok(m),
-            Ok(Err(e)) => bail!("CodegenWasmJit: background model-module compile failed: {e}"),
-            Err(_) => bail!("CodegenWasmJit: background model-module compile thread panicked"),
+            Ok(Err(e)) => return Err("CodegenWasmJit: background model-module compile failed: {e}"),
+            Err(_) => return Err("CodegenWasmJit: background model-module compile thread panicked"),
         },
         None => compile_model_module(&model.wasm),
     }
@@ -160,7 +160,7 @@ pub(super) fn take_compiled_model(model: &SimModel) -> Result<wasmtime::Module> 
 type Store = wasmtime::Store<()>;
 
 fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
-    r.map_err(|e| anyhow!("{e:?}"))
+    r.map_err(|e| "{e:?}")
 }
 
 // External objects are native `void*` (e.g. a table `tableID`) that must survive
@@ -224,7 +224,7 @@ fn define_external_imports(
             sig.wasm_results().iter().map(|s| wty_valtype(s.wty())),
         );
         let addr = openmodelica_util::dynload::external_symbol(&sig.name)
-            .ok_or_else(|| anyhow!("external \"C\" function `{}` not found in any loaded library", sig.name))?;
+            .ok_or_else(|| "external \"C\" function `{}` not found in any loaded library")?;
         let name = sig.name.clone();
         let sig = sig.clone();
         let rt_str_new = rt_str_new.clone();
@@ -321,7 +321,7 @@ unsafe fn call_external(
                     let off = v.unwrap_i32() as usize;
                     let len = u32::from_le_bytes(mem[off + 4..off + 8].try_into().unwrap()) as usize;
                     let cs = std::ffi::CString::new(&mem[off + 8..off + 8 + len])
-                        .map_err(|_| anyhow!("external \"C\" `{}`: string argument has an interior NUL", sig.name))?;
+                        .map_err(|_| "external \"C\" `{}`: string argument has an interior NUL")?;
                     slots.push(Slot::P(cs.as_ptr() as *mut c_void));
                     cstrings.push(cs);
                     types.push(Type::pointer());
@@ -341,7 +341,7 @@ unsafe fn call_external(
                     slots.push(Slot::P(native as *mut c_void));
                     types.push(Type::pointer());
                 }
-                other => bail!("CodegenWasmJit: external \"C\" `{}`: input argument type {other:?} not yet marshalled", sig.name),
+                other => return Err("CodegenWasmJit: external \"C\" `{}`: input argument type {other:?} not yet marshalled"),
             }
         }
     }
@@ -359,7 +359,7 @@ unsafe fn call_external(
         Some(SigTy::Real) => Type::f64(),
         Some(SigTy::Int) | Some(SigTy::Bool) => Type::i32(),
         Some(SigTy::Str) | Some(SigTy::Ptr) => Type::pointer(),
-        Some(other) => bail!("CodegenWasmJit: external \"C\" `{}`: return type {other:?} not yet marshalled", sig.name),
+        Some(other) => return Err("CodegenWasmJit: external \"C\" `{}`: return type {other:?} not yet marshalled"),
     };
     let cif = Cif::new(types, ret_type);
     let mut rvalue = [0u8; 8];
@@ -379,7 +379,7 @@ unsafe fn call_external(
         openmodelica_modelica_utilities::sim_external_end();
         // A `ModelicaError` recorded its message in the Error buffer and unwound
         // here as a panic; surface a failure to the host.
-        bail!("CodegenWasmJit: external \"C\" `{}` raised a runtime error", sig.name);
+        return Err("CodegenWasmJit: external \"C\" `{}` raised a runtime error");
     }
 
     // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
@@ -398,7 +398,7 @@ unsafe fn call_external(
             SigTy::Int | SigTy::Bool => Val::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
             SigTy::Ptr => Val::I32(registry_put(usize::from_le_bytes(raw))),
             SigTy::Str => Val::I32(make(usize::from_le_bytes(raw) as *const std::os::raw::c_char)? as i32),
-            other => bail!("external \"C\": result type {other:?} not marshalled"),
+            other => return Err("external \"C\": result type {other:?} not marshalled"),
         })
     };
 
@@ -478,7 +478,7 @@ pub(super) fn build_engine(model: &SimModel) -> Result<(Box<dyn sim_driver::SimE
     wt(linker.instance(&mut store, "rt", rt_inst))?;
     let memory = rt_inst
         .get_memory(&mut store, "memory")
-        .ok_or_else(|| anyhow!("CodegenWasmJit: runtime has no `memory` export"))?;
+        .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
     // External "C" functions (module `ext`) resolved from the host; they share the
     // runtime's linear memory for string/array/pointer marshalling, and re-enter
     // the runtime's `rt_str_new`/`rt_str_data` to build in-wasm strings for `char*`
@@ -525,10 +525,10 @@ impl WasmtimeEngine {
 
 impl sim_driver::SimEngine for WasmtimeEngine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
-        self.memory.read(&self.store, addr as usize, buf).map_err(|e| anyhow!("CodegenWasmJit: mem read: {e}"))
+        self.memory.read(&self.store, addr as usize, buf).map_err(|e| "CodegenWasmJit: mem read: {e}")
     }
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
-        self.memory.write(&mut self.store, addr as usize, buf).map_err(|e| anyhow!("CodegenWasmJit: mem write: {e}"))
+        self.memory.write(&mut self.store, addr as usize, buf).map_err(|e| "CodegenWasmJit: mem write: {e}")
     }
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
         let f = self.func(name)?;

@@ -17,7 +17,6 @@ openmodelica_util_datatypes_basic.workspace=true
 openmodelica_ast_collections.workspace = true
 openmodelica_frontend_inst.workspace = true
 openmodelica_script_util.workspace = true
-anyhow.workspace = true
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true

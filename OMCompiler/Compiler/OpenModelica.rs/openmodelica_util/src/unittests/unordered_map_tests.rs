@@ -8,7 +8,7 @@
 //
 // We use ArcStr keys and i32 values throughout.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::{ArcStr, literal};

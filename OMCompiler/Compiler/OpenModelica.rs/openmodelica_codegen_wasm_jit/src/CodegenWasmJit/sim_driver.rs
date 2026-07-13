@@ -11,7 +11,7 @@
 
 use std::cell::RefCell;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 use super::{JacAInfo, REAL_OFF, ResultKind, SimLayout, SimModel, SolveStats, StateSetInfo, TIME_OFF};
 use crate::CodegenWasmJitFunctions::WTy;
@@ -122,7 +122,7 @@ fn state_selection_set(
 
     let old_col = st.col_pivot.clone();
     if !pivot(&mut jac, nd, nc, &mut st.row_pivot, &mut st.col_pivot) {
-        bail!("CodegenWasmJit: singular Jacobian for dynamic state selection");
+        return Err("CodegenWasmJit: singular Jacobian for dynamic state selection");
     }
 
     // comparePivot: enable = 1 for the first nd pivot columns (dummy), 2 for the
@@ -211,7 +211,7 @@ fn read_rt_string(e: &dyn SimEngine, handle: i32) -> Result<String> {
 /// one is pending, route it to the error buffer (matching the C target's
 /// `[file:l:c] Error: <msg>`, and so OMEdit shows it) and return the enriched
 /// error; otherwise return the original trap error.
-pub(super) fn enrich_trap(e: &mut dyn SimEngine, err: anyhow::Error) -> anyhow::Error {
+pub(super) fn enrich_trap(e: &mut dyn SimEngine, err: &'static str) -> &'static str {
     let Some(pa) = e.take_pending_assert() else { return err };
     let msg = read_rt_string(e, pa[0]).unwrap_or_default();
     let file = read_rt_string(e, pa[1]).unwrap_or_default();
@@ -229,7 +229,7 @@ pub(super) fn enrich_trap(e: &mut dyn SimEngine, err: anyhow::Error) -> anyhow::
         metamodelica::cons(arcstr::ArcStr::from(msg.as_str()), metamodelica::nil()),
         info,
     );
-    anyhow::anyhow!("assertion failed: {msg}")
+    "assertion failed: {msg}"
 }
 
 /// Result of a simulation run.
@@ -341,7 +341,7 @@ fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> {
 /// point, the Euler loop). The DASSL residual handles this recoverably instead.
 fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if read_i32(e, sim_data + layout.nls_fail_off)? != 0 {
-        bail!("CodegenWasmJit: nonlinear system did not converge");
+        return Err("CodegenWasmJit: nonlinear system did not converge");
     }
     Ok(())
 }
@@ -415,7 +415,7 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
             e.call1("functionInitialEquations", sim_data)?;
         }
         if check_nls(e, sim_data, layout).is_err() {
-            bail!("CodegenWasmJit: homotopy initialization did not converge at lambda={lambda}");
+            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda={lambda}");
         }
     }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
@@ -640,7 +640,7 @@ pub(super) fn make_driver(
         "dassl" | "dasslrt" | "ida" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
         // Uniform host-driven Euler so it is resumable/cancellable like DASSL.
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
-        other => bail!("CodegenWasmJit: unsupported integration method `{other}` (supported: `dassl`, `euler`)"),
+        other => return Err("CodegenWasmJit: unsupported integration method `{other}` (supported: `dassl`, `euler`)"),
     }
 }
 
@@ -703,7 +703,7 @@ pub(super) fn drive(
         loop {
             match driver.advance(e, model, budget_ms).map_err(|err| enrich_trap(e, err))? {
                 Advance::Done | Advance::Terminated => break,
-                Advance::Cancelled => bail!("CodegenWasmJit: simulation cancelled"),
+                Advance::Cancelled => return Err("CodegenWasmJit: simulation cancelled"),
                 Advance::Running => continue,
             }
         }
@@ -868,7 +868,7 @@ struct ResCtx {
     n_zc: usize,
     /// A wasm trap / memory error captured inside the callback, surfaced after
     /// `ddaskr` returns (the C-style callback cannot return a `Result`).
-    err: Option<anyhow::Error>,
+    err: Option<&'static str>,
     /// ODE Jacobian sparsity+coloring for the colored-FD `jacd`; null ⇒ the
     /// analytic path is off and daskr's own numerical Jacobian is used.
     jac: *const JacAInfo,
@@ -1335,7 +1335,7 @@ impl Driver for DasslDriver {
             self.nje = ctx.nje;
             // Surface a wasm error captured in the callback, then DASSL failures.
             if let Some(err) = ctx.err.take() {
-                return Err(err.context(format!("in DASSL residual at t={}", self.t)));
+                return Err(err);
             }
             if self.idid == -1 && self.work_retries < 10_000 {
                 // Work quota expended before TOUT: stay on this interval, continue.
@@ -1345,7 +1345,7 @@ impl Driver for DasslDriver {
                 continue;
             }
             if self.idid < 0 {
-                bail!("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tout}), IDID={}", self.t, self.idid);
+                return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tout}), IDID={}");
             }
             // Interval complete: reset the resume state, write the interpolated state
             // back, and emit the row.
@@ -1714,10 +1714,10 @@ impl Driver for DasslEventsDriver {
                     }
                     self.ev_retries = 0; // this target's integration is done (or failing)
                     if let Some(err) = ctx.err.take() {
-                        return Err(err.context(format!("in DASSL residual at t={}", self.t)));
+                        return Err(err);
                     }
                     if self.idid < 0 {
-                        bail!("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tt}), IDID={}", self.t, self.idid);
+                        return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tt}), IDID={}");
                     }
                     for i in 0..n_states {
                         write_f64(e, states_base + (i as u32) * 8, self.y[i])?;

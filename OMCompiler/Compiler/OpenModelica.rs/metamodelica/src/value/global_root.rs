@@ -7,7 +7,7 @@
 //! Values are erased through `Rc<dyn Any>`; `getGlobalRoot::<A>`
 //! downcasts on retrieval.
 
-use anyhow::Result;
+use crate::Result;
 
 thread_local! {
     static GLOBAL_ROOTS: std::cell::RefCell<Vec<Option<std::rc::Rc<dyn std::any::Any>>>> =
@@ -32,14 +32,10 @@ pub fn getGlobalRoot<A: std::any::Any + Clone + 'static>(index: i32) -> Result<A
         let entry = v
             .get(index as usize)
             .and_then(|o| o.clone())
-            .ok_or_else(|| anyhow::anyhow!("getGlobalRoot: index {} is uninitialized", index))?;
+            .ok_or_else(|| "getGlobalRoot: index {} is uninitialized")?;
         match entry.downcast::<A>() {
             Ok(rc) => Ok((*rc).clone()),
-            Err(_) => Err(anyhow::anyhow!(
-                "getGlobalRoot: index {} type mismatch (expected {})",
-                index,
-                std::any::type_name::<A>()
-            )),
+            Err(_) => Err("getGlobalRoot: index type mismatch"),
         }
     })
 }

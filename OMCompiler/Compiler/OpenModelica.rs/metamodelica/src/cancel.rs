@@ -91,14 +91,14 @@ pub fn check_cancel() -> bool {
 
 /// The canonical cancellation error. Distinct message so callers/UI can tell a
 /// user-cancel from a real failure.
-pub fn cancelled_error() -> anyhow::Error {
-    anyhow::anyhow!("Operation cancelled by user")
+pub fn cancelled_error() -> &'static str {
+    "Operation cancelled by user"
 }
 
 /// `Err(cancelled_error())` if cancellation was requested, else `Ok(())`.
 /// Use with `?` at a chokepoint: `metamodelica::bail_if_cancelled()?;`.
 #[inline]
-pub fn bail_if_cancelled() -> anyhow::Result<()> {
+pub fn bail_if_cancelled() -> crate::Result<()> {
     if check_cancel() {
         return Err(cancelled_error());
     }

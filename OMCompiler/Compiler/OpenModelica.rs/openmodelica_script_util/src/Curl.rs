@@ -33,7 +33,7 @@ use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::ArcStr;
 use curl::easy::Easy;
 use metamodelica::List;

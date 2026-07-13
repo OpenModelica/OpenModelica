@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 use openmodelica_frontend_types::DAE;
 use wasm_encoder as we;
@@ -108,10 +108,7 @@ pub(crate) fn compile_linear_system(
         return Ok(());
     }
     if res_exps.len() != n {
-        bail!(
-            "CodegenWasmJit: linear system has {n} unknowns but {} residuals",
-            res_exps.len()
-        );
+        return Err("CodegenWasmJit: linear system has {n} unknowns but {} residuals");
     }
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(n);
@@ -122,9 +119,9 @@ pub(crate) fn compile_linear_system(
             .vars
             .get(&key)
             .copied()
-            .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: linear-system unknown `{key}` has no slot"))?;
+            .ok_or_else(|| "CodegenWasmJit: linear-system unknown `{key}` has no slot")?;
         if slot.wty != WTy::F64 {
-            bail!("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
         }
         slots.push(slot.off);
     }
@@ -230,10 +227,7 @@ pub(crate) fn compile_linear_system_symbolic(
         return Ok(());
     }
     if b_exps.len() != n {
-        bail!(
-            "CodegenWasmJit: SES_LINEAR (index {index}) has {n} unknowns but {} b entries",
-            b_exps.len()
-        );
+        return Err("CodegenWasmJit: SES_LINEAR (index {index}) has {n} unknowns but {} b entries");
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in vars {
@@ -243,9 +237,9 @@ pub(crate) fn compile_linear_system_symbolic(
             .vars
             .get(&key)
             .copied()
-            .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: linear-system unknown `{key}` has no slot"))?;
+            .ok_or_else(|| "CodegenWasmJit: linear-system unknown `{key}` has no slot")?;
         if slot.wty != WTy::F64 {
-            bail!("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
         }
         slots.push(slot.off);
     }
@@ -271,7 +265,7 @@ pub(crate) fn compile_linear_system_symbolic(
     // A[row + col*n] = element expression (column-major).
     for &(row, col, exp) in a_entries {
         if row >= n || col >= n {
-            bail!("CodegenWasmJit: SES_LINEAR (index {index}) simJac entry ({row},{col}) out of range for size {n}");
+            return Err("CodegenWasmJit: SES_LINEAR (index {index}) simJac entry ({row},{col}) out of range for size {n}");
         }
         let elem_off = a_off + ((col * n + row) as u32) * 8;
         ctx.emit(we::Instruction::LocalGet(base));

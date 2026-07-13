@@ -29,7 +29,7 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::{ArcStr, literal};
 use metamodelica::{List, OrderedFloat, Real, cons, nil};
 use openmodelica_util::Error;
@@ -1088,7 +1088,7 @@ pub fn str2unit(
             ERROR_PARSING_UNIT.clone(),
             Arc::new(List::from_iter([ArcStr::from(input), ArcStr::from(e.message())])),
         )?;
-        bail!("Error parsing unit {}: {}", input, e.message());
+        return Err("Error parsing unit {}: {}");
     }
 
     let scale_factor = unit.scale_factor.to_real() * 10f64.powf(unit.prefix_expo.to_real());
