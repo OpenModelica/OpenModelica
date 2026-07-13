@@ -329,11 +329,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
     }
   }
   else if (isMac()) {
-    // /opt/local/bin (MacPorts) must come first so "gcc"/"g++"/"gfortran" resolve
-    // to the real GCC toolchain implied by -DCMAKE_PREFIX_PATH=/opt/local, rather
-    // than falling through to Apple Clang's /usr/bin/gcc wrapper (which lacks
-    // OpenMP support / omp.h).
-    withEnv (["PATH=/opt/local/bin:/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+    withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
       sh "echo PATH: $PATH"
       sh "mkdir ./build_cmake"
       sh "${cmake_exe} --version"
