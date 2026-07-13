@@ -57,30 +57,7 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
-        // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
-        stage('cmake-rust-clang') {
-          agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
-              label 'linux'
-              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
-                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds }
-          }
-          steps {
-            script {
-              common.buildRustOMC()
-            }
-          }
-        }
+        // Linux build stages
         stage('gcc') {
           agent {
             docker {
@@ -122,27 +99,6 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('Win/UCRT64') {
-          agent {
-            node {
-              label 'windows-no-release'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildUCRT }
-          }
-          environment {
-            RUNTESTDB = '/c/dev/'
-            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildWinUCRT() }
-          }
-        }
         stage('cmake-jammy-gcc') {
           agent {
             docker {
@@ -170,33 +126,6 @@ pipeline {
                 "-DCMAKE_INSTALL_PREFIX=build"])
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
-          }
-        }
-        stage('cmake-macos-arm64-gcc') {
-          agent {
-            node {
-              label 'M1'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableMacOSCMakeBuild}
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_PREFIX_PATH=/opt/local",     // Look in /opt/local first to prefer the macports libraries over others in the system.
-                "-DCMAKE_C_COMPILER=gcc",             // Always specify the compilers explicitly for macOS
-                "-DCMAKE_CXX_COMPILER=g++",
-                "-DCMAKE_Fortran_COMPILER=gfortran",
-                "-DOM_QT_MAJOR_VERSION=5"])           //Use Qt5 on old macOS machines
-            }
           }
         }
         stage('cmake-alpine-clang') {
@@ -229,6 +158,58 @@ pipeline {
             }
           }
         }
+
+        // macOS build stages
+        stage('cmake-macos-arm64-gcc') {
+          agent {
+            node {
+              label 'M1'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableMacOSCMakeBuild}
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.buildOMC_CMake([
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DOM_USE_CCACHE=OFF",
+                "-DCMAKE_INSTALL_PREFIX=build",
+                "-DCMAKE_PREFIX_PATH=/opt/local",     // Look in /opt/local first to prefer the macports libraries over others in the system.
+                "-DCMAKE_C_COMPILER=gcc",             // Always specify the compilers explicitly for macOS
+                "-DCMAKE_CXX_COMPILER=g++",
+                "-DCMAKE_Fortran_COMPILER=gfortran",
+                "-DOM_QT_MAJOR_VERSION=5"])           //Use Qt5 on old macOS machines
+            }
+          }
+        }
+
+        // Windows build stages
+        stage('Win/UCRT64') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildUCRT }
+          }
+          environment {
+            RUNTESTDB = '/c/dev/'
+            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script { common.buildWinUCRT() }
+          }
+        }
         stage('cmake-OMDev-gcc') {
           agent {
             node {
@@ -251,6 +232,33 @@ pipeline {
             }
           }
         }
+
+        // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
+        // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
+        stage('cmake-rust-clang') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds }
+          }
+          steps {
+            script {
+              common.buildRustOMC()
+            }
+          }
+        }
+
+        // Checks
         stage('checks') {
           agent {
             docker {
