@@ -4,6 +4,7 @@
 // teardown_command: rm -f Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_diff.csv && rm -rf Buildings*.libs
 
 loadModel(Buildings, {"12.1.1"}); getErrorString();
+
 setCommandLineOptions("--newBackend"); getErrorString();
 simulate(Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage, stopTime=1.0); getErrorString();
 diffSimulationResults("Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat", "ReferenceFiles/Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat", "Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_diff.csv", 1e-8);

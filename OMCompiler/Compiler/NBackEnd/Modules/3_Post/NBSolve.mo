@@ -302,7 +302,12 @@ public
             inner_comps := listAppend(tmp, inner_comps);
             for elem in tmp loop
               if StrongComponent.getSolveStatus(elem) <> NBSolve.Status.EXPLICIT then
-                failed_inner := elem :: failed_inner;
+                // Pure discrete algebraic loops (mixed=false) are solved by event iteration —
+                // they are allowed to remain implicit as inner equations of a mixed block.
+                () := match elem
+                  case StrongComponent.ALGEBRAIC_LOOP(mixed = false) then ();
+                  else algorithm failed_inner := elem :: failed_inner; then ();
+                end match;
               end if;
             end for;
           end for;
