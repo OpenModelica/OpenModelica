@@ -107,15 +107,15 @@ readFile("testLoopsOverFMUs_systemCall.log");
 
 // Possible solutions:
 // a≈0.635425, b=-1.8, c≈1.16458 or a≈1.16458, b=-1.8, c≈0.635425
-val(a_out, 0.1, "loopsOverFMUs.mat");
-val(b_out, 0.1, "loopsOverFMUs.mat");
-val(c_out, 0.1, "loopsOverFMUs.mat");
+val(A.a_out, 0.1, "loopsOverFMUs.mat");
+val(A.b_out, 0.1, "loopsOverFMUs.mat");
+val(B.c_out, 0.1, "loopsOverFMUs.mat");
 
 // x should be equal to y
-val(y, 0, "loopsOverFMUs.mat");
-val(y, 0.1, "loopsOverFMUs.mat");
-val(x_out, 0, "loopsOverFMUs.mat");
-val(x_out, 0.1, "loopsOverFMUs.mat");
+val(C.y, 0, "loopsOverFMUs.mat");
+val(C.y, 0.1, "loopsOverFMUs.mat");
+val(D.x_out, 0, "loopsOverFMUs.mat");
+val(D.x_out, 0.1, "loopsOverFMUs.mat");
 
 
 // Result:

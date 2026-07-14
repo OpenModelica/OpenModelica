@@ -54,21 +54,6 @@ val(u, 2.5, "start_time_res.mat");
 // info:    Final Statistics for 'setstartTime.root':
 //          NumSteps = 1252 NumRhsEvals  = 1255 NumLinSolvSetups = 65
 //          NumNonlinSolvIters = 1254 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
-// info: *** FMU Simulation Info ***
-//      - model     : setstartTime (model exchange)
-//      - fmiVersion: 2.0
-//      - startTime : 2.500000
-//      - stopTime  : 5.000000
-//      - tolerance : 0.000001
-//      - stepSize  : 0.002000
-// info:    maximum step size for 'setstartTime.root': 0.002000
-// info:    Result file: start_time_res.mat (bufferSize=10)
-// info:    Parameter setstartTime.scheme.delimiter will not be stored in the result file, because the signal type is not supported
-// info:    Parameter setstartTime.scheme.fileName will not be stored in the result file, because the signal type is not supported
-// info:    Parameter setstartTime.scheme.tableName will not be stored in the result file, because the signal type is not supported
-// info:    Final Statistics for 'setstartTime.root':
-//          NumSteps = 1252 NumRhsEvals  = 1255 NumLinSolvSetups = 65
-//          NumNonlinSolvIters = 1254 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // 2.5
 // 2.0
