@@ -5,7 +5,7 @@
 loadModel(Modelica); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu --mode=cs --suppressPath=true", "Pendulum_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu --mode=cs", "Pendulum_systemCall.log");
 readFile("Pendulum_systemCall.log");
 
 // Result:
@@ -14,14 +14,15 @@ readFile("Pendulum_systemCall.log");
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     model (co-simulation)
-//           - startTime: 0.000000
-//           - stopTime:  5.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.010000
-// info:    Result file: model_res.mat (bufferSize=10)
-// info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
+// "info: *** FMU Simulation Info ***
+//      - model     : Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 5.000000
+//      - tolerance : 0.000001
+//      - stepSize  : 0.010000
+// info:    Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_res.mat (bufferSize=10)
+// info:    Parameter Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
 // "
 // endResult

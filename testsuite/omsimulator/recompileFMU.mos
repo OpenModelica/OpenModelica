@@ -30,7 +30,7 @@ system("unzip -o -qq simpleLoop.fmu -d simpleLoop_FMU/");
 remove("simpleLoop.fmu");
 system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi -DFMI2_OVERRIDE_FUNCTION_PREFIX -DOMC_FMI_RUNTIME\" && make -s", "build_simpleLoop.log"); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --suppressPath=true", "simpleLoop_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 simpleLoop.fmu --mode=me", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
 
 // Result:
@@ -43,12 +43,13 @@ readFile("simpleLoop_me_systemCall.log");
 // 0
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     simpleLoop (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//           - model     : simpleLoop (model exchange)
+//           - fmiVersion: 2.0
+//           - startTime : 0.000000
+//           - stopTime  : 1.000000
+//           - tolerance : 0.000001
+//           - stepSize  : 0.002000
 // info:    model doesn't contain any continuous state
 // info:    maximum step size for 'simpleLoop.root': 0.002000
 // info:    Result file: simpleLoop_res.mat (bufferSize=10)

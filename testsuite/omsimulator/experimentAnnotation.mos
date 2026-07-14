@@ -14,7 +14,7 @@ end M;"); getErrorString();
 buildModelFMU(M, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
 // this should be later replaced by a Python script, but for now we just use the system command to run the FMU
-system(getInstallationDirectoryPath() + "/bin/OMSimulator M.fmu -r=experiment_annotation.mat --suppressPath=true", "M_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 M.fmu --result-file=experiment_annotation.mat --stripRoot", "M_systemCall.log");
 readFile("M_systemCall.log");
 
 val(x, 1.0, "experiment_annotation.mat");
@@ -27,18 +27,14 @@ val(x0, 1.0, "experiment_annotation.mat");
 // "M.fmu"
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     M (model-exchange)
-//           - startTime: 0.200000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.010000
-// info:    model doesn't contain any continuous state
-// info:    maximum step size for 'M.root': 0.010000
-// info:    Result file: experiment_annotation.mat (bufferSize=1)
-// info:    Final Statistics for 'M.root':
-//          NumSteps = 81 NumRhsEvals  = 82 NumLinSolvSetups = 5
-//          NumNonlinSolvIters = 81 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "info: *** FMU Simulation Info ***
+//      - model     : M (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.200000
+//      - stopTime  : 1.000000
+//      - tolerance : 0.000001
+//      - stepSize  : 0.010000
+// info:    Result file: experiment_annotation.mat (bufferSize=10)
 // "
 // 1.0
 // 0.2

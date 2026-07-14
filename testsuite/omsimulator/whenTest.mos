@@ -34,7 +34,7 @@ loadString("
 
 buildModelFMU(WhenTestA, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestA.fmu -r=WhenTestA_res.mat --suppressPath=true", "WhenTestA_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 WhenTestA.fmu --result-file=WhenTestA_res.mat --stripRoot", "WhenTestA_systemCall.log");
 readFile("WhenTestA_systemCall.log");
 
 val(der(s), 1.0, "WhenTestA_res.mat");
@@ -42,7 +42,7 @@ val(stop, 1.0, "WhenTestA_res.mat");
 
 buildModelFMU(WhenTestB, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestB.fmu -r=WhenTestB_res.mat --suppressPath=true", "WhenTestB_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 WhenTestB.fmu --result-file=WhenTestB_res.mat --stripRoot", "WhenTestB_systemCall.log");
 readFile("WhenTestB_systemCall.log");
 
 val(der(s), 1.0, "WhenTestB_res.mat");
@@ -54,14 +54,15 @@ val(stop, 1.0, "WhenTestB_res.mat");
 // "WhenTestA.fmu"
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     WhenTestA (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//      - model     : WhenTestA (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 0.000001
+//      - stepSize  : 0.002000
 // info:    maximum step size for 'WhenTestA.root': 0.002000
-// info:    Result file: WhenTestA_res.mat (bufferSize=1)
+// info:    Result file: WhenTestA_res.mat (bufferSize=10)
 // info:    Final Statistics for 'WhenTestA.root':
 //          NumSteps = 251 NumRhsEvals  = 252 NumLinSolvSetups = 14
 //          NumNonlinSolvIters = 251 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
@@ -71,14 +72,15 @@ val(stop, 1.0, "WhenTestB_res.mat");
 // "WhenTestB.fmu"
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     WhenTestB (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//      - model     : WhenTestB (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 0.000001
+//      - stepSize  : 0.002000
 // info:    maximum step size for 'WhenTestB.root': 0.002000
-// info:    Result file: WhenTestB_res.mat (bufferSize=1)
+// info:    Result file: WhenTestB_res.mat (bufferSize=10)
 // info:    Final Statistics for 'WhenTestB.root':
 //          NumSteps = 251 NumRhsEvals  = 252 NumLinSolvSetups = 14
 //          NumNonlinSolvIters = 251 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

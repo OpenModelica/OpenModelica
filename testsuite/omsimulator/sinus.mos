@@ -17,7 +17,7 @@ loadString("
 
 buildModelFMU(sinus, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator sinus.fmu --stopTime=4.0 -r=sinus_res.mat --suppressPath=true", "sinus_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 sinus.fmu --stop-time=4.0 --result-file=sinus_res.mat", "sinus_systemCall.log");
 readFile("sinus_systemCall.log");
 
 
@@ -27,12 +27,13 @@ readFile("sinus_systemCall.log");
 // "sinus.fmu"
 // ""
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     sinus (co-simulation)
-//           - startTime: 0.000000
-//           - stopTime:  4.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
-// info:    Result file: sinus_res.mat (bufferSize=1)
+// "info: *** FMU Simulation Info ***
+//      - model     : sinus (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 4.000000
+//      - tolerance : 0.000001
+//      - stepSize  : 0.002000
+// info:    Result file: sinus_res.mat (bufferSize=10)
 // "
 // endResult
