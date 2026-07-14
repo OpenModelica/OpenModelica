@@ -33,15 +33,27 @@
 /* Two reals: the state at index 0 and its derivative at index 1 (see
  * STATESDERIVATIVES below), so the dummy defines are internally consistent
  * when fmu3_model_interface.c is compiled against this placeholder. */
-#define NUMBER_OF_REALS 2
-#define NUMBER_OF_STATES 1
-#define NUMBER_OF_INTEGERS 1
-#define NUMBER_OF_BOOLEANS 1
-#define NUMBER_OF_STRINGS 1
-#define NUMBER_OF_EVENT_INDICATORS 1
+#define NUMBER_OF_REALS             2
+#define NUMBER_OF_STATES            1
+#define NUMBER_OF_REAL_INPUTS       1
+#define NUMBER_OF_INTEGERS          1
+#define NUMBER_OF_BOOLEANS          1
+#define NUMBER_OF_STRINGS           1
+#define NUMBER_OF_EVENT_INDICATORS  1
 #define NUMBER_OF_EXTERNALFUNCTIONS 1
+#define NUMBER_OF_EXTERNALOBJECTS   1
+#define NUMBER_OF_CLOCKS            1
 
-#define STATES { 0 }
+#define FMI3_REAL_VR_OFFSET           0
+#define FMI3_INTEGER_VR_OFFSET        (NUMBER_OF_REALS)
+#define FMI3_BOOLEAN_VR_OFFSET        (NUMBER_OF_REALS + NUMBER_OF_INTEGERS)
+#define FMI3_STRING_VR_OFFSET         (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS)
+#define FMI3_BINARY_VR_OFFSET         (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
+#define FMI3_CLOCK_VR_OFFSET          (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
+#define FMI3_TIME_VR                  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
+#define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+
+#define STATES            { 0 }
 #define STATESDERIVATIVES { 1 }
 
 #endif /* FMU3_DUMMY_MODEL_DEFINES_H */

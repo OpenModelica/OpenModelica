@@ -1909,7 +1909,7 @@ fmi3Status omcGetDirectionalDerivative(ModelInstance* c,
 
 
 /***************************************************
-Functions for FMI2 for Model Exchange
+Functions for FMI3 for Model Exchange
 ****************************************************/
 fmi3Status omcEnterEventMode(ModelInstance* c)
 {
@@ -2300,19 +2300,9 @@ fmi3Status omcGetRealOutputDerivatives(ModelInstance* c, const fmi3ValueReferenc
 }
 
 /**
- * @brief FMI 2 doStep function.
+ * @brief Internal Co-Simulation step, called from fmi3DoStep.
  *
  * Compute time step to next communication point with explicit Euler or CVODE.
- *
- * @param c                                   FMU component.
- * @param currentCommunicationPoint           Current communication point of master algorithm.
- * @param communicationStepSize               Communication step size.
- * @param noSetFMUStatePriorToCurrentPoint    Unused.
- * @return fmi3Status                         Returns fmi3OK if communication point was reached successfully.
- *                                            Returns fmi3Error if something went wrong.
- */
-/**
- * @brief Internal Co-Simulation step shared by omcDoStep and fmi3DoStep.
  *
  * When @p eventModeUsed and @p earlyReturnAllowed are both true (FMI 3.0
  * Co-Simulation with Event Mode), the step stops at the first encountered event
@@ -2323,8 +2313,20 @@ fmi3Status omcGetRealOutputDerivatives(ModelInstance* c, const fmi3ValueReferenc
  * with a new step from @p lastSuccessfulTime. Otherwise events are handled
  * internally (FMI 2.0 behaviour) and the step always advances to the
  * communication point.
+ *
+ * @param c                                  FMU component instance.
+ * @param currentCommunicationPoint          Current communication point of the master algorithm.
+ * @param communicationStepSize              Communication step size.
+ * @param noSetFMUStatePriorToCurrentPoint   Unused.
+ * @param eventModeUsed                      True if the importer uses FMI 3.0 Co-Simulation Event Mode for this instance.
+ * @param earlyReturnAllowed                 True if the master allows the step to return early on a deferred event; only relevant when @p eventModeUsed is true.
+ * @param eventEncountered                   Output, may be NULL. Set to fmi3True if an event was encountered and deferred to the master.
+ * @param terminateSimulationOut             Output, may be NULL. Set to fmi3True if the simulation should terminate.
+ * @param earlyReturn                        Output, may be NULL. Set to fmi3True if the step returned before reaching the requested communication point due to a deferred event.
+ * @param lastSuccessfulTime                 Output, may be NULL. Simulation time actually reached by this step.
+ * @return fmi3Status                        Returns fmi3OK if the step (or partial step up to a deferred event) completed successfully, fmi3Error/fmi3Fatal otherwise.
  */
-static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommunicationPoint,
+static fmi3Status doStepInternal(ModelInstance* c, fmi3Float64 currentCommunicationPoint,
     fmi3Float64 communicationStepSize, fmi3Boolean noSetFMUStatePriorToCurrentPoint,
     fmi3Boolean eventModeUsed, fmi3Boolean earlyReturnAllowed,
     fmi3Boolean* eventEncountered, fmi3Boolean* terminateSimulationOut,
@@ -2355,7 +2357,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
   if (earlyReturn)            *earlyReturn = fmi3False;
   if (lastSuccessfulTime)     *lastSuccessfulTime = currentCommunicationPoint + communicationStepSize;
 
-  if (invalidState(comp, "omcDoStep", 0, model_state_cs_step_complete))
+  if (invalidState(comp, "fmi3DoStep", 0, model_state_cs_step_complete))
     return fmi3Error;
 
   MemPoolState doStep_pool_state = omc_util_get_pool_state();
@@ -2416,7 +2418,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
 #if NUMBER_OF_STATES > 0
-    status = internalGetDerivatives(c, "omcDoStep", states_der, NUMBER_OF_STATES);
+    status = internalGetDerivatives(c, "fmi3DoStep", states_der, NUMBER_OF_STATES);
   if (status != fmi3OK) goto doStep_cleanup;
 
     status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
@@ -2424,7 +2426,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, "omcDoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi3OK) goto doStep_cleanup;
 #endif
 
@@ -2453,18 +2455,18 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
         flag = cvode_solver_fmi_step(comp, tNext, states);
         if (flag < 0)
         {
-          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcDoStep: CVODE integrator step failed.")
+          FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: CVODE integrator step failed.")
           status = fmi3Fatal;
           goto doStep_cleanup;
         }
 #else
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcDoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
+        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
         status = fmi3Fatal;
         goto doStep_cleanup;
 #endif /* WITH_SUNDIALS */
         break;
       default:
-        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "omcDoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
+        FILTERED_LOG(comp, fmi3Fatal, LOG_STATUSFATAL, "fmi3DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
         status = fmi3Fatal;
         goto doStep_cleanup;
     }
@@ -2498,12 +2500,12 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
     /* signal completed integrator step */
-    status = internal_CompletedIntegratorStep(c, "omcDoStep", fmi3True, &enterEventMode, &terminateSimulation);
+    status = internal_CompletedIntegratorStep(c, "fmi3DoStep", fmi3True, &enterEventMode, &terminateSimulation);
     if (status != fmi3OK) goto doStep_cleanup;
 
     /* check for events */
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, "omcDoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi3OK) goto doStep_cleanup;
 
     for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
@@ -2535,7 +2537,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
            deferred when the master allows early return, otherwise it is handled
            internally below. */
         ev = fmi3True;
-        FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "omcDoStep: event encountered at %g, deferring to the master", comp->fmuData->localData[0]->timeValue)
+        FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "fmi3DoStep: event encountered at %g, deferring to the master", comp->fmuData->localData[0]->timeValue)
         break;
       }
 
@@ -2566,7 +2568,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
       }
 
       #if NUMBER_OF_EVENT_INDICATORS > 0
-        status = internalGetEventIndicators(c, "omcDoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+        status = internalGetEventIndicators(c, "fmi3DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
         if (status != fmi3OK) goto doStep_cleanup;
       #endif
 
@@ -2594,7 +2596,7 @@ doStep_cleanup:
   {
     if (status == fmi3OK)
     {
-      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcDoStep: terminated by an assertion.")
+      FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3DoStep: terminated by an assertion.")
       status = fmi3Error;
     }
   }
@@ -2611,13 +2613,6 @@ doStep_cleanup:
   }
 
   return status;
-}
-
-/* FMI 2.0 Co-Simulation doStep: events are always handled internally. */
-fmi3Status omcDoStep(ModelInstance* c, fmi3Float64 currentCommunicationPoint, fmi3Float64 communicationStepSize, fmi3Boolean noSetFMUStatePriorToCurrentPoint)
-{
-  return fmu3DoStepInternal(c, currentCommunicationPoint, communicationStepSize,
-      noSetFMUStatePriorToCurrentPoint, fmi3False, fmi3False, NULL, NULL, NULL, NULL);
 }
 
 // ---------------------------------------------------------------------------
@@ -3789,7 +3784,7 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
   fmi3Float64 lastTime = currentCommunicationPoint + communicationStepSize;
   fmi3Status status;
   if (!inst) return fmi3Error;
-  status = fmu3DoStepInternal(c, (fmi3Float64)currentCommunicationPoint,
+  status = doStepInternal(c, (fmi3Float64)currentCommunicationPoint,
       (fmi3Float64)communicationStepSize, noSetFMUStatePriorToCurrentPoint,
       inst->eventModeUsed ? fmi3True : fmi3False,
       inst->earlyReturnAllowed ? fmi3True : fmi3False,
