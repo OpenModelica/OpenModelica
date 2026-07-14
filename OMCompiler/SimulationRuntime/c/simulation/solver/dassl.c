@@ -56,6 +56,9 @@
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
 
+#include "../jacobian_util.h"
+#include "../../util/simulation_options.h"
+
 #include "dassl.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
@@ -1009,8 +1012,10 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
 #else
   JACOBIAN* t_jac = jac;
 #endif
-  evalJacobianByMethod(COLOREDSYMJAC, data, threadData, jac, t_jac,
-                       matrixA, setJacElementRawDenseColumnMajor, NULL);
+  // evalJacobianByMethod(COLOREDSYMJAC, data, threadData, jac, t_jac,
+  //                      matrixA, setJacElementRawDenseColumnMajor, NULL);
+  evalJacobianNew(data, threadData, COLOREDSYMJAC, jac, /*parentJacobian=*/NULL, t_jac,
+             matrixA, JAC_OUTPUT_CUSTOM, setJacElementRawDenseColumnMajor, NULL);
   return 0;
 }
 
@@ -1033,8 +1038,10 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
 #else
   JACOBIAN* t_jac = jac;
 #endif
-  evalJacobianByMethod(COLOREDSYMJACADJ, data, threadData, jac, t_jac,
-                       matrixA, NULL, setJacElementRawDenseColumnMajorRowEval);
+  // evalJacobianByMethod(COLOREDSYMJACADJ, data, threadData, jac, t_jac,
+  //                      matrixA, NULL, setJacElementRawDenseColumnMajorRowEval);
+  evalJacobianNew(data, threadData, COLOREDSYMJACADJ, jac, /*parentJacobian=*/NULL, t_jac,
+             matrixA, JAC_OUTPUT_CUSTOM, NULL, setJacElementRawDenseColumnMajorRowEval);
   return 0;
 }
 
@@ -1052,9 +1059,17 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  evalJacobianByMethod(BICOLOREDSYMJAC, data, threadData, jac, jac,
-                       matrixA, setJacElementRawDenseColumnMajor, NULL);
+#ifdef USE_PARJAC
+  JACOBIAN* t_jac = dasslData->jacColumns;
+#else
+  JACOBIAN* t_jac = jac;
+#endif
+  // evalJacobianByMethod(BICOLOREDSYMJAC, data, threadData, jac, t_jac,
+  //                      matrixA, setJacElementRawDenseColumnMajor, NULL);
+  evalJacobianNew(data, threadData, BICOLOREDSYMJAC, jac, /*parentJacobian=*/NULL, t_jac,
+             matrixA, JAC_OUTPUT_CUSTOM, setJacElementRawDenseColumnMajor, NULL);
   return 0;
 }
 

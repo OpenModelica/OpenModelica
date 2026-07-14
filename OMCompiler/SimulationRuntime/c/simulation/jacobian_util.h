@@ -165,6 +165,11 @@ void evalJacobianColored(DATA* data, threadData_t *threadData, JACOBIAN* jacobia
  * isDense=FALSE → sparse CSC output; values written at their CSC position (jac[nz]).
  */
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+void evalJacobianNew(DATA* data, threadData_t* threadData,
+                   JACOBIAN_METHOD method,
+                   JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* t_jac,
+                   void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
+                   setJacElementFunc setFwd, setJacElementFunc setAdj);
 
 void initBidirectionalRecovery(JACOBIAN* fwd);
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);

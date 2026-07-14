@@ -231,6 +231,88 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
 }
 
 /**
+ * @brief Evaluate a Jacobian using the specified method and output format.
+ *
+ * Colored methods (COLOREDSYMJAC/SYMJAC/COLOREDSYMJACADJ) dispatch through
+ * evalJacobianColored[Parallel]; the fwd/adj setter choice for built-in formats
+ * is derived from jacobian->isRowEval, so the three colored enum values behave
+ * identically here (kept only for external/legacy compatibility).
+ * BICOLOREDSYMJAC dispatches through evalJacobianBidirectional and scatters the
+ * resulting CSC buffer into outputMatrix via setFwd.
+ *
+ * Caller responsibilities: set jac->dae_cj if needed, call setContext/unsetContext
+ * around this function. Dense output is zeroed internally; other formats are not.
+ *
+ * @param jacobian       Primary/meta Jacobian (sizeRows/sizeCols/sparsePattern/isRowEval).
+ * @param parentJacobian Parent context forwarded to evalJacobianColored, or NULL.
+ * @param t_jac          Thread-local copy for parallel eval; pass NULL to use jacobian itself (serial).
+ * @param format         JAC_OUTPUT_DENSE / JAC_OUTPUT_SPARSE_RAW / JAC_OUTPUT_CUSTOM.
+ * @param setFwd/setAdj  Only consulted for JAC_OUTPUT_CUSTOM (and always for the
+ *                        BICOLOREDSYMJAC scatter, which uses setFwd regardless of format).
+ */
+void evalJacobianNew(DATA* data, threadData_t* threadData,
+                   JACOBIAN_METHOD method,
+                   JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* t_jac,
+                   void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
+                   setJacElementFunc setFwd, setJacElementFunc setAdj)
+{
+  jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
+  JACOBIAN* evalJac = t_jac ? t_jac : jacobian;
+
+  /* Resolve setter(s) for the built-in formats; JAC_OUTPUT_CUSTOM keeps whatever
+   * the caller passed in (e.g. a SUNDIALS sparse setter). */
+  switch (format) {
+  case JAC_OUTPUT_DENSE:
+    memset(outputMatrix, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+    setFwd = setAdj = jacobian->isRowEval
+        ? setJacElementRawDenseColumnMajorRowEval
+        : setJacElementRawDenseColumnMajor;
+    break;
+  case JAC_OUTPUT_SPARSE_RAW:
+    setFwd = setAdj = setJacElementRawSparse;
+    break;
+  case JAC_OUTPUT_CUSTOM:
+    break; /* setFwd/setAdj supplied by caller */
+  }
+
+  switch (method) {
+  case COLOREDSYMJAC:
+  case SYMJAC:
+  case COLOREDSYMJACADJ: {
+    setJacElementFunc setter = jacobian->isRowEval ? setAdj : setFwd;
+#ifndef USE_PARJAC
+    evalJacobianColored(data, threadData, evalJac, parentJacobian, outputMatrix, setter, cleanup);
+#else
+    evalJacobianColoredParallel(data, threadData, evalJac, jacobian->sparsePattern, outputMatrix, setter);
+#endif
+    break;
+  }
+
+  case BICOLOREDSYMJAC: {
+    const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+    unsigned int col, nz;
+    double* buf = (double*) malloc(sp->nnz * sizeof(double));
+    if (!buf) {
+      throwStreamPrint(threadData, "evalJacobian: out of memory (nnz=%u)", sp->nnz);
+      return;
+    }
+    evalJacobianBidirectional(data, threadData, jacobian, NULL, buf, 0 /* sparse CSC */);
+    for (col = 0; col < jacobian->sizeCols; col++) {
+      for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+        setFwd((int)sp->index[nz], (int)col, (int)nz, buf[nz], outputMatrix, (int)jacobian->sizeRows);
+      }
+    }
+    free(buf);
+    break;
+  }
+
+  default:
+    throwStreamPrint(threadData, "evalJacobian: unsupported method %d", (int)method);
+    break;
+  }
+}
+
+/**
  * @brief No-op cleanup: does nothing. Use for column-wise (forward) evaluation.
  */
 void evalJacobianCleanupNoop(JACOBIAN* jac)
