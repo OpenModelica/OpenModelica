@@ -613,24 +613,17 @@ public
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
-        // entwined array equations
-        case _ guard(List.all(node_comp, isArrayBucket)) algorithm
+        // entwined equations: at least one array bucket mixed with scalar equations
+        case _ guard(List.any(node_comp, isArrayBucket)) algorithm
           // sort local system to determine in what order the equations have to be solved
           (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
           sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
-
-          if List.compareLength(sorted_body_components, sorted_body_indices) == 0 then
-            // create entwined for loop if there was no algebraic loop
-            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
-          else
-            // create algebraic loop
-            comp := StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
-          end if;
+          comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
         then comp;
 
-        // create algebraic loop (body components not actually sorted)
+        // fallback: pure scalar or algebraic loop phase III nodes (body components not actually sorted)
         else algorithm
           sorted_body_indices := List.flatten(list(getEqnIndices(n) for n in node_comp));
         then StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);

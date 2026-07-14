@@ -716,13 +716,15 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.ENTWINED_COMPONENT() algorithm
-          // create generic index list calls for entwined for-loop equations
+          // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
             (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
-            UnorderedMap.add(getGenericEquationName(slice), getGenericAssignIndex(single_call), entwined_index_map);
+            // position = current list length before prepend (0-based, stable after reversal below)
+            UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
           end for;
+          single_calls := listReverse(single_calls);
           for tpl in listReverse(comp.entwined_tpl_lst) loop
             (eqn_ptr, _) := tpl;
             call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
@@ -1363,6 +1365,23 @@ public
         then fail();
       end match;
     end getGenericEquationName;
+
+    function getEntwinedEquationName
+      "Returns the equation name for any slice type that can appear in an ENTWINED_COMPONENT."
+      input StrongComponent comp;
+      output ComponentRef name;
+    algorithm
+      name := match comp
+        case StrongComponent.SINGLE_COMPONENT()    then Equation.getEqnName(comp.eqn);
+        case StrongComponent.MULTI_COMPONENT()     then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.SLICED_COMPONENT()    then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.GENERIC_COMPONENT()   then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.RESIZABLE_COMPONENT() then Equation.getEqnName(Slice.getT(comp.eqn));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getEntwinedEquationName;
   end Block;
 
   uniontype LinearSystem

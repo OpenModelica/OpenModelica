@@ -148,9 +148,10 @@ public
   end GENERIC_COMPONENT;
 
   record ENTWINED_COMPONENT
-    "component for entwined SLICED_COMPONENT or GENERIC_COMPONENT
-    the body equations have to be called in a specific pattern but do not form an algebraic loop"
-    list<StrongComponent> entwined_slices                     "has to be SLICED_COMPONENT()";
+    "component for entwined equations that have to be called in a specific interleaved order
+    but do not form an algebraic loop. Slices can be SLICED_COMPONENT, GENERIC_COMPONENT,
+    RESIZABLE_COMPONENT, SINGLE_COMPONENT or MULTI_COMPONENT."
+    list<StrongComponent> entwined_slices                     "one entry per distinct equation (for-loop or scalar)";
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
   end ENTWINED_COMPONENT;
 
@@ -445,11 +446,15 @@ public
       end match;
     end for;
 
-    // create individual slices
+    // create individual slices (array bucket → slice component, scalar → scalar component)
     for tpl in UnorderedMap.toList(elem_map) loop
       (eqn_arr_idx, scal_indices) := tpl;
-      var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
-      entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
+      if UnorderedMap.contains(eqn_arr_idx, cref_map) then
+        var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
+        entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
+      else
+        entwined_slices := createPseudoScalar(scal_indices, eqn_to_var, mapping, vars, eqns) :: entwined_slices;
+      end if;
     end for;
 
     // create scalar list for fallback

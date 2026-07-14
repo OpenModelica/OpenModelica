@@ -7144,6 +7144,7 @@ case eqn as SES_GENERIC_ASSIGN() then
   <<
   const int idx_lst_<%call_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
   >>
+else ""
 %>
 >>
 end entwinedSingleCallIndices;
@@ -7157,11 +7158,37 @@ case eqn as SES_GENERIC_ASSIGN() then
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   <<
-    case <%call_index%>:
+    case <%i0%>:
       genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
       call_indices[<%i0%>]++;
       break;
   >>
+case eqn as SES_SIMPLE_ASSIGN(__) then
+  <<
+    case <%i0%>:
+      <%equationSimpleAssign(eqn, context, &varDecls, &auxFunction)%>
+      break;
+  >>
+case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+  <<
+    case <%i0%>:
+      <%equationArrayCallAssign(eqn, context, &varDecls, &auxFunction)%>
+      break;
+  >>
+case eqn as SES_ALGORITHM(__) then
+  <<
+    case <%i0%>:
+      <%equationAlgorithm(eqn, context, &varDecls, &auxFunction)%>
+      break;
+  >>
+case eqn as SES_WHEN(__) then
+  <<
+    case <%i0%>:
+      <%equationWhen(eqn, context, &varDecls, &auxFunction)%>
+      break;
+  >>
+else
+  error(sourceInfo(), 'entwinedSingleCall: unhandled equation type')
 %>
 >>
 end entwinedSingleCall;
