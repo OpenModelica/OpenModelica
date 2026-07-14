@@ -6657,7 +6657,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.STRING("typename"), json);
-          json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
+          json := JSON.addPair("name", JSON.makeString(Type.typenameString(Type.arrayElementType(exp.ty))), json);
         then
           json;
 

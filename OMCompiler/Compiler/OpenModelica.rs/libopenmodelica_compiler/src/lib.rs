@@ -26,6 +26,14 @@ use openmodelica_backend_main::capi;
 use std::ffi::{CStr, CString, c_char, c_int};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(all(feature = "jemalloc", not(target_arch = "wasm32")))]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 // MetaModelica-ABI compatibility shims (`omc_Main_init` / `omc_Main_handleCommand`
 // / GC + Windows no-ops) OMEdit links against. Implemented over the embedding ABI
 // below; the `#[no_mangle]` entry points are exported from this cdylib directly.
@@ -44,6 +52,11 @@ mod wasm_api;
 // with the System plot-callback registry at init.
 #[cfg(target_arch = "wasm32")]
 mod wasm_plot;
+
+// MultiBody animation: parses the `-d=visxml` scene and resolves per-frame shape
+// transforms for the web simulator's 3D view (omc_anim_*).
+#[cfg(target_arch = "wasm32")]
+mod wasm_anim;
 
 // SimulationRuntime metadata tables OMEdit reads (FLAG_*, *_METHOD_*,
 // OMC_LOG_STREAM_*); generated from the C runtime by gen/gen-sim-tables.sh so
@@ -234,4 +247,45 @@ pub extern "C" fn omc_compiler_free_string(s: *mut c_char) {
             drop(CString::from_raw(s));
         }
     }
+}
+
+/// Request cancellation of any running in-process op — a wasm-jit simulation, or
+/// a long frontend/loader/backend call (cross-thread — an OMEdit Cancel button, a
+/// Ctrl-C handler). The op then returns a "cancelled" error, leaving omc
+/// consistent.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_request_cancel() {
+    capi::request_cancel();
+}
+
+/// Clear the cancel flag; call before starting a new cancellable op so a stale
+/// request from a previous op does not abort it immediately.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_clear_cancel() {
+    capi::clear_cancel();
+}
+
+/// Register a host event-pump callback invoked at every cancel check (pass NULL
+/// to clear). An in-process GUI host (OMEdit) points this at a rate-limited
+/// `processEvents` so a long compile keeps the UI live and the Cancel button
+/// clickable; the host must disable all UI but Cancel while a call is in flight
+/// (the compiler is not reentrant).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_set_pump_callback(cb: Option<extern "C" fn()>) {
+    capi::set_pump_callback(cb);
+}
+
+/// Last reported progress permille (0..=1000, or negative for an indeterminate
+/// spinner). An in-process host reads this from its pump callback to fill a
+/// progress bar during a long compile.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_permille() -> c_int {
+    capi::progress_permille()
+}
+
+/// Last reported progress phase (see the compiler's `PHASE_*` constants:
+/// 0 idle, 1 download, 2 parse, 3 instantiate, 4 backend, 5 simulate).
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_compiler_progress_phase() -> c_int {
+    capi::progress_phase()
 }

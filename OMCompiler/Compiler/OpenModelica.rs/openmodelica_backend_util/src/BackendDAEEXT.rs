@@ -48,7 +48,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::sync::Arc;
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use metamodelica::Array;
 
 // ── Per-task state ────────────────────────────────────────────────────────────
@@ -269,10 +269,10 @@ pub fn getAssignment(ass1: Array<i32>, ass2: Array<i32>) -> Result<()> {
         let len1 = ass1.borrow().len() as i32;
         let len2 = ass2.borrow().len() as i32;
         if s.n > len1 {
-            bail!("BackendDAEEXT.getAssignment failed because n={}>arrayLength(ass1)={}", s.n, len1);
+            return Err("BackendDAEEXT.getAssignment failed because n={}>arrayLength(ass1)={}");
         }
         if s.m > len2 {
-            bail!("BackendDAEEXT.getAssignment failed because m={}>arrayLength(ass2)={}", s.m, len2);
+            return Err("BackendDAEEXT.getAssignment failed because m={}>arrayLength(ass2)={}");
         }
         {
             let mut a1 = ass1.borrow_mut();

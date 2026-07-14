@@ -191,6 +191,7 @@ algorithm
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
+  Error.checkCancel();
   instExpressions(inst_cls, context = context, settings = settings);
   execStat("NFInst.instExpressions");
 
@@ -199,9 +200,11 @@ algorithm
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
+  Error.checkCancel();
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
+  Error.checkCancel();
   flatModel := Flatten.flatten(inst_cls, classPath);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
@@ -435,6 +438,7 @@ function instantiate
   input InstContext.Type context;
   input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
+  System.reportProgress(-1, 3) "PHASE_INSTANTIATE";
   node := expand(node, context);
 
   if instPartial or not InstNode.isPartial(node) or
@@ -1110,6 +1114,7 @@ protected
   Class cls;
   Modifier outer_mod;
 algorithm
+  Error.checkCancel();
   cls := InstNode.getClass(node);
   outer_mod := Class.getModifier(cls);
 

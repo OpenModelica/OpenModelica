@@ -45,7 +45,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{Result, anyhow, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
 
@@ -247,18 +247,18 @@ fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<Si
                     match chars.next() {
                         Some(':') => break,
                         Some(c) => name.push(c),
-                        None => bail!("CodegenWasmJit: unterminated record field in signature"),
+                        None => return Err("CodegenWasmJit: unterminated record field in signature"),
                     }
                 }
                 fields.push((ArcStr::from(name.as_str()), parse_sig_type(chars)?));
             }
             match chars.next() {
                 Some('}') => {}
-                other => bail!("CodegenWasmJit: expected `}}` in record signature, got {other:?}"),
+                other => return Err("CodegenWasmJit: expected `}}` in record signature, got {other:?}"),
             }
             Ok(SigTy::Record { path: ArcStr::from(path.as_str()), fields: Arc::new(fields) })
         }
-        other => bail!("CodegenWasmJit: malformed signature type code {other:?}"),
+        other => return Err("CodegenWasmJit: malformed signature type code {other:?}"),
     }
 }
 
@@ -323,7 +323,7 @@ fn env_extra_index(name: &str) -> Result<u32> {
     let pos = ENV_EXTRA
         .iter()
         .position(|(n, _, _)| *n == name)
-        .ok_or_else(|| anyhow!("CodegenWasmJit: unknown env-extra import `{name}`"))?;
+        .ok_or_else(|| "CodegenWasmJit: unknown env-extra import `{name}`")?;
     Ok((BUILTINS.len() + RT_BUILTINS.len() + pos) as u32)
 }
 
@@ -469,7 +469,7 @@ pub(crate) fn rt_index(name: &str) -> Result<u32> {
     let pos = RT_BUILTINS
         .iter()
         .position(|(n, _, _)| *n == name)
-        .ok_or_else(|| anyhow!("CodegenWasmJit: unknown runtime function {name}"))?;
+        .ok_or_else(|| "CodegenWasmJit: unknown runtime function {name}")?;
     Ok((BUILTINS.len() + pos) as u32)
 }
 
@@ -546,7 +546,7 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     // then the dependencies.
     let mut funcs: Vec<&SimCodeFunction::Function::Function> = Vec::new();
     let Some(main) = &fn_code.mainFunction else {
-        bail!("CodegenWasmJit: function code has no main function");
+        return Err("CodegenWasmJit: function code has no main function");
     };
     funcs.push(&**main);
     for f in &*fn_code.functions {
@@ -673,7 +673,7 @@ pub(crate) fn function_signature(f: &SimCodeFunction::Function::Function) -> Res
             let results = var_sigtys(outVars)?;
             Ok((mangle(name)?, FnSig { params, results }))
         }
-        _ => bail!("CodegenWasmJit: only plain Modelica/MetaModelica FUNCTIONs and known scalar-math external functions are supported"),
+        _ => return Err("CodegenWasmJit: only plain Modelica/MetaModelica FUNCTIONs and known scalar-math external functions are supported"),
     }
 }
 
@@ -790,7 +790,7 @@ pub(crate) fn external_general(f: &SimCodeFunction::Function::Function) -> bool 
 pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, .. } = f else {
-        bail!("CodegenWasmJit: external_import_sig on a non-external function");
+        return Err("CodegenWasmJit: external_import_sig on a non-external function");
     };
     let mut args: Vec<(SigTy, bool)> = Vec::new();
     for a in &**extArgs {
@@ -799,14 +799,14 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
             A::SIMEXTARGSIZE { .. } => (SigTy::Int, false),
             A::SIMEXTARG { type_, isInput, .. } => (sig_ty(type_)?, !*isInput),
             A::SIMEXTARGEXP { type_, .. } => (sig_ty(type_)?, false),
-            other => bail!("CodegenWasmJit: unsupported external-call argument {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported external-call argument {other:?}"),
         };
         args.push((ty, is_out));
     }
     let ret = match &**extReturn {
         A::SIMNOEXTARG => None,
         A::SIMEXTARG { type_, .. } => Some(sig_ty(type_)?),
-        other => bail!("CodegenWasmJit: unsupported external return {other:?}"),
+        other => return Err("CodegenWasmJit: unsupported external return {other:?}"),
     };
     Ok(ExtCallSig { name: extName.to_string(), args, ret })
 }
@@ -817,7 +817,7 @@ fn main_sig_types(f: &SimCodeFunction::Function::Function) -> Result<(Vec<SigTy>
     match f {
         F::FUNCTION { outVars, functionArguments, .. } => Ok((var_sigtys(functionArguments)?, var_sigtys(outVars)?)),
         F::EXTERNAL_FUNCTION { outVars, funArgs, .. } if external_known(f) || external_general(f) => Ok((var_sigtys(funArgs)?, var_sigtys(outVars)?)),
-        _ => bail!("CodegenWasmJit: only plain FUNCTIONs and known scalar-math external functions are supported"),
+        _ => return Err("CodegenWasmJit: only plain FUNCTIONs and known scalar-math external functions are supported"),
     }
 }
 
@@ -825,7 +825,7 @@ fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Res
     let mut out = Vec::new();
     for v in &**vars {
         let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = &**v else {
-            bail!("CodegenWasmJit: unsupported variable kind (function pointer)");
+            return Err("CodegenWasmJit: unsupported variable kind (function pointer)");
         };
         out.push(variable_sigty(ty, instDims)?);
     }
@@ -878,7 +878,7 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
         DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::EXTERNAL_OBJ { .. }, .. } => SigTy::Ptr,
         DAE::Type::T_COMPLEX { complexClassType, varLst, .. } => {
             let ClassInf::State::RECORD { path } = complexClassType else {
-                bail!("CodegenWasmJit: non-record complex type not supported: {complexClassType:?}");
+                return Err("CodegenWasmJit: non-record complex type not supported: {complexClassType:?}");
             };
             let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
             let mut fields = Vec::new();
@@ -887,8 +887,8 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
             }
             SigTy::Record { path: path_str, fields: Arc::new(fields) }
         }
-        DAE::Type::T_SUBTYPE_BASIC { .. } => bail!("CodegenWasmJit: subtype-basic types not yet supported"),
-        other => bail!("CodegenWasmJit: type not supported: {other:?}"),
+        DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
+        other => return Err("CodegenWasmJit: type not supported: {other:?}"),
     })
 }
 
@@ -1058,7 +1058,7 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn sim(&self) -> Result<&SimCtx> {
         self.sim
             .as_ref()
-            .ok_or_else(|| anyhow!("CodegenWasmJit: sim context missing (internal error)"))
+            .ok_or_else(|| "CodegenWasmJit: sim context missing (internal error)")
     }
 
     /// Emit `A[n,n] = 1` for each state set's identity selection (C's
@@ -1254,7 +1254,7 @@ impl<'a> FnCtx<'a> {
         } else {
             for (i, c) in conds.iter().enumerate() {
                 if compile_sim_cref_read(self, c)?.is_none() {
-                    bail!("CodegenWasmJit: when-condition `{}` is not a model variable", sim_cref_key(c)?);
+                    return Err("CodegenWasmJit: when-condition `{}` is not a model variable");
                 }
                 let pre = pre_cref(c);
                 compile_sim_cref_read(self, &pre)?;
@@ -1275,7 +1275,7 @@ impl<'a> FnCtx<'a> {
                 openmodelica_simcode_types::SimCode::SimEqSystem::SES_WHEN {
                     conditions, whenStmtLst, elseWhen, ..
                 } => self.sim_when(conditions, whenStmtLst, elseWhen)?,
-                other => bail!("CodegenWasmJit: elseWhen is not a SES_WHEN: {}", crate::CodegenWasmJit::eq_kind_name(other)),
+                other => return Err("CodegenWasmJit: elseWhen is not a SES_WHEN: {}"),
             }
         }
         self.emit(I::End);
@@ -1327,7 +1327,7 @@ pub(crate) fn compile_function(
     }
     let SimCodeFunction::Function::Function::FUNCTION { outVars, functionArguments, variableDeclarations, body, .. } = f
     else {
-        bail!("CodegenWasmJit: only plain FUNCTIONs are supported");
+        return Err("CodegenWasmJit: only plain FUNCTIONs are supported");
     };
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
@@ -1407,7 +1407,7 @@ fn compile_external_function(
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, extName, extArgs, .. } = f else {
-        bail!("CodegenWasmJit: compile_external_function on a non-external function");
+        return Err("CodegenWasmJit: compile_external_function on a non-external function");
     };
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
@@ -1457,7 +1457,7 @@ fn compile_external_function(
                 let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
                 Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
             }
-            other => bail!("CodegenWasmJit: unsupported external-call argument {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported external-call argument {other:?}"),
         })
     };
 
@@ -1487,12 +1487,12 @@ fn compile_external_function(
             .filter(|&i| !matches!(ctx.outputs[i].1, SigTy::Array { .. }))
             .collect();
         if results.len() != scalar_outs.len() {
-            bail!("CodegenWasmJit: external `{extName}` returns {} scalar value(s) but the function has {} non-array output(s)", results.len(), scalar_outs.len());
+            return Err("CodegenWasmJit: external `{extName}` returns {} scalar value(s) but the function has {} non-array output(s)");
         }
         for k in (0..scalar_outs.len()).rev() {
             let (out_idx, out_sty) = ctx.outputs[scalar_outs[k]].clone();
             if results[k].wty() != out_sty.wty() {
-                bail!("CodegenWasmJit: external `{extName}` output {k} type mismatch");
+                return Err("CodegenWasmJit: external `{extName}` output {k} type mismatch");
             }
             ctx.emit(we::Instruction::LocalSet(out_idx));
         }
@@ -1533,7 +1533,7 @@ fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Ex
     if let Some(bi) = builtin_index(ext_name) {
         let (_, params, _) = BUILTINS[bi as usize];
         if args.len() != params.len() {
-            bail!("CodegenWasmJit: external `{ext_name}` expects {} args, got {}", params.len(), args.len());
+            return Err("CodegenWasmJit: external `{ext_name}` expects {} args, got {}");
         }
         for (a, p) in args.iter().zip(params.iter()) {
             let w = compile_exp(ctx, a)?;
@@ -1543,7 +1543,7 @@ fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Ex
         return Ok(SigTy::Real);
     }
     if args.len() != 1 {
-        bail!("CodegenWasmJit: external `{ext_name}` expects 1 arg, got {}", args.len());
+        return Err("CodegenWasmJit: external `{ext_name}` expects 1 arg, got {}");
     }
     let w = compile_exp(ctx, &args[0])?;
     coerce(ctx, w, WTy::F64);
@@ -1552,7 +1552,7 @@ fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Ex
         "fabs" => ctx.emit(we::Instruction::F64Abs),
         "floor" => ctx.emit(we::Instruction::F64Floor),
         "ceil" => ctx.emit(we::Instruction::F64Ceil),
-        other => bail!("CodegenWasmJit: external math function `{other}` not supported"),
+        other => return Err("CodegenWasmJit: external math function `{other}` not supported"),
     }
     Ok(SigTy::Real)
 }
@@ -1566,10 +1566,10 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
         Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),
-        None => bail!("CodegenWasmJit: external `{ext_name}` import not declared"),
+        None => return Err("CodegenWasmJit: external `{ext_name}` import not declared"),
     };
     if args.len() != params.len() {
-        bail!("CodegenWasmJit: external `{ext_name}` expects {} input arg(s), got {}", params.len(), args.len());
+        return Err("CodegenWasmJit: external `{ext_name}` expects {} input arg(s), got {}");
     }
     for (a, p) in args.iter().zip(params.iter()) {
         let w = compile_exp(ctx, a)?;
@@ -1613,7 +1613,7 @@ fn intern_local(
 /// they live in `instDims`.
 fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<Vec<Arc<DAE::Dimension>>> {
     let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = v else {
-        bail!("CodegenWasmJit: function-pointer variables not supported");
+        return Err("CodegenWasmJit: function-pointer variables not supported");
     };
     let from_ty = type_array_dims(ty);
     Ok(if from_ty.is_empty() { (&**instDims).into_iter().cloned().collect() } else { from_ty })
@@ -1637,7 +1637,7 @@ fn type_array_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
 /// element kind, set the dimension sizes, and store the handle in `slot`.
 fn emit_array_alloc(ctx: &mut FnCtx, slot: u32, elem: &SigTy, dims: &[Arc<DAE::Dimension>]) -> Result<()> {
     if dims.is_empty() {
-        bail!("CodegenWasmJit: array local with no dimensions");
+        return Err("CodegenWasmJit: array local with no dimensions");
     }
     // Evaluate each dimension into a scratch local (reused for the total and the
     // per-axis size).
@@ -1721,7 +1721,7 @@ fn release_heap_locals(ctx: &mut FnCtx) -> Result<()> {
 /// [`variable_sigty`]). The name must be a plain `CREF_IDENT`.
 fn var_name_ty(v: &SimCodeFunction::Variable::Variable) -> Result<(String, SigTy)> {
     let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, instDims, .. } = v else {
-        bail!("CodegenWasmJit: function-pointer variables not supported");
+        return Err("CodegenWasmJit: function-pointer variables not supported");
     };
     Ok((cref_ident(name)?, variable_sigty(ty, instDims)?))
 }
@@ -1732,12 +1732,12 @@ fn cref_ident(cr: &DAE::ComponentRef) -> Result<String> {
     match cr {
         DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } => {
             if !subscriptLst.is_empty() {
-                bail!("CodegenWasmJit: subscripted component reference (arrays not supported)");
+                return Err("CodegenWasmJit: subscripted component reference (arrays not supported)");
             }
             Ok(ident.to_string())
         }
-        DAE::ComponentRef::CREF_QUAL { .. } => bail!("CodegenWasmJit: qualified component reference (records not supported)"),
-        other => bail!("CodegenWasmJit: unsupported component reference {other:?}"),
+        DAE::ComponentRef::CREF_QUAL { .. } => return Err("CodegenWasmJit: qualified component reference (records not supported)"),
+        other => return Err("CodegenWasmJit: unsupported component reference {other:?}"),
     }
 }
 
@@ -1752,7 +1752,7 @@ fn compile_stmts(ctx: &mut FnCtx, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Res
 /// subscripted array element (`a[i,...] := x`, written in place).
 fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()> {
     let DAE::Exp::CREF { componentRef, .. } = lhs else {
-        bail!("CodegenWasmJit: assignment to non-cref lhs not supported");
+        return Err("CodegenWasmJit: assignment to non-cref lhs not supported");
     };
     // Simulation mode: assigning to a model variable writes into the shared
     // `SimData` block. Returns false for an ordinary wasm local handled below.
@@ -1765,13 +1765,13 @@ fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()>
         return compile_cref_assign_qual(ctx, componentRef, rhs);
     }
     let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
-        bail!("CodegenWasmJit: assignment to qualified/record lhs not supported");
+        return Err("CodegenWasmJit: assignment to qualified/record lhs not supported");
     };
     let name = ident.to_string();
     let (idx, dst_sty) = ctx
         .locals
         .get(&name)
-        .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: assignment to unknown variable `{name}`"))?
+        .ok_or_else(|| "CodegenWasmJit: assignment to unknown variable `{name}`")?
         .clone();
 
     if !subscriptLst.is_empty() {
@@ -1779,7 +1779,7 @@ fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()>
         // own (private) array, so no copy-on-write is needed (Modelica arrays are
         // mutable value objects; aliasing is broken at whole-array assignment).
         let SigTy::Array { elem, rank } = dst_sty else {
-            bail!("CodegenWasmJit: subscripting non-array local `{name}`");
+            return Err("CodegenWasmJit: subscripting non-array local `{name}`");
         };
         let idx_exps = index_subscripts(subscriptLst, rank)?;
         return compile_elem_assign(ctx, idx, &elem, &idx_exps, rhs);
@@ -1842,12 +1842,12 @@ fn store_fresh_into_local(ctx: &mut FnCtx, idx: u32, dst_sty: &SigTy, vt: u32) -
 /// locals; subscripted / qualified tuple targets are not supported.
 fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &DAE::Exp) -> Result<()> {
     let DAE::Exp::CALL { path, expLst, attr } = call else {
-        bail!("CodegenWasmJit: tuple assignment rhs is not a function call: {call:?}");
+        return Err("CodegenWasmJit: tuple assignment rhs is not a function call: {call:?}");
     };
     let lhs_v: Vec<&Arc<DAE::Exp>> = (&**lhs).into_iter().collect();
     let results = compile_call(ctx, path, expLst, attr)?;
     if results.len() != lhs_v.len() {
-        bail!("CodegenWasmJit: tuple assignment arity mismatch ({} targets, {} results)", lhs_v.len(), results.len());
+        return Err("CodegenWasmJit: tuple assignment arity mismatch ({} targets, {} results)");
     }
     // Pop the results into temps (the last result is on top of the stack).
     let mut temps = vec![0u32; results.len()];
@@ -1860,7 +1860,7 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
         let sty = &results[i];
         let vt = temps[i];
         let DAE::Exp::CREF { componentRef, .. } = &***lhs_exp else {
-            bail!("CodegenWasmJit: tuple-assignment target is not a cref: {lhs_exp:?}");
+            return Err("CodegenWasmJit: tuple-assignment target is not a cref: {lhs_exp:?}");
         };
         match &**componentRef {
             // `_` output: discard (release a heap value).
@@ -1875,11 +1875,11 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
                 let (idx, dst_sty) = ctx
                     .locals
                     .get(&name)
-                    .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: tuple assignment to unknown variable `{name}`"))?
+                    .ok_or_else(|| "CodegenWasmJit: tuple assignment to unknown variable `{name}`")?
                     .clone();
                 store_fresh_into_local(ctx, idx, &dst_sty, vt)?;
             }
-            other => bail!("CodegenWasmJit: unsupported tuple-assignment target `{other:?}`"),
+            other => return Err("CodegenWasmJit: unsupported tuple-assignment target `{other:?}`"),
         }
     }
     Ok(())
@@ -1963,7 +1963,7 @@ fn record_field(fields: &[(ArcStr, SigTy)], name: &str) -> Result<(u32, SigTy)> 
             return Ok((layout.data_off + layout.field_off[i], fty.clone()));
         }
     }
-    bail!("CodegenWasmJit: record has no field `{name}`");
+    return Err("CodegenWasmJit: record has no field `{name}`");
 }
 
 pub(crate) fn mem_arg(offset: u32, align_log2: u32) -> we::MemArg {
@@ -2044,19 +2044,19 @@ fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_e
 /// to the type's declaration order by component name.
 fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &Arc<List<Arc<DAE::Exp>>>, comp: &Arc<List<ArcStr>>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: record constructor with non-record type {ty:?}");
+        return Err("CodegenWasmJit: record constructor with non-record type {ty:?}");
     };
     let expv: Vec<&Arc<DAE::Exp>> = (&**exps).into_iter().collect();
     let compv: Vec<&ArcStr> = (&**comp).into_iter().collect();
     if expv.len() != compv.len() || expv.len() != fields.len() {
-        bail!("CodegenWasmJit: record constructor arity mismatch ({} values, {} fields)", expv.len(), fields.len());
+        return Err("CodegenWasmJit: record constructor arity mismatch ({} values, {} fields)");
     }
     let mut field_exps = Vec::with_capacity(fields.len());
     for (fname, _) in fields.iter() {
         let pos = compv
             .iter()
             .position(|n| n.as_str() == fname.as_str())
-            .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: record constructor missing field `{fname}`"))?;
+            .ok_or_else(|| "CodegenWasmJit: record constructor missing field `{fname}`")?;
         field_exps.push(expv[pos]);
     }
     emit_record_construction(ctx, &fields, &field_exps)
@@ -2067,11 +2067,11 @@ fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &Arc<List<Arc<DAE::Exp>
 /// fields in declaration order.
 fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: record constructor call with non-record type {ty:?}");
+        return Err("CodegenWasmJit: record constructor call with non-record type {ty:?}");
     };
     let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != fields.len() {
-        bail!("CodegenWasmJit: record constructor call arity mismatch ({} args, {} fields)", argv.len(), fields.len());
+        return Err("CodegenWasmJit: record constructor call arity mismatch ({} args, {} fields)");
     }
     emit_record_construction(ctx, &fields, &argv)
 }
@@ -2081,7 +2081,7 @@ fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &Arc<List<Arc<DAE:
 /// field is read; a heap field is retained so the returned value is owned.
 fn compile_rsub(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str) -> Result<WTy> {
     let SigTy::Record { fields, .. } = exp_sigty(exp)? else {
-        bail!("CodegenWasmJit: field access `.{name}` on a non-record expression");
+        return Err("CodegenWasmJit: field access `.{name}` on a non-record expression");
     };
     let (off, fty) = record_field(&fields, name)?;
     compile_exp(ctx, exp)?; // owned record handle
@@ -2154,11 +2154,11 @@ fn push_owned_record_base(
     let (idx, sty) = ctx
         .locals
         .get(ident)
-        .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: reference to unknown variable `{ident}`"))?
+        .ok_or_else(|| "CodegenWasmJit: reference to unknown variable `{ident}`")?
         .clone();
     if subs.is_empty() {
         let SigTy::Record { fields, .. } = sty else {
-            bail!("CodegenWasmJit: field access on non-record local `{ident}`");
+            return Err("CodegenWasmJit: field access on non-record local `{ident}`");
         };
         ctx.emit(we::Instruction::LocalGet(idx));
         ctx.emit(we::Instruction::LocalGet(idx));
@@ -2168,14 +2168,14 @@ fn push_owned_record_base(
         Ok((t, fields))
     } else {
         let SigTy::Array { elem, rank } = sty else {
-            bail!("CodegenWasmJit: subscripting non-array local `{ident}`");
+            return Err("CodegenWasmJit: subscripting non-array local `{ident}`");
         };
         let SigTy::Record { fields, .. } = &*elem else {
-            bail!("CodegenWasmJit: indexed base `{ident}[..]` is not an array of records");
+            return Err("CodegenWasmJit: indexed base `{ident}[..]` is not an array of records");
         };
         let fields = fields.clone();
         if !is_scalar_index(subs, rank) {
-            bail!("CodegenWasmJit: slicing an array of records before field access is not supported");
+            return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
         ctx.emit(we::Instruction::LocalGet(idx));
         ctx.emit(we::Instruction::LocalGet(idx));
@@ -2226,19 +2226,19 @@ fn step_into_record(
     let (vt, fty) = take_field(ctx, rec, fields, field)?;
     if fsubs.is_empty() {
         let SigTy::Record { fields: f2, .. } = fty else {
-            bail!("CodegenWasmJit: field access on non-record field `{field}`");
+            return Err("CodegenWasmJit: field access on non-record field `{field}`");
         };
         Ok((vt, f2))
     } else {
         let SigTy::Array { elem, rank } = fty else {
-            bail!("CodegenWasmJit: subscripting non-array field `{field}`");
+            return Err("CodegenWasmJit: subscripting non-array field `{field}`");
         };
         let SigTy::Record { fields: f2, .. } = &*elem else {
-            bail!("CodegenWasmJit: field access on non-record array element `{field}`");
+            return Err("CodegenWasmJit: field access on non-record array element `{field}`");
         };
         let f2 = f2.clone();
         if !is_scalar_index(fsubs, rank) {
-            bail!("CodegenWasmJit: slicing an array of records before field access is not supported");
+            return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
         ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
         let idx_exps = index_subscripts(fsubs, rank)?;
@@ -2255,7 +2255,7 @@ fn step_into_record(
 /// slice). Leaves the owned field value on the stack.
 fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<WTy> {
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
-        bail!("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
+        return Err("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
     };
     let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
@@ -2268,7 +2268,7 @@ fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<W
                     return Ok(fty.wty());
                 }
                 let SigTy::Array { elem, rank } = fty else {
-                    bail!("CodegenWasmJit: subscripting non-array field `{field}`");
+                    return Err("CodegenWasmJit: subscripting non-array field `{field}`");
                 };
                 ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
                 return if is_scalar_index(fsubs, rank) {
@@ -2284,7 +2284,7 @@ fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<W
                 fields = f2;
                 cur = inner;
             }
-            other => bail!("CodegenWasmJit: unsupported component reference {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported component reference {other:?}"),
         }
     }
 }
@@ -2297,7 +2297,7 @@ fn navigate_qual<'c>(
     cref: &'c DAE::ComponentRef,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c Arc<List<Arc<DAE::Subscript>>>)> {
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
-        bail!("CodegenWasmJit: navigate_qual on non-qualified cref");
+        return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
     let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
@@ -2312,7 +2312,7 @@ fn navigate_qual<'c>(
                 fields = f2;
                 cur = inner;
             }
-            other => bail!("CodegenWasmJit: unsupported component reference {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported component reference {other:?}"),
         }
     }
 }
@@ -2329,7 +2329,7 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
         // owned) array, in place.
         let (off, fty) = record_field(&fields, leaf)?;
         let SigTy::Array { elem, rank } = fty else {
-            bail!("CodegenWasmJit: subscripted field `{leaf}` is not an array");
+            return Err("CodegenWasmJit: subscripted field `{leaf}` is not an array");
         };
         let arr_t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalGet(rec));
@@ -2437,7 +2437,7 @@ fn emit_assert(
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     let mw = compile_exp(ctx, msg)?; // owned String handle
     if mw != WTy::I32 {
-        bail!("CodegenWasmJit: assert message is not a String");
+        return Err("CodegenWasmJit: assert message is not a String");
     }
     let info = &source.info;
     emit_str_literal(ctx, info.fileName.as_bytes())?; // file String handle
@@ -2500,7 +2500,7 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
             let (brk, _) = *ctx
                 .loops
                 .last()
-                .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: `break` outside a loop"))?;
+                .ok_or_else(|| "CodegenWasmJit: `break` outside a loop")?;
             ctx.branch_to(brk);
             Ok(())
         }
@@ -2508,11 +2508,11 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
             let (_, cont) = *ctx
                 .loops
                 .last()
-                .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: `continue` outside a loop"))?;
+                .ok_or_else(|| "CodegenWasmJit: `continue` outside a loop")?;
             ctx.branch_to(cont);
             Ok(())
         }
-        other => bail!("CodegenWasmJit: statement not yet supported: {other:?}"),
+        other => return Err("CodegenWasmJit: statement not yet supported: {other:?}"),
     }
 }
 
@@ -2585,7 +2585,7 @@ fn compile_for_int_range(
     body: &Arc<List<Arc<DAE::Statement>>>,
 ) -> Result<()> {
     let DAE::Exp::RANGE { start, step, stop, .. } = range else {
-        bail!("CodegenWasmJit: for-loop over non-range expression not supported");
+        return Err("CodegenWasmJit: for-loop over non-range expression not supported");
     };
     // Allocate the iterator local and stop/step locals.
     let it = ctx.alloc_temp(WTy::I32);
@@ -2645,10 +2645,10 @@ fn compile_for_array(
     body: &Arc<List<Arc<DAE::Statement>>>,
 ) -> Result<()> {
     let SigTy::Array { elem, rank } = exp_sigty(range)? else {
-        bail!("CodegenWasmJit: for-loop over non-array, non-range expression not supported");
+        return Err("CodegenWasmJit: for-loop over non-array, non-range expression not supported");
     };
     if rank != 1 {
-        bail!("CodegenWasmJit: for-loop over a multi-dimensional array not yet supported");
+        return Err("CodegenWasmJit: for-loop over a multi-dimensional array not yet supported");
     }
     let elem = (*elem).clone();
     // Evaluate the iterable to an owned array handle.
@@ -2711,7 +2711,7 @@ fn emit_value_const(ctx: &mut FnCtx, v: &Values::Value, wty: WTy) -> Result<()> 
             ctx.emit(we::Instruction::F64Const(real.into_inner().into()));
             WTy::F64
         }
-        other => bail!("CodegenWasmJit: unsupported reduction default value {other:?}"),
+        other => return Err("CodegenWasmJit: unsupported reduction default value {other:?}"),
     };
     coerce(ctx, from, wty);
     Ok(())
@@ -2798,7 +2798,7 @@ fn emit_red_nest(
         return body(ctx);
     };
     let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp else {
-        bail!("CodegenWasmJit: reduction over a non-range iterator not supported");
+        return Err("CodegenWasmJit: reduction over a non-range iterator not supported");
     };
     let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
@@ -2845,18 +2845,18 @@ fn compile_reduction(
 ) -> Result<WTy> {
     let iters: Vec<&Arc<DAE::ReductionIterator>> = (&**iterators).into_iter().collect();
     if iters.is_empty() {
-        bail!("CodegenWasmJit: reduction with no iterators");
+        return Err("CodegenWasmJit: reduction with no iterators");
     }
 
     if let Some(fold) = &info.foldExp {
         // Folding reduction. `info.exprType` is the (scalar) accumulator type.
         let elem_sty = sig_ty(&info.exprType)?;
         if elem_sty.is_heap() {
-            bail!("CodegenWasmJit: non-scalar reduction result not supported");
+            return Err("CodegenWasmJit: non-scalar reduction result not supported");
         }
         let elem_wty = elem_sty.wty();
         let Some(default) = &info.defaultValue else {
-            bail!("CodegenWasmJit: reduction without a default value not supported");
+            return Err("CodegenWasmJit: reduction without a default value not supported");
         };
         let acc = ctx.alloc_temp(elem_wty);
         let foldval = ctx.alloc_temp(elem_wty);
@@ -2880,11 +2880,11 @@ fn compile_reduction(
     // `array(...)` comprehension. The element type is the per-iteration
     // expression's type (`info.exprType` is the whole array type here).
     if iters.iter().any(|it| it.guardExp.is_some()) {
-        bail!("CodegenWasmJit: guarded array comprehension not supported");
+        return Err("CodegenWasmJit: guarded array comprehension not supported");
     }
     let elem_sty = exp_sigty(expr)?;
     if elem_sty.is_heap() {
-        bail!("CodegenWasmJit: array comprehension with non-scalar elements not supported");
+        return Err("CodegenWasmJit: array comprehension with non-scalar elements not supported");
     }
     let elem_wty = elem_sty.wty();
     let n = iters.len() as u32;
@@ -2893,7 +2893,7 @@ fn compile_reduction(
     let mut counts = Vec::with_capacity(iters.len());
     for it in &iters {
         let DAE::Exp::RANGE { start, step, stop, .. } = &*it.exp else {
-            bail!("CodegenWasmJit: array comprehension over a non-range iterator not supported");
+            return Err("CodegenWasmJit: array comprehension over a non-range iterator not supported");
         };
         counts.push(emit_range_count(ctx, start, step, stop)?);
     }
@@ -3011,7 +3011,7 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
             s.push('.');
             sim_cref_key_into(componentRef, s)?;
         }
-        other => bail!("CodegenWasmJit: unsupported component reference in simulation: {other:?}"),
+        other => return Err("CodegenWasmJit: unsupported component reference in simulation: {other:?}"),
     }
     Ok(())
 }
@@ -3030,9 +3030,9 @@ fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Resul
                     s.push_str(&index.to_string());
                     s.push(']');
                 }
-                other => bail!("CodegenWasmJit: non-constant subscript in simulation cref: {other:?}"),
+                other => return Err("CodegenWasmJit: non-constant subscript in simulation cref: {other:?}"),
             },
-            other => bail!("CodegenWasmJit: unsupported subscript in simulation cref: {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported subscript in simulation cref: {other:?}"),
         }
     }
     Ok(())
@@ -3096,12 +3096,7 @@ fn emit_sim_array_elem_addr(
     sub_exps: &[Arc<DAE::Exp>],
 ) -> Result<WTy> {
     if sub_exps.len() != group.dims.len() {
-        bail!(
-            "CodegenWasmJit: {}-dim array indexed with {} non-constant subscript(s) \
-             (slicing with a variable subscript is not supported)",
-            group.dims.len(),
-            sub_exps.len()
-        );
+        return Err("error");
     }
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let data = ctx.sim()?.data_local;
@@ -3165,7 +3160,7 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                         ctx.emit(we::Instruction::F64Const(0.0.into()));
                         Ok(Some(WTy::F64))
                     }
-                    None => bail!("CodegenWasmJit: $START for unknown variable `{key}`"),
+                    None => return Err("CodegenWasmJit: $START for unknown variable `{key}`"),
                 };
             }
             "$PRE" => {
@@ -3205,7 +3200,7 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                 emit_sim_array_gather(ctx, &group)?;
                 return Ok(Some(WTy::I32));
             }
-            bail!("CodegenWasmJit: simulation reference to unknown variable `{key}`")
+            return Err("CodegenWasmJit: simulation reference to unknown variable `{key}`")
         }
     };
     let data = ctx.sim()?.data_local;
@@ -3296,11 +3291,11 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE:
                 emit_sim_array_scatter(ctx, &group, rhs)?;
                 return Ok(true);
             }
-            bail!("CodegenWasmJit: simulation assignment to unknown variable `{key}`")
+            return Err("CodegenWasmJit: simulation assignment to unknown variable `{key}`")
         }
     };
     if slot.negate {
-        bail!("CodegenWasmJit: assignment to negated alias `{key}`");
+        return Err("CodegenWasmJit: assignment to negated alias `{key}`");
     }
     let data = ctx.sim()?.data_local;
     if slot.heap {
@@ -3380,7 +3375,7 @@ fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: &DAE::Exp) -
     let h = ctx.alloc_temp(WTy::I32);
     let rw = compile_exp(ctx, rhs)?;
     if rw != WTy::I32 {
-        bail!("CodegenWasmJit: whole-array assignment rhs is not an array handle");
+        return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
     }
     ctx.emit(we::Instruction::LocalSet(h));
     // memory.copy(dst = SimData + base_off, src = rhs data, len = total * stride).
@@ -3450,13 +3445,13 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             }
             // A scalar/whole-value reference, or a subscripted array element.
             let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
-                bail!("CodegenWasmJit: unsupported component reference {componentRef:?}");
+                return Err("CodegenWasmJit: unsupported component reference {componentRef:?}");
             };
             let name = ident.to_string();
             let (idx, sty) = ctx
                 .locals
                 .get(&name)
-                .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: reference to unknown variable `{name}`"))?
+                .ok_or_else(|| "CodegenWasmJit: reference to unknown variable `{name}`")?
                 .clone();
             if subscriptLst.is_empty() {
                 ctx.emit(we::Instruction::LocalGet(idx));
@@ -3474,7 +3469,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 // Indexed read `v[i, ...]`: push the (retained, owned) array
                 // handle, then load the element (which releases the handle).
                 let SigTy::Array { elem, rank } = sty else {
-                    bail!("CodegenWasmJit: subscripting non-array local `{name}`");
+                    return Err("CodegenWasmJit: subscripting non-array local `{name}`");
                 };
                 ctx.emit(we::Instruction::LocalGet(idx));
                 ctx.emit(we::Instruction::LocalGet(idx));
@@ -3518,7 +3513,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::LUNARY { operator, exp } => {
             // `not` — the only logical unary.
             let DAE::Operator::NOT { .. } = operator else {
-                bail!("CodegenWasmJit: unsupported logical unary operator {operator:?}");
+                return Err("CodegenWasmJit: unsupported logical unary operator {operator:?}");
             };
             // Element-wise `not` over a Boolean array.
             if matches!(exp_sigty(exp), Ok(SigTy::Array { .. })) {
@@ -3538,7 +3533,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 let (op_code, ty) = match operator {
                     DAE::Operator::AND { ty } => (OP_AND, ty),
                     DAE::Operator::OR { ty } => (OP_OR, ty),
-                    other => bail!("CodegenWasmJit: unsupported logical array operator {other:?}"),
+                    other => return Err("CodegenWasmJit: unsupported logical array operator {other:?}"),
                 };
                 return compile_array_ew(ctx, exp1, exp2, op_code, ty);
             }
@@ -3549,7 +3544,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             match operator {
                 DAE::Operator::AND { .. } => ctx.emit(we::Instruction::I32And),
                 DAE::Operator::OR { .. } => ctx.emit(we::Instruction::I32Or),
-                other => bail!("CodegenWasmJit: unsupported logical binary operator {other:?}"),
+                other => return Err("CodegenWasmJit: unsupported logical binary operator {other:?}"),
             }
             Ok(WTy::I32)
         }
@@ -3573,8 +3568,8 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             let results = compile_call(ctx, path, expLst, attr)?;
             match results.len() {
                 1 => Ok(results[0].wty()),
-                0 => bail!("CodegenWasmJit: call to {} used in expression position returns no value", mangle(path)?),
-                _ => bail!("CodegenWasmJit: call to {} returns multiple values; not usable in expression position", mangle(path)?),
+                0 => return Err("CodegenWasmJit: call to {} used in expression position returns no value"),
+                _ => return Err("CodegenWasmJit: call to {} returns multiple values; not usable in expression position"),
             }
         }
         // Array constructor `{e1, e2, ...}` or matrix `{{...}, {...}}`.
@@ -3604,7 +3599,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::REDUCTION { reductionInfo, expr, iterators } => {
             compile_reduction(ctx, reductionInfo, expr, iterators)
         }
-        other => bail!("CodegenWasmJit: expression not yet supported: {other:?}"),
+        other => return Err("CodegenWasmJit: expression not yet supported: {other:?}"),
     }
 }
 
@@ -3685,7 +3680,7 @@ fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
         | O::POW_SCALAR_ARRAY { ty }
         | O::POW_ARR { ty }
         | O::POW_ARR2 { ty } => ty,
-        other => bail!("CodegenWasmJit: cannot determine type of operator {other:?}"),
+        other => return Err("CodegenWasmJit: cannot determine type of operator {other:?}"),
     };
     sig_ty(ty)
 }
@@ -3717,7 +3712,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         // (a full index yields the scalar element).
         E::ASUB { exp, sub } => {
             let SigTy::Array { elem, rank } = exp_sigty(exp)? else {
-                bail!("CodegenWasmJit: subscripting a non-array expression");
+                return Err("CodegenWasmJit: subscripting a non-array expression");
             };
             let n = (&**sub).into_iter().count() as u32;
             match rank.checked_sub(n) {
@@ -3730,7 +3725,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
         // A record constructor / field access carry their type directly.
         E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty(ty)?,
-        other => bail!("CodegenWasmJit: cannot determine type of expression {other:?}"),
+        other => return Err("CodegenWasmJit: cannot determine type of expression {other:?}"),
     })
 }
 
@@ -3738,7 +3733,7 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
     // Array negation `-a`: negate every element into a fresh array.
     if let DAE::Operator::UMINUS_ARR { ty } = op {
         let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-            bail!("CodegenWasmJit: UMINUS_ARR with non-array type {ty:?}");
+            return Err("CodegenWasmJit: UMINUS_ARR with non-array type {ty:?}");
         };
         let rt = if elem.wty() == WTy::F64 { "rt_array_neg_f64" } else { "rt_array_neg_i32" };
         compile_exp(ctx, exp)?; // owned array
@@ -3750,7 +3745,7 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
         return Ok(WTy::I32);
     }
     let DAE::Operator::UMINUS { ty } = op else {
-        bail!("CodegenWasmJit: unsupported unary operator {op:?}");
+        return Err("CodegenWasmJit: unsupported unary operator {op:?}");
     };
     let wty = sig_ty(ty)?.wty();
     let w = compile_exp(ctx, exp)?;
@@ -3801,7 +3796,7 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
     // is a fresh String handle from the runtime.
     if operator_sigty(op)? == SigTy::Str {
         let O::ADD { .. } = op else {
-            bail!("CodegenWasmJit: unsupported String operator {op:?}");
+            return Err("CodegenWasmJit: unsupported String operator {op:?}");
         };
         str_binop(ctx, e1, e2, "rt_concat")?;
         return Ok(WTy::I32);
@@ -3863,7 +3858,7 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
         (O::MUL { .. }, WTy::I32) => ctx.emit(we::Instruction::I32Mul),
         (O::DIV { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Div),
         (O::DIV { .. }, WTy::I32) => ctx.emit(we::Instruction::I32DivS),
-        (other, _) => bail!("CodegenWasmJit: unsupported binary operator {other:?}"),
+        (other, _) => return Err("CodegenWasmJit: unsupported binary operator {other:?}"),
     }
     Ok(wty)
 }
@@ -3889,7 +3884,7 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
                     _ => we::Instruction::I32GeS,
                 });
             }
-            other => bail!("CodegenWasmJit: unsupported String relation {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported String relation {other:?}"),
         }
         return Ok(WTy::I32);
     }
@@ -4023,7 +4018,7 @@ fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: 
         O::LESS { .. } => (I::F64Le, dir),
         O::GREATER { .. } => (I::F64Ge, !dir),
         O::GREATEREQ { .. } => (I::F64Gt, !dir),
-        other => bail!("CodegenWasmJit: non-inequality in hysteresis path: {other:?}"),
+        other => return Err("CodegenWasmJit: non-inequality in hysteresis path: {other:?}"),
     };
     ctx.emit(I::LocalGet(diff));
     ctx.emit(I::LocalGet(eps));
@@ -4067,7 +4062,7 @@ fn compile_relation_fresh(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2
         (O::EQUAL { .. }, WTy::I32) => we::Instruction::I32Eq,
         (O::NEQUAL { .. }, WTy::F64) => we::Instruction::F64Ne,
         (O::NEQUAL { .. }, WTy::I32) => we::Instruction::I32Ne,
-        (other, _) => bail!("CodegenWasmJit: unsupported relational operator {other:?}"),
+        (other, _) => return Err("CodegenWasmJit: unsupported relational operator {other:?}"),
     };
     ctx.emit(instr);
     Ok(WTy::I32)
@@ -4083,7 +4078,7 @@ fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
         O::LESS { ty } | O::LESSEQ { ty } | O::GREATER { ty } | O::GREATEREQ { ty } | O::EQUAL { ty } | O::NEQUAL { ty } => ty,
-        other => bail!("CodegenWasmJit: not a relational operator: {other:?}"),
+        other => return Err("CodegenWasmJit: not a relational operator: {other:?}"),
     };
     sig_ty(ty)
 }
@@ -4108,7 +4103,7 @@ fn compile_call(
         let index = info.index;
         let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
         if argv.len() != params.len() {
-            bail!("CodegenWasmJit: call to {mangled} expects {} args, got {}", params.len(), argv.len());
+            return Err("CodegenWasmJit: call to {mangled} expects {} args, got {}");
         }
         for (a, p) in argv.iter().zip(params.iter()) {
             let w = compile_exp(ctx, a)?;
@@ -4133,7 +4128,7 @@ fn compile_call(
 /// left on the stack (to be released if heap, otherwise dropped).
 fn compile_call_drop(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<Vec<SigTy>> {
     let DAE::Exp::CALL { path, expLst, attr } = exp else {
-        bail!("CodegenWasmJit: no-return statement is not a call: {exp:?}");
+        return Err("CodegenWasmJit: no-return statement is not a call: {exp:?}");
     };
     compile_call(ctx, path, expLst, attr)
 }
@@ -4200,7 +4195,7 @@ fn compile_math_event(
     let (data, base, fresh_off) = {
         let s = ctx.sim()?;
         if idx >= s.n_mathevents {
-            bail!("CodegenWasmJit: math-event index {idx} out of range (n={})", s.n_mathevents);
+            return Err("CodegenWasmJit: math-event index {idx} out of range (n={})");
         }
         (s.data_local, s.mathevents_off + idx * 8, s.rel_fresh_off)
     };
@@ -4303,7 +4298,7 @@ fn compile_math_event(
                 }
             }
         }
-        _ => bail!("CodegenWasmJit: not a math-event builtin: {name}"),
+        _ => return Err("CodegenWasmJit: not a math-event builtin: {name}"),
     }
 }
 
@@ -4338,7 +4333,7 @@ fn compile_math_builtin(
     if let Some(bi) = builtin_index(name) {
         let (_, params, _) = BUILTINS[bi as usize];
         if argv.len() != params.len() {
-            bail!("CodegenWasmJit: builtin {name} expects {} args", params.len());
+            return Err("CodegenWasmJit: builtin {name} expects {} args");
         }
         for (a, p) in argv.iter().zip(params.iter()) {
             let w = compile_exp(ctx, a)?;
@@ -4609,13 +4604,13 @@ fn compile_math_builtin(
         "pre" => {
             need_args(&argv, 1, name)?;
             let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
-                bail!("CodegenWasmJit: `pre` expects a variable reference");
+                return Err("CodegenWasmJit: `pre` expects a variable reference");
             };
             let pre = pre_cref(componentRef);
             match compile_sim_cref_read(ctx, &pre)? {
                 Some(WTy::F64) => Ok(SigTy::Real),
                 Some(WTy::I32) => Ok(SigTy::Int),
-                None => bail!("CodegenWasmJit: `pre` of a non-model variable"),
+                None => return Err("CodegenWasmJit: `pre` of a non-model variable"),
             }
         }
         // `sample(index, start, interval)` (the backend's 3-arg internal form,
@@ -4626,13 +4621,13 @@ fn compile_math_builtin(
         "sample" => {
             need_args(&argv, 3, name)?;
             let DAE::Exp::ICONST { integer } = &**argv[0] else {
-                bail!("CodegenWasmJit: `sample` index must be an integer literal");
+                return Err("CodegenWasmJit: `sample` index must be an integer literal");
             };
             let k = *ctx
                 .sim()?
                 .sample_map
                 .get(integer)
-                .ok_or_else(|| anyhow!("CodegenWasmJit: unknown sample index {integer}"))?;
+                .ok_or_else(|| "CodegenWasmJit: unknown sample index {integer}")?;
             let data = ctx.sim()?.data_local;
             let off = ctx.sim()?.sample_active_off + k * 4;
             ctx.emit(we::Instruction::LocalGet(data));
@@ -4644,15 +4639,15 @@ fn compile_math_builtin(
         "der" => {
             need_args(&argv, 1, name)?;
             let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
-                bail!("CodegenWasmJit: der() of a non-reference expression not supported");
+                return Err("CodegenWasmJit: der() of a non-reference expression not supported");
             };
             let dcref = der_cref(componentRef);
             match compile_sim_cref_read(ctx, &dcref)? {
                 Some(_) => Ok(SigTy::Real),
-                None => bail!("CodegenWasmJit: der() is only supported in simulation mode"),
+                None => return Err("CodegenWasmJit: der() is only supported in simulation mode"),
             }
         }
-        other => bail!("CodegenWasmJit: builtin function `{other}` not yet supported"),
+        other => return Err("CodegenWasmJit: builtin function `{other}` not yet supported"),
     }
 }
 
@@ -4727,7 +4722,7 @@ fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>]) -> Result<SigTy
     // threaded through from the DAE type into the sidecar/runtime.
     if exp_is_enumeration(argv[0]) {
         let Some(names) = exp_enum_names(argv[0]) else {
-            bail!("CodegenWasmJit: String(Enumeration) on an enum literal whose names are not in scope");
+            return Err("CodegenWasmJit: String(Enumeration) on an enum literal whose names are not in scope");
         };
         emit_enum_string(ctx, argv[0], &names)?;
         // String(e, minimumLength, leftJustified): pad the name like any scalar.
@@ -4761,7 +4756,7 @@ fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>]) -> Result<SigTy
         }
         // String(Real, significantDigits, minimumLength, leftJustified).
         (SigTy::Real, 4) => emit_real_format(ctx, argv[0], argv[1], argv[2], argv[3]),
-        other => bail!("CodegenWasmJit: unsupported String() argument shape {other:?}"),
+        other => return Err("CodegenWasmJit: unsupported String() argument shape {other:?}"),
     }
 }
 
@@ -4775,14 +4770,14 @@ fn emit_string_format(ctx: &mut FnCtx, val: &DAE::Exp, fmt: &DAE::Exp, vty: &Sig
         // Integer and Boolean share the integer formatter (Booleans coerce to
         // 0/1). The String format variant (`%s`) is not yet ported.
         SigTy::Int | SigTy::Bool => "rt_string_format_int",
-        other => bail!("CodegenWasmJit: String(value, format) not yet implemented for {other:?}"),
+        other => return Err("CodegenWasmJit: String(value, format) not yet implemented for {other:?}"),
     };
     let w = compile_exp(ctx, val)?;
     coerce(ctx, w, vty.wty());
     let fmt_t = ctx.alloc_temp(WTy::I32);
     let fw = compile_exp(ctx, fmt)?;
     if fw != WTy::I32 {
-        bail!("CodegenWasmJit: String() format argument is not a string");
+        return Err("CodegenWasmJit: String() format argument is not a string");
     }
     ctx.emit(we::Instruction::LocalTee(fmt_t)); // keep the handle, leave it on the stack
     ctx.emit(we::Instruction::Call(rt_index(rt_fn)?));
@@ -4966,7 +4961,7 @@ fn format_scalar_string(ctx: &mut FnCtx, arg: &DAE::Exp, ty: SigTy) -> Result<Si
         // `String(array)` / `String(record)` are not scalar conversions (the
         // frontend would not produce them here); reject rather than mis-format.
         SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr => {
-            bail!("CodegenWasmJit: String() of an array/record/external-object is not supported")
+            return Err("CodegenWasmJit: String() of an array/record/external-object is not supported")
         }
     }
 }
@@ -5013,7 +5008,7 @@ fn const_dims(ty: &DAE::Type) -> Result<Vec<u32>> {
     for d in &**dims {
         match &**d {
             DAE::Dimension::DIM_INTEGER { integer } if *integer >= 0 => out.push(*integer as u32),
-            other => bail!("CodegenWasmJit: array construction needs constant dimensions, got {other:?}"),
+            other => return Err("CodegenWasmJit: array construction needs constant dimensions, got {other:?}"),
         }
     }
     out.extend(const_dims(elem)?);
@@ -5049,11 +5044,11 @@ fn flatten_array_exp<'a>(exp: &'a DAE::Exp, out: &mut Vec<&'a DAE::Exp>) {
 /// element's reference transfers into the array (released by `rt_array_release`).
 fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> Result<()> {
     let SigTy::Array { elem, rank } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: array constructor with non-array type {ty:?}");
+        return Err("CodegenWasmJit: array constructor with non-array type {ty:?}");
     };
     let dims = const_dims(ty)?;
     if dims.len() as u32 != rank {
-        bail!("CodegenWasmJit: array constructor rank {rank} does not match {} dimensions", dims.len());
+        return Err("CodegenWasmJit: array constructor rank {rank} does not match {} dimensions");
     }
     let total: u32 = dims.iter().product();
     // The top-level structure (`ARRAY`/`MATRIX` nodes) is flattened to its
@@ -5108,7 +5103,7 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
         }
     }
     if k != total {
-        bail!("CodegenWasmJit: array constructor produced {k} elements but type implies {total}");
+        return Err("CodegenWasmJit: array constructor produced {k} elements but type implies {total}");
     }
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(())
@@ -5168,13 +5163,13 @@ fn operator_dae_type(op: &DAE::Operator) -> Option<Arc<DAE::Type>> {
 /// element-count rounding to stay byte-identical, so they fail loudly.
 fn compile_range_array(ctx: &mut FnCtx, ty: &DAE::Type, start: &DAE::Exp, step: Option<&DAE::Exp>, stop: &DAE::Exp) -> Result<()> {
     let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: range with non-array type {ty:?}");
+        return Err("CodegenWasmJit: range with non-array type {ty:?}");
     };
     match &*elem {
         // Integer and enumeration ranges (enum literals are their i32 index).
         SigTy::Int => compile_int_range_array(ctx, start, step, stop),
         SigTy::Real => compile_real_range_array(ctx, start, step, stop),
-        other => bail!("CodegenWasmJit: only Integer/Real ranges are supported as array values (element {other:?})"),
+        other => return Err("CodegenWasmJit: only Integer/Real ranges are supported as array values (element {other:?})"),
     }
 }
 
@@ -5372,7 +5367,7 @@ const OP_OR: i32 = 6;
 /// operand arrays are released after.
 fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, ty: &DAE::Type) -> Result<WTy> {
     let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: element-wise array op with non-array type {ty:?}");
+        return Err("CodegenWasmJit: element-wise array op with non-array type {ty:?}");
     };
     let rt = if elem.wty() == WTy::F64 { "rt_array_ew_f64" } else { "rt_array_ew_i32" };
     compile_exp(ctx, e1)?;
@@ -5393,7 +5388,7 @@ fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32,
 /// `v1 * v2` scalar (dot) product of two numeric vectors → a scalar. Both
 /// operand arrays are released; the scalar result is left on the stack.
 fn compile_dot(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
-    let elem = array_elem(e1)?.ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: scalar-product operand is not an array"))?;
+    let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: scalar-product operand is not an array")?;
     let f64mode = elem.wty() == WTy::F64;
     let rt = if f64mode { "rt_array_dot_f64" } else { "rt_array_dot_i32" };
     compile_exp(ctx, e1)?;
@@ -5414,7 +5409,7 @@ fn compile_dot(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
 /// runtime computes the result shape from the operand ranks; both operands are
 /// released and the fresh result array handle is left on the stack.
 fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
-    let elem = array_elem(e1)?.ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: matrix-product operand is not an array"))?;
+    let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: matrix-product operand is not an array")?;
     let rt = if elem.wty() == WTy::F64 { "rt_array_matmul_f64" } else { "rt_array_matmul_i32" };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
@@ -5438,7 +5433,7 @@ fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> 
 /// order); the array operand is released after.
 fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, rev: bool, ty: &DAE::Type) -> Result<WTy> {
     let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        bail!("CodegenWasmJit: array-scalar op with non-array type {ty:?}");
+        return Err("CodegenWasmJit: array-scalar op with non-array type {ty:?}");
     };
     let elem_wty = elem.wty();
     let rt = if elem_wty == WTy::F64 { "rt_array_scalar_f64" } else { "rt_array_scalar_i32" };
@@ -5465,7 +5460,7 @@ fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: 
 /// element's wasm type.
 fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
     let SigTy::Array { elem, rank } = exp_sigty(base)? else {
-        bail!("CodegenWasmJit: subscripting a non-array expression");
+        return Err("CodegenWasmJit: subscripting a non-array expression");
     };
     compile_exp(ctx, base)?; // owned array handle
     if is_scalar_index(subs, rank) {
@@ -5497,13 +5492,13 @@ fn is_scalar_index(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> bool {
 fn index_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
     let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
     if subs.len() as u32 != rank {
-        bail!("CodegenWasmJit: array slicing / partial indexing not supported ({} subscripts on rank {rank})", subs.len());
+        return Err("CodegenWasmJit: array slicing / partial indexing not supported ({} subscripts on rank {rank})");
     }
     let mut out = Vec::with_capacity(subs.len());
     for s in subs {
         match &**s {
             DAE::Subscript::INDEX { exp } => out.push(exp.clone()),
-            other => bail!("CodegenWasmJit: non-scalar subscript {other:?} (slicing not supported)"),
+            other => return Err("CodegenWasmJit: non-scalar subscript {other:?} (slicing not supported)"),
         }
     }
     Ok(out)
@@ -5620,7 +5615,7 @@ fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Resul
                 spec_elem_addr(ctx, spec_t, val_slot)?;
                 let w = compile_exp(ctx, exp)?; // owned Integer index array
                 if w != WTy::I32 {
-                    bail!("CodegenWasmJit: array slice subscript is not an integer index array");
+                    return Err("CodegenWasmJit: array slice subscript is not an integer index array");
                 }
                 let s_t = ctx.alloc_temp(WTy::I32);
                 ctx.emit(we::Instruction::LocalTee(s_t));
@@ -5661,7 +5656,7 @@ fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
 /// released after.
 fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
     let SigTy::Array { rank, .. } = exp_sigty(exp)? else {
-        bail!("CodegenWasmJit: size() of a non-array expression");
+        return Err("CodegenWasmJit: size() of a non-array expression");
     };
     compile_exp(ctx, exp)?; // owned array handle
     let arr_t = ctx.alloc_temp(WTy::I32);
@@ -5727,11 +5722,11 @@ fn compile_array_builtin(
         // fill(s, d1, ..., dk): array of the given dims, every element = s.
         "fill" => {
             if argv.len() < 2 {
-                bail!("CodegenWasmJit: fill expects a value and at least one dimension");
+                return Err("CodegenWasmJit: fill expects a value and at least one dimension");
             }
             let arr_ty = sig_ty(&attr.ty)?;
             let SigTy::Array { elem, .. } = &arr_ty else {
-                bail!("CodegenWasmJit: fill result is not an array ({arr_ty:?})");
+                return Err("CodegenWasmJit: fill result is not an array ({arr_ty:?})");
             };
             let obj = emit_alloc_from_exprs(ctx, elem, &argv[1..])?;
             emit_fill_value(ctx, obj, elem, argv[0])?;
@@ -5741,11 +5736,11 @@ fn compile_array_builtin(
         // zeros(d...) / ones(d...): like fill with a constant 0 / 1.
         "zeros" | "ones" => {
             if argv.is_empty() {
-                bail!("CodegenWasmJit: {name} expects at least one dimension");
+                return Err("CodegenWasmJit: {name} expects at least one dimension");
             }
             let arr_ty = sig_ty(&attr.ty)?;
             let SigTy::Array { elem, .. } = &arr_ty else {
-                bail!("CodegenWasmJit: {name} result is not an array ({arr_ty:?})");
+                return Err("CodegenWasmJit: {name} result is not an array ({arr_ty:?})");
             };
             let obj = emit_alloc_from_exprs(ctx, elem, argv)?;
             emit_fill_const(ctx, obj, elem, if name == "ones" { 1 } else { 0 })?;
@@ -5786,7 +5781,7 @@ fn compile_array_builtin(
         // diagonal(v): n×n matrix with the vector v on the diagonal.
         "diagonal" if argv.len() == 1 => {
             if array_elem(argv[0])?.is_none() {
-                bail!("CodegenWasmJit: diagonal of a non-array expression");
+                return Err("CodegenWasmJit: diagonal of a non-array expression");
             }
             compile_exp(ctx, argv[0])?;
             let vt = ctx.alloc_temp(WTy::I32);
@@ -5810,7 +5805,7 @@ fn compile_array_builtin(
         // transpose(a): a fresh n×m array (the operand 2-D array is released).
         "transpose" if argv.len() == 1 => {
             if array_elem(argv[0])?.is_none() {
-                bail!("CodegenWasmJit: transpose of a non-array expression");
+                return Err("CodegenWasmJit: transpose of a non-array expression");
             }
             compile_exp(ctx, argv[0])?;
             let at = ctx.alloc_temp(WTy::I32);
@@ -5839,7 +5834,7 @@ fn compile_array_builtin(
             let mut in_temps = Vec::with_capacity(n as usize);
             for (i, a) in argv[1..].iter().enumerate() {
                 if array_elem(a)?.is_none() {
-                    bail!("CodegenWasmJit: cat argument is not an array");
+                    return Err("CodegenWasmJit: cat argument is not an array");
                 }
                 ctx.emit(we::Instruction::LocalGet(handles_t));
                 ctx.emit(we::Instruction::I32Const(i as i32 + 1));
@@ -5866,7 +5861,7 @@ fn compile_array_builtin(
         // ndims(a) -> Integer.
         "ndims" if argv.len() == 1 => {
             if array_elem(argv[0])?.is_none() {
-                bail!("CodegenWasmJit: ndims of a non-array expression");
+                return Err("CodegenWasmJit: ndims of a non-array expression");
             }
             emit_array_reduce(ctx, argv[0], "rt_array_ndims", None)?;
             Ok(Some(SigTy::Int))
@@ -5874,7 +5869,7 @@ fn compile_array_builtin(
         // scalar(a): the single element of an array whose dimensions are all 1.
         "scalar" if argv.len() == 1 => {
             let elem = array_elem(argv[0])?
-                .ok_or_else(|| anyhow::anyhow!("CodegenWasmJit: scalar() of a non-array expression"))?;
+                .ok_or_else(|| "CodegenWasmJit: scalar() of a non-array expression")?;
             compile_exp(ctx, argv[0])?; // owned array
             let arr_t = ctx.alloc_temp(WTy::I32);
             ctx.emit(we::Instruction::LocalSet(arr_t));
@@ -5927,7 +5922,7 @@ fn compile_array_builtin(
         // promote(a, n): add trailing size-1 dimensions to reach rank `n`.
         "promote" if argv.len() == 2 => {
             if array_elem(argv[0])?.is_none() {
-                bail!("CodegenWasmJit: promote of a non-array expression");
+                return Err("CodegenWasmJit: promote of a non-array expression");
             }
             compile_exp(ctx, argv[0])?;
             let at = ctx.alloc_temp(WTy::I32);
@@ -5951,7 +5946,7 @@ fn compile_array_builtin(
 /// result handle on the stack.
 fn emit_unary_array(ctx: &mut FnCtx, arg: &DAE::Exp, rt: &str) -> Result<()> {
     if array_elem(arg)?.is_none() {
-        bail!("CodegenWasmJit: {rt} of a non-array expression");
+        return Err("CodegenWasmJit: {rt} of a non-array expression");
     }
     compile_exp(ctx, arg)?;
     let at = ctx.alloc_temp(WTy::I32);
@@ -6068,7 +6063,7 @@ fn unary_f64(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], instr: we::Instruction<'s
 
 fn need_args(argv: &[&Arc<DAE::Exp>], n: usize, name: &str) -> Result<()> {
     if argv.len() != n {
-        bail!("CodegenWasmJit: builtin {name} expects {n} args, got {}", argv.len());
+        return Err("CodegenWasmJit: builtin {name} expects {n} args, got {}");
     }
     Ok(())
 }
@@ -6120,8 +6115,8 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     let sig = format!("{in_codes}\n{out_codes}\n");
     // Native writes the module + sidecar to disk; wasm has no OS filesystem, so
     // the facade stages them in the VFS where `load_and_execute` reads them back.
-    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes)?;
-    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes())?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
     Ok(())
 }
 

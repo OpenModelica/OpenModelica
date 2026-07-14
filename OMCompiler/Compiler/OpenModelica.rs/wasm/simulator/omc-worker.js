@@ -8,10 +8,16 @@
 // plus unsolicited { type:'status', id, text } for download progress.
 import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate,
+  omc_sim_start, omc_sim_advance, omc_sim_free,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
+  omc_anim_scene, omc_anim_all_frames, omc_anim_stride, omc_dxf_mesh,
 } from '../omc/OpenModelicaCompiler.js';
+
+// Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
+// long sim is cancelled without killing the worker (which would drop the MSL + JIT).
+let simCancel = false;
 
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
 const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s; };
@@ -146,8 +152,37 @@ function simError(fallback) {
   return { ok: false, error: omc_eval('getErrorString()').trim() || fallback };
 }
 
+// Chunked, cancellable integration of a prepared model. Each `omc_sim_advance`
+// runs ~BUDGET_MS of wall-clock (it times itself), then we yield to the message
+// loop so a queued {cmd:'cancelSim'} can set `simCancel`. A run that finishes in
+// one chunk never yields. Returns the status: 1 done, 2 terminated, 3 cancelled, <0 error.
+async function runResumable(prefix, simflags, onStatus) {
+  simCancel = false;   // discard a cancel that raced in after the previous run
+  if (!omc_sim_start(prefix, prefix + '_res.mat', simflags)) return -1;
+  onStatus && onStatus('Simulating…');
+  const BUDGET_MS = 150;
+  for (;;) {
+    if (simCancel) { simCancel = false; omc_sim_free(); return 3; }
+    const st = omc_sim_advance(BUDGET_MS);
+    if (st !== 0) return st;
+    await new Promise((r) => setTimeout(r, 0));   // let cancelSim land
+  }
+}
+
+// The settings a run used, to seed the dialog: the explicit ones the page sent, or
+// getSimulationOptions → (startTime, stopTime, tolerance, numberOfIntervals) for a
+// fresh model driven by its `experiment` annotation.
+function simOptions(name, a) {
+  if (a.stopTime) return { stopTime: a.stopTime, tolerance: a.tolerance || null, intervals: a.intervals || null };
+  const n = (omc_eval(`getSimulationOptions(${name})`).match(/-?[0-9][0-9.eE+-]*/g) || []).map(Number);
+  return { stopTime: n[1] ?? null, tolerance: n[2] ?? null, intervals: n[3] ?? null };
+}
+
 self.onmessage = async (ev) => {
   const { id, cmd } = ev.data, a = ev.data;
+  // Out-of-band: arrives while a simulate handler is parked at its inter-chunk
+  // `await`, so it just raises the flag (no reply; the sim replies {cancelled:true}).
+  if (cmd === 'cancelSim') { simCancel = true; return; }
   const status = (text) => self.postMessage({ type: 'status', id, text });
   const wlog = (text) => self.postMessage({ type: 'log', id, text });
   _plog = wlog;
@@ -163,6 +198,12 @@ self.onmessage = async (ev) => {
         await init();
         omc_set_env('OPENMODELICAHOME', '/usr');
         if (!omc_init()) throw new Error('omc_init() failed');
+        // Emit the MultiBody visualization scene (<model>_visual.xml) for every
+        // simulation, so any model with animatable shapes shows a 3D view by
+        // default. copyClass'd library examples carry no annotation of their own,
+        // so this API call is how the option gets set (models may still opt in via
+        // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
+        omc_eval('setCommandLineOptions("-d=visxml")');
         reply({ ok: true, version: omc_eval('getVersion()') });
         break;
       }
@@ -204,6 +245,21 @@ self.onmessage = async (ev) => {
         // figures/doc annotations, so those come from the copy itself.
         if ((await evalWithDownloads(`copyClass(${a.from}, "${a.name}")`, status)).trim() !== 'true')
           return reply(simError('copyClass failed for ' + a.from));
+        // Optionally curate the plots via a figures annotation the library class
+        // lacks. addClassAnnotation replaces the whole Documentation annotation,
+        // so re-inject the class's existing info alongside the figures to keep the
+        // model's own documentation intact.
+        if (a.figures) {
+          let infoAttr = '';
+          try {
+            const arr = JSON.parse(withJsonDump(() => oeval(`getDocumentationAnnotation(${a.name})`)));
+            const info = Array.isArray(arr) ? (arr[0] || '') : '';
+            if (info) infoAttr = `info="${esc(info)}", `;
+          } catch (_) {}
+          const annotate = `Documentation(${infoAttr}figures={${a.figures}})`;
+          if (omc_eval(`addClassAnnotation(${a.name}, annotate=${annotate})`).trim() !== 'true')
+            wlog('addClassAnnotation failed: ' + omc_eval('getErrorString()').trim());
+        }
         reply({ ok: true, name: a.name, source: omc_eval(`list(${a.name})`),
                 figures: figuresFor(a.name), doc: documentationFor(a.name) });
         break;
@@ -217,27 +273,61 @@ self.onmessage = async (ev) => {
         break;
       }
       case 'simulate': {
-        // Direct scripting call (no O(program) env build); 0 / "" = omit (use annotation default).
-        const res = prof('omc_simulate ' + a.name, () => omc_simulate(
-          a.name,
-          a.stopTime != null ? a.stopTime : 0,
-          a.intervals != null ? a.intervals : 0,
-          a.tolerance != null ? a.tolerance : 0,
-          a.method || '',
-          a.override || ''));
-        logSimTimers(res);
+        // buildModel (translate + JIT, bakes the settings) then runResumable (a
+        // cancellable chunked run + `.mat`). Omitted args use the experiment annotation.
+        const opts = [];
+        if (a.stopTime) opts.push(`stopTime=${a.stopTime}`);
+        if (a.intervals) opts.push(`numberOfIntervals=${a.intervals}`);
+        if (a.tolerance) opts.push(`tolerance=${a.tolerance}`);
+        if (a.method) opts.push(`method="${a.method}"`);
+        const built = (await evalWithDownloads(`buildModel(${a.name}${opts.length ? ',' + opts.join(',') : ''})`, status)).trim();
+        // buildModel → {"<prefix>","<initfile>"}; an empty first element means it failed.
+        if (!/^\{\s*"[^"]/.test(built)) return reply(simError('Build failed.'));
+        const st = await runResumable(a.name, a.override ? `-override=${a.override}` : '', status);
+        if (st === 3) return reply({ ok: false, cancelled: true });
+        if (st < 0) return reply(simError('Simulation failed.'));
         const s = snapshot();
         if (!s) return reply(simError('Simulation produced no result.'));
-        s.snap.options = parseSimOptions(res);   // settings actually used → seed the dialog
+        s.snap.options = simOptions(a.name, a);  // settings actually used → seed the dialog
         reply(s.snap, s.transfer);               // figures/doc come from loadSource/copyClass
         break;
       }
       case 'resimulate': {
-        await evalWithDownloads(
-          `simulate(${a.name}, simflags="${esc(a.override)}", resimulateExecutable="${a.name}")`, status);
+        // Re-run the already-built model (no rebuild) — same cancellable chunked path.
+        const st = await runResumable(a.name, a.override ? `-override=${a.override}` : '', status);
+        if (st === 3) return reply({ ok: false, cancelled: true });
+        if (st < 0) return reply(simError('Re-simulation failed.'));
         const s = snapshot();
         if (!s) return reply(simError('Re-simulation produced no result.'));
         reply(s.snap, s.transfer);
+        break;
+      }
+      case 'anim': {
+        // MultiBody animation for the last run: the shape scene (present only if
+        // the model enabled `-d=visxml`, e.g. via __OpenModelica_commandLineOptions)
+        // plus the flat per-frame transform buffer the JS renderer plays back.
+        const scene = omc_anim_scene();
+        if (!scene || !scene.shapes || !scene.shapes.length) { reply({ available: false }); break; }
+        const times = omc_sim_time();
+        const data = omc_anim_all_frames();
+        if (!times || !data) { reply({ available: false }); break; }
+        const transfer = [times.buffer, data.buffer];
+        // Load real geometry for CAD shapes (dxf): resolve the modelica:// URI to
+        // a VFS file and parse it (in Rust) into a triangle mesh the client renders.
+        for (const s of scene.shapes) {
+          if (s.kind !== 9 || !/\.dxf$/i.test(s.type || '')) continue;   // 9 = ShapeKind::Cad
+          try {
+            const path = unquote(omc_eval(`uriToFilename("${esc(s.type)}")`));
+            const bytes = path && wasiReadFile(path);
+            if (!bytes) continue;
+            const mesh = omc_dxf_mesh(new TextDecoder().decode(bytes));
+            if (mesh && mesh.positions && mesh.positions.length) {
+              s.mesh = mesh;
+              transfer.push(mesh.positions.buffer, mesh.normals.buffer, mesh.colors.buffer);
+            }
+          } catch (e) { wlog('dxf load failed for ' + s.type + ': ' + e); }
+        }
+        reply({ available: true, scene, times, data, stride: omc_anim_stride() }, transfer);
         break;
       }
       case 'eval':

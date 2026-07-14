@@ -4840,31 +4840,32 @@ public
     function mapExp
       input output EqData eqData;
       input MapFuncExp func;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
     algorithm
       eqData := match eqData
         case EqData.EQ_DATA_SIM() algorithm
           // we do not want to traverse removed equations, otherwise we could break them
-          eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func);
-          eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func);
-          eqData.clocked      := EquationPointers.mapExp(eqData.clocked, func);
-          eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
-          eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
+          eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func, funcCrefOpt);
+          eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func, funcCrefOpt);
+          eqData.clocked      := EquationPointers.mapExp(eqData.clocked, func, funcCrefOpt);
+          eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func, funcCrefOpt);
+          eqData.initials     := EquationPointers.mapExp(eqData.initials, func, funcCrefOpt);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
         then eqData;
 
         case EqData.EQ_DATA_JAC() algorithm
-          eqData.results      := EquationPointers.mapExp(eqData.results, func);
-          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
+          eqData.results      := EquationPointers.mapExp(eqData.results, func, funcCrefOpt);
+          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
-          Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func));
-          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
-          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
-          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
+          Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func, funcCrefOpt));
+          eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func, funcCrefOpt);
+          eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func, funcCrefOpt);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func, funcCrefOpt);
         then eqData;
       end match;
     end mapExp;

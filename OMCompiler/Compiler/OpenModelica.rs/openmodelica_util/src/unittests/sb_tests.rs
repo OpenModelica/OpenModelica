@@ -22,7 +22,7 @@
 //
 // Other known bugs documented inline with "Bug:" prefixes.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use crate::SBInterval;
@@ -793,7 +793,7 @@ fn partb_sbmi_cardinality_2d_sums_not_product() {
 /// dummy to the safe runtime variant `arrayCreateNoInitWithDummy` when the
 /// dummy expression is known-initialised (here, `arrayGet(mi1.intervals, 1)`).
 #[test]
-fn partb_sbmi_intersection_1d_overlapping() -> anyhow::Result<()> {
+fn partb_sbmi_intersection_1d_overlapping() -> metamodelica::Result<()> {
     let mi1 = raw_mi1d(1, 1, 5);
     let mi2 = raw_mi1d(3, 1, 7);
     let res = SBMultiInterval::intersection(mi1, mi2)?;

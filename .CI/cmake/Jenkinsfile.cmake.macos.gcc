@@ -71,7 +71,7 @@ pipeline {
                         sourceFiles: "build_cmake/_packages/${pkg_filename}",
                         removePrefix: "build_cmake/_packages/",
                         // Make a symbolic link to the latest package.
-                        // Unfortunatelly, relative paths do not seem to work. Use full path to the files.
+                        // Unfortunately, relative paths do not seem to work. Use full path to the files.
                         execCommand: "ln -sf ${full_remote_dir}/${pkg_filename} ${full_remote_dir}/OpenModelica-latest.pkg")
                     ]
                   )

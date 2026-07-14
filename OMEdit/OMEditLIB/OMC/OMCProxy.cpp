@@ -66,10 +66,35 @@ void omc_System_initGarbageCollector(void *threadData);
 #if defined(_WIN32)
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
+#if !defined(__EMSCRIPTEN__) && defined(OMC_RUST_ABI)
+void omc_compiler_clear_cancel();                       // Rust in-process: reset the cancel flag per op
+void omc_compiler_set_pump_callback(void (*cb)(void));  // register the event-pump callback
+int omc_compiler_progress_permille();                   // 0..1000, or <0 for indeterminate
+int omc_compiler_progress_phase();                      // PHASE_* (0 idle)
+#elif !defined(__EMSCRIPTEN__)
+void System_clearCancel();                              // classic C omc runtime
+void System_setPumpCallback(void (*cb)(void));
+int System_progressPermille();
+int System_progressPhase();
+#endif
 }
 
 #include <QMessageBox>
 #include <QStringBuilder>
+#include <QCoreApplication>
+
+// Progress phase (compiler PHASE_* / metamodelica::cancel) → user-facing label.
+// Shared by the wasm worker-wait UI and the native pump-driven progress bar.
+static QString omcPhaseLabel(int phase) {
+  switch (phase) {
+    case 1: return QObject::tr("Downloading…");
+    case 2: return QObject::tr("Parsing…");
+    case 3: return QObject::tr("Instantiating…");
+    case 4: return QObject::tr("Compiling model…");
+    case 5: return QObject::tr("Simulating…");
+    default: return QString();
+  }
+}
 
 #if defined(__EMSCRIPTEN__)
 #include <cstdlib>
@@ -94,6 +119,19 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
   url.search = "v=" + UTF8ToString(ver);
   const w = new Worker(url, { type: "module" });
   Module.__omcWorker = w;
+  // Cooperative cancel + live progress: a shared "control block" the omc worker
+  // polls/writes (needs cross-origin isolation for SharedArrayBuffer). A long omc
+  // call blocks the worker, so cancel can't be a message — the main thread writes
+  // control[0], the worker reads it; the worker writes progress into control[1]/[2].
+  // Layout (Int32Array): [0] cancel, [1] progress permille, [2] phase, [3] generation.
+  Module.__omcControlView = null;
+  try {
+    if (typeof SharedArrayBuffer !== "undefined" && self.crossOriginIsolated) {
+      const cbuf = new SharedArrayBuffer(16);
+      Module.__omcControlView = new Int32Array(cbuf);
+      w.postMessage({ cmd: "controlBuf", buf: cbuf });
+    }
+  } catch (e) { Module.__omcControlView = null; }
   Module.__omcPending = null;
   Module.__omcMsgId = 0;
   Module.__omcCallId = 0;
@@ -228,6 +266,35 @@ EM_ASYNC_JS(void, omedit_await_call, (int id), {
 
 EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
 
+// Cooperative cancel + progress control block (shared with the omc worker).
+// Available only when cross-origin isolated (SharedArrayBuffer);
+// omedit_cancel_available reports it. Indices: 0 cancel, 1 progress, 2 phase,
+// 3 generation.
+EM_JS(int, omedit_cancel_available, (), {
+  return Module.__omcControlView ? 1 : 0;
+});
+EM_JS(void, omedit_cancel_sim, (), {
+  if (Module.__omcControlView) Atomics.store(Module.__omcControlView, 0, 1);
+});
+// Clear the cancel flag and reset progress at the start of a new op; bump the
+// generation so a late progress write from the previous op is ignored.
+EM_JS(void, omedit_clear_cancel, (), {
+  const v = Module.__omcControlView;
+  if (v) {
+    Atomics.store(v, 0, 0);
+    Atomics.store(v, 1, -1);
+    Atomics.store(v, 2, 0);
+    Atomics.add(v, 3, 1);
+  }
+});
+// Read current progress permille (-1 indeterminate) / phase for the UI timer.
+EM_JS(int, omedit_progress_permille, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 1) : -1;
+});
+EM_JS(int, omedit_progress_phase, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 2) : 0;
+});
+
 static QVarLengthArray<QEventLoop *> g_omcWaitStack;
 static bool g_omcWakeInstalled = false;
 
@@ -240,6 +307,49 @@ static void ensureWakeInstalled() {
   });
   EM_ASM({ Module.__omcWakeIndex = $0; }, idx);
   g_omcWakeInstalled = true;
+}
+
+// Read the worker's progress control block and reflect it on the main-window
+// status bar while a blocking call is in flight. Sets ownsBar when it is the
+// one that made the bar visible, so the wait can restore it on completion.
+static void omcDriveProgressUi(bool &ownsBar, bool &ownsCancel) {
+  int phase = omedit_progress_phase();
+  if (phase == 0) return; // PHASE_IDLE — nothing running to report
+  MainWindow *w = MainWindow::instance();
+  // The status bar / progress bar are built partway through MainWindow's
+  // constructor, but omc commands (getVersion, …) run before that from the
+  // OMCProxy constructor — and the wait's QTimer can fire during them. Bail
+  // until they exist so we never make a virtual call on an uninitialised member.
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    ownsBar = true;
+    w->showProgressBar();
+  }
+  int permille = omedit_progress_permille();
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  ownsCancel = true;
+  w->showCancelOperationButton(true);
+  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+}
+
+// Restore whatever this wait made visible. The bar and cancel button are
+// tracked separately: a wait may show the Cancel button while another widget
+// already owns the progress bar, and must still hide the button on completion.
+static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  if (ownsCancel) w->showCancelOperationButton(false);
+  if (ownsBar) {
+    w->hideProgressBar();
+    w->getProgressBar()->setRange(0, 100);
+    w->getStatusBar()->clearMessage();
+  }
 }
 
 void omcWorkerWaitReply(int id) {
@@ -259,9 +369,25 @@ void omcWorkerWaitReply(int id) {
     loop.exec();
     return;
   }
+  // Only the outermost wait drives the progress UI (nested calls would fight
+  // over the same status bar) and only when the shared control block exists
+  // (cross-origin isolated); a quick call finishes before the 100 ms tick, so
+  // the bar never flashes for trivial requests.
+  bool outermost = g_omcWaitStack.isEmpty();
   g_omcWaitStack.append(&loop);
+  QTimer progressTimer;
+  bool ownsBar = false;
+  bool ownsCancel = false;
+  if (outermost && omedit_cancel_available()) {
+    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&ownsBar, &ownsCancel]() {
+      omcDriveProgressUi(ownsBar, ownsCancel);
+    });
+    progressTimer.start(100);
+  }
   while (!omedit_call_ready(id)) loop.exec();
+  progressTimer.stop();
   g_omcWaitStack.removeLast();
+  if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
   if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
 }
 
@@ -370,6 +496,114 @@ bool omcWorkerStageFile(const char *path) {
   return omedit_stage_into_memfs(id, path) != 0;
 }
 #endif // __EMSCRIPTEN__
+
+#if !defined(__EMSCRIPTEN__)
+// omc runs in-process on the UI thread, so a long compile would freeze the GUI.
+// omc invokes this at every cancel check (System.checkCancel); it hands the
+// thread back to Qt so the Cancel click is delivered (flipping the flag omc then
+// reads) and progress repaints. Rate-limited — checkCancel fires per class.
+// Reentering omc is prevented by OmcBusyScope disabling all UI but Cancel.
+// Reflect the compiler's last-reported progress (read via the backend getters)
+// on the status bar while an in-process op is in flight. Tracks whether it was
+// the one that made the bar visible so OmcBusyScope can restore it on completion.
+static bool g_omcNativeOwnsBar = false;
+static void omcDriveNativeProgress()
+{
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+#if defined(OMC_RUST_ABI)
+  int phase = omc_compiler_progress_phase();
+  int permille = omc_compiler_progress_permille();
+#else
+  int phase = System_progressPhase();
+  int permille = System_progressPermille();
+#endif
+  if (phase == 0) return; // nothing reported yet
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    g_omcNativeOwnsBar = true;
+    w->showProgressBar();
+  }
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+}
+
+static void omcClearNativeProgress()
+{
+  if (!g_omcNativeOwnsBar) return;
+  g_omcNativeOwnsBar = false;
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  w->hideProgressBar();
+  w->getProgressBar()->setRange(0, 100);
+  w->getStatusBar()->clearMessage();
+}
+
+extern "C" void omedit_pump_events()
+{
+  static QElapsedTimer sLastPump;
+  if (sLastPump.isValid() && sLastPump.elapsed() < 40) {
+    return;
+  }
+  sLastPump.restart();
+  omcDriveNativeProgress();
+  QCoreApplication::processEvents();
+}
+
+// Registers omedit_pump_events with whichever omc backend is linked, once.
+static void omedit_install_pump()
+{
+#if defined(OMC_RUST_ABI)
+  omc_compiler_set_pump_callback(omedit_pump_events);
+#else
+  System_setPumpCallback(omedit_pump_events);
+#endif
+}
+
+// Marks omc busy for the duration of a command: at the outermost call it clears
+// any stale cancel and disables the UI (except Cancel) so the pumped event loop
+// can't reenter the non-reentrant compiler. Nested calls (e.g. loadModelCB) are
+// no-ops. RAII so early returns in sendCommand still restore the UI.
+namespace {
+int g_omcCommandDepth = 0;
+struct OmcBusyScope {
+  bool outer;
+  // Reveal Cancel only if the op runs past this; quick commands (the vast
+  // majority) finish first and never flash the button. The UI-disable itself
+  // is immediate — the pump can fire mid-op, so reentrancy must be blocked now.
+  QTimer showButtonTimer;
+  OmcBusyScope() : outer(g_omcCommandDepth == 0) {
+    g_omcCommandDepth++;
+    if (outer) {
+#if defined(OMC_RUST_ABI)
+      omc_compiler_clear_cancel();
+#else
+      System_clearCancel();
+#endif
+      if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(true);
+      showButtonTimer.setSingleShot(true);
+      QObject::connect(&showButtonTimer, &QTimer::timeout, []() {
+        if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
+      });
+      showButtonTimer.start(100);
+    }
+  }
+  ~OmcBusyScope() {
+    g_omcCommandDepth--;
+    if (outer) {
+      showButtonTimer.stop();
+      omcClearNativeProgress();
+      if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(false);
+    }
+  }
+};
+}
+#endif // !__EMSCRIPTEN__
 
 /*!
  * \class OMCProxy
@@ -589,6 +823,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
+  omedit_install_pump();
 #endif
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
@@ -693,6 +928,9 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     }
   }
 #else
+  // Busy scope (outermost call) clears any stale cancel and disables all UI but
+  // the Cancel button, so omedit_pump_events can run the event loop safely.
+  OmcBusyScope omcBusy;
   if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;

@@ -28,7 +28,7 @@
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use core::ffi::c_void;
 
 // `threadData_t` is 304 bytes in the current runtime; over-allocate generously
@@ -44,7 +44,7 @@ const THREADDATA_SIZE: usize = 4096;
 // ---------------------------------------------------------------------------
 #[cfg(unix)]
 pub(crate) mod dl {
-    use anyhow::{Result, bail};
+    use metamodelica::Result;
     use core::ffi::c_void;
     use libc::c_int;
     use std::ffi::{CStr, CString};
@@ -70,11 +70,11 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
-        let c = CString::new(path)?;
+        let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         unsafe { libc::dlerror() }; // clear any stale error
         let h = unsafe { libc::dlopen(c.as_ptr(), FLAGS) };
         if h.is_null() {
-            bail!("dlopen `{path}`: {}", last_error());
+            return Err("dlopen `{path}`: {}");
         }
         Ok(h as usize)
     }
@@ -84,7 +84,7 @@ pub(crate) mod dl {
         unsafe { libc::dlerror() };
         let h = unsafe { libc::dlopen(std::ptr::null(), FLAGS) };
         if h.is_null() {
-            bail!("dlopen process: {}", last_error());
+            return Err("dlopen process: {}");
         }
         Ok(h as usize)
     }
@@ -121,7 +121,7 @@ pub(crate) mod dl {
 
 #[cfg(windows)]
 pub(crate) mod dl {
-    use anyhow::{Result, bail};
+    use metamodelica::Result;
     use core::ffi::{c_char, c_void};
     use std::ffi::CString;
 
@@ -149,10 +149,10 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
-        let c = CString::new(path)?;
+        let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         let h = unsafe { LoadLibraryA(c.as_ptr()) };
         if h.is_null() {
-            bail!("LoadLibrary `{path}`: {}", last_error());
+            return Err("LoadLibrary `{path}`: {}");
         }
         Ok(h as usize)
     }
@@ -160,7 +160,7 @@ pub(crate) mod dl {
     pub fn open_self() -> Result<usize> {
         let h = unsafe { GetModuleHandleA(std::ptr::null()) };
         if h.is_null() {
-            bail!("GetModuleHandle(process): {}", last_error());
+            return Err("GetModuleHandle(process): {}");
         }
         Ok(h as usize)
     }
@@ -369,8 +369,8 @@ pub fn load_library(path: &str, relative: bool, debug: bool) -> Result<i32> {
 /// point) inside a loaded library and return a handle to it.
 pub fn lookup_function(lib: i32, name: &str) -> Result<i32> {
     let mut reg = REGISTRY.lock().unwrap();
-    let handle = *reg.libs.get(&lib).ok_or_else(|| anyhow::anyhow!("lookupFunction: invalid library handle {lib}"))?;
-    let addr = dlsym_addr(handle, name).ok_or_else(|| anyhow::anyhow!("lookupFunction: `{name}` not found: {}", dl::last_error()))?;
+    let handle = *reg.libs.get(&lib).ok_or_else(|| "lookupFunction: invalid library handle {lib}")?;
+    let addr = dlsym_addr(handle, name).ok_or_else(|| "lookupFunction: `{name}` not found: {}")?;
     let idx = reg.next_func;
     reg.next_func += 1;
     reg.funcs.insert(idx, addr);
@@ -397,7 +397,7 @@ pub fn free_library(lib: i32, _debug: bool) -> Result<()> {
 
 /// Address of the `in_*` entry point behind a function handle.
 pub fn function_addr(func: i32) -> Result<usize> {
-    REGISTRY.lock().unwrap().funcs.get(&func).copied().ok_or_else(|| anyhow::anyhow!("executeFunction: invalid function handle {func}"))
+    REGISTRY.lock().unwrap().funcs.get(&func).copied().ok_or_else(|| "executeFunction: invalid function handle {func}")
 }
 
 /// Resolve a symbol from the loaded C runtime (e.g. `mmc_mk_*`,
@@ -472,9 +472,9 @@ fn ensure_runtime(reg: &mut Registry) -> Result<()> {
     if reg.inited {
         return Ok(());
     }
-    let &lib = reg.libs.values().next().ok_or_else(|| anyhow::anyhow!("executeFunction: no library loaded"))?;
-    let mmc_init = dlsym_addr(lib, "mmc_init").ok_or_else(|| anyhow::anyhow!("runtime symbol `mmc_init` not found"))?;
-    let gc_alloc = dlsym_addr(lib, "GC_malloc_uncollectable").ok_or_else(|| anyhow::anyhow!("runtime symbol `GC_malloc_uncollectable` not found"))?;
+    let &lib = reg.libs.values().next().ok_or_else(|| "executeFunction: no library loaded")?;
+    let mmc_init = dlsym_addr(lib, "mmc_init").ok_or_else(|| "runtime symbol `mmc_init` not found")?;
+    let gc_alloc = dlsym_addr(lib, "GC_malloc_uncollectable").ok_or_else(|| "runtime symbol `GC_malloc_uncollectable` not found")?;
     // Pin the runtime shared object: locate it from `mmc_init`'s address and
     // re-open it so later closes of function libraries leave the GC heap and
     // `threadData` valid.
@@ -485,7 +485,7 @@ fn ensure_runtime(reg: &mut Registry) -> Result<()> {
         let alloc: extern "C" fn(usize) -> *mut c_void = std::mem::transmute(gc_alloc);
         let td = alloc(THREADDATA_SIZE);
         if td.is_null() {
-            bail!("executeFunction: threadData allocation failed");
+            return Err("executeFunction: threadData allocation failed");
         }
         std::ptr::write_bytes(td as *mut u8, 0, THREADDATA_SIZE);
         reg.thread_data = td as usize;

@@ -365,7 +365,9 @@ public
     Real clock_time;
     tuple<Integer, Integer> varSizes, eqnSizes;
   algorithm
+    System.reportProgress(-1, 4) "PHASE_BACKEND";
     for module in modules loop
+      Error.checkCancel();
       (func, name) := module;
       if  Flags.isSet(Flags.FAILTRACE) then
         debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
@@ -1519,12 +1521,12 @@ protected
       then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables, complete));
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
-        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables, complete = complete)) for tpl in call.iters);
         exp.call := call;
       then exp;
 
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
-        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
+        call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables, complete = complete)) for tpl in call.iters);
         exp.call := call;
       then exp;
 
@@ -1624,12 +1626,16 @@ protected
   function lowerInstNode
     input output InstNode node;
     input VariablePointers variables;
+    input Boolean complete = true;
   protected
     ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
     Pointer<Variable> var;
   algorithm
-    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), SOME(sourceInfo()));
-    node := InstNode.VAR_NODE(InstNode.name(node), var);
+    try
+      var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
+      node := InstNode.VAR_NODE(InstNode.name(node), var);
+    else
+    end try;
   end lowerInstNode;
 
 public

@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write as _;
 
-use anyhow::{Context, Result};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 #[derive(Default)]
@@ -120,7 +120,7 @@ pub fn saveAndClearBuf() -> Result<i32> {
 pub fn writeBuf(filename: ArcStr) -> Result<()> {
     let contents = with(|s| s.buf.clone());
     openmodelica_wasi::fs::write(filename.as_str(), contents.as_bytes())
-        .with_context(|| format!("Print.writeBuf: write failed for {filename}"))?;
+        .map_err(|_| "Print.writeBuf: write failed for {filename}")?;
     Ok(())
 }
 
@@ -207,7 +207,7 @@ pub fn writeBufConvertLines(filename: ArcStr) -> Result<()> {
         .create(true)
         .truncate(true)
         .open(filename.as_str())
-        .with_context(|| format!("Print.writeBufConvertLines: cannot open {filename}"))?;
+        .map_err(|_| "Print.writeBufConvertLines: cannot open {filename}")?;
     // The C version destructively clears the print buffer on the paths that
     // reach the line-by-line loop (and on the empty-buffer early exit the
     // buffer is empty anyway); it only stays intact when the file cannot be
@@ -215,7 +215,7 @@ pub fn writeBufConvertLines(filename: ArcStr) -> Result<()> {
     let contents = with(|s| std::mem::take(&mut s.buf));
     if contents.is_empty() {
         // C: "nothing to write to file, just close it and return 1"
-        anyhow::bail!("Print.writeBufConvertLines: nothing to write to {filename}");
+        return Err("Print.writeBufConvertLines: nothing to write to {filename}");
     }
 
     let mut out = String::with_capacity(contents.len() + contents.len() / 8);
@@ -270,6 +270,6 @@ pub fn writeBufConvertLines(filename: ArcStr) -> Result<()> {
     }
 
     f.write_all(out.as_bytes())
-        .with_context(|| format!("Print.writeBufConvertLines: write failed for {filename}"))?;
+        .map_err(|_| "Print.writeBufConvertLines: write failed for {filename}")?;
     Ok(())
 }

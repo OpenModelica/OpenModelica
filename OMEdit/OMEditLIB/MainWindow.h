@@ -60,6 +60,7 @@ extern "C" {
 #include <QMainWindow>
 #include <QDialog>
 #include <QProgressBar>
+#include <QToolButton>
 #include <QMimeData>
 #include <QDomDocument>
 #include <QStackedWidget>
@@ -156,6 +157,8 @@ public:
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
+  void showCancelOperationButton(bool show);
+  void setOmcOperationRunning(bool running);
   Label* getPositionLabel() {return mpPositionLabel;}
   bool isModelingPerspectiveActive();
   bool isPlottingPerspectiveActive();
@@ -320,11 +323,13 @@ private:
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
-  QProgressBar *mpProgressBar;
+  QProgressBar *mpProgressBar = nullptr;
+  QToolButton *mpCancelOperationButton = nullptr;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
-  StatusBar *mpStatusBar;
-  QTimer *mpAutoSaveTimer;
+  StatusBar *mpStatusBar = nullptr;
+  QTimer *mpAutoSaveTimer = nullptr;
+  bool mAutoSaveWasActive = false;
   QShortcut *mpSearchBrowserShortcut;
   // File Menu
   // Modelica File Actions
@@ -585,6 +590,7 @@ public slots:
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
 private slots:
+  void cancelOmcOperation();
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);

@@ -2,7 +2,7 @@
 //! the crate is built without the `jit` feature. Mirrors the public surface the
 //! parent `CodegenWasmJit` module uses, reporting the engine as not built in.
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 use super::SimModel;
 
@@ -21,19 +21,19 @@ pub(super) struct RunResult {
 }
 
 pub(super) fn runtime_module() -> Result<&'static Module> {
-    bail!("{NO_ENGINE}")
+    return Err("{NO_ENGINE}")
 }
 
 pub(super) fn compile_model_module(_wasm: &[u8]) -> Result<Module> {
-    bail!("{NO_ENGINE}")
+    return Err("{NO_ENGINE}")
 }
 
 pub(super) fn start_runtime_compile() {}
 
 pub(super) fn take_compiled_model(_model: &SimModel) -> Result<Module> {
-    bail!("{NO_ENGINE}")
+    return Err("{NO_ENGINE}")
 }
 
 pub(super) fn run(_model: &SimModel) -> Result<RunResult> {
-    bail!("{NO_ENGINE}")
+    return Err("{NO_ENGINE}")
 }

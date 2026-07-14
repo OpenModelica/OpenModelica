@@ -9,7 +9,7 @@
 //   - realRangeSize: missing parentheses → `inStart/inStep` subtracted from `inStop`
 //                    instead of `(inStop-inStart)/inStep`
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::{ArcStr, literal};

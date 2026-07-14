@@ -18,6 +18,47 @@ extern "C" {
     fn console_log(s: &str);
     #[wasm_bindgen(js_namespace = console, js_name = error)]
     fn console_error(s: &str);
+    // Wall-clock (ms) for the simulation chunk budget; wasm has no `Instant`.
+    #[wasm_bindgen(js_namespace = performance, js_name = now)]
+    fn perf_now() -> f64;
+    // Host cancel poll (control block index 0, a cross-thread `SharedArrayBuffer`
+    // flag, OMEdit-wasm). Only called after `omc_enable_cancel_poll`, so the
+    // global need not exist otherwise.
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcPollCancel)]
+    fn omc_poll_cancel_js() -> i32;
+    // Host progress sink (control block indices 1/2). Only called after
+    // `omc_enable_progress_sink`, so the global need not exist otherwise.
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcReportProgress)]
+    fn omc_report_progress_js(permille: i32, phase: i32);
+}
+
+fn wall_ms() -> f64 {
+    perf_now()
+}
+
+fn poll_cancel() -> bool {
+    omc_poll_cancel_js() != 0
+}
+
+fn report_progress(permille: i32, phase: i32) {
+    omc_report_progress_js(permille, phase);
+}
+
+/// Enable the cross-thread cancel poll for any blocking omc call (simulate, and
+/// the frontend/loader/backend chokepoints). The worker must define
+/// `globalThis.__omcPollCancel` first (OMEdit-wasm); the standalone simulator
+/// cancels via `omc_sim_free` instead and doesn't call this.
+#[wasm_bindgen]
+pub fn omc_enable_cancel_poll() {
+    metamodelica::cancel::set_cancel_poll(poll_cancel);
+}
+
+/// Enable live progress reporting out of a blocking omc call: the runtime writes
+/// permille + phase into the shared control block via `globalThis.__omcReportProgress`
+/// (which the worker defines). The UI thread reads the block on its own timer.
+#[wasm_bindgen]
+pub fn omc_enable_progress_sink() {
+    metamodelica::cancel::set_progress_sink(report_progress);
 }
 
 // The compiler emits stdout/stderr in fragments (a `print` call need not end on
@@ -83,6 +124,9 @@ pub fn omc_init() -> bool {
     // Route `plot(...)` through the in-page charton renderer instead of spawning
     // the external OMPlot process (which does not exist on wasm).
     crate::wasm_plot::register();
+
+    // wasm has no `Instant`; give the sim driver a wall-clock for the chunk budget.
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_clock(wall_ms);
 
     // `-d=-buildExternalLibs`: never try to *build* an external "C" library's
     // Resources/BuildProjects (autotools) — impossible in-browser, and it would
@@ -367,4 +411,54 @@ pub fn omc_simulate(
             None => "Error: simulation panicked".to_owned(),
         },
     }
+}
+
+// --- resumable / cancellable simulation --------------------------------------
+// The blocking `omc_simulate` can't be interrupted, and killing the worker loses the
+// loaded library + warmed JIT. Instead the worker builds the model then drives the
+// run in time-bounded chunks (`omc_sim_start`/`omc_sim_advance`/`omc_sim_free`),
+// draining a cancel between chunks; results reach the page via the `omc_sim_*`
+// getters. See HANDOFF-sim-cancel.md.
+
+/// Start a resumable run of a model already built by `buildModel` (keyed by its
+/// `prefix`; `result_file` is where the `.mat` goes). `false` on failure — read
+/// `getErrorString()`.
+#[wasm_bindgen]
+pub fn omc_sim_start(prefix: &str, result_file: &str, simflags: &str) -> bool {
+    LAST_PANIC.with(|p| *p.borrow_mut() = None);
+    let run = || openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_start(prefix, result_file, simflags);
+    matches!(catch_unwind(AssertUnwindSafe(run)), Ok(Ok(())))
+}
+
+/// Integrate for about `budget_ms` of wall-clock, then return so the worker can
+/// yield. Codes: `0` running (call again), `1` done, `2` terminated (`terminate()`),
+/// `3` cancelled, `-1` error (read `getErrorString()`). On `1`/`2` the results are
+/// ready via the `omc_sim_*` getters and the `.mat` is written; on `3`/`-1`/`1`/`2`
+/// the session is freed.
+#[wasm_bindgen]
+pub fn omc_sim_advance(budget_ms: f64) -> i32 {
+    use openmodelica_codegen_wasm_jit::CodegenWasmJit::SimStatus;
+    LAST_PANIC.with(|p| *p.borrow_mut() = None);
+    let run = || openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_advance(budget_ms);
+    match catch_unwind(AssertUnwindSafe(run)) {
+        Ok(Ok(SimStatus::Running)) => 0,
+        Ok(Ok(SimStatus::Done)) => 1,
+        Ok(Ok(SimStatus::Terminated)) => 2,
+        Ok(Ok(SimStatus::Cancelled)) => 3,
+        _ => -1,
+    }
+}
+
+/// Drop the active simulation session (freeing its external objects). Used by the
+/// worker's Cancel path; safe with no active session.
+#[wasm_bindgen]
+pub fn omc_sim_free() {
+    let _ = catch_unwind(AssertUnwindSafe(openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_free));
+}
+
+/// Request cancellation of the running simulation (mirrors the native C ABI). The
+/// simulator cancels via `omc_sim_free` instead; this is used by the SAB cancel path.
+#[wasm_bindgen]
+pub fn omc_request_cancel() {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::request_cancel();
 }

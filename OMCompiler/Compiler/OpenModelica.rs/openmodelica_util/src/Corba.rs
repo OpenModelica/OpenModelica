@@ -50,7 +50,7 @@
  *
  */
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 /// `Corba_haveCorba` — the stub build reports CORBA unavailable.
@@ -59,25 +59,25 @@ pub fn haveCorba() -> bool {
 }
 
 pub(crate) fn setObjectReferenceFilePath(_inObjectReferenceFilePath: ArcStr) -> Result<()> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 pub(crate) fn setSessionName(_inSessionName: ArcStr) -> Result<()> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 pub fn initialize() -> Result<()> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 pub fn waitForCommand() -> Result<ArcStr> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 pub fn sendreply(_inString: ArcStr) -> Result<()> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 pub fn close() -> Result<()> {
-    bail!("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
+    return Err("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }

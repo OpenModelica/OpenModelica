@@ -12,7 +12,7 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::literal;
 use openmodelica_ast::Absyn;
 use crate::AbsynUtil;

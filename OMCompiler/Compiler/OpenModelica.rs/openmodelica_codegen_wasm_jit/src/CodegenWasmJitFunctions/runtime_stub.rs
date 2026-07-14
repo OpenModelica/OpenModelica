@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 use metamodelica::List;
 use openmodelica_frontend_types::Values;
@@ -16,5 +16,5 @@ pub(super) fn load_and_execute(
     _name: &str,
     _args: &Arc<List<Arc<Values::Value>>>,
 ) -> Result<Arc<Values::Value>> {
-    bail!("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
+    return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
 }

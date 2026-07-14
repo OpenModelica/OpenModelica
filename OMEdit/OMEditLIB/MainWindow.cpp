@@ -235,6 +235,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpProgressBar->setMaximumWidth(300);
   mpProgressBar->setTextVisible(false);
   mpProgressBar->setVisible(false);
+  // Cancel button for a running omc operation (parse/instantiate/backend/sim)
+  mpCancelOperationButton = new QToolButton;
+  mpCancelOperationButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCancelOperationButton->setToolTip(tr("Cancel the running operation"));
+  mpCancelOperationButton->setAutoRaise(true);
+  mpCancelOperationButton->setVisible(false);
+  connect(mpCancelOperationButton, SIGNAL(clicked()), SLOT(cancelOmcOperation()));
   // Position Label
   mpPositionLabel = new Label;
   mpPositionLabel->setMinimumWidth(75);
@@ -270,6 +277,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // add items to statusbar
   mpStatusBar->addPermanentWidget(mpProgressBar);
+  mpStatusBar->addPermanentWidget(mpCancelOperationButton);
   mpStatusBar->addPermanentWidget(mpPositionLabel);
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
@@ -3637,6 +3645,84 @@ void MainWindow::toggleAutoSave()
   } else {
     mpAutoSaveTimer->stop();
   }
+}
+
+// Cancel setter, one per backend. The compiler polls this flag at its chokepoints
+// (System.checkCancel) and unwinds cooperatively; nothing is force-terminated.
+// extern "C": these are C-linkage symbols (EM_JS / the omc C ABI), so the
+// declarations must not be C++-mangled or the reference won't resolve.
+extern "C" {
+#if defined(__EMSCRIPTEN__)
+void omedit_cancel_sim();                        // omc Web Worker: SharedArrayBuffer store (OMCProxy.cpp)
+#elif defined(OMC_RUST_ABI)
+void omc_compiler_request_cancel();              // Rust omc in-process (libOpenModelicaCompiler)
+#else
+void System_requestCancel();                     // classic C omc runtime
+#endif
+}
+
+/*!
+ * \brief MainWindow::showCancelOperationButton
+ * Shows or hides the status-bar Cancel button for a running omc operation.
+ */
+void MainWindow::showCancelOperationButton(bool show)
+{
+  // May be called by an omc command issued before the status bar is built.
+  if (mpCancelOperationButton) {
+    mpCancelOperationButton->setVisible(show);
+  }
+}
+
+/*!
+ * \brief MainWindow::setOmcOperationRunning
+ * Disables everything but the status-bar Cancel button for the duration of an
+ * omc command, so the pumped event loop (omedit_pump_events) can deliver the
+ * Cancel click without re-entering the non-reentrant compiler. Also parks the
+ * auto-save timer, which would otherwise fire an omc command mid-operation.
+ */
+void MainWindow::setOmcOperationRunning(bool running)
+{
+  const bool enabled = !running;
+  if (centralWidget()) {
+    centralWidget()->setEnabled(enabled);
+  }
+  if (menuBar()) {
+    menuBar()->setEnabled(enabled);
+  }
+  for (QToolBar *pToolBar : findChildren<QToolBar*>()) {
+    pToolBar->setEnabled(enabled);
+  }
+  for (QDockWidget *pDockWidget : findChildren<QDockWidget*>()) {
+    pDockWidget->setEnabled(enabled);
+  }
+  if (mpAutoSaveTimer) {
+    if (running) {
+      mAutoSaveWasActive = mpAutoSaveTimer->isActive();
+      mpAutoSaveTimer->stop();
+    } else if (mAutoSaveWasActive) {
+      mpAutoSaveTimer->start();
+    }
+  }
+  // The button is revealed by OmcBusyScope's delayed timer so quick commands
+  // don't flash it; here we only guarantee it is hidden once the op ends.
+  if (!running) {
+    showCancelOperationButton(false);
+  }
+}
+
+/*!
+ * \brief MainWindow::cancelOmcOperation
+ * Requests cancellation of the operation omc is currently running.
+ */
+void MainWindow::cancelOmcOperation()
+{
+#if defined(__EMSCRIPTEN__)
+  omedit_cancel_sim();
+#elif defined(OMC_RUST_ABI)
+  omc_compiler_request_cancel();
+#else
+  System_requestCancel();
+#endif
 }
 
 /*!

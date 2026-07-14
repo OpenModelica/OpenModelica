@@ -42,7 +42,6 @@ openmodelica_script_util.workspace=true
 openmodelica_susan = { workspace = true, optional = true }
 openmodelica_util.workspace=true
 openmodelica_util_datatypes_basic.workspace=true
-anyhow.workspace=true
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true

@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::literal;
 use metamodelica::*;
 use openmodelica_frontend_types::DAE;

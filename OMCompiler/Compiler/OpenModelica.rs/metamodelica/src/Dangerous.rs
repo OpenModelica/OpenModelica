@@ -1,7 +1,6 @@
 //! `MetaModelica.Dangerous` — bounds-check-skipping / destructive variants.
 
 use std::sync::Arc;
-use anyhow::{Result, bail};
 use arcstr::ArcStr;
 pub use crate::*;
 
@@ -167,7 +166,7 @@ pub fn listSetRest<T: Clone>(list: Arc<List<T>>, new_tail: Arc<List<T>>) -> Resu
     unsafe {
         match &mut *ptr {
             List::Cons { tail, .. } => { *tail = new_tail; Ok(()) }
-            List::Nil => bail!("listSetRest: called on Nil"),
+            List::Nil => return Err("listSetRest: called on Nil"),
         }
     }
 }
@@ -178,7 +177,7 @@ pub fn listSetFirst<T: Clone>(list: Arc<List<T>>, new_head: T) -> Result<()> {
     unsafe {
         match &mut *ptr {
             List::Cons { head, .. } => { *head = new_head; Ok(()) }
-            List::Nil => bail!("listSetFirst: called on Nil"),
+            List::Nil => return Err("listSetFirst: called on Nil"),
         }
     }
 }

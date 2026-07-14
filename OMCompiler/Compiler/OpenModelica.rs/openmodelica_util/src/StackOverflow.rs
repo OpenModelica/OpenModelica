@@ -37,7 +37,7 @@
 #![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
 
 use std::sync::Arc;
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::*; // Built-in types and functions
 use const_str;
@@ -69,7 +69,7 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
     if n.clone() == 3 {
         let (__pa0, __pa1) = ::match_deref::match_deref! { match &(strs.clone()) {
             Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa0, tail: Deref @ metamodelica::List::Cons { head: __pa1, tail: Deref @ metamodelica::List::Nil } } } => (__pa0.clone(), __pa1.clone()),
-            _ => bail!("pattern mismatch"),
+            _ => return Err("pattern mismatch"),
         } };
         so = __pa0.clone();
         fun = __pa1.clone();
@@ -79,7 +79,7 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
         if n.clone() == 3 {
             let (__pa3, __pa4) = ::match_deref::match_deref! { match &(strs.clone()) {
                 Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa3, tail: Deref @ metamodelica::List::Cons { head: __pa4, tail: Deref @ metamodelica::List::Nil } } } => (__pa3.clone(), __pa4.clone()),
-                _ => bail!("pattern mismatch"),
+                _ => return Err("pattern mismatch"),
             } };
             so = __pa3.clone();
             fun = __pa4.clone();

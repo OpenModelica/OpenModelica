@@ -312,6 +312,50 @@ extern void System_setUsesCardinality(int b)
   usesCardinality = b;
 }
 
+/* Cooperative cancellation. System_isCancelled is polled by the compiler
+ * (Error.checkCancel); System_requestCancel/System_clearCancel are the host
+ * (OMEdit) side. Progress is one-way, compiler → host. */
+extern int System_isCancelled()
+{
+  if (pumpCallback) {
+    pumpCallback();
+  }
+  return cancelRequested;
+}
+
+extern void System_setPumpCallback(void (*cb)(void))
+{
+  pumpCallback = cb;
+}
+
+extern void System_requestCancel()
+{
+  cancelRequested = 1;
+}
+
+extern void System_clearCancel()
+{
+  cancelRequested = 0;
+  progressPermille = -1;
+  progressPhase = 0;
+}
+
+extern void System_reportProgress(int permille, int phase)
+{
+  progressPermille = permille;
+  progressPhase = phase;
+}
+
+extern int System_progressPermille()
+{
+  return progressPermille;
+}
+
+extern int System_progressPhase()
+{
+  return progressPhase;
+}
+
 extern void* System_strtok(const char *str0, const char *delimit)
 {
   char *s;

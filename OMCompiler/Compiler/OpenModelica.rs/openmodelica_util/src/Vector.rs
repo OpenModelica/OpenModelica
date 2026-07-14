@@ -22,7 +22,7 @@
 #![allow(dead_code)]
 
 use std::sync::Arc;
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::{Array, List, stringDelimitList, cons, nil, listHead, listRest};
 
@@ -83,7 +83,7 @@ pub fn insert<T: Clone + 'static>(v: Arc<Vector<T>>, value: T, index: i32) -> Re
         return Ok(());
     }
     if index < 1 || index > sz {
-        bail!("Vector.insert: index {} out of bounds (size {})", index, sz);
+        return Err("Vector.insert: index {} out of bounds (size {})");
     }
     v.borrow_mut().insert(idx(index), value);
     Ok(())
@@ -153,7 +153,7 @@ pub fn remove<T: Clone + 'static>(v: Arc<Vector<T>>, index: i32) -> Result<()> {
     }
     // Match the MetaModelica check exactly (note: index < 0, not <= 0).
     if index < 0 || index > sz {
-        bail!("Vector.remove: index {} out of bounds (size {})", index, sz);
+        return Err("Vector.remove: index {} out of bounds (size {})");
     }
     data.remove(idx(index));
     Ok(())
@@ -163,7 +163,7 @@ pub fn update<T: Clone + 'static>(v: Arc<Vector<T>>, index: i32, value: T) -> Re
     let mut data = v.borrow_mut();
     let sz = data.len() as i32;
     if index <= 0 || index > sz {
-        bail!("Vector.update: index {} out of bounds (size {})", index, sz);
+        return Err("Vector.update: index {} out of bounds (size {})");
     }
     data[idx(index)] = value;
     Ok(())
@@ -177,7 +177,7 @@ pub fn get<T: Clone + 'static>(v: Arc<Vector<T>>, index: i32) -> Result<T> {
     let data = v.borrow();
     let sz = data.len() as i32;
     if index <= 0 || index > sz {
-        bail!("Vector.get: index {} out of bounds (size {})", index, sz);
+        return Err("Vector.get: index {} out of bounds (size {})");
     }
     Ok(data[idx(index)].clone())
 }
@@ -190,7 +190,7 @@ pub fn last<T: Clone + 'static>(v: Arc<Vector<T>>) -> Result<T> {
     let data = v.borrow();
     match data.last() {
         Some(e) => Ok(e.clone()),
-        None => bail!("Vector.last: empty vector"),
+        None => return Err("Vector.last: empty vector"),
     }
 }
 
@@ -224,7 +224,7 @@ pub fn fill<T: Clone + 'static>(v: Arc<Vector<T>>, value: T, from: i32, to: i32)
     let mut data = v.borrow_mut();
     let sz = data.len() as i32;
     if from < 1 || to < 1 || from > sz || to > sz {
-        bail!("Vector.fill: range [{}, {}] out of bounds (size {})", from, to, sz);
+        return Err("Vector.fill: range [{}, {}] out of bounds (size {})");
     }
     for i in from..=to {
         data[idx(i)] = value.clone();

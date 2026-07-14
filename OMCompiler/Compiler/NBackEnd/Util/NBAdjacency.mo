@@ -444,6 +444,7 @@ public
           sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
           rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vars.map, dep_map, sol_map, rep_set);
+          addInitialStartOccurrences(occ_set, dep_map, sol_map, rep_set, kind);
           equation_names[index] := Equation.getEqnName(eqn_ptr);
           occurrences[index]     := occ_set;
           dependencies[index]   := dep_map;
@@ -2452,6 +2453,43 @@ public
     Dependency.updateList(crefs, -1, false, dep_map);
     Solvability.updateList(crefs, Solvability.UNSOLVABLE(), sol_map);
   end updateConditionCrefs;
+
+  function addInitialStartOccurrences
+    "in the initial system start value dependencies must be included.
+      - x has a start value x.start which is unfixed
+      - x is iteration variable in an algebraic loop
+      - the equation for x.start has to be solved before x is used"
+    input UnorderedSet<ComponentRef> occs;
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    input UnorderedSet<ComponentRef> rep_set;
+    input Partition.Kind kind;
+  algorithm
+    // only do something if its an initial partition
+    if Partition.kindIsInitial(kind) then
+      for cref in UnorderedSet.toList(occs) loop
+        () := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
+          local
+            Pointer<Variable> start;
+            ComponentRef start_cref;
+
+          // only save the x -> x.start dependency not the other way around
+          case SOME(start) guard(BVariable.isStart(start)) algorithm
+            start_cref := BVariable.getVarName(start);
+            // add the start cref dependency in the same way the original variable occured
+            // but with UNSOLVABLE as it is only relevant for sorting and cannot be solved
+            UnorderedSet.add(start_cref, occs);
+            UnorderedMap.add(start_cref, UnorderedMap.getSafe(cref, dep_map, sourceInfo()), dep_map);
+            UnorderedMap.add(start_cref, Solvability.UNSOLVABLE(), sol_map);
+            if UnorderedSet.contains(cref, rep_set) then
+              UnorderedSet.add(start_cref, rep_set);
+            end if;
+          then ();
+          else ();
+        end match;
+      end for;
+    end if;
+  end addInitialStartOccurrences;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBAdjacency;

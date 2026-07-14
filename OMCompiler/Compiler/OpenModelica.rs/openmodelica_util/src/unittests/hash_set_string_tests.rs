@@ -17,7 +17,7 @@
 //   hashSetList  → all stored keys as a list
 //   addUnique    → inserts only when key is absent; fails if already present
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::{ArcStr, literal};

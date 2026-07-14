@@ -31,7 +31,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{anyhow, Context, Result};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use crate::Absyn;
@@ -99,14 +99,14 @@ fn report_syntax_messages(info_filename: &str) {
     }
 }
 
-/// Wrap [`parser::parse`]'s `Box<dyn Error>` into an `anyhow::Error` so
+/// Wrap [`parser::parse`]'s `Box<dyn Error>` into an `&'static str` so
 /// the MetaModelica-facing signatures (which return `anyhow::Result`)
 /// can use `?` directly. `filename` is the real path stored into SOURCEINFO;
 /// `info_filename` (the possibly testsuite-friendly name) is only used to
 /// display syntax errors — same split as the C parser's `filename_C` vs
 /// `filename_C_testsuiteFriendly` (Parser/parse.c).
 fn run_parse(src: &str, filename: &str, info_filename: &str, grammar: Grammar, readonly: bool, timestamp: f64) -> Result<Absyn::Program> {
-    let result = parser::parse(src, filename, info_filename, grammar, readonly, timestamp).map_err(|e| anyhow!(e.to_string()));
+    let result = parser::parse(src, filename, info_filename, grammar, readonly, timestamp).map_err(|_| "error");
     report_syntax_messages(info_filename);
     result
 }
@@ -186,17 +186,21 @@ pub fn parse(
     _libraryPath: ArcStr,
     _lveInstance: Option<i32>,
 ) -> Result<Absyn::Program> {
+    // Loader cancel chokepoint: loadModel/loadFile/installPackage parse each file
+    // through here, so a per-file check makes the whole parse phase cancellable.
+    metamodelica::cancel::bail_if_cancelled()?;
+    metamodelica::cancel::report_progress(
+        metamodelica::cancel::PROGRESS_INDETERMINATE,
+        metamodelica::cancel::PHASE_PARSE,
+    );
     // The Rust parser operates on UTF-8 `&str` directly.  Anything else
     // would need transcoding via the `encoding_rs` crate; bail explicitly
     // rather than silently misinterpreting the bytes.
     if !encoding.is_empty() && !encoding.eq_ignore_ascii_case("UTF-8") && !encoding.eq_ignore_ascii_case("UTF8") {
-        return Err(anyhow!(
-            "ParserExt::parse: only UTF-8 input is supported, got encoding {:?}",
-            encoding.as_str()
-        ));
+        return Err("ParserExt::parse: only UTF-8 input is supported, got encoding {:?}");
     }
     let (src, orig_bytes) = read_source_file(filename.as_str())
-        .with_context(|| format!("ParserExt::parse: cannot read {filename}"))?;
+        .map_err(|_| "ParserExt::parse: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     parser::set_pure_impure_as_ident(languageStandardInt < 33 && strict);
     // Like parseFile in Parser/parse.c: classes parsed from a file the user
@@ -239,11 +243,11 @@ pub fn parseexp(
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
     let (src, orig_bytes) = read_source_file(filename.as_str())
-        .with_context(|| format!("ParserExt::parseexp: cannot read {filename}"))?;
+        .map_err(|_| "ParserExt::parseexp: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let readonly = !regular_file_writable(filename.as_str());
     parser::set_non_utf8_source_bytes(orig_bytes);
-    let result = parser::parse_statements(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str())).map_err(|e| anyhow!(e.to_string()));
+    let result = parser::parse_statements(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str())).map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     parser::set_non_utf8_source_bytes(None);
     result
@@ -257,7 +261,7 @@ pub fn parsestringexp(
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
-    let result = parser::parse_statements(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp()).map_err(|e| anyhow!(e.to_string()));
+    let result = parser::parse_statements(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp()).map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -272,7 +276,7 @@ pub fn stringPath(
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_path(r#str.as_str(), infoFilename.as_str(), grammar)
         .map(Arc::new)
-        .map_err(|e| anyhow!(e.to_string()));
+        .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -287,7 +291,7 @@ pub fn stringCref(
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_cref(r#str.as_str(), infoFilename.as_str(), grammar)
         .map(Arc::new)
-        .map_err(|e| anyhow!(e.to_string()));
+        .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -302,7 +306,7 @@ pub fn stringMod(
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_modification(r#str.as_str(), infoFilename.as_str(), grammar)
         .map(Arc::new)
-        .map_err(|e| anyhow!(e.to_string()));
+        .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -317,7 +321,7 @@ pub fn stringEq(
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_equation(r#str.as_str(), infoFilename.as_str(), grammar)
         .map(Arc::new)
-        .map_err(|e| anyhow!(e.to_string()));
+        .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }

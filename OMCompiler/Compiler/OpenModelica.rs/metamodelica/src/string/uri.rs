@@ -1,7 +1,7 @@
 //! `modelica://` / `file://` URI resolution (`uriToFilename`).
 
 use std::cell::RefCell;
-use anyhow::Result;
+use crate::Result;
 use arcstr::ArcStr;
 use crate::Array;
 use crate::omc_assert;

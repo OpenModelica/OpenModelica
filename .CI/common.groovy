@@ -3,6 +3,10 @@ def isWindows() {
   return !isUnix()
 }
 
+def isMac() {
+  return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
 
@@ -321,26 +325,30 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         set MSYS2_PATH_TYPE=inherit
         %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
       """)
+      sanityCheck('build', true)
     }
   }
-  else {
-    def uname = sh script: 'uname', returnStdout: true
-    def isMac = uname.startsWith("Darwin")
-    def envOverrides = isMac ? ["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"] : []
-    withEnv (envOverrides) {
-      if (isMac) {
-        sh "echo PATH: $PATH"
-      }
+  else if (isMac()) {
+    withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+      sh "echo PATH: $PATH"
       sh "mkdir ./build_cmake"
       sh "${cmake_exe} --version"
       sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
       sh "build/bin/omc --version"
+      sanityCheck('build', true)
     }
   }
-
-  sanityCheck('build', true)
+  else {
+    sh "mkdir ./build_cmake"
+    sh "${cmake_exe} --version"
+    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+    sh "build/bin/omc --version"
+    sanityCheck('build', true)
+  }
 }
 
 // sccache config for the cargo builds: a shared S3 (MinIO) compile cache at

@@ -8,7 +8,7 @@
 // from `openmodelica_wasi::wasi`; each `mod` below re-imports them via
 // `use super::*`.
 
-use anyhow::{Result, anyhow};
+use metamodelica::Result;
 
 pub use openmodelica_wasi::wasi::*;
 
@@ -43,7 +43,7 @@ mod wasmtime_impl {
     /// Register the `wasi_snapshot_preview1` imports into `linker`.
     pub fn add_to_linker(linker: &mut Linker) -> Result<()> {
         let m = "wasi_snapshot_preview1";
-        let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| r.map(|_| ()).map_err(|e| anyhow!("{e:?}"));
+        let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| r.map(|_| ()).map_err(|e| "{e:?}");
 
         wt(linker.func_wrap(m, "fd_write", |mut c: Caller<'_, WasiCtx>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
@@ -175,21 +175,21 @@ mod wasmtime_impl {
     /// `openmodelica_wasi`, with relative paths keyed under `cwd`.
     pub fn run_command(wasm: &[u8], cwd: &str, args: Vec<String>) -> Result<u32> {
         let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, wasm).map_err(|e| anyhow!("{e:?}"))?;
+        let module = wasmtime::Module::new(&engine, wasm).map_err(|e| "{e:?}")?;
         let mut linker = Linker::new(&engine);
         add_to_linker(&mut linker)?;
         let mut store = wasmtime::Store::new(&engine, WasiCtx::new(cwd, args));
-        let instance = linker.instantiate(&mut store, &module).map_err(|e| anyhow!("{e:?}"))?;
+        let instance = linker.instantiate(&mut store, &module).map_err(|e| "{e:?}")?;
         let start = instance
             .get_typed_func::<(), ()>(&mut store, "_start")
-            .map_err(|e| anyhow!("module has no `_start`: {e:?}"))?;
+            .map_err(|e| "module has no `_start`: {e:?}")?;
         match start.call(&mut store, ()) {
             Ok(()) => Ok(0),
             // A `proc_exit` unwinds as an error after setting `exit_code`; that is
             // a normal termination, not a trap.
             Err(e) => match store.data().exit_code {
                 Some(code) => Ok(code),
-                None => Err(anyhow!("wasi command trapped: {e:?}")),
+                None => Err("wasi command trapped: {e:?}"),
             },
         }
     }
@@ -395,23 +395,23 @@ mod wasmer_impl {
         // (works on both the native `sys` and the worker `js` backends, where
         // `Store::default()` is not available).
         let engine = wasmer::Engine::default();
-        let module = Module::new(&engine, wasm).map_err(|e| anyhow!("{e:?}"))?;
+        let module = Module::new(&engine, wasm).map_err(|e| "{e:?}")?;
         let mut store = Store::new(engine);
         let env = FunctionEnv::new(&mut store, Env { ctx: WasiCtx::new(cwd, args), memory: None });
         let mut imports = Imports::new();
         add_to_imports(&mut store, &env, &mut imports);
-        let instance = Instance::new(&mut store, &module, &imports).map_err(|e| anyhow!("{e:?}"))?;
-        let memory = instance.exports.get_memory("memory").map_err(|e| anyhow!("no `memory` export: {e:?}"))?.clone();
+        let instance = Instance::new(&mut store, &module, &imports).map_err(|e| "{e:?}")?;
+        let memory = instance.exports.get_memory("memory").map_err(|e| "no `memory` export: {e:?}")?.clone();
         env.as_mut(&mut store).memory = Some(memory);
         let start = instance
             .exports
             .get_typed_function::<(), ()>(&store, "_start")
-            .map_err(|e| anyhow!("module has no `_start`: {e:?}"))?;
+            .map_err(|e| "module has no `_start`: {e:?}")?;
         match start.call(&mut store) {
             Ok(()) => Ok(0),
             Err(e) => match env.as_ref(&store).ctx.exit_code {
                 Some(code) => Ok(code),
-                None => Err(anyhow!("wasi command trapped: {e:?}")),
+                None => Err("wasi command trapped: {e:?}"),
             },
         }
     }

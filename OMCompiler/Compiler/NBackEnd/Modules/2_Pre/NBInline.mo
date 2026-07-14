@@ -277,7 +277,8 @@ protected
     // collect new iterators from replaced function bodies
     eqData  := EqData.map(eqData, function BackendDAE.lowerEquationIterators(variables = variables, set = set));
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
-    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
+    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true),
+        SOME(function BackendDAE.lowerComponentReference(variables = variables, complete = true)));
   end inline;
 
 // =========================================================================
