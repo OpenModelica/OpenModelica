@@ -29,9 +29,9 @@ diffSimulationResults("AliasCyclic1_res.mat", "ReferenceFiles/AliasCyclic1_res.m
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) -b = c ($RES_SIM_0)
-// 	[SCAL] (1) -(2 * b + a) = -1 ($RES_SIM_1)
-// 	[SCAL] (1) -a = 1 + c ($RES_SIM_2)
+// 	[SCAL] (1) -b = c; ($RES_SIM_0)
+// 	[SCAL] (1) -(2 * b + a) = -1; ($RES_SIM_1)
+// 	[SCAL] (1) -a = 1 + c; ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
