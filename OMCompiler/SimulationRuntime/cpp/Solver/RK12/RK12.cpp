@@ -198,7 +198,7 @@ void RK12::initialize()
 
         memset(_f0,0,_dimSys*sizeof(double));
         memset(_f1,0,_dimSys*sizeof(double));
-        memset(_zeroSignIter,0,_dimSys*sizeof(int));
+        memset(_zeroSignIter,0,_dimZeroFunc*sizeof(int));
 
         memset(_activeStates,0,_dimSys*sizeof(bool));
 
