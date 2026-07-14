@@ -5920,14 +5920,34 @@ end initialResizableAnalyticJacobians;
 
 template resizableSparsityRowCount(SparsityRow row, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 "Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
- depsCode is computed once from dependencies (in SPARSITY_ROW scope) then reused per solved_cref."
+ For REGULAR 1D WHOLEDIM seeds (dep.kinds=[false], not rep) inside WHOLEDIM/multi-dim-WHOLEDIM sc,
+ emits a single col_counts[v.index + _wr_k]++ (diagonal). All other cases use REDUCTION (full loop)."
 ::=
 match row
-  case SPARSITY_ROW() then
+  // Explicitly bind 'dependencies' as 'deps' so it is accessible inside nested list iterators.
+  // Susan does not propagate implicit record-field access into nested lambdas.
+  case SPARSITY_ROW(dependencies=deps) then
     let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
     let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
-    let depsCode = (dependencies |> (seed, _, _) => resizableColCount(seed, context, &preExp, &varDecls, &auxFunction) ;separator="\n")
     let bodyCode = (solved_crefs |> sc hasindex k =>
+      // depsCode: dep-aware; for REGULAR 1D WHOLEDIM seeds uses resizableColCountRegular(_wr<%k%>).
+      // Dep/rep condition checked inline; only valid where the outer _wr<%k%> loop variable is in scope.
+      let depsCode = (deps |> (seed, dep, rep) =>
+        match dep
+        case DEPENDENCY(kinds=kinds) then
+          if not rep then
+            if not listEmpty(kinds) then
+              if not listHead(kinds) then
+                match crefSubs(seed)
+                case {WHOLEDIM()} then resizableColCountRegular(seed, k, context, &preExp, &varDecls, &auxFunction)
+                else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+              else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+            else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+          else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+        else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+      ;separator="\n")
+      // depsCodeReduced: always REDUCTION; used for SLICE sc (column alignment differs) and non-loop cases
+      let depsCodeReduced = (deps |> (seed, _, _) => resizableColCount(seed, context, &preExp, &varDecls, &auxFunction) ;separator="\n")
       match crefSubs(sc)
         case {WHOLEDIM()} then
           match context
@@ -5957,12 +5977,12 @@ match row
               {
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
-                  <%depsCode%>
+                  <%depsCodeReduced%>
                 }
               }
               >>
-            else depsCode
-          else depsCode
+            else depsCodeReduced
+          else depsCodeReduced
         else
           match listReverse(crefSubs(sc))
           case WHOLEDIM() :: _ then
@@ -5981,7 +6001,7 @@ match row
                 >>
               else depsCode
             else depsCode
-          else depsCode
+          else depsCodeReduced
     ;separator="\n")
     let scNames = (solved_crefs |> sc => System.stringReplace(System.stringReplace(crefStrNoUnderscore(sc), "/*", ""), "*/", "") ;separator=", ")
     if bodyCode then
@@ -5993,6 +6013,24 @@ match row
       >>
     else ''
 end resizableSparsityRowCount;
+
+template resizableColCountRegular(ComponentRef seed, Integer k, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+"Count phase for a REGULAR 1D whole-array seed: emit col_counts[v.index + _wr<%k%>]++ (one
+ column aligned with the outer row-loop variable _wr<%k%>). Only call when dep.kinds=[false]
+ and not rep — the caller is responsible for checking those conditions inline."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarFromHT(crefStripSubs(seed), jacHT)
+    case v as SIMVAR() then
+      let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
+      <<
+      <%seedComment%>
+      col_counts[<%v.index%> + _wr<%k%>]++;
+      >>
+    else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+  else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+end resizableColCountRegular;
 
 template resizableColCount(ComponentRef seed, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 "Increment col_counts for one dependency cref."
@@ -6086,7 +6124,25 @@ template resizableFillDepsForRow(SparsityRow row, Integer k, ComponentRef sc, Co
 ::=
 match row
   case SPARSITY_ROW(dependencies=deps) then
-    let depsWhole = (deps |> (seed, _, _) => resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+    // depsWholeDep: dep-aware fill; for REGULAR 1D WHOLEDIM seeds uses resizableColFillRegular
+    // (single entry at _wr<%k%> offset). Dep/rep condition checked inline.
+    // Only valid where _wr<%k%> is in scope (WHOLEDIM sc and multi-dim WHOLEDIM sc).
+    let depsWholeDep = (deps |> (seed, dep, rep) =>
+      match dep
+      case DEPENDENCY(kinds=kinds) then
+        if not rep then
+          if not listEmpty(kinds) then
+            if not listHead(kinds) then
+              match crefSubs(seed)
+              case {WHOLEDIM()} then resizableColFillRegular(seed, 'row_<%k%>', k, context, &preExp, &varDecls, &auxFunction, spPattern)
+              else resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+            else resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+          else resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+        else resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+      else resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern)
+    ;separator="\n")
+    // depsWholeReduced: always REDUCTION; used for SLICE sc where column ≠ _wr<%k%>.
+    let depsWholeReduced = (deps |> (seed, _, _) => resizableColFill(seed, 'row_<%k%>', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
     match crefSubs(sc)
       case {WHOLEDIM()} then
         match context
@@ -6099,7 +6155,7 @@ match row
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
                 unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
-                <%depsWhole%>
+                <%depsWholeDep%>
               }
             }
             >>
@@ -6118,7 +6174,7 @@ match row
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
                 unsigned int row_<%k%> = <%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
-                <%depsWhole%>
+                <%depsWholeReduced%>
               }
             }
             >>
@@ -6148,7 +6204,7 @@ match row
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
                   unsigned int row_<%k%> = <%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
-                  <%depsWhole%>
+                  <%depsWholeDep%>
                 }
               }
               >>
@@ -6164,6 +6220,25 @@ match row
             else ''
           else ''
 end resizableFillDepsForRow;
+
+
+template resizableColFillRegular(ComponentRef seed, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
+"Fill phase for a REGULAR 1D whole-array seed: emit a single diagonal entry
+ spPattern->index[col_fill[v.index + _wr<%k%>]++] = row. Only call when dep.kinds=[false]
+ and not rep — the caller is responsible for checking those conditions inline."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarFromHT(crefStripSubs(seed), jacHT)
+    case v as SIMVAR() then
+      let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
+      <<
+      <%seedComment%>
+      <%spPattern%>->index[col_fill[<%v.index%> + _wr<%k%>]++] = <%rowExpr%>;
+      >>
+    else resizableColFill(seed, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+  else resizableColFill(seed, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
+end resizableColFillRegular;
 
 template resizableColFill(ComponentRef seed, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
