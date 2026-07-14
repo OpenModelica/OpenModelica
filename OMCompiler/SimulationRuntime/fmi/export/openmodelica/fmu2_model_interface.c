@@ -567,68 +567,58 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     return NULL;
   }
   comp = (ModelInstance *)functions->allocateMemory(1, sizeof(ModelInstance));
-  if (comp) {
-    DATA* fmudata = NULL;
-    MODEL_DATA* modelData = NULL;
-    SIMULATION_INFO* simInfo = NULL;
-    threadData_t *threadData = NULL;
-    int i;
-
-    comp->state = model_state_start_end;
-    comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
-    comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
-    comp->functions = (fmi2CallbackFunctions*)functions->allocateMemory(1, sizeof(fmi2CallbackFunctions));
-    fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
-    modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
-    simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
-    fmudata->modelData = modelData;
-    fmudata->simulationInfo = simInfo;
-
-    threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
-    memset(threadData, 0, sizeof(threadData_t));
-    /*
-    pthread_key_create(&fmu2_thread_data_key,NULL);
-    pthread_setspecific(fmu2_thread_data_key, threadData);
-    */
-
-    comp->threadData = threadData;
-    comp->threadDataParent = threadDataParent;
-    comp->fmuData = fmudata;
-    threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
-    if (!comp->fmuData) {
-      functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Could not initialize the global data structure file.");
-      functions->freeMemory(threadData);
-      functions->freeMemory(simInfo);
-      functions->freeMemory(modelData);
-      functions->freeMemory(fmudata);
-      functions->freeMemory(comp->functions);
-      functions->freeMemory(comp->GUID);
-      functions->freeMemory(comp->instanceName);
-      functions->freeMemory(comp);
-      return NULL;
-    }
-    // set all categories to on or off. fmi2SetDebugLogging should be called to choose specific categories.
-    for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
-      comp->logCategories[i] = loggingOn;
-    }
-  }
-
-  if (!comp || !comp->instanceName || !comp->GUID || !comp->functions || !comp->fmuData || !comp->fmuData->modelData || !comp->fmuData->simulationInfo || !comp->threadData) {
+  if (!comp) {
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
-    if (comp) {
-      if (comp->threadData) functions->freeMemory(comp->threadData);
-      if (comp->fmuData) {
-        if (comp->fmuData->simulationInfo) functions->freeMemory(comp->fmuData->simulationInfo);
-        if (comp->fmuData->modelData) functions->freeMemory(comp->fmuData->modelData);
-        functions->freeMemory(comp->fmuData);
-      }
-      if (comp->functions) functions->freeMemory(comp->functions);
-      if (comp->GUID) functions->freeMemory((void*)comp->GUID);
-      if (comp->instanceName) functions->freeMemory((void*)comp->instanceName);
-      functions->freeMemory(comp);
-    }
     return NULL;
   }
+
+  DATA* fmudata = NULL;
+  MODEL_DATA* modelData = NULL;
+  SIMULATION_INFO* simInfo = NULL;
+  threadData_t *threadData = NULL;
+  int i;
+
+  comp->state = model_state_start_end;
+  comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
+  comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
+  comp->functions = (fmi2CallbackFunctions*)functions->allocateMemory(1, sizeof(fmi2CallbackFunctions));
+  fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
+  modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
+  simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
+  threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
+
+  /* Every allocation has to be checked before any of them is dereferenced below. */
+  if (!comp->instanceName || !comp->GUID || !comp->functions || !fmudata || !modelData || !simInfo || !threadData) {
+    functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
+    functions->freeMemory(threadData);
+    functions->freeMemory(simInfo);
+    functions->freeMemory(modelData);
+    functions->freeMemory(fmudata);
+    functions->freeMemory((void*)comp->functions);
+    functions->freeMemory((void*)comp->GUID);
+    functions->freeMemory((void*)comp->instanceName);
+    functions->freeMemory(comp);
+    return NULL;
+  }
+
+  memset(threadData, 0, sizeof(threadData_t));
+  fmudata->modelData = modelData;
+  fmudata->simulationInfo = simInfo;
+  /*
+  pthread_key_create(&fmu2_thread_data_key,NULL);
+  pthread_setspecific(fmu2_thread_data_key, threadData);
+  */
+
+  comp->threadData = threadData;
+  comp->threadDataParent = threadDataParent;
+  comp->fmuData = fmudata;
+  threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
+
+  // set all categories to on or off. fmi2SetDebugLogging should be called to choose specific categories.
+  for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
+    comp->logCategories[i] = loggingOn;
+  }
+
 #if defined(OM_HAVE_PTHREADS)
   pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
@@ -850,9 +840,9 @@ void fmi2FreeInstance(fmi2Component c)
   freeMemory(comp->threadData);
   freeMemory(comp->fmuData);
   /* free instanceName & GUID */
-  if (comp->instanceName) freeMemory((void*)comp->instanceName);
-  if (comp->GUID) freeMemory((void*)comp->GUID);
-  if (comp->functions) freeMemory((void*)comp->functions);
+  freeMemory((void*)comp->instanceName);
+  freeMemory((void*)comp->GUID);
+  freeMemory((void*)comp->functions);
   /* free comp */
   freeMemory(comp);
   free_memory_pool();
@@ -2199,7 +2189,9 @@ fmi2Status internalGetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nom
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
+  if (nx > 0) {
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
+  }
   for (i = 0; i < nx; i++)
     x_nominal[i] = 1;
   return fmi2OK;

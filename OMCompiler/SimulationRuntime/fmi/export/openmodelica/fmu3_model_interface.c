@@ -610,65 +610,56 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
     return NULL;
   }
   comp = (ModelInstance *)calloc(1, sizeof(ModelInstance));
-  if (comp) {
-    DATA* fmudata = NULL;
-    MODEL_DATA* modelData = NULL;
-    SIMULATION_INFO* simInfo = NULL;
-    threadData_t *threadData = NULL;
-    int i;
-
-    comp->state = model_state_start_end;
-    comp->instanceName = (fmi3String)calloc(1 + strlen(instanceName), sizeof(char));
-    comp->GUID = (fmi3String)calloc(1 + strlen(fmuGUID), sizeof(char));
-    fmudata = (DATA *)calloc(1, sizeof(DATA));
-    modelData = (MODEL_DATA *)calloc(1, sizeof(MODEL_DATA));
-    simInfo = (SIMULATION_INFO *)calloc(1, sizeof(SIMULATION_INFO));
-    fmudata->modelData = modelData;
-    fmudata->simulationInfo = simInfo;
-
-    threadData = (threadData_t *)calloc(1, sizeof(threadData_t));
-    memset(threadData, 0, sizeof(threadData_t));
-    /*
-    pthread_key_create(&fmu3_thread_data_key,NULL);
-    pthread_setspecific(fmu3_thread_data_key, threadData);
-    */
-
-    comp->threadData = threadData;
-    comp->threadDataParent = threadDataParent;
-    comp->fmuData = fmudata;
-    threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
-    if (!comp->fmuData) {
-      omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Could not initialize the global data structure file.");
-      free(threadData);
-      free(simInfo);
-      free(modelData);
-      free(fmudata);
-      free((void*)comp->GUID);
-      free((void*)comp->instanceName);
-      free(comp);
-      return NULL;
-    }
-    // set all categories to on or off. omcSetDebugLogging should be called to choose specific categories.
-    for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
-      comp->logCategories[i] = loggingOn;
-    }
-  }
-
-  if (!comp || !comp->instanceName || !comp->GUID || !comp->fmuData || !comp->fmuData->modelData || !comp->fmuData->simulationInfo || !comp->threadData) {
+  if (!comp) {
     omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Out of memory.");
-    if (comp) {
-      if (comp->threadData) free(comp->threadData);
-      if (comp->fmuData) {
-        if (comp->fmuData->simulationInfo) free(comp->fmuData->simulationInfo);
-        if (comp->fmuData->modelData) free(comp->fmuData->modelData);
-        free(comp->fmuData);
-      }
-      if (comp->GUID) free((void*)comp->GUID);
-      if (comp->instanceName) free((void*)comp->instanceName);
-      free(comp);
-    }
     return NULL;
   }
+
+  DATA* fmudata = NULL;
+  MODEL_DATA* modelData = NULL;
+  SIMULATION_INFO* simInfo = NULL;
+  threadData_t *threadData = NULL;
+  int i;
+
+  comp->state = model_state_start_end;
+  comp->instanceName = (fmi3String)calloc(1 + strlen(instanceName), sizeof(char));
+  comp->GUID = (fmi3String)calloc(1 + strlen(fmuGUID), sizeof(char));
+  fmudata = (DATA *)calloc(1, sizeof(DATA));
+  modelData = (MODEL_DATA *)calloc(1, sizeof(MODEL_DATA));
+  simInfo = (SIMULATION_INFO *)calloc(1, sizeof(SIMULATION_INFO));
+  threadData = (threadData_t *)calloc(1, sizeof(threadData_t));
+
+  /* Every allocation has to be checked before any of them is dereferenced below. */
+  if (!comp->instanceName || !comp->GUID || !fmudata || !modelData || !simInfo || !threadData) {
+    omc_fmi3_logCallback(logMessage, instanceEnvironment, fmi3Error, "logStatusError", "omcInstantiate: Out of memory.");
+    free(threadData);
+    free(simInfo);
+    free(modelData);
+    free(fmudata);
+    free((void*)comp->GUID);
+    free((void*)comp->instanceName);
+    free(comp);
+    return NULL;
+  }
+
+  memset(threadData, 0, sizeof(threadData_t));
+  fmudata->modelData = modelData;
+  fmudata->simulationInfo = simInfo;
+  /*
+  pthread_key_create(&fmu3_thread_data_key,NULL);
+  pthread_setspecific(fmu3_thread_data_key, threadData);
+  */
+
+  comp->threadData = threadData;
+  comp->threadDataParent = threadDataParent;
+  comp->fmuData = fmudata;
+  threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
+
+  // set all categories to on or off. omcSetDebugLogging should be called to choose specific categories.
+  for (i = 0; i < NUMBER_OF_CATEGORIES; i++) {
+    comp->logCategories[i] = loggingOn;
+  }
+
 #if defined(OM_HAVE_PTHREADS)
   pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
@@ -895,8 +886,8 @@ void omcFreeInstance(ModelInstance* c)
   free(comp->threadData);
   free(comp->fmuData);
   /* free instanceName & GUID */
-  if (comp->instanceName) free((void*)comp->instanceName);
-  if (comp->GUID) free((void*)comp->GUID);
+  free((void*)comp->instanceName);
+  free((void*)comp->GUID);
   /* free comp */
   free(comp);
   free_memory_pool();
@@ -2239,7 +2230,9 @@ fmi3Status internalGetNominalsOfContinuousStates(ModelInstance* c, fmi3Float64 x
     return fmi3Error;
   if (nullPointer(comp, "omcGetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
     return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
+  if (nx > 0) {
+    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
+  }
   for (i = 0; i < nx; i++)
     x_nominal[i] = 1;
   return fmi3OK;
