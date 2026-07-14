@@ -155,7 +155,7 @@ Cvode::~Cvode()
 	delete measuredFunctionEndValues;
 	delete solveFunctionStartValues;
 	delete solveFunctionEndValues;
-	delete solverValues;
+	/* solverValues is owned by (*measureTimeFunctionsArray)[6] and freed by ~MeasureTimeData() */
 #endif
 }
 

@@ -163,8 +163,7 @@ DASSL::~DASSL()
     delete solveFunctionStartValues;
   if (solveFunctionEndValues)
     delete solveFunctionEndValues;
-  if (solverValues)
-    delete solverValues;
+  /* solverValues is owned by (*measureTimeFunctionsArray)[6] and freed by ~MeasureTimeData() */
 #endif
 }
 
