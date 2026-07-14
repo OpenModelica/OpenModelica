@@ -3,65 +3,65 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 dae_fmu_export_error.mos \
 EnumerationTest.mos \
-# ExportFMUCLI.mos \
-# fmi_attributes_01.mos \
-# fmi_attributes_02.mos \
-# fmi_attributes_03.mos \
-# fmi_attributes_04.mos \
-# fmi_attributes_05.mos \
-# fmi_attributes_06.mos \
-# fmi_attributes_07.mos \
-# fmi_attributes_08.mos \
-# fmi_attributes_09.mos \
-# fmi_attributes_10.mos \
-# fmi_attributes_11.mos \
-# fmi_attributes_12.mos \
-# fmi_attributes_13.mos \
-# fmi_attributes_14.mos \
-# fmi_attributes_15.mos \
-# fmi_attributes_16.mos \
-# fmi_attributes_17.mos \
-# fmi_attributes_18.mos \
-# fmi_attributes_19.mos \
-# fmi_attributes_20.mos \
-# fmi_attributes_21.mos \
-# fmi_attributes_22.mos \
-# fmi_attributes_23.mos \
-# fmi_attributes_24.mos \
-# fmi_attributes_25.mos \
-# fmi2_array_attributes_nb.mos \
-# fmi2_array_attributes.mos \
-# fmi2_array_nonscalarized.mos \
-# fmi2_arrays_initial_unknowns.mos \
-# fmiFilterTest.mos \
-# FMUResourceTest.mos \
-# HelloFMIWorld.mos \
-# HelloFMIWorldEvent.mos \
-# IntegerNetwork1.mos \
-# Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-# Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-# Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-# ModelWithAlias.mos \
-# QuotedIdentifierExport.mos \
-# RealFFT1.mos \
-# testAssert.mos \
-# testBug2764.mos \
-# testBug2765.mos \
-# testBug3034.mos \
-# testBug3049.mos \
-# testBug3763.mos \
-# testBug3846.mos \
-# testBug5673.mos \
-# testChangeParam.mos \
-# testDgesvSources.mos \
-# testDisableDep.mos \
-# testDiscreteStructe.mos \
-# testInitialEquationsFMI.mos \
-# testModelicaStandardTables.mos \
-# TestSourceCodeFMU.mos \
-# ticket5670.mos \
-# ticket6262.mos \
-# ZeroStates.mos \
+ExportFMUCLI.mos \
+fmi_attributes_01.mos \
+fmi_attributes_02.mos \
+fmi_attributes_03.mos \
+fmi_attributes_04.mos \
+fmi_attributes_05.mos \
+fmi_attributes_06.mos \
+fmi_attributes_07.mos \
+fmi_attributes_08.mos \
+fmi_attributes_09.mos \
+fmi_attributes_10.mos \
+fmi_attributes_11.mos \
+fmi_attributes_12.mos \
+fmi_attributes_13.mos \
+fmi_attributes_14.mos \
+fmi_attributes_15.mos \
+fmi_attributes_16.mos \
+fmi_attributes_17.mos \
+fmi_attributes_18.mos \
+fmi_attributes_19.mos \
+fmi_attributes_20.mos \
+fmi_attributes_21.mos \
+fmi_attributes_22.mos \
+fmi_attributes_23.mos \
+fmi_attributes_24.mos \
+fmi_attributes_25.mos \
+fmi2_array_attributes_nb.mos \
+fmi2_array_attributes.mos \
+fmi2_array_nonscalarized.mos \
+fmi2_arrays_initial_unknowns.mos \
+fmiFilterTest.mos \
+FMUResourceTest.mos \
+HelloFMIWorld.mos \
+HelloFMIWorldEvent.mos \
+IntegerNetwork1.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
+ModelWithAlias.mos \
+QuotedIdentifierExport.mos \
+RealFFT1.mos \
+testAssert.mos \
+testBug2764.mos \
+testBug2765.mos \
+testBug3034.mos \
+testBug3049.mos \
+testBug3763.mos \
+testBug3846.mos \
+testBug5673.mos \
+testChangeParam.mos \
+testDgesvSources.mos \
+testDisableDep.mos \
+testDiscreteStructe.mos \
+testInitialEquationsFMI.mos \
+testModelicaStandardTables.mos \
+TestSourceCodeFMU.mos \
+ticket5670.mos \
+ticket6262.mos \
+ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
