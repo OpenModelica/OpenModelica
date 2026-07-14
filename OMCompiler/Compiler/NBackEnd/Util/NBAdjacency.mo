@@ -482,6 +482,7 @@ public
       input list<StrongComponent> comps;
       input UnorderedSet<ComponentRef> seed_set;
       input UnorderedSet<ComponentRef> pder_set;
+      input UnorderedMap<ComponentRef, ComponentRef> diff_map;
       output Matrix sparsity;
 
       type Dependencies = list<ComponentRef>;
@@ -560,7 +561,12 @@ public
                   (inner_deps, dep, repeated) := tpl;
                   for dep_cref in inner_deps loop
                     if filterSet(dep_cref, seed_set) then
-                      seed_cref := BVariable.getPartnerCref(dep_cref, BVariable.getVarSeed);
+                      seed_cref := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), diff_map)
+                        case SOME(seed_cref) then ComponentRef.copySubscripts(dep_cref, seed_cref);
+                        else algorithm
+                          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no seed was found for " + ComponentRef.toString(dep_cref) + " in diff_map."});
+                        then fail();
+                      end match;
                       UnorderedMap.add(seed_cref, dep, dep_map);
                       if repeated then
                         UnorderedSet.add(seed_cref, rep_set);

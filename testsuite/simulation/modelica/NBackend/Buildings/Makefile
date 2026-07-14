@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage.mos \
+Buildings.Fluid.Humidifiers.Examples.Humidifier_u.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

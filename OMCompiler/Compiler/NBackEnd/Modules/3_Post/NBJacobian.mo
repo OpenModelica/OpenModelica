@@ -568,7 +568,9 @@ protected
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
                                                                      makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
     for v in VariablePointers.toList(seedCandidates) loop
-      UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      end if;
     end for;
 
     // create pDer vars (also filters out discrete vars)
@@ -639,7 +641,7 @@ protected
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = name,
@@ -1419,7 +1421,7 @@ protected
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = newName,
@@ -1452,7 +1454,9 @@ protected
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
     seed_vars_d := Pointer.access(seed_vars_ptr);
     for v in VariablePointers.toList(seedCandidates) loop
-      UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      end if;
     end for;
 
     for v in res_vars loop
@@ -1481,7 +1485,7 @@ protected
       end if;
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in arrayList(Util.getOption(strongComponents))))));
-      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set);
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set, diff_map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
       fail();

@@ -1,0 +1,21 @@
+// name: Buildings.Fluid.Humidifiers.Examples.Humidifier_u
+// keywords: NewBackend Buildings moist air $START seed variable NLS Jacobian
+// status: correct
+// teardown_command: rm -f Buildings.Fluid.Humidifiers.Examples.Humidifier_u* Buildings*.libs
+
+loadModel(Buildings, {"12.0.0-master"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+translateModel(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) humDyn.vol.p_start = humDyn.p_start; ($RES_BND_509)
+// "
+// endResult
