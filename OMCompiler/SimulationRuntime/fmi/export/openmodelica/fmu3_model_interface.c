@@ -1546,7 +1546,7 @@ fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
 
   // After restoring the FMU state, the internal solver (CVODE/Euler) has
   // outdated step history, Jacobians, and time.  Reinitialize it so that the
-  // next doStep starts from a clean solver state (#12260).
+  // next doStep starts from a clean solver state.
   if (status == fmi3OK && isCoSimulation(comp) && comp->solverInfo) {
     FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcSetFMUstate: reinitialising solver")
     FMI3CS_deInitializeSolverData(comp);
