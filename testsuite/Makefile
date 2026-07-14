@@ -359,6 +359,10 @@ simulationnewbackend-basics.log: omc-diff
 	@echo $@ done
 simulationnewbackend-bicoloring.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/bicoloring/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-buildings.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/Buildings/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-cpp.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/cpp/ -f Makefile test > $@
 	@echo $@ done
