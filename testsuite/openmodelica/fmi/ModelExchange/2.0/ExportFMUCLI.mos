@@ -1,6 +1,7 @@
 // name:     ExportFMUCLI
 // keywords: fmu export cli
 // status: correct
+// depends: ExportFMUCLI.mo
 // teardown_command: rm -rf ExportFMUCLI.fmu ExportFMUCLI_* export_fmu_test_*.mo export_fmu_output*.log ExportFMUCLI3.fmu ExportFMUCLI3_*
 // cflags: -d=-newInst
 //
