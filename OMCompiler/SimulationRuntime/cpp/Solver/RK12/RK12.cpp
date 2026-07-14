@@ -183,7 +183,6 @@ void RK12::initialize()
 
         memset(_z,			0,_dimSys*sizeof(double));
         memset(_z0,			0,_dimSys*sizeof(double));
-        memset(_zPred,		0,_dimSys*sizeof(double));
         memset(_z1,			0,_dimSys*sizeof(double));
         memset(_z_a,		0,_dimSys*sizeof(double));
         memset(_z_a_0,		0,_dimSys*sizeof(double));
