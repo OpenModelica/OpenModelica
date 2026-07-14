@@ -1955,18 +1955,18 @@ fmi3Status omcEnterContinuousTimeMode(ModelInstance* c)
   return fmi3OK;
 }
 
-fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetFMUStatePriorToCurrentPoint, fmi3Boolean* enterEventMode, fmi3Boolean* terminateSimulation)
+fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, fmi3Boolean noSetFMUStatePriorToCurrentPoint, fmi3Boolean* enterEventMode, fmi3Boolean* terminateSimulation)
 {
   int done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp=threadData->mmc_jumper;
 
-  if (nullPointer(comp, "omcCompletedIntegratorStep", "enterEventMode", enterEventMode))
+  if (nullPointer(comp, func, "enterEventMode", enterEventMode))
     return fmi3Error;
-  if (nullPointer(comp, "omcCompletedIntegratorStep", "terminateSimulation", terminateSimulation))
+  if (nullPointer(comp, func, "terminateSimulation", terminateSimulation))
     return fmi3Error;
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcCompletedIntegratorStep")
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, func)
 
   setThreadData(comp);
   MemPoolState mem_pool_state = omc_util_get_pool_state();
@@ -1987,7 +1987,7 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetF
     {
       /* if new set is calculated reinit the solver */
       *enterEventMode = fmi3True;
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcCompletedIntegratorStep: Need to iterate state values changed!")
+      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: Need to iterate state values changed!", func)
     }
 #endif
     /* TODO: fix the extrapolation in non-linear system
@@ -2006,7 +2006,7 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetF
   if (done) {
     return fmi3OK;
   }
-  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcCompletedIntegratorStep: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
   return fmi3Error;
 }
 
@@ -2017,7 +2017,7 @@ fmi3Status omcCompletedIntegratorStep(ModelInstance* c, fmi3Boolean noSetFMUStat
   if (invalidState(comp, "omcCompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
     return fmi3Error;
 
-  return internal_CompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
+  return internal_CompletedIntegratorStep(c, "omcCompletedIntegratorStep", noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
 }
 
 fmi3Status omcSetTime(ModelInstance* c, fmi3Float64 t)
@@ -2064,15 +2064,15 @@ fmi3Status omcSetContinuousStates(ModelInstance* c, const fmi3Float64 x[], size_
   return internalSetContinuousStates(c, x, nx);
 }
 
-fmi3Status internalGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], size_t nx)
+fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float64 derivatives[], size_t nx)
 {
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, "omcGetDerivatives", "nx", nx, NUMBER_OF_STATES))
+  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_STATES))
     return fmi3Error;
-  if (nullPointer(comp, "omcGetDerivatives", "derivatives[]", derivatives))
+  if (nullPointer(comp, func, "derivatives[]", derivatives))
     return fmi3Error;
 
   setThreadData(comp);
@@ -2091,7 +2091,7 @@ fmi3Status internalGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], s
     for (i = 0; i < nx; i++) {
       fmi3ValueReference vr = vrStatesDerivatives[i];
       derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetDerivatives: #r%d# = %.16g", vr, derivatives[i])
+      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: #r%d# = %.16g", func, vr, derivatives[i])
     }
 #endif
 
@@ -2106,26 +2106,26 @@ fmi3Status internalGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], s
   if (done) {
     return fmi3OK;
   }
-  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcGetDerivatives: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
   return fmi3Error;
 }
 
 fmi3Status omcGetDerivatives(ModelInstance* c, fmi3Float64 derivatives[], size_t nx)
 {
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "omcGetDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+  if (invalidState(comp, "fmi3GetContinuousStateDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
     return fmi3Error;
 
-  return internalGetDerivatives(c, derivatives, nx);
+  return internalGetDerivatives(c, "fmi3GetContinuousStateDerivatives", derivatives, nx);
 }
 
-fmi3Status internalGetEventIndicators(ModelInstance* c, fmi3Float64 eventIndicators[], size_t nx)
+fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Float64 eventIndicators[], size_t nx)
 {
   int i, done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, "omcGetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
+  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_EVENT_INDICATORS))
     return fmi3Error;
 
   setThreadData(comp);
@@ -2144,7 +2144,7 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, fmi3Float64 eventIndicat
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
-      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetEventIndicators: z%d = %.16g", i, eventIndicators[i])
+      FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: z%d = %.16g", func, i, eventIndicators[i])
     }
 #endif
     done=1;
@@ -2158,7 +2158,7 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, fmi3Float64 eventIndicat
   if (done) {
     return fmi3OK;
   }
-  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetEventIndicators: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
   return fmi3Error;
 }
 
@@ -2172,7 +2172,7 @@ fmi3Status omcGetEventIndicators(ModelInstance* c, fmi3Float64 eventIndicators[]
   /*if (invalidState(comp, "omcGetEventIndicators", model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error))*/
     return fmi3Error;
 
-  return internalGetEventIndicators(c, eventIndicators, nx);
+  return internalGetEventIndicators(c, "omcGetEventIndicators", eventIndicators, nx);
 }
 
 fmi3Status internalGetContinuousStates(ModelInstance* c, fmi3Float64 x[], size_t nx)
@@ -2416,7 +2416,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
 #if NUMBER_OF_STATES > 0
-    status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
+    status = internalGetDerivatives(c, "omcDoStep", states_der, NUMBER_OF_STATES);
   if (status != fmi3OK) goto doStep_cleanup;
 
     status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
@@ -2424,7 +2424,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "omcDoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi3OK) goto doStep_cleanup;
 #endif
 
@@ -2498,12 +2498,12 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
 #endif
 
     /* signal completed integrator step */
-    status = internal_CompletedIntegratorStep(c, fmi3True, &enterEventMode, &terminateSimulation);
+    status = internal_CompletedIntegratorStep(c, "omcDoStep", fmi3True, &enterEventMode, &terminateSimulation);
     if (status != fmi3OK) goto doStep_cleanup;
 
     /* check for events */
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "omcDoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi3OK) goto doStep_cleanup;
 
     for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
@@ -2566,7 +2566,7 @@ static fmi3Status fmu3DoStepInternal(ModelInstance* c, fmi3Float64 currentCommun
       }
 
       #if NUMBER_OF_EVENT_INDICATORS > 0
-        status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+        status = internalGetEventIndicators(c, "omcDoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
         if (status != fmi3OK) goto doStep_cleanup;
       #endif
 

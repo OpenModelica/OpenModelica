@@ -1913,18 +1913,18 @@ fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c)
   return fmi2OK;
 }
 
-fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
+fmi2Status internal_CompletedIntegratorStep(fmi2Component c, const char *func, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
 {
   int done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp=threadData->mmc_jumper;
 
-  if (nullPointer(comp, "fmi2CompletedIntegratorStep", "enterEventMode", enterEventMode))
+  if (nullPointer(comp, func, "enterEventMode", enterEventMode))
     return fmi2Error;
-  if (nullPointer(comp, "fmi2CompletedIntegratorStep", "terminateSimulation", terminateSimulation))
+  if (nullPointer(comp, func, "terminateSimulation", terminateSimulation))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, func)
 
   setThreadData(comp);
   MemPoolState mem_pool_state = omc_util_get_pool_state();
@@ -1945,7 +1945,7 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFM
     {
       /* if new set is calculated reinit the solver */
       *enterEventMode = fmi2True;
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep: Need to iterate state values changed!")
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "%s: Need to iterate state values changed!", func)
     }
 #endif
     /* TODO: fix the extrapolation in non-linear system
@@ -1964,7 +1964,7 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFM
   if (done) {
     return fmi2OK;
   }
-  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "%s: terminated by an assertion.", func)
   return fmi2Error;
 }
 
@@ -1975,7 +1975,7 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
   if (invalidState(comp, "fmi2CompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
     return fmi2Error;
 
-  return internal_CompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
+  return internal_CompletedIntegratorStep(c, "fmi2CompletedIntegratorStep", noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
 }
 
 fmi2Status fmi2SetTime(fmi2Component c, fmi2Real t)
@@ -2022,15 +2022,15 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
   return internalSetContinuousStates(c, x, nx);
 }
 
-fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx)
+fmi2Status internalGetDerivatives(fmi2Component c, const char *func, fmi2Real derivatives[], size_t nx)
 {
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, "fmi2GetDerivatives", "nx", nx, NUMBER_OF_STATES))
+  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
-  if (nullPointer(comp, "fmi2GetDerivatives", "derivatives[]", derivatives))
+  if (nullPointer(comp, func, "derivatives[]", derivatives))
     return fmi2Error;
 
   setThreadData(comp);
@@ -2049,7 +2049,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
     for (i = 0; i < nx; i++) {
       fmi2ValueReference vr = vrStatesDerivatives[i];
       derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "%s: #r%d# = %.16g", func, vr, derivatives[i])
     }
 #endif
 
@@ -2064,7 +2064,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
   if (done) {
     return fmi2OK;
   }
-  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetDerivatives: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "%s: terminated by an assertion.", func)
   return fmi2Error;
 }
 
@@ -2074,16 +2074,16 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
   if (invalidState(comp, "fmi2GetDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
     return fmi2Error;
 
-  return internalGetDerivatives(c, derivatives, nx);
+  return internalGetDerivatives(c, "fmi2GetDerivatives", derivatives, nx);
 }
 
-fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], size_t nx)
+fmi2Status internalGetEventIndicators(fmi2Component c, const char *func, fmi2Real eventIndicators[], size_t nx)
 {
   int i, done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  if (invalidNumber(comp, "fmi2GetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
+  if (invalidNumber(comp, func, "nx", nx, NUMBER_OF_EVENT_INDICATORS))
     return fmi2Error;
 
   setThreadData(comp);
@@ -2102,7 +2102,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetEventIndicators: z%d = %.16g", i, eventIndicators[i])
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "%s: z%d = %.16g", func, i, eventIndicators[i])
     }
 #endif
     done=1;
@@ -2116,7 +2116,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
   if (done) {
     return fmi2OK;
   }
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetEventIndicators: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "%s: terminated by an assertion.", func)
   return fmi2Error;
 }
 
@@ -2130,7 +2130,7 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
   /*if (invalidState(comp, "fmi2GetEventIndicators", model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error))*/
     return fmi2Error;
 
-  return internalGetEventIndicators(c, eventIndicators, nx);
+  return internalGetEventIndicators(c, "fmi2GetEventIndicators", eventIndicators, nx);
 }
 
 fmi2Status internalGetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
@@ -2351,7 +2351,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 #endif
 
 #if NUMBER_OF_STATES > 0
-    status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
+    status = internalGetDerivatives(c, "fmi2DoStep", states_der, NUMBER_OF_STATES);
   if (status != fmi2OK) goto doStep_cleanup;
 
     status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
@@ -2359,7 +2359,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 #endif
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "fmi2DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
@@ -2433,12 +2433,12 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 #endif
 
     /* signal completed integrator step */
-    status = internal_CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
+    status = internal_CompletedIntegratorStep(c, "fmi2DoStep", fmi2True, &enterEventMode, &terminateSimulation);
     if (status != fmi2OK) goto doStep_cleanup;
 
     /* check for events */
 #if NUMBER_OF_EVENT_INDICATORS > 0
-    status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
+    status = internalGetEventIndicators(c, "fmi2DoStep", event_indicators, NUMBER_OF_EVENT_INDICATORS);
   if (status != fmi2OK) goto doStep_cleanup;
 
     for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
@@ -2484,7 +2484,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       }
 
       #if NUMBER_OF_EVENT_INDICATORS > 0
-        status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+        status = internalGetEventIndicators(c, "fmi2DoStep", event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
         if (status != fmi2OK) goto doStep_cleanup;
       #endif
 
