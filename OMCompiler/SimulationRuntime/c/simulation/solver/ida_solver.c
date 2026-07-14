@@ -1661,7 +1661,7 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
     setContext(data, tt, CONTEXT_SYM_JACOBIAN);
     // evalJacobianByMethod(method, data, threadData, jac, t_jac,
     //                      Jac, setJacElementSundialsDense, setJacElementSundialsDenseRowEval);
-    evalJacobianNew(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
+    evalJacobianExtended(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
              Jac, JAC_OUTPUT_CUSTOM, setJacElementSundialsDense, setJacElementSundialsDenseRowEval);
     unsetContext(data);
   }
@@ -1913,12 +1913,12 @@ static int callSparseJacobian(double currentTime, double cj,
       IDA_SPARSE_ADJ_CTX ctx = { Jac, jac->csrToCscMap };
       // evalJacobianByMethod(method, data, threadData, jac, t_jac,
       //                      &ctx, NULL, setJacElementSundialsSparseRowEval);
-      evalJacobianNew(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
+      evalJacobianExtended(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
              &ctx, JAC_OUTPUT_CUSTOM, NULL, setJacElementSundialsSparseRowEval);
     } else {
       // evalJacobianByMethod(method, data, threadData, jac, t_jac,
       //                      Jac, setJacElementSundialsSparse, NULL);
-      evalJacobianNew(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
+      evalJacobianExtended(data, threadData, method, jac, /*parentJacobian=*/NULL, t_jac,
              Jac, JAC_OUTPUT_CUSTOM, setJacElementSundialsSparse, NULL);
     }
     finishSparseColPtr(Jac, jac->sparsePattern->nnz);

@@ -189,45 +189,62 @@ void freeJacobianCopy(JACOBIAN *jac)
   }
 }
 
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
-                  JACOBIAN* parentJacobian, modelica_real* jac,
-                  modelica_boolean isDense)
-{
-  jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
-  if (isDense) {
-    // dense column-major
-    // Row-eval scatter calls setElement(currentIndex=col, j=row, ...) so needs the row-eval setter.
-    // Column-eval scatter calls setElement(currentIndex=row, j=col, ...) so uses the standard setter.
-    setJacElementFunc setter = jacobian->isRowEval
-        ? setJacElementRawDenseColumnMajorRowEval
-        : setJacElementRawDenseColumnMajor;
-    memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
-    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setter, cleanup);
-  } else {
-    // sparse: setter only uses nth, argument order does not matter
-    evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse, cleanup);
-  }
+// void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
+//                   JACOBIAN* parentJacobian, modelica_real* jac,
+//                   modelica_boolean isDense)
+// {
+//   jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
+//   if (isDense) {
+//     // dense column-major
+//     // Row-eval scatter calls setElement(currentIndex=col, j=row, ...) so needs the row-eval setter.
+//     // Column-eval scatter calls setElement(currentIndex=row, j=col, ...) so uses the standard setter.
+//     setJacElementFunc setter = jacobian->isRowEval
+//         ? setJacElementRawDenseColumnMajorRowEval
+//         : setJacElementRawDenseColumnMajor;
+//     memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+//     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setter, cleanup);
+//   } else {
+//     // sparse: setter only uses nth, argument order does not matter
+//     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse, cleanup);
+//   }
 
-  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
-    if (isDense) {
-      const unsigned int nRows = jacobian->sizeRows;
-      const unsigned int nCols = jacobian->sizeCols;
-      infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (dense %ux%u, column-major):", nRows, nCols);
-      for (unsigned int col = 0; col < nCols; col++) {
-        for (unsigned int row = 0; row < nRows; row++) {
-          infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u,%u] = %g", row, col, jac[col * nRows + row]);
-        }
-      }
-      messageClose(OMC_LOG_JAC);
-    } else {
-      const unsigned int nnz = jacobian->sparsePattern->nnz;
-      infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (sparse, nnz=%u):", nnz);
-      for (unsigned int k = 0; k < nnz; k++) {
-        infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u] = %g", k, jac[k]);
-      }
-      messageClose(OMC_LOG_JAC);
-    }
-  }
+//   if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
+//     if (isDense) {
+//       const unsigned int nRows = jacobian->sizeRows;
+//       const unsigned int nCols = jacobian->sizeCols;
+//       infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (dense %ux%u, column-major):", nRows, nCols);
+//       for (unsigned int col = 0; col < nCols; col++) {
+//         for (unsigned int row = 0; row < nRows; row++) {
+//           infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u,%u] = %g", row, col, jac[col * nRows + row]);
+//         }
+//       }
+//       messageClose(OMC_LOG_JAC);
+//     } else {
+//       const unsigned int nnz = jacobian->sparsePattern->nnz;
+//       infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (sparse, nnz=%u):", nnz);
+//       for (unsigned int k = 0; k < nnz; k++) {
+//         infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u] = %g", k, jac[k]);
+//       }
+//       messageClose(OMC_LOG_JAC);
+//     }
+//   }
+// }
+
+/**
+ * @brief Evaluate a colored Jacobian, auto-selecting fwd/adj setter from jacobian->isRowEval.
+ *
+ * Thin convenience wrapper around evalJacobianEx for the common case: colored
+ * (non-bicolored) evaluation into a dense or raw-sparse buffer, no custom setters,
+ * no explicit method/t_jac needed. Equivalent to the old evalJacobian().
+ */
+void evalJacobian(DATA* data, threadData_t* threadData, JACOBIAN* jacobian,
+                   JACOBIAN* parentJacobian, modelica_real* jac,
+                   modelica_boolean isDense)
+{
+  JACOBIAN_METHOD method = jacobian->isRowEval ? COLOREDSYMJACADJ : COLOREDSYMJAC;
+  evalJacobianExtended(data, threadData, method, jacobian, parentJacobian, /*t_jac=*/NULL,
+                 jac, isDense ? JAC_OUTPUT_DENSE : JAC_OUTPUT_SPARSE_RAW,
+                 /*setFwd=*/NULL, /*setAdj=*/NULL);
 }
 
 /**
@@ -250,7 +267,7 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
  * @param setFwd/setAdj  Only consulted for JAC_OUTPUT_CUSTOM (and always for the
  *                        BICOLOREDSYMJAC scatter, which uses setFwd regardless of format).
  */
-void evalJacobianNew(DATA* data, threadData_t* threadData,
+void evalJacobianExtended(DATA* data, threadData_t* threadData,
                    JACOBIAN_METHOD method,
                    JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* t_jac,
                    void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
