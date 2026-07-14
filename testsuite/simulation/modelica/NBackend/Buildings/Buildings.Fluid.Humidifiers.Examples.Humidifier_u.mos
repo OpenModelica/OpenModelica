@@ -1,7 +1,7 @@
 // name: Buildings.Fluid.Humidifiers.Examples.Humidifier_u
 // keywords: NewBackend Buildings moist air $START seed variable NLS Jacobian
 // status: correct
-// teardown_command: rm -f Buildings.Fluid.Humidifiers.Examples.Humidifier_u* Buildings*.libs
+// teardown_command: rm -rf Buildings.Fluid.Humidifiers.Examples.Humidifier_u.libs Buildings*.libs
 
 loadModel(Buildings, {"12.0.0-master"}); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
