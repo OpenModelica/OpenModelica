@@ -1,7 +1,7 @@
 // name: Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage
 // keywords: NewBackend Buildings StateGraph discrete algebraic loop
 // status: correct
-// teardown_command: rm -f Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage* Buildings*.libs
+// teardown_command: rm -f Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_diff.csv && rm -rf Buildings*.libs
 
 loadModel(Buildings, {"12.0.0-master"}); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
