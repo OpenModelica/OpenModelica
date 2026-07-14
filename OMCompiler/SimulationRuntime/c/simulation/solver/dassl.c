@@ -1012,8 +1012,6 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
 #else
   JACOBIAN* t_jac = jac;
 #endif
-  // evalJacobianByMethod(COLOREDSYMJAC, data, threadData, jac, t_jac,
-  //                      matrixA, setJacElementRawDenseColumnMajor, NULL);
   evalJacobianExtended(data, threadData, COLOREDSYMJAC, jac, /*parentJacobian=*/NULL, t_jac,
              matrixA, JAC_OUTPUT_CUSTOM, setJacElementRawDenseColumnMajor, NULL);
   return 0;
@@ -1038,8 +1036,6 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
 #else
   JACOBIAN* t_jac = jac;
 #endif
-  // evalJacobianByMethod(COLOREDSYMJACADJ, data, threadData, jac, t_jac,
-  //                      matrixA, NULL, setJacElementRawDenseColumnMajorRowEval);
   evalJacobianExtended(data, threadData, COLOREDSYMJACADJ, jac, /*parentJacobian=*/NULL, t_jac,
              matrixA, JAC_OUTPUT_CUSTOM, NULL, setJacElementRawDenseColumnMajorRowEval);
   return 0;
@@ -1066,8 +1062,6 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
 #else
   JACOBIAN* t_jac = jac;
 #endif
-  // evalJacobianByMethod(BICOLOREDSYMJAC, data, threadData, jac, t_jac,
-  //                      matrixA, setJacElementRawDenseColumnMajor, NULL);
   evalJacobianExtended(data, threadData, BICOLOREDSYMJAC, jac, /*parentJacobian=*/NULL, t_jac,
              matrixA, JAC_OUTPUT_CUSTOM, setJacElementRawDenseColumnMajor, NULL);
   return 0;

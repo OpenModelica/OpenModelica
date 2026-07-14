@@ -36,14 +36,6 @@
 #include "../jacobian_util.h"  /* setJacElementFunc is defined here */
 
 void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns);
-
-void evalJacobianByMethod(JACOBIAN_METHOD method,
-                          DATA* data, threadData_t* threadData,
-                          JACOBIAN* jac, JACOBIAN* t_jac,
-                          void* outputMatrix,
-                          setJacElementFunc setFwd,
-                          setJacElementFunc setAdj);
-
 void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 
 #endif
