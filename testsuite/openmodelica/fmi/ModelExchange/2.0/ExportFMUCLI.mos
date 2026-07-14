@@ -6,38 +6,35 @@
 //
 // Tests the --export-fmu CLI option.
 
-// Write a model file to test with
-writeFile("export_fmu_test_ExportFMUCLI.mo", "
-model ExportFMUCLI
-  Real x(start=1);
-  parameter Real a=2;
-equation
-  der(x) = a * x;
-end ExportFMUCLI;
-"); getErrorString();
+// Hide installation dir from stdout
+echo(false);
+cd := getInstallationDirectoryPath();
+echo(true);
 
 // Test 1: Basic --export-fmu with --fmiVersion=2.0 (Model Exchange, default type)
-cd := getInstallationDirectoryPath();
-system(cd + "/bin/omc --export-fmu --fmiVersion=2.0 export_fmu_test_ExportFMUCLI.mo", "export_fmu_output1.log");
-getErrorString();
-regularFileExists("ExportFMUCLI.fmu");
-getErrorString();
+system(cd + "/bin/omc --export-fmu --fmiVersion=2.0 ExportFMUCLI.mo", "export_fmu_output1.log"); getErrorString();
+regularFileExists("ExportFMUCLI.fmu"); getErrorString();
+readFile("export_fmu_output1.log");
+remove("ExportFMUCLI.fmu");
 
 // Test 2: --export-fmu with --fmiVersion=3.0 and --fmuType=cs (Co-Simulation)
-system(cd + "/bin/omc --export-fmu --fmiVersion=3.0 --fmuType=cs export_fmu_test_ExportFMUCLI.mo", "export_fmu_output2.log");
+system(cd + "/bin/omc --export-fmu --fmiVersion=3.0 --fmuType=cs ExportFMUCLI.mo", "export_fmu_output2.log");
 getErrorString();
 regularFileExists("ExportFMUCLI.fmu");
+readFile("export_fmu_output2.log");
 getErrorString();
 
 // Result:
 // true
-// ""
 // 0
 // ""
 // true
 // ""
+// ""
+// true
 // 0
 // ""
 // true
+// ""
 // ""
 // endResult
