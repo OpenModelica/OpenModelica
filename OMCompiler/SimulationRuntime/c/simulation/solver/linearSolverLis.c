@@ -274,7 +274,6 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     infoStreamPrint(OMC_LOG_LS_V, 1, "b vector [%d]", n);
     for(i=0; i<n; i++)
     {
-      buffer[0] = 0;
       sprintf(buffer, "%20.12g ", solverData->b->value[i]);
       infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     }
