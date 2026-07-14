@@ -179,9 +179,7 @@ pipeline {
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
-                // Look in /opt/local first to prefer the macports libraries over others in the system.
-                // Look in /opt/homebrew for boost
-                '-DCMAKE_PREFIX_PATH="/opt/local;/opt/homebrew"',
+                "-DCMAKE_PREFIX_PATH=/opt/local",   // Look in /opt/local first to prefer the macports libraries over others in the system.
                 "-DCMAKE_C_COMPILER=gcc",           // Always specify the compilers explicitly for macOS
                 "-DCMAKE_CXX_COMPILER=g++",
                 "-DCMAKE_Fortran_COMPILER=gfortran",
