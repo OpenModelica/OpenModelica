@@ -290,7 +290,7 @@ void SimManager::computeSampleCycles()
         else
         {
             // Check if sample time is a multiple of the cycle time (with a tolerance)
-            if ((interval / _config->getGlobalSettings()->gethOutput()) - int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
+            if (std::fabs((interval / _config->getGlobalSettings()->gethOutput()) - int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5)) <= 1e6 * UROUND)
             {
                 _sampleCycles[counter] = int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5);
             }
