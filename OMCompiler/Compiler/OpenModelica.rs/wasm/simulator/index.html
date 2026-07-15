@@ -105,6 +105,8 @@
   /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
   .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:7px 18px; }
   .ic-item { display:grid; grid-template-columns:minmax(0,1fr) 80px auto; gap:9px; align-items:center; }
+  /* Enum: name dropdown, no unit column. */
+  .ic-item.enum { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); }
   .ic-item .nm { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ic-item .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
   .ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
@@ -478,7 +480,7 @@ function parseModelName(text) {
 // --- state ------------------------------------------------------------------
 let icValues = new Map();     // param name -> input value (string)
 let builtModel = null, lastText = null;
-let running = false, pendingKind = null;
+let running = false, pendingKind = null, runningKind = null;
 let modelFigures = null;      // parsed figures for the current model, or null
 let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
 const hidden = new Set();     // "chartKey|label" of series toggled off (persists across runs)
@@ -492,7 +494,6 @@ let builtWorker = null;       // worker that holds the current built model (for 
 let mslDone = false;          // true once the MSL worker has finished install+load
 let mslJobStarted = false;    // true once a real MSL job is requested → skip the throwaway warmup
 let copyName = null;          // top-level name of the current library copy (copyClass), else null
-let pendingMods = [];         // [{element, value}] parameter tweaks to apply to the copy before the next rebuild
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animator = null;          // the three.js Animator (lazily created on first use)
@@ -515,8 +516,14 @@ function seedFromOptions(o) {
 }
 
 async function run(kind) {                       // 'full' | 'resim'
-  if (running) { pendingKind = pendingKind === 'full' ? 'full' : kind; return; }
-  running = true; setRunUI(true);
+  if (running) {
+    pendingKind = pendingKind === 'full' ? 'full' : kind;
+    // Cancel an in-flight resim so the latest values run now; a full build is left
+    // alone (its compiled model is needed, and it can't yield mid-build).
+    if (runningKind === 'resim' && jobWorker) jobWorker.postMessage({ cmd: 'cancelSim' });
+    return;
+  }
+  running = true; runningKind = kind; setRunUI(true);
   log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
 
@@ -537,23 +544,6 @@ async function run(kind) {                       // 'full' | 'resim'
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       snap = r;
-    } else if (mode === 'librarycopy' && pendingMods.length) {
-      // Tune the copy: apply the parameter tweaks to its AST, refresh the editor
-      // from list(), then rebuild (a model change invalidates the built executable).
-      const worker = await pickWorker('');
-      jobWorker = worker;
-      let src;
-      for (const m of pendingMods) {
-        const sm = await call(worker, 'setModifier', { name: copyName, element: m.element, value: m.value });
-        if (!sm.ok) return fail(sm.error || ('could not set ' + m.element));
-        src = sm.source;
-      }
-      pendingMods = [];
-      if (src != null) { srcEl.value = unquote(src); lastText = srcEl.value; }
-      const r = await call(worker, 'simulate', { name: copyName, override: '', ...settings });
-      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
-      if (!r.ok) return fail(r.error);
-      builtModel = copyName; builtWorker = worker; snap = r;   // figures/doc unchanged by a tweak
     } else {
       const text = srcEl.value, textChanged = text !== lastText;
       if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
@@ -591,7 +581,7 @@ async function run(kind) {                       // 'full' | 'resim'
     log('run failed', e); fail('' + e);
   }
   finally {
-    running = false; setRunUI(false); jobWorker = null; retireW1();
+    running = false; runningKind = null; setRunUI(false); jobWorker = null; retireW1();
     if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
   }
 }
@@ -628,7 +618,7 @@ function showBuilding() {
 
 async function selectExample(ex) {
   currentExample = ex;
-  builtModel = null; builtWorker = null; lastText = null; pendingMods = []; preloaded = null; freshModel = true;
+  builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
   showBuilding();
   if (ex.library) {
     // A genuine editable copy via copyClass: a self-contained top-level class with
@@ -698,26 +688,35 @@ function buildInitialConditions() {
   if (!params.length) { icEmpty.style.display = ''; icEmpty.textContent = 'This model has no editable parameters.'; return; }
   icEmpty.style.display = 'none';
   for (const p of params) {
-    icValues.set(p.name, String(p.value));
     const item = document.createElement('div'); item.className = 'ic-item';
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name; nm.title = p.comment || p.name;
-    const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
-    inp.addEventListener('change', () => onParamChange(p.name, inp.value));
-    const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
-    item.append(nm, inp, unit); icGrid.appendChild(item);
+    item.appendChild(nm);
+    if (p.enumNames && p.enumNames.length) {
+      // Enum: the overridden value is the 1-based index.
+      item.classList.add('enum');
+      const idx = Math.round(p.value) || 1;
+      icValues.set(p.name, String(idx));
+      const sel = document.createElement('select');
+      p.enumNames.forEach((n, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = n; sel.appendChild(o); });
+      sel.value = String(idx);
+      sel.addEventListener('change', () => onParamChange(p.name, sel.value));
+      item.appendChild(sel);
+    } else {
+      icValues.set(p.name, String(p.value));
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
+      inp.addEventListener('change', () => onParamChange(p.name, inp.value));
+      const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
+      item.append(inp, unit);
+    }
+    icGrid.appendChild(item);
   }
 }
 
-// Inline models: -override + fast resim. Library copies: -override cannot touch
-// modifier-bound params, so set the modifier on the copy and full-rebuild.
+// -override=name=value re-simulates the built model without recompiling; no
+// write-back to the model text.
 function onParamChange(name, value) {
   icValues.set(name, value);
-  const v = parseFloat(value);
-  if (mode === 'librarycopy') {
-    if (isFinite(v)) { pendingMods.push({ element: name, value: v }); run('full'); }
-  } else {
-    run('resim');
-  }
+  run('resim');
 }
 
 // Render the model's documentation HTML in the (wide-screen) doc column. The
@@ -1091,8 +1090,8 @@ window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsB
 
 // --- wiring -----------------------------------------------------------------
 let debounce;
-srcEl.addEventListener('input', () => {   // manual edits are authoritative: drop queued tweaks, re-read the model's settings
-  pendingMods = []; preloaded = null; freshModel = true;
+srcEl.addEventListener('input', () => {   // manual edits are authoritative: re-read the model's settings
+  preloaded = null; freshModel = true;
   clearTimeout(debounce); debounce = setTimeout(() => run('full'), 700);
 });
 for (const id of ['stop', 'intervals', 'method']) el(id).addEventListener('change', () => run('full'));

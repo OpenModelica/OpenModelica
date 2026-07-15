@@ -647,7 +647,9 @@ pub(super) fn build_engine(model: &SimModel) -> Result<(Box<dyn sim_driver::SimE
     // Prefer the module already prepared by `finishCompile` (buildModel's
     // compile phase, counted as `timeCompile`); otherwise join/compile here.
     let t_model = Instant::now();
-    let prepared = model.prepared.lock().unwrap().take();
+    // Clone, not take: keep the module cached so a resimulate reuses it instead
+    // of recompiling the whole model.
+    let prepared = model.prepared.lock().unwrap().clone();
     let model_module = match prepared {
         Some(m) => m,
         None => take_compiled_model(model)?,

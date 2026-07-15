@@ -264,14 +264,6 @@ self.onmessage = async (ev) => {
                 figures: figuresFor(a.name), doc: documentationFor(a.name) });
         break;
       }
-      case 'setModifier': {
-        // Tune one parameter on the (already-loaded) copy's AST. A model change
-        // means the built executable is stale, so the page follows with a rebuild.
-        const ok = omc_eval(`setElementModifierValue(${a.name}, ${a.element}, $Code(=${a.value}))`).trim();
-        if (ok !== 'true') return reply({ ok: false, error: omc_eval('getErrorString()').trim() || ('could not set ' + a.element) });
-        reply({ ok: true, source: omc_eval(`list(${a.name})`) });
-        break;
-      }
       case 'simulate': {
         // buildModel (translate + JIT, bakes the settings) then runResumable (a
         // cancellable chunked run + `.mat`). Omitted args use the experiment annotation.

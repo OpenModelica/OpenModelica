@@ -316,9 +316,9 @@ pub fn omc_sim_series() -> JsValue {
     arr.into()
 }
 
-/// The last run's editable initial conditions (user-settable parameters): an
-/// array of `{ name, comment, unit, value }`. Feed edits back via a
-/// `-override=name=value` in `simflags` on the next `simulate`/resimulate.
+/// The last run's editable initial conditions: an array of `{ name, comment,
+/// unit, value }`, plus `enumNames` for an enumeration (its value is the 1-based
+/// index). Feed edits back via `-override=name=value` on the next simulate.
 #[wasm_bindgen]
 pub fn omc_sim_parameters() -> JsValue {
     let arr = js_sys::Array::new();
@@ -329,6 +329,13 @@ pub fn omc_sim_parameters() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
+            if !p.enum_names.is_empty() {
+                let names = js_sys::Array::new();
+                for n in &p.enum_names {
+                    names.push(&JsValue::from_str(n));
+                }
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("enumNames"), &names);
+            }
             arr.push(&item);
         }
     });

@@ -461,6 +461,8 @@ struct EditableParam {
     /// A state's start value (vs. a plain parameter): shown as the state's `t0`
     /// value, and overridden after `functionInitStartValues` rather than before.
     is_start: bool,
+    /// Enumeration literal names (1-based index → name), empty for non-enum.
+    enum_names: Vec<String>,
 }
 
 /// Process-wide table of prepared models, keyed by file-name prefix. Populated
@@ -493,6 +495,8 @@ pub struct CapturedParam {
     pub comment: String,
     pub unit: String,
     pub value: f64,
+    /// Enumeration literal names (1-based index → name), empty for non-enum.
+    pub enum_names: Vec<String>,
 }
 
 /// The last run's results, resolved from the model's [`RunResult`] into per-signal
@@ -590,6 +594,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
             } else {
                 param_value_by_off.get(&p.off).copied().unwrap_or(0.0)
             },
+            enum_names: p.enum_names.clone(),
         })
         .collect();
     *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
@@ -1168,6 +1173,17 @@ fn is_result_output(sv: &SimCodeVar::SimVar) -> bool {
     !sv.isProtected && sv.hideResult != Some(true)
 }
 
+/// Literal names of an enumeration type (through subtype/array wrappers), or
+/// `None` for a non-enumeration. The stored value is the 1-based index into these.
+fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
+    match ty {
+        DAE::Type::T_ENUMERATION { names, .. } => Some(lst(names).map(|n| n.to_string()).collect()),
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => enumeration_names(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => enumeration_names(ty),
+        _ => None,
+    }
+}
+
 /// Map a raw cref display name to the name it carries in the result file, or
 /// `None` to drop it. The new backend names a derivative of a non-state variable
 /// `$DER.x`; the C runtime shows it as `der(x)`. Other `$`-prefixed names are
@@ -1290,6 +1306,7 @@ fn build_var_map(
                     off,
                     wty,
                     is_start: false,
+                    enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }
         }
@@ -1345,6 +1362,7 @@ fn build_var_map(
                     off: start_off,
                     wty: WTy::F64,
                     is_start: true,
+                    enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }
         }
