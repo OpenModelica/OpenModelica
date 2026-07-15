@@ -915,6 +915,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     {
       comp->state = model_state_error;
       omc_util_restore_pool_state(mem_pool_state);
+      MMC_RESTORE_INTERNAL(simulationJumpBuffer);
       threadData->mmc_jumper = old_jmp;
       resetThreadData(comp);
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")

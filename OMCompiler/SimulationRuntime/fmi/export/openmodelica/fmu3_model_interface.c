@@ -960,6 +960,7 @@ fmi3Status omcExitInitializationMode(ModelInstance* c)
     {
       comp->state = model_state_error;
       omc_util_restore_pool_state(mem_pool_state);
+      MMC_RESTORE_INTERNAL(simulationJumpBuffer);
       threadData->mmc_jumper = old_jmp;
       resetThreadData(comp);
       FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "omcExitInitializationMode: failed")
