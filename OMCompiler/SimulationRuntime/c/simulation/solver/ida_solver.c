@@ -438,56 +438,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
 
-  // /* For adjoint method: build CSR-to-CSC index map.
-  //  * we derive the map purely from the CSR pattern: process rows in order so
-  //  * that within each column the rows are assigned ascending CSC positions. */
-  // if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
-  //   JACOBIAN* adjJac = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-  //   /* If we used adjJac as the primary Jacobian above it is already initialized;
-  //    * otherwise (should not normally happen) initialize it now. */
-  //   if (adjJac->availability == JACOBIAN_UNKNOWN) {
-  //     data->callback->initialAnalyticJacobianADJ(data, threadData, adjJac);
-  //   }
-  //   if (adjJac->availability == JACOBIAN_AVAILABLE || adjJac->availability == JACOBIAN_ONLY_SPARSITY) {
-  //     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized adjoint Jacobian:");
-  //     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", adjJac->sizeCols, adjJac->sizeRows);
-  //     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", adjJac->sparsePattern->nnz, adjJac->sparsePattern->maxColors);
-  //     messageClose(OMC_LOG_SIMULATION);
-  //   }
-
-  //   // for adjoint Jacobian we need to build a map from CSR to CSC to set elements correctly in the CSC matrix
-  //   if (adjJac->csrToCscMap == NULL) {
-  //     const SPARSE_PATTERN* adjsp = adjJac->sparsePattern;
-  //     const unsigned int nnz      = adjsp->nnz;
-  //     const unsigned int nRows    = adjJac->sizeRows;
-  //     const unsigned int nCols    = adjJac->sizeCols;
-  //     adjJac->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
-
-  //     /*  derive CSC positions from row-major
-  //       * traversal order (rows processed 0..nRows-1 → ascending row indices
-  //       * within each column → correct CSC ordering). */
-  //     unsigned int* colHead = (unsigned int*) calloc(nCols, sizeof(unsigned int));
-  //     /* Count nnz per column */
-  //     for (unsigned int nz = 0; nz < nnz; nz++)
-  //       colHead[adjsp->index[nz]]++;
-  //     /* Exclusive prefix sum → CSC column start positions */
-  //     unsigned int cumulative_sum = 0;
-  //     for (unsigned int j = 0; j < nCols; j++) {
-  //       unsigned int tmp = colHead[j];
-  //       colHead[j] = cumulative_sum;
-  //       cumulative_sum += tmp;
-  //     }
-  //     /* Assign CSC positions in row-major order */
-  //     for (unsigned int i = 0; i < nRows; i++) {
-  //       for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
-  //         const unsigned int j = adjsp->index[nz];
-  //         adjJac->csrToCscMap[nz] = colHead[j]++;
-  //       }
-  //     }
-  //     free(colHead);
-  //   }
-  // }
-
   /* Set NNZ – prefer adjoint pattern when only ADJ was compiled */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
