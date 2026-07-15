@@ -73,18 +73,6 @@ void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double v
 }
 
 /**
- * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
- *
- * Writes value at: jac[col * nRows + row] = value.
- * nth is unused.
- */
-void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols)
-{
-  (void)nth;
-  ((modelica_real*)jac)[row * nCols + col] = value;
-}
-
-/**
  * @brief Initialize analytic jacobian.
  *
  * Jacobian has to be allocatd already.
@@ -188,47 +176,6 @@ void freeJacobianCopy(JACOBIAN *jac)
     free(jac);
   }
 }
-
-// void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian,
-//                   JACOBIAN* parentJacobian, modelica_real* jac,
-//                   modelica_boolean isDense)
-// {
-//   jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
-//   if (isDense) {
-//     // dense column-major
-//     // Row-eval scatter calls setElement(currentIndex=col, j=row, ...) so needs the row-eval setter.
-//     // Column-eval scatter calls setElement(currentIndex=row, j=col, ...) so uses the standard setter.
-//     setJacElementFunc setter = jacobian->isRowEval
-//         ? setJacElementRawDenseColumnMajorRowEval
-//         : setJacElementRawDenseColumnMajor;
-//     memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
-//     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setter, cleanup);
-//   } else {
-//     // sparse: setter only uses nth, argument order does not matter
-//     evalJacobianColored(data, threadData, jacobian, parentJacobian, jac, setJacElementRawSparse, cleanup);
-//   }
-
-//   if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
-//     if (isDense) {
-//       const unsigned int nRows = jacobian->sizeRows;
-//       const unsigned int nCols = jacobian->sizeCols;
-//       infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (dense %ux%u, column-major):", nRows, nCols);
-//       for (unsigned int col = 0; col < nCols; col++) {
-//         for (unsigned int row = 0; row < nRows; row++) {
-//           infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u,%u] = %g", row, col, jac[col * nRows + row]);
-//         }
-//       }
-//       messageClose(OMC_LOG_JAC);
-//     } else {
-//       const unsigned int nnz = jacobian->sparsePattern->nnz;
-//       infoStreamPrint(OMC_LOG_JAC, 1, "evalJacobian result (sparse, nnz=%u):", nnz);
-//       for (unsigned int k = 0; k < nnz; k++) {
-//         infoStreamPrint(OMC_LOG_JAC, 0, "  jac[%u] = %g", k, jac[k]);
-//       }
-//       messageClose(OMC_LOG_JAC);
-//     }
-//   }
-// }
 
 /**
  * @brief Evaluate a colored Jacobian, auto-selecting fwd/adj setter from jacobian->isRowEval.
@@ -441,80 +388,6 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
     evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
                          activeDim, nRows, matrixA, setElement,
                          jacobian->evalColumn, cleanupFunc);
-  }
-}
-
-/*!
- * \brief Row-wise Jacobian evaluation.
- *
- * Assumptions:
- *  - jacobian->evalColumn evaluates a row-direction seed (i.e., is a row evaluator)
- *  - sparsePattern is in CSR format:
- *      leadindex: sizeRows + 1 (row pointers)
- *      index:     nnz (column indices)
- *  - colorCols encodes row coloring (1-based color ids)
- *
- * Output:
- *  - If isDense == false: jac is nnz-sized buffer aligned with CSR index order.
- *  - If isDense == true:  jac is dense column-major buffer of size sizeRows*sizeCols
- *                         with J(row, col) stored at jac[col*sizeRows + row].
- */
-void evalJacobianRow(DATA* data, threadData_t *threadData,
-                     JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-                     modelica_real* jac, modelica_boolean isDense)
-{
-  int color, row, col, nz;
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  const unsigned int nRows = jacobian->sizeRows;
-  const unsigned int nCols = jacobian->sizeCols;
-
-  if (!jacobian->isRowEval) {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform row-wise evaluation on column-evaluation Jacobian\n");
-    return;
-  }
-
-  /* evaluate constant equations of Jacobian (if any) */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-
-  /* memset to zero for dense, since solvers might destroy "hard zeros" */
-  if (isDense) {
-    memset(jac, 0, nRows * nCols * sizeof(modelica_real));
-  }
-
-  /* Ensure seeds are zeroed before use (row seeds) */
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
-
-  /* evaluate Jacobian row-wise using row-coloring */
-  for (color = 0; color < (int)sp->maxColors; color++) {
-    /* activate seed variable(s) for the corresponding color (rows) */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        jacobian->seedVars[row] = 1.0;
-      }
-    }
-
-    /* evaluate all active rows at once (evalColumn acts as evalRow here) */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    /* scatter results */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
-          col = sp->index[nz];
-          if (!isDense) {
-            /* sparse case (CSR value buffer aligned with index order) */
-            jac[nz] = jacobian->resultVars[col];
-          } else {
-            /* dense case (row-major layout for csr format) */
-            jac[row * nCols + col] = jacobian->resultVars[col];
-          }
-        }
-        /* de-activate seed variable for the corresponding color (row) */
-        jacobian->seedVars[row] = 0.0;
-      }
-    }
   }
 }
 
@@ -1142,30 +1015,3 @@ unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx)
 
   return row;
 }
-
-
-
-// JACOBIAN* initializeSymbolicJacobian(threadData_t* threadData, DATA* data, JACOBIAN_METHOD method)
-// {
-//   JACOBIAN* jacobian;
-//   switch (method)
-//   {
-//   case COLOREDSYMJAC:
-//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-//     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-//     break;
-//   case COLOREDSYMJACADJ:
-//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-//     data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
-//     break;
-//   // if bidirectional then the adjoint Jacobian and the bidirectional eval is initialized inside the initialAnalyticJacobianA function
-//   case BICOLOREDSYMJAC:
-//     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-//     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-//     break;
-//   default:
-//     throwStreamPrint(threadData, "Unhandled case in initializeSymbolicJacobian. Jacobian method was given: %s", JACOBIAN_METHOD_NAME[method]);
-//     break;
-//   }
-//   return jacobian;
-// }

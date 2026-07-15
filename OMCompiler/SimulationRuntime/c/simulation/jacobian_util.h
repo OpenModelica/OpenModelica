@@ -98,11 +98,6 @@ void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, v
 void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows);
 
 /**
- * @brief setJacElementFunc-compatible setter: writes jac[row*nCols+col] = value (dense row-major raw buffer).
- */
-void setJacElementRawDenseRowMajor(int row, int col, int nth, double value, void* jac, int nCols);
-
-/**
  * @brief Evaluate one color of a Jacobian using a generic element setter.
  *
  * This is the shared single-color kernel used by both the serial evalJacobianColored
