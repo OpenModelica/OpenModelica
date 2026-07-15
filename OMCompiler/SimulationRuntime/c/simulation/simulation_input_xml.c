@@ -838,6 +838,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
+      free(mi);
+      XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
 
