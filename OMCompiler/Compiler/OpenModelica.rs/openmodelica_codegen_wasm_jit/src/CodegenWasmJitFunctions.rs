@@ -946,6 +946,9 @@ pub(crate) struct SimCtx {
     /// zero). Stored separately from `vars` because `$START` reads the start
     /// attribute, not the live value.
     pub(crate) starts: HashMap<String, Option<Arc<DAE::Exp>>>,
+    /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
+    /// present, else the inline expression. Empty while building the fill function.
+    pub(crate) start_slots: HashMap<String, u32>,
     /// Canonical cref key of an *array-valued* model variable (the base name with
     /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
     /// scalarized elements occupy. A whole-array reference reads/writes the range
@@ -1192,6 +1195,27 @@ impl<'a> FnCtx<'a> {
                 coerce(self, w, WTy::F64);
                 self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
             }
+        }
+        Ok(())
+    }
+
+    /// Store each state's `start` expression into its start slot (`0.0` when the
+    /// state has no explicit start, the Real default).
+    pub(crate) fn emit_init_start_values(
+        &mut self,
+        starts: &[(Option<Arc<DAE::Exp>>, u32)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (exp, off) in starts {
+            self.emit(we::Instruction::LocalGet(data));
+            match exp {
+                Some(e) => {
+                    let w = compile_exp(self, e)?;
+                    coerce(self, w, WTy::F64);
+                }
+                None => self.emit(we::Instruction::F64Const(0.0f64.into())),
+            }
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
         }
         Ok(())
     }
@@ -3152,6 +3176,13 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
         match ident.as_str() {
             "$START" => {
                 let key = sim_cref_key(componentRef)?;
+                // Read the overridable start slot if this state has one.
+                if let Some(&off) = ctx.sim()?.start_slots.get(&key) {
+                    let data = ctx.sim()?.data_local;
+                    ctx.emit(we::Instruction::LocalGet(data));
+                    ctx.emit(we::Instruction::F64Load(mem_arg(off, 3)));
+                    return Ok(Some(WTy::F64));
+                }
                 let start = ctx.sim()?.starts.get(&key).cloned();
                 return match start {
                     Some(Some(exp)) => Ok(Some(compile_exp(ctx, &exp)?)),

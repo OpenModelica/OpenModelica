@@ -30,6 +30,7 @@ use openmodelica_sim_meta::{self as meta, Layout, MetaKind, SimMeta, WTy, REAL_O
 #[link(wasm_import_module = "model")]
 unsafe extern "C" {
     fn functionParameters(sim_data: u32);
+    fn functionInitStartValues(sim_data: u32);
     fn functionInitialEquations(sim_data: u32);
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
@@ -73,6 +74,7 @@ fn capture_row(rows: &mut Vec<f64>, sim_data: u32, layout: &Layout) {
 fn run_euler(m: &SimMeta, sim_data: u32, n_reals: u32, n_rows: u32) -> Vec<f64> {
     unsafe {
         functionParameters(sim_data);
+        functionInitStartValues(sim_data);
         functionInitialEquations(sim_data);
     }
     let n_states = m.layout.n_states;
@@ -149,6 +151,7 @@ fn run_dassl(m: &SimMeta, sim_data: u32, n_reals: u32, n_rows: u32) -> Vec<f64> 
     daskr::auxiliary::xsetf(0); // silence DASKR's own printing
     unsafe {
         functionParameters(sim_data);
+        functionInitStartValues(sim_data);
         functionInitialEquations(sim_data);
     }
     let n_states = m.layout.n_states as usize;

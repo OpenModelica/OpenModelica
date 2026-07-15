@@ -201,6 +201,11 @@ struct SimLayout {
     mathevents_off: u32,
     /// Zero-crossing hysteresis tolerance slot (f64); see [`SimCtx::zctol_off`].
     zctol_off: u32,
+    /// Base of the overridable start-value region (one f64 per state, state `i` at
+    /// `start_off + i*8`): `functionInitStartValues` fills it from each start
+    /// expression and `$START.<state>` reads it back, so `-override=<state>=v` sets
+    /// the initial condition.
+    start_off: u32,
     total: u32,
 }
 
@@ -265,13 +270,20 @@ impl SimLayout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         // Zero-crossing tolerance (f64), 8-aligned after the math-event region.
         let zctol_off = mathevents_off + n_math_slots * 8;
-        let total = zctol_off + 8;
+        // Overridable start values (one f64 per state), 8-aligned after the tolerance.
+        let start_off = zctol_off + 8;
+        let total = start_off + n_states * 8;
         SimLayout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off, bool_off, bparam_off,
             str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off,
-            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, n_math, mathevents_off, zctol_off, total,
+            n_zc, zc_off, n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, n_math, mathevents_off, zctol_off, start_off, total,
         }
+    }
+
+    /// Byte offset of state `i`'s overridable start-value slot.
+    fn state_start_off(&self, i: u32) -> u32 {
+        self.start_off + i * 8
     }
 
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
@@ -446,6 +458,9 @@ struct EditableParam {
     unit: String,
     off: u32,
     wty: WTy,
+    /// A state's start value (vs. a plain parameter): shown as the state's `t0`
+    /// value, and overridden after `functionInitStartValues` rather than before.
+    is_start: bool,
 }
 
 /// Process-wide table of prepared models, keyed by file-name prefix. Populated
@@ -560,6 +575,9 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
             }),
         }
     }
+    // A start value shows the state's t0 value; a plain parameter shows its slot.
+    let row0_by_name: HashMap<&str, f64> =
+        series.iter().map(|s| (s.name.as_str(), s.values.first().copied().unwrap_or(0.0))).collect();
     let params = model
         .editable_params
         .iter()
@@ -567,7 +585,11 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
             name: p.name.clone(),
             comment: p.comment.clone(),
             unit: p.unit.clone(),
-            value: param_value_by_off.get(&p.off).copied().unwrap_or(0.0),
+            value: if p.is_start {
+                row0_by_name.get(p.name.as_str()).copied().unwrap_or(0.0)
+            } else {
+                param_value_by_off.get(&p.off).copied().unwrap_or(0.0)
+            },
         })
         .collect();
     *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
@@ -774,19 +796,22 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 /// Parse `-override=name=value,...` tokens out of `simflags` and resolve each to
 /// its editable parameter's `SimData` slot. Unknown names / unparsable values are
 /// skipped (an unknown override is a no-op, as in the C runtime).
-fn resolve_overrides(model: &SimModel, simflags: &str) -> Vec<(u32, WTy, f64)> {
-    let mut out = Vec::new();
+/// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
+/// values, applied at different points of initialization (see `run_initialization`).
+fn resolve_overrides(model: &SimModel, simflags: &str) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
+    let mut params = Vec::new();
+    let mut starts = Vec::new();
     for tok in simflags.split_whitespace() {
         let Some(list) = tok.strip_prefix("-override=") else { continue };
         for item in list.split(',') {
             let Some((name, value)) = item.split_once('=') else { continue };
             let Ok(val) = value.trim().parse::<f64>() else { continue };
             if let Some(p) = model.editable_params.iter().find(|p| p.name == name.trim()) {
-                out.push((p.off, p.wty, val));
+                if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, val));
             }
         }
     }
-    out
+    (params, starts)
 }
 
 fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Result<()>, String) {
@@ -802,7 +827,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
     let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
     // `-override=name=value,...`: resolve each editable parameter to its SimData
     // slot and hand the list to the driver (applied after `functionParameters`).
-    sim_driver::set_param_overrides(resolve_overrides(&model, simflags));
+    let (param_ov, start_ov) = resolve_overrides(&model, simflags);
+    sim_driver::set_param_overrides(param_ov, start_ov);
     openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
     let res = (|| -> Result<()> {
@@ -903,7 +929,8 @@ mod session {
         if fmt != "mat" && fmt != "empty" {
             return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got `{fmt}`)");
         }
-        sim_driver::set_param_overrides(resolve_overrides(&model, simflags));
+        let (param_ov, start_ov) = resolve_overrides(&model, simflags);
+        sim_driver::set_param_overrides(param_ov, start_ov);
         sim_driver::clear_cancel();
         openmodelica_wasi::wasi::start_stdout_capture();
         // Build engine + driver (instantiate, init, emit row 0). An init trap is
@@ -1087,6 +1114,10 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
 struct SimVarMap {
     vars: HashMap<String, SimSlot>,
     starts: HashMap<String, Option<Arc<DAE::Exp>>>,
+    /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
+    /// slot instead of the inline expression. Empty when building
+    /// `functionInitStartValues` (it fills the slots, so must not read them).
+    start_slots: HashMap<String, u32>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     array_groups: HashMap<String, ArrayGroup>,
     /// Transient accumulator: base cref key -> the scalarized elements seen
@@ -1226,6 +1257,7 @@ fn build_var_map(
     let mut map = SimVarMap {
         vars: HashMap::new(),
         starts: HashMap::new(),
+        start_slots: HashMap::new(),
         array_groups: HashMap::new(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
@@ -1246,6 +1278,8 @@ fn build_var_map(
     let mut result_vars: Vec<ResultVar> = Vec::new();
     // User-settable parameters (isValueChangeable), collected as they are laid out.
     let mut editable: Vec<EditableParam> = Vec::new();
+    // Collected separately: the `push_editable` closure borrows `editable`. Merged below.
+    let mut start_editable: Vec<EditableParam> = Vec::new();
     let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: u32, wty: WTy| {
         if sv.isValueChangeable && is_result_output(sv) {
             if let Some(disp) = result_name(name) {
@@ -1255,6 +1289,7 @@ fn build_var_map(
                     unit: sv.unit.to_string(),
                     off,
                     wty,
+                    is_start: false,
                 });
             }
         }
@@ -1298,6 +1333,21 @@ fn build_var_map(
     // States | derivatives | real algebraics -> the realVars region (data_2).
     for (i, sv) in states.iter().enumerate() {
         let name = cref_display(&sv.name)?;
+        // Every state gets a start slot; value-changeable ones are also editable.
+        let start_off = layout.state_start_off(i as u32);
+        map.start_slots.insert(sim_cref_key(&sv.name)?, start_off);
+        if sv.isValueChangeable && is_result_output(sv) {
+            if let Some(disp) = result_name(&name) {
+                start_editable.push(EditableParam {
+                    name: disp,
+                    comment: sv.comment.to_string(),
+                    unit: sv.unit.to_string(),
+                    off: start_off,
+                    wty: WTy::F64,
+                    is_start: true,
+                });
+            }
+        }
         push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
     }
     for (i, sv) in ders.iter().enumerate() {
@@ -1450,6 +1500,7 @@ fn build_var_map(
     }
 
     finalize_array_groups(&mut map)?;
+    editable.extend(start_editable);
     Ok((map, result_vars, editable))
 }
 
@@ -1578,6 +1629,7 @@ struct EqFnIdx {
     initial: u32,
     ode: u32,
     algebraics: u32,
+    init_start_values: u32,
 }
 
 /// One `sample(index, start, interval)` time event, from `SimCode.timeEvents`.
@@ -1716,6 +1768,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let vars = &mi.vars;
+    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
 
     let n_states = vi.numStateVars.max(0) as u32;
     let n_real_alg = (count(&vars.algVars) + count(&vars.discreteAlgVars)) as u32;
@@ -1825,12 +1878,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         initial: eq_base + 1,
         ode: eq_base + 2,
         algebraics: eq_base + 3,
+        // Always emitted (no-op with no states) so the fixed indices below hold.
+        init_start_values: eq_base + 4,
     };
-    let simulate_idx = eq_base + 4;
+    let simulate_idx = eq_base + 5;
     // The two metadata accessors the standalone wasip1 runtime imports
     // (`om_meta_ptr`/`om_meta_len`), appended after `simulate`.
-    let om_meta_ptr_idx = eq_base + 5;
-    let om_meta_len_idx = eq_base + 6;
+    let om_meta_ptr_idx = eq_base + 6;
+    let om_meta_len_idx = eq_base + 7;
 
     // --- Equation lists + nonlinear-system registration. Flattened here (before
     // the type/import sections, which need to know whether the model has any
@@ -1991,6 +2046,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     bodies.push(build_eq_fn_with_prelude("initialEquations", &[], initial_eqs, &var_map, &eq_index, &by_name, &mut literals, &init_save, &[])?);
     bodies.push(build_eq_fn("odeEquations", ode_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
     bodies.push(build_eq_fn_with_prelude("algebraicEquations", &[], algebraic_eqs, &var_map, &eq_index, &by_name, &mut literals, &save_pre, &[])?);
+    // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
+    bodies.push(build_init_start_values_fn(&states, &layout, &var_map, &by_name, &mut literals)?);
     // The integrator loop.
     bodies.push(build_simulate(&layout, &eqfn)?);
 
@@ -2055,7 +2112,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         }
         f.instruction(&I::End);
         bodies.push(f);
-        Some(eq_base + 7)
+        Some(eq_base + 8)
     };
 
     // --- Nonlinear-system callbacks + `start`. For each system emit its
@@ -2121,7 +2178,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     for ti in &model_fn_type {
         functions.function(*ti);
     }
-    for _ in 0..4 {
+    // param / initial / ode / algebraics / initStartValues — all (i32) -> ().
+    for _ in 0..5 {
         functions.function(eqfn_type);
     }
     functions.function(simulate_type);
@@ -2161,6 +2219,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     let mut exports = we::ExportSection::new();
     exports.export("functionParameters", we::ExportKind::Func, eqfn.parameters);
     exports.export("functionInitialEquations", we::ExportKind::Func, eqfn.initial);
+    exports.export("functionInitStartValues", we::ExportKind::Func, eqfn.init_start_values);
     exports.export("functionODE", we::ExportKind::Func, eqfn.ode);
     exports.export("functionAlgebraics", we::ExportKind::Func, eqfn.algebraics);
     exports.export("simulate", we::ExportKind::Func, simulate_idx);
@@ -2523,6 +2582,7 @@ fn build_eq_fn_with_prelude(
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
         nls_fail_off: var_map.nls_fail_off,
@@ -2573,6 +2633,7 @@ fn build_init_sample_fn(
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
         nls_fail_off: var_map.nls_fail_off,
@@ -2602,6 +2663,53 @@ fn build_init_sample_fn(
     Ok(func)
 }
 
+/// Build `functionInitStartValues(SimData*)`: fill each state's start slot from its
+/// `start` expression. Called after `functionParameters` (so parameter-bound starts
+/// see final values) and before the initial equations. Empty `start_slots` here so
+/// the expressions compile inline (slots fill exactly as the old inline read).
+fn build_init_start_values_fn(
+    states: &[&SimCodeVar::SimVar],
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let sim = SimCtx {
+        data_local: 0,
+        vars: var_map.vars.clone(),
+        starts: var_map.starts.clone(),
+        start_slots: HashMap::new(),
+        array_groups: var_map.array_groups.clone(),
+        terminate_off: var_map.terminate_off,
+        nls_fail_off: var_map.nls_fail_off,
+        nls_jobs: var_map.nls_jobs.clone(),
+        sample_map: var_map.sample_map.clone(),
+        sample_active_off: var_map.sample_active_off,
+        relations_off: var_map.relations_off,
+        rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
+        n_relations: var_map.n_relations,
+        mathevents_off: var_map.mathevents_off,
+        n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
+        zc_context: false,
+    };
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32)> = Vec::with_capacity(states.len());
+    for (i, sv) in states.iter().enumerate() {
+        pairs.push((sv.initialValue.clone(), layout.state_start_off(i as u32)));
+    }
+    ctx.emit_init_start_values(&pairs)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
 /// Build the `functionZeroCrossings(SimData*)` function: evaluate each crossing's
 /// `lhs - rhs` into the zero-crossing region (see [`FnCtx::emit_zero_crossings`]).
 /// Called by the driver's DASKR root callback.
@@ -2616,6 +2724,7 @@ fn build_zero_crossings_fn(
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
         nls_fail_off: var_map.nls_fail_off,
@@ -3007,6 +3116,7 @@ fn build_nls_fns(
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
         nls_fail_off: var_map.nls_fail_off,
@@ -3170,9 +3280,11 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     f.instruction(&I::F64Const(1.0f64.into()));
     f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(layout.lambda_off, 3)));
 
-    // functionParameters(sim_data); functionInitialEquations(sim_data)
+    // functionParameters; functionInitStartValues; functionInitialEquations.
     f.instruction(&I::LocalGet(SIM_DATA));
     f.instruction(&I::Call(eqfn.parameters));
+    f.instruction(&I::LocalGet(SIM_DATA));
+    f.instruction(&I::Call(eqfn.init_start_values));
     f.instruction(&I::LocalGet(SIM_DATA));
     f.instruction(&I::Call(eqfn.initial));
 
@@ -3358,8 +3470,8 @@ mod standalone_tests {
         // Imported func index: rt_alloc = 0.
 
         let mut funcs = we::FunctionSection::new();
-        for _ in 0..4 {
-            funcs.function(1); // functionParameters/InitialEquations/ODE/Algebraics
+        for _ in 0..5 {
+            funcs.function(1); // param/initial/initStartValues/ODE/algebraics
         }
         funcs.function(2); // om_meta_ptr
         funcs.function(2); // om_meta_len
@@ -3367,15 +3479,16 @@ mod standalone_tests {
 
         let mut exports = we::ExportSection::new();
         exports.export("functionParameters", we::ExportKind::Func, 1);
-        exports.export("functionInitialEquations", we::ExportKind::Func, 2);
-        exports.export("functionODE", we::ExportKind::Func, 3);
-        exports.export("functionAlgebraics", we::ExportKind::Func, 4);
-        exports.export("om_meta_ptr", we::ExportKind::Func, 5);
-        exports.export("om_meta_len", we::ExportKind::Func, 6);
+        exports.export("functionInitStartValues", we::ExportKind::Func, 2);
+        exports.export("functionInitialEquations", we::ExportKind::Func, 3);
+        exports.export("functionODE", we::ExportKind::Func, 4);
+        exports.export("functionAlgebraics", we::ExportKind::Func, 5);
+        exports.export("om_meta_ptr", we::ExportKind::Func, 6);
+        exports.export("om_meta_len", we::ExportKind::Func, 7);
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
-        for _ in 0..4 {
+        for _ in 0..5 {
             let mut f = we::Function::new([]);
             f.instruction(&I::End);
             code.function(&f);

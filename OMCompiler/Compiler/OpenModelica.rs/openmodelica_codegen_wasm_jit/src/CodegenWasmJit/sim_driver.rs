@@ -356,22 +356,35 @@ thread_local! {
     /// Set per run by `run_simulation_inner`; independent parameters only (a
     /// calculated parameter's binding still overwrites it in `functionParameters`).
     static PARAM_OVERRIDES: RefCell<Vec<(u32, WTy, f64)>> = const { RefCell::new(Vec::new()) };
+    /// Start-value `-override`s, applied *after* `functionInitStartValues` so they
+    /// replace the computed start instead of being overwritten by it.
+    static START_OVERRIDES: RefCell<Vec<(u32, WTy, f64)>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Set the parameter overrides applied by the next [`run_initialization`].
-pub(super) fn set_param_overrides(overrides: Vec<(u32, WTy, f64)>) {
-    PARAM_OVERRIDES.with(|o| *o.borrow_mut() = overrides);
+/// Set the parameter/start overrides applied by the next [`run_initialization`].
+pub(super) fn set_param_overrides(params: Vec<(u32, WTy, f64)>, starts: Vec<(u32, WTy, f64)>) {
+    PARAM_OVERRIDES.with(|o| *o.borrow_mut() = params);
+    START_OVERRIDES.with(|o| *o.borrow_mut() = starts);
 }
 
-fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
-    let overrides = PARAM_OVERRIDES.with(|o| o.borrow().clone());
-    for (off, wty, val) in overrides {
+fn apply_overrides(e: &mut dyn SimEngine, sim_data: u32, overrides: &[(u32, WTy, f64)]) -> Result<()> {
+    for &(off, wty, val) in overrides {
         match wty {
             WTy::F64 => write_f64(e, sim_data + off, val)?,
             WTy::I32 => write_i32(e, sim_data + off, val as i32)?,
         }
     }
     Ok(())
+}
+
+fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    let overrides = PARAM_OVERRIDES.with(|o| o.borrow().clone());
+    apply_overrides(e, sim_data, &overrides)
+}
+
+fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    let overrides = START_OVERRIDES.with(|o| o.borrow().clone());
+    apply_overrides(e, sim_data, &overrides)
 }
 
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
@@ -389,7 +402,11 @@ fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
 
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     e.call1("functionParameters", sim_data)?;
+    // Params first (a start expression may read one), then fill start slots, then
+    // start overrides (replacing the just-computed start).
     apply_param_overrides(e, sim_data)?;
+    e.call1("functionInitStartValues", sim_data)?;
+    apply_start_overrides(e, sim_data)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;

@@ -261,16 +261,65 @@ pub fn write(file: File, data: ArcStr) -> Result<()> {
 }
 
 pub fn writeInt(file: File, data: i32, format: ArcStr) -> Result<()> {
-    // The C runtime uses `fprintf` with a user-supplied format string. We
-    // honor the common `%d` default with a fast path and fall through to a
-    // simple substitution otherwise. Full printf-compatibility would require
-    // a printf parser; callers in the OMC sources only use `%d` and `%ld`.
     let mut guard = file.inner.lock().unwrap();
-    let s = match format.as_str() {
-        "%d" | "%i" | "%ld" => data.to_string(),
-        other => other.replace("%d", &data.to_string()).replace("%ld", &data.to_string()),
-    };
+    let s = format_int(format.as_str(), data);
     guard.write_bytes(s.as_bytes(), "writeInt")
+}
+
+// Substitute the first printf integer conversion `%[0][width][l](d|i)` in `fmt`,
+// keeping surrounding literals. Callers use `%d`/`%i`/`%ld` and `%02d` (xsdateTime).
+fn format_int(fmt: &str, data: i32) -> String {
+    let bytes = fmt.as_bytes();
+    let mut out = String::with_capacity(fmt.len() + 8);
+    let mut i = 0;
+    let mut lit_start = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'%' {
+            i += 1;
+            continue;
+        }
+        let mut j = i + 1;
+        let zero = j < bytes.len() && bytes[j] == b'0';
+        if zero {
+            j += 1;
+        }
+        let ws = j;
+        while j < bytes.len() && bytes[j].is_ascii_digit() {
+            j += 1;
+        }
+        let width: usize = fmt.get(ws..j).and_then(|w| w.parse().ok()).unwrap_or(0);
+        while j < bytes.len() && bytes[j] == b'l' {
+            j += 1;
+        }
+        if j < bytes.len() && (bytes[j] == b'd' || bytes[j] == b'i') {
+            out.push_str(&fmt[lit_start..i]);
+            out.push_str(&fmt_int_field(data, zero, width));
+            j += 1;
+            i = j;
+            lit_start = j;
+        } else {
+            i += 1;
+        }
+    }
+    out.push_str(&fmt[lit_start..]);
+    out
+}
+
+// Zero- or space-pad `data` to `width` (sign kept outside the padding).
+fn fmt_int_field(data: i32, zero: bool, width: usize) -> String {
+    let num = data.to_string();
+    if num.len() >= width {
+        return num;
+    }
+    let pad = width - num.len();
+    if zero {
+        match num.strip_prefix('-') {
+            Some(rest) => format!("-{}{}", "0".repeat(pad), rest),
+            None => format!("{}{}", "0".repeat(pad), num),
+        }
+    } else {
+        format!("{}{}", " ".repeat(pad), num)
+    }
 }
 
 pub fn writeReal(file: File, data: metamodelica::Real, format: ArcStr) -> Result<()> {

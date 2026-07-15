@@ -283,7 +283,7 @@ self.onmessage = async (ev) => {
         const built = (await evalWithDownloads(`buildModel(${a.name}${opts.length ? ',' + opts.join(',') : ''})`, status)).trim();
         // buildModel → {"<prefix>","<initfile>"}; an empty first element means it failed.
         if (!/^\{\s*"[^"]/.test(built)) return reply(simError('Build failed.'));
-        const st = await runResumable(a.name, a.override ? `-override=${a.override}` : '', status);
+        const st = await runResumable(a.name, a.override || '', status);
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Simulation failed.'));
         const s = snapshot();
@@ -294,7 +294,7 @@ self.onmessage = async (ev) => {
       }
       case 'resimulate': {
         // Re-run the already-built model (no rebuild) — same cancellable chunked path.
-        const st = await runResumable(a.name, a.override ? `-override=${a.override}` : '', status);
+        const st = await runResumable(a.name, a.override || '', status);
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Re-simulation failed.'));
         const s = snapshot();
