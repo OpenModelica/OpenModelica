@@ -1,0 +1,74 @@
+// name:     issue13060
+// keywords: fmi cpp runtime event sample algebraics output
+// status:   correct
+// teardown_command: rm -rf issue13060.fmu issue13060_systemCall.log issue13060_res.mat/ issue13060-tmp/
+// cflags: -d=-newInst
+//
+// Modelica model with a periodic sample event that updates a discrete
+// variable r = x. An algebraic variable y = r depends on r.
+//
+// The C++ runtime FMU wrapper must:
+//   1. Activate time event conditions (computeTimeEventConditions) so that
+//      when sample() events are detected during event handling
+//   2. Re-evaluate algebraic variables (evaluateAll) after handleSystemEvents
+//      so that outputs depending on discrete variables updated by event
+//      handling have the correct post-event values
+//
+// Previously FMU2Wrapper::newDiscreteStates and FMU3Wrapper::newDiscreteStates
+// did neither, so no sample events fired and fmi2GetReal returned stale
+// pre-event output values.
+//
+// See #13060
+
+loadString("
+  model issue13060
+    Real x(start=0, fixed=true);
+    discrete Real r(start=0, fixed=true);
+    Real y;
+  equation
+    der(x) = 1;
+    when sample(0, 0.1) then
+      r = x;
+    end when;
+    y = r;
+  end issue13060;
+"); getErrorString();
+
+// Build FMU with C++ target runtime (original issue #13060)
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+buildModelFMU(issue13060, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator issue13060.fmu --intervals=3 --stopTime=0.3 --resultFile=\"issue13060_res.mat\" --suppressPath --tempDir=\"issue13060-tmp\"", "issue13060_systemCall.log"); getErrorString();
+readFile("issue13060_systemCall.log");
+
+// Check values at midpoint times (between events) where results are unambiguous:
+//   t=0.05 -> y = r = 0   (before first event)
+//   t=0.15 -> y = r = 0.1 (after first event at 0.1)
+//   t=0.25 -> y = r = 0.2 (after second event at 0.2)
+val(issue13060.y, {0.05, 0.15, 0.25}, "issue13060_res.mat");
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "issue13060.fmu"
+// ""
+// 0
+// ""
+// "info: *** FMU Simulation Info ***
+//      - model     : issue13060 (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 0.300000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    maximum step size for 'issue13060.root': 0.002000
+// info:    Result file: issue13060_res.mat (bufferSize=10)
+// info:    Final Statistics for 'issue13060.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// {0.0, 0.1, 0.2}
+// endResult
