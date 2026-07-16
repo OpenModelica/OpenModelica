@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf Buildings.Fluid.Humidifiers.Examples.Humidifier_u.libs Buildings*.libs
 
-loadModel(Buildings, {"12.0.0-master"}); getErrorString();
+loadModel(Buildings, {"12.1.1"}); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 translateModel(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorString();
 
@@ -16,6 +16,6 @@ translateModel(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorStrin
 // "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
 // Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
 // Checking for consistency is not yet supported, following equations had to be removed:
-// [SCAL] (1) humDyn.vol.p_start = humDyn.p_start; ($RES_BND_509)
+// [SCAL] (1) humDyn.vol.p_start = humDyn.p_start; ($RES_BND_506)
 // "
 // endResult
