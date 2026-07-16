@@ -82,6 +82,12 @@ fn trap() -> ! {
 #[cfg(target_os = "wasi")]
 mod standalone;
 
+// The in-wasm session driver (`rt_sim_*`), only on the no_std JIT runtime target
+// (wasm32-unknown-unknown): the shared driver + daskr compiled in-wasm so the
+// model's functionODE etc. are reached wasm->wasm via the shared table.
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+mod session;
+
 // ---------------------------------------------------------------------------
 // Raw little-endian memory access (all pointers are byte offsets into the one
 // shared linear memory).
@@ -2026,4 +2032,22 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     } else {
         1
     }
+}
+
+// ---------------------------------------------------------------------------
+// Host-driven call_indirect into the model (in-wasm sim driver wiring).
+//
+// The host appends a model export (e.g. `functionODE`) to the shared
+// `__indirect_function_table` and passes back its index; the runtime reaches it
+// wasm→wasm via `call_indirect`, exactly as `rt_solve_nls` reaches a system's
+// `residual`/`load`. A fn-pointer value *is* the table index on wasm, so a
+// transmute + call lowers to `call_indirect` of the `(i32)->()` type.
+// ---------------------------------------------------------------------------
+
+/// Call the table-`idx` model function of type `fn(u32)` (an equation function
+/// such as `functionODE`/`functionParameters`) with `arg` (the `sim_data` ptr).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_call1_indirect(idx: u32, arg: u32) {
+    let f: extern "C" fn(u32) = unsafe { core::mem::transmute(idx as usize) };
+    f(arg);
 }

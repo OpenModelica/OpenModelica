@@ -38,6 +38,7 @@ name = "daskr"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "libm",
 ]
 
 [[package]]
@@ -180,6 +181,10 @@ version = "0.1.0"
 [[package]]
 name = "openmodelica_sim_meta"
 version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
+]
 
 [[package]]
 name = "shlex"

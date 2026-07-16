@@ -1920,6 +1920,7 @@ name = "daskr"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "libm",
 ]
 
 [[package]]
@@ -6753,6 +6754,10 @@ dependencies = [
 [[package]]
 name = "openmodelica_sim_meta"
 version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
+]
 
 [[package]]
 name = "openmodelica_simcode_types"

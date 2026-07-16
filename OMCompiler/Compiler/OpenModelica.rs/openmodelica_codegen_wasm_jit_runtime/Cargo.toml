@@ -25,9 +25,18 @@ libm = "0.2"
 # (dlmalloc-backed) + `libm` for float ops — no host boundary crossing per solve.
 nalgebra = { version = "0.35", default-features = false, features = ["alloc", "libm"] }
 
+# In-wasm session driver (`src/session.rs`) for the no_std JIT runtime
+# (wasm32-unknown-unknown): the shared driver + solver compiled in-wasm so the
+# model's functionODE etc. are reached wasm->wasm. no_std (`default-features =
+# false`); math routes through libm. mat_writer is not needed here (rows go into
+# an rt_alloc buffer, not a `.mat`).
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+daskr = { path = "../daskr", default-features = false }
+
 # Standalone-export (wasm32-wasip1) only: the in-wasm driver (`src/standalone.rs`)
 # decodes the model metadata, runs DASSL (daskr) / Euler, and serialises the
-# `.mat`. None of these are pulled into the no_std JIT runtime build.
+# `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
 openmodelica_sim_meta = { path = "../openmodelica_sim_meta" }
 openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }

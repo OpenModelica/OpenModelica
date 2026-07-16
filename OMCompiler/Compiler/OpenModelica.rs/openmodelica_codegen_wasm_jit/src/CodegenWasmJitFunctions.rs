@@ -77,14 +77,17 @@ pub(crate) mod runtime;
 /// A wasm value type. MetaModelica `Integer` is the port's `i32`
 /// ([[funcbuiltin-i32-intmaxlit]]); `Boolean` and `Enumeration` indices also
 /// live in an `i32`; `Real` is an `f64`.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub(crate) enum WTy {
-    I32,
-    F64,
-}
+// `WTy` is defined once in `openmodelica_sim_meta` (shared with the in-wasm sim
+// driver so the emitted layout and the driver's readback cannot drift). Its
+// wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
+// trait rather than an inherent method.
+pub(crate) use openmodelica_sim_meta::WTy;
 
-impl WTy {
-    pub(crate) fn val(self) -> we::ValType {
+pub(crate) trait WTyVal {
+    fn val(self) -> we::ValType;
+}
+impl WTyVal for WTy {
+    fn val(self) -> we::ValType {
         match self {
             WTy::I32 => we::ValType::I32,
             WTy::F64 => we::ValType::F64,

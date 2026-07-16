@@ -129,6 +129,16 @@ pub(crate) fn add_host_builtins(linker: &mut wasmtime::Linker<()>) -> Result<()>
             });
         },
     ))?;
+    // The in-wasm session driver (`rt_sim_*`) polls these for its chunk budget and
+    // cooperative cancel, wasm-side, so it uses the *same* clock/cancel source as
+    // the host driver. Present in every runtime instantiation (unused by the host
+    // driver path).
+    wt(linker.func_wrap("env", "rt_host_now_ms", || -> f64 {
+        openmodelica_sim_meta::driver::now_ms_host()
+    }))?;
+    wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 {
+        metamodelica::cancel::check_cancel() as i32
+    }))?;
     Ok(())
 }
 

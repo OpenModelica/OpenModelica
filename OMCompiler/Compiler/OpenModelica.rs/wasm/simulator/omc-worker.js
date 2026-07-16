@@ -7,7 +7,7 @@
 //   page → { id, cmd, ... }         worker → { type:'reply', id, ok, result|error }
 // plus unsolicited { type:'status', id, text } for download progress.
 import init, {
-  omc_set_env, omc_init, omc_eval, omc_simulate,
+  omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
   omc_sim_start, omc_sim_advance, omc_sim_free,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
@@ -18,6 +18,10 @@ import init, {
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
 let simCancel = false;
+
+// `?driver=` override (0 host, 1 in-wasm), applied once the module is up.
+let driverMode = null;
+let inited = false;
 
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
 const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s; };
@@ -183,6 +187,8 @@ self.onmessage = async (ev) => {
   // Out-of-band: arrives while a simulate handler is parked at its inter-chunk
   // `await`, so it just raises the flag (no reply; the sim replies {cancelled:true}).
   if (cmd === 'cancelSim') { simCancel = true; return; }
+  // May arrive before `init`: the export is unreachable until the module is up.
+  if (cmd === 'setDriver') { driverMode = a.mode; if (inited) omc_set_inwasm_driver(a.mode); return; }
   const status = (text) => self.postMessage({ type: 'status', id, text });
   const wlog = (text) => self.postMessage({ type: 'log', id, text });
   _plog = wlog;
@@ -198,6 +204,8 @@ self.onmessage = async (ev) => {
         await init();
         omc_set_env('OPENMODELICAHOME', '/usr');
         if (!omc_init()) throw new Error('omc_init() failed');
+        inited = true;
+        if (driverMode !== null) omc_set_inwasm_driver(driverMode);
         // Emit the MultiBody visualization scene (<model>_visual.xml) for every
         // simulation, so any model with animatable shapes shows a 3D view by
         // default. copyClass'd library examples carry no annotation of their own,
@@ -272,25 +280,33 @@ self.onmessage = async (ev) => {
         if (a.intervals) opts.push(`numberOfIntervals=${a.intervals}`);
         if (a.tolerance) opts.push(`tolerance=${a.tolerance}`);
         if (a.method) opts.push(`method="${a.method}"`);
+        const _tb = performance.now();
         const built = (await evalWithDownloads(`buildModel(${a.name}${opts.length ? ',' + opts.join(',') : ''})`, status)).trim();
+        const buildMs = performance.now() - _tb;
         // buildModel → {"<prefix>","<initfile>"}; an empty first element means it failed.
         if (!/^\{\s*"[^"]/.test(built)) return reply(simError('Build failed.'));
+        const _ts = performance.now();
         const st = await runResumable(a.name, a.override || '', status);
+        const simMs = performance.now() - _ts;
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Simulation failed.'));
         const s = snapshot();
         if (!s) return reply(simError('Simulation produced no result.'));
         s.snap.options = simOptions(a.name, a);  // settings actually used → seed the dialog
+        s.snap.timing = { buildMs, simMs };
         reply(s.snap, s.transfer);               // figures/doc come from loadSource/copyClass
         break;
       }
       case 'resimulate': {
         // Re-run the already-built model (no rebuild) — same cancellable chunked path.
+        const _ts = performance.now();
         const st = await runResumable(a.name, a.override || '', status);
+        const simMs = performance.now() - _ts;
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Re-simulation failed.'));
         const s = snapshot();
         if (!s) return reply(simError('Re-simulation produced no result.'));
+        s.snap.timing = { buildMs: 0, simMs };
         reply(s.snap, s.transfer);
         break;
       }

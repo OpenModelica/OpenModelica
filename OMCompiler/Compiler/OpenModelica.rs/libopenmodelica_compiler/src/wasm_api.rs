@@ -469,3 +469,18 @@ pub fn omc_sim_free() {
 pub fn omc_request_cancel() {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::request_cancel();
 }
+
+/// Select the simulation driver: `1` in-wasm (the default here — the model is
+/// reached wasm->wasm), `0` host (each model call crosses wasm->JS->wasm through
+/// wasmer), `-1` the default. Applies from the next `omc_sim_start`/`omc_simulate`.
+#[wasm_bindgen]
+pub fn omc_set_inwasm_driver(mode: i32) {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_inwasm_driver_override(mode);
+}
+
+/// Enable the per-run bench lines; the `OMC_WASM_SIM_BENCH` that arms them
+/// natively is unreachable without an environment.
+#[wasm_bindgen]
+pub fn omc_set_sim_bench(on: bool) {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_sim_bench(on);
+}

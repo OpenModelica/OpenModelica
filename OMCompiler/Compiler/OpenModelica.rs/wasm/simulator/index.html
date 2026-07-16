@@ -429,9 +429,13 @@ function call(worker, cmd, args) {
     worker.postMessage({ id, cmd, ...(args || {}) });
   });
 }
+// `?driver=host|inwasm` overrides the simulation driver, for A/B'ing the two.
+const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).get('driver')] ?? null;
+
 function makeWorker(tag) {
   const w = new Worker(new URL('./omc-worker.js', import.meta.url), { type: 'module' });
   attach(w, tag);
+  if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
   return w;
 }
 // The MSL worker took over: make it primary and terminate the plain worker so we
@@ -524,6 +528,8 @@ async function run(kind) {                       // 'full' | 'resim'
     return;
   }
   running = true; runningKind = kind; setRunUI(true);
+  const tRun = performance.now();
+  let runMs = 0;
   log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
 
@@ -541,6 +547,7 @@ async function run(kind) {                       // 'full' | 'resim'
     if (kind === 'resim' && builtModel && builtWorker) {
       jobWorker = builtWorker;
       const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov });
+      runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       snap = r;
@@ -564,6 +571,7 @@ async function run(kind) {                       // 'full' | 'resim'
       if (lm.figures !== undefined) modelFigures = lm.figures || null;
       if (lm.doc !== undefined) { modelDoc = lm.doc || ''; renderDoc(); }
       const r = await call(worker, 'simulate', { name: lm.name, override: ov, ...settings });
+      runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
       builtModel = lm.name; builtWorker = worker; lastText = text; snap = r;
@@ -575,7 +583,12 @@ async function run(kind) {                       // 'full' | 'resim'
     renderCharts();
     await fetchAnim(builtWorker);      // 3D scene, if the model enabled -d=visxml
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
-    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}`);
+    const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
+    const t = snap.timing;
+    const msNote = t
+      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${drv}`
+      : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
+    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
   } catch (e) {
     log('run failed', e); fail('' + e);
@@ -1112,6 +1125,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
   try {
     await loadConfig();                             // examples + title, before the first run
 
+    if (DRIVER_MODE !== null) log('sim driver forced to', DRIVER_MODE ? 'in-wasm' : 'host', '(?driver=)');
     w1 = makeWorker('w1');
     w2 = makeWorker('w2-msl');
     primaryWorker = w1;
