@@ -49,10 +49,12 @@ public
   import Algorithm = NFAlgorithm;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -339,9 +341,12 @@ public
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
-          if solve_status < Status.UNSOLVABLE then
+          if solve_status == Status.EXPLICIT then
+            // successfully solved explicitly; use result directly
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
           else
+            // IMPLICIT (cref hidden inside array expression) or UNSOLVABLE:
+            // try expanding array sums to find an explicit solution for the slice
             (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
             comp.eqn := eqn_slice;
           end if;
@@ -954,13 +959,18 @@ protected
       case Status.IMPLICIT
         then eqn;
       else algorithm
-        status := Status.EXPLICIT;
-        solvedRHS := Expression.makeZero(ty);
-        for instruction in inverseInstructions loop
-          solvedRHS := applyInstruction(solvedRHS, instruction);
-        end for;
-        eqn := Equation.setLHS(eqn, crefExp);
-        eqn := Equation.setRHS(eqn, solvedRHS);
+        if not crefFound then
+          // cref was not found in the residual expression; cannot solve explicitly
+          status := Status.IMPLICIT;
+        else
+          status := Status.EXPLICIT;
+          solvedRHS := Expression.makeZero(ty);
+          for instruction in inverseInstructions loop
+            solvedRHS := applyInstruction(solvedRHS, instruction);
+          end for;
+          eqn := Equation.setLHS(eqn, crefExp);
+          eqn := Equation.setRHS(eqn, solvedRHS);
+        end if;
         then eqn;
     end match;
   end solveUnique;
@@ -1580,6 +1590,60 @@ protected
     end if;
   end tupleSolvable;
 
+  function expandArraySumsForCref
+    "Expands sum(arrayCref) to an element-wise sum in an equation.
+    Used in SLICED_COMPONENT solving when the target cref is a slice of arrayCref."
+    input output Equation eqn;
+    input ComponentRef arrayCref "the parent array cref to expand in sum() calls";
+  algorithm
+    eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = arrayCref));
+  end expandArraySumsForCref;
+
+  function expandArraySumExp
+    "Replaces sum(arrayCref) with arrayCref[1] + ... + arrayCref[n] for 1D arrays.
+    sum(A) without explicit iterator is represented as TYPED_CALL, not TYPED_REDUCTION."
+    input output Expression exp;
+    input ComponentRef arrayCref;
+  protected
+    Call call;
+    Type arrTy, elemTy;
+    list<Dimension> dims;
+    Integer n;
+    list<Expression> elements = {};
+    ComponentRef elemCref;
+    Expression arg;
+  algorithm
+    () := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        if AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "sum" and
+           List.hasOneElement(call.arguments) then
+          arg := listHead(call.arguments);
+          if Expression.isCref(arg) and
+             ComponentRef.isEqual(Expression.toCref(arg), arrayCref) then
+            arrTy := ComponentRef.getSubscriptedType(arrayCref, true);
+            elemTy := Type.arrayElementType(arrTy);
+            dims := Type.arrayDims(arrTy);
+            if listLength(dims) == 1 then
+              n := Dimension.size(listHead(dims));
+              if n > 1 then
+                for i in 1:n loop
+                  elemCref := ComponentRef.mergeSubscripts({Subscript.INDEX(Expression.INTEGER(i))}, arrayCref);
+                  elements := Expression.CREF(elemTy, elemCref) :: elements;
+                end for;
+              end if;
+            end if;
+          end if;
+        end if;
+      then ();
+      else ();
+    end match;
+    // assign outside the match to avoid type narrowing conflict (CALL := MULTARY)
+    if not listEmpty(elements) then
+      elemTy := Type.arrayElementType(ComponentRef.getSubscriptedType(arrayCref, true));
+      exp := Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
+    end if;
+  end expandArraySumExp;
+
   function getVarSlice
     input output ComponentRef var_cref;
     input Option<ComponentRef> reference;
@@ -1648,6 +1712,13 @@ protected
     if solve_status < Status.IMPLICIT then
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+    elseif solve_status == Status.IMPLICIT then
+      // var_cref is a parent array containing cref as a slice; expand array sums to enable explicit solving
+      eqn := expandArraySumsForCref(eqn, var_cref);
+      (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+      if solve_status < Status.UNSOLVABLE then
+        eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+      end if;
     end if;
   end solveForVarSlice;
 

@@ -5,7 +5,7 @@
 
 loadModel(Buildings, {"12.1.1"}); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
-translateModel(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorString();
+simulate(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorString();
 
 // Result:
 // true
