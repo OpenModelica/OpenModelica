@@ -254,6 +254,9 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
+  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literalsAcc = literals;
+  list<SimCodeFunction.RecordDeclaration> recordDeclsAcc = recordDecls;
+  AvlTreePathFunction.Tree fmiDerInitFuncTree;
   HashTable.HashTable crefToClockIndexHT;
   array<Integer> systemIndexMap;
   list<BackendDAE.EqSystem> clockedSysts, contSysts;
@@ -600,10 +603,14 @@ algorithm
     (stateSets, modelInfo, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
-    // collect fmi partial derivative
+    // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
     if FMI.isFMIVersion20(FMUVersion) then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex, fmiDerInitFuncTree) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+      // the FMIDERINIT jacobian is created here, i.e. after the functions have been
+      // elaborated, so the functions it calls on its own have to be added now
+      (modelInfo, literalsAcc, recordDeclsAcc) := addFmiDerInitFunctions(program, fmiDerInitFuncTree,
+        BackendDAEUtil.getFunctions(inBackendDAE.shared), modelInfo, literalsAcc, recordDeclsAcc);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
 
@@ -767,7 +774,7 @@ algorithm
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {}, // Set by the traversal below...
-      recordDecls                 = recordDecls,
+      recordDecls                 = recordDeclsAcc,
       externalFunctionIncludes    = externalFunctionIncludes,
       generic_loop_calls          = {}, // only used in new backend
       localKnownVars              = localKnownVars,
@@ -819,7 +826,7 @@ algorithm
       scalarized                  = true
     );
 
-    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
+    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literalsAcc);
     simCode := setSimCodeLiterals(simCode, listReverse(lits));
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
@@ -13717,6 +13724,7 @@ public function createFMIModelStructure
   output SimCode.ModelInfo outModelInfo = inModelInfo;
   output list<SimCode.JacobianMatrix> symJacs = {};
   output Integer uniqueEqIndex = inUniqueEqIndex;
+  output AvlTreePathFunction.Tree outFmiDerInitFuncTree = AvlTreePathFunction.new() "functions the FMIDERINIT jacobian calls, may hold functions created by the differentiation";
 protected
    BackendDAE.SparsePatternCrefs spTA, spTA1;
    SimCode.SparsityPattern sparseInts;
@@ -13812,7 +13820,7 @@ algorithm
 
     // get FMI initialUnknowns list with dependencies
     if not listEmpty(tmpInitialUnknowns) then
-      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs, outFmiDerInitFuncTree) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
     else
       allInitialUnknowns := {};
     end if;
@@ -13879,6 +13887,83 @@ else
   end try;
 end try;
 end createFMIModelStructure;
+
+protected function collectUsedFmiDerInitFunctions
+  "returns the functions of the given tree that the FMIDERINIT jacobian equations call"
+  input BackendDAE.SymbolicJacobians fmiDerInit;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree;
+  output AvlTreePathFunction.Tree usedFuncs = AvlTreePathFunction.new();
+protected
+  BackendDAE.BackendDAE jacDAE;
+algorithm
+  for jac in fmiDerInit loop
+    () := match jac
+      case (SOME((jacDAE, _, _, _, _, _)), _, _, _)
+        algorithm
+          usedFuncs := BackendDAEOptimize.removeUnusedFunctions(jacDAE.eqs, jacDAE.shared, {}, fmiDerInitFuncTree, usedFuncs);
+        then ();
+      else ();
+    end match;
+  end for;
+end collectUsedFmiDerInitFunctions;
+
+protected function addFmiDerInitFunctions
+  "The FMIDERINIT jacobian is created after the functions have been elaborated, and
+   differentiating it symbolically can call functions that nothing else in the model calls,
+   e.g. a partial derivative created on the fly or the function of a derivative annotation
+   that got removed by removeUnusedFunctions. Elaborate those and add them here, otherwise
+   the generated code calls functions that are never defined."
+  input Absyn.Program program;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree "functions the FMIDERINIT jacobian calls";
+  input AvlTreePathFunction.Tree elaboratedFuncTree "functions that are elaborated already";
+  input output SimCode.ModelInfo modelInfo;
+  input output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+  output list<SimCodeFunction.RecordDeclaration> outRecordDecls = recordDecls;
+protected
+  list<DAE.Function> newFuncs;
+  list<DAE.Exp> lits;
+  list<SimCodeFunction.Function> simFuncs;
+  list<SimCodeFunction.RecordDeclaration> newRecordDecls;
+  list<String> knownRecordDecls;
+algorithm
+  // keep the ones that are not elaborated yet
+  newFuncs := list(func for func guard
+    isNone(AvlTreePathFunction.getOpt(elaboratedFuncTree, DAEUtil.functionName(func)))
+    in DAEUtil.getFunctionList(fmiDerInitFuncTree));
+
+  if listEmpty(newFuncs) then
+    return;
+  end if;
+
+  // same treatment the elaborated functions got in SimCodeUtilShared.createFunctions,
+  // continuing the literal count so the indices of the existing literals still hold
+  newFuncs := Inline.inlineCallsInFunctions(newFuncs, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
+  (newFuncs, literals) := DAEUtil.traverseDAEFunctions(newFuncs, SimCodeFunctionUtil.findLiteralsHelper, literals);
+  (_, _, lits) := literals;
+  (simFuncs, newRecordDecls) := SimCodeFunctionUtil.elaborateFunctions(program, newFuncs, {}, lits, {});
+
+  modelInfo.functions := listAppend(modelInfo.functions, simFuncs);
+
+  // add the record declarations that are not declared already, the new ones are sorted
+  // by their dependencies already and nothing declared before can depend on them
+  knownRecordDecls := list(recordDeclarationName(rd) for rd in recordDecls);
+  newRecordDecls := list(rd for rd guard
+    not listMember(recordDeclarationName(rd), knownRecordDecls) in newRecordDecls);
+  outRecordDecls := listAppend(recordDecls, newRecordDecls);
+end addFmiDerInitFunctions;
+
+protected function recordDeclarationName
+  "returns the name a record declaration is generated under"
+  input SimCodeFunction.RecordDeclaration recordDecl;
+  output String name;
+algorithm
+  name := match recordDecl
+    case SimCodeFunction.RECORD_DECL_FULL() then recordDecl.name;
+    case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() then recordDecl.ctor_name;
+    case SimCodeFunction.RECORD_DECL_DEF() then AbsynUtil.pathString(recordDecl.path);
+  end match;
+end recordDeclarationName;
 
 protected function isInitialApproxOrCalculatedSimVar
   "return true if the initial attribute is CALCULATED or APPROX else false"
@@ -13955,6 +14040,7 @@ protected function getFmiInitialUnknowns
   output BackendDAE.SymbolicJacobians fmiDerInit = {} "partial derivative of initDAE";
   output list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {} "sorted crefs of unknowns";
   output list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs = {} "sorted crefs of knowns";
+  output AvlTreePathFunction.Tree fmiDerInitFuncTree = AvlTreePathFunction.new() "functions the partial derivative of initDAE calls";
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs, crefs;
   DAE.ComponentRef cref;
@@ -14084,7 +14170,10 @@ algorithm
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
     end if;
-    fmiDerInit := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    (fmiDerInit, fmiDerInitFuncTree) := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    // the jacobian can call functions that nothing else calls, keep track of them so that
+    // they can be elaborated later on, the tree of initDAE itself is not filtered at all
+    fmiDerInitFuncTree := collectUsedFmiDerInitFunctions(fmiDerInit, fmiDerInitFuncTree);
 
     // sort the cref according to FMIINDEX, to be used by fmi2GetDirectionalDerivative()
     sortedknownCrefs := sortInitialUnknowsSimVars(getSimVars2Crefs(indepCrefs, crefSimVarHT));
