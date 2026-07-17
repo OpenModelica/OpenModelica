@@ -1,0 +1,74 @@
+// name: fmi_export_derivative_annotation.mos
+// keywords: FMI 2.0 export, directional derivatives, derivative annotation
+// status: correct
+// teardown_command: rm -rf MDerAnn.fmu MDerAnn.log MDerAnn_info.json *.fmutmp
+
+// Exporting a Model Exchange FMU with directional derivatives enabled has to emit the
+// functions the FMIDERINIT jacobian calls, i.e. the function of a derivative annotation
+// and the partial derivatives the symbolic differentiation creates for it. Otherwise the
+// generated <Model>_12jac.c calls functions that are never defined and the FMU does not
+// compile.
+
+setCommandLineOptions("-d=-disableDirectionalDerivatives");
+getErrorString();
+
+loadString("
+package MWE
+  function flowFun
+    input Real m_flow;
+    input Real k;
+    input Real m_flow_turbulent(min=0);
+    output Real dp;
+  protected
+    Real dp_turbulent = (m_flow_turbulent/k)^2;
+    Real m_flowNorm = m_flow/m_flow_turbulent;
+    Real m_flowNormSq = m_flowNorm^2;
+  algorithm
+    dp := smooth(2, if noEvent(abs(m_flow) > m_flow_turbulent)
+          then sign(m_flow)*(m_flow/k)^2
+          else (0.375 + (0.75 - 0.125*m_flowNormSq)*m_flowNormSq)*dp_turbulent*m_flowNorm);
+    annotation(Inline=false, smoothOrder=2,
+      derivative(order=1, zeroDerivative=k, zeroDerivative=m_flow_turbulent) = MWE.flowFun_der);
+  end flowFun;
+
+  function flowFun_der
+    input Real m_flow;
+    input Real k;
+    input Real m_flow_turbulent(min=0);
+    input Real m_flow_der;
+    output Real dp_der;
+  protected
+    Real dp_turbulent = (m_flow_turbulent/k)^2;
+    Real m_flowNormSq = (m_flow/m_flow_turbulent)^2;
+  algorithm
+    dp_der := (if noEvent(abs(m_flow) > m_flow_turbulent)
+               then sign(m_flow)*2*m_flow/k^2
+               else (0.375 + (2.25 - 0.625*m_flowNormSq)*m_flowNormSq)*dp_turbulent/m_flow_turbulent)*m_flow_der;
+    annotation(Inline=false, smoothOrder=1);
+  end flowFun_der;
+
+  model MDerAnn
+    parameter Real m_flow0 = 1;
+    parameter Real k = 0.5;
+    parameter Real m_flow_turbulent = 0.1;
+    input Real u(start=0.05);
+    Real x(start=0, fixed=true);
+    Real dp;
+  equation
+    dp = flowFun(m_flow0, k, m_flow_turbulent);
+    der(x) = -1e-3*dp*x + u;
+  end MDerAnn;
+end MWE;
+"); getErrorString();
+
+// compiles the FMU, i.e. fails if the jacobian calls a function that is not emitted
+buildModelFMU(MWE.MDerAnn, version="2.0", fmuType="me"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "MDerAnn.fmu"
+// ""
+// endResult
