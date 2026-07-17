@@ -1,0 +1,90 @@
+// name:                singleOutputSpatialDistribution.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f SingleOutput*
+//
+// Models that only use one of the two outputs of the spatialDistribution
+// operator. In that case the code generator passes NULL for the unused output
+// pointer and the runtime must not dereference it.
+// Regression test for #15431.
+
+loadModel(Modelica); getErrorString();
+
+// Only the first output is used, second output pointer is NULL.
+loadString("
+  model SingleOutputFirst
+    \"Only uses the first output of spatialDistribution (negative velocity).\"
+  extends Modelica.Icons.Example;
+  Real input_ = time*2;
+  Real leftOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {1.0, 1.0};
+  Real v;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = der(x);
+  v = -1;
+  posV = v >= 0;
+  leftOutput = spatialDistribution(input_, input_, x, posV, initialPoints, initialValues);
+end SingleOutputFirst;"); getErrorString();
+
+// Only the second output is used, first output pointer is unused (return value).
+loadString("
+  model SingleOutputSecond
+    \"Only uses the second output of spatialDistribution (positive velocity).\"
+  extends Modelica.Icons.Example;
+  Real input_ = time*2;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {1.0, 1.0};
+  Real v;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = der(x);
+  v = 1;
+  posV = v >= 0;
+  (, rightOutput) = spatialDistribution(input_, input_, x, posV, initialPoints, initialValues);
+end SingleOutputSecond;"); getErrorString();
+
+simulate(SingleOutputFirst, stopTime=2.0); getErrorString();
+val(leftOutput, 0.0);
+val(leftOutput, 1.0);
+val(leftOutput, 2.0);
+
+simulate(SingleOutputSecond, stopTime=2.0); getErrorString();
+val(rightOutput, 0.0);
+val(rightOutput, 1.0);
+val(rightOutput, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SingleOutputFirst_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SingleOutputFirst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// 2.0
+// record SimulationResult
+//     resultFile = "SingleOutputSecond_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SingleOutputSecond', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// 2.0
+// endResult
