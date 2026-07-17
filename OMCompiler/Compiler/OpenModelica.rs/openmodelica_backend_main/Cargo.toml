@@ -22,6 +22,7 @@ openmodelica_codegen_xml.workspace=true
 # `#[cfg(feature = …)]` and bails/panics when the target is absent (see
 # `mmtorust` codegen `gate_value`). backend_main is the only always-built crate
 # that references these, so the features live here.
+openmodelica_codegen_fmu = { workspace = true, optional = true }
 openmodelica_codegen_fmu_c = { workspace = true, optional = true }
 openmodelica_codegen_fmu_omsi = { workspace = true, optional = true }
 openmodelica_codegen_c = { workspace = true, optional = true }
@@ -55,18 +56,21 @@ match_deref.workspace=true
 # runtime drops `cpp`; the wasm build uses `--no-default-features` to drop all
 # of these and keep only the in-process wasm-jit target.
 #
-# `dep:<crate>` ties each feature to its optional dependency. `codegen_fmu`
-# implies `codegen_c` because the FMU C export builds on the C codegen.
-default = ["cpp", "codegen_c", "codegen_fmu"]
+# `dep:<crate>` ties each feature to its optional dependency. `codegen_fmu` is
+# the modelDescription.xml templates alone (what the wasm FMU export needs);
+# `codegen_fmu_c` is the FMU C export, which builds on `codegen_c`.
+default = ["cpp", "codegen_c", "codegen_fmu_c"]
 cpp = [
     "dep:openmodelica_codegen_cpp",
     "dep:openmodelica_codegen_cpp_ext",
     "dep:openmodelica_codegen_cpp_omsi_ext",
 ]
 codegen_c = ["dep:openmodelica_codegen_c"]
-codegen_fmu = [
+codegen_fmu = ["dep:openmodelica_codegen_fmu"]
+codegen_fmu_c = [
     "dep:openmodelica_codegen_fmu_c",
     "dep:openmodelica_codegen_fmu_omsi",
+    "codegen_fmu",
     "codegen_c",
 ]
 susan = ["dep:openmodelica_susan"]

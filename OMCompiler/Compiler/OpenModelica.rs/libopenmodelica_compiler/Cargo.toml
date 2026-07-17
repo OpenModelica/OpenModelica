@@ -67,10 +67,11 @@ getrandom = { version = "0.3", features = ["wasm_js"] }
 # keeps the native set (C, C++, FMU); `scripting_api` (the OMEdit ABI) and
 # `susan` are off unless requested. The wasm build uses `--no-default-features`
 # to drop all of these and keep only the in-process wasm-jit target.
-default = ["cpp", "codegen_c", "codegen_fmu"]
+default = ["cpp", "codegen_c", "codegen_fmu_c"]
 cpp = ["openmodelica_backend_main/cpp"]
 codegen_c = ["openmodelica_backend_main/codegen_c"]
 codegen_fmu = ["openmodelica_backend_main/codegen_fmu"]
+codegen_fmu_c = ["openmodelica_backend_main/codegen_fmu_c"]
 susan = ["openmodelica_backend_main/susan"]
 scripting_api = ["dep:openmodelica_scripting_qt"]
 

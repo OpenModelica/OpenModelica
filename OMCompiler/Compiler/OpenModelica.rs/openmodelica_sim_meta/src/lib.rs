@@ -284,9 +284,28 @@ pub struct SolveStats {
     pub time_events: u64,
 }
 
+/// One FMI value reference and the `SimData` slot it names. The value references
+/// are `SimCodeUtil.getFMI3ValueReference`'s, so they cannot be derived from the
+/// layout geometry -- the codegen records the mapping here instead.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct FmiVr {
+    pub vr: u32,
+    pub off: u32,
+    pub wty: WTy,
+    /// The variable is a negated alias of the slot at `off`; a read negates it.
+    pub negate: bool,
+    /// A state's start-value slot, 0 for everything else. An Initialization Mode
+    /// set must land here: `functionInitStartValues` runs after the parameter
+    /// overrides and would overwrite `off` from `$START`.
+    pub start_off: u32,
+    /// The variable is a String: `off` is its i32 runtime-String-handle slot, so
+    /// the adapter reads/writes it through `rt_str_*` rather than as a number.
+    pub is_string: bool,
+}
+
 /// Everything the driver and the `.mat` writer need about one model: its layout,
 /// the run scalars, the ordered result variables, and the solver metadata.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct SimMeta {
     pub layout: Layout,
     pub start_time: f64,
@@ -310,6 +329,9 @@ pub struct SimMeta {
     /// Per-state nominal magnitude `max(|nominal|, 1e-32)` for per-state atol;
     /// `1.0` if absent. Empty ⇒ all-ones.
     pub state_nominals: Vec<f64>,
+    /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
+    /// FMU export; empty for a plain simulation.
+    pub fmi_vrs: Vec<FmiVr>,
 }
 
 // ─────────────────────────────── wire format ─────────────────────────────────
@@ -320,7 +342,7 @@ pub struct SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -421,6 +443,15 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.state_nominals.len() as u32);
     for &v in &m.state_nominals {
         put_f64(&mut o, v);
+    }
+    put_u32(&mut o, m.fmi_vrs.len() as u32);
+    for v in &m.fmi_vrs {
+        put_u32(&mut o, v.vr);
+        put_u32(&mut o, v.off);
+        o.push(matches!(v.wty, WTy::F64) as u8);
+        o.push(v.negate as u8);
+        put_u32(&mut o, v.start_off);
+        o.push(v.is_string as u8);
     }
     o
 }
@@ -570,9 +601,20 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..nnom {
         state_nominals.push(r.f64()?);
     }
+    let nvr = r.u32()? as usize;
+    let mut fmi_vrs = Vec::with_capacity(nvr);
+    for _ in 0..nvr {
+        let vr = r.u32()?;
+        let off = r.u32()?;
+        let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
+        let negate = r.u8()? != 0;
+        let start_off = r.u32()?;
+        let is_string = r.u8()? != 0;
+        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, state_nominals,
+        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs,
     })
 }
 
@@ -617,6 +659,10 @@ mod tests {
                 result_offs: vec![224],
             }],
             state_nominals: vec![1.0, 2.5],
+            fmi_vrs: vec![
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
+            ],
         }
     }
 

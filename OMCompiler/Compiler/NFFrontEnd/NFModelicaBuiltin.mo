@@ -3038,6 +3038,7 @@ function buildModelFMU
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
+  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>

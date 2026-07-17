@@ -84,8 +84,11 @@ mod standalone;
 
 // The in-wasm session driver (`rt_sim_*`), only on the no_std JIT runtime target
 // (wasm32-unknown-unknown): the shared driver + daskr compiled in-wasm so the
-// model's functionODE etc. are reached wasm->wasm via the shared table.
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+// model's functionODE etc. are reached wasm->wasm via the shared table. Gated by
+// the default `session` feature so the FMI3 adapter (which links this crate for
+// its allocator + rt_* but drives the model via direct `model` imports, not the
+// `env` table) can drop it and avoid a dangling `env` table import.
+#[cfg(all(target_arch = "wasm32", target_os = "unknown", feature = "session"))]
 mod session;
 
 // ---------------------------------------------------------------------------

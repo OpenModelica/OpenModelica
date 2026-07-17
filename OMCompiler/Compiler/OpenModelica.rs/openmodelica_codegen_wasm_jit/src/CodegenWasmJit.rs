@@ -66,7 +66,8 @@ use crate::CodegenWasmJitFunctions::{
 // the emitted module and the driver's readback cannot drift. Aliased to their
 // historical host names.
 use openmodelica_sim_meta::{
-    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar, SimMeta, StateSetInfo,
+    FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar, SimMeta,
+    StateSetInfo,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -475,7 +476,7 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
-    let outcome = build_sim_model(&simCode).and_then(|model| {
+    let outcome = build_sim_model(&simCode, false).and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), Arc::new(model));
         Ok(())
@@ -970,7 +971,7 @@ static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime
 /// `wasm-merge` is an external tool, absent in the omc wasm build.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
-    let model = build_sim_model(sim_code)?;
+    let model = build_sim_model(sim_code, false)?;
     merge_standalone(&model.wasm)
 }
 
@@ -1017,6 +1018,365 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
     let bytes = std::fs::read(&out_path).map_err(|_| "CodegenWasmJit: cannot read merged wasm")?;
     let _ = std::fs::remove_dir_all(&dir);
     Ok(bytes)
+}
+
+// ===========================================================================
+// FMI 3.0 wasm Model-Exchange FMU export (fmi-ls-wasm component)
+// ===========================================================================
+
+/// The model-agnostic FMI3 adapters, built + embedded by build.rs as dylink side
+/// modules: one per FMU type (the same crate, two WIT worlds).
+static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
+static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));
+/// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
+static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
+
+/// Rewrites the model's import module name `rt` → `env`, the dylink convention
+/// `wit_component::Linker` resolves against.
+struct RtToEnv;
+impl RtToEnv {
+    fn rename(module: &str) -> &str {
+        if module == "rt" { "env" } else { module }
+    }
+}
+impl wasm_encoder::reencode::Reencode for RtToEnv {
+    type Error = core::convert::Infallible;
+    /// `parse_imports`, not `parse_import`: only this one is on the section's
+    /// dispatch path (`parse_import` is a convenience wrapper nothing calls).
+    fn parse_imports(
+        &mut self,
+        imports: &mut wasm_encoder::ImportSection,
+        group: wasmparser::Imports<'_>,
+    ) -> core::result::Result<(), wasm_encoder::reencode::Error<Self::Error>> {
+        let group = match group {
+            wasmparser::Imports::Single(n, import) => wasmparser::Imports::Single(
+                n,
+                wasmparser::Import { module: Self::rename(import.module), ..import },
+            ),
+            wasmparser::Imports::Compact1 { module, items } => {
+                wasmparser::Imports::Compact1 { module: Self::rename(module), items }
+            }
+            wasmparser::Imports::Compact2 { module, ty, names } => {
+                wasmparser::Imports::Compact2 { module: Self::rename(module), ty, names }
+            }
+        };
+        wasm_encoder::reencode::utils::parse_imports(self, imports, group)
+    }
+}
+
+fn uleb(v: u32, out: &mut Vec<u8>) {
+    let mut v = v;
+    loop {
+        let mut b = (v & 0x7f) as u8;
+        v >>= 7;
+        if v != 0 {
+            b |= 0x80;
+        }
+        out.push(b);
+        if v == 0 {
+            break;
+        }
+    }
+}
+
+/// Splice a `dylink.0` section after the 8-byte header, marking the module a
+/// shared-everything library. MEM_INFO is all-zero because the model has no
+/// static data (its only data segment is passive) and no own table.
+fn add_dylink0(module: &[u8]) -> Vec<u8> {
+    let mut meminfo = Vec::new();
+    for _ in 0..4 {
+        uleb(0, &mut meminfo); // mem_size, mem_align, table_size, table_align
+    }
+    let mut sub = Vec::new();
+    sub.push(1u8); // WASM_DYLINK_MEM_INFO
+    uleb(meminfo.len() as u32, &mut sub);
+    sub.extend_from_slice(&meminfo);
+    let mut content = Vec::new();
+    uleb(8, &mut content);
+    content.extend_from_slice(b"dylink.0");
+    content.extend_from_slice(&sub);
+    let mut sec = Vec::new();
+    sec.push(0u8); // custom section id
+    uleb(content.len() as u32, &mut sec);
+    sec.extend_from_slice(&content);
+    let mut out = Vec::with_capacity(module.len() + sec.len());
+    out.extend_from_slice(&module[..8]);
+    out.extend_from_slice(&sec);
+    out.extend_from_slice(&module[8..]);
+    out
+}
+
+/// Turn an emitted model kernel module into a dylink side module.
+fn model_to_dylink(model_wasm: &[u8]) -> Result<Vec<u8>> {
+    use wasm_encoder::reencode::Reencode;
+    let mut re = RtToEnv;
+    let mut m = wasm_encoder::Module::new();
+    re.parse_core_module(&mut m, wasmparser::Parser::new(0), model_wasm)
+        .map_err(|_| "CodegenWasmJit: cannot reencode model module to dylink")?;
+    Ok(add_dylink0(&m.finish()))
+}
+
+/// The first `external "C"` import (module `ext`) in the model, if any. A
+/// host-free FMU has no host to provide these, so the export names the function
+/// rather than failing later inside `wit_component`.
+fn first_external_import(model_wasm: &[u8]) -> Option<String> {
+    use wasmparser::Imports;
+    for payload in wasmparser::Parser::new(0).parse_all(model_wasm).flatten() {
+        if let wasmparser::Payload::ImportSection(reader) = payload {
+            for group in reader.into_iter().flatten() {
+                match group {
+                    Imports::Single(_, imp) if imp.module == "ext" => return Some(imp.name.to_string()),
+                    Imports::Compact1 { module: "ext", items } => {
+                        return Some(items.into_iter().flatten().next().map_or_else(|| "ext".to_string(), |it| it.name.to_string()));
+                    }
+                    Imports::Compact2 { module: "ext", names, .. } => {
+                        return Some(names.into_iter().flatten().next().map_or("ext", |n| n).to_string());
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Link the adapter with the model into an fmi-ls-wasm component. Pure Rust, so
+/// it runs in the browser omc as well as native.
+fn link_fmu_component(model_wasm: &[u8], adapter: &[u8]) -> Result<Vec<u8>> {
+    if adapter.is_empty() {
+        return Err("CodegenWasmJit: FMI3 adapter unavailable (build wasm32-unknown-unknown + -Z build-std)");
+    }
+    let model = model_to_dylink(model_wasm)?;
+    wit_component::Linker::default()
+        .validate(true)
+        .library("adapter", adapter, false)
+        .and_then(|l| l.library("model", &model, false))
+        .and_then(|l| l.encode())
+        .map_err(|e| {
+            record_error(format!("CodegenWasmJit: FMI3 component link failed: {e:?}"));
+            "CodegenWasmJit: FMI3 component link failed"
+        })
+}
+
+/// The `vr -> SimData slot` table the FMI3 adapter resolves getters/setters with.
+/// The value references are `getFMI3ValueReference`'s, the ones `CodegenFMU3`
+/// writes into `modelDescription.xml`. Variables with no slot are skipped; the
+/// adapter reports an unresolvable vr as an error.
+fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<Vec<FmiVr>> {
+    use openmodelica_backend::SimCodeUtil;
+    let vars = &sim_code.modelInfo.vars;
+    let all = lst(&vars.stateVars)
+        .chain(lst(&vars.derivativeVars))
+        .chain(lst(&vars.algVars))
+        .chain(lst(&vars.discreteAlgVars))
+        .chain(lst(&vars.paramVars))
+        .chain(lst(&vars.aliasVars))
+        .chain(lst(&vars.intAlgVars))
+        .chain(lst(&vars.intParamVars))
+        .chain(lst(&vars.intAliasVars))
+        .chain(lst(&vars.boolAlgVars))
+        .chain(lst(&vars.boolParamVars))
+        .chain(lst(&vars.boolAliasVars));
+    let mut out = Vec::new();
+    for sv in all {
+        let key = sim_cref_key(&sv.name)?;
+        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let vr: u32 = SimCodeUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
+            .parse()
+            .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
+        // A state's start slot: an init-mode set must go to `$START.<x>`, not to
+        // the live slot that `functionInitStartValues` is about to rewrite.
+        let start_off = map.start_slots.get(&key).copied().unwrap_or(0);
+        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off, is_string: false });
+    }
+    // String variables: `is_string` marks the slot as an i32 runtime-String
+    // handle, so the adapter reads/writes it via `rt_str_*`, not as a number.
+    for sv in lst(&vars.stringAlgVars)
+        .chain(lst(&vars.stringParamVars))
+        .chain(lst(&vars.stringAliasVars))
+    {
+        let key = sim_cref_key(&sv.name)?;
+        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let vr: u32 = SimCodeUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
+            .parse()
+            .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
+        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off: 0, is_string: true });
+    }
+    // time, then the event indicators after it (`EventIndicatorVariables3`).
+    let time_vr: u32 = SimCodeUtil::getFMI3TimeValueReference(sim_code.clone())?
+        .parse()
+        .map_err(|_| "CodegenWasmJit: FMI3 time value reference is not a number")?;
+    out.push(FmiVr { vr: time_vr, off: TIME_OFF, wty: WTy::F64, negate: false, start_off: 0, is_string: false });
+    for k in 0..layout.n_zc {
+        out.push(FmiVr {
+            vr: time_vr + 1 + k,
+            off: layout.zc_off + k * 8,
+            wty: WTy::F64,
+            negate: false,
+            start_off: 0,
+            is_string: false,
+        });
+    }
+    out.sort_by_key(|e| e.vr);
+    out.dedup_by_key(|e| e.vr);
+    Ok(out)
+}
+
+/// Model-identifier / file-safe name from the model name.
+fn sanitize_identifier(name: &str) -> String {
+    let mut s: String = name
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+        .collect();
+    if s.is_empty() || s.as_bytes()[0].is_ascii_digit() {
+        s.insert(0, '_');
+    }
+    s
+}
+
+
+/// CRC-32 (IEEE) for the ZIP entries.
+fn crc32(data: &[u8]) -> u32 {
+    let mut crc: u32 = 0xffff_ffff;
+    for &b in data {
+        crc ^= b as u32;
+        for _ in 0..8 {
+            crc = (crc >> 1) ^ (0xedb8_8320 & (0u32.wrapping_sub(crc & 1)));
+        }
+    }
+    !crc
+}
+
+/// A minimal store-method ZIP, so the `.fmu` is assembled in-process rather than
+/// by an external `zip`.
+fn zip_store(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
+    let mut out = Vec::new();
+    let mut central = Vec::new();
+    let le16 = |v: u16, o: &mut Vec<u8>| o.extend_from_slice(&v.to_le_bytes());
+    let le32 = |v: u32, o: &mut Vec<u8>| o.extend_from_slice(&v.to_le_bytes());
+    let mut offsets: Vec<u32> = Vec::new();
+    for (name, data) in entries {
+        offsets.push(out.len() as u32);
+        let crc = crc32(data);
+        let n = name.as_bytes();
+        // local file header
+        le32(0x0403_4b50, &mut out);
+        le16(20, &mut out); // version needed
+        le16(0, &mut out); // flags
+        le16(0, &mut out); // method: store
+        le16(0, &mut out); // mod time
+        le16(0x21, &mut out); // mod date (1980-01-01)
+        le32(crc, &mut out);
+        le32(data.len() as u32, &mut out); // compressed size
+        le32(data.len() as u32, &mut out); // uncompressed size
+        le16(n.len() as u16, &mut out);
+        le16(0, &mut out); // extra len
+        out.extend_from_slice(n);
+        out.extend_from_slice(data);
+    }
+    let cd_start = out.len() as u32;
+    for ((name, data), off) in entries.iter().zip(&offsets) {
+        let crc = crc32(data);
+        let n = name.as_bytes();
+        le32(0x0201_4b50, &mut central);
+        le16(20, &mut central); // version made by
+        le16(20, &mut central); // version needed
+        le16(0, &mut central); // flags
+        le16(0, &mut central); // method
+        le16(0, &mut central); // time
+        le16(0x21, &mut central); // date
+        le32(crc, &mut central);
+        le32(data.len() as u32, &mut central);
+        le32(data.len() as u32, &mut central);
+        le16(n.len() as u16, &mut central);
+        le16(0, &mut central); // extra
+        le16(0, &mut central); // comment
+        le16(0, &mut central); // disk
+        le16(0, &mut central); // internal attrs
+        le32(0, &mut central); // external attrs
+        le32(*off, &mut central);
+        central.extend_from_slice(n);
+    }
+    let cd_len = central.len() as u32;
+    out.extend_from_slice(&central);
+    // end of central directory
+    le32(0x0605_4b50, &mut out);
+    le16(0, &mut out); // disk
+    le16(0, &mut out); // cd disk
+    le16(entries.len() as u16, &mut out);
+    le16(entries.len() as u16, &mut out);
+    le32(cd_len, &mut out);
+    le32(cd_start, &mut out);
+    le16(0, &mut out); // comment len
+    out
+}
+
+/// `CodegenWasmJit.emitMeFmu` / `emitCsFmu`: build the FMI 3.0 wasm FMU for
+/// `sim_code` and write it to `fmu_path` (`modelDescription` +
+/// `binaries/wasm32-wasip2/<id>.wasm`). Host-free: no `wasm-merge`, no `zip`.
+pub fn emitMeFmu(
+    sim_code: SimCode::SimCode,
+    fmu_path: ArcStr,
+    _guid: ArcStr,
+    model_description: ArcStr,
+) -> Result<()> {
+    emit_fmu(sim_code, fmu_path, model_description, FMI3_ME_ADAPTER, "ME")
+}
+
+/// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
+pub fn emitCsFmu(
+    sim_code: SimCode::SimCode,
+    fmu_path: ArcStr,
+    _guid: ArcStr,
+    model_description: ArcStr,
+) -> Result<()> {
+    emit_fmu(sim_code, fmu_path, model_description, FMI3_CS_ADAPTER, "CS")
+}
+
+/// me_cs: one component exporting both interfaces (the wasm equivalent of a
+/// classic me_cs FMU — a single binary and modelIdentifier).
+pub fn emitMeCsFmu(
+    sim_code: SimCode::SimCode,
+    fmu_path: ArcStr,
+    _guid: ArcStr,
+    model_description: ArcStr,
+) -> Result<()> {
+    emit_fmu(sim_code, fmu_path, model_description, FMI3_MECS_ADAPTER, "me_cs")
+}
+
+fn emit_fmu(
+    sim_code: SimCode::SimCode,
+    fmu_path: ArcStr,
+    model_description: ArcStr,
+    adapter: &[u8],
+    kind: &str,
+) -> Result<()> {
+    sim_runtime::start_runtime_compile();
+    let errs_before = openmodelica_util::Error::getNumErrorMessages();
+    let outcome = (|| -> Result<()> {
+        let model = build_sim_model(&sim_code, true)?;
+        if let Some(func) = first_external_import(&model.wasm) {
+            record_error(format!(
+                "CodegenWasmJit: model `{}` uses the external C function `{func}`; external \
+                 \"C\" is not yet supported in a host-free wasm FMU. Simulate the model in the \
+                 browser (or `--simCodeTarget=wasm-jit`) instead.", model.model_name));
+            return Err("CodegenWasmJit: external \"C\" not supported in a host-free wasm FMU");
+        }
+        let component = link_fmu_component(&model.wasm, adapter)?;
+        let model_id = sanitize_identifier(&model.model_name);
+        let fmu = zip_store(&[
+            ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
+            (format!("binaries/wasm32-wasip2/{model_id}.wasm"), component),
+        ]);
+        write_output(&fmu_path, &fmu).map_err(|_| "CodegenWasmJit: cannot write .fmu")?;
+        Ok(())
+    })();
+    if let Err(e) = &outcome {
+        if openmodelica_util::Error::getNumErrorMessages() == errs_before {
+            record_error(format!("CodegenWasmJit: cannot build FMI3 {kind} FMU: {e:#}"));
+        }
+    }
+    outcome
 }
 
 // ===========================================================================
@@ -1503,15 +1863,21 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
     for (base, elems) in acc {
         let Some(first) = elems.first() else { continue };
         let rank = first.0.len();
+        // A group that cannot be treated as one contiguous whole-array is skipped,
+        // not fatal: individual element references still resolve through their own
+        // slots, and a genuine whole-array reference fails later as "unknown
+        // variable". Only truly malformed shapes (non-positive index) are errors.
         if elems.iter().any(|(s, _, _)| s.len() != rank) {
-            return Err("CodegenWasmJit: inconsistent subscript rank for array variable `{base}`");
+            continue; // ragged rank (element and its own sub-slice both present)
         }
         // Shape: 1-based max index per axis.
         let mut dims = vec![0u32; rank];
         for (subs, _, _) in &elems {
             for (axis, &ix) in subs.iter().enumerate() {
                 if ix < 1 {
-                    return Err("CodegenWasmJit: non-positive subscript {ix} for array variable `{base}`");
+                    record_error(format!(
+                        "CodegenWasmJit: non-positive subscript {ix} for array variable `{base}`"));
+                    return Err("CodegenWasmJit: non-positive array subscript");
                 }
                 dims[axis] = dims[axis].max(ix as u32);
             }
@@ -1525,20 +1891,19 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         }
         let wty = first.2;
         if elems.iter().any(|(_, _, w)| *w != wty) {
-            return Err("CodegenWasmJit: mixed element types for array variable `{base}`");
+            continue; // mixed element storage types: not a uniform contiguous array
         }
         let stride = match wty { WTy::F64 => 8, WTy::I32 => 4 };
         let Some(base_off) = elems.iter().map(|(_, o, _)| *o).min() else { continue };
-        // Verify contiguous, row-major layout.
-        for (subs, off, _) in &elems {
-            let mut lin: u32 = 0;
-            for (axis, &ix) in subs.iter().enumerate() {
-                lin = lin * dims[axis] + (ix as u32 - 1);
-            }
-            let expected = base_off + lin * stride;
-            if *off != expected {
-                return Err("error");
-            }
+        // Contiguous row-major? If any element's slot is elsewhere (aliased, or the
+        // elements straddle SimData regions), this is not one contiguous block, so
+        // skip the group rather than aborting the whole build.
+        let contiguous = elems.iter().all(|(subs, off, _)| {
+            let lin = subs.iter().enumerate().fold(0u32, |lin, (axis, &ix)| lin * dims[axis] + (ix as u32 - 1));
+            *off == base_off + lin * stride
+        });
+        if !contiguous {
+            continue;
         }
         map.array_groups.insert(base, ArrayGroup { base_off, wty, dims, total });
     }
@@ -1691,7 +2056,8 @@ fn collect_samples(
     Ok(out)
 }
 
-fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
+/// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
+fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimModel> {
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let vars = &mi.vars;
@@ -1950,8 +2316,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
     // --- Compile bodies (collecting String literals into the module pool). ---
     let mut literals: Vec<Vec<u8>> = Vec::new();
     let mut bodies: Vec<we::Function> = Vec::new();
-    // Model functions first, in index order.
+    // Model functions first, in index order; poll for cancellation between them so
+    // a long emit is interruptible like the frontend/backend upstream.
     for f in &model_fns {
+        metamodelica::cancel::bail_if_cancelled()?;
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
     // Parameter bindings (`parameter Real c = 0.5`) are not in
@@ -1997,8 +2365,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode) -> Result<SimModel> {
         .collect();
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
+    // Only the FMU export needs the vr table; a plain simulation would just carry
+    // it around unused.
+    let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
+        fmi_vrs,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -2336,6 +2708,7 @@ fn build_sim_meta(
     jac_a: Option<JacAInfo>,
     state_sets: &[StateSetInfo],
     state_nominals: &[f64],
+    fmi_vrs: Vec<FmiVr>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -2351,6 +2724,7 @@ fn build_sim_meta(
         jac_a,
         state_sets: state_sets.to_vec(),
         state_nominals: state_nominals.to_vec(),
+        fmi_vrs,
     }
 }
 
@@ -2499,7 +2873,12 @@ fn build_eq_fn_with_prelude(
         let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
         ctx.sim_assign(&lhs, exp).map_err(|e| "in {which} binding: {e}")?;
     }
-    for eq in &eqs {
+    for (i, eq) in eqs.iter().enumerate() {
+        // Cancellation poll, throttled: the equation functions are the bulk of the
+        // emit for models with no user functions to poll between.
+        if i & 63 == 0 {
+            metamodelica::cancel::bail_if_cancelled()?;
+        }
         lower_equation(&mut ctx, eq, eq_index)
             .map_err(|e| "in {which}: {e}")?;
     }

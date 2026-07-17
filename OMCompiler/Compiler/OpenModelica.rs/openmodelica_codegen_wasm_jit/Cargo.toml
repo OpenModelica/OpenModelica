@@ -10,6 +10,9 @@ openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true
 openmodelica_simcode_types.workspace = true
+# SimCodeUtil::getFMI3ValueReference: the FMU export's value references must be
+# the ones CodegenFMU3 puts in modelDescription.xml.
+openmodelica_backend.workspace = true
 openmodelica_backend_types.workspace = true
 openmodelica_error.workspace = true
 openmodelica_frontend_types.workspace = true
@@ -17,7 +20,15 @@ openmodelica_frontend_dump.workspace = true
 openmodelica_util.workspace = true
 arcstr.workspace = true
 ordered-float.workspace = true
-wasm-encoder.workspace = true
+# `wasmparser` feature enables wasm-encoder's `reencode` (model→dylink transform).
+wasm-encoder = { workspace = true, features = ["wasmparser"] }
+# FMI3 wasm export: transform the model kernel module to a dylink side module
+# (wasm-encoder reencode) and link it with the embedded adapter into an fmi-ls-wasm
+# component via wit_component::Linker. Pure Rust → works in the browser omc too
+# (no external wasm-merge). wasmparser reads the model for the reencode. Pinned to
+# the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
+wit-component = "0.252"
+wasmparser = "0.252"
 # Native DAE solver for the wasm-jit DASSL driver; only used when the engine is
 # built in (the `jit` feature).
 daskr = { path = "../daskr", optional = true }

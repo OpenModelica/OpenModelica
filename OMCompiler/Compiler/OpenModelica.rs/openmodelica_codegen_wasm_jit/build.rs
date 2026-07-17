@@ -55,6 +55,156 @@ fn main() {
     build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
     build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
     build_external_c_wasm(&crate_dir, &out_dir);
+    build_fmi3_me_adapter(&crate_dir, &out_dir);
+}
+
+/// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
+/// a dylink side module, linked with the per-model module at FMU-export time.
+/// Built here regardless of omc's own target arch: build scripts run on the host.
+fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path) {
+    for v in ADAPTER_VARIANTS {
+        build_fmi3_adapter(crate_dir, out_dir, v);
+    }
+}
+
+/// One FMI3 adapter build: a WIT world selected by Cargo features, from the same
+/// `openmodelica_fmi3_wasm` crate.
+struct AdapterVariant {
+    /// Output basename (`fmi3_<name>_adapter.wasm`) and env-override stem.
+    name: &'static str,
+    /// Human label for diagnostics.
+    label: &'static str,
+    /// `cargo build` feature args (empty = default features → Model Exchange).
+    cargo_args: &'static [&'static str],
+}
+
+/// Model Exchange (default features), Co-Simulation, and the combined me_cs world.
+const ADAPTER_VARIANTS: &[AdapterVariant] = &[
+    AdapterVariant { name: "me", label: "ME", cargo_args: &[] },
+    AdapterVariant { name: "cs", label: "CS", cargo_args: &["--no-default-features", "--features", "cs"] },
+    AdapterVariant { name: "mecs", label: "me_cs", cargo_args: &["--no-default-features", "--features", "me,cs"] },
+];
+
+fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
+    let name = format!("fmi3_{}_adapter", v.name);
+    let dest = out_dir.join(format!("{name}.wasm"));
+    let stamp = out_dir.join(format!("{name}.wasm.hash"));
+    let adapter_dir = crate_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_fmi3_wasm");
+    let runtime_dir = crate_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_codegen_wasm_jit_runtime");
+    let sim_meta_dir = crate_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_sim_meta");
+
+    let env_override = format!("OMC_FMI3_{}_ADAPTER", v.name.to_uppercase());
+    println!("cargo:rerun-if-env-changed={env_override}");
+    if let Ok(path) = std::env::var(&env_override) {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+
+    // The adapter depends on the runtime + sim_meta crates, so hash all three.
+    let mut files = Vec::new();
+    for d in [&adapter_dir, &runtime_dir, &sim_meta_dir] {
+        collect_files(&d.join("src"), &mut files);
+        for m in ["Cargo.toml", "Cargo.lock"] {
+            let p = d.join(m);
+            if p.exists() {
+                files.push(p);
+            }
+        }
+    }
+    collect_files(&adapter_dir.join("wit"), &mut files);
+    files.sort();
+    for f in &files {
+        println!("cargo:rerun-if-changed={}", f.display());
+    }
+    let mut h: u64 = 0xcbf29ce484222325;
+    for f in &files {
+        if let Ok(b) = std::fs::read(f) {
+            for &byte in &b {
+                h ^= byte as u64;
+                h = h.wrapping_mul(0x100000001b3);
+            }
+        }
+    }
+    let hash = format!("{h:016x}-{}", v.name);
+    if dest.exists()
+        && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
+        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
+    {
+        return;
+    }
+
+    match build_dylink_adapter(&adapter_dir, out_dir, v) {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            std::fs::write(&stamp, &hash).ok();
+        }
+        Err(e) => {
+            let committed = crate_dir.join(format!("{name}.wasm"));
+            if committed.exists() {
+                println!(
+                    "cargo:warning=could not rebuild the FMI3 {} adapter ({e}); using the prebuilt {}",
+                    v.label,
+                    committed.display()
+                );
+                copy(&committed, &dest);
+                std::fs::write(&stamp, "prebuilt").ok();
+            } else {
+                println!(
+                    "cargo:warning=could not build the FMI3 {} adapter ({e}); that FMI3 wasm \
+                     export will be unavailable. Install `rustup target add wasm32-unknown-unknown`.",
+                    v.label
+                );
+                std::fs::write(&dest, []).ok();
+                std::fs::write(&stamp, "missing").ok();
+            }
+        }
+    }
+}
+
+/// Compile the FMI3 adapter to a dylink side module. `build-std` because the
+/// precompiled `liballoc` is non-PIC; `--allow-undefined` because
+/// `__heap_base`/`__heap_end` become imports the linker supplies;
+/// `-Zcodegen-backend=llvm` because the workspace default cranelift cannot target
+/// wasm and RUSTFLAGS here replaces the crate's `.cargo/config.toml`.
+fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) -> Result<PathBuf, String> {
+    let target = "wasm32-unknown-unknown";
+    // Separate target dirs: the worlds differ only by feature, and sharing one
+    // would rebuild the crate on every alternation.
+    let target_dir = out_dir.join(format!("adapter-dylink-target-{}", v.name));
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
+        -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
+        -Clink-arg=--allow-undefined";
+    let status = Command::new(cargo)
+        .current_dir(adapter_dir)
+        .args(["build", "-Z", "build-std=core,alloc,panic_abort", "--release", "--target", target])
+        .args(v.cargo_args)
+        .arg("--target-dir")
+        .arg(&target_dir)
+        .env("RUSTFLAGS", rustflags)
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .env_remove("RUSTC_WORKSPACE_WRAPPER")
+        .status()
+        .map_err(|e| format!("could not spawn cargo: {e}"))?;
+    if !status.success() {
+        return Err(format!("cargo build (dylink) exited with {status}"));
+    }
+    let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
+    if !produced.exists() {
+        return Err(format!("expected dylink wasm not found at {}", produced.display()));
+    }
+    Ok(produced)
 }
 
 /// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
@@ -299,12 +449,31 @@ fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, ha
 /// workspace selects the cranelift backend, which cannot target wasm — the
 /// runtime must build with the default LLVM backend).
 fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Result<PathBuf, String> {
-    // One target dir per triple so the two variants (wasm32-unknown-unknown JIT
-    // runtime + wasm32-wasip1 standalone runtime) don't churn each other's cache.
-    let target_dir = out_dir.join(format!("runtime-target-{target}"));
+    build_runtime_wasm_named(
+        runtime_dir,
+        out_dir,
+        target,
+        "openmodelica_codegen_wasm_jit_runtime",
+        "runtime-target",
+    )
+}
+
+/// Compile a wasm-only cdylib crate at `crate_dir` to `target` (release) and
+/// return the produced `<artifact>.wasm`. `target_dir_prefix` isolates its cargo
+/// target dir so parallel variants don't churn each other's cache. Scrubs the
+/// host build's RUSTFLAGS / codegen-backend so the wasm build uses the default
+/// LLVM backend.
+fn build_runtime_wasm_named(
+    crate_dir: &Path,
+    out_dir: &Path,
+    target: &str,
+    artifact: &str,
+    target_dir_prefix: &str,
+) -> Result<PathBuf, String> {
+    let target_dir = out_dir.join(format!("{target_dir_prefix}-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let status = Command::new(cargo)
-        .current_dir(runtime_dir)
+        .current_dir(crate_dir)
         .args(["build", "--release", "--target", target])
         .arg("--target-dir")
         .arg(&target_dir)
@@ -321,7 +490,7 @@ fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Resul
     let produced = target_dir
         .join(target)
         .join("release")
-        .join("openmodelica_codegen_wasm_jit_runtime.wasm");
+        .join(format!("{artifact}.wasm"));
     if !produced.exists() {
         return Err(format!("expected wasm not found at {}", produced.display()));
     }
@@ -330,13 +499,21 @@ fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Resul
 
 /// Stable hash over the runtime crate's sources + manifests. Returns the hex
 /// digest and the list of files that were hashed (for `rerun-if-changed`).
+///
+/// The path dependencies count too: the driver and the metadata wire format live
+/// in `openmodelica_sim_meta`. Miss them and the cache serves a runtime whose
+/// `decode` no longer matches the emitted blob, which fails at run time
+/// (`rt_sim_start failed`), not at build time.
 fn hash_inputs(runtime_dir: &Path) -> (String, Vec<PathBuf>) {
     let mut files = Vec::new();
-    collect_files(&runtime_dir.join("src"), &mut files);
-    for m in ["Cargo.toml", "Cargo.lock"] {
-        let p = runtime_dir.join(m);
-        if p.exists() {
-            files.push(p);
+    let deps = runtime_dir.parent().expect("crate has a parent dir");
+    for d in [runtime_dir, &deps.join("openmodelica_sim_meta"), &deps.join("openmodelica_mat_writer")] {
+        collect_files(&d.join("src"), &mut files);
+        for m in ["Cargo.toml", "Cargo.lock"] {
+            let p = d.join(m);
+            if p.exists() {
+                files.push(p);
+            }
         }
     }
     files.sort();

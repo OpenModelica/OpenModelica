@@ -1292,10 +1292,11 @@ impl GenCtx {
 }
 
 /// Cargo feature guarding an optional code-generation target crate, or `None`
-/// for crates that are always built. Grouping: all `openmodelica_codegen_cpp*`
-/// crates share `cpp`; the FMU codegen crates share `codegen_fmu`. Kept in sync
-/// with the `[features]` tables of `openmodelica_backend_main` and the
-/// `interface_to_crate` mapping in `MM.rs`.
+/// for crates that are always built. All `openmodelica_codegen_cpp*` crates share
+/// `cpp`; the modelDescription.xml templates are `codegen_fmu` and the FMU C
+/// export `codegen_fmu_c`, so the web omc can emit an FMU without the C code
+/// generator. Kept in sync with the `[features]` tables of
+/// `openmodelica_backend_main` and the `interface_to_crate` mapping in `MM.rs`.
 fn feature_for_crate(crate_name: &str) -> Option<&'static str> {
     Some(match crate_name {
         "openmodelica_codegen_cpp"
@@ -1304,9 +1305,8 @@ fn feature_for_crate(crate_name: &str) -> Option<&'static str> {
         | "openmodelica_codegen_cpp_ext"
         | "openmodelica_codegen_cpp_omsi_ext" => "cpp",
         "openmodelica_codegen_c" => "codegen_c",
-        "openmodelica_codegen_fmu"
-        | "openmodelica_codegen_fmu_c"
-        | "openmodelica_codegen_fmu_omsi" => "codegen_fmu",
+        "openmodelica_codegen_fmu" => "codegen_fmu",
+        "openmodelica_codegen_fmu_c" | "openmodelica_codegen_fmu_omsi" => "codegen_fmu_c",
         "openmodelica_susan" => "susan",
         _ => return None,
     })

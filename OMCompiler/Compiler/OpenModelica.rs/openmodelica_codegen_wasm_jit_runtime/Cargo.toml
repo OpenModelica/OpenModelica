@@ -13,7 +13,15 @@ version = "0.1.0"
 edition = "2024"
 
 [lib]
-crate-type = ["cdylib"]
+# `rlib` in addition to `cdylib` so the FMI3-ME adapter crate can depend on this
+# crate for its allocator + `rt_*` primitives (linked into one module, one heap).
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# The in-wasm `rt_sim_*` session driver (src/session.rs). Default on for the JIT
+# runtime build; the FMI3 adapter disables it (default-features = false).
+default = ["session"]
+session = []
 
 [dependencies]
 dlmalloc = { version = "0.2.14", features = ["global"] }

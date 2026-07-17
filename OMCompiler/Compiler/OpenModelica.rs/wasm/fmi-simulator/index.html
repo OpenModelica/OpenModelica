@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — FMI Simulator</title>
+<link rel="stylesheet" href="../theme.css" />
+<style>
+  /* Log severities are this page's own; the rest of the palette is theme.css. */
+  :root { --warn:#d7ba7d; }
+
+  main { flex:1 1 auto; display:grid; grid-template-columns:minmax(340px,38%) 1fr; min-height:0; }
+  .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow-y:auto; }
+  .right { display:flex; flex-direction:column; min-height:0; }
+
+  /* FMU summary, or the drop target when nothing is loaded yet. */
+  .info { padding:2px 12px 12px; }
+  .drop { margin:10px 12px; border:1.5px dashed var(--border); border-radius:8px;
+    padding:28px 16px; text-align:center; color:var(--muted); font-size:14px; }
+  .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
+  .drop b { color:var(--fg); font-weight:600; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:13.5px; }
+  .kv dt { color:var(--muted); }
+  .kv dd { margin:0; overflow-wrap:anywhere; }
+  .tag { display:inline-block; border:1px solid var(--border); border-radius:3px;
+    padding:0 5px; margin-right:4px; font-size:12px; color:var(--teal); }
+  .tag.off { color:var(--muted); opacity:.55; }
+  .grid2 .wide { grid-column:2 / -1; }
+  input:disabled { color:var(--muted); }
+
+  #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
+  .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:7px 18px; }
+  .ic-item { display:grid; grid-template-columns:minmax(0,1fr) 104px auto; gap:9px; align-items:center; }
+  .ic-item .nm .in { color:var(--accent); font-size:11px; margin-left:4px; }
+  .ic-item input { font-size:14px; padding:4px 6px; font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .ic-item input.bad { border-color:var(--err); }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; max-height:22%; overflow-y:auto; }
+
+  /* FMU log: fmi3LogMessage callbacks plus anything the guest writes to stdout/stderr. */
+  .log-pane { flex:0 0 auto; height:26%; min-height:96px; display:flex; flex-direction:column;
+    border-top:1px solid var(--border); background:var(--panel); }
+  .log-head { display:flex; align-items:center; gap:8px; }
+  .log-head .section-label { flex:1 1 auto; }
+  .log-body { flex:1 1 auto; overflow-y:auto; padding:2px 12px 8px;
+    font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; }
+  .log-body .warning, .log-body .stderr { color:var(--warn); }
+  .log-body .error, .log-body .fatal, .log-body .host { color:var(--err); }
+  .log-body .empty { color:var(--muted); font-family:inherit; }
+
+  @media (max-width:820px), (orientation:portrait) {
+    main { grid-template-columns:1fr; }
+    .left { border-right:0; border-bottom:1px solid var(--border); overflow:visible; }
+    .grid2 .wide { grid-column:2; }
+    #icPanel { max-height:none; }
+    header .status { order:3; flex-basis:100%; white-space:normal; }
+    .log-pane { height:auto; max-height:40vh; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "@bytecodealliance/preview2-shim/cli": "./vendor/preview2-shim/cli.js",
+    "@bytecodealliance/preview2-shim/clocks": "./vendor/preview2-shim/clocks.js",
+    "@bytecodealliance/preview2-shim/filesystem": "./vendor/preview2-shim/filesystem.js",
+    "@bytecodealliance/preview2-shim/io": "./vendor/preview2-shim/io.js",
+    "@bytecodealliance/preview2-shim/random": "./vendor/preview2-shim/random.js",
+    "@bytecodealliance/preview2-shim/sockets": "./vendor/preview2-shim/sockets.js",
+    "@bytecodealliance/preview2-shim/http": "./vendor/preview2-shim/http.js"
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <span class="title">FMI Simulator</span>
+  <span class="status" id="status">Open an FMI 3.0 wasm FMU to begin.</span>
+  <input type="file" id="file" accept=".fmu,application/zip" hidden />
+  <button class="ghost" id="open">Open FMU…</button>
+  <button id="run" disabled>Simulate</button>
+</header>
+
+<main>
+  <div class="left">
+    <div class="section-label">FMU</div>
+    <div class="info" id="info">
+      <div class="drop" id="drop">
+        <b>Drop an .fmu here</b><br />
+        FMI 3.0 Co-Simulation or Model Exchange with a<br />
+        <code>binaries/wasm32-wasip2</code> component (FMI-LS-WASM).
+      </div>
+    </div>
+
+    <div class="section-label">Inputs, parameters and start values</div>
+    <div id="icPanel">
+      <div class="ic-grid" id="icGrid"></div>
+      <div class="ic-empty" id="icEmpty">No FMU loaded.</div>
+    </div>
+
+    <div class="panel grid2">
+      <label for="interface">Interface</label>
+      <select id="interface" class="wide" disabled></select>
+      <label for="start">Start</label><input id="start" value="0" />
+      <label for="stop">Stop</label><input id="stop" value="1" />
+      <label for="step" id="stepLabel">Step size</label><input id="step" value="0.1" />
+      <label for="tol">Tolerance</label><input id="tol" value="1e-6" />
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="charts" id="charts">
+      <div class="charts-empty" id="chartsEmpty">No results yet.</div>
+    </div>
+    <div class="log-pane">
+      <div class="log-head">
+        <div class="section-label">FMU log</div>
+        <button class="icon-btn" id="logClear" title="Clear the log">✕</button>
+      </div>
+      <div class="log-body" id="log"><span class="empty">No messages.</span></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { loadFmu } from './fmu.js';
+import { simulate } from './master.js';
+import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+
+const el = (id) => document.getElementById(id);
+const statusEl = el('status'), runBtn = el('run'), openBtn = el('open'), fileEl = el('file');
+const infoEl = el('info'), dropEl = el('drop'), icGrid = el('icGrid'), icEmpty = el('icEmpty');
+const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty'), logEl = el('log');
+const charts = createCharts(chartsEl);
+const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
+      tolEl = el('tol'), stepLabel = el('stepLabel');
+
+let fmu = null;         // { md, exports, cs, me, resourcePath }
+let fields = [];        // { v, input, kind:'input'|'parameter' }
+let running = false, cancelled = false, logCount = 0;
+
+const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
+const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
+
+function log(cls, text) {
+  if (!logCount++) logEl.replaceChildren();
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = text;
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
+  logEl.appendChild(line);
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+el('logClear').onclick = () => { logEl.innerHTML = '<span class="empty">No messages.</span>'; logCount = 0; };
+
+// --- loading ----------------------------------------------------------------
+openBtn.onclick = () => fileEl.click();
+fileEl.onchange = () => { if (fileEl.files[0]) openFile(fileEl.files[0]); fileEl.value = ''; };
+
+for (const ev of ['dragenter', 'dragover']) {
+  document.addEventListener(ev, (e) => { e.preventDefault(); dropEl && dropEl.classList.add('over'); });
+}
+for (const ev of ['dragleave', 'drop']) {
+  document.addEventListener(ev, (e) => { e.preventDefault(); dropEl && dropEl.classList.remove('over'); });
+}
+document.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+
+async function openFile(file) {
+  if (running) return;
+  runBtn.disabled = true;
+  setStatus(`Loading ${file.name}…`, 'busy');
+  try {
+    const buf = await file.arrayBuffer();
+    const t0 = performance.now();
+    fmu = await loadFmu(buf, { onLog: (status, text) => log(status, text) });
+    const probe = await fmu.instance();
+    const ms = Math.round(performance.now() - t0);
+    renderInfo(file.name, probe);
+    renderFields();
+    applyDefaults();
+    runBtn.disabled = false;
+    setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.common.getVersion()}.`);
+  } catch (e) {
+    fmu = null;
+    runBtn.disabled = true;
+    setStatus(`${file.name}: ${e.message}`, 'err');
+    log('host', `load failed: ${e.stack || e.message}`);
+  }
+}
+
+// An interface counts as available only when the model description declares it
+// and the component actually exports it.
+const kinds = (probe) => [
+  fmu.md.cs && probe.cs ? { id: 'cs', label: 'Co-Simulation' } : null,
+  fmu.md.me && probe.me ? { id: 'me', label: 'Model Exchange' } : null,
+].filter(Boolean);
+
+function renderInfo(fileName, probe) {
+  const md = fmu.md;
+  const tag = (on, text) => `<span class="tag${on ? '' : ' off'}">${text}</span>`;
+  const row = (k, v) => (v ? `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>` : '');
+  infoEl.innerHTML = `<dl class="kv">
+    ${row('Model', md.modelName || fileName)}
+    ${row('Description', md.description)}
+    ${row('Generated by', md.generationTool)}
+    ${row('FMI', md.fmiVersion + (md.version ? ' · model version ' + md.version : ''))}
+    <dt>Interfaces</dt><dd>${tag(!!md.cs, 'Co-Simulation')}${tag(!!md.me, 'Model Exchange')}${md.se ? tag(false, 'Scheduled Execution (unsupported)') : ''}</dd>
+    <dt>Variables</dt><dd>${md.variables.length}${md.nStates ? ` · ${md.nStates} continuous states` : ''}${md.nEventIndicators ? ` · ${md.nEventIndicators} event indicators` : ''}</dd>
+  </dl>`;
+
+  const avail = kinds(probe);
+  if (!avail.length) throw new Error('the component exports neither a Co-Simulation nor a Model Exchange interface');
+  ifaceEl.replaceChildren();
+  for (const k of avail) ifaceEl.append(new Option(k.label, k.id));
+  ifaceEl.disabled = avail.length < 2;
+  ifaceEl.value = avail[0].id;
+  onIfaceChange();
+}
+
+ifaceEl.onchange = onIfaceChange;
+function onIfaceChange() {
+  stepLabel.textContent = ifaceEl.value === 'me' ? 'Max step' : 'Step size';
+}
+
+// Inputs are functions of t; parameters and start values are constants applied
+// during Initialization Mode. A continuous state is whatever a derivative points
+// at, and is settable when it declares initial exact/approx.
+function renderFields() {
+  const md = fmu.md;
+  fields = [];
+  icGrid.replaceChildren();
+  const stateVrs = new Set(md.variables
+    .filter((v) => v.derivative != null)
+    .map((v) => parseInt(v.derivative, 10)));
+  const isStart = (v) => stateVrs.has(v.vr) && (v.initial === 'exact' || v.initial === 'approx');
+  const wanted = md.variables.filter((v) =>
+    (v.causality === 'input') ||
+    (v.causality === 'parameter' && (v.variability === 'fixed' || v.variability === 'tunable')) ||
+    isStart(v));
+  for (const v of wanted) {
+    const item = document.createElement('div');
+    item.className = 'ic-item';
+    const isInput = v.causality === 'input';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    const kindLabel = isStart(v) ? 'start value' : v.causality;
+    nm.title = `${v.name}${v.description ? ' — ' + v.description : ''} (${kindLabel}, ${v.tag})`;
+    nm.innerHTML = escapeHtml(v.name)
+      + (isInput ? '<span class="in">f(t)</span>' : isStart(v) ? '<span class="in">start</span>' : '');
+    const input = document.createElement('input');
+    input.value = v.start != null ? v.start : (v.tag === 'Boolean' ? 'false' : '0');
+    input.spellcheck = false;
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.innerHTML = v.unit ? unitHTML(v.unit) : '';
+    item.append(nm, input, unit);
+    icGrid.appendChild(item);
+    fields.push({ v, input, kind: isInput ? 'input' : 'parameter' });
+  }
+  icEmpty.textContent = fields.length ? '' : 'This FMU has no inputs, parameters or settable start values.';
+  icEmpty.style.display = fields.length ? 'none' : '';
+}
+
+function applyDefaults() {
+  const de = fmu.md.defaultExperiment;
+  startEl.value = de.startTime != null ? de.startTime : 0;
+  stopEl.value = de.stopTime != null ? de.stopTime : num(startEl.value, 0) + 1;
+  const step = de.stepSize != null ? de.stepSize : (num(stopEl.value, 1) - num(startEl.value, 0)) / 500;
+  stepEl.value = step;
+  tolEl.value = (de.tolerance != null ? de.tolerance : 1e-6).toExponential();
+}
+
+// An input expression in t, with Math in scope: "sin(2*PI*t)", "t < 1 ? 0 : 1".
+const MATH = Object.getOwnPropertyNames(Math).filter((k) => k !== 'constructor');
+function compileExpr(src, name) {
+  let fn;
+  try {
+    fn = new Function('t', `const {${MATH.join(',')}} = Math; return (${src});`);
+    const v = fn(0);
+    if (typeof v !== 'number' && typeof v !== 'boolean') throw new Error('does not evaluate to a number');
+    if (typeof v === 'number' && !isFinite(v)) throw new Error('is not finite at t = 0');
+  } catch (e) {
+    throw new Error(`${name}: "${src}" ${e.message.replace(/^.*?: /, '')}`);
+  }
+  return fn;
+}
+
+function collectFields() {
+  const inputs = [], parameters = [];
+  for (const f of fields) {
+    f.input.classList.remove('bad');
+    const src = f.input.value.trim() || '0';
+    const target = f.kind === 'input' ? inputs : parameters;
+    try {
+      if (f.v.tag === 'String') { target.push({ vr: f.v.vr, type: 'String', value: () => f.input.value }); continue; }
+      const fn = compileExpr(src, f.v.name);
+      target.push({ vr: f.v.vr, type: f.v.type, value: fn });
+    } catch (e) { f.input.classList.add('bad'); throw e; }
+  }
+  return { inputs, parameters };
+}
+
+// --- running ----------------------------------------------------------------
+runBtn.onclick = () => { if (running) { cancelled = true; setStatus('Cancelling…', 'busy'); } else run(); };
+
+async function run() {
+  if (!fmu) return;
+  let opts;
+  try {
+    const { inputs, parameters } = collectFields();
+    opts = {
+      startTime: num(startEl.value, 0),
+      stopTime: num(stopEl.value, 1),
+      stepSize: num(stepEl.value, 0.1),
+      tolerance: num(tolEl.value, 1e-6),
+      inputs, parameters,
+      shouldCancel: () => cancelled,
+      onProgress: (t) => setStatus(`Simulating… t = ${(+t.toPrecision(4))}`, 'busy'),
+    };
+  } catch (e) { setStatus(e.message, 'err'); return; }
+  if (!(opts.stopTime > opts.startTime)) { setStatus('Stop time must be after start time.', 'err'); return; }
+  if (!(opts.stepSize > 0)) { setStatus('Step size must be positive.', 'err'); return; }
+
+  running = true; cancelled = false;
+  runBtn.textContent = 'Cancel'; runBtn.className = 'cancel';
+  openBtn.disabled = true;
+  setStatus('Simulating…', 'busy');
+  const t0 = performance.now();
+  try {
+    const rec = await simulate(await fmu.instance(), ifaceEl.value, opts);
+    const ms = Math.round(performance.now() - t0);
+    renderCharts(rec);
+    const kind = ifaceEl.value === 'me' ? 'Model Exchange' : 'Co-Simulation';
+    if (rec.warning) { setStatus(rec.warning, 'err'); log('warning', rec.warning); }
+    else setStatus(`${rec.time.length} samples in ${ms} ms — ${kind}.`);
+  } catch (e) {
+    if (cancelled) setStatus('Cancelled.');
+    else { setStatus(e.message, 'err'); log('host', `simulation failed: ${e.stack || e.message}`); }
+  } finally {
+    running = false;
+    runBtn.textContent = 'Simulate'; runBtn.className = '';
+    openBtn.disabled = false;
+  }
+}
+
+// --- charts -----------------------------------------------------------------
+function renderCharts(rec) {
+  charts.clear();
+  const xs = Float64Array.from(rec.time);
+  const curves = rec.columns
+    .filter((c) => c.values.some((v) => isFinite(v)))
+    .map((c, i) => ({ label: c.name, unit: c.unit || '', color: COLORS[i % COLORS.length],
+                      xs, ys: Float64Array.from(c.values) }));
+  if (!curves.length) {
+    charts.clear(chartsEmpty);
+    chartsEmpty.style.display = '';
+    chartsEmpty.textContent = 'The FMU reported no output, local or input variables to plot.';
+    return;
+  }
+  charts.add({ curves, xText: 'time', xUnit: 's', xIsTime: true, solo: true }, 'all');
+}
+
+addEventListener('resize', () => charts.redraw());
+</script>
+</body>
+</html>

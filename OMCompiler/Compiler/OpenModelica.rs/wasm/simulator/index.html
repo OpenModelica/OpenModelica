@@ -4,40 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Simulator</title>
+<link rel="stylesheet" href="../theme.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg:#1e1e1e; --panel:#252526; --border:#333; --fg:#d4d4d4; --muted:#8a8a8a;
-    --accent:#23afe5; --accent-2:#0e639c; --teal:#4ec9b0; --err:#f48771;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; }
-  body {
-    font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    background:var(--bg); color:var(--fg);
-    display:flex; flex-direction:column; height:100vh; overflow:hidden;
-  }
-  header {
-    flex:0 0 auto; display:flex; align-items:center; gap:10px;
-    padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--border);
-  }
-  header .title { color:var(--teal); font-weight:650; }
-  header .status { color:var(--muted); flex:1; min-width:0; overflow:hidden;
-    text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
-  header .status.err { color:var(--err); }
-  header .status.busy { color:var(--accent); }
-  button {
-    background:var(--accent-2); color:#fff; border:0; border-radius:4px;
-    padding:7px 16px; font:inherit; font-size:15px; cursor:pointer;
-  }
-  button:hover:not(:disabled){ background:#1177bb; }
-  button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
-  button.cancel{ background:#a1260d; }
-  button.cancel:hover:not(:disabled){ background:#c42b0e; }
-  button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
-  button.ghost:hover:not(:disabled){ background:#2d2d30; }
-  button.ghost.icon-only { padding:6px 9px; display:inline-flex; align-items:center; }
-  button.ghost.icon-only svg { width:16px; height:16px; display:block; }
 
   main { flex:1 1 auto; display:grid; grid-template-columns:minmax(320px,40%) 1fr; min-height:0; }
   .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow:hidden; }
@@ -59,9 +27,6 @@
   .doc-body td, .doc-body th { border:1px solid var(--border); padding:3px 6px; }
   .doc-body pre, .doc-body code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; }
   .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
-
-  .section-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
-    color:var(--muted); padding:9px 12px 4px; flex:0 0 auto; }
   .editor-label { display:flex; align-items:center; gap:10px; }
   .editor-label > span { flex:1 1 auto; }
   .ex-select { text-transform:none; letter-spacing:normal; width:auto; min-width:0; max-width:60%;
@@ -71,14 +36,6 @@
     flex:1 1 auto; resize:none; border:0; outline:none; min-height:120px;
     background:#1b1b1b; color:var(--fg); padding:10px 12px;
     font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2;
-  }
-
-  .panel { flex:0 0 auto; border-top:1px solid var(--border); background:var(--panel); }
-  .grid2 { padding:10px 12px; display:grid; grid-template-columns:auto 1fr auto 1fr; gap:9px 10px; align-items:center; }
-  .grid2 label { color:var(--muted); font-size:14px; white-space:nowrap; }
-  input, select {
-    background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
-    border-radius:4px; padding:6px 8px; font:inherit; font-size:15px; width:100%; min-width:0;
   }
   /* log-scale tolerance stepper */
   .stepper { display:flex; align-items:stretch; gap:0; }
@@ -97,19 +54,22 @@
     width:min(460px,100%); box-shadow:0 14px 44px #000a; }
   .modal-head { display:flex; align-items:center; justify-content:space-between;
     padding:12px 14px; border-bottom:1px solid var(--border); font-weight:650; color:var(--fg); }
-  .icon-btn { background:transparent; border:0; color:var(--muted); font-size:17px; line-height:1;
-    cursor:pointer; padding:4px 8px; }
-  .icon-btn:hover { color:var(--fg); }
+  .modal-body { padding:14px; display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; }
+  .modal-body > label { color:var(--muted); }
+  .modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+    border-radius:4px; padding:3px 6px; font:inherit; }
+  .modal-body select:disabled { opacity:.5; }
+  .chk-group { display:flex; flex-direction:column; gap:6px; }
+  .chk { display:flex; align-items:center; gap:7px; color:var(--fg); }
+  .chk input { width:auto; }
+  .modal-foot { display:flex; justify-content:flex-end; gap:8px;
+    padding:12px 14px; border-top:1px solid var(--border); }
+  .modal-hint { grid-column:1 / -1; color:var(--muted); font-size:12px; margin:0; }
 
   #icPanel { max-height:34%; overflow-y:auto; }
   /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
-  .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:7px 18px; }
-  .ic-item { display:grid; grid-template-columns:minmax(0,1fr) 80px auto; gap:9px; align-items:center; }
   /* Enum: name dropdown, no unit column. */
   .ic-item.enum { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); }
-  .ic-item .nm { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ic-item .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
-  .ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
 
   /* 3D animation view: sits above the charts (both visible). Canvas fills the
      pane, a control bar pinned below it, view presets overlaid top-right. */
@@ -138,39 +98,7 @@
   .anim-loop.active { color:var(--accent); border-color:var(--accent); }
 
   /* charts area: one card per plot, scrollable */
-  .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
-  .charts[hidden] { display:none; }
-  .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
-  .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
-  .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
-  .chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
-  .chart-card.solo .plot-wrap { flex:1 1 auto; height:auto; min-height:200px; }
-  .plot-head { color:var(--fg); font-size:13px; margin:1px 2px 4px; }
-  .plot-wrap { position:relative; height:230px; }
-  .plot-wrap svg.plot { width:100%; height:100%; display:block; }
-  .plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
-  .tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
-    background:#000c; border:1px solid var(--border); border-radius:5px; padding:6px 8px;
-    font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:70%; }
-  .tooltip .t { color:var(--muted); margin-bottom:2px; }
-  .tooltip .row { display:flex; align-items:center; gap:6px; }
-  .tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
-  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; }
-  .legend .item { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; user-select:none; }
-  .legend .item.off { opacity:.4; }
-  .legend .sw { width:13px; height:13px; border-radius:3px; flex:0 0 auto; }
-  .legend .empty { color:var(--muted); }
-  .legend .u { color:var(--muted); }
-  .caption { color:var(--muted); font-size:12.5px; white-space:pre-wrap; margin:6px 2px 0; }
   /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
-  sup { font-size:.7em; line-height:0; }
-  .frac { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.02; }
-  .frac > .fn { border-bottom:1px solid currentColor; padding:0 .25em; }
-  .frac > .fd { padding:0 .25em; }
-  .xlabel { position:absolute; left:0; right:0; bottom:2px; text-align:center; color:var(--muted); font-size:11px; pointer-events:none; }
-  .ylabel { position:absolute; left:0; top:0; bottom:0; width:22px; display:flex; align-items:center; justify-content:center;
-    color:var(--muted); font-size:11px; pointer-events:none; }
-  .ylabel > .rot { transform:rotate(-90deg); white-space:nowrap; display:inline-flex; align-items:center; gap:.35em; }
 
   @media (max-width:820px), (orientation:portrait) {
     body { overflow:auto; height:auto; min-height:100vh; }
@@ -183,7 +111,6 @@
     .charts { overflow:visible; }
     .anim { flex:none; height:auto; }
     .anim-view { height:70vw; min-height:320px; }
-    .chart-card.solo .plot-wrap { min-height:300px; height:56vw; }
     header { flex-wrap:wrap; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
     .ex-select { max-width:56%; }
@@ -221,6 +148,7 @@
   <button id="settingsBtn" class="ghost icon-only" title="Simulation settings" aria-label="Simulation settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
+  <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
   <button id="run" disabled>Run</button>
 </header>
 
@@ -310,8 +238,35 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="exportBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Export FMU" aria-modal="true">
+    <div class="modal-head">
+      <span>Export FMU</span>
+      <button class="icon-btn" id="exportClose" title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Interfaces</label>
+      <div class="chk-group">
+        <label class="chk"><input type="checkbox" id="fmiMe" checked /> Model Exchange</label>
+        <label class="chk"><input type="checkbox" id="fmiCs" checked /> Co-Simulation</label>
+      </div>
+      <label for="csSolver">CS solver</label>
+      <select id="csSolver">
+        <option value="dassl">dassl</option>
+        <option value="euler">euler</option>
+      </select>
+      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" id="exportCancel">Cancel</button>
+      <button id="exportGo">Export</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { Animator } from './animation.js';
+import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
 // ready fast, and a second that installs the MSL in the background and takes
@@ -332,11 +287,11 @@ const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: 
 // eight distinct hues in a fixed, CVD-optimized order (dataviz reference palette).
 // The always-present legend is the secondary encoding for the one adjacent pair
 // that sits in the CVD floor band.
-const COLORS = ['#3987e5','#199e70','#c98500','#008300','#9085e9','#e66767','#d55181','#d95926'];
 
 const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), srcEl = el('src');
 const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
+const charts = createCharts(chartsEl);
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 const exSel = el('examples'), docBody = el('docBody');
 const settingsBtn = el('settingsBtn'), settingsBackdrop = el('settingsBackdrop'), settingsClose = el('settingsClose');
@@ -349,7 +304,7 @@ let animLoopOn = false;   // repeat preference, persisted across runs
 // strip (mobile) whose chevron reopens it. Collapsing widens the charts.
 let docsUserToggled = false;   // once the user decides, stop auto-collapsing
 function reflowDocs() {
-  for (const c of charts) drawChart(c);            // chart width changed
+  charts.redraw();                                   // chart width changed
   if (animator && !animEl.hidden) animator.resize();
 }
 function toggleDocs() {
@@ -432,9 +387,23 @@ function call(worker, cmd, args) {
 // `?driver=host|inwasm` overrides the simulation driver, for A/B'ing the two.
 const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).get('driver')] ?? null;
 
+// Per-worker cancel control block (SharedArrayBuffer, needs the page's COOP/COEP
+// headers): each worker gets its own so cancelling an export never disturbs another
+// worker's job, e.g. the background MSL install. activeExportWorker is the target.
+const canShareCancel = (typeof SharedArrayBuffer !== 'undefined');
+let activeExportWorker = null;
+function requestExportCancel() {
+  const w = activeExportWorker;
+  if (w && w._cancel) Atomics.store(w._cancel, 0, 1);
+}
+
 function makeWorker(tag) {
   const w = new Worker(new URL('./omc-worker.js', import.meta.url), { type: 'module' });
   attach(w, tag);
+  if (canShareCancel) {
+    w._cancel = new Int32Array(new SharedArrayBuffer(16));
+    w.postMessage({ cmd: 'setCancelBuffer', buf: w._cancel.buffer });
+  }
   if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
   return w;
 }
@@ -487,9 +456,7 @@ let builtModel = null, lastText = null;
 let running = false, pendingKind = null, runningKind = null;
 let modelFigures = null;      // parsed figures for the current model, or null
 let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
-const hidden = new Set();     // "chartKey|label" of series toggled off (persists across runs)
 let colMap = new Map();       // result-variable name -> { values:Float64Array, unit }
-let charts = [];              // live chart states for hover
 let snap = null;              // last simulation snapshot from a worker
 let modelDoc = '';            // current model's documentation HTML (persists across re-sims)
 let currentExample = null;
@@ -623,7 +590,7 @@ function cancelRun() {
 function showBuilding() {
   icGrid.replaceChildren(); icValues.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
-  charts = []; chartsEl.replaceChildren(chartsEmpty);
+  charts.clear(chartsEmpty);
   chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
   docBody.className = 'doc-body empty'; docBody.textContent = '…';
   animInfo = null; if (animator) animator.pause(); animEl.hidden = true;
@@ -690,8 +657,8 @@ async function loadConfig() {
 
 function fail(msg) {
   log('FAIL', msg);
-  setStatus(msg, 'err'); charts = []; modelFigures = null;
-  chartsEl.replaceChildren(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
+  setStatus(msg, 'err'); modelFigures = null;
+  charts.clear(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
 }
 
 // --- editable initial conditions -------------------------------------------
@@ -769,14 +736,14 @@ function alignXY(xcol, ycol) {
 
 // --- chart rendering --------------------------------------------------------
 function renderCharts() {
-  chartsEl.replaceChildren(); charts = [];
+  charts.clear();
   buildColMap();
   const haveFigs = !!(modelFigures && modelFigures.length);
   toggleBtn.style.display = haveFigs ? '' : 'none';
   const useFigs = haveFigs && viewMode !== 'all';
   toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
   if (useFigs) renderFigures(); else renderAllVariables();
-  if (!charts.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
+  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
     chartsEmpty.textContent = 'No variables to plot.'; }
 }
 
@@ -791,7 +758,7 @@ function renderAllVariables() {
     const { xs, ys } = alignXY(time, yc);
     curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
   });
-  makeChart({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
+  charts.add({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
 }
 
 function renderFigures() {
@@ -822,7 +789,7 @@ function renderFigures() {
         yLog: (yAxis.scale && yAxis.scale.scaleType === 'Log'),
         note: (plot.curves || []).length && !curves.length ? 'Referenced variables are not in the result.' : '',
       };
-      makeChart(spec, 'f' + fi + 'p' + pi);
+      charts.add(spec, 'f' + fi + 'p' + pi);
     });
     const cap = expandText(fig.caption);
     if (cap) { const c = document.createElement('div'); c.className = 'caption'; c.textContent = cap; chartsEl.appendChild(c); }
@@ -830,172 +797,10 @@ function renderFigures() {
 }
 function bound(arr) { return Array.isArray(arr) && arr.length ? arr[0] : null; }
 
-const SVGNS = 'http://www.w3.org/2000/svg';
-function svg(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-function niceStep(range, target) { const raw = range / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
-  return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * mag; }
-function fmt(v) { if (v === 0) return '0'; const a = Math.abs(v);
-  return (a >= 1e4 || a < 1e-3) ? v.toExponential(1) : (+v.toPrecision(4)).toString(); }
-
-// --- Modelica unit rendering ------------------------------------------------
-function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-// Parse a Modelica unit ("m/s2", "kg.m/s2", "W/(m.K)", "s-1") into numerator and
-// denominator factors, each with a positive integer exponent. '.' multiplies,
-// '/' starts the denominator, a trailing (signed) integer is the exponent.
-function parseUnit(u) {
-  if (!u) return null;
-  const num = [], den = []; let denom = false;
-  for (const tok of u.split(/([./()])/)) {
-    if (tok === '/') { denom = true; continue; }
-    if (tok === '' || tok === '.' || tok === '(' || tok === ')') continue;
-    const m = tok.match(/^(.*?)([+-]?\d+)$/);
-    let sym = tok, exp = 1;
-    if (m && m[1]) { sym = m[1]; exp = parseInt(m[2], 10); }
-    if (sym === '1') continue;
-    const e = exp * (denom ? -1 : 1);
-    (e < 0 ? den : num).push({ s: sym, e: Math.abs(e) });
-  }
-  return (num.length || den.length) ? { num, den } : null;
-}
-function factorsHTML(list) { return list.map((f) => escapeHtml(f.s) + (f.e !== 1 ? '<sup>' + f.e + '</sup>' : '')).join('·'); }
-// A unit as HTML: superscript exponents, and a stacked fraction when it divides.
-function unitHTML(u) {
-  const p = parseUnit(u); if (!p) return '';
-  if (!p.den.length) return factorsHTML(p.num);
-  return '<span class="frac"><span class="fn">' + (p.num.length ? factorsHTML(p.num) : '1') + '</span>'
-    + '<span class="fd">' + factorsHTML(p.den) + '</span></span>';
-}
-function labelHTML(text, unit) {
-  const u = unit ? unitHTML(unit) : '', t = text ? escapeHtml(text) : '';
-  return t && u ? t + ' ' + u : (t || u);
-}
-
-function makeChart(spec, key) {
-  const card = document.createElement('div'); card.className = 'chart-card' + (spec.solo ? ' solo' : '');
-  if (spec.title) { const h = document.createElement('div'); h.className = 'plot-head'; h.textContent = spec.title; card.appendChild(h); }
-  const wrap = document.createElement('div'); wrap.className = 'plot-wrap';
-  const s = svg('svg', { class: 'plot', preserveAspectRatio: 'none' });
-  const tip = document.createElement('div'); tip.className = 'tooltip';
-  const note = document.createElement('div'); note.className = 'plot-note'; note.style.display = 'none';
-  const xlab = document.createElement('div'); xlab.className = 'xlabel';
-  const ylab = document.createElement('div'); ylab.className = 'ylabel';
-  wrap.append(s, tip, note, xlab, ylab); card.appendChild(wrap);
-  const legend = document.createElement('div'); legend.className = 'legend'; card.appendChild(legend);
-  chartsEl.appendChild(card);
-
-  const chart = { spec, key, svgEl: s, tip, wrap, note, xlabel: xlab, ylabel: ylab, state: null };
-  charts.push(chart);
-
-  legend.replaceChildren();
-  if (!spec.curves.length) { legend.innerHTML = '<span class="empty">—</span>'; }
-  for (const c of spec.curves) {
-    const item = document.createElement('div');
-    const k = key + '|' + c.label;
-    item.className = 'item' + (hidden.has(k) ? ' off' : ''); item.title = c.label;
-    item.innerHTML = '<span class="sw" style="background:' + c.color + '"></span>';
-    item.append(c.label + ' ');
-    if (c.unit) { const u = document.createElement('span'); u.className = 'u'; u.innerHTML = unitHTML(c.unit); item.append(u); }
-    item.onclick = () => { if (hidden.has(k)) hidden.delete(k); else hidden.add(k);
-      item.classList.toggle('off', hidden.has(k)); drawChart(chart); };
-    legend.appendChild(item);
-  }
-  drawChart(chart);
-}
-
-function drawChart(chart) {
-  const { spec, key, svgEl, tip, note } = chart;
-  svgEl.replaceChildren(); tip.style.display = 'none';
-  const active = spec.curves.filter((c) => !hidden.has(key + '|' + c.label));
-  if (!active.length) { note.style.display = 'grid'; note.textContent = spec.note || (spec.curves.length ? 'No variables selected.' : 'No variables to plot.');
-    chart.xlabel.innerHTML = ''; chart.ylabel.innerHTML = ''; chart.state = null; return; }
-  note.style.display = 'none';
-
-  const W = svgEl.clientWidth || 800, H = svgEl.clientHeight || 360;
-  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const m = { l: 64, r: 14, t: 12, b: 30 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
-  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-  for (const c of active) { for (const v of c.xs) { if (v < xMin) xMin = v; if (v > xMax) xMax = v; }
-    for (const v of c.ys) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }
-  if (!isFinite(xMin)) { xMin = 0; xMax = 1; } if (xMin === xMax) xMax = xMin + 1;
-  if (spec.yMin != null) yMin = spec.yMin; if (spec.yMax != null) yMax = spec.yMax;
-  if (!isFinite(yMin)) { yMin = 0; yMax = 1; } if (yMin === yMax) { yMin -= 1; yMax += 1; }
-  const yLog = spec.yLog && yMin > 0 && yMax > 0;
-  if (!yLog) { const pad = (yMax - yMin) * 0.05; yMin -= pad; yMax += pad; }
-  const tY = yLog ? Math.log10 : (y) => y;
-  const yLo = tY(yMin), yHi = tY(yMax);
-  const px = (x) => m.l + (x - xMin) / (xMax - xMin) * iw;
-  const py = (y) => m.t + (1 - (tY(y) - yLo) / (yHi - yLo)) * ih;
-
-  const grid = svg('g', {});
-  const gridline = (x1, y1, x2, y2, stroke) => grid.appendChild(svg('line', { x1, y1, x2, y2, stroke, 'stroke-width': 1 }));
-  const label = (x, y, anchor, txt) => { const t = svg('text', { x, y, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': anchor }); t.textContent = txt; grid.appendChild(t); };
-  if (yLog) {
-    for (let p = Math.floor(Math.log10(yMin)); p <= Math.ceil(Math.log10(yMax)); p++) {
-      const v = Math.pow(10, p); if (v < yMin || v > yMax) continue; const y = py(v);
-      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v));
-    }
-  } else {
-    const yStep = niceStep(yMax - yMin, 5);
-    for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) { const y = py(v);
-      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v)); }
-  }
-  const xStep = niceStep(xMax - xMin, 6);
-  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) { const x = px(v);
-    gridline(x, m.t, x, H - m.b, '#2a2a2a'); label(x, H - m.b + 16, 'middle', fmt(v)); }
-  svgEl.appendChild(grid);
-  svgEl.appendChild(svg('line', { x1: m.l, y1: m.t, x2: m.l, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-  svgEl.appendChild(svg('line', { x1: m.l, y1: H - m.b, x2: W - m.r, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-
-  for (const c of active) {
-    let d = '';
-    for (let i = 0; i < c.xs.length && i < c.ys.length; i++) d += (i ? 'L' : 'M') + px(c.xs[i]).toFixed(1) + ' ' + py(c.ys[i]).toFixed(1);
-    svgEl.appendChild(svg('path', { d, fill: 'none', stroke: c.color, 'stroke-width': 1.6 }));
-  }
-  // Axis titles are HTML overlays (not SVG text) so units render as stacked fractions.
-  let yUnit = spec.yUnit;
-  if (!yUnit) { const us = [...new Set(active.map((c) => c.unit).filter(Boolean))]; if (us.length === 1) yUnit = us[0]; }
-  chart.xlabel.innerHTML = labelHTML(spec.xText || '', spec.xUnit || '');
-  const yl = labelHTML(spec.yText || '', yUnit || '');
-  chart.ylabel.innerHTML = yl ? '<span class="rot">' + yl + '</span>' : '';
-
-  const cursor = svg('g', { style: 'display:none' });
-  const vline = svg('line', { y1: m.t, y2: H - m.b, stroke: '#888', 'stroke-width': 1, 'stroke-dasharray': '3 3' });
-  cursor.appendChild(vline);
-  const dots = active.map((c) => svg('circle', { r: 3.5, fill: c.color, stroke: '#1e1e1e', 'stroke-width': 1 }));
-  dots.forEach((d) => cursor.appendChild(d));
-  svgEl.appendChild(cursor);
-  chart.state = { active, px, py, geom: { m, W, H }, cursor, vline, dots };
-}
-
-function onHover(ev, chart) {
-  const st = chart.state; if (!st) return;
-  const { active, px, py, geom, cursor, vline, dots } = st;
-  const rect = chart.svgEl.getBoundingClientRect();
-  const vbX = (ev.clientX - rect.left) / rect.width * geom.W;
-  if (vbX < geom.m.l || vbX > geom.W - geom.m.r) { cursor.setAttribute('style', 'display:none'); chart.tip.style.display = 'none'; return; }
-  const idxNearest = (xs) => { let best = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } } return best; };
-  const i0 = idxNearest(active[0].xs);
-  cursor.setAttribute('style', ''); vline.setAttribute('x1', px(active[0].xs[i0])); vline.setAttribute('x2', px(active[0].xs[i0]));
-  let html = '';
-  active.forEach((c, k) => { const i = c.xs === active[0].xs ? i0 : idxNearest(c.xs);
-    dots[k].setAttribute('cx', px(c.xs[i])); dots[k].setAttribute('cy', py(c.ys[i]));
-    html += '<div class="row"><span class="sw" style="background:' + c.color + '"></span>'
-      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>'; });
-  const xLbl = (chart.spec.xLabel || 'x').replace(/\s*\[.*\]$/, '');
-  chart.tip.innerHTML = '<div class="t">' + xLbl + ' = ' + (+active[0].xs[i0].toPrecision(6)) + '</div>' + html;
-  chart.tip.style.display = 'block';
-  const wrap = chart.wrap.getBoundingClientRect();
-  let tx = ev.clientX - wrap.left + 14, ty = ev.clientY - wrap.top + 12;
-  if (tx + chart.tip.offsetWidth > wrap.width) tx = ev.clientX - wrap.left - chart.tip.offsetWidth - 14;
-  if (ty + chart.tip.offsetHeight > wrap.height) ty = wrap.height - chart.tip.offsetHeight - 4;
-  chart.tip.style.left = tx + 'px'; chart.tip.style.top = ty + 'px';
-}
-chartsEl.addEventListener('mousemove', (ev) => { const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target)); if (c) onHover(ev, c); });
-chartsEl.addEventListener('mouseleave', () => { for (const c of charts) { if (c.state) c.state.cursor.setAttribute('style', 'display:none'); c.tip.style.display = 'none'; } }, true);
 // Click a time-based chart to jump the animation (and the shared cursor) to that time.
 chartsEl.addEventListener('click', (ev) => {
   if (!animator || !animInfo) return;
-  const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target));
+  const c = charts.at(ev.target);
   if (!c || !c.state || !c.spec.xIsTime || !c.state.active.length) return;
   const st = c.state, xs = st.active[0].xs;
   const vbX = (ev.clientX - c.svgEl.getBoundingClientRect().left) / c.svgEl.clientWidth * st.geom.W;
@@ -1070,7 +875,7 @@ function placeCursor(chart, i0) {
 
 // Move the cursor of every time-based chart to time t (driven by playback/scrub).
 function setChartsCursor(t) {
-  for (const chart of charts) {
+  for (const chart of charts.list) {
     if (!chart.spec.xIsTime || !chart.state || !chart.state.active.length) continue;
     placeCursor(chart, nearestByX(chart.state.active[0].xs, t));
   }
@@ -1114,9 +919,64 @@ el('tolDn').addEventListener('click', () => stepTol(0.1));
 tolEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); stepTol(10); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepTol(0.1); } });
 tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (isFinite(v) && v > 0) { tolValue = cleanTol(v); } renderTol(); run('full'); });
 runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('full'); });
+
+const exportBtn = el('exportFmu');
+function downloadBlob(name, bytes) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+let exporting = false;
+async function exportFmu({ fmuType, method }) {
+  if (running || exporting) return;
+  const text = srcEl.value;
+  if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
+  exporting = true;
+  exportBtn.textContent = 'Cancel';         // the button cancels the running export
+  setStatus('Exporting FMU…', 'busy');
+  try {
+    if (needsMsl(text) && !mslDone) setStatus('Loading Modelica library…', 'busy');
+    const worker = await pickWorker(text);
+    if (!worker) throw new Error('compiler not ready');
+    activeExportWorker = worker;   // so a Cancel targets this worker's control block
+    const name = parseModelName(text);
+    const lm = await call(worker, 'loadSource', { text, name });
+    if (!lm.ok) return fail(lm.error);
+    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method });
+    if (r.cancelled) { setStatus('Export cancelled.'); return; }
+    if (!r.ok) return fail(r.error);
+    downloadBlob(r.filename, r.bytes);
+    setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
+  } catch (e) { fail('' + e); }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; }
+}
+
+// FMU export dialog: pick interface(s) and (for CS) the embedded solver.
+const exportBackdrop = el('exportBackdrop'), fmiMe = el('fmiMe'), fmiCs = el('fmiCs'), csSolver = el('csSolver');
+function syncExportDialog() {
+  csSolver.disabled = !fmiCs.checked;
+  el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
+}
+function openExport() { if (!exportBtn.disabled) { syncExportDialog(); exportBackdrop.hidden = false; } }
+function closeExport() { exportBackdrop.hidden = true; }
+fmiCs.addEventListener('change', syncExportDialog);
+fmiMe.addEventListener('change', syncExportDialog);
+// While exporting the button cancels; otherwise it opens the dialog.
+exportBtn.addEventListener('click', () => { if (exporting) requestExportCancel(); else openExport(); });
+el('exportClose').addEventListener('click', closeExport);
+el('exportCancel').addEventListener('click', closeExport);
+exportBackdrop.addEventListener('click', (e) => { if (e.target === exportBackdrop) closeExport(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !exportBackdrop.hidden) closeExport(); });
+el('exportGo').addEventListener('click', () => {
+  const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
+  const method = fmiCs.checked ? csSolver.value : undefined;
+  closeExport();
+  exportFmu({ fmuType, method });
+});
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
-window.addEventListener('resize', () => { autoDocs(); for (const c of charts) drawChart(c); });
+window.addEventListener('resize', () => { autoDocs(); charts.redraw(); });
 autoDocs();
 
 exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
@@ -1143,6 +1003,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
     const v = await call(w1, 'init');
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     runBtn.disabled = false;
+    el('exportFmu').disabled = false;
     setStatus('Ready. ' + v.version);
     selectExample(currentExample);                  // run the configured default example
   } catch (e) { log('startup error', e); setStatus('Startup error: ' + e, 'err'); }

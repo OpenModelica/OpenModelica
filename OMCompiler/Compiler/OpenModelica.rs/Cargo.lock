@@ -4288,6 +4288,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a2c462a4d927d512f5f882a033ddd62f33a05bb9f230d98f736ac3dc85938f"
 
 [[package]]
+name = "id-arena"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6138,6 +6144,7 @@ dependencies = [
  "openmodelica_codegen_cpp",
  "openmodelica_codegen_cpp_ext",
  "openmodelica_codegen_cpp_omsi_ext",
+ "openmodelica_codegen_fmu",
  "openmodelica_codegen_fmu_c",
  "openmodelica_codegen_fmu_omsi",
  "openmodelica_codegen_wasm_jit",
@@ -6497,6 +6504,7 @@ dependencies = [
  "libffi",
  "metamodelica",
  "openmodelica_ast",
+ "openmodelica_backend",
  "openmodelica_backend_types",
  "openmodelica_error",
  "openmodelica_frontend_dump",
@@ -6510,7 +6518,9 @@ dependencies = [
  "ordered-float",
  "wasm-encoder 0.252.0",
  "wasmer",
+ "wasmparser 0.252.0",
  "wasmtime",
+ "wit-component",
 ]
 
 [[package]]
@@ -10369,6 +10379,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-metadata"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b7e08e02a3cd55bf778009d4cd6faae50da011f293644daf78a531a32d6d142"
+dependencies = [
+ "anyhow",
+ "indexmap",
+ "wasm-encoder 0.252.0",
+ "wasmparser 0.252.0",
+]
+
+[[package]]
 name = "wasm-streams"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10570,8 +10592,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3eb099dcadcde5be9eef55e3a337128efd4e44b4c93122487e4d2e4e1c6627c"
 dependencies = [
  "bitflags 2.13.0",
+ "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
@@ -12036,6 +12060,44 @@ name = "wit-bindgen"
 version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+
+[[package]]
+name = "wit-component"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76db0662b590f45d33d0e363fa13539a5a1eecd35d5a12fe208c335461c1053d"
+dependencies = [
+ "anyhow",
+ "bitflags 2.13.0",
+ "indexmap",
+ "log",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "wasm-encoder 0.252.0",
+ "wasm-metadata",
+ "wasmparser 0.252.0",
+ "wit-parser",
+]
+
+[[package]]
+name = "wit-parser"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4266bea110371c620ccf3201c5023676046bc4556e5c7cfb5d500bda5ebc162d"
+dependencies = [
+ "anyhow",
+ "hashbrown 0.17.1",
+ "id-arena",
+ "indexmap",
+ "log",
+ "semver",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "unicode-ident",
+ "wasmparser 0.252.0",
+]
 
 [[package]]
 name = "writeable"

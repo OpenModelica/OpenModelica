@@ -14688,13 +14688,13 @@ public function getFMI3TypeOffset
   input SimCode.ModelInfo inModelInfo;
   output Integer outOffset;
 protected
-  SimCodeVar.SimVars vars = inModelInfo.vars;
-  // per-scalar counts so the offsets match the contiguous scalar realVars layout
-  // (an array variable occupies getNumElems scalar slots).
-  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
-  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
-  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
-  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
+  // Per-scalar counts from varInfo (O(1)). Re-counting the variable lists here on
+  // every call is O(n) and this runs once per variable, i.e. O(n^2) overall.
+  SimCode.VarInfo vi = inModelInfo.varInfo;
+  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
+  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
+  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
+  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
 algorithm
   outOffset := match inType
     local DAE.Type aty;

@@ -69,6 +69,7 @@ import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
 import CodegenFMU;
+import CodegenFMU3;
 import CodegenFMUCpp;
 import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
@@ -784,7 +785,8 @@ protected function callTargetTemplatesFMU
   input String FMUType;
   input Absyn.Program program;
 protected
-  // No WASM FMU support yet; fall back to C so the testsuite passes.
+  // The wasm FMU export (target "wasm-jit") emits an fmi-ls-wasm component; the
+  // testsuite has no wasm toolchain, so fall back to C there.
   String fmuTarget = if target == "wasm-jit" and Testsuite.isRunning() then "C" else target;
 algorithm
 
@@ -794,6 +796,7 @@ algorithm
       String str, newdir, newpath, resourcesDir, dirname, htmlFile;
       String fmutmp;
       String guid;
+      String modelDescriptionStr;
       Boolean b, exportDocumentation;
       Boolean needSundials = false;
       String fileprefix, fileNamePrefixHash;
@@ -805,6 +808,24 @@ algorithm
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
+    case (SimCode.SIMCODE(),"wasm-jit")
+      algorithm
+        // FMI 3.0 wasm Model-Exchange export: link the model with the ME adapter
+        // into an fmi-ls-wasm component and write the self-contained <name>.fmu
+        // (host-free, all in Rust — no external wasm-merge/zip). The
+        // modelDescription.xml is CodegenFMU3's, same as the C target's.
+        guid := System.getUUIDStr();
+        modelDescriptionStr := Tpl.textString(
+          CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
+        if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
+          CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+        elseif FMI.isFMICSType(FMUType) then
+          CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+        else
+          CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+        end if;
+      then ();
+
     case (SimCode.SIMCODE(),"C")
       algorithm
         fileNamePrefixHash := Util.hashFileNamePrefix(simCode.fileNamePrefix);

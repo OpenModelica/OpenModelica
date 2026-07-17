@@ -4,20 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Web</title>
+<link rel="stylesheet" href="theme.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #1e1e1e; --panel: #252526; --border: #333; --fg: #d4d4d4;
-    --muted: #808080; --accent: #23afe5; --accent-2: #0e639c; --teal: #4ec9b0;
-    --rail: 84px;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+    :root { --rail: 84px; }
+  /* A sidebar rail beside the client stage, not theme.css's stacked column. */
   body {
-    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    background: var(--bg); color: var(--fg);
+    font-size: 14px;
     display: grid; grid-template-columns: var(--rail) 1fr; grid-template-rows: 1fr;
-    height: 100vh; overflow: hidden;
   }
 
   /* --- Sidebar --------------------------------------------------------- */
@@ -35,6 +28,10 @@
   }
   .nav-btn .ic { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
   .nav-btn .ic img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  /* The FMI logo is the Modelica Association's, dark artwork that may not be
+     recoloured; its usage terms ask for a white background, which also makes it
+     legible here. */
+  #nav-fmi .ic img { background: #fff; border-radius: 4px; padding: 2px 3px; }
   .nav-btn .lbl {
     font-size: 10px; line-height: 1.1; width: 100%; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -76,7 +73,8 @@
     background: transparent; color: var(--muted); cursor: pointer; font: inherit;
     font-size: 13px; transition: background .12s, color .12s, border-color .12s;
   }
-  .pill:hover { color: var(--fg); border-color: #555; }
+  /* Only the outline lights up; the fill is reserved for the active variant. */
+  .pill:hover { background: transparent; color: var(--fg); border-color: #555; }
   .pill.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
   .pill.missing { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
   .spacer { flex: 1; }
@@ -181,6 +179,8 @@ const CLIENTS = [
     ] },
   { id: 'simulator', name: 'Simulator', icon: 'icons/simulator.svg',
     src: 'simulator/index.html' },
+  { id: 'fmi', name: 'FMI', icon: 'icons/fmi.svg',
+    src: 'fmi-simulator/index.html' },
   { id: 'omnotebook', name: 'OMNotebook', icon: 'icons/omnotebook.svg',
     src: 'OMNotebook-qt/OMNotebook-qt.html' },
   { id: 'omedit', name: 'OMEdit', icon: 'icons/omedit.png',

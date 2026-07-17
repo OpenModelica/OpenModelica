@@ -260,22 +260,26 @@ case SIMCODE(__) then
 end ModelExchange3;
 
 template CoSimulation3(SimCode simCode, list<String> sourceFiles)
- "Generates the CoSimulation element for FMI 3.0."
+ "Generates the CoSimulation element for FMI 3.0. The capabilities are the
+  runtime's, so they depend on the code-generation target: the wasm-jit adapter
+  integrates itself but has no output derivatives and handles events internally
+  (the importer never drives Event Mode)."
 ::=
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
+  let isWasm = if stringEq(Config.simCodeTarget(), "wasm-jit") then "true" else "false"
   <<
   <CoSimulation
     modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canBeInstantiatedOnlyOncePerProcess="false"
-    maxOutputDerivativeOrder="1"
+    maxOutputDerivativeOrder="<%if stringEq(isWasm, "true") then "0" else "1"%>"
     providesIntermediateUpdate="false"
-    mightReturnEarlyFromDoStep="true"
+    mightReturnEarlyFromDoStep="<%if stringEq(isWasm, "true") then "false" else "true"%>"
     canReturnEarlyAfterIntermediateUpdate="false"
-    hasEventMode="true"
+    hasEventMode="<%if stringEq(isWasm, "true") then "false" else "true"%>"
     providesEvaluateDiscreteStates="false"
     recommendedIntermediateInputSmoothness="0"
     canGetAndSetFMUState="true"
@@ -681,7 +685,7 @@ template EventIndicators3(SimCode simCode)
     '<EventIndicator valueReference="<%intAdd(stringInt(timeVR), i)%>"/>' ;separator="\n")
 end EventIndicators3;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMU3;
 
 // vim: filetype=susan sw=2 sts=2

@@ -1,0 +1,108 @@
+/* The look shared by the web clients: colour tokens, the header/controls, the
+   settings widgets, and the plot area that plot.js renders into. Pages add
+   their own layout on top; anything only one page needs stays in that page. */
+
+:root {
+  color-scheme: dark;
+  --bg:#1e1e1e; --panel:#252526; --border:#333; --fg:#d4d4d4; --muted:#8a8a8a;
+  --accent:#23afe5; --accent-2:#0e639c; --teal:#4ec9b0; --err:#f48771;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; height:100%; }
+body {
+  font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:var(--bg); color:var(--fg);
+  display:flex; flex-direction:column; height:100vh; overflow:hidden;
+}
+
+header {
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--border);
+}
+header .title { color:var(--teal); font-weight:650; }
+header .status { color:var(--muted); flex:1; min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+header .status.err { color:var(--err); }
+header .status.busy { color:var(--accent); }
+
+/* The plain-button look. :hover stays at one class of specificity (the disabled
+   rule below it wins by order, not by :not) so a page whose controls are
+   class-based — the launcher's rail, pills and tools — overrides it normally. */
+button {
+  background:var(--accent-2); color:#fff; border:0; border-radius:4px;
+  padding:7px 16px; font:inherit; font-size:15px; cursor:pointer;
+}
+button:hover{ background:#1177bb; }
+button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
+button.cancel{ background:#a1260d; }
+button.cancel:hover:not(:disabled){ background:#c42b0e; }
+button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
+button.ghost:hover:not(:disabled){ background:#2d2d30; }
+button.ghost.icon-only { padding:6px 9px; display:inline-flex; align-items:center; }
+button.ghost.icon-only svg { width:16px; height:16px; display:block; }
+.icon-btn { background:transparent; border:0; color:var(--muted); font-size:17px; line-height:1;
+  cursor:pointer; padding:4px 8px; }
+.icon-btn:hover { color:var(--fg); }
+
+.section-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--muted); padding:9px 12px 4px; flex:0 0 auto; }
+
+.panel { flex:0 0 auto; border-top:1px solid var(--border); background:var(--panel); }
+.grid2 { padding:10px 12px; display:grid; grid-template-columns:auto 1fr auto 1fr; gap:9px 10px; align-items:center; }
+.grid2 label { color:var(--muted); font-size:14px; white-space:nowrap; }
+input, select {
+  background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+  border-radius:4px; padding:6px 8px; font:inherit; font-size:15px; width:100%; min-width:0;
+}
+
+/* Inputs/parameters grid: auto-fill into as many columns as fit. */
+.ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:7px 18px; }
+.ic-item { display:grid; grid-template-columns:minmax(0,1fr) 80px auto; gap:9px; align-items:center; }
+.ic-item .nm { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ic-item .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
+.ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
+
+/* Charts area: one card per plot, scrollable. */
+.charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
+.charts[hidden] { display:none; }
+.charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
+.fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
+.chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
+.chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+.chart-card.solo .plot-wrap { flex:1 1 auto; height:auto; min-height:200px; }
+.plot-head { color:var(--fg); font-size:13px; margin:1px 2px 4px; }
+.plot-wrap { position:relative; height:230px; }
+.plot-wrap svg.plot { width:100%; height:100%; display:block; }
+.plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
+.tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
+  background:#000c; border:1px solid var(--border); border-radius:5px; padding:6px 8px;
+  font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:70%; }
+.tooltip .t { color:var(--muted); margin-bottom:2px; }
+.tooltip .row { display:flex; align-items:center; gap:6px; }
+.tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; }
+.legend .item { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; user-select:none; }
+.legend .item.off { opacity:.4; }
+.legend .sw { width:13px; height:13px; border-radius:3px; flex:0 0 auto; }
+.legend .empty { color:var(--muted); }
+.legend .u { color:var(--muted); }
+.caption { color:var(--muted); font-size:12.5px; white-space:pre-wrap; margin:6px 2px 0; }
+
+/* Modelica units: superscript exponents and stacked (num-over-den) fractions. */
+sup { font-size:.7em; line-height:0; }
+.frac { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.02; }
+.frac > .fn { border-bottom:1px solid currentColor; padding:0 .25em; }
+.frac > .fd { padding:0 .25em; }
+.xlabel { position:absolute; left:0; right:0; bottom:2px; text-align:center; color:var(--muted); font-size:11px; pointer-events:none; }
+.ylabel { position:absolute; left:0; top:0; bottom:0; width:22px; display:flex; align-items:center; justify-content:center;
+  color:var(--muted); font-size:11px; pointer-events:none; }
+.ylabel > .rot { transform:rotate(-90deg); white-space:nowrap; display:inline-flex; align-items:center; gap:.35em; }
+
+@media (max-width:820px), (orientation:portrait) {
+  body { overflow:auto; height:auto; min-height:100vh; }
+  .grid2 { grid-template-columns:auto 1fr; }
+  .charts { overflow:visible; }
+  .chart-card.solo .plot-wrap { min-height:300px; height:56vw; }
+  header { flex-wrap:wrap; }
+  header .status { order:3; flex-basis:100%; white-space:normal; }
+}

@@ -161,6 +161,16 @@ openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
+openmodelica_fmi3_wasm/Cargo.lock
+openmodelica_fmi3_wasm/Cargo.toml
+openmodelica_fmi3_wasm/src/lib.rs
+openmodelica_fmi3_wasm/wit/fmi3-callbacks.wit
+openmodelica_fmi3_wasm/wit/fmi3-co-simulation.wit
+openmodelica_fmi3_wasm/wit/fmi3-common.wit
+openmodelica_fmi3_wasm/wit/fmi3-model-exchange.wit
+openmodelica_fmi3_wasm/wit/fmi3-scheduled-execution.wit
+openmodelica_fmi3_wasm/wit/fmi3-types.wit
+openmodelica_fmi3_wasm/wit/world.wit
 openmodelica_codegen_xml/Cargo.toml
 openmodelica_dump_extra/Cargo.toml
 openmodelica_error/Cargo.toml
@@ -267,6 +277,8 @@ rust-toolchain.toml
 susanSources.txt
 wasm/index.html
 wasm/omc-cli.js
+wasm/plot.js
+wasm/theme.css
 wasm/home/index.html
 wasm/omc-terminal/index.html
 wasm/simulator/index.html
@@ -275,6 +287,10 @@ wasm/simulator/animation.js
 wasm/simulator/OrbitControls.js
 wasm/simulator/config.json
 wasm/simulator/examples/BouncingBall.mo
+wasm/fmi-simulator/index.html
+wasm/fmi-simulator/fmu.js
+wasm/fmi-simulator/master.js
+wasm/icons/fmi.svg
 wasm/icons/om.svg
 wasm/icons/omshell.svg
 wasm/icons/omnotebook.svg

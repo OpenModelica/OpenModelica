@@ -8,6 +8,7 @@
 // plus unsolicited { type:'status', id, text } for download progress.
 import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
+  omc_enable_cancel_poll,
   omc_sim_start, omc_sim_advance, omc_sim_free,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
@@ -18,6 +19,12 @@ import init, {
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
 let simCancel = false;
+
+// Cross-thread cancel bit (SharedArrayBuffer index 0) the omc polls via
+// globalThis.__omcPollCancel. Unlike simCancel it works while the worker is parked
+// in a single synchronous omc call, since the page writes shared memory directly.
+let cancelFlag = null;
+function clearCancel() { if (cancelFlag) Atomics.store(cancelFlag, 0, 0); }
 
 // `?driver=` override (0 host, 1 in-wasm), applied once the module is up.
 let driverMode = null;
@@ -187,6 +194,9 @@ self.onmessage = async (ev) => {
   // Out-of-band: arrives while a simulate handler is parked at its inter-chunk
   // `await`, so it just raises the flag (no reply; the sim replies {cancelled:true}).
   if (cmd === 'cancelSim') { simCancel = true; return; }
+  // Shares the page's cancel control block (a SharedArrayBuffer). May arrive before
+  // `init`; the poll is wired once the module is up.
+  if (cmd === 'setCancelBuffer') { cancelFlag = new Int32Array(a.buf); return; }
   // May arrive before `init`: the export is unreachable until the module is up.
   if (cmd === 'setDriver') { driverMode = a.mode; if (inited) omc_set_inwasm_driver(a.mode); return; }
   const status = (text) => self.postMessage({ type: 'status', id, text });
@@ -205,6 +215,9 @@ self.onmessage = async (ev) => {
         omc_set_env('OPENMODELICAHOME', '/usr');
         if (!omc_init()) throw new Error('omc_init() failed');
         inited = true;
+        // 0 (no cancel) until the page shares a control block, so it is a no-op then.
+        globalThis.__omcPollCancel = () => (cancelFlag ? Atomics.load(cancelFlag, 0) : 0);
+        omc_enable_cancel_poll();
         if (driverMode !== null) omc_set_inwasm_driver(driverMode);
         // Emit the MultiBody visualization scene (<model>_visual.xml) for every
         // simulation, so any model with animatable shapes shows a 3D view by
@@ -336,6 +349,31 @@ self.onmessage = async (ev) => {
           } catch (e) { wlog('dxf load failed for ' + s.type + ': ' + e); }
         }
         reply({ available: true, scene, times, data, stride: omc_anim_stride() }, transfer);
+        break;
+      }
+      case 'exportFmu': {
+        // FMI 3.0 wasm FMU of the active model. buildModelFMU with platforms={"wasm"}
+        // routes to the host-free component export (emitMeFmu/emitCsFmu/emitMeCsFmu),
+        // writing <name>.fmu into the VFS; read it back and hand the bytes to the
+        // page to download. No server, no external toolchain. fmuType is me / cs /
+        // me_cs; method is the embedded Co-Simulation solver.
+        status('Exporting FMU…');
+        clearCancel();   // discard a cancel that raced in before this export
+        const fmuType = a.fmuType || 'me';
+        const method = a.method ? `, method="${a.method}"` : '';
+        const res = (await evalWithDownloads(
+          `buildModelFMU(${a.name}, version="3.0", fmuType="${fmuType}", platforms={"wasm"}${method})`, status)).trim();
+        const path = unquote(res);
+        if (!path || !path.endsWith('.fmu')) {
+          const err = omc_eval('getErrorString()');
+          if (cancelFlag && Atomics.load(cancelFlag, 0)) { clearCancel(); return reply({ ok: false, cancelled: true }); }
+          return reply({ ok: false, error: err.trim() || 'FMU export failed.' });
+        }
+        const bytes = wasiReadFile(path);
+        if (!bytes || !bytes.length) return reply({ ok: false, error: 'FMU export produced no file at ' + path });
+        // Copy out of wasm memory before transferring (wasiReadFile may view it).
+        const buf = bytes.slice();
+        reply({ ok: true, filename: (a.name || 'model') + '.fmu', bytes: buf }, [buf.buffer]);
         break;
       }
       case 'eval':

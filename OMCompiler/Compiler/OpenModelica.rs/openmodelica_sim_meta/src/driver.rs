@@ -517,7 +517,7 @@ fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
 /// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
 /// step seeded by the previous one's solution. Leaves lambda = 1, then seeds
 /// `relationsPre` for the continuous phase's held relations.
-fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     run_initialization_impl(e, sim_data, layout)?;
     update_relations_pre(e, sim_data, layout)
 }
@@ -699,7 +699,7 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
 /// driver interleaves these events with the integration — at a firing time it
 /// raises the sample's `active` flag, runs the discrete update, and advances the
 /// next time by the interval (C's `samplesInfo` + `nextSampleEvent`).
-struct Samples {
+pub struct Samples {
     /// Next firing time per sample (starts at the sample's `start`).
     next: Vec<f64>,
     interval: Vec<f64>,
@@ -709,7 +709,7 @@ struct Samples {
 
 impl Samples {
     /// Read the start/interval pairs `initSample` wrote into the sample region.
-    fn load(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Self> {
+    pub fn load(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Self> {
         let n = layout.n_samples as usize;
         let mut next = Vec::with_capacity(n);
         let mut interval = Vec::with_capacity(n);
@@ -722,7 +722,7 @@ impl Samples {
     }
 
     /// Time of the next sample event (min of `next`), or +inf if there are none.
-    fn next_time(&self) -> f64 {
+    pub fn next_time(&self) -> f64 {
         self.next.iter().copied().fold(f64::INFINITY, f64::min)
     }
 
@@ -731,7 +731,7 @@ impl Samples {
     /// when-bodies on their rising edge, and saves pre-values), then clear the
     /// flags and advance the fired samples by their interval. `t` is written as
     /// the current simulation time first.
-    fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+    pub fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
         let eps = t.abs().max(1.0) * 1e-10;
         let mut fired = vec![false; self.next.len()];
         for k in 0..self.next.len() {
@@ -758,6 +758,85 @@ impl Samples {
     }
 }
 
+/// Outcome of one [`event_update`] pass.
+pub struct EventUpdate {
+    /// A `reinit` moved a continuous state, so the integrator must re-read them.
+    pub states_changed: bool,
+    pub terminate: bool,
+    /// Time of the next sample event, or `None` if none is scheduled.
+    pub next_event_time: Option<f64>,
+}
+
+/// The discrete update at an already-located event, for hosts that own the
+/// integration and the root-finding (FMI `update-discrete-states`). The
+/// `DasslEventsDriver` inlines this same sequence around its row bookkeeping.
+/// A sample due at `time` is a time event, otherwise it is a state event.
+pub fn event_update(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    samples: Option<&mut Samples>,
+    time: f64,
+) -> Result<EventUpdate> {
+    let n_states = layout.n_states as usize;
+    let states_base = sim_data + REAL_OFF;
+    let mut before = vec![0.0f64; n_states];
+    for (i, v) in before.iter_mut().enumerate() {
+        *v = read_f64(e, states_base + (i as u32) * 8)?;
+    }
+
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+
+    let eps = time.abs().max(1.0) * 1e-10;
+    let mut samples = samples;
+    let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + eps);
+    if time_event {
+        if let Some(s) = samples.as_deref_mut() {
+            s.fire(e, sim_data, time)?;
+        }
+        store_relations(e, sim_data, layout)?;
+        // `fire` cleared the `active` flag; re-evaluate so the condition reads
+        // false and `pre` records it, or the next firing sees no edge.
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
+    } else {
+        // `pre(x)` of a continuous variable must be its value at the crossing.
+        save_pre_real(e, sim_data, layout)?;
+        store_relations(e, sim_data, layout)?;
+        iterate_discrete(e, sim_data, layout)?;
+        store_relations(e, sim_data, layout)?;
+        check_nls(e, sim_data, layout)?;
+        // A reinit changes the state the derivatives are computed from.
+        e.call1("functionODE", sim_data)?;
+    }
+
+    let mut states_changed = false;
+    for (i, b) in before.iter().enumerate() {
+        if read_f64(e, states_base + (i as u32) * 8)? != *b {
+            states_changed = true;
+            break;
+        }
+    }
+
+    let next = samples.as_ref().map(|s| s.next_time()).filter(|t| t.is_finite());
+    Ok(EventUpdate { states_changed, terminate: terminated(e, sim_data, layout)?, next_event_time: next })
+}
+
+/// Set the zero-crossing hysteresis band from the solver tolerance. Every driver
+/// must do this before the first `functionZeroCrossings`: a 0 band re-triggers an
+/// indicator left sitting on the crossing by an event.
+pub fn set_zc_tolerance(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    tolerance: f64,
+) -> Result<()> {
+    let rtol = if tolerance > 0.0 { tolerance } else { 1e-6 };
+    write_f64(e, sim_data + layout.zctol_off, 1e-4 * rtol.max(1e-12))
+}
+
 /// Build the resumable driver (init + row 0 + the zero-crossing band); shared by
 /// [`drive`] and the session. `method` empty = DASSL. Any events force the
 /// event-aware DASSL driver regardless of `method`.
@@ -768,9 +847,7 @@ pub fn make_driver(
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
     let layout = &model.layout;
-    // Zero-crossing hysteresis band, from the same tolerance fed to DASSL.
-    let rtol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-    write_f64(e, sim_data + layout.zctol_off, 1e-4 * rtol.max(1e-12))?;
+    set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
 
     if layout.n_samples > 0 || layout.n_zc > 0 {
         return Ok((Box::new(DasslEventsDriver::new(e, model, sim_data)?), "dassl-events"));
@@ -825,8 +902,7 @@ pub fn drive(
 
     let (rows, label) = if !use_events && method == "euler" && !host_driven {
         // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
-        let rtol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        write_f64(e, sim_data + layout.zctol_off, 1e-4 * rtol.max(1e-12))?;
+        set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
         let rows = run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)
             .map_err(|err| enrich_trap(e, err))?;
         (rows, "euler-wasm")
@@ -1553,12 +1629,17 @@ impl Driver for DasslDriver {
 /// [`DasslDriver`] but clamps integration to each `sample` time and root-finds the
 /// zero-crossings. `mid_row`/`grid_covered` persist a partial output row so a yield
 /// mid-interval (or a stuck stiff/chattering one) resumes exactly.
-struct DasslEventsDriver {
+/// The DASKR state and the one integration path over it: [`integrate_to`] runs the
+/// solver to a time, handling the state events it roots out and the samples due on
+/// the way. `DasslEventsDriver` drives it to each output row and `CsDriver` to each
+/// communication point, so the two cannot drift.
+///
+/// [`integrate_to`]: DasslCore::integrate_to
+struct DasslCore {
     sim_data: u32,
     n_states: usize,
     states_base: u32,
     ders_base: u32,
-    row: u32,
     y: Vec<f64>,
     yp: Vec<f64>,
     info: [i32; 24],
@@ -1573,65 +1654,49 @@ struct DasslEventsDriver {
     idid: i32,
     t: f64,
     nfe: u64,
-    pivots: Vec<StateSetPivot>,
-    samp: Samples,
-    rows: Vec<f64>,
-    /// Resume state for a yield mid output row: `mid_row` (so `grid_covered` isn't
-    /// reset) and `ev_retries` (the in-progress target's continuation count).
-    mid_row: bool,
-    grid_covered: bool,
+    /// Jacobian evaluation count, accumulated across chunks (for the bench line).
+    nje: u64,
+    /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
-    state_events: u64,
-    time_events: u64,
-    pending_terminate: bool,
-    finished: bool,
     /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
     /// daskr's own numerical Jacobian.
     jac_a: Option<JacAInfo>,
-    /// Jacobian evaluation count, accumulated across chunks (for the bench line).
-    nje: u64,
+    state_events: u64,
+    time_events: u64,
 }
 
-impl DasslEventsDriver {
-    fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
-        daskr::auxiliary::xsetf(0);
-        let layout = &model.layout;
-        // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
-        // inside run_initialization; seed the hysteresis direction from the relations.
-        run_initialization(e, sim_data, layout)?;
-        store_relations(e, sim_data, layout)?;
+/// How far [`DasslCore::integrate_to`] got.
+enum Step {
+    /// `tout` reached; `grid_covered` when an event landed on it, so its rows are
+    /// already emitted.
+    Reached { grid_covered: bool },
+    Terminated,
+    /// Out of budget mid-target; call again with the same `tout`.
+    Yielded,
+    Cancelled,
+}
 
+struct DasslEventsDriver {
+    core: DasslCore,
+    row: u32,
+    pivots: Vec<StateSetPivot>,
+    samp: Samples,
+    rows: Vec<f64>,
+    /// Resume state for a yield mid output row, so `grid_covered` is not reset.
+    mid_row: bool,
+    grid_covered: bool,
+    pending_terminate: bool,
+    finished: bool,
+}
+
+impl DasslCore {
+    /// Size the DASKR workspaces and read the initial `(y, yp)` out of `SimData`.
+    /// The caller has already initialized the model (`run_initialization`).
+    fn new(model: &SimModel, sim_data: u32, t: f64) -> Self {
+        let layout = &model.layout;
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
         let ders_base = states_base + layout.n_states * 8;
-        let n_rows = model.n_intervals + 1;
-        let n_reals = layout.n_row_total();
-        let start = model.start_time;
-
-        let mut samp = Samples::load(e, sim_data, layout)?;
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut time_events = 0u64;
-        // A sample scheduled exactly at the start time fires before row 0.
-        if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
-            samp.fire(e, sim_data, start)?;
-            store_relations(e, sim_data, layout)?;
-            time_events += 1;
-        }
-        emit_row(e, &mut rows, sim_data, layout, start)?;
-        let pending_terminate = terminated(e, sim_data, layout)?;
-
-        // Dynamic state selection: identity pivots, then re-pivot at the initial
-        // point (see `DasslDriver`). A switch reinits states, so refresh derivatives.
-        let mut pivots = init_state_pivots(&model.state_sets);
-        let (mut y, mut yp) = (Vec::new(), Vec::new());
-        if n_states > 0 && !pending_terminate {
-            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
-            y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
-            yp = (0..n_states).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
-        }
-
         let neq = n_states as i32;
         let nrt = layout.n_zc as i32;
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
@@ -1647,14 +1712,13 @@ impl DasslEventsDriver {
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
-        Ok(DasslEventsDriver {
+        DasslCore {
             sim_data,
             n_states,
             states_base,
             ders_base,
-            row: 1,
-            y,
-            yp,
+            y: Vec::new(),
+            yp: Vec::new(),
             info,
             rtol,
             atol,
@@ -1665,32 +1729,461 @@ impl DasslEventsDriver {
             jroot: vec![0i32; (nrt as usize).max(1)],
             nrt,
             idid: 0,
-            t: start,
+            t,
             nfe: 0,
+            nje: 0,
+            ev_retries: 0,
+            jac_a,
+            state_events: 0,
+            time_events: 0,
+        }
+    }
+
+    /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
+    /// that moved a state behind DASKR's back.
+    fn read_states(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+        self.y = (0..self.n_states)
+            .map(|i| read_f64(e, self.states_base + (i as u32) * 8))
+            .collect::<Result<_>>()?;
+        self.yp = (0..self.n_states)
+            .map(|i| read_f64(e, self.ders_base + (i as u32) * 8))
+            .collect::<Result<_>>()?;
+        Ok(())
+    }
+
+    /// The `ResCtx` the DASKR callbacks read through, held for one `integrate_to`
+    /// (`RES_CTX` is a thread-local raw pointer to it).
+    fn res_ctx(&self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> ResCtx {
+        ResCtx {
+            engine: e as *mut dyn SimEngine,
+            sim_data: self.sim_data,
+            states_base: self.states_base,
+            ders_base: self.ders_base,
+            n_states: self.n_states,
+            nls_fail_off: layout.nls_fail_off,
+            nfe: self.nfe,
+            zc_off: layout.zc_off,
+            n_zc: layout.n_zc as usize,
+            err: None,
+            jac: self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+            jac_gp: vec![0.0; self.n_states],
+            jac_ysave: vec![0.0; self.n_states],
+            jac_del: vec![0.0; self.n_states],
+            jac_ders: Vec::new(),
+            nje: self.nje,
+        }
+    }
+
+    /// Integrate to `tout`, handling the state events DASKR roots out and the
+    /// samples due on the way. `rows` collects the pre/post-event rows when the
+    /// caller wants them; CS passes `None`. A `Yielded` return resumes on the same
+    /// `tout` (DASKR continues via INFO(1)=1), so the yields are safe points.
+    #[allow(clippy::too_many_arguments)]
+    fn integrate_to(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        ctx: &mut ResCtx,
+        samp: &mut Samples,
+        tout: f64,
+        deadline: f64,
+        mut rows: Option<&mut Vec<f64>>,
+        did_step: &mut bool,
+    ) -> Result<Step> {
+        use daskr::solver;
+        let layout = &model.layout;
+        let sim_data = self.sim_data;
+        let n_states = self.n_states;
+        let (states_base, ders_base) = (self.states_base, self.ders_base);
+        let neq = n_states as i32;
+        let nrt = self.nrt;
+        let rt_fn: solver::RtFn = if layout.n_zc > 0 { dassl_rt } else { solver::dummy_rt };
+        let lrw = self.rwork.len();
+        let liw = self.iwork.len();
+        let jacfn: solver::JacFn = if self.jac_a.is_none() { solver::dummy_jacd } else { dassl_jac };
+        let eps = tout.abs().max(1.0) * 1e-10;
+        let mut grid_covered = false;
+
+        loop {
+            // Yield at the loop boundary (before any state mutation).
+            if *did_step && past_deadline(deadline) {
+                self.nfe = ctx.nfe;
+                return Ok(Step::Yielded);
+            }
+            if cancel_requested() {
+                self.nfe = ctx.nfe;
+                return Ok(Step::Cancelled);
+            }
+            // Mode 0: hold relations across the DASKR solve so its residual/Jacobian
+            // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
+            write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+            let te = samp.next_time();
+            let target = tout.min(te);
+            // Integrate from the current t toward `target` (the caller's time or the
+            // next scheduled sample). DASKR may stop early at a zero-crossing root.
+            if target - self.t > eps {
+                let mut tt = target;
+                loop {
+                    // Yield inside the work-quota loop too, so a stuck stiff interval
+                    // is interruptible; resume re-enters with the same target.
+                    if *did_step && past_deadline(deadline) {
+                        self.nfe = ctx.nfe;
+                        return Ok(Step::Yielded);
+                    }
+                    if cancel_requested() {
+                        self.nfe = ctx.nfe;
+                        return Ok(Step::Cancelled);
+                    }
+                    unsafe {
+                        solver::ddaskr(
+                            dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(), &mut tt,
+                            self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
+                            self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
+                            self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
+                            solver::dummy_jack, solver::dummy_psol, rt_fn, nrt,
+                            self.jroot.as_mut_ptr(),
+                        );
+                    }
+                    self.nfe = ctx.nfe;
+                    self.nje = ctx.nje;
+                    *did_step = true;
+                    if ctx.err.is_some() {
+                        break;
+                    }
+                    if self.idid == -1 && self.ev_retries < 10_000 {
+                        self.info[0] = 1;
+                        self.ev_retries += 1;
+                        continue;
+                    }
+                    break;
+                }
+                self.ev_retries = 0; // this target's integration is done (or failing)
+                if let Some(err) = ctx.err.take() {
+                    return Err(err);
+                }
+                if self.idid < 0 {
+                    return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tt}), IDID={}");
+                }
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
+                // IDID=5: a zero-crossing root at `t` (< target). Handle the state
+                // event here, then restart the integrator and keep going.
+                if self.idid == 5 {
+                    self.state_events += 1;
+                    let troot = self.t;
+                    // pre-event row (before the discrete update), then event +
+                    // post-event row.
+                    if let Some(r) = rows.as_deref_mut() {
+                        capture_pre(e, r, sim_data, layout, troot)?;
+                    }
+                    event_update(e, sim_data, layout, None, troot)?;
+                    if let Some(r) = rows.as_deref_mut() {
+                        capture_row(e, r, sim_data, layout)?;
+                    }
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(Step::Terminated);
+                    }
+                    // Re-read states (a reinit may have jumped one), recompute the
+                    // consistent derivative, and restart DASKR at troot (INFO(1)=0).
+                    for i in 0..n_states {
+                        self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                    }
+                    e.call1("functionODE", sim_data)?;
+                    for i in 0..n_states {
+                        self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    }
+                    self.info[0] = 0;
+                    continue;
+                }
+            }
+            // Reached `target`. Fire a sample event at `te` if it lands at or
+            // before `tout` (pre-event row, fire, post-event row).
+            if te <= tout + eps {
+                // Snap an event near `tout` onto it (keeps the final row at `stop`
+                // despite float drift).
+                let te = if (te - tout).abs() <= eps { tout } else { te };
+                *did_step = true;
+                if let Some(r) = rows.as_deref_mut() {
+                    emit_row(e, r, sim_data, layout, te)?; // pre-event row (held)
+                }
+                write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
+                samp.fire(e, sim_data, te)?;
+                store_relations(e, sim_data, layout)?; // advance the hysteresis direction
+                self.time_events += 1;
+                if let Some(r) = rows.as_deref_mut() {
+                    emit_row(e, r, sim_data, layout, te)?;
+                }
+                if terminated(e, sim_data, layout)? {
+                    return Ok(Step::Terminated);
+                }
+                for i in 0..n_states {
+                    self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                }
+                // A sample may change discrete state the derivative depends on;
+                // recompute yp and restart so DASKR continues consistently.
+                if layout.n_zc > 0 {
+                    e.call1("functionODE", sim_data)?;
+                    for i in 0..n_states {
+                        self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    }
+                    self.info[0] = 0;
+                }
+                if te >= tout - eps {
+                    grid_covered = true;
+                }
+            }
+            if target >= tout - eps {
+                return Ok(Step::Reached { grid_covered });
+            }
+        }
+    }
+}
+
+/// Co-Simulation: the FMU owns the integration, the importer picks the
+/// communication points. Unlike [`DasslEventsDriver`] there is no output grid and
+/// no rows -- `step_to` just advances the shared [`DasslCore`] to the next
+/// communication point, handling events internally on the way (FMI's
+/// `eventModeUsed = false`).
+///
+/// The caller initializes the model (`run_initialization`) before building this,
+/// since FMI does that in its own Initialization Mode.
+pub struct CsDriver {
+    core: DasslCore,
+    samp: Samples,
+    pivots: Vec<StateSetPivot>,
+    /// `None` = DASSL; `Some(h)` = fixed-step forward Euler with internal step `h`.
+    /// Only ever set for event-free models (events force DASSL, as in `make_driver`).
+    euler_h: Option<f64>,
+    euler_steps: u64,
+}
+
+/// What [`CsDriver::step_to`] did.
+pub enum CsStep {
+    /// Reached the requested time.
+    Reached,
+    /// `terminate()` fired; `last_time` is where it stopped.
+    Terminated,
+}
+
+impl CsDriver {
+    /// Build over an already-initialized model at time `t`. The integrator follows
+    /// `model.method` (`"euler"` → forward Euler, else DASSL), except that any events
+    /// force DASSL — the same rule `make_driver` applies.
+    pub fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t: f64) -> Result<Self> {
+        daskr::auxiliary::xsetf(0);
+        let layout = &model.layout;
+        store_relations(e, sim_data, layout)?;
+        let samp = Samples::load(e, sim_data, layout)?;
+        let mut core = DasslCore::new(model, sim_data, t);
+        let mut pivots = init_state_pivots(&model.state_sets);
+        if core.n_states > 0 {
+            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+                e.call1("functionODE", sim_data)?;
+            }
+            core.read_states(e)?;
+        }
+        let has_events = layout.n_samples > 0 || layout.n_zc > 0;
+        let euler_h = if !has_events && model.method == "euler" {
+            let n = model.n_intervals.max(1) as f64;
+            let h = (model.stop_time - model.start_time) / n;
+            Some(if h > 0.0 { h } else { f64::INFINITY })
+        } else {
+            None
+        };
+        Ok(CsDriver { core, samp, pivots, euler_h, euler_steps: 0 })
+    }
+
+    /// The time reached so far (FMI's `last-successful-time`).
+    pub fn time(&self) -> f64 {
+        self.core.t
+    }
+
+    /// Advance to `t_target`, handling events on the way. No budget: an importer's
+    /// `do-step` runs to completion.
+    pub fn step_to(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+    ) -> Result<CsStep> {
+        let layout = &model.layout;
+        let sim_data = self.core.sim_data;
+        // No continuous states: only the samples move the model along.
+        if self.core.n_states == 0 {
+            let eps = t_target.abs().max(1.0) * 1e-10;
+            while self.samp.next_time() <= t_target + eps {
+                let te = self.samp.next_time();
+                write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+                event_update(e, sim_data, layout, Some(&mut self.samp), te)?;
+                self.core.time_events += 1;
+                if terminated(e, sim_data, layout)? {
+                    self.core.t = te;
+                    return Ok(CsStep::Terminated);
+                }
+            }
+            self.core.t = t_target;
+            write_f64(e, sim_data + TIME_OFF, t_target)?;
+            e.call1_if_present("functionAlgebraics", sim_data)?;
+            return Ok(CsStep::Reached);
+        }
+
+        if let Some(h0) = self.euler_h {
+            return self.euler_step_to(e, model, t_target, h0);
+        }
+
+        let mut ctx = self.core.res_ctx(e, layout);
+        let _guard = ResCtxGuard;
+        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        let mut did_step = false;
+        let outcome = self.core.integrate_to(
+            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step,
+        )?;
+        self.core.nfe = ctx.nfe;
+        match outcome {
+            Step::Terminated => return Ok(CsStep::Terminated),
+            // `deadline` is +inf and CS does not cancel, so these cannot arise.
+            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
+            Step::Reached { .. } => {}
+        }
+        // Refresh the outputs at the communication point, and re-select states there
+        // (see `DasslDriver`).
+        write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+        write_f64(e, sim_data + TIME_OFF, t_target)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1_if_present("functionAlgebraics", sim_data)?;
+        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            e.call1("functionODE", sim_data)?;
+            self.core.read_states(e)?;
+            self.core.info[0] = 0;
+        }
+        if terminated(e, sim_data, layout)? {
+            return Ok(CsStep::Terminated);
+        }
+        Ok(CsStep::Reached)
+    }
+
+    /// Fixed-step forward Euler to `t_target`, sub-stepping by `h0` and landing
+    /// exactly on the communication point. Event-free by construction (see `new`),
+    /// so it never enters Event Mode; non-convergent NLS is fatal (Euler cannot back
+    /// off), matching [`EulerDriver`].
+    fn euler_step_to(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+        h0: f64,
+    ) -> Result<CsStep> {
+        let layout = &model.layout;
+        let sim_data = self.core.sim_data;
+        let states_base = self.core.states_base;
+        let ders_base = self.core.ders_base;
+        let n_states = self.core.n_states as u32;
+        let eps = t_target.abs().max(1.0) * 1e-12;
+        while self.core.t < t_target - eps {
+            let h = (t_target - self.core.t).min(h0);
+            write_f64(e, sim_data + TIME_OFF, self.core.t)?;
+            e.call1("functionODE", sim_data)?;
+            e.call1_if_present("functionAlgebraics", sim_data)?;
+            check_nls(e, sim_data, layout)?;
+            if terminated(e, sim_data, layout)? {
+                return Ok(CsStep::Terminated);
+            }
+            if !model.state_sets.is_empty()
+                && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)?
+            {
+                e.call1("functionODE", sim_data)?;
+            }
+            for i in 0..n_states {
+                let s = read_f64(e, states_base + i * 8)?;
+                let d = read_f64(e, ders_base + i * 8)?;
+                write_f64(e, states_base + i * 8, s + h * d)?;
+            }
+            self.core.t += h;
+            self.euler_steps += 1;
+        }
+        self.core.t = t_target;
+        write_f64(e, sim_data + TIME_OFF, t_target)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1_if_present("functionAlgebraics", sim_data)?;
+        if terminated(e, sim_data, layout)? {
+            return Ok(CsStep::Terminated);
+        }
+        Ok(CsStep::Reached)
+    }
+
+    pub fn fill_stats(&self, stats: &mut SolveStats) {
+        let c = &self.core;
+        stats.steps = if self.euler_h.is_some() {
+            self.euler_steps
+        } else {
+            c.iwork.get(10).copied().unwrap_or(0).max(0) as u64
+        };
+        stats.res_evals = c.nfe;
+        stats.state_events = c.state_events;
+        stats.time_events = c.time_events;
+    }
+}
+
+impl DasslEventsDriver {
+    fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
+        daskr::auxiliary::xsetf(0);
+        let layout = &model.layout;
+        // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
+        // inside run_initialization; seed the hysteresis direction from the relations.
+        run_initialization(e, sim_data, layout)?;
+        store_relations(e, sim_data, layout)?;
+
+        let n_states = layout.n_states as usize;
+        let states_base = sim_data + REAL_OFF;
+        let n_rows = model.n_intervals + 1;
+        let n_reals = layout.n_row_total();
+        let start = model.start_time;
+
+        let mut samp = Samples::load(e, sim_data, layout)?;
+        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut core = DasslCore::new(model, sim_data, start);
+        // A sample scheduled exactly at the start time fires before row 0.
+        if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
+            samp.fire(e, sim_data, start)?;
+            store_relations(e, sim_data, layout)?;
+            core.time_events += 1;
+        }
+        emit_row(e, &mut rows, sim_data, layout, start)?;
+        let pending_terminate = terminated(e, sim_data, layout)?;
+
+        // Dynamic state selection: identity pivots, then re-pivot at the initial
+        // point (see `DasslDriver`). A switch reinits states, so refresh derivatives.
+        let mut pivots = init_state_pivots(&model.state_sets);
+        if n_states > 0 && !pending_terminate {
+            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+                e.call1("functionODE", sim_data)?;
+            }
+            core.read_states(e)?;
+        }
+        let _ = states_base;
+
+        Ok(DasslEventsDriver {
+            core,
+            row: 1,
             pivots,
             samp,
             rows,
             mid_row: false,
             grid_covered: false,
-            ev_retries: 0,
-            state_events: 0,
-            time_events,
             pending_terminate,
             finished: false,
-            jac_a,
-            nje: 0,
         })
     }
 }
 
 impl Driver for DasslEventsDriver {
     fn advance(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel, budget_ms: f64) -> Result<Advance> {
-        use daskr::solver;
         if self.finished {
             return Ok(Advance::Done);
         }
         let layout = &model.layout;
-        let sim_data = self.sim_data;
+        let sim_data = self.core.sim_data;
         if self.pending_terminate {
             self.pending_terminate = false;
             self.finished = true;
@@ -1702,9 +2195,11 @@ impl Driver for DasslEventsDriver {
         let stop = model.stop_time;
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
+        let n_states = self.core.n_states;
+        let tout_of = |row: u32| if row == n_steps { stop } else { start + row as f64 * h };
 
         // No continuous states: evaluate outputs on the grid, firing events between.
-        if self.n_states == 0 {
+        if n_states == 0 {
             let mut did_step = false;
             while self.row < n_rows {
                 if did_step && past_deadline(deadline) {
@@ -1714,7 +2209,7 @@ impl Driver for DasslEventsDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let tout = tout_of(self.row);
                 let eps = tout.abs().max(1.0) * 1e-10;
                 let mut grid_covered = false;
                 while self.samp.next_time() <= tout + eps {
@@ -1725,7 +2220,7 @@ impl Driver for DasslEventsDriver {
                     emit_row(e, &mut self.rows, sim_data, layout, te)?;
                     self.samp.fire(e, sim_data, te)?;
                     store_relations(e, sim_data, layout)?;
-                    self.time_events += 1;
+                    self.core.time_events += 1;
                     emit_row(e, &mut self.rows, sim_data, layout, te)?;
                     if terminated(e, sim_data, layout)? {
                         self.finished = true;
@@ -1748,43 +2243,12 @@ impl Driver for DasslEventsDriver {
             return Ok(Advance::Done);
         }
 
-        let n_states = self.n_states;
-        let states_base = self.states_base;
-        let ders_base = self.ders_base;
-        let neq = n_states as i32;
-        let nrt = self.nrt;
-        let rt_fn: solver::RtFn = if layout.n_zc > 0 { dassl_rt } else { solver::dummy_rt };
-        let lrw = self.rwork.len();
-        let liw = self.iwork.len();
-
-        let jac_ptr = self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo);
-        let jacfn: solver::JacFn = if jac_ptr.is_null() { solver::dummy_jacd } else { dassl_jac };
-        let mut ctx = ResCtx {
-            engine: &mut *e as *mut dyn SimEngine,
-            sim_data,
-            states_base,
-            ders_base,
-            n_states,
-            nls_fail_off: layout.nls_fail_off,
-            nfe: self.nfe,
-            zc_off: layout.zc_off,
-            n_zc: layout.n_zc as usize,
-            err: None,
-            jac: jac_ptr,
-            jac_gp: vec![0.0; n_states],
-            jac_ysave: vec![0.0; n_states],
-            jac_del: vec![0.0; n_states],
-            jac_ders: Vec::new(),
-            nje: self.nje,
-        };
+        let mut ctx = self.core.res_ctx(e, layout);
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
 
-        // Yields happen only at the inner-loop boundary or in the work-quota loop —
-        // safe resume points: re-entry recomputes the same `target` and DASKR
-        // continues via INFO(1)=1. `mid_row`/`grid_covered` carry the partial row over.
         let mut did_step = false;
-        let outcome = 'outer: loop {
+        let outcome = loop {
             if self.row >= n_rows {
                 break Advance::Done;
             }
@@ -1794,145 +2258,21 @@ impl Driver for DasslEventsDriver {
             if cancel_requested() {
                 break Advance::Cancelled;
             }
-            let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
-            let eps = tout.abs().max(1.0) * 1e-10;
+            let tout = tout_of(self.row);
             if !self.mid_row {
                 self.grid_covered = false;
             }
-            loop {
-                // Yield at the inner-loop boundary (before any state mutation).
-                if did_step && past_deadline(deadline) {
+            match self.core.integrate_to(
+                e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step,
+            )? {
+                Step::Yielded => {
+                    // Resume on the same row; `mid_row` keeps `grid_covered`.
                     self.mid_row = true;
-                    self.nfe = ctx.nfe;
                     return Ok(Advance::Running);
                 }
-                if cancel_requested() {
-                    self.nfe = ctx.nfe;
-                    return Ok(Advance::Cancelled);
-                }
-                // Mode 0: hold relations across the DASKR solve so its residual/Jacobian
-                // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
-                write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-                let te = self.samp.next_time();
-                let target = tout.min(te);
-                // Integrate from the current t toward `target` (a grid point or the
-                // next scheduled sample). DASKR may stop early at a zero-crossing root.
-                if target - self.t > eps {
-                    let mut tt = target;
-                    loop {
-                        // Yield inside the work-quota loop too, so a stuck stiff interval
-                        // is interruptible; resume re-enters the inner loop (same target).
-                        if did_step && past_deadline(deadline) {
-                            self.mid_row = true;
-                            self.nfe = ctx.nfe;
-                            return Ok(Advance::Running);
-                        }
-                        if cancel_requested() {
-                            self.nfe = ctx.nfe;
-                            return Ok(Advance::Cancelled);
-                        }
-                        unsafe {
-                            solver::ddaskr(
-                                dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(), &mut tt,
-                                self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
-                                self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
-                                self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
-                                solver::dummy_jack, solver::dummy_psol, rt_fn, nrt,
-                                self.jroot.as_mut_ptr(),
-                            );
-                        }
-                        self.nfe = ctx.nfe;
-                        self.nje = ctx.nje;
-                        did_step = true;
-                        if ctx.err.is_some() {
-                            break;
-                        }
-                        if self.idid == -1 && self.ev_retries < 10_000 {
-                            self.info[0] = 1;
-                            self.ev_retries += 1;
-                            continue;
-                        }
-                        break;
-                    }
-                    self.ev_retries = 0; // this target's integration is done (or failing)
-                    if let Some(err) = ctx.err.take() {
-                        return Err(err);
-                    }
-                    if self.idid < 0 {
-                        return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tt}), IDID={}");
-                    }
-                    for i in 0..n_states {
-                        write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
-                    }
-                    // IDID=5: a zero-crossing root at `t` (< target). Handle the state
-                    // event here, then restart the integrator and keep going.
-                    if self.idid == 5 {
-                        self.state_events += 1;
-                        let troot = self.t;
-                        // pre-event row (before the discrete update), then event +
-                        // post-event row.
-                        capture_pre(e, &mut self.rows, sim_data, layout, troot)?;
-                        // pre(x) of continuous vars must be the value at the crossing.
-                        save_pre_real(e, sim_data, layout)?;
-                        write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
-                        store_relations(e, sim_data, layout)?;
-                        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-                        write_f64(e, sim_data + TIME_OFF, troot)?;
-                        iterate_discrete(e, sim_data, layout)?;
-                        store_relations(e, sim_data, layout)?;
-                        check_nls(e, sim_data, layout)?;
-                        capture_row(e, &mut self.rows, sim_data, layout)?;
-                        if terminated(e, sim_data, layout)? {
-                            break 'outer Advance::Terminated;
-                        }
-                        // Re-read states (a reinit may have jumped one), recompute the
-                        // consistent derivative, and restart DASKR at troot (INFO(1)=0).
-                        for i in 0..n_states {
-                            self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
-                        }
-                        e.call1("functionODE", sim_data)?;
-                        for i in 0..n_states {
-                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
-                        }
-                        self.info[0] = 0;
-                        continue;
-                    }
-                }
-                // Reached `target`. Fire a sample event at `te` if it lands at or
-                // before this output point (pre-event row, fire, post-event row).
-                if te <= tout + eps {
-                    // Snap an event near a grid point onto it (keeps the final row at
-                    // `stop` despite float drift).
-                    let te = if (te - tout).abs() <= eps { tout } else { te };
-                    did_step = true;
-                    emit_row(e, &mut self.rows, sim_data, layout, te)?; // pre-event row (held)
-                    write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
-                    self.samp.fire(e, sim_data, te)?;
-                    store_relations(e, sim_data, layout)?; // advance the hysteresis direction
-                    self.time_events += 1;
-                    emit_row(e, &mut self.rows, sim_data, layout, te)?;
-                    if terminated(e, sim_data, layout)? {
-                        break 'outer Advance::Terminated;
-                    }
-                    for i in 0..n_states {
-                        self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
-                    }
-                    // A sample may change discrete state the derivative depends on;
-                    // recompute yp and restart so DASKR continues consistently.
-                    if layout.n_zc > 0 {
-                        e.call1("functionODE", sim_data)?;
-                        for i in 0..n_states {
-                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
-                        }
-                        self.info[0] = 0;
-                    }
-                    if te >= tout - eps {
-                        self.grid_covered = true;
-                    }
-                }
-                if target >= tout - eps {
-                    break;
-                }
+                Step::Cancelled => return Ok(Advance::Cancelled),
+                Step::Terminated => break Advance::Terminated,
+                Step::Reached { grid_covered } => self.grid_covered |= grid_covered,
             }
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
@@ -1941,21 +2281,21 @@ impl Driver for DasslEventsDriver {
                 did_step = true;
                 emit_row(e, &mut self.rows, sim_data, layout, tout)?;
                 if terminated(e, sim_data, layout)? {
-                    break 'outer Advance::Terminated;
+                    break Advance::Terminated;
                 }
             }
             // Re-select states at the accepted output point (see `DasslDriver`).
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
                 e.call1("functionODE", sim_data)?;
                 for i in 0..n_states {
-                    self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
-                    self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    self.core.y[i] = read_f64(e, self.core.states_base + (i as u32) * 8)?;
+                    self.core.yp[i] = read_f64(e, self.core.ders_base + (i as u32) * 8)?;
                 }
-                self.info[0] = 0;
+                self.core.info[0] = 0;
             }
             self.row += 1;
         };
-        self.nfe = ctx.nfe;
+        self.core.nfe = ctx.nfe;
         if matches!(outcome, Advance::Done | Advance::Terminated) {
             self.finished = true;
         }
@@ -1967,13 +2307,14 @@ impl Driver for DasslEventsDriver {
     }
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
-        let nst = self.iwork.get(10).copied().unwrap_or(0);
+        let c = &self.core;
+        let nst = c.iwork.get(10).copied().unwrap_or(0);
         stats.steps = nst.max(0) as u64;
-        stats.res_evals = self.nfe;
-        stats.jac_evals = if self.jac_a.is_some() { self.nje } else { self.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
-        stats.err_test_fails = self.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
-        stats.conv_test_fails = self.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
-        stats.state_events = self.state_events;
-        stats.time_events = self.time_events;
+        stats.res_evals = c.nfe;
+        stats.jac_evals = if c.jac_a.is_some() { c.nje } else { c.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
+        stats.err_test_fails = c.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
+        stats.conv_test_fails = c.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+        stats.state_events = c.state_events;
+        stats.time_events = c.time_events;
     }
 }

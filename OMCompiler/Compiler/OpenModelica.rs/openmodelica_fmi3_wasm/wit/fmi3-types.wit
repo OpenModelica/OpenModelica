@@ -1,0 +1,143 @@
+
+package fmi:fmi3@3.0.0;
+
+// Copyright (C) 2026 Modelica Association Project "FMI"
+//               All rights reserved.
+//
+// Copied from the FMI Layered Standard WebAssembly (fmi-ls-wasm) repository
+// (https://github.com/modelica/fmi-ls-wasm), released under the BSD 2-Clause
+// license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// SPDX-License-Identifier: BSD-2-Clause
+
+interface types {
+
+  // ── Value reference ─────────────────────────────────────────────────────────
+
+  /// Identifies a model variable. Corresponds to fmi3ValueReference.
+  type value-reference = u32;
+
+  // ── Status ──────────────────────────────────────────────────────────────────
+
+  /// Return status for most FMI functions. Corresponds to fmi3Status.
+  enum status {
+    /// All OK; no further action required.
+    ok,
+    /// Non-fatal issue; result may still be used.
+    warning,
+    /// Step was discarded; do not use results (only from fmi3DoStep).
+    discard,
+    /// Unrecoverable error; instance must be freed.
+    error,
+    /// Unexpected fatal error; process should be restarted.
+    fatal,
+  }
+
+  // ── Interval qualifier ───────────────────────────────────────────────────────
+
+  /// Qualifies a clock interval returned by fmi3GetIntervalDecimal /
+  /// fmi3GetIntervalFraction. Corresponds to fmi3IntervalQualifier.
+  enum interval-qualifier {
+    /// Interval value is not yet determined.
+    interval-not-yet-known,
+    /// Interval is the same as the last activation.
+    interval-unchanged,
+    /// Interval has changed and the new value is provided.
+    interval-changed,
+  }
+
+  // ── Dependency kind ──────────────────────────────────────────────────────────
+
+  /// Describes how one variable depends on another.
+  /// Corresponds to fmi3DependencyKind.
+  enum dependency-kind {
+    /// Output depends on the input in an unspecified way.
+    dependent,
+    /// Output is a constant with respect to the input.
+    constant,
+    /// Dependency is fixed (cannot change after initialisation).
+    fixed,
+    /// Dependency is tunable (may change at event boundaries).
+    tunable,
+    /// Dependency is discrete (changes only at events).
+    discrete,
+  }
+
+  // ── Opaque FMU state ─────────────────────────────────────────────────────────
+
+  /// Serialised snapshot of internal FMU state.
+  /// Corresponds to the data pointed to by fmi3FMUState.
+  /// The host must treat the content as opaque bytes.
+  type fmu-state = list<u8>;
+
+  // ── Clock interval as a fraction ─────────────────────────────────────────────
+
+  /// A rational representation of a clock interval or shift:
+  ///   value = counter / resolution  (seconds)
+  /// Corresponds to the (fmi3UInt64 counter, fmi3UInt64 resolution) pair
+  /// used by fmi3GetIntervalFraction / fmi3SetIntervalFraction and
+  /// fmi3GetShiftFraction / fmi3SetShiftFraction.
+  record interval-fraction {
+    counter:    u64,
+    resolution: u64,
+  }
+
+  // ── Variable dependency entry ────────────────────────────────────────────────
+
+  /// One entry in the variable-dependency table returned by
+  /// fmi3GetVariableDependencies.
+  record variable-dependency {
+    /// Index into the model-description variable list for the dependent variable.
+    dependent-value-reference:  value-reference,
+    /// Index of the element within a structured variable (0-based; 0 for scalars).
+    element-index-of-dependent: u32,
+    /// Index into the model-description variable list for the independent variable.
+    independent-value-reference: value-reference,
+    /// Index of the element within the independent structured variable.
+    element-index-of-independent: u32,
+    /// Nature of the dependency.
+    kind: dependency-kind,
+  }
+
+  // ── Event info ───────────────────────────────────────────────────────────────
+
+  /// Aggregated event information returned after event iteration.
+  /// Corresponds to the output parameters of fmi3UpdateDiscreteStates
+  /// (FMI 3.0 § 2.3.5), which replaces the fmi2EventInfo struct.
+  record discrete-states-info {
+    /// Another internal event is pending; iterate again.
+    new-discrete-states-needed:       bool,
+    /// No further event processing is required; proceed to continuous mode.
+    terminate-simulation:             bool,
+    /// Nominals of continuous states have changed.
+    nominals-of-continuous-states-changed: bool,
+    /// Values of continuous states have changed (state re-initialisation needed).
+    values-of-continuous-states-changed:   bool,
+    /// Next event time is defined.
+    next-event-time-defined:          bool,
+    /// Value of the next event time (valid only when next-event-time-defined).
+    next-event-time:                  f64,
+  }
+}

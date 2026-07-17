@@ -455,6 +455,11 @@ function(omc_rust_setup_codegen)
       CACHE INTERNAL "Generated OpenModelicaScriptingAPIQt C++ sources (build tree)")
 
   set(CODEGEN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_codegen.stamp)
+  # The generated *.rs depend on how mmtorust lowers, not only on the *.mo it
+  # lowers; without these a transpiler change leaves stale *.rs in place.
+  file(GLOB_RECURSE MMTORUST_SOURCES CONFIGURE_DEPENDS
+       ${RUST_OMC_DIR}/mmtorust/src/*.rs)
+  list(APPEND MMTORUST_SOURCES ${RUST_OMC_DIR}/mmtorust/Cargo.toml)
   if(RUST_OMC_PREBUILT_GENERATED_SRC)
     # Stamp completion with no dependency on the transpile chain, so mmtorust /
     # susan / the templates are never built; the .rs are already in the tree.
@@ -484,7 +489,7 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES}
+            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
@@ -509,9 +514,10 @@ function(omc_rust_setup_codegen)
   #     OMEdit links those #[no_mangle] symbols out of this cdylib. A split CI can
   #     force it ON to ship those symbols even with the GUI subdirs OFF.
   # `--no-default-features` lets the list below be authoritative (the wasm-jit
-  # target is always present and is not a feature). codegen_fmu implies
+  # target is always present and is not a feature). codegen_fmu_c is the FMU C
+  # export; it implies codegen_fmu (the modelDescription.xml templates) and
   # codegen_c in the crate's feature table.
-  set(_rust_omc_features codegen_c codegen_fmu)
+  set(_rust_omc_features codegen_c codegen_fmu_c)
   if(OM_OMC_ENABLE_CPP_RUNTIME)
     list(APPEND _rust_omc_features cpp)
   endif()
@@ -973,6 +979,9 @@ function(omc_rust_setup_wasm)
   set(_wasm_name OpenModelicaCompiler)
   # wasmtime has no wasm backend, so the wasm-jit engine must be wasmer (`js`);
   # the cdylib is built with no default features (drops the native-only deps).
+  # `codegen_fmu` is on for the wasm FMU export's modelDescription.xml: the
+  # description templates only, not `codegen_fmu_c`/`codegen_c` -- the wasm-jit
+  # target emits the model itself.
   #
   # When the OMShell web pages are wanted (GUI clients on, browser host) their
   # crates are added to this *same* cargo invocation, so eframe/dioxus and their
@@ -994,10 +1003,10 @@ function(omc_rust_setup_wasm)
     set(_wasm_common --target ${_wasm_target}
                      -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,omshell_dioxus/web${_wasm_scripting_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature})
   else()
     set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
-                     --no-default-features --features engine-wasmer${_wasm_scripting_feature})
+                     --no-default-features --features engine-wasmer,codegen_fmu${_wasm_scripting_feature})
   endif()
 
   if(_profile STREQUAL "release")
@@ -1044,6 +1053,43 @@ function(omc_rust_setup_wasm)
       endif()
     endif()
 
+    # The FMI simulator transpiles a Wasm component to JS in the browser using
+    # jco's js-component-bindgen, which runs on the WASI preview2 shim. Both are
+    # vendor code, not kept in git: download the pinned npm tarballs at configure
+    # time and unpack them into the build tree.
+    set(_jco_vendor ${CMAKE_BINARY_DIR}/downloads/jco-transpile/package/vendor)
+    set(_p2_shim ${CMAKE_BINARY_DIR}/downloads/preview2-shim/package/dist/browser)
+    foreach(_pkg IN ITEMS
+            "jco-transpile|0.4.2|6f65610ecef99501084de896e299885fc6f645ee77413a820c20aa3d53f21bc7"
+            "preview2-shim|0.19.0|625d787a571bb1dd4b4e1d0fe51e2ef2f0b24e689d7cfcaff6c47ee866dc3526")
+      string(REPLACE "|" ";" _p ${_pkg})
+      list(GET _p 0 _p_name)
+      list(GET _p 1 _p_ver)
+      list(GET _p 2 _p_hash)
+      set(_p_dir ${CMAKE_BINARY_DIR}/downloads/${_p_name})
+      if(NOT EXISTS ${_p_dir}/package/package.json)
+        set(_p_tgz ${CMAKE_BINARY_DIR}/downloads/${_p_name}-${_p_ver}.tgz)
+        message(STATUS "Downloading @bytecodealliance/${_p_name} ${_p_ver}…")
+        file(DOWNLOAD
+             https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz
+             ${_p_tgz} EXPECTED_HASH SHA256=${_p_hash} TLS_VERIFY ON STATUS _p_dl)
+        list(GET _p_dl 0 _p_dl_code)
+        if(NOT _p_dl_code EQUAL 0)
+          file(REMOVE ${_p_tgz})
+          message(FATAL_ERROR "Failed to download @bytecodealliance/${_p_name}: ${_p_dl}")
+        endif()
+        # cmake -E tar, not file(ARCHIVE_EXTRACT): that needs 3.18, and the web
+        # target should not raise the repo's CMake floor.
+        file(MAKE_DIRECTORY ${_p_dir})
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_p_tgz}
+                        WORKING_DIRECTORY ${_p_dir} RESULT_VARIABLE _p_untar)
+        if(NOT _p_untar EQUAL 0)
+          file(REMOVE_RECURSE ${_p_tgz} ${_p_dir})
+          message(FATAL_ERROR "Failed to unpack ${_p_tgz}: ${_p_untar}")
+        endif()
+      endif()
+    endforeach()
+
     # Static page sources copied into the bundle. Listed as DEPENDS below so an
     # edit to any of them re-assembles the bundle (the wasm itself need not change).
     set(_web_launcher_deps
@@ -1055,8 +1101,19 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/OrbitControls.js
         ${RUST_OMC_DIR}/wasm/simulator/config.json
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
+        ${RUST_OMC_DIR}/wasm/plot.js
+        ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
         ${_three_js})
     set(_web_launcher_extra
+        # The chart engine and the shared look, imported by both simulator pages.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/plot.js
+                ${RUST_OMC_DIR}/wasm/theme.css
+                ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/omc-terminal/index.html ${_web_dir}/omc-terminal/
@@ -1073,6 +1130,19 @@ function(omc_rust_setup_wasm)
                 ${_three_js} ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
+                ${_web_dir}/fmi-simulator/
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${_jco_vendor}/js-component-bindgen-component.js
+                ${_jco_vendor}/js-component-bindgen-component.core.wasm
+                ${_jco_vendor}/js-component-bindgen-component.core2.wasm
+                ${_web_dir}/fmi-simulator/vendor/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${_p2_shim} ${_web_dir}/fmi-simulator/vendor/preview2-shim
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()
