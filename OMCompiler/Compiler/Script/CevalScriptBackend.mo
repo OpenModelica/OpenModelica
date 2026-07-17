@@ -1272,12 +1272,6 @@ algorithm
       then
         ret_val;
 
-    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
-      algorithm
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
-      then
-        ret_val;
-
     case ("buildModelFMU", _)
       then Values.STRING("");
 
