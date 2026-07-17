@@ -1590,15 +1590,6 @@ protected
     end if;
   end tupleSolvable;
 
-  function expandArraySumsForCref
-    "Expands sum(arrayCref) to an element-wise sum in an equation.
-    Used in SLICED_COMPONENT solving when the target cref is a slice of arrayCref."
-    input output Equation eqn;
-    input ComponentRef arrayCref "the parent array cref to expand in sum() calls";
-  algorithm
-    eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = arrayCref));
-  end expandArraySumsForCref;
-
   function expandArraySumExp
     "Replaces sum(arrayCref) with arrayCref[1] + ... + arrayCref[n] for 1D arrays.
     sum(A) without explicit iterator is represented as TYPED_CALL, not TYPED_REDUCTION."
@@ -1608,41 +1599,52 @@ protected
     Call call;
     Type arrTy, elemTy;
     list<Dimension> dims;
-    Integer n;
-    list<Expression> elements = {};
-    ComponentRef elemCref;
-    Expression arg;
+    list<Integer> sizes;
+    list<Expression> elements;
+
+    ComponentRef arg_cref, elemCref;
+    Expression new_exp;
   algorithm
-    () := match exp
-      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-        if AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "sum" and
-           List.hasOneElement(call.arguments) then
-          arg := listHead(call.arguments);
-          if Expression.isCref(arg) and
-             ComponentRef.isEqual(Expression.toCref(arg), arrayCref) then
-            arrTy := ComponentRef.getSubscriptedType(arrayCref, true);
-            elemTy := Type.arrayElementType(arrTy);
-            dims := Type.arrayDims(arrTy);
-            if listLength(dims) == 1 then
-              n := Dimension.size(listHead(dims));
-              if n > 1 then
-                for i in 1:n loop
-                  elemCref := ComponentRef.mergeSubscripts({Subscript.INDEX(Expression.INTEGER(i))}, arrayCref);
-                  elements := Expression.CREF(elemTy, elemCref) :: elements;
-                end for;
-              end if;
-            end if;
-          end if;
-        end if;
-      then ();
-      else ();
+    exp := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = arg_cref)}))
+      guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "sum" and ComponentRef.isEqual(arg_cref, arrayCref)) algorithm
+        arrTy     := ComponentRef.getSubscriptedType(arrayCref, true);
+        elemTy    := Type.arrayElementType(arrTy);
+        dims      := Type.arrayDims(arrTy);
+        sizes     := list(Dimension.size(dim) for dim in dims);
+        elements  := expandArraySumExpDim(sizes, arrayCref, elemTy);
+        new_exp   := Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
+      then new_exp;
+      else exp;
     end match;
-    // assign outside the match to avoid type narrowing conflict (CALL := MULTARY)
-    if not listEmpty(elements) then
-      elemTy := Type.arrayElementType(ComponentRef.getSubscriptedType(arrayCref, true));
-      exp := Expression.MULTARY(listReverse(elements), {}, Operator.makeAdd(elemTy));
-    end if;
   end expandArraySumExp;
+
+  function expandArraySumExpDim
+    input list<Integer> sizes;
+    input ComponentRef arrayCref;
+    input Type elemTy;
+    input list<Subscript> subs = {};
+    input output list<Expression> elements = {};
+  algorithm
+    elements := match sizes
+      local
+        Integer n;
+        list<Integer> rest;
+        ComponentRef elemCref;
+
+      // create all combinations of the current subscript
+      case n :: rest algorithm
+        for i in 1:n loop
+          elements := expandArraySumExpDim(rest, arrayCref, elemTy, Subscript.INDEX(Expression.INTEGER(i)) :: subs, elements);
+        end for;
+      then elements;
+
+      // no further subscripts, add the element
+      else algorithm
+        elemCref := ComponentRef.mergeSubscripts(listReverse(subs), arrayCref);
+      then Expression.CREF(elemTy, elemCref) :: elements;
+    end match;
+  end expandArraySumExpDim;
 
   function getVarSlice
     input output ComponentRef var_cref;
@@ -1714,10 +1716,13 @@ protected
       eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
     elseif solve_status == Status.IMPLICIT then
       // var_cref is a parent array containing cref as a slice; expand array sums to enable explicit solving
-      eqn := expandArraySumsForCref(eqn, var_cref);
+      eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       if solve_status < Status.UNSOLVABLE then
         eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+      else
+        // all expansion tactics failed; allow implicit solution as last resort
+        solve_status := Status.IMPLICIT;
       end if;
     end if;
   end solveForVarSlice;
