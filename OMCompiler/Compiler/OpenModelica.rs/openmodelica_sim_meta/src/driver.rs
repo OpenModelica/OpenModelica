@@ -727,6 +727,62 @@ fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
     e.write_bytes(sim_data + layout.relations_pre_off, &buf)
 }
 
+/// Evaluate the zero-crossing functions at `time` with the current discrete state,
+/// filling `out` with the `n_zc` values (`gout[i] = relation ? 1 : -1`). Used by
+/// the discrete-only driver to bracket and localize state events between grid
+/// points.
+fn eval_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
+    // Held relations (mode 0): the probe must not flip a relation or fire a
+    // when-body, only a located event changes discrete state. `functionAlgebraics`
+    // is needed alongside `functionODE` so a boolean algebraic the crossing reads
+    // (e.g. StateGraph's `enableFire`) is current; the crossing function itself
+    // re-evaluates relations regardless of this flag.
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    e.call1("functionODE", sim_data)?;
+    e.call1("functionAlgebraics", sim_data)?;
+    e.call1("functionZeroCrossings", sim_data)?;
+    for (i, v) in out.iter_mut().enumerate() {
+        *v = read_f64(e, sim_data + layout.zc_off + (i as u32) * 8)?;
+    }
+    Ok(())
+}
+
+/// Whether any zero-crossing value changed sign between `a` and `b` — i.e. a state
+/// event lies in the bracketed interval.
+fn zc_crossed(a: &[f64], b: &[f64]) -> bool {
+    a.iter().zip(b).any(|(&x, &y)| (x < 0.0) != (y < 0.0))
+}
+
+/// Bisect `(t0, t1]` for the earliest zero-crossing, given the values `zc0` at `t0`
+/// and a known sign change by `t1`. Holds the discrete state fixed (only `time`
+/// varies), as the crossing is a continuous function of time. Returns the located
+/// event time; `scratch` is reused for the probe evaluations.
+fn locate_zc_root(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    mut t0: f64,
+    mut t1: f64,
+    zc0: &[f64],
+    scratch: &mut [f64],
+) -> Result<f64> {
+    let tol = t1.abs().max(1.0) * 1e-12;
+    while t1 - t0 > tol {
+        let tm = 0.5 * (t0 + t1);
+        if tm <= t0 || tm >= t1 {
+            break;
+        }
+        eval_zero_crossings(e, sim_data, layout, tm, scratch)?;
+        if zc_crossed(zc0, scratch) {
+            t1 = tm;
+        } else {
+            t0 = tm;
+        }
+    }
+    Ok(t1)
+}
+
 /// Snapshot of the discrete state — boolean/integer algebraics and held relations
 /// — used to detect when an event's discrete update has reached a fixed point.
 fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
@@ -2446,9 +2502,18 @@ impl Driver for DasslEventsDriver {
         let n_states = self.core.n_states;
         let tout_of = |row: u32| if row == n_steps { stop } else { start + row as f64 * h };
 
-        // No continuous states: evaluate outputs on the grid, firing events between.
+        // No continuous states: nothing to integrate, but zero-crossings on `time`
+        // (e.g. a timer `time >= t_start + waitTime`) are still continuous events
+        // that must be located between grid points. Walk grid point to grid point,
+        // bracketing each state event on a zero-crossing sign change and bisecting to
+        // its exact time, interleaved with the sample (time) events in time order.
         if n_states == 0 {
             let mut did_step = false;
+            let mut zc0 = vec![0.0f64; layout.n_zc as usize];
+            let mut scratch = vec![0.0f64; layout.n_zc as usize];
+            if layout.n_zc > 0 {
+                eval_zero_crossings(e, sim_data, layout, self.core.t, &mut zc0)?;
+            }
             while self.row < n_rows {
                 if did_step && past_deadline(deadline) {
                     return Ok(Advance::Running);
@@ -2460,31 +2525,75 @@ impl Driver for DasslEventsDriver {
                 let tout = tout_of(self.row);
                 let eps = tout.abs().max(1.0) * 1e-10;
                 let mut grid_covered = false;
-                while self.samp.next_time() <= tout + eps {
+                // Handle every event (state or sample) up to `tout`, earliest first.
+                loop {
                     let te = self.samp.next_time();
-                    // Snap an event onto the grid point it (near-)coincides with.
-                    let te = if (te - tout).abs() <= eps { tout } else { te };
-                    // Pre-event row (old), fire, post-event row (new) — a step.
-                    emit_row(e, &mut self.rows, sim_data, layout, te)?;
-                    self.samp.fire(e, sim_data, te)?;
-                    store_relations(e, sim_data, layout)?;
-                    self.core.time_events += 1;
-                    emit_row(e, &mut self.rows, sim_data, layout, te)?;
-                    if terminated(e, sim_data, layout)? {
-                        self.finished = true;
-                        return Ok(Advance::Terminated);
+                    let subtarget = tout.min(te);
+                    // A state event bracketed in (t, subtarget]?
+                    let mut troot = None;
+                    if layout.n_zc > 0 && subtarget - self.core.t > eps {
+                        eval_zero_crossings(e, sim_data, layout, subtarget, &mut scratch)?;
+                        if zc_crossed(&zc0, &scratch) {
+                            troot = Some(locate_zc_root(
+                                e, sim_data, layout, self.core.t, subtarget, &zc0, &mut scratch,
+                            )?);
+                        }
                     }
-                    if te >= tout - eps {
-                        grid_covered = true;
+                    if let Some(tr) = troot {
+                        capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
+                        event_update(e, sim_data, layout, None, tr)?;
+                        self.core.state_events += 1;
+                        capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
+                        if terminated(e, sim_data, layout)? {
+                            self.finished = true;
+                            return Ok(Advance::Terminated);
+                        }
+                        self.core.t = tr;
+                        eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
+                        continue;
+                    }
+                    // No state event before the next sample time. Fire the sample if
+                    // it is due at or before this grid point; otherwise the interval
+                    // is clean up to `tout`.
+                    if te <= tout + eps {
+                        let te = if (te - tout).abs() <= eps { tout } else { te };
+                        write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
+                        emit_row(e, &mut self.rows, sim_data, layout, te)?; // pre-event row
+                        write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
+                        self.samp.fire(e, sim_data, te)?;
+                        store_relations(e, sim_data, layout)?;
+                        self.core.time_events += 1;
+                        emit_row(e, &mut self.rows, sim_data, layout, te)?; // post-event row
+                        if terminated(e, sim_data, layout)? {
+                            self.finished = true;
+                            return Ok(Advance::Terminated);
+                        }
+                        self.core.t = te;
+                        if layout.n_zc > 0 {
+                            eval_zero_crossings(e, sim_data, layout, te, &mut zc0)?;
+                        }
+                        if te >= tout - eps {
+                            grid_covered = true;
+                        }
+                    } else {
+                        break;
                     }
                 }
                 if !grid_covered {
+                    // Fresh (mode 1) output solve: every event up to `tout` is already
+                    // handled above, so no when-edge fires here, while an algebraic loop
+                    // (e.g. an ideal-diode network) needs its relations solved fresh.
+                    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
                     emit_row(e, &mut self.rows, sim_data, layout, tout)?;
                     if terminated(e, sim_data, layout)? {
                         self.finished = true;
                         return Ok(Advance::Terminated);
                     }
+                    if layout.n_zc > 0 {
+                        eval_zero_crossings(e, sim_data, layout, tout, &mut zc0)?;
+                    }
                 }
+                self.core.t = tout;
                 self.row += 1;
             }
             self.finished = true;

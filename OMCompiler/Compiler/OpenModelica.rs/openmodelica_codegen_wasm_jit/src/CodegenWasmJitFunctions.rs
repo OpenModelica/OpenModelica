@@ -1894,6 +1894,83 @@ fn store_fresh_into_local(ctx: &mut FnCtx, idx: u32, dst_sty: &SigTy, vt: u32) -
     Ok(())
 }
 
+/// Store a freshly-owned value held in temp `vt` into record field `name` of the
+/// record whose handle is in local/temp `rec_idx`, releasing the previous field
+/// value first. The value is already owned (a call result), so no copy is made.
+fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigTy)], name: &str, vt: u32) -> Result<()> {
+    let (off, fty) = record_field(fields, name)?;
+    if let Some(release_fn) = fty.release_fn() {
+        ctx.emit(we::Instruction::LocalGet(rec_idx));
+        field_load(ctx, fty.wty(), off);
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    }
+    ctx.emit(we::Instruction::LocalGet(rec_idx));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    field_store(ctx, fty.wty(), off);
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into array element
+/// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
+/// previous element first. The value is already owned, so no copy is made.
+fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], vt: u32) -> Result<()> {
+    emit_elem_addr(ctx, arr_idx, idx_exps)?;
+    let addr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(addr_t));
+    if let Some(release_fn) = elem.release_fn() {
+        ctx.emit(we::Instruction::LocalGet(addr_t));
+        elem_load(ctx, elem);
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    }
+    ctx.emit(we::Instruction::LocalGet(addr_t));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    elem_store(ctx, elem);
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into an arbitrary cref target
+/// (simple local, array element, or record field — possibly a subscripted
+/// field). Used by tuple assignment, where each result is already computed.
+fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, vt: u32) -> Result<()> {
+    if let DAE::ComponentRef::CREF_QUAL { .. } = cref {
+        let (rec, fields, leaf, lsubs) = navigate_qual(ctx, cref)?;
+        if lsubs.is_empty() {
+            store_fresh_into_field(ctx, rec, &fields, leaf, vt)?;
+        } else {
+            let (off, fty) = record_field(&fields, leaf)?;
+            let SigTy::Array { elem, rank } = fty else {
+                return Err("CodegenWasmJit: subscripted field is not an array");
+            };
+            let arr_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalGet(rec));
+            field_load(ctx, WTy::I32, off);
+            ctx.emit(we::Instruction::LocalSet(arr_t));
+            let idx_exps = index_subscripts(lsubs, rank)?;
+            store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
+        }
+        ctx.emit(we::Instruction::LocalGet(rec));
+        ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+        return Ok(());
+    }
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else {
+        return Err("CodegenWasmJit: unsupported tuple-assignment target");
+    };
+    let name = ident.to_string();
+    let (idx, dst_sty) = ctx
+        .locals
+        .get(&name)
+        .ok_or_else(|| "CodegenWasmJit: tuple assignment to unknown variable")?
+        .clone();
+    if subscriptLst.is_empty() {
+        return store_fresh_into_local(ctx, idx, &dst_sty, vt);
+    }
+    let SigTy::Array { elem, rank } = dst_sty else {
+        return Err("CodegenWasmJit: subscripting non-array local");
+    };
+    let idx_exps = index_subscripts(subscriptLst, rank)?;
+    store_fresh_into_elem(ctx, idx, &elem, &idx_exps, vt)
+}
+
 /// Lower `(l1, l2, …) := f(args)` (`STMT_TUPLE_ASSIGN`): call the multi-output
 /// generated function (which leaves its results on the stack, first result
 /// deepest), then move each owned result into its target local. A `_` (wildcard)
@@ -1921,25 +1998,15 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
         let DAE::Exp::CREF { componentRef, .. } = &***lhs_exp else {
             return Err("CodegenWasmJit: tuple-assignment target is not a cref");
         };
-        match &**componentRef {
-            // `_` output: discard (release a heap value).
-            DAE::ComponentRef::WILD => {
-                if let Some(release_fn) = sty.release_fn() {
-                    ctx.emit(we::Instruction::LocalGet(vt));
-                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
-                }
+        // `_` output: discard (release a heap value).
+        if let DAE::ComponentRef::WILD = &**componentRef {
+            if let Some(release_fn) = sty.release_fn() {
+                ctx.emit(we::Instruction::LocalGet(vt));
+                ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
             }
-            DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } if subscriptLst.is_empty() => {
-                let name = ident.to_string();
-                let (idx, dst_sty) = ctx
-                    .locals
-                    .get(&name)
-                    .ok_or_else(|| "CodegenWasmJit: tuple assignment to unknown variable")?
-                    .clone();
-                store_fresh_into_local(ctx, idx, &dst_sty, vt)?;
-            }
-            other => return Err("CodegenWasmJit: unsupported tuple-assignment target"),
+            continue;
         }
+        store_fresh_into_cref(ctx, componentRef, vt)?;
     }
     Ok(())
 }
