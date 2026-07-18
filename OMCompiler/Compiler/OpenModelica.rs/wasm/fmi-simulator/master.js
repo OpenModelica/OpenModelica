@@ -61,12 +61,16 @@ export function makeRecorder(md) {
   const vars = md.variables.filter(
     (v) => v.numeric && v.variability !== 'constant' && RECORDED.has(v.causality));
   const groups = groupByType(vars);
-  const columns = vars.map((v) => ({ name: v.name, unit: v.unit, causality: v.causality, values: [] }));
+  // A continuous state is any variable another variable differentiates
+  // (`derivative="<its vr>"`), used to pick a sensible default plot.
+  const stateVrs = new Set(md.variables.filter((v) => v.derivative != null).map((v) => Number(v.derivative)));
+  const columns = vars.map((v) => ({ name: v.name, unit: v.unit, causality: v.causality, isState: stateVrs.has(v.vr), values: [] }));
   const index = new Map(vars.map((v, i) => [v, i]));
   const time = [];
   return {
     columns, time,
     warning: null,   // set when a run ends before the stop time for a benign reason
+    terminated: null, // time of a model-requested `terminate()` — a normal, successful stop
     sample(inst, t) {
       time.push(t);
       for (const g of groups) {
@@ -136,9 +140,9 @@ export async function runCS(inst, md, o) {
       const info = eventIteration(inst);
       check('enter-step-mode', inst.enterStepMode());
       rec.sample(inst, t);
-      if (info.terminateSimulation) { rec.warning = `the FMU requested termination at t = ${t}.`; break; }
+      if (info.terminateSimulation) { rec.terminated = t; break; }
     }
-    if (r.terminateSimulation) { rec.warning = `the FMU requested termination at t = ${t}.`; break; }
+    if (r.terminateSimulation) { rec.terminated = t; break; }
     if (performance.now() > next) { await pump(o, t); next = performance.now() + 40; }
   }
   check('terminate', inst.terminate());
@@ -269,7 +273,7 @@ export async function runME(inst, md, o) {
     const cis = call('completed-integrator-step', () => inst.completedIntegratorStep(true));
     t = tNew; x = xNew; z = zNew;
     rec.sample(inst, t);
-    if (cis.terminateSimulation) { rec.warning = `the FMU requested termination at t = ${t}.`; break; }
+    if (cis.terminateSimulation) { rec.terminated = t; break; }
 
     if (event || cis.enterEventMode) {
       const r = handleEvent(t, x);
@@ -277,7 +281,7 @@ export async function runME(inst, md, o) {
       z = indicators(t, x);
       tEvent = r.ev.nextEventTimeDefined ? r.ev.nextEventTime : Infinity;
       rec.sample(inst, t);
-      if (r.ev.terminateSimulation) { rec.warning = `the FMU requested termination at t = ${t}.`; break; }
+      if (r.ev.terminateSimulation) { rec.terminated = t; break; }
       chatter = t - lastEvent < span * 1e-9 ? chatter + 1 : 0;
       lastEvent = t;
       if (chatter > 100) {

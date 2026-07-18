@@ -1031,12 +1031,17 @@ static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_c
 /// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
 static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
 
-/// Rewrites the model's import module name `rt` → `env`, the dylink convention
-/// `wit_component::Linker` resolves against.
+/// The external-"C" FMU artifacts, linked in only when the model uses `external
+/// "C"`. Any is empty when that omc was built without the toolchain.
+use openmodelica_wasi_libc::{EXTERNAL_C_DYLINK, LIBC_PIC, WASI_P1_ADAPTER, available as external_c_available};
+
+/// Renames the model's `rt`/`ext` import modules → `env`, the dylink convention
+/// `wit_component::Linker` resolves against (so `ext.<fn>` binds to the
+/// ModelicaExternalC side module's export `<fn>`).
 struct RtToEnv;
 impl RtToEnv {
     fn rename(module: &str) -> &str {
-        if module == "rt" { "env" } else { module }
+        if module == "rt" || module == "ext" { "env" } else { module }
     }
 }
 impl wasm_encoder::reencode::Reencode for RtToEnv {
@@ -1140,22 +1145,32 @@ fn first_external_import(model_wasm: &[u8]) -> Option<String> {
     None
 }
 
-/// Link the adapter with the model into an fmi-ls-wasm component. Pure Rust, so
-/// it runs in the browser omc as well as native.
+/// Link the adapter + model into an fmi-ls-wasm component (pure Rust, so it runs in
+/// the browser omc too). When the model uses `external "C"`, ModelicaExternalC +
+/// PIC `libc.so` are added as shared-everything libraries and libc's preview1
+/// imports bridged to the component's preview2 WASI by the reactor adapter.
 fn link_fmu_component(model_wasm: &[u8], adapter: &[u8]) -> Result<Vec<u8>> {
     if adapter.is_empty() {
         return Err("CodegenWasmJit: FMI3 adapter unavailable (build wasm32-unknown-unknown + -Z build-std)");
     }
+    let has_ext = first_external_import(model_wasm).is_some();
     let model = model_to_dylink(model_wasm)?;
-    wit_component::Linker::default()
-        .validate(true)
-        .library("adapter", adapter, false)
-        .and_then(|l| l.library("model", &model, false))
-        .and_then(|l| l.encode())
-        .map_err(|e| {
-            record_error(format!("CodegenWasmJit: FMI3 component link failed: {e:?}"));
-            "CodegenWasmJit: FMI3 component link failed"
-        })
+    let mut l = wit_component::Linker::default().validate(true);
+    l = l.library("adapter", adapter, false).map_err(link_err)?;
+    l = l.library("model", &model, false).map_err(link_err)?;
+    if has_ext {
+        // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
+        // runtime rt_alloc over one shared heap) is intentional.
+        l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
+        l = l.library("libc", LIBC_PIC, false).map_err(link_err)?;
+        l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
+    }
+    l.encode().map_err(link_err)
+}
+
+fn link_err(e: impl core::fmt::Debug) -> &'static str {
+    record_error(format!("CodegenWasmJit: FMI3 component link failed: {e:?}"));
+    "CodegenWasmJit: FMI3 component link failed"
 }
 
 /// The `vr -> SimData slot` table the FMI3 adapter resolves getters/setters with.
@@ -1354,13 +1369,18 @@ fn emit_fmu(
     sim_runtime::start_runtime_compile();
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
-        let model = build_sim_model(&sim_code, true)?;
+        // Shared linear memory across model + runtime + ModelicaExternalC, so
+        // `external "C"` calls pass real pointers, not handles.
+        let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(&sim_code, true))?;
         if let Some(func) = first_external_import(&model.wasm) {
-            record_error(format!(
-                "CodegenWasmJit: model `{}` uses the external C function `{func}`; external \
-                 \"C\" is not yet supported in a host-free wasm FMU. Simulate the model in the \
-                 browser (or `--simCodeTarget=wasm-jit`) instead.", model.model_name));
-            return Err("CodegenWasmJit: external \"C\" not supported in a host-free wasm FMU");
+            if !external_c_available() {
+                record_error(format!(
+                    "CodegenWasmJit: model `{}` uses the external C function `{func}`, but this omc \
+                     was built without the PIC wasi-libc needed for external \"C\" in a host-free \
+                     wasm FMU. Rebuild with a PIC wasi-libc (set OMC_WASI_PIC_SYSROOT), or simulate \
+                     the model in the browser (`--simCodeTarget=wasm-jit`) instead.", model.model_name));
+                return Err("CodegenWasmJit: external \"C\" support not built into this omc");
+            }
         }
         let component = link_fmu_component(&model.wasm, adapter)?;
         let model_id = sanitize_identifier(&model.model_name);

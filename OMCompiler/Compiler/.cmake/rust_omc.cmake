@@ -214,6 +214,59 @@ list(APPEND CARGO_ENV
      # can compile the ModelicaExternalC WASI side module (modelicaexternalc.wasm) —
      # the crate builds from a synced copy (rust-src) whose relative path can't reach it.
      "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources")
+
+# wasi-libc source (pinned wasi-sdk-32) for build.rs to build a -fPIC libc.so
+# (Debian's is non-PIC), passed as OMC_WASI_LIBC_SRC. Download failure is a WARNING,
+# not FATAL: it only disables external "C" in wasm FMUs. Override the whole build
+# with a prebuilt sysroot via OMC_WASI_PIC_SYSROOT.
+set(_wasi_libc_src ${CMAKE_BINARY_DIR}/downloads/wasi-libc/wasi-libc-wasi-sdk-32)
+if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  set(_wasi_tgz ${CMAKE_BINARY_DIR}/downloads/wasi-libc-wasi-sdk-32.tar.gz)
+  message(STATUS "Downloading wasi-libc (wasi-sdk-32) source for the PIC libc…")
+  file(DOWNLOAD
+       https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
+       ${_wasi_tgz}
+       EXPECTED_HASH SHA256=ea9827495c0f35bca3b3d0a953e854cac112c43bea3196b5a4f7f8fc4704b9a4
+       TLS_VERIFY ON STATUS _wasi_dl)
+  list(GET _wasi_dl 0 _wasi_dl_code)
+  if(NOT _wasi_dl_code EQUAL 0)
+    file(REMOVE ${_wasi_tgz})
+    message(WARNING "Failed to download wasi-libc source (${_wasi_dl}); external \"C\" in wasm FMUs will be unavailable")
+  else()
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc
+                    RESULT_VARIABLE _wasi_untar)
+    if(NOT _wasi_untar EQUAL 0)
+      message(WARNING "Failed to unpack wasi-libc source; external \"C\" in wasm FMUs will be unavailable")
+    endif()
+  endif()
+endif()
+if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
+endif()
+
+# The wasi_snapshot_preview1 reactor adapter (wasmtime release) build.rs bridges
+# into the FMU component. Downloaded + cached like the other wasm vendor artifacts,
+# passed as OMC_WASI_P1_ADAPTER; WARNING (not FATAL) on failure.
+set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
+if(NOT EXISTS ${_wasi_p1_adapter})
+  message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
+  file(DOWNLOAD
+       https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm
+       ${_wasi_p1_adapter}
+       EXPECTED_HASH SHA256=cf26d826c3b1b81faa86c5b6352a725fcf55c50a8806fdf58ba658f675971ff2
+       TLS_VERIFY ON STATUS _wasi_p1_dl)
+  list(GET _wasi_p1_dl 0 _wasi_p1_code)
+  if(NOT _wasi_p1_code EQUAL 0)
+    file(REMOVE ${_wasi_p1_adapter})
+    message(WARNING "Failed to download the wasi preview1 adapter (${_wasi_p1_dl}); external \"C\" in wasm FMUs will be unavailable")
+  endif()
+endif()
+if(EXISTS ${_wasi_p1_adapter})
+  list(APPEND CARGO_ENV "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
+endif()
+
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
 set(CARGO_BUILD ${CARGO_ENV} ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
 # The build tools (mmtorust, susan, scripting_api_gen) always run on and target

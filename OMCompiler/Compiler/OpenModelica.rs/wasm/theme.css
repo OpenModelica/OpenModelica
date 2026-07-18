@@ -24,6 +24,7 @@ header .status { color:var(--muted); flex:1; min-width:0; overflow:hidden;
   text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
 header .status.err { color:var(--err); }
 header .status.busy { color:var(--accent); }
+header .status.ok { color:var(--teal); }
 
 /* The plain-button look. :hover stays at one class of specificity (the disabled
    rule below it wins by order, not by :not) so a page whose controls are
@@ -81,6 +82,10 @@ input, select {
 .tooltip .row { display:flex; align-items:center; gap:6px; }
 .tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
 .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; }
+.legend-filter { display:flex; align-items:center; gap:10px; padding:6px 2px 0; }
+.legend-filter input { flex:0 1 260px; min-width:120px; background:var(--panel,#252526); color:var(--fg);
+  border:1px solid var(--border,#3c3c3c); border-radius:4px; padding:3px 8px; font-size:13px; }
+.legend-note { color:var(--muted); font-size:12px; white-space:nowrap; }
 .legend .item { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; user-select:none; }
 .legend .item.off { opacity:.4; }
 .legend .sw { width:13px; height:13px; border-radius:3px; flex:0 0 auto; }

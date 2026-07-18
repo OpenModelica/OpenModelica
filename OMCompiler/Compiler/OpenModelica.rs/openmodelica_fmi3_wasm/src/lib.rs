@@ -478,8 +478,22 @@ macro_rules! shared_instance_methods {
         }
         Ok(out)
     }
-    fn get_int64(&self, _: Vec<u32>) -> Result<Vec<i64>, Status> {
-        Err(Status::Error)
+    // fmi3 accesses `<Enumeration>` vars via Int64; they are `WTy::I32` slots here,
+    // so widen/narrow around the i32.
+    fn get_int64(&self, vrs: Vec<u32>) -> Result<Vec<i64>, Status> {
+        let st = self.st.borrow();
+        st.eval();
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => {
+                    let v = st.read_i32(e.off);
+                    out.push((if e.negate { -v } else { v }) as i64);
+                }
+                _ => return Err(Status::Error),
+            }
+        }
+        Ok(out)
     }
     fn get_uint8(&self, _: Vec<u32>) -> Result<Vec<u8>, Status> {
         Err(Status::Error)
@@ -490,8 +504,17 @@ macro_rules! shared_instance_methods {
     fn get_uint32(&self, _: Vec<u32>) -> Result<Vec<u32>, Status> {
         Err(Status::Error)
     }
-    fn get_uint64(&self, _: Vec<u32>) -> Result<Vec<u64>, Status> {
-        Err(Status::Error)
+    fn get_uint64(&self, vrs: Vec<u32>) -> Result<Vec<u64>, Status> {
+        let st = self.st.borrow();
+        st.eval();
+        let mut out = Vec::with_capacity(vrs.len());
+        for vr in vrs {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.is_string => out.push(st.read_i32(e.off) as u64),
+                _ => return Err(Status::Error),
+            }
+        }
+        Ok(out)
     }
     fn get_boolean(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
         let st = self.st.borrow();
@@ -573,8 +596,24 @@ macro_rules! shared_instance_methods {
         }
         Status::Ok
     }
-    fn set_int64(&self, _: Vec<u32>, _: Vec<i64>) -> Status {
-        Status::Error
+    fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
+        if vrs.len() != values.len() {
+            return Status::Error;
+        }
+        let mut st = self.st.borrow_mut();
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                    if st.in_init {
+                        st.init_overrides.push((e.off, WTy::I32, v as f64));
+                    } else {
+                        st.write_i32(e.off, v as i32);
+                    }
+                }
+                _ => return Status::Error,
+            }
+        }
+        Status::Ok
     }
     fn set_uint8(&self, _: Vec<u32>, _: Vec<u8>) -> Status {
         Status::Error
@@ -585,8 +624,24 @@ macro_rules! shared_instance_methods {
     fn set_uint32(&self, _: Vec<u32>, _: Vec<u32>) -> Status {
         Status::Error
     }
-    fn set_uint64(&self, _: Vec<u32>, _: Vec<u64>) -> Status {
-        Status::Error
+    fn set_uint64(&self, vrs: Vec<u32>, values: Vec<u64>) -> Status {
+        if vrs.len() != values.len() {
+            return Status::Error;
+        }
+        let mut st = self.st.borrow_mut();
+        for (vr, v) in vrs.into_iter().zip(values) {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                    if st.in_init {
+                        st.init_overrides.push((e.off, WTy::I32, v as f64));
+                    } else {
+                        st.write_i32(e.off, v as i32);
+                    }
+                }
+                _ => return Status::Error,
+            }
+        }
+        Status::Ok
     }
     fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
         if vrs.len() != values.len() {

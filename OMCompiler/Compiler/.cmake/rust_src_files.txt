@@ -273,6 +273,11 @@ openmodelica_wasi/Cargo.toml
 openmodelica_wasi/src/lib.rs
 openmodelica_wasi/src/wasi.rs
 openmodelica_wasi/src/fs.rs
+openmodelica_wasi_libc/Cargo.toml
+openmodelica_wasi_libc/build.rs
+openmodelica_wasi_libc/src/lib.rs
+openmodelica_wasi_libc/external_c_stubs.c
+openmodelica_wasi_libc/external_c_callbacks.c
 rust-toolchain.toml
 susanSources.txt
 wasm/index.html

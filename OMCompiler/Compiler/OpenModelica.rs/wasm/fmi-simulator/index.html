@@ -339,6 +339,11 @@ async function run() {
     renderCharts(rec);
     const kind = ifaceEl.value === 'me' ? 'Model Exchange' : 'Co-Simulation';
     if (rec.warning) { setStatus(rec.warning, 'err'); log('warning', rec.warning); }
+    else if (rec.terminated != null) {
+      // A model-requested `terminate()` is a normal, successful stop — not an error.
+      setStatus(`${rec.time.length} samples in ${ms} ms — ${kind}; model terminated at t = ${rec.terminated}.`, 'ok');
+      log('info', `the model requested termination at t = ${rec.terminated} (normal stop).`);
+    }
     else setStatus(`${rec.time.length} samples in ${ms} ms — ${kind}.`);
   } catch (e) {
     if (cancelled) setStatus('Cancelled.');
@@ -354,17 +359,25 @@ async function run() {
 function renderCharts(rec) {
   charts.clear();
   const xs = Float64Array.from(rec.time);
-  const curves = rec.columns
-    .filter((c) => c.values.some((v) => isFinite(v)))
-    .map((c, i) => ({ label: c.name, unit: c.unit || '', color: COLORS[i % COLORS.length],
-                      xs, ys: Float64Array.from(c.values) }));
-  if (!curves.length) {
+  const finite = rec.columns.filter((c) => c.values.some((v) => isFinite(v)));
+  if (!finite.length) {
     charts.clear(chartsEmpty);
     chartsEmpty.style.display = '';
     chartsEmpty.textContent = 'The FMU reported no output, local or input variables to plot.';
     return;
   }
-  charts.add({ curves, xText: 'time', xUnit: 's', xIsTime: true, solo: true }, 'all');
+  // `ys` references the recorded array, so all signals go into the legend cheaply;
+  // big models default to one state visible with the rest toggled off (drawing all
+  // would be unresponsive).
+  const curves = finite.map((c, i) => ({ label: c.name, unit: c.unit || '', color: COLORS[i % COLORS.length],
+                                         xs, ys: c.values }));
+  const spec = { curves, xText: 'time', xUnit: 's', xIsTime: true, solo: true };
+  if (finite.length > 5) {
+    const state = finite.find((c) => c.isState) || finite[0];
+    spec.defaultVisible = [state.name];
+    log('info', `${finite.length} signals recorded — plotting ${state.name}; click others in the legend to add them.`);
+  }
+  charts.add(spec, 'all');
 }
 
 addEventListener('resize', () => charts.redraw());

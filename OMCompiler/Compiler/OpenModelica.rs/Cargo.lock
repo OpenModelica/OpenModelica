@@ -6515,6 +6515,7 @@ dependencies = [
  "openmodelica_simcode_types",
  "openmodelica_util",
  "openmodelica_wasi",
+ "openmodelica_wasi_libc",
  "ordered-float",
  "wasm-encoder 0.252.0",
  "wasmer",
@@ -6875,6 +6876,10 @@ dependencies = [
  "getrandom 0.3.4",
  "web-time",
 ]
+
+[[package]]
+name = "openmodelica_wasi_libc"
+version = "0.1.0"
 
 [[package]]
 name = "openssl"

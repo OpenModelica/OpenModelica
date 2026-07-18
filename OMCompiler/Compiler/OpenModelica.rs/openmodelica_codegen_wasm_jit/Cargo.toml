@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 openmodelica_wasi.workspace = true
+# External-"C" wasm-FMU artifacts, consumed by the FMU linker.
+openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true

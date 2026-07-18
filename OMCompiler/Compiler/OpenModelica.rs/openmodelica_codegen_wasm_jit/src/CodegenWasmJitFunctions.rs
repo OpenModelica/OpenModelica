@@ -1509,7 +1509,9 @@ fn compile_external_function(
         // they are not results — their locals are already populated. The results
         // land on the stack in order; store them into the non-array outputs
         // back-to-front.
-        let results = emit_general_external_call(&mut ctx, extName, &input_args)?;
+        // Per-arg SigTy, so the shared-memory path knows which args are String/array.
+        let arg_types = external_import_sig(f)?.wasm_params();
+        let results = emit_general_external_call(&mut ctx, extName, &input_args, &arg_types)?;
         let scalar_outs: Vec<usize> = (0..ctx.outputs.len())
             .filter(|&i| !matches!(ctx.outputs[i].1, SigTy::Array { .. }))
             .collect();
@@ -1589,7 +1591,24 @@ fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Ex
 /// argument coerced to the import's parameter type, then `call`. The import's
 /// results (one per external output: the C return value first, then each `_Out_`
 /// pointer's value) are left on the stack in order; their `SigTy`s are returned.
-fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<Vec<SigTy>> {
+thread_local! {
+    /// When set, `external "C"` calls pass real shared-memory pointers for String/
+    /// array args (`rt_str_data`/`rt_array_elem_ptr`) instead of runtime handles —
+    /// for a host-free wasm FMU, where model + runtime + ModelicaExternalC share one
+    /// memory so no host trampoline marshals. The interactive wasmer path leaves it
+    /// off (two memories, host-marshalled).
+    static EXTERNALS_SHARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Run `f` with [`EXTERNALS_SHARED`] set, restoring it after.
+pub(crate) fn with_shared_externals<T>(f: impl FnOnce() -> T) -> T {
+    let prev = EXTERNALS_SHARED.with(|c| c.replace(true));
+    let r = f();
+    EXTERNALS_SHARED.with(|c| c.set(prev));
+    r
+}
+
+fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>], arg_types: &[SigTy]) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
         Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),
@@ -1598,9 +1617,22 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
     if args.len() != params.len() {
         return Err("CodegenWasmJit: external `{ext_name}` expects {} input arg(s), got {}");
     }
-    for (a, p) in args.iter().zip(params.iter()) {
+    let shared = EXTERNALS_SHARED.with(|c| c.get());
+    for ((a, p), sty) in args.iter().zip(params.iter()).zip(arg_types.iter()) {
         let w = compile_exp(ctx, a)?;
         coerce(ctx, w, p.wty());
+        // Shared-memory FMU: pass a real pointer, not the runtime handle (both i32).
+        if shared {
+            match sty {
+                SigTy::Str => ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?)),
+                SigTy::Array { .. } => {
+                    // `rt_array_elem_ptr` is 1-based; element 1 is the data start.
+                    ctx.emit(we::Instruction::I32Const(1));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+                }
+                _ => {}
+            }
+        }
     }
     ctx.emit(we::Instruction::Call(index));
     Ok(results)
