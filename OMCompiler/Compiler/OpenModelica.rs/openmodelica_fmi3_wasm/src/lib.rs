@@ -146,6 +146,10 @@ struct MeState {
     /// Built on exit-initialization-mode, once the model is initialized.
     #[cfg(feature = "cs")]
     cs: Option<CsDriver>,
+    /// `eventModeUsed` from instantiation: `do-step` stops at and reports each event
+    /// for the master, rather than handling it internally.
+    #[cfg(feature = "cs")]
+    event_mode: bool,
     vrs: Vrs,
     in_init: bool,
     /// Set during Initialization Mode, applied by `run_initialization`: states as
@@ -278,6 +282,8 @@ fn new_state() -> Option<MeState> {
         meta,
         #[cfg(feature = "cs")]
         cs: None,
+        #[cfg(feature = "cs")]
+        event_mode: false,
         in_init: false,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
@@ -348,7 +354,18 @@ macro_rules! shared_instance_methods {
         }
         // The CS driver is built lazily on the first `do-step` (see there): a me_cs
         // component driven in Model Exchange must not pay for — or be perturbed by —
-        // a driver it never uses.
+        // a driver it never uses. Event Mode is the exception: the master's first
+        // action after init is an event iteration (`update-discrete-states`), which
+        // must run through the driver's sample schedule, so build it eagerly.
+        #[cfg(feature = "cs")]
+        if st.event_mode {
+            let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
+            let meta = st.meta.clone();
+            match CsDriver::new(&mut e, &meta, sim_data, t) {
+                Ok(d) => st.cs = Some(d),
+                Err(_) => return Status::Error,
+            }
+        }
         Status::Ok
     }
 
@@ -364,10 +381,31 @@ macro_rules! shared_instance_methods {
         let (sim_data, layout) = (st.sim_data, st.layout);
         let time = st.read_f64(TIME_OFF);
         let mut e = Engine;
+
+        #[cfg(feature = "cs")]
+        let up = if st.event_mode {
+            // Route through the driver so its sample schedule advances in step with
+            // the integrator (see `CsDriver::do_event_update`).
+            let meta = st.meta.clone();
+            let mut d = st.cs.take().ok_or(Status::Error)?;
+            let r = d.do_event_update(&mut e, &meta, time);
+            st.cs = Some(d);
+            match r {
+                Ok(up) => up,
+                Err(_) => return Err(Status::Error),
+            }
+        } else {
+            match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
+                Ok(up) => up,
+                Err(_) => return Err(Status::Error),
+            }
+        };
+        #[cfg(not(feature = "cs"))]
         let up = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
             Ok(up) => up,
             Err(_) => return Err(Status::Error),
         };
+
         Ok(DiscreteStatesInfo {
             new_discrete_states_needed: false,
             terminate_simulation: up.terminate,
@@ -787,17 +825,18 @@ impl GuestCoSimulationInstance for Instance {
         _resource_path: String,
         _visible: bool,
         _logging_on: bool,
-        _event_mode_used: bool,
+        event_mode_used: bool,
         _early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
-        let st = new_state()?;
+        let mut st = new_state()?;
+        st.event_mode = event_mode_used;
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
     }
 
-    /// Integrate to the communication point, handling events on the way: the
-    /// modelDescription declares `hasEventMode="false"` for this target, so the
-    /// importer never drives Event Mode and `event-handling-needed` stays false.
+    /// Integrate to the communication point. Under `eventModeUsed` it stops at the
+    /// first event and returns `event-handling-needed`; otherwise events are handled
+    /// internally.
     fn do_step(
         &self,
         current_communication_point: f64,
@@ -806,10 +845,12 @@ impl GuestCoSimulationInstance for Instance {
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
         let target = current_communication_point + communication_step_size;
+        let event_mode = st.event_mode;
         let meta = st.meta.clone();
         let mut e = Engine;
         // Build the driver on first use, over the initialized state at the start
         // point (FMI ran Initialization Mode; the importer may also have set inputs).
+        // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             match CsDriver::new(&mut e, &meta, sim_data, t) {
@@ -818,15 +859,26 @@ impl GuestCoSimulationInstance for Instance {
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let outcome = driver.step_to(&mut e, &meta, target);
+        let outcome = if event_mode {
+            driver.step_to_event(&mut e, &meta, target)
+        } else {
+            driver.step_to(&mut e, &meta, target)
+        };
         let last = driver.time();
         st.cs = Some(driver);
+        let eps = target.abs().max(1.0) * 1e-10;
         match outcome {
             Ok(CsStep::Reached) => Ok(DoStepResult {
                 last_successful_time: last,
                 event_handling_needed: false,
                 terminate_simulation: false,
                 early_return: false,
+            }),
+            Ok(CsStep::Event { time }) => Ok(DoStepResult {
+                last_successful_time: time,
+                event_handling_needed: true,
+                terminate_simulation: false,
+                early_return: time + eps < target,
             }),
             Ok(CsStep::Terminated) => Ok(DoStepResult {
                 last_successful_time: last,

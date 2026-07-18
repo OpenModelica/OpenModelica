@@ -111,7 +111,8 @@ async function pump(o, t) {
 export async function runCS(inst, md, o) {
   const setInputs = makeInputs(o.inputs || []);
   const rec = makeRecorder(md);
-  const eventMode = !!(md.cs && md.cs.hasEventMode);
+  // Resolved by `simulate` (capability AND the user's choice); default on.
+  const eventMode = !!o.eventMode;
 
   initialize(inst, o, setInputs);
   if (eventMode) {
@@ -297,10 +298,13 @@ export async function simulate(fmu, kind, o) {
   const token = md.instantiationToken;
   let inst;
   if (kind === 'cs') {
+    // Needs the capability; within it the caller may opt out. Default on.
+    // eventModeUsed and earlyReturnAllowed move together.
+    const eventMode = !!md.cs.hasEventMode && (o.eventMode ?? true);
     inst = fmu.cs.CoSimulationInstance.instantiateCoSimulation(
-      name, token, fmu.resourcePath, false, true, !!md.cs.hasEventMode, false, []);
+      name, token, fmu.resourcePath, false, true, eventMode, eventMode, []);
     if (!inst) throw new Error('instantiate-co-simulation returned no instance');
-    return await runCS(inst, md, o);
+    return await runCS(inst, md, { ...o, eventMode });
   }
   inst = fmu.me.ModelExchangeInstance.instantiateModelExchange(
     name, token, fmu.resourcePath, false, true);

@@ -262,8 +262,8 @@ end ModelExchange3;
 template CoSimulation3(SimCode simCode, list<String> sourceFiles)
  "Generates the CoSimulation element for FMI 3.0. The capabilities are the
   runtime's, so they depend on the code-generation target: the wasm-jit adapter
-  integrates itself but has no output derivatives and handles events internally
-  (the importer never drives Event Mode)."
+  integrates itself and has no output derivatives, but supports Event Mode
+  (stops at events and reports them when the importer negotiates eventModeUsed)."
 ::=
 match simCode
 case SIMCODE(__) then
@@ -277,9 +277,9 @@ case SIMCODE(__) then
     canBeInstantiatedOnlyOncePerProcess="false"
     maxOutputDerivativeOrder="<%if stringEq(isWasm, "true") then "0" else "1"%>"
     providesIntermediateUpdate="false"
-    mightReturnEarlyFromDoStep="<%if stringEq(isWasm, "true") then "false" else "true"%>"
+    mightReturnEarlyFromDoStep="true"
     canReturnEarlyAfterIntermediateUpdate="false"
-    hasEventMode="<%if stringEq(isWasm, "true") then "false" else "true"%>"
+    hasEventMode="true"
     providesEvaluateDiscreteStates="false"
     recommendedIntermediateInputSmoothness="0"
     canGetAndSetFMUState="true"

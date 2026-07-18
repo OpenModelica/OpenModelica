@@ -26,6 +26,8 @@
     padding:0 5px; margin-right:4px; font-size:12px; color:var(--teal); }
   .tag.off { color:var(--muted); opacity:.55; }
   .grid2 .wide { grid-column:2 / -1; }
+  .grid2 label.chk:not([hidden]) { color:var(--fg); display:flex; align-items:center; gap:7px; white-space:normal; cursor:pointer; font-size:13px; }
+  .grid2 label.chk input { width:auto; margin:0; }
   input:disabled { color:var(--muted); }
 
   #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
@@ -103,6 +105,8 @@
       <label for="stop">Stop</label><input id="stop" value="1" />
       <label for="step" id="stepLabel">Step size</label><input id="step" value="0.1" />
       <label for="tol">Tolerance</label><input id="tol" value="1e-6" />
+      <label for="eventMode" id="eventModeLabel" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden>Event mode</label>
+      <label class="chk wide" id="eventModeCell" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden><input type="checkbox" id="eventMode" checked /></label>
     </div>
   </div>
 
@@ -132,6 +136,7 @@ const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty'), logEl = el('log'
 const charts = createCharts(chartsEl);
 const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
       tolEl = el('tol'), stepLabel = el('stepLabel');
+const eventModeEl = el('eventMode'), eventModeLabel = el('eventModeLabel'), eventModeCell = el('eventModeCell');
 
 let fmu = null;         // { md, exports, cs, me, resourcePath }
 let fields = [];        // { v, input, kind:'input'|'parameter' }
@@ -218,6 +223,9 @@ function renderInfo(fileName, probe) {
 ifaceEl.onchange = onIfaceChange;
 function onIfaceChange() {
   stepLabel.textContent = ifaceEl.value === 'me' ? 'Max step' : 'Step size';
+  // The Event Mode toggle only applies to a CS FMU that advertises the capability.
+  const showEventMode = ifaceEl.value === 'cs' && !!(fmu && fmu.md.cs && fmu.md.cs.hasEventMode);
+  eventModeLabel.hidden = eventModeCell.hidden = !showEventMode;
 }
 
 // Inputs are functions of t; parameters and start values are constants applied
@@ -312,6 +320,7 @@ async function run() {
       stepSize: num(stepEl.value, 0.1),
       tolerance: num(tolEl.value, 1e-6),
       inputs, parameters,
+      eventMode: eventModeEl.checked,
       shouldCancel: () => cancelled,
       onProgress: (t) => setStatus(`Simulating… t = ${(+t.toPrecision(4))}`, 'busy'),
     };

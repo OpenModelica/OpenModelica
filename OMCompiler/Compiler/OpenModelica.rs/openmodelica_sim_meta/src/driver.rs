@@ -1671,6 +1671,9 @@ enum Step {
     /// already emitted.
     Reached { grid_covered: bool },
     Terminated,
+    /// Located an event at `time`, discrete update left undone for the caller to
+    /// report (CS Event Mode). Only returned under `stop_at_event`.
+    Event { time: f64 },
     /// Out of budget mid-target; call again with the same `tout`.
     Yielded,
     Cancelled,
@@ -1778,6 +1781,8 @@ impl DasslCore {
     /// samples due on the way. `rows` collects the pre/post-event rows when the
     /// caller wants them; CS passes `None`. A `Yielded` return resumes on the same
     /// `tout` (DASKR continues via INFO(1)=1), so the yields are safe points.
+    /// `stop_at_event` (CS Event Mode) stops at the first event and returns
+    /// [`Step::Event`] instead of updating in place.
     #[allow(clippy::too_many_arguments)]
     fn integrate_to(
         &mut self,
@@ -1789,6 +1794,7 @@ impl DasslCore {
         deadline: f64,
         mut rows: Option<&mut Vec<f64>>,
         did_step: &mut bool,
+        stop_at_event: bool,
     ) -> Result<Step> {
         use daskr::solver;
         let layout = &model.layout;
@@ -1870,8 +1876,12 @@ impl DasslCore {
                 // IDID=5: a zero-crossing root at `t` (< target). Handle the state
                 // event here, then restart the integrator and keep going.
                 if self.idid == 5 {
-                    self.state_events += 1;
                     let troot = self.t;
+                    if stop_at_event {
+                        write_f64(e, sim_data + TIME_OFF, troot)?;
+                        return Ok(Step::Event { time: troot });
+                    }
+                    self.state_events += 1;
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
                     if let Some(r) = rows.as_deref_mut() {
@@ -1904,6 +1914,11 @@ impl DasslCore {
                 // despite float drift).
                 let te = if (te - tout).abs() <= eps { tout } else { te };
                 *did_step = true;
+                if stop_at_event {
+                    self.t = te;
+                    write_f64(e, sim_data + TIME_OFF, te)?;
+                    return Ok(Step::Event { time: te });
+                }
                 if let Some(r) = rows.as_deref_mut() {
                     emit_row(e, r, sim_data, layout, te)?; // pre-event row (held)
                 }
@@ -1942,9 +1957,9 @@ impl DasslCore {
 
 /// Co-Simulation: the FMU owns the integration, the importer picks the
 /// communication points. Unlike [`DasslEventsDriver`] there is no output grid and
-/// no rows -- `step_to` just advances the shared [`DasslCore`] to the next
-/// communication point, handling events internally on the way (FMI's
-/// `eventModeUsed = false`).
+/// no rows. [`step_to`](CsDriver::step_to) handles events internally
+/// (`eventModeUsed = false`); [`step_to_event`](CsDriver::step_to_event) stops at
+/// each event and reports it for the master to drive (`eventModeUsed = true`).
 ///
 /// The caller initializes the model (`run_initialization`) before building this,
 /// since FMI does that in its own Initialization Mode.
@@ -1956,12 +1971,17 @@ pub struct CsDriver {
     /// Only ever set for event-free models (events force DASSL, as in `make_driver`).
     euler_h: Option<f64>,
     euler_steps: u64,
+    /// A `do_event_update` ran since the last step, so `step_to_event` must re-read
+    /// states and restart DASKR.
+    resume_reinit: bool,
 }
 
-/// What [`CsDriver::step_to`] did.
+/// What [`CsDriver::step_to`] / [`step_to_event`](CsDriver::step_to_event) did.
 pub enum CsStep {
     /// Reached the requested time.
     Reached,
+    /// Event Mode only: stopped at an event at `time` for the master to handle.
+    Event { time: f64 },
     /// `terminate()` fired; `last_time` is where it stopped.
     Terminated,
 }
@@ -1991,7 +2011,7 @@ impl CsDriver {
         } else {
             None
         };
-        Ok(CsDriver { core, samp, pivots, euler_h, euler_steps: 0 })
+        Ok(CsDriver { core, samp, pivots, euler_h, euler_steps: 0, resume_reinit: false })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -2037,13 +2057,16 @@ impl CsDriver {
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
         let mut did_step = false;
         let outcome = self.core.integrate_to(
-            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step,
+            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, false,
         )?;
         self.core.nfe = ctx.nfe;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
-            // `deadline` is +inf and CS does not cancel, so these cannot arise.
-            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
+            // `deadline` is +inf, CS does not cancel, and `stop_at_event` is off on
+            // this path, so none of these can arise.
+            Step::Yielded | Step::Cancelled | Step::Event { .. } => {
+                return Err("CodegenWasmJit: CS step yielded unexpectedly")
+            }
             Step::Reached { .. } => {}
         }
         // Refresh the outputs at the communication point, and re-select states there
@@ -2061,6 +2084,95 @@ impl CsDriver {
             return Ok(CsStep::Terminated);
         }
         Ok(CsStep::Reached)
+    }
+
+    /// Event Mode step (`eventModeUsed = true`): integrate toward `t_target`,
+    /// stopping at the first event and returning [`CsStep::Event`] without the
+    /// discrete update — the master runs that via [`do_event_update`] and resumes.
+    ///
+    /// [`do_event_update`]: CsDriver::do_event_update
+    pub fn step_to_event(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+    ) -> Result<CsStep> {
+        let layout = &model.layout;
+        let sim_data = self.core.sim_data;
+        // A reinit or discrete change in the master's update needs a DASKR restart.
+        if self.resume_reinit {
+            if self.core.n_states > 0 {
+                e.call1("functionODE", sim_data)?;
+                self.core.read_states(e)?;
+                self.core.info[0] = 0;
+            }
+            self.resume_reinit = false;
+        }
+        // No continuous states: stop at the next sample in the step for the master.
+        if self.core.n_states == 0 {
+            let eps = t_target.abs().max(1.0) * 1e-10;
+            let te = self.samp.next_time();
+            if te <= t_target + eps {
+                self.core.t = te;
+                write_f64(e, sim_data + TIME_OFF, te)?;
+                return Ok(CsStep::Event { time: te });
+            }
+            self.core.t = t_target;
+            write_f64(e, sim_data + TIME_OFF, t_target)?;
+            e.call1_if_present("functionAlgebraics", sim_data)?;
+            return Ok(CsStep::Reached);
+        }
+
+        let mut ctx = self.core.res_ctx(e, layout);
+        let _guard = ResCtxGuard;
+        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        let mut did_step = false;
+        let outcome = self.core.integrate_to(
+            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, true,
+        )?;
+        self.core.nfe = ctx.nfe;
+        match outcome {
+            Step::Terminated => return Ok(CsStep::Terminated),
+            Step::Event { time } => return Ok(CsStep::Event { time }),
+            // `deadline` is +inf and CS does not cancel.
+            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
+            Step::Reached { .. } => {}
+        }
+        // Communication point reached with no event: refresh outputs like `step_to`.
+        write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+        write_f64(e, sim_data + TIME_OFF, t_target)?;
+        e.call1("functionODE", sim_data)?;
+        e.call1_if_present("functionAlgebraics", sim_data)?;
+        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            e.call1("functionODE", sim_data)?;
+            self.core.read_states(e)?;
+            self.core.info[0] = 0;
+        }
+        if terminated(e, sim_data, layout)? {
+            return Ok(CsStep::Terminated);
+        }
+        Ok(CsStep::Reached)
+    }
+
+    /// The master's `update-discrete-states` at the event `step_to_event` stopped on.
+    /// Fires any sample through the driver's own schedule so it stays in step with
+    /// the integrator, and flags a DASKR restart for the next step.
+    pub fn do_event_update(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        time: f64,
+    ) -> Result<EventUpdate> {
+        let layout = &model.layout;
+        let eps = time.abs().max(1.0) * 1e-10;
+        if self.samp.next_time() <= time + eps {
+            self.core.time_events += 1;
+        } else {
+            self.core.state_events += 1;
+        }
+        let up = event_update(e, self.core.sim_data, layout, Some(&mut self.samp), time)?;
+        self.resume_reinit = true;
+        Ok(up)
     }
 
     /// Fixed-step forward Euler to `t_target`, sub-stepping by `h0` and landing
@@ -2263,7 +2375,7 @@ impl Driver for DasslEventsDriver {
                 self.grid_covered = false;
             }
             match self.core.integrate_to(
-                e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step,
+                e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step, false,
             )? {
                 Step::Yielded => {
                     // Resume on the same row; `mid_row` keeps `grid_covered`.
@@ -2272,6 +2384,8 @@ impl Driver for DasslEventsDriver {
                 }
                 Step::Cancelled => return Ok(Advance::Cancelled),
                 Step::Terminated => break Advance::Terminated,
+                // `stop_at_event` is false here, so `Event` never arises.
+                Step::Event { .. } => unreachable!("stop_at_event is off for the output-grid driver"),
                 Step::Reached { grid_covered } => self.grid_covered |= grid_covered,
             }
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
