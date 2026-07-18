@@ -550,6 +550,24 @@ void assembleWeb() {
   sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
+
+  // Merge the three Rust-partest partition shards into one sorted failure list,
+  // archived so regressions are easy to diff between runs. Here (not a dedicated
+  // agent) since the web deliverable is already assembled; shards may be absent.
+  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
+  def haveShard = false
+  for (p in [1, 2, 3]) {
+    try {
+      unstash "partest-failed-${p}"
+      haveShard = true
+    } catch (ignored) {
+      echo "partest-failed-${p}: no shard (rust partest disabled or run failed)"
+    }
+  }
+  if (haveShard) {
+    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
+    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
+  }
 }
 
 void buildRustGUI() {
@@ -598,16 +616,26 @@ void partestRust(partition) {
     build/bin/omc-diff -v1.4
   """
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
-  sh """#!/bin/bash -x
+  sh """#!/bin/bash
+    set -o pipefail
     ulimit -t 1500
     ulimit -v 6291456
+    rm -f testsuite/partest-failed-${partition}.txt
     cd testsuite/partest
-    ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml${simCodeTargetArg}
-    CODE=\$?
+    set -x
+    ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+    CODE=\${PIPESTATUS[0]}
+    set +x
     # 0/7 == the run completed (7 means some tests failed); only fail the step on
     # anything else, so junit below still publishes the per-test results.
     test \$CODE = 0 -o \$CODE = 7 || exit 1
+    # This partition's failures, from the 'Failed tests:' block (the only
+    # tab-indented lines). Parsing stdout rather than failed.<branch> avoids the
+    # die on branch names with '/'. Stashed and merged in assemble-web.
+    grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
+    wc -l ../partest-failed-${partition}.txt
   """
+  stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
   // TODO: Make this conditional on a flag
   // junit 'testsuite/partest/result.xml'
 }
