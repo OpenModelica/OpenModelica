@@ -443,7 +443,10 @@ public
           if BVariable.isBound(c_var) then
             BVariable.setBindingAsStart(c_var, true);
           end if;
-          (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          // Only recurse for record children; scalar children are already handled by the parameters pass
+          if BVariable.isRecord(c_var) then
+            (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          end if;
         end for;
       end if;
 
@@ -453,7 +456,6 @@ public
       if not BVariable.hasEvaluableBinding(var) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
-        // generate equation only if variable is fixed
         if BVariable.isFixed(var) then
           parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
         end if;
