@@ -20,7 +20,7 @@ use super::SigTy;
 /// wasmtime errors carry their own (re-exported) `anyhow`, which does not unify
 /// with ours under the feature set we build with; flatten via the message.
 fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
-    r.map_err(|e| "{e:?}")
+    r.map_err(|_| "CodegenWasmJit: wasm engine error")
 }
 
 /// The static linear-memory runtime, precompiled from
@@ -179,7 +179,7 @@ fn value_as_f64(v: &Values::Value) -> Result<f64> {
         Values::Value::INTEGER { integer } => *integer as f64,
         Values::Value::BOOL { boolean } => *boolean as i64 as f64,
         Values::Value::ENUM_LITERAL { index, .. } => *index as f64,
-        other => return Err("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass to a wasm function"),
     })
 }
 
@@ -190,7 +190,7 @@ fn value_as_i32(v: &Values::Value) -> Result<i32> {
         Values::Value::BOOL { boolean } => *boolean as i32,
         Values::Value::ENUM_LITERAL { index, .. } => *index,
         Values::Value::REAL { real } => real.into_inner() as i32,
-        other => return Err("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass to a wasm function"),
     })
 }
 
@@ -241,7 +241,7 @@ pub(super) fn load_and_execute(
     // Marshal the arguments according to the input signature.
     let argv: Vec<&Arc<Values::Value>> = (&**args).into_iter().collect();
     if argv.len() != sig.inputs.len() {
-        return Err("CodegenWasmJit: function expects {} arguments, got {}");
+        return Err("CodegenWasmJit: function argument count mismatch");
     }
     let mut params: Vec<wasmtime::Val> = Vec::with_capacity(argv.len());
     for (a, ty) in argv.iter().zip(sig.inputs.iter()) {
@@ -269,7 +269,7 @@ pub(super) fn load_and_execute(
     wt(call_res)?;
 
     if results.len() != sig.outputs.len() {
-        return Err("CodegenWasmJit: wasm returned {} values but signature has {}");
+        return Err("CodegenWasmJit: wasm return-value/signature count mismatch");
     }
 
     let mut out: Vec<Arc<Values::Value>> = Vec::with_capacity(results.len());
@@ -291,7 +291,7 @@ fn read_rt_str(store: &mut Store, rt: &RtFns, handle: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, handle))? as usize;
     let data = wt(rt.str_data.call(&mut *store, handle))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.read(&*store, data, &mut buf).map_err(|e| "CodegenWasmJit: {e}")?;
+    rt.mem.read(&*store, data, &mut buf).map_err(|e| "CodegenWasmJit")?;
     Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
@@ -357,7 +357,7 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
 /// is self-describing for release/copy.
 fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v: &Values::Value) -> Result<i32> {
     let Values::Value::RECORD { orderd, comp, .. } = v else {
-        return Err("CodegenWasmJit: expected a record argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a record argument");
     };
     let layout = super::record_layout(fields);
     let obj = wt(rt.rec_new.call(&mut *store, (layout.heap.len() as i32, layout.size as i32)))?;
@@ -375,7 +375,7 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
     for (i, (fname, fty)) in fields.iter().enumerate() {
         let fv = by_name
             .get(fname.as_str())
-            .ok_or_else(|| "CodegenWasmJit: record argument missing field `{fname}`")?;
+            .ok_or_else(|| "CodegenWasmJit: record argument missing field")?;
         let addr = obj as usize + layout.data_off as usize + layout.field_off[i] as usize;
         write_elem(store, rt, fty, addr, fv)?;
     }
@@ -385,12 +385,12 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
 /// Materialize a `Values.STRING` into a fresh runtime string, returning its handle.
 fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32> {
     let Values::Value::STRING { string } = v else {
-        return Err("CodegenWasmJit: expected a String argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a String argument");
     };
     let b = string.as_bytes();
     let h = wt(rt.str_new.call(&mut *store, b.len() as i32))?;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
-    rt.mem.write(&mut *store, d, b).map_err(|e| "CodegenWasmJit: memory write: {e}")?;
+    rt.mem.write(&mut *store, d, b).map_err(|e| "CodegenWasmJit: memory write")?;
     Ok(h)
 }
 
@@ -399,11 +399,11 @@ fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32
 /// dimension; the leaves are flattened row-major and written into the object.
 fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &Values::Value) -> Result<i32> {
     let Values::Value::ARRAY { dimLst, .. } = v else {
-        return Err("CodegenWasmJit: expected an array argument, got {v:?}");
+        return Err("CodegenWasmJit: expected an array argument");
     };
     let dims: Vec<i32> = (&**dimLst).into_iter().copied().collect();
     if dims.len() as u32 != rank {
-        return Err("CodegenWasmJit: array argument has {} dimensions, expected rank {rank}");
+        return Err("CodegenWasmJit: array argument has dimensions, expected rank");
     }
     let total: i32 = dims.iter().product();
     let obj = wt(rt.arr_new.call(&mut *store, (elem.elem_kind() as i32, rank as i32, total)))?;
@@ -414,7 +414,7 @@ fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &V
     let mut leaves = Vec::new();
     flatten_values(v, &mut leaves);
     if leaves.len() as i32 != total {
-        return Err("CodegenWasmJit: array argument has {} elements but dimensions imply {total}");
+        return Err("CodegenWasmJit: array argument element/dimension count mismatch");
     }
     for (k, leaf) in leaves.iter().enumerate() {
         let addr = wt(rt.arr_elem_ptr.call(&mut *store, (obj, k as i32 + 1)))? as usize;
@@ -459,7 +459,7 @@ fn write_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize, v: &Valu
 }
 
 fn write_bytes(store: &mut Store, rt: &RtFns, addr: usize, bytes: &[u8]) -> Result<()> {
-    rt.mem.write(&mut *store, addr, bytes).map_err(|e| "CodegenWasmJit: memory write: {e}")
+    rt.mem.write(&mut *store, addr, bytes).map_err(|e| "CodegenWasmJit: memory write")
 }
 
 /// Build a `Values.Value` from a wasm result of the given Modelica type.
@@ -526,8 +526,8 @@ fn read_string(store: &mut Store, rt: &RtFns, h: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, h))? as usize;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.read(&*store, d, &mut buf).map_err(|e| "CodegenWasmJit: memory read: {e}")?;
-    String::from_utf8(buf).map_err(|e| "CodegenWasmJit: non-utf8 result string: {e}")
+    rt.mem.read(&*store, d, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
+    String::from_utf8(buf).map_err(|e| "CodegenWasmJit: non-utf8 result string")
 }
 
 /// Read a runtime array handle into a (nested) `Values.ARRAY` of element type
@@ -573,7 +573,7 @@ fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result
 
 fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Result<[u8; N]> {
     let mut buf = [0u8; N];
-    rt.mem.read(&*store, addr, &mut buf).map_err(|e| "CodegenWasmJit: memory read: {e}")?;
+    rt.mem.read(&*store, addr, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
     Ok(buf)
 }
 

@@ -509,6 +509,80 @@ fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     apply_overrides(e, sim_data, &overrides_store::starts())
 }
 
+/// Returned to abort a run on detected chattering (`-abortSlowSimulation`).
+pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to chattering";
+
+/// Log-line prefix `<stream>| <level>| ` at the runtime's column widths.
+fn log_prefix(stream: &str, level: &str) -> String {
+    format!("{stream:<18}| {level:<8}| ")
+}
+
+/// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
+/// before a run (the driver can only return a `&'static str`).
+mod chatter_store {
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    #[cfg(feature = "std")]
+    mod imp {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::{Cell, RefCell};
+        std::thread_local! {
+            static ABORT: Cell<bool> = const { Cell::new(false) };
+            static LOG: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+        }
+        pub fn set_abort(v: bool) {
+            ABORT.with(|a| a.set(v));
+        }
+        pub fn abort() -> bool {
+            ABORT.with(|a| a.get())
+        }
+        pub fn push(s: String) {
+            LOG.with(|l| l.borrow_mut().push(s));
+        }
+        pub fn take() -> Vec<String> {
+            LOG.with(|l| core::mem::take(&mut *l.borrow_mut()))
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::UnsafeCell;
+        // The in-wasm runtime is single-threaded, so a plain cell is sound.
+        struct Store(UnsafeCell<(bool, Vec<String>)>);
+        unsafe impl Sync for Store {}
+        static STORE: Store = Store(UnsafeCell::new((false, Vec::new())));
+        pub fn set_abort(v: bool) {
+            unsafe { (*STORE.0.get()).0 = v };
+        }
+        pub fn abort() -> bool {
+            unsafe { (*STORE.0.get()).0 }
+        }
+        pub fn push(s: String) {
+            unsafe { (*STORE.0.get()).1.push(s) };
+        }
+        pub fn take() -> Vec<String> {
+            unsafe { core::mem::take(&mut (*STORE.0.get()).1) }
+        }
+    }
+
+    pub use imp::{abort, push, set_abort, take};
+}
+
+/// Arm `-abortSlowSimulation` for the next run and clear any stale chattering log.
+pub fn set_abort_slow(v: bool) {
+    chatter_store::set_abort(v);
+    let _ = chatter_store::take();
+}
+
+/// Drain the chattering log lines the last run emitted.
+pub fn take_chatter_log() -> Vec<String> {
+    chatter_store::take()
+}
+
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
 /// with the relations fresh (init mode). Tries directly first (lambda = 1, so
 /// `homotopy(a, s)` = a); if that leaves a non-converged nonlinear system and the
@@ -554,7 +628,7 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
             e.call1("functionInitialEquations", sim_data)?;
         }
         if check_nls(e, sim_data, layout).is_err() {
-            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda={lambda}");
+            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda=");
         }
     }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
@@ -856,7 +930,7 @@ pub fn make_driver(
         "dassl" | "dasslrt" | "ida" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
         // Uniform host-driven Euler so it is resumable/cancellable like DASSL.
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
-        other => return Err("CodegenWasmJit: unsupported integration method `{other}` (supported: `dassl`, `euler`)"),
+        other => return Err("CodegenWasmJit: unsupported integration method (supported: `dassl`, `euler`)"),
     }
 }
 
@@ -1563,7 +1637,7 @@ impl Driver for DasslDriver {
                 continue;
             }
             if self.idid < 0 {
-                return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tout}), IDID={}");
+                return Err("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
             }
             // Interval complete: reset the resume state, write the interpolated state
             // back, and emit the row.
@@ -1663,7 +1737,16 @@ struct DasslCore {
     jac_a: Option<JacAInfo>,
     state_events: u64,
     time_events: u64,
+    /// Chattering detector: a ring of the last [`CHATTER_LIMIT`] state-event times
+    /// + a consecutive-event counter. Fires once.
+    chatter_times: [f64; CHATTER_LIMIT],
+    chatter_idx: usize,
+    chatter_consec: u32,
+    chatter_emitted: bool,
 }
+
+/// Consecutive state events within one output step that count as chattering.
+const CHATTER_LIMIT: usize = 100;
 
 /// How far [`DasslCore::integrate_to`] got.
 enum Step {
@@ -1739,7 +1822,34 @@ impl DasslCore {
             jac_a,
             state_events: 0,
             time_events: 0,
+            chatter_times: [0.0; CHATTER_LIMIT],
+            chatter_idx: 0,
+            chatter_consec: 0,
+            chatter_emitted: false,
         }
+    }
+
+    /// Record a state event at `time`. `Some((t0, time))` once [`CHATTER_LIMIT`]
+    /// consecutive events span less than `step_size`.
+    fn note_chatter_event(&mut self, time: f64, step_size: f64) -> Option<(f64, f64)> {
+        self.chatter_times[self.chatter_idx] = time;
+        self.chatter_consec += 1;
+        let hit = if !self.chatter_emitted && self.chatter_consec >= CHATTER_LIMIT as u32 {
+            let t0 = self.chatter_times[(self.chatter_idx + 1) % CHATTER_LIMIT];
+            (time - t0 < step_size).then_some((t0, time))
+        } else {
+            None
+        };
+        if hit.is_some() {
+            self.chatter_emitted = true;
+        }
+        self.chatter_idx = (self.chatter_idx + 1) % CHATTER_LIMIT;
+        hit
+    }
+
+    /// A step with no state event breaks the run.
+    fn note_clean_step(&mut self) {
+        self.chatter_consec = 0;
     }
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
@@ -1868,7 +1978,7 @@ impl DasslCore {
                     return Err(err);
                 }
                 if self.idid < 0 {
-                    return Err("CodegenWasmJit: DASSL (daskr) failed at t={} (target {tt}), IDID={}");
+                    return Err("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
                 }
                 for i in 0..n_states {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
@@ -1882,6 +1992,30 @@ impl DasslCore {
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
+                    let step_size = if model.n_intervals > 0 {
+                        (model.stop_time - model.start_time) / model.n_intervals as f64
+                    } else {
+                        0.0
+                    };
+                    if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
+                        let zc = self.jroot.iter().position(|&r| r != 0).unwrap_or(0);
+                        let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
+                        chatter_store::push(format!(
+                            "{}Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state \
+                             events in a row with a total time delta less than the step size \
+                             {step_size}). This can be a performance bottleneck. Use -lv LOG_EVENTS \
+                             for more information. The zero-crossing was: {desc}",
+                            log_prefix("LOG_STDOUT", "info"),
+                        ));
+                        if chatter_store::abort() {
+                            chatter_store::push(format!(
+                                "{}Aborting simulation due to chattering being detected and the \
+                                 simulation flags requesting we do not continue further.",
+                                log_prefix("LOG_ASSERT", "debug"),
+                            ));
+                            return Err(CHATTER_ABORT_ERR);
+                        }
+                    }
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
                     if let Some(r) = rows.as_deref_mut() {
@@ -1906,6 +2040,8 @@ impl DasslCore {
                     self.info[0] = 0;
                     continue;
                 }
+                // Reached the target with no state event: breaks a chattering run.
+                self.note_clean_step();
             }
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).

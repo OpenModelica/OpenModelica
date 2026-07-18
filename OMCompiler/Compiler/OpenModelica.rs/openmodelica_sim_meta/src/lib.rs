@@ -332,6 +332,10 @@ pub struct SimMeta {
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
+    /// Per-zero-crossing description (Modelica source of the relation, e.g.
+    /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
+    /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
+    pub zc_desc: Vec<String>,
 }
 
 // ─────────────────────────────── wire format ─────────────────────────────────
@@ -342,7 +346,7 @@ pub struct SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 3;
+const VERSION: u32 = 4;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -452,6 +456,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         o.push(v.negate as u8);
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
+    }
+    put_u32(&mut o, m.zc_desc.len() as u32);
+    for d in &m.zc_desc {
+        put_str(&mut o, d);
     }
     o
 }
@@ -612,9 +620,14 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let is_string = r.u8()? != 0;
         fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string });
     }
+    let ndesc = r.u32()? as usize;
+    let mut zc_desc = Vec::with_capacity(ndesc);
+    for _ in 0..ndesc {
+        zc_desc.push(r.string()?);
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs,
+        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc,
     })
 }
 
@@ -663,6 +676,7 @@ mod tests {
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
             ],
+            zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
         }
     }
 

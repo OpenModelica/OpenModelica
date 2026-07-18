@@ -138,6 +138,9 @@ for(@ARGV){
   }
   elsif(/^-simCodeTarget=(.*)$/) {
     $ENV{OPENMODELICA_TEST_SIMCODETARGET} = $1;
+    # Library sim tests read the env var (ModelTesting.mos); the standalone .mos
+    # tests only honour the omc flag, so pass it through RTEST_OMCFLAGS too.
+    $ENV{RTEST_OMCFLAGS} = (defined $ENV{RTEST_OMCFLAGS} ? $ENV{RTEST_OMCFLAGS} . " " : "") . "--simCodeTarget=$1";
   }
   elsif(/^-printtests$/) {
     $print_tests = 1;

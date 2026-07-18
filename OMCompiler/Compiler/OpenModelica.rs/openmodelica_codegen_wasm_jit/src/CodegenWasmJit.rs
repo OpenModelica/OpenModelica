@@ -504,6 +504,11 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
             "{output}LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n\
              LOG_SUCCESS       | info    | The simulation finished successfully.\n"
         ),
+        // Chattering abort (`-abortSlowSimulation`): init succeeded, then the driver's
+        // own `output` carries the chattering + aborting lines.
+        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!(
+            "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n{output}"
+        ),
         Err(e) => format!("{output}LOG_ERROR         | error   | wasm-jit simulation failed: {e:#}\n"),
     };
     let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
@@ -564,7 +569,7 @@ pub fn emitStandalone(simCode: SimCode::SimCode) -> Result<()> {
     let _ = simCode;
     let msg = "CodegenWasmJit: simCodeTarget=wasm (standalone export) is unavailable in the wasm omc build";
     record_error(msg.to_string());
-    return Err("{msg}")
+    return Err(msg)
 }
 
 /// `CodegenWasmJit.runSimulationWasmtime`: run the standalone module emitted by
@@ -594,7 +599,7 @@ fn run_wasmtime_inner(prefix: &str, result_file: &str, _simflags: &str) -> Resul
     use std::process::Command;
     let module = format!("{prefix}.wasm");
     if !std::path::Path::new(&module).exists() {
-        return Err("standalone module `{module}` not found (emitStandalone not run?)");
+        return Err("standalone module not found (emitStandalone not run?)");
     }
     let wasmtime = std::env::var("OMC_WASMTIME").unwrap_or_else(|_| "wasmtime".to_owned());
     // `--dir .::.` preopens the cwd as the guest `.`; the module writes the result
@@ -611,15 +616,15 @@ fn run_wasmtime_inner(prefix: &str, result_file: &str, _simflags: &str) -> Resul
         .arg(".::.")
         .arg(&module)
         .status()
-        .map_err(|e| "cannot run `{wasmtime}` (is it on PATH? override with OMC_WASMTIME): {e}")?;
+        .map_err(|e| "cannot run (is it on PATH? override with OMC_WASMTIME)")?;
     if !status.success() {
-        return Err("`{wasmtime} run {module}` failed with {status}");
+        return Err("` run ` failed with");
     }
     // The module writes `<prefix>_res.mat`; rename if omc selected another name.
     let produced = format!("{prefix}_res.mat");
     if result_file != produced && std::path::Path::new(&produced).exists() {
         std::fs::rename(&produced, result_file)
-            .map_err(|e| "cannot rename {produced} -> {result_file}: {e}")?;
+            .map_err(|e| "cannot rename ->")?;
     }
     Ok(())
 }
@@ -661,7 +666,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
         .get(prefix)
         .cloned();
     let Some(model) = model else {
-        return (Err("no prepared wasm-jit model for `{prefix}` (translateModel not run?)"), String::new());
+        return (Err("no prepared wasm-jit model for (translateModel not run?)"), String::new());
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
@@ -669,6 +674,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
     // slot and hand the list to the driver (applied after `functionParameters`).
     let (param_ov, start_ov) = resolve_overrides(&model, simflags);
     sim_driver::set_param_overrides(param_ov, start_ov);
+    // `-abortSlowSimulation`: stop the run when chattering is detected.
+    sim_driver::set_abort_slow(simflags.split_whitespace().any(|t| t == "-abortSlowSimulation"));
     openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
     let res = (|| -> Result<()> {
@@ -676,7 +683,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
         // benchmarking the solver in isolation from the `.mat` writer.
         let fmt = model.output_format.as_str();
         if fmt != "mat" && fmt != "empty" {
-            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got `{fmt}`)");
+            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)");
         }
         let run = sim_runtime::run(&model)?;
         if log_stats {
@@ -688,6 +695,12 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
         }
         Ok(())
     })();
+    // The driver reports chattering out-of-band (it can only return a `&'static str`);
+    // fold its log lines in whether the run finished or aborted.
+    for line in sim_driver::take_chatter_log() {
+        extra.push_str(&line);
+        extra.push('\n');
+    }
     let captured = openmodelica_wasi::wasi::take_stdout_capture();
     (res, format!("{captured}{extra}"))
 }
@@ -786,10 +799,10 @@ mod session {
             .unwrap_or_else(|e| e.into_inner())
             .get(prefix)
             .cloned()
-            .ok_or_else(|| "no prepared wasm-jit model for `{prefix}` (translateModel not run?)")?;
+            .ok_or_else(|| "no prepared wasm-jit model for (translateModel not run?)")?;
         let fmt = model.output_format.as_str();
         if fmt != "mat" && fmt != "empty" {
-            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got `{fmt}`)");
+            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)");
         }
         let (param_ov, start_ov) = resolve_overrides(&model, simflags);
         sim_driver::set_param_overrides(param_ov, start_ov);
@@ -1011,9 +1024,9 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
         .arg(&out_path)
         .arg("-all")
         .status()
-        .map_err(|e| "CodegenWasmJit: cannot run `{merge}`: {e}")?;
+        .map_err(|e| "CodegenWasmJit: cannot run")?;
     if !status.success() {
-        return Err("CodegenWasmJit: `{merge}` failed with {status}");
+        return Err("CodegenWasmJit: failed with");
     }
     let bytes = std::fs::read(&out_path).map_err(|_| "CodegenWasmJit: cannot read merged wasm")?;
     let _ = std::fs::remove_dir_all(&dir);
@@ -1979,7 +1992,7 @@ pub(crate) fn math_event_kind(name: &str, nargs: usize) -> Option<MathEventKind>
 pub(crate) fn math_event_index(last: &DAE::Exp) -> Result<u32> {
     match last {
         DAE::Exp::ICONST { integer } if *integer >= 0 => Ok(*integer as u32),
-        other => return Err("CodegenWasmJit: math-event index is not a non-negative ICONST: {other:?}"),
+        other => return Err("CodegenWasmJit: math-event index is not a non-negative ICONST"),
     }
 }
 
@@ -2011,7 +2024,7 @@ fn collect_zero_crossings(
     let mut out = Vec::new();
     for zc in lst(zcs) {
         if zc.iter.is_some() {
-            return Err("CodegenWasmJit: for-loop (iterator) zero-crossing not yet supported: {:?}");
+            return Err("CodegenWasmJit: for-loop (iterator) zero-crossing not yet supported");
         }
         match &*zc.relation_ {
             DAE::Exp::RELATION { .. } | DAE::Exp::LBINARY { .. } | DAE::Exp::LUNARY { .. } => {
@@ -2031,7 +2044,7 @@ fn collect_zero_crossings(
                 let ops = argv[..argv.len() - 1].to_vec();
                 out.push(ZcInfo::Math { kind, ops, idx });
             }
-            other => return Err("CodegenWasmJit: unsupported zero-crossing form: {other:?}"),
+            other => return Err("CodegenWasmJit: unsupported zero-crossing form"),
         }
     }
     Ok(out)
@@ -2370,7 +2383,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
-        fmi_vrs,
+        fmi_vrs, zc_descriptions(&zero_crossings),
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -2414,7 +2427,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             let key = extobj_destructor_key(sv)?;
             let didx = by_name
                 .get(&key)
-                .ok_or_else(|| "CodegenWasmJit: external-object destructor `{key}` was not compiled")?
+                .ok_or_else(|| "CodegenWasmJit: external-object destructor was not compiled")?
                 .index;
             let slot = layout.eobj_off + (i as u32) * 4;
             f.instruction(&I::LocalGet(0)); // SimData*
@@ -2709,6 +2722,7 @@ fn build_sim_meta(
     state_sets: &[StateSetInfo],
     state_nominals: &[f64],
     fmi_vrs: Vec<FmiVr>,
+    zc_desc: Vec<String>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -2725,7 +2739,23 @@ fn build_sim_meta(
         state_sets: state_sets.to_vec(),
         state_nominals: state_nominals.to_vec(),
         fmi_vrs,
+        zc_desc,
     }
+}
+
+/// The Modelica source of each zero-crossing relation (via
+/// `ExpressionBasics::printExpStr`), so the driver can name the crossing that
+/// triggered chattering. A math-event crossing has no relation string.
+fn zc_descriptions(crossings: &[ZcInfo]) -> Vec<String> {
+    crossings
+        .iter()
+        .map(|zc| match zc {
+            ZcInfo::Bool { expr } => openmodelica_frontend_dump::ExpressionBasics::printExpStr(expr.clone())
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
+            ZcInfo::Math { .. } => String::new(),
+        })
+        .collect()
 }
 
 /// A fresh `T_REAL` type for synthesizing the lhs `CREF` expression of a simple
@@ -2871,7 +2901,7 @@ fn build_eq_fn_with_prelude(
     ctx.emit_stateset_diag_init(stateset_diag)?;
     for (cref, exp) in prelude {
         let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
-        ctx.sim_assign(&lhs, exp).map_err(|e| "in {which} binding: {e}")?;
+        ctx.sim_assign(&lhs, exp)?;
     }
     for (i, eq) in eqs.iter().enumerate() {
         // Cancellation poll, throttled: the equation functions are the bulk of the
@@ -2879,8 +2909,7 @@ fn build_eq_fn_with_prelude(
         if i & 63 == 0 {
             metamodelica::cancel::bail_if_cancelled()?;
         }
-        lower_equation(&mut ctx, eq, eq_index)
-            .map_err(|e| "in {which}: {e}")?;
+        lower_equation(&mut ctx, eq, eq_index)?;
     }
     ctx.sim_save_pre_values(save_pre)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -3050,11 +3079,11 @@ fn lower_equation(
         E::SES_ALIAS { aliasOf, .. } => {
             let target = eq_index
                 .get(aliasOf)
-                .ok_or_else(|| "SES_ALIAS references unknown equation index {aliasOf}")?
+                .ok_or_else(|| "SES_ALIAS references unknown equation index")?
                 .clone();
             lower_equation(ctx, &target, eq_index)
         }
-        other => return Err("CodegenWasmJit: unsupported equation kind {} (index {})"),
+        other => Err(eq_kind_name(other)),
     }
 }
 
@@ -3112,7 +3141,7 @@ fn lower_linear_system_symbolic(
         let (row, col, eq) = entry;
         match &**eq {
             E::SES_RESIDUAL { exp, .. } => a_entries.push((*row as usize, *col as usize, exp)),
-            other => return Err("CodegenWasmJit: SES_LINEAR (index {}) simJac entry is {} (only SES_RESIDUAL supported)"),
+            other => return Err("CodegenWasmJit: SES_LINEAR simJac entry is not SES_RESIDUAL"),
         }
     }
     let b_exps: Vec<&Arc<DAE::Exp>> = lst(&lsystem.beqs).collect();
@@ -3127,7 +3156,7 @@ fn stateset_scratch_f64(state_sets: &Arc<List<SimCode::StateSet>>) -> Result<u32
     for set in lst(state_sets) {
         let col = lst(&set.jacobianMatrix.columns)
             .next()
-            .ok_or_else(|| "CodegenWasmJit: state set {} has no Jacobian column")?;
+            .ok_or_else(|| "CodegenWasmJit: state set has no Jacobian column")?;
         n += count(&set.jacobianMatrix.seedVars) as u32 + count(&col.columnVars) as u32;
     }
     Ok(n)
@@ -3149,9 +3178,9 @@ fn build_state_set_infos(
         let slot = var_map
             .vars
             .get(&key)
-            .ok_or_else(|| "CodegenWasmJit: state-set variable `{key}` has no slot")?;
+            .ok_or_else(|| "CodegenWasmJit: state-set variable has no slot")?;
         if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: state-set variable `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: state-set variable is not a Real variable");
         }
         Ok(slot.off)
     };
@@ -3161,7 +3190,7 @@ fn build_state_set_infos(
         let n_dummy = n_candidates - n_states;
         let col = lst(&set.jacobianMatrix.columns)
             .next()
-            .ok_or_else(|| "CodegenWasmJit: state set {} has no Jacobian column")?;
+            .ok_or_else(|| "CodegenWasmJit: state set has no Jacobian column")?;
 
         // Seed slots (candidate order) — register the seed var crefs.
         let mut seed_offs = Vec::new();
@@ -3197,7 +3226,7 @@ fn build_state_set_infos(
                 let slot = var_map
                     .vars
                     .get(&key)
-                    .ok_or_else(|| "CodegenWasmJit: state-set matrix entry `{key}` has no slot")?;
+                    .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
                 a_offs.push(slot.off);
             }
         }
@@ -3259,9 +3288,9 @@ fn stateset_diag_offsets(
             let slot = var_map
                 .vars
                 .get(&key)
-                .ok_or_else(|| "CodegenWasmJit: state-set matrix entry `{key}` has no slot")?;
+                .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
             if slot.wty != WTy::I32 {
-                return Err("CodegenWasmJit: state-set matrix entry `{key}` is not an Integer variable");
+                return Err("CodegenWasmJit: state-set matrix entry is not an Integer variable");
             }
             offs.push(slot.off);
         }
@@ -3283,7 +3312,7 @@ fn lower_nonlinear_system(
         .sim()?
         .nls_jobs
         .get(&nlsystem.index)
-        .ok_or_else(|| "CodegenWasmJit: SES_NONLINEAR (index {}) was not registered for rt_solve_nls")?;
+        .ok_or_else(|| "CodegenWasmJit: SES_NONLINEAR was not registered for rt_solve_nls")?;
     emit_solve_nls_call(ctx, job)
 }
 
@@ -3304,11 +3333,11 @@ fn nls_parts(
         }
     }
     if res_exps.is_empty() {
-        return Err("CodegenWasmJit: SES_NONLINEAR (index {}) has no residual equations");
+        return Err("CodegenWasmJit: SES_NONLINEAR has no residual equations");
     }
     let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
     if iter_vars.len() != res_exps.len() {
-        return Err("CodegenWasmJit: SES_NONLINEAR (index {}) has {} unknowns but {} residuals");
+        return Err("CodegenWasmJit: SES_NONLINEAR unknown/residual count mismatch");
     }
     Ok((inner, res_exps, iter_vars))
 }
@@ -3359,9 +3388,9 @@ fn build_nls_fns(
             .vars
             .get(&key)
             .copied()
-            .ok_or_else(|| "CodegenWasmJit: nonlinear-system unknown `{key}` has no slot")?;
+            .ok_or_else(|| "CodegenWasmJit: nonlinear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: nonlinear-system unknown `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: nonlinear-system unknown is not a Real variable");
         }
         slots.push(slot.off);
     }
@@ -3700,7 +3729,7 @@ fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: 
         .collect();
     let bytes = openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, params);
     let _ = &model.model_name; // (kept for diagnostics)
-    write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write {path}: {e}")
+    write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
 }
 
 // The standalone-export merge uses `wasmtime::Module` to validate the result, so

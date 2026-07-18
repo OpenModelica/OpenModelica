@@ -108,7 +108,7 @@ pub(crate) fn compile_linear_system(
         return Ok(());
     }
     if res_exps.len() != n {
-        return Err("CodegenWasmJit: linear system has {n} unknowns but {} residuals");
+        return Err("CodegenWasmJit: linear system unknown/residual count mismatch");
     }
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(n);
@@ -119,9 +119,9 @@ pub(crate) fn compile_linear_system(
             .vars
             .get(&key)
             .copied()
-            .ok_or_else(|| "CodegenWasmJit: linear-system unknown `{key}` has no slot")?;
+            .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
         }
         slots.push(slot.off);
     }
@@ -227,7 +227,7 @@ pub(crate) fn compile_linear_system_symbolic(
         return Ok(());
     }
     if b_exps.len() != n {
-        return Err("CodegenWasmJit: SES_LINEAR (index {index}) has {n} unknowns but {} b entries");
+        return Err("CodegenWasmJit: SES_LINEAR unknown/b-entry count mismatch");
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in vars {
@@ -237,9 +237,9 @@ pub(crate) fn compile_linear_system_symbolic(
             .vars
             .get(&key)
             .copied()
-            .ok_or_else(|| "CodegenWasmJit: linear-system unknown `{key}` has no slot")?;
+            .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: linear-system unknown `{key}` is not a Real variable");
+            return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
         }
         slots.push(slot.off);
     }
@@ -265,7 +265,7 @@ pub(crate) fn compile_linear_system_symbolic(
     // A[row + col*n] = element expression (column-major).
     for &(row, col, exp) in a_entries {
         if row >= n || col >= n {
-            return Err("CodegenWasmJit: SES_LINEAR (index {index}) simJac entry ({row},{col}) out of range for size {n}");
+            return Err("CodegenWasmJit: SES_LINEAR simJac entry out of range for size");
         }
         let elem_off = a_off + ((col * n + row) as u32) * 8;
         ctx.emit(we::Instruction::LocalGet(base));
