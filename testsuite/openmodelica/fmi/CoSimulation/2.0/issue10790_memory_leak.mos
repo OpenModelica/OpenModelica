@@ -1,0 +1,57 @@
+// name:     issue10790_memory_leak
+// keywords: fmu export simulation memory leak co-simulation
+// status: correct
+// teardown_command: rm -rf issue10790.fmu issue10790* memoryLeakFmu* tmp-*
+// cflags: -d=-newInst
+//
+// Regression test for #10790: co-simulation FMU memory leak from un-freed
+// function-local array allocations.
+
+loadString("
+model memoryLeakFmu
+  function leakyFunc
+    input Real x;
+    output Real y;
+  protected
+    Real[100000] tmp;
+  algorithm
+    y := 0;
+    for i in 1:100000 loop
+      tmp[i] := x * i * 1e-12;
+      y := y + tmp[i];
+    end for;
+  end leakyFunc;
+
+  Real z;
+equation
+  der(z) = leakyFunc(time) - z;
+end memoryLeakFmu;
+"); getErrorString();
+
+buildModelFMU(memoryLeakFmu, version="2.0", fmuType="me_cs"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator memoryLeakFmu.fmu --mode=cs --stopTime=10.0 --stepSize=0.01 --resultFile=\"memoryLeakFmu_res.mat\" --suppressPath=true --tempDir=\"tmp-issue10790\"", "issue10790_sim.log"); getErrorString();
+readFile("issue10790_sim.log"); getErrorString();
+
+val(z, 10.0, "memoryLeakFmu_res.mat"); getErrorString();
+
+// Result:
+// true
+// ""
+// "memoryLeakFmu.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "info:    *** FMU Simulation Info ***
+//           - model:     memoryLeakFmu (co-simulation)
+//           - startTime: 0.000000
+//           - stopTime:  10.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.010000
+// info:    Result file: memoryLeakFmu_res.mat (bufferSize=1)
+// "
+// ""
+// 0.0450006658583956
+// ""
+// endResult
