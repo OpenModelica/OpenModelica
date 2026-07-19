@@ -1,0 +1,43 @@
+// name: integerIteratorNoEvent
+// keywords: NewBackend integer iterator for-loop when-block no state event
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf IntegerIteratorNoEvent_* IntegerIteratorNoEvent.libs
+
+loadString("
+model IntegerIteratorNoEvent
+  \"Integer loop iterators inside when-blocks must not generate state events ($SEV).\"
+  Real x(start = 0.0, fixed = true);
+  Real outputs[3](each start = 0.0, each fixed = true);
+  parameter Real dt = 0.1;
+equation
+  der(x) = 1.0;
+algorithm
+  when sample(0, dt) then
+    for m in 1:3 loop
+      if m == 1 then
+        outputs[m] := x;
+      elseif m == 2 then
+        outputs[m] := 2.0 * x;
+      else
+        outputs[m] := 3.0 * x;
+      end if;
+    end for;
+  end when;
+end IntegerIteratorNoEvent;
+"); getErrorString();
+
+simulate(IntegerIteratorNoEvent, stopTime = 0.5); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IntegerIteratorNoEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IntegerIteratorNoEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

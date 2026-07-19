@@ -3,6 +3,8 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage.mos \
 Buildings.Fluid.Humidifiers.Examples.Humidifier_u.mos \
+Buildings.Fluid.Boilers.Examples.BoilerPolynomial.mos \
+Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

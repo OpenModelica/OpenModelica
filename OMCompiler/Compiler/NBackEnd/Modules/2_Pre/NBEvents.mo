@@ -1213,6 +1213,11 @@ protected
         end match;
       end if;
     else
+      // state/composite events require at least one continuous real variable;
+      // skip purely discrete/integer conditions like (m == 1) with iterator m
+      if not BackendUtil.containsContinuousVar(exp) then
+        return;
+      end if;
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createEqn);
     end if;
 

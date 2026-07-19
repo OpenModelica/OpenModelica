@@ -1654,6 +1654,15 @@ algorithm
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
           end if;
+          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
+          // function return types using 'name' produce "unknown type name" C errors, because
+          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
+          if isNone(UnorderedMap.get(name, recDeclsMap)) then
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
+            UnorderedMap.add(name, recDecl, recDeclsMap);
+            collectRecDeclsFromTypesVars(varlst, recDeclsMap);
+          end if;
         end if;
       then ();
 
