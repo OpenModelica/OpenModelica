@@ -112,6 +112,16 @@ function parseFigures(root) {
   return figures;
 }
 
+// The OpenModelica <Visualization> annotation naming the _visual.xml resource, or null.
+function parseVisualization(root) {
+  const v = root.querySelector(':scope > Annotations > Tool[name="OpenModelica"] > Visualization');
+  if (!v) return null;
+  const version = attr(v, 'version');
+  if (version != null && version !== '1') return null;
+  const file = attr(v, 'file');
+  return file ? { file } : null;
+}
+
 export function parseModelDescription(xml) {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   const perr = doc.querySelector('parsererror');
@@ -122,13 +132,16 @@ export function parseModelDescription(xml) {
   if (!fmiVersion.startsWith('3.')) throw new Error(`FMI version ${fmiVersion || '?'} is not supported; this simulator requires FMI 3.0`);
 
   const variables = [];
+  // FMI 3.0 <Alias> name -> primary name; many visualization crefs are aliases.
+  const aliases = new Map();
   const mv = root.querySelector('ModelVariables');
   for (const e of mv ? Array.from(mv.children) : []) {
     const type = TYPES[e.tagName];
     if (!type) continue;
     const start = attr(e, 'start');
+    const name = attr(e, 'name') || '';
     variables.push({
-      name: attr(e, 'name') || '',
+      name,
       vr: parseInt(attr(e, 'valueReference'), 10),
       tag: e.tagName,
       type,
@@ -141,6 +154,10 @@ export function parseModelDescription(xml) {
       description: attr(e, 'description') || '',
       derivative: attr(e, 'derivative'),
     });
+    for (const al of e.querySelectorAll(':scope > Alias')) {
+      const an = attr(al, 'name');
+      if (an) aliases.set(an, name);
+    }
   }
 
   const de = root.querySelector('DefaultExperiment');
@@ -162,10 +179,18 @@ export function parseModelDescription(xml) {
       tolerance: de ? numAttr(de, 'tolerance') : null,
     },
     variables,
+    aliases,
     nStates: ms ? ms.querySelectorAll(':scope > ContinuousStateDerivative').length : 0,
     nEventIndicators: ms ? ms.querySelectorAll(':scope > EventIndicator').length : 0,
     figures: parseFigures(root),
+    visualization: parseVisualization(root),
   };
+}
+
+// The text of an FMU resource (path relative to resources/), or null.
+export function readResource(files, name) {
+  const bytes = files.get('resources/' + name);
+  return bytes ? new TextDecoder().decode(bytes) : null;
 }
 
 // The wasm component lives at binaries/wasm32-wasip2/<modelIdentifier>.wasm; fall

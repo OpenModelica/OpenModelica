@@ -1416,6 +1416,31 @@ pub fn emitMeCsFmu(
     emit_fmu(sim_code, fmu_path, model_description, FMI3_MECS_ADAPTER, "me_cs")
 }
 
+/// The distinct CAD file references (`<type>` values ending in a CAD extension)
+/// in a `_visual.xml`, in document order.
+fn cad_type_refs(visual_xml: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut rest = visual_xml;
+    while let Some(i) = rest.find("<type>") {
+        rest = &rest[i + "<type>".len()..];
+        let Some(j) = rest.find("</type>") else { break };
+        let t = &rest[..j];
+        let lower = t.to_ascii_lowercase();
+        if [".dxf", ".stl", ".obj", ".3ds"].iter().any(|e| lower.ends_with(e))
+            && !out.iter().any(|s| s == t)
+        {
+            out.push(t.to_string());
+        }
+        rest = &rest[j + "</type>".len()..];
+    }
+    out
+}
+
+/// The FMU-resource file name for a CAD reference (its basename).
+fn cad_basename(uri: &str) -> &str {
+    uri.rsplit(['/', '\\']).next().unwrap_or(uri)
+}
+
 fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
@@ -1441,10 +1466,29 @@ fn emit_fmu(
         }
         let component = link_fmu_component(&model.wasm, adapter)?;
         let model_id = sanitize_identifier(&model.model_name);
-        let fmu = zip_store(&[
+        let mut entries = vec![
             ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
             (format!("binaries/wasm32-wasip2/{model_id}.wasm"), component),
-        ]);
+        ];
+        // Ship the -d=visxml scene as a resource (the <Visualization> annotation
+        // points at it), plus the CAD files it references so the scene is
+        // self-contained. openmodelica_wasi::fs, not std::fs, which no-ops on wasm.
+        if openmodelica_util::Flags::isSet(openmodelica_util::Flags::VISUAL_XML.clone()).unwrap_or(false) {
+            let visual = format!("{}_visual.xml", sim_code.fileNamePrefix);
+            if let Ok(data) = openmodelica_wasi::fs::read(&visual) {
+                let xml = String::from_utf8_lossy(&data).into_owned();
+                entries.push((format!("resources/{visual}"), data));
+                for uri in cad_type_refs(&xml) {
+                    let base = cad_basename(&uri);
+                    if let Ok(path) = metamodelica::uriToFilename(ArcStr::from(uri.as_str())) {
+                        if let Ok(bytes) = openmodelica_wasi::fs::read(&path) {
+                            entries.push((format!("resources/{base}"), bytes));
+                        }
+                    }
+                }
+            }
+        }
+        let fmu = zip_store(&entries);
         write_output(&fmu_path, &fmu).map_err(|_| "CodegenWasmJit: cannot write .fmu")?;
         Ok(())
     })();

@@ -67,8 +67,14 @@ export function makeRecorder(md) {
   const columns = vars.map((v) => ({ name: v.name, unit: v.unit, causality: v.causality, isState: stateVrs.has(v.vr), values: [] }));
   const index = new Map(vars.map((v, i) => [v, i]));
   const time = [];
+  // Numeric non-recorded values (parameters, constants), read once after init: the
+  // 3D view needs shape attributes (size, colour, directions) that aren't sampled.
+  const recordedSet = new Set(vars);
+  const staticGroups = groupByType(md.variables.filter(
+    (v) => v.numeric && v.causality !== 'independent' && !recordedSet.has(v)));
+  const parameters = new Map();   // name -> number
   return {
-    columns, time,
+    columns, time, parameters,
     warning: null,   // set when a run ends before the stop time for a benign reason
     terminated: null, // time of a model-requested `terminate()` — a normal, successful stop
     sample(inst, t) {
@@ -76,6 +82,13 @@ export function makeRecorder(md) {
       for (const g of groups) {
         const values = call(`get-${g.type.toLowerCase()}`, () => inst[`get${g.type}`](g.vrs));
         g.items.forEach((it, k) => columns[index.get(it)].values.push(toNumber(values[k])));
+      }
+    },
+    snapshotParameters(inst) {
+      for (const g of staticGroups) {
+        let values;
+        try { values = inst[`get${g.type}`](g.vrs); } catch { continue; }
+        if (values) g.items.forEach((it, k) => parameters.set(it.name, toNumber(values[k])));
       }
     },
   };
@@ -123,6 +136,7 @@ export async function runCS(inst, md, o) {
     eventIteration(inst);
     check('enter-step-mode', inst.enterStepMode());
   }
+  rec.snapshotParameters(inst);
   rec.sample(inst, o.startTime);
 
   let t = o.startTime;
@@ -172,6 +186,7 @@ export async function runME(inst, md, o) {
   if (info.terminateSimulation) throw new Error('the FMU requested termination during initialization');
   check('enter-continuous-time-mode', inst.enterContinuousTimeMode());
 
+  rec.snapshotParameters(inst);
   const nx = count(inst, 'getNumberOfContinuousStates', md.nStates);
   const nz = count(inst, 'getNumberOfEventIndicators', md.nEventIndicators);
   const rtol = o.tolerance || 1e-6;

@@ -61,6 +61,7 @@
 <script type="importmap">
 {
   "imports": {
+    "three": "../anim/three.module.min.js",
     "@bytecodealliance/preview2-shim/cli": "./vendor/preview2-shim/cli.js",
     "@bytecodealliance/preview2-shim/clocks": "./vendor/preview2-shim/clocks.js",
     "@bytecodealliance/preview2-shim/filesystem": "./vendor/preview2-shim/filesystem.js",
@@ -126,9 +127,11 @@
 </main>
 
 <script type="module">
-import { loadFmu } from './fmu.js';
+import { loadFmu, readResource } from './fmu.js';
 import { simulate } from './master.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { AnimView } from '../anim/anim-view.js';
+import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 
 const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), openBtn = el('open'), fileEl = el('file');
@@ -145,6 +148,7 @@ let fields = [];        // { v, input, kind:'input'|'parameter' }
 let running = false, cancelled = false, logCount = 0;
 let lastRec = null;     // the most recent simulation record, for re-rendering
 let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
+let animView = null;    // shared 3D animation panel, if the FMU carries a <Visualization>
 
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
@@ -179,6 +183,7 @@ async function openFile(file) {
   try {
     const buf = await file.arrayBuffer();
     const t0 = performance.now();
+    if (animView) animView.hide();
     fmu = await loadFmu(buf, { onLog: (status, text) => log(status, text) });
     const probe = await fmu.instance();
     const ms = Math.round(performance.now() - t0);
@@ -341,6 +346,7 @@ async function run() {
     const rec = await simulate(await fmu.instance(), ifaceEl.value, opts);
     const ms = Math.round(performance.now() - t0);
     renderCharts(rec);
+    renderAnimation(rec);
     const kind = ifaceEl.value === 'me' ? 'Model Exchange' : 'Co-Simulation';
     if (rec.warning) { setStatus(rec.warning, 'err'); log('warning', rec.warning); }
     else if (rec.terminated != null) {
@@ -367,6 +373,35 @@ function updateFigToggle() {
   const have = haveFigures() && !!lastRec;
   figToggle.hidden = !have;
   figToggle.textContent = (viewMode === 'all') ? 'Figures' : 'All variables';
+}
+
+// Build the 3D scene from the FMU's <Visualization> resource and the run's data,
+// via the shared anim core. CAD shapes whose modelica:// URI isn't in the FMU are skipped.
+async function renderAnimation(rec) {
+  const viz = fmu && fmu.md.visualization;
+  const xml = viz && readResource(fmu.files, viz.file);
+  if (!xml) { if (animView) animView.hide(); return; }
+  const byName = new Map(rec.columns.map((c) => [c.name, c]));
+  const aliases = fmu.md.aliases || new Map();
+  // A cref is a recorded column or a static parameter, possibly via an <Alias>.
+  const lookup = (name) => {
+    const n = byName.has(name) || (rec.parameters && rec.parameters.has(name)) ? name : (aliases.get(name) || name);
+    const c = byName.get(n);
+    if (c) return c.values;
+    const p = rec.parameters && rec.parameters.get(n);
+    return p == null ? undefined : [p];
+  };
+  try {
+    const built = await buildAnimData(xml, rec.time, lookup);
+    if (!built) { if (animView) animView.hide(); return; }
+    // CAD shapes: read the embedded DXF resource (basename of the type URI).
+    attachCadMeshes(built.shapes, (type) => readResource(fmu.files, type.split(/[\\/]/).pop()));
+    if (built.missing && built.missing.length) {
+      log('warning', `3D view: ${built.missing.length} shape variable(s) not found in the FMU result (rendered with 0) — e.g. ${built.missing.slice(0, 3).join(', ')}`);
+    }
+    if (!animView) { animView = new AnimView(); chartsEl.parentElement.insertBefore(animView.el, chartsEl); }
+    animView.setData(built);
+  } catch (e) { log('host', 'animation failed: ' + (e.message || e)); if (animView) animView.hide(); }
 }
 
 function renderCharts(rec) {

@@ -13,8 +13,10 @@ import init, {
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
-  omc_anim_scene, omc_anim_all_frames, omc_anim_stride, omc_dxf_mesh,
 } from '../omc/OpenModelicaCompiler.js';
+// Shared MultiBody animation core (standalone wasm), the same module the FMI
+// simulator uses; fed here from the omc result store rather than an FMU.
+import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
@@ -324,31 +326,33 @@ self.onmessage = async (ev) => {
         break;
       }
       case 'anim': {
-        // MultiBody animation for the last run: the shape scene (present only if
-        // the model enabled `-d=visxml`, e.g. via __OpenModelica_commandLineOptions)
-        // plus the flat per-frame transform buffer the JS renderer plays back.
-        const scene = omc_anim_scene();
-        if (!scene || !scene.shapes || !scene.shapes.length) { reply({ available: false }); break; }
+        // Build the last run's scene from the VFS visxml + omc result columns.
+        const info = omc_sim_info();
+        const model = info && info.model;
+        const xmlBytes = model && wasiReadFile(model + '_visual.xml');
         const times = omc_sim_time();
-        const data = omc_anim_all_frames();
-        if (!times || !data) { reply({ available: false }); break; }
-        const transfer = [times.buffer, data.buffer];
-        // Load real geometry for CAD shapes (dxf): resolve the modelica:// URI to
-        // a VFS file and parse it (in Rust) into a triangle mesh the client renders.
-        for (const s of scene.shapes) {
-          if (s.kind !== 9 || !/\.dxf$/i.test(s.type || '')) continue;   // 9 = ShapeKind::Cad
-          try {
-            const path = unquote(omc_eval(`uriToFilename("${esc(s.type)}")`));
-            const bytes = path && wasiReadFile(path);
-            if (!bytes) continue;
-            const mesh = omc_dxf_mesh(new TextDecoder().decode(bytes));
-            if (mesh && mesh.positions && mesh.positions.length) {
-              s.mesh = mesh;
-              transfer.push(mesh.positions.buffer, mesh.normals.buffer, mesh.colors.buffer);
-            }
-          } catch (e) { wlog('dxf load failed for ' + s.type + ': ' + e); }
-        }
-        reply({ available: true, scene, times, data, stride: omc_anim_stride() }, transfer);
+        if (!xmlBytes || !times) { reply({ available: false }); break; }
+        const series = omc_sim_series() || [];
+        const idxByName = new Map(series.map((m, i) => [m.name, i]));
+        const colCache = new Map();
+        const lookup = (name) => {
+          if (colCache.has(name)) return colCache.get(name);
+          const i = idxByName.get(name);
+          const c = (i != null) ? omc_sim_column(i) : undefined;
+          colCache.set(name, c);
+          return c;
+        };
+        const built = await buildAnimData(new TextDecoder().decode(xmlBytes), times, lookup);
+        if (!built) { reply({ available: false }); break; }
+        const transfer = [built.times.buffer, built.data.buffer];
+        // CAD shapes: resolve the modelica:// URI to a VFS file for the shared core.
+        attachCadMeshes(built.shapes, (type) => {
+          const path = unquote(omc_eval(`uriToFilename("${esc(type)}")`));
+          const bytes = path && wasiReadFile(path);
+          return bytes ? new TextDecoder().decode(bytes) : null;
+        });
+        for (const s of built.shapes) if (s.mesh) transfer.push(s.mesh.positions.buffer, s.mesh.normals.buffer, s.mesh.colors.buffer);
+        reply({ available: true, shapes: built.shapes, times: built.times, data: built.data, stride: built.stride }, transfer);
         break;
       }
       case 'exportFmu': {

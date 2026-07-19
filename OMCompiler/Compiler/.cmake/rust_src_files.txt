@@ -25,7 +25,6 @@ libopenmodelica_compiler/src/mmc_compat.rs
 libopenmodelica_compiler/src/omedit_runtime.rs
 libopenmodelica_compiler/src/sim_metadata.rs
 libopenmodelica_compiler/src/wasm_api.rs
-libopenmodelica_compiler/src/wasm_anim.rs
 libopenmodelica_compiler/src/wasm_plot.rs
 metamodelica/Cargo.toml
 metamodelica/src/Dangerous.rs
@@ -102,6 +101,8 @@ openmodelica_animation/src/dxf.rs
 openmodelica_animation/src/math.rs
 openmodelica_animation/src/scene.rs
 openmodelica_animation/tests/DoublePendulum_visual.xml
+openmodelica_animation_wasm/Cargo.toml
+openmodelica_animation_wasm/src/lib.rs
 openmodelica_ast/Cargo.toml
 openmodelica_ast/src/Absyn.rs
 openmodelica_ast/src/GlobalScript.rs
@@ -288,10 +289,12 @@ wasm/home/index.html
 wasm/omc-terminal/index.html
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
-wasm/simulator/animation.js
-wasm/simulator/OrbitControls.js
 wasm/simulator/config.json
 wasm/simulator/examples/BouncingBall.mo
+wasm/anim/animation.js
+wasm/anim/OrbitControls.js
+wasm/anim/anim-view.js
+wasm/anim/anim-core.js
 wasm/fmi-simulator/index.html
 wasm/fmi-simulator/fmu.js
 wasm/fmi-simulator/master.js

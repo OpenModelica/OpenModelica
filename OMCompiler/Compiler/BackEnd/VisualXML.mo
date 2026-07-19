@@ -46,6 +46,7 @@ encapsulated package VisualXML
 protected
 
 import Absyn;
+import Array;
 import Error;
 import ExpressionBasics;
 import ProgramUtil;
@@ -131,7 +132,7 @@ author:Waurich TUD 2015-04"
 protected
   BackendDAE.EqSystems eqs, eqs0;
   BackendDAE.Shared shared;
-  BackendDAE.Variables globalKnownVars, aliasVars;
+  BackendDAE.Variables globalKnownVars, aliasVars, constVars;
   list<BackendDAE.Var> globalKnownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
   list<tuple<DAE.ComponentRef, String>> allVisuals;
@@ -159,6 +160,10 @@ algorithm
   //some expressions refer to other known parameters, get them
   visuals := List.map2(visuals,replaceVisualBinding,globalKnownVars,program);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
+
+  // Inline constant attributes so the xml survives an FMU export folding them away.
+  constVars := BackendVariable.mergeVariables(globalKnownVars, aliasVars);
+  visuals := List.map1(visuals, inlineConstVisAttributes, constVars);
 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
@@ -197,6 +202,85 @@ algorithm
     else ();
   end matchcontinue;
 end replaceVisualBinding;
+
+function inlineConstVisAttributes
+  "Inline attributes that resolve to a genuine constant, so the _visual.xml is
+   self-contained for constants an FMU export folds away (e.g. axis-label frames)."
+  input output Visualization vis;
+  input BackendDAE.Variables vars;
+algorithm
+  () := match vis
+    case SHAPE()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r := Array.map1(vis.r, inlineConstExp, vars);
+        vis.r_shape := Array.map1(vis.r_shape, inlineConstExp, vars);
+        vis.lengthDir := Array.map1(vis.lengthDir, inlineConstExp, vars);
+        vis.widthDir := Array.map1(vis.widthDir, inlineConstExp, vars);
+        vis.length := inlineConstExp(vis.length, vars);
+        vis.width := inlineConstExp(vis.width, vars);
+        vis.height := inlineConstExp(vis.height, vars);
+        vis.extra := inlineConstExp(vis.extra, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+        vis.specularCoeff := inlineConstExp(vis.specularCoeff, vars);
+      then ();
+
+    case VECTOR()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r := Array.map1(vis.r, inlineConstExp, vars);
+        vis.coordinates := Array.map1(vis.coordinates, inlineConstExp, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+      then ();
+
+    case SURFACE()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r_0 := Array.map1(vis.r_0, inlineConstExp, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+      then ();
+
+    else ();
+  end match;
+end inlineConstVisAttributes;
+
+function inlineConstExpList
+  input output list<DAE.Exp> exps;
+  input BackendDAE.Variables vars;
+algorithm
+  exps := List.map1(exps, inlineConstExp, vars);
+end inlineConstExpList;
+
+function inlineConstExp
+  input output DAE.Exp exp;
+  input BackendDAE.Variables vars;
+algorithm
+  exp := matchcontinue exp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CREF(componentRef = cr) then tryConstCrefValue(cr, vars);
+    else exp;
+  end matchcontinue;
+end inlineConstExp;
+
+function tryConstCrefValue
+  "`cr`'s value when it resolves through alias bindings to a literal, never via a
+   parameter (settable in an FMU, so must stay a cref). Fails otherwise."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output DAE.Exp exp;
+protected
+  BackendDAE.Var var;
+  DAE.Exp bind;
+algorithm
+  ({var}, _) := BackendVariable.getVar(cr, vars);   // only known/alias vars; dynamic ones fail
+  false := BackendVariable.isParam(var);            // parameter: keep the cref
+  bind := BackendVariable.varBindExp(var);          // fails when there is no binding
+  exp := match bind
+    case _ guard Expression.isConst(bind) then bind;
+    case DAE.CREF() then tryConstCrefValue(Expression.expCref(bind), vars);
+  end match;
+end tryConstCrefValue;
 
 function getConstCrefBinding
   "Get the const binding for the cref. It has to be somewhere in the vars.

@@ -68,6 +68,25 @@ pub extern "C" fn rt_assert(
     core::arch::wasm32::unreachable()
 }
 
+/// Warning-level assertion: non-fatal, so continue. No host logger here, so the
+/// message is dropped.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_warning(
+    _cond: i32,
+    _msg: i32,
+    _file: i32,
+    _sline: i32,
+    _scol: i32,
+    _eline: i32,
+    _ecol: i32,
+    _read_only: i32,
+) {
+}
+
+/// The `print` builtin. No host stdout here, so the output is discarded.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_print(_str: i32) {}
+
 // ── SimEngine over the merged module's shared linear memory ──────────────────
 struct Engine;
 
