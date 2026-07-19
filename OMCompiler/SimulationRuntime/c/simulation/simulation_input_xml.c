@@ -199,6 +199,63 @@ typedef struct omc_ModelInput
   omc_ModelVariables**  lastCT; /* type (classification) */
 } omc_ModelInput;
 
+static inline void freeHashStringString(hash_string_string *ht)
+{
+  if (ht) {
+    hash_string_string *it, *tmp;
+    HASH_ITER(hh, ht, it, tmp) {
+      free((char*)it->id);
+      free((char*)it->val);
+      free(it);
+    }
+  }
+}
+
+static inline void freeHashStringLong(hash_string_long *ht)
+{
+  if (ht) {
+    hash_string_long *it, *tmp;
+    HASH_ITER(hh, ht, it, tmp) {
+      free((char*)it->id);
+      free(it);
+    }
+  }
+}
+
+static inline void freeHashLongVarValues(hash_long_var *ht)
+{
+  if (ht) {
+    hash_long_var *it, *tmp;
+    HASH_ITER(hh, ht, it, tmp) {
+      HASH_DEL(ht, it);
+      free(it);
+    }
+  }
+}
+
+static inline void freeModelInput(omc_ModelInput *mi)
+{
+  if (!mi) return;
+  freeHashStringString(mi->md);
+  freeHashStringString(mi->de);
+  freeHashLongVarValues(mi->rSta);
+  freeHashLongVarValues(mi->rDer);
+  freeHashLongVarValues(mi->rAlg);
+  freeHashLongVarValues(mi->rPar);
+  freeHashLongVarValues(mi->rAli);
+  freeHashLongVarValues(mi->rSen);
+  freeHashLongVarValues(mi->iAlg);
+  freeHashLongVarValues(mi->iPar);
+  freeHashLongVarValues(mi->iAli);
+  freeHashLongVarValues(mi->bAlg);
+  freeHashLongVarValues(mi->bPar);
+  freeHashLongVarValues(mi->bAli);
+  freeHashLongVarValues(mi->sAlg);
+  freeHashLongVarValues(mi->sPar);
+  freeHashLongVarValues(mi->sAli);
+  free(mi);
+}
+
 // a map for overrides
 typedef hash_string_string omc_CommandLineOverrides;
 // a map to find out which names were used
@@ -825,7 +882,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    free(mi);
+    freeModelInput(mi);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
@@ -838,7 +895,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
-      free(mi);
+      freeModelInput(mi);
       XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
@@ -1135,8 +1192,11 @@ void read_input_xml(MODEL_DATA* modelData,
 
   calculateAllScalarLength(modelData);
 
+  freeHashStringLong(mapAlias);
+  freeHashStringLong(mapAliasParam);
+  freeHashStringLong(mapAliasSen);
   free((char*)filename);
-  free(mi);
+  freeModelInput(mi);
 }
 
 /**
