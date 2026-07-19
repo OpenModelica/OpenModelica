@@ -1,7 +1,7 @@
 // name:     issue10790_memory_leak
 // keywords: fmu export simulation memory leak co-simulation
 // status: correct
-// teardown_command: rm -rf issue10790.fmu issue10790* memoryLeakFmu* tmp-*
+// teardown_command: rm -rf memoryLeakFmu* tmp-* issue10790_sim.log
 // cflags: -d=-newInst
 //
 // Regression test for #10790: co-simulation FMU memory leak from un-freed
