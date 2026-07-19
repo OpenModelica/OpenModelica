@@ -1766,8 +1766,9 @@ impl Driver for DasslDriver {
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
 
-        // No states: nothing to integrate — just evaluate outputs on the grid.
-        if self.n_states == 0 {
+        // No integration — just evaluate outputs on the grid — with no states or an
+        // empty time span (`stopTime <= startTime`; a zero-width `ddaskr` step errors).
+        if self.n_states == 0 || stop <= start {
             let mut did_step = false;
             while self.row < n_rows {
                 if did_step && past_deadline(deadline) {

@@ -1608,6 +1608,161 @@ fn col_to_off(col: u32, layout: &SimLayout) -> u32 {
     }
 }
 
+/// Expand every whole-array `SimVar` (`--simCodeScalarize=false`) into its
+/// row-major scalar element `SimVar`s; already-scalar vars pass through.
+fn scalarize_sim_vars(vars: &SimCodeVar::SimVars) -> Result<SimCodeVar::SimVars> {
+    // Already scalarized by NBackend; the element vars still carry the parent's
+    // numArrayElement, so re-expanding would duplicate them.
+    if openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())? {
+        return Ok(vars.clone());
+    }
+    let mut out = vars.clone();
+    out.stateVars = scalarize_var_list(&vars.stateVars)?;
+    out.derivativeVars = scalarize_var_list(&vars.derivativeVars)?;
+    out.algVars = scalarize_var_list(&vars.algVars)?;
+    out.discreteAlgVars = scalarize_var_list(&vars.discreteAlgVars)?;
+    out.intAlgVars = scalarize_var_list(&vars.intAlgVars)?;
+    out.boolAlgVars = scalarize_var_list(&vars.boolAlgVars)?;
+    out.inputVars = scalarize_var_list(&vars.inputVars)?;
+    out.outputVars = scalarize_var_list(&vars.outputVars)?;
+    out.aliasVars = scalarize_var_list(&vars.aliasVars)?;
+    out.intAliasVars = scalarize_var_list(&vars.intAliasVars)?;
+    out.boolAliasVars = scalarize_var_list(&vars.boolAliasVars)?;
+    out.paramVars = scalarize_var_list(&vars.paramVars)?;
+    out.intParamVars = scalarize_var_list(&vars.intParamVars)?;
+    out.boolParamVars = scalarize_var_list(&vars.boolParamVars)?;
+    out.stringAlgVars = scalarize_var_list(&vars.stringAlgVars)?;
+    out.stringParamVars = scalarize_var_list(&vars.stringParamVars)?;
+    out.stringAliasVars = scalarize_var_list(&vars.stringAliasVars)?;
+    out.extObjVars = scalarize_var_list(&vars.extObjVars)?;
+    out.constVars = scalarize_var_list(&vars.constVars)?;
+    out.intConstVars = scalarize_var_list(&vars.intConstVars)?;
+    out.boolConstVars = scalarize_var_list(&vars.boolConstVars)?;
+    out.stringConstVars = scalarize_var_list(&vars.stringConstVars)?;
+    Ok(out)
+}
+
+fn scalarize_var_list(list: &Arc<List<SimCodeVar::SimVar>>) -> Result<Arc<List<SimCodeVar::SimVar>>> {
+    let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
+    for sv in &**list {
+        let dims = array_dims_of(&sv.numArrayElement)?;
+        if dims.is_empty() {
+            out.push(sv.clone());
+            continue;
+        }
+        for idx in row_major_indices(&dims) {
+            let mut e = sv.clone();
+            e.name = cref_with_indices(&sv.name, &idx);
+            e.numArrayElement = metamodelica::nil();
+            e.arrayCref = None;
+            e.aliasvar = reindex_aliasvar(&sv.aliasvar, &idx);
+            e.initialValue = index_attr(&sv.initialValue, &idx);
+            e.nominalValue = index_attr(&sv.nominalValue, &idx);
+            e.minValue = index_attr(&sv.minValue, &idx);
+            e.maxValue = index_attr(&sv.maxValue, &idx);
+            out.push(e);
+        }
+    }
+    Ok(Arc::new(out.into_iter().collect::<List<SimCodeVar::SimVar>>()))
+}
+
+/// Parse `numArrayElement` (dimension sizes) to integers; empty for a scalar.
+fn array_dims_of(nae: &Arc<List<ArcStr>>) -> Result<Vec<u32>> {
+    let mut dims = Vec::new();
+    for s in &**nae {
+        match s.trim().parse::<u32>() {
+            Ok(d) => dims.push(d),
+            Err(_) => {
+                record_error(format!("CodegenWasmJit: non-integer array dimension `{s}`"));
+                return Err("CodegenWasmJit: non-integer array dimension");
+            }
+        }
+    }
+    Ok(dims)
+}
+
+/// All 1-based index tuples of shape `dims`, row-major (last axis fastest).
+pub(crate) fn row_major_indices(dims: &[u32]) -> Vec<Vec<i32>> {
+    let mut out = vec![Vec::new()];
+    for &d in dims {
+        let mut next = Vec::with_capacity(out.len() * d as usize);
+        for prefix in &out {
+            for i in 1..=d as i32 {
+                let mut p = prefix.clone();
+                p.push(i);
+                next.push(p);
+            }
+        }
+        out = next;
+    }
+    out
+}
+
+/// A copy of `cr` with `idx` appended as `INDEX` subscripts on its deepest ident.
+fn cref_with_indices(cr: &Arc<DAE::ComponentRef>, idx: &[i32]) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    match &**cr {
+        C::CREF_IDENT { ident, identType, .. } => {
+            let subs: List<Arc<DAE::Subscript>> = idx
+                .iter()
+                .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: i }) }))
+                .collect();
+            Arc::new(C::CREF_IDENT { ident: ident.clone(), identType: identType.clone(), subscriptLst: Arc::new(subs) })
+        }
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: cref_with_indices(componentRef, idx),
+        }),
+        _ => cr.clone(),
+    }
+}
+
+/// Index an optional array-valued attribute (start/nominal/min/max) to element `idx`.
+fn index_attr(attr: &Option<Arc<DAE::Exp>>, idx: &[i32]) -> Option<Arc<DAE::Exp>> {
+    attr.as_ref().map(|e| index_exp(e, idx))
+}
+
+/// Element `idx` of an array expression: literal `ARRAY`/`MATRIX` indexed
+/// statically, otherwise wrapped in an `ASUB` evaluated at run time.
+fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
+    use DAE::Exp as E;
+    if idx.is_empty() {
+        return exp.clone();
+    }
+    match &**exp {
+        E::ARRAY { array, .. } => {
+            if let Some(e) = (&**array).into_iter().nth((idx[0] - 1) as usize) {
+                return index_exp(e, &idx[1..]);
+            }
+        }
+        E::MATRIX { matrix, .. } if idx.len() >= 2 => {
+            if let Some(row) = (&**matrix).into_iter().nth((idx[0] - 1) as usize) {
+                if let Some(e) = (&**row).into_iter().nth((idx[1] - 1) as usize) {
+                    return index_exp(e, &idx[2..]);
+                }
+            }
+        }
+        _ => {}
+    }
+    let sub: List<Arc<DAE::Subscript>> = idx
+        .iter()
+        .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: i }) }))
+        .collect();
+    Arc::new(E::ASUB { exp: exp.clone(), sub: Arc::new(sub) })
+}
+
+/// Subscript an alias target by the same `idx`; `NOALIAS` passes through.
+fn reindex_aliasvar(av: &SimCodeVar::AliasVariable, idx: &[i32]) -> SimCodeVar::AliasVariable {
+    use SimCodeVar::AliasVariable as A;
+    match av {
+        A::ALIAS { varName } => A::ALIAS { varName: cref_with_indices(varName, idx) },
+        A::NEGATEDALIAS { varName } => A::NEGATEDALIAS { varName: cref_with_indices(varName, idx) },
+        A::NOALIAS => A::NOALIAS,
+    }
+}
+
 /// Build the cref->slot map and the result-variable list from the model's
 /// `SimVars`. The slot offsets follow [`SimLayout`]; the result order matches
 /// the C runtime (time, states, state derivatives, real algebraics, then
@@ -2137,10 +2292,11 @@ fn collect_samples(
 fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimModel> {
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
-    let vars = &mi.vars;
+    let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
+    let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
 
-    let n_states = vi.numStateVars.max(0) as u32;
+    let n_states = count(&vars.stateVars) as u32;
     let n_real_alg = (count(&vars.algVars) + count(&vars.discreteAlgVars)) as u32;
     let n_real_param = count(&vars.paramVars) as u32;
     let samples = collect_samples(&sim_code.timeEvents)?;

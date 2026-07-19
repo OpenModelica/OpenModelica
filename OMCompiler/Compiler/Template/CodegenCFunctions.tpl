@@ -6537,7 +6537,7 @@ let &sub = buffer ""
       <%assertCommonVar('<%ntmp%> > 0.0', '"Model error: Second argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be > 0, got %d", <%ntmp%>', context, &varDecls, dummyInfo)%>
       <%assertCommonVar('modelica_integer_mod(<%ntmp%>, 2) != 0 || <%vtmp%> >= 0.0', '"Model error: First argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be >= 0 if the second is even, got %g", <%vtmp%>', context, &varDecls, dummyInfo)%>
       >>
-    'pow(<%vtmp%>, 1.0/<%ntmp%>)'
+    'copysign(pow(fabs(<%vtmp%>), 1.0/<%ntmp%>), <%vtmp%>)'
 
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
