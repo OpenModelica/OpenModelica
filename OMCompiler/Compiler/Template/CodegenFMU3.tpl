@@ -109,9 +109,96 @@ case SIMCODE(__) then
     <%DefaultExperiment3(simulationSettingsOpt)%>
     <%fmiModelVariables3(simCode, FMUType)%>
     <%modelStructure3(simCode, modelStructure)%>
+    <%fmiFiguresAnnotation(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
+
+template fmiFiguresAnnotation(SimCode simCode)
+ "The model's figures annotation as the OpenModelica <Figures> vendor annotation,
+  so an importer can offer default plots. Empty (schema-valid) when the model has
+  no resolvable figures. Common to the C and wasm FMU export."
+::=
+match SimCodeUtil.getFMI3Figures(simCode)
+case {} then ''
+case figures then
+  <<
+  <Annotations>
+    <Tool name="OpenModelica">
+      <Figures version="1">
+        <%figures |> f => Figure3(f) ;separator="\n"%>
+      </Figures>
+    </Tool>
+  </Annotations>
+  >>
+end fmiFiguresAnnotation;
+
+template Figure3(FmiFigure figure)
+::=
+match figure
+case FMI_FIGURE(__) then
+  let titleAttr = figureStrAttr("title", title)
+  let groupAttr = figureStrAttr("group", group)
+  let prefAttr = if preferred then ' preferred="true"'
+  let captionElt = if boolNot(stringEq(caption, "")) then '<%\n%>  <Caption><%Util.escapeModelicaStringToXmlString(caption)%></Caption>'
+  <<
+  <Figure<%titleAttr%><%groupAttr%><%prefAttr%>>
+    <%plots |> p => FigurePlot3(p) ;separator="\n"%><%captionElt%>
+  </Figure>
+  >>
+end Figure3;
+
+template FigurePlot3(FmiPlot plot)
+::=
+match plot
+case FMI_PLOT(__) then
+  let titleAttr = figureStrAttr("title", title)
+  let xAxisElt = FigureAxis3("x", xAxis)
+  let yAxisElt = FigureAxis3("y", yAxis)
+  let curveElts = (curves |> c => FigureCurve3(c) ;separator="\n")
+  let termRef = match terminal case SOME(t) then '<%\n%>  <TerminalRef terminal="<%Util.escapeModelicaStringToXmlString(t)%>"/>'
+  <<
+  <Plot<%titleAttr%>>
+    <%xAxisElt%><%yAxisElt%><%curveElts%><%termRef%>
+  </Plot>
+  >>
+end FigurePlot3;
+
+template FigureAxis3(String role, FmiFigureAxis axis)
+ "An <Axis> element, emitted only when it carries a non-default attribute."
+::=
+match axis
+case FMI_FIGURE_AXIS(__) then
+  let labelAttr = figureStrAttr("label", label)
+  let unitAttr = figureStrAttr("unit", unit)
+  let minAttr = match min case SOME(r) then ' min="<%r%>"'
+  let maxAttr = match max case SOME(r) then ' max="<%r%>"'
+  let scaleAttr = if logScale then ' scale="Log"'
+  let body = '<%labelAttr%><%unitAttr%><%minAttr%><%maxAttr%><%scaleAttr%>'
+  if stringEq(body, "") then '' else '<Axis role="<%role%>"<%body%>/><%\n%>  '
+end FigureAxis3;
+
+template FigureCurve3(FmiCurve curve)
+::=
+match curve
+case FMI_CURVE(__) then
+  let yAttr = ' y="<%figureCrefName(yVariable)%>"'
+  let xAttr = match xVariable case SOME(x) then ' x="<%figureCrefName(x)%>"'
+  let legendAttr = figureStrAttr("legend", legend)
+  '<Curve<%yAttr%><%xAttr%><%legendAttr%>/>'
+end FigureCurve3;
+
+template figureCrefName(DAE.ComponentRef cref)
+ "A cref formatted exactly like a variable name in modelDescription.xml."
+::=
+  Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(cref),"$", "_D_"))
+end figureCrefName;
+
+template figureStrAttr(String name, String value)
+ "A non-empty XML attribute, or nothing."
+::=
+  if stringEq(value, "") then '' else ' <%name%>="<%Util.escapeModelicaStringToXmlString(value)%>"'
+end figureStrAttr;
 
 template fmiBuildDescriptionFile(SimCode simCode, list<String> sourceFiles, String fileNamePrefixHash)
  "Writes sources/buildDescription.xml (FMI 3.0). Returns the empty string (the

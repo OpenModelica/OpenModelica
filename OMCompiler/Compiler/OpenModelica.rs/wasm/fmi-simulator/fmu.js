@@ -68,6 +68,50 @@ function iface(e) {
   };
 }
 
+// The OpenModelica <Figures> vendor annotation. Absent / unknown-version /
+// malformed degrades to []: such an FMU is plotted the ordinary way, never rejected.
+function parseFigures(root) {
+  const viz = root.querySelector(':scope > Annotations > Tool[name="OpenModelica"] > Figures');
+  if (!viz) return [];
+  const version = attr(viz, 'version');
+  if (version != null && version !== '1') return [];   // unknown schema: ignore, don't guess
+  const axis = (plot, role) => {
+    const a = plot.querySelector(`:scope > Axis[role="${role}"]`);
+    if (!a) return null;
+    return {
+      label: attr(a, 'label') || '', unit: attr(a, 'unit') || '',
+      min: numAttr(a, 'min'), max: numAttr(a, 'max'),
+      log: (attr(a, 'scale') || 'Linear') === 'Log',
+    };
+  };
+  const figures = [];
+  for (const f of viz.querySelectorAll(':scope > Figure')) {
+    const plots = [];
+    for (const p of f.querySelectorAll(':scope > Plot')) {
+      const curves = [];
+      for (const c of p.querySelectorAll(':scope > Curve')) {
+        const y = attr(c, 'y'); if (!y) continue;
+        curves.push({ x: attr(c, 'x') || '', y, legend: attr(c, 'legend') || '' });
+      }
+      const tr = p.querySelector(':scope > TerminalRef');
+      if (!curves.length) continue;   // TerminalRef-only plot: skip, we render explicit curves
+      plots.push({
+        title: attr(p, 'title') || '', preferred: boolAttr(p, 'preferred') === true,
+        terminal: tr ? attr(tr, 'terminal') : null, curves,
+        x: axis(p, 'x'), y: axis(p, 'y'), y2: axis(p, 'y2'),
+      });
+    }
+    if (!plots.length) continue;
+    const cap = f.querySelector(':scope > Caption');
+    figures.push({
+      title: attr(f, 'title') || '', group: attr(f, 'group') || '',
+      preferred: boolAttr(f, 'preferred') === true,
+      caption: cap ? cap.textContent : '', plots,
+    });
+  }
+  return figures;
+}
+
 export function parseModelDescription(xml) {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   const perr = doc.querySelector('parsererror');
@@ -120,6 +164,7 @@ export function parseModelDescription(xml) {
     variables,
     nStates: ms ? ms.querySelectorAll(':scope > ContinuousStateDerivative').length : 0,
     nEventIndicators: ms ? ms.querySelectorAll(':scope > EventIndicator').length : 0,
+    figures: parseFigures(root),
   };
 }
 

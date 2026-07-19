@@ -128,6 +128,7 @@ import SimCodeUtilShared;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
+import SymbolTable;
 import System;
 import TypesDump;
 import Util;
@@ -15844,6 +15845,405 @@ algorithm
     else NONE();
   end matchcontinue;
 end connectorMemberOf;
+
+public function getFMI3Figures
+  "The model's Documentation(figures=...) annotation, resolved against the exported
+   SimVars, for CodegenFMU3 to emit as the OpenModelica <Figures> vendor annotation.
+   Curves that do not reference an exported variable (and plots/figures thereby left
+   empty) are dropped; an empty result writes no annotation. C and wasm FMU export."
+  input SimCode.SimCode simCode;
+  output list<SimCode.FmiFigure> figures = {};
+protected
+  Absyn.Program program;
+  Absyn.Class cls;
+  Option<list<Absyn.Exp>> ofigs;
+  list<Absyn.Exp> figExps;
+  list<tuple<String, DAE.ComponentRef>> nameMap;
+  list<SimCode.FmiTerminal> terminals;
+  SimCode.FmiFigure fig;
+algorithm
+  program := SymbolTable.getAbsyn();
+  try
+    cls := ProgramUtil.getPathedClassInProgram(simCode.modelInfo.name, program);
+  else
+    return;
+  end try;
+  ofigs := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.QUALIFIED("Documentation", Absyn.IDENT("figures")), figureExpsFromMod);
+  figExps := match ofigs case SOME(figExps) then figExps; else {}; end match;
+  if listEmpty(figExps) then
+    return;
+  end if;
+  nameMap := buildFmiFigureNameMap(simCode);
+  terminals := getFMI3Terminals(simCode);
+  for e in figExps loop
+    fig := fmiFigureFromExp(e, nameMap, terminals);
+    if not listEmpty(fig.plots) then
+      figures := fig :: figures;
+    end if;
+  end for;
+  figures := listReverse(figures);
+end getFMI3Figures;
+
+protected function figureExpsFromMod
+  input Option<Absyn.Modification> mod;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match mod
+    local Absyn.Exp exp;
+    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))) then figureExpElements(exp);
+    else {};
+  end match;
+end figureExpsFromMod;
+
+protected function figureExpElements
+  input Absyn.Exp exp;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match exp
+    case Absyn.ARRAY() then exp.arrayExp;
+    else {exp};
+  end match;
+end figureExpElements;
+
+protected function buildFmiFigureNameMap "name -> cref over every exported SimVar, to resolve curve references"
+  input SimCode.SimCode simCode;
+  output list<tuple<String, DAE.ComponentRef>> nameMap = {};
+protected
+  SimCodeVar.SimVars vars;
+  list<SimCodeVar.SimVar> allVars;
+algorithm
+  vars := simCode.modelInfo.vars;
+  allVars := List.flatten({vars.stateVars, vars.derivativeVars, vars.algVars,
+    vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
+    vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
+  for v in allVars loop
+    nameMap := (ComponentReference.crefStr(v.name), v.name) :: nameMap;
+  end for;
+end buildFmiFigureNameMap;
+
+protected function fmiFigureFromExp
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output SimCode.FmiFigure figure;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiPlot> plots;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "group", "preferred", "plots", "caption"});
+  plots := fmiPlotsFromExp(figureArgExp(args, "plots"), nameMap, terminals);
+  figure := SimCode.FMI_FIGURE(
+    figureStrArg(args, "title"),
+    figureStrArg(args, "group"),
+    figureBoolFlag(args, "preferred"),
+    figureStrArg(args, "caption"),
+    plots);
+end fmiFigureFromExp;
+
+protected function fmiPlotsFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output list<SimCode.FmiPlot> plots = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiPlot> op;
+algorithm
+  elems := match oexp case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    op := fmiPlotFromExp(e, nameMap, terminals);
+    if isSome(op) then
+      plots := Util.getOption(op) :: plots;
+    end if;
+  end for;
+  plots := listReverse(plots);
+end fmiPlotsFromExp;
+
+protected function fmiPlotFromExp
+  "A resolved plot, or NONE() when no curve resolved to an exported variable."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<SimCode.FmiPlot> oplot;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiCurve> curves;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "curves", "x", "y"});
+  curves := fmiCurvesFromExp(figureArgExp(args, "curves"), nameMap);
+  if listEmpty(curves) then
+    oplot := NONE();
+  else
+    oplot := SOME(SimCode.FMI_PLOT(
+      figureStrArg(args, "title"),
+      curves,
+      fmiAxisFromArg(figureArgExp(args, "x")),
+      fmiAxisFromArg(figureArgExp(args, "y")),
+      curvesCommonTerminal(curves, terminals)));
+  end if;
+end fmiPlotFromExp;
+
+protected function fmiCurvesFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output list<SimCode.FmiCurve> curves = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiCurve> oc;
+algorithm
+  elems := match oexp case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    oc := fmiCurveFromExp(e, nameMap);
+    if isSome(oc) then
+      curves := Util.getOption(oc) :: curves;
+    end if;
+  end for;
+  curves := listReverse(curves);
+end fmiCurvesFromExp;
+
+protected function fmiCurveFromExp
+  "A resolved curve, or NONE() when y (or a given non-time x) is not an exported
+   variable. Only plain variable references resolve, not derived expressions."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<SimCode.FmiCurve> ocurve = NONE();
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  Option<DAE.ComponentRef> yref, xVar;
+  DAE.ComponentRef yc;
+  Boolean dropX;
+algorithm
+  args := figureArgs(exp, {"x", "y", "legend"});
+  yref := match figureArgExp(args, "y") case SOME(e) then resolveFigureRef(e, nameMap); else NONE(); end match;
+  if isNone(yref) then
+    return;
+  end if;
+  SOME(yc) := yref;
+  (xVar, dropX) := match figureArgExp(args, "x")
+    local Absyn.Exp xe;
+    case NONE() then (NONE(), false);
+    case SOME(xe) guard isFigureTime(xe) then (NONE(), false);
+    case SOME(xe)
+      then match resolveFigureRef(xe, nameMap)
+        local DAE.ComponentRef xc;
+        case SOME(xc) then (SOME(xc), false);
+        else (NONE(), true);
+      end match;
+  end match;
+  if dropX then
+    return;
+  end if;
+  ocurve := SOME(SimCode.FMI_CURVE(xVar, yc, figureStrArg(args, "legend")));
+end fmiCurveFromExp;
+
+protected function fmiAxisFromArg
+  input Option<Absyn.Exp> oexp;
+  output SimCode.FmiFigureAxis axis;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := match oexp case SOME(e) then figureArgs(e, {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  axis := SimCode.FMI_FIGURE_AXIS(
+    figureStrArg(args, "label"),
+    figureStrArg(args, "unit"),
+    figureBoundArg(args, "min"),
+    figureBoundArg(args, "max"),
+    figureScaleIsLog(figureArgExp(args, "scale")));
+end fmiAxisFromArg;
+
+protected function resolveFigureRef "the exported cref a curve x/y names, or NONE() if not a plain exported-var reference"
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<DAE.ComponentRef> ocref;
+algorithm
+  ocref := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then lookupFigureName(nameMap, AbsynUtil.crefString(acr));
+    else NONE();
+  end match;
+end resolveFigureRef;
+
+protected function isFigureTime
+  input Absyn.Exp exp;
+  output Boolean isTime;
+algorithm
+  isTime := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then stringEq(AbsynUtil.crefString(acr), "time");
+    else false;
+  end match;
+end isFigureTime;
+
+protected function lookupFigureName
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input String key;
+  output Option<DAE.ComponentRef> ocref = NONE();
+protected
+  String k;
+  DAE.ComponentRef c;
+algorithm
+  for e in nameMap loop
+    (k, c) := e;
+    if stringEq(k, key) then
+      ocref := SOME(c);
+      return;
+    end if;
+  end for;
+end lookupFigureName;
+
+protected function curvesCommonTerminal "the terminal shared by all curves y-vars, else NONE()"
+  input list<SimCode.FmiCurve> curves;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> terminal = NONE();
+protected
+  Option<String> t;
+  Boolean first = true;
+algorithm
+  for c in curves loop
+    t := crefTerminalName(c.yVariable, terminals);
+    if isNone(t) then
+      terminal := NONE();
+      return;
+    end if;
+    if first then
+      terminal := t;
+      first := false;
+    elseif not stringEq(Util.getOption(t), Util.getOption(terminal)) then
+      terminal := NONE();
+      return;
+    end if;
+  end for;
+  if first then
+    terminal := NONE();
+  end if;
+end curvesCommonTerminal;
+
+protected function crefTerminalName
+  input DAE.ComponentRef cref;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> name = NONE();
+protected
+  String key;
+algorithm
+  key := ComponentReference.crefStr(cref);
+  for t in terminals loop
+    for m in t.members loop
+      if stringEq(ComponentReference.crefStr(m.variable), key) then
+        name := SOME(t.name);
+        return;
+      end if;
+    end for;
+  end for;
+end crefTerminalName;
+
+protected function figureArgs
+  "Maps a record-constructor call's arguments to (fieldName, exp) pairs; positional
+   args by declared field order, named args by name."
+  input Absyn.Exp exp;
+  input list<String> fieldNames;
+  output list<tuple<String, Absyn.Exp>> args = {};
+protected
+  list<Absyn.Exp> pos;
+  list<Absyn.NamedArg> named;
+  list<String> names = fieldNames;
+  String name;
+algorithm
+  () := match exp
+    case Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = pos, argNames = named))
+      algorithm
+        for e in pos loop
+          name :: names := names;
+          args := (name, e) :: args;
+        end for;
+        for na in named loop
+          args := (na.argName, na.argValue) :: args;
+        end for;
+      then ();
+    else ();
+  end match;
+end figureArgs;
+
+protected function figureArgExp
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Absyn.Exp> oexp = NONE();
+protected
+  String n;
+  Absyn.Exp e;
+algorithm
+  for a in args loop
+    (n, e) := a;
+    if n == name then
+      oexp := SOME(e);
+      return;
+    end if;
+  end for;
+end figureArgExp;
+
+protected function figureStrArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output String value;
+algorithm
+  value := match figureArgExp(args, name)
+    local String s;
+    case SOME(Absyn.STRING(value = s)) then s;
+    else "";
+  end match;
+end figureStrArg;
+
+protected function figureBoolFlag
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Boolean value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Boolean b;
+    case SOME(Absyn.BOOL(value = b)) then b;
+    else false;
+  end match;
+end figureBoolFlag;
+
+protected function figureBoundArg
+  "An axis bound: NONE() when absent (auto), SOME when explicitly set."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Real> value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then SOME(figureExpReal(e));
+    else NONE();
+  end match;
+end figureBoundArg;
+
+protected function figureExpReal
+  input Absyn.Exp exp;
+  output Real value;
+algorithm
+  value := match exp
+    local Integer i; String s;
+    case Absyn.INTEGER(value = i) then intReal(i);
+    case Absyn.REAL(value = s) then stringReal(s);
+    case Absyn.UNARY(op = Absyn.UMINUS()) then -figureExpReal(exp.exp);
+    else 0.0;
+  end match;
+end figureExpReal;
+
+protected function figureScaleIsLog
+  "Whether an axis scale argument denotes the logarithmic scale (Scale.Log)."
+  input Option<Absyn.Exp> oexp;
+  output Boolean isLog;
+algorithm
+  isLog := match oexp
+    local Absyn.ComponentRef cr;
+    case SOME(Absyn.CALL(function_ = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    case SOME(Absyn.CREF(componentRef = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    else false;
+  end match;
+end figureScaleIsLog;
 
 protected function crefConnectorSplit
   "Split a cref at its outermost connector-typed qualifier: returns the connector

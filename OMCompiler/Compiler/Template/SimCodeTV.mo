@@ -1085,6 +1085,44 @@ end SparsityRow;
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
 
+  uniontype FmiFigure
+    record FMI_FIGURE
+      String title;
+      String group;
+      Boolean preferred;
+      String caption;
+      list<FmiPlot> plots;
+    end FMI_FIGURE;
+  end FmiFigure;
+
+  uniontype FmiPlot
+    record FMI_PLOT
+      String title;
+      list<FmiCurve> curves;
+      FmiFigureAxis xAxis;
+      FmiFigureAxis yAxis;
+      Option<String> terminal;
+    end FMI_PLOT;
+  end FmiPlot;
+
+  uniontype FmiCurve
+    record FMI_CURVE
+      Option<DAE.ComponentRef> xVariable;
+      DAE.ComponentRef yVariable;
+      String legend;
+    end FMI_CURVE;
+  end FmiCurve;
+
+  uniontype FmiFigureAxis
+    record FMI_FIGURE_AXIS
+      String label;
+      String unit;
+      Option<Real> min;
+      Option<Real> max;
+      Boolean logScale;
+    end FMI_FIGURE_AXIS;
+  end FmiFigureAxis;
+
   uniontype FmiClock
     record FMI_CLOCK
       Integer valueReference;
@@ -1436,6 +1474,11 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
+
+  function getFMI3Figures
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiFigure> figures;
+  end getFMI3Figures;
 
   function isFMI3NestableAlias
     input SimCodeVar.SimVar simVar;

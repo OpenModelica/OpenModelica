@@ -812,6 +812,47 @@ public uniontype FmiTerminalMember
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
 
+/* The Documentation(figures=...) annotation resolved against the exported
+   variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor
+   annotation. See SimCodeUtil.getFMI3Figures. */
+public uniontype FmiFigure
+  record FMI_FIGURE
+    String title;
+    String group            "plot-group name, \"\" if none";
+    Boolean preferred       "display automatically after simulation";
+    String caption          "\"\" if none";
+    list<FmiPlot> plots;
+  end FMI_FIGURE;
+end FmiFigure;
+
+public uniontype FmiPlot
+  record FMI_PLOT
+    String title;
+    list<FmiCurve> curves;
+    FmiFigureAxis xAxis;
+    FmiFigureAxis yAxis;
+    Option<String> terminal "set when every curve's y variable is a member of this one terminal";
+  end FMI_PLOT;
+end FmiPlot;
+
+public uniontype FmiCurve
+  record FMI_CURVE
+    Option<DAE.ComponentRef> xVariable "NONE() means simulation time; a cref is formatted like a modelDescription variable";
+    DAE.ComponentRef yVariable         "resolved exported variable; formatted like a modelDescription variable";
+    String legend                      "\"\" if none";
+  end FMI_CURVE;
+end FmiCurve;
+
+public uniontype FmiFigureAxis
+  record FMI_FIGURE_AXIS
+    String label            "\"\" if none";
+    String unit             "\"\" if none";
+    Option<Real> min        "only when explicitly set";
+    Option<Real> max        "only when explicitly set";
+    Boolean logScale        "true for a logarithmic axis";
+  end FMI_FIGURE_AXIS;
+end FmiFigureAxis;
+
 /* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
 public uniontype FmiClock
   record FMI_CLOCK

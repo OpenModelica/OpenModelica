@@ -78,6 +78,7 @@
   <span class="status" id="status">Open an FMI 3.0 wasm FMU to begin.</span>
   <input type="file" id="file" accept=".fmu,application/zip" hidden />
   <button class="ghost" id="open">Open FMU…</button>
+  <button class="ghost" id="figToggle" title="Switch between the FMU's figures and all recorded variables" hidden>All variables</button>
   <button id="run" disabled>Simulate</button>
 </header>
 
@@ -137,10 +138,13 @@ const charts = createCharts(chartsEl);
 const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
       tolEl = el('tol'), stepLabel = el('stepLabel');
 const eventModeEl = el('eventMode'), eventModeLabel = el('eventModeLabel'), eventModeCell = el('eventModeCell');
+const figToggle = el('figToggle');
 
 let fmu = null;         // { md, exports, cs, me, resourcePath }
 let fields = [];        // { v, input, kind:'input'|'parameter' }
 let running = false, cancelled = false, logCount = 0;
+let lastRec = null;     // the most recent simulation record, for re-rendering
+let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
 
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
@@ -356,16 +360,33 @@ async function run() {
 }
 
 // --- charts -----------------------------------------------------------------
+const haveFigures = () => !!(fmu && fmu.md.figures && fmu.md.figures.length);
+
+// Reflect whether figures are available and which view is active on the toggle.
+function updateFigToggle() {
+  const have = haveFigures() && !!lastRec;
+  figToggle.hidden = !have;
+  figToggle.textContent = (viewMode === 'all') ? 'Figures' : 'All variables';
+}
+
 function renderCharts(rec) {
+  lastRec = rec;
   charts.clear();
-  const xs = Float64Array.from(rec.time);
   const finite = rec.columns.filter((c) => c.values.some((v) => isFinite(v)));
   if (!finite.length) {
     charts.clear(chartsEmpty);
     chartsEmpty.style.display = '';
     chartsEmpty.textContent = 'The FMU reported no output, local or input variables to plot.';
+    updateFigToggle();
     return;
   }
+  const useFigs = haveFigures() && viewMode !== 'all';
+  if (useFigs) renderFigures(rec, finite); else renderAllVariables(rec, finite);
+  updateFigToggle();
+}
+
+function renderAllVariables(rec, finite) {
+  const xs = Float64Array.from(rec.time);
   // `ys` references the recorded array, so all signals go into the legend cheaply;
   // big models default to one state visible with the rest toggled off (drawing all
   // would be unresponsive).
@@ -379,6 +400,52 @@ function renderCharts(rec) {
   }
   charts.add(spec, 'all');
 }
+
+// Render the FMU's <Figures> as the default plots (preferred first), like the
+// Modelica simulator; a curve whose variable is not in the result is skipped.
+function renderFigures(rec, finite) {
+  const xs = Float64Array.from(rec.time);
+  const byName = new Map(rec.columns.map((c) => [c.name, c]));
+  const figs = fmu.md.figures.slice().sort((a, b) => (b.preferred - a.preferred));
+  let plotted = 0;
+  figs.forEach((fig, fi) => {
+    if (fig.title) {
+      const h = document.createElement('div'); h.className = 'fig-head'; h.textContent = fig.title;
+      chartsEl.appendChild(h);
+    }
+    fig.plots.forEach((plot, pi) => {
+      const curves = [];
+      plot.curves.forEach((cv) => {
+        const yc = byName.get(cv.y); if (!yc) return;
+        const xc = cv.x ? byName.get(cv.x) : null;
+        curves.push({ label: cv.legend || cv.y, unit: yc.unit || '', color: COLORS[curves.length % COLORS.length],
+                      xs: xc ? Float64Array.from(xc.values) : xs, ys: yc.values, xName: cv.x || 'time' });
+      });
+      const yAxis = plot.y || {}, xAxis = plot.x || {};
+      const xIsTime = curves.every((c) => c.xName === 'time');
+      charts.add({
+        title: plot.title, curves, xIsTime,
+        xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
+        xUnit: xAxis.unit || (xIsTime ? 's' : ''),
+        yText: yAxis.label || '', yUnit: yAxis.unit || '',
+        yMin: yAxis.min != null ? yAxis.min : null, yMax: yAxis.max != null ? yAxis.max : null,
+        yLog: !!yAxis.log,
+        note: plot.curves.length && !curves.length ? 'Referenced variables are not in the result.' : '',
+      }, 'f' + fi + 'p' + pi);
+      if (curves.length) plotted++;
+    });
+    if (fig.caption) {
+      const c = document.createElement('div'); c.className = 'caption'; c.textContent = fig.caption;
+      chartsEl.appendChild(c);
+    }
+  });
+  if (!plotted) log('info', 'the figure annotation referenced no recorded variables; switch to All variables to plot.');
+}
+
+figToggle.onclick = () => {
+  viewMode = (viewMode === 'all') ? 'auto' : 'all';
+  if (lastRec) renderCharts(lastRec);
+};
 
 addEventListener('resize', () => charts.redraw());
 </script>
