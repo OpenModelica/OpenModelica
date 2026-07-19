@@ -183,3 +183,42 @@ pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _elin
     }
     core::arch::wasm32::unreachable()
 }
+
+/// In-wasm `rt_print`: the `print` builtin. Write the String handle's bytes to
+/// stdout, flushed so the captured output stays ordered.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_print(handle: i32) {
+    if handle != 0 {
+        let h = handle as u32;
+        let len = unsafe { crate::load_u32(h + 4) } as usize;
+        let bytes = unsafe { core::slice::from_raw_parts((h + 8) as *const u8, len) };
+        use std::io::Write;
+        let mut out = std::io::stdout();
+        let _ = out.write_all(bytes);
+        let _ = out.flush();
+    }
+}
+
+/// In-wasm `rt_assert_warning`: a non-fatal (AssertionLevel.warning) violation.
+/// The standalone has no host driver to format a `LOG_ASSERT` block, so print the
+/// message (`msg` is an `rt` String handle) and continue — no trap.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_warning(
+    _cond: i32,
+    msg: i32,
+    _file: i32,
+    _sline: i32,
+    _scol: i32,
+    _eline: i32,
+    _ecol: i32,
+    _read_only: i32,
+) {
+    if msg != 0 {
+        let h = msg as u32;
+        let len = unsafe { crate::load_u32(h + 4) } as usize;
+        let bytes = unsafe { core::slice::from_raw_parts((h + 8) as *const u8, len) };
+        if let Ok(s) = core::str::from_utf8(bytes) {
+            eprintln!("wasm-jit standalone: assertion warning: {s}");
+        }
+    }
+}

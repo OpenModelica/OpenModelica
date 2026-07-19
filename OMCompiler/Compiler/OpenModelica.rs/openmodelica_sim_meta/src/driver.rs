@@ -204,6 +204,14 @@ pub trait SimEngine {
     /// into shared memory), else `None`. Backed by the engine's `rt_assert` host
     /// import; lets [`drive`] report a model assertion instead of a bare trap.
     fn take_pending_assert(&mut self) -> Option<[i32; 7]>;
+    /// Take the warning-level assertion violations (`AssertionLevel.warning`)
+    /// recorded by the `rt_assert_warning` host import since the last call, each as
+    /// `[cond, msg, file, sline, scol, eline, ecol, read_only]` (string handles +
+    /// source position). Drained by the drivers after `functionCheckAsserts` to
+    /// emit C's `LOG_ASSERT` warnings. Default: none (backends without the import).
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+        Vec::new()
+    }
 }
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
@@ -389,6 +397,22 @@ fn cancel_requested() -> bool {
     f()
 }
 
+// Fires once when `run_initialization` finishes — the boundary between the
+// initialization and simulation output. The host (which owns the stdout capture)
+// uses it to keep the model's `print` output ordered: init prints, the
+// "initialization finished" line, then the simulation prints.
+static INIT_DONE_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_init_done_hook(f: fn()) {
+    INIT_DONE_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn signal_init_done() {
+    let p = INIT_DONE_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
+}
+
 /// Read one little-endian i32 from linear memory at byte address `addr`.
 pub fn read_i32(e: &dyn SimEngine, addr: u32) -> Result<i32> {
     let mut b = [0u8; 4];
@@ -572,6 +596,134 @@ mod chatter_store {
     pub use imp::{abort, push, set_abort, take};
 }
 
+/// Homotopy-step count of the last initialization, so the host can print C's
+/// "finished successfully with N homotopy steps" / "without homotopy method"
+/// (the driver only returns a `&'static str`). 0 = no homotopy was used.
+mod init_report {
+    use core::sync::atomic::{AtomicU32, Ordering};
+    static HOMOTOPY_STEPS: AtomicU32 = AtomicU32::new(0);
+    pub fn set_homotopy_steps(n: u32) {
+        HOMOTOPY_STEPS.store(n, Ordering::Relaxed);
+    }
+    pub fn homotopy_steps() -> u32 {
+        HOMOTOPY_STEPS.load(Ordering::Relaxed)
+    }
+}
+
+/// Homotopy steps the last `run_initialization` used (0 = none); the host reads it
+/// to format the initialization success message like the C runtime.
+pub fn init_homotopy_steps() -> u32 {
+    init_report::homotopy_steps()
+}
+
+/// The formatted `LOG_ASSERT` warning lines (min/max variable-attribute checks and
+/// other `AssertionLevel.warning` asserts) collected during the last run, plus the
+/// per-site keys already reported so each warns only once (C's static
+/// `warningTriggered`). Cleared at run start; folded into the log by the host.
+mod assert_warn_store {
+    #[cfg(feature = "std")]
+    mod imp {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static LINES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+            static SEEN: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+        }
+        pub fn reset() {
+            LINES.with(|l| l.borrow_mut().clear());
+            SEEN.with(|s| s.borrow_mut().clear());
+        }
+        pub fn push_once(key: String, line: String) {
+            SEEN.with(|s| {
+                let mut s = s.borrow_mut();
+                if s.iter().any(|k| *k == key) {
+                    return;
+                }
+                s.push(key);
+                LINES.with(|l| l.borrow_mut().push(line));
+            });
+        }
+        pub fn take() -> Vec<String> {
+            LINES.with(|l| core::mem::take(&mut *l.borrow_mut()))
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<(Vec<String>, Vec<String>)>);
+        unsafe impl Sync for Store {}
+        static STORE: Store = Store(UnsafeCell::new((Vec::new(), Vec::new())));
+        pub fn reset() {
+            unsafe {
+                (*STORE.0.get()).0.clear();
+                (*STORE.0.get()).1.clear();
+            }
+        }
+        pub fn push_once(key: String, line: String) {
+            unsafe {
+                let st = &mut *STORE.0.get();
+                if st.1.iter().any(|k| *k == key) {
+                    return;
+                }
+                st.1.push(key);
+                st.0.push(line);
+            }
+        }
+        pub fn take() -> Vec<String> {
+            unsafe { core::mem::take(&mut (*STORE.0.get()).0) }
+        }
+    }
+    pub use imp::{push_once, reset, take};
+}
+
+/// Drain the formatted `LOG_ASSERT` warning lines emitted during the last run.
+pub fn take_assert_warnings() -> Vec<String> {
+    assert_warn_store::take()
+}
+
+/// Format `%f`-style (C's `%f`: 6 fractional digits), for the assertion time value.
+fn format_f(v: f64) -> String {
+    alloc::format!("{v:.6}")
+}
+
+/// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
+/// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
+/// block, once per site. Called by the drivers after each accepted output step.
+fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    e.call1_if_present("functionCheckAsserts", sim_data)?;
+    let pending = e.take_pending_warnings();
+    if pending.is_empty() {
+        return Ok(());
+    }
+    let time = read_f64(e, sim_data + TIME_OFF)?;
+    for w in pending {
+        let cond = read_rt_string(e, w[0])?;
+        let msg = read_rt_string(e, w[1])?;
+        let file = read_rt_string(e, w[2])?;
+        let (sl, sc, el, ec, ro) = (w[3], w[4], w[5], w[6], w[7] != 0);
+        let ro_str = if ro { "readonly" } else { "writable" };
+        // C (`omc_error.c` messageText + printInfo): a header line with the source
+        // position, then the message split on '\n' onto continuation lines whose
+        // stream/type columns are "|".
+        let head = log_prefix("LOG_ASSERT", "info");
+        let cont = log_prefix("|", "|");
+        // C wraps the already-parenthesised `assert_cond` = "(<dumped>)" once more
+        // in the `(%s)` format, so the displayed condition is double-parenthesised.
+        let line = alloc::format!(
+            "{head}[{file}:{sl}:{sc}-{el}:{ec}:{ro_str}]\n\
+             {cont}The following assertion has been violated at time {t}\n\
+             {cont}(({cond})) --> \"{msg}\"\n",
+            t = format_f(time),
+        );
+        let key = alloc::format!("{file}:{sl}:{sc}-{el}:{ec}|{cond}");
+        assert_warn_store::push_once(key, line);
+    }
+    Ok(())
+}
+
 /// Arm `-abortSlowSimulation` for the next run and clear any stale chattering log.
 pub fn set_abort_slow(v: bool) {
     chatter_store::set_abort(v);
@@ -593,10 +745,22 @@ pub fn take_chatter_log() -> Vec<String> {
 /// `relationsPre` for the continuous phase's held relations.
 pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     run_initialization_impl(e, sim_data, layout)?;
-    update_relations_pre(e, sim_data, layout)
+    // Seed the continuous phase's held relations from a full discrete fixed point.
+    // The initial system does not necessarily touch every relation guarding the
+    // continuous equations, so a straight snapshot of `relations[]` here would
+    // freeze those at their stale (zero) value and pick the wrong equation branch.
+    iterate_discrete(e, sim_data, layout)?;
+    store_relations(e, sim_data, layout)?;
+    update_relations_pre(e, sim_data, layout)?;
+    // Initialization output is complete; the next model output is the simulation
+    // phase. Let the host close the init segment of the capture.
+    signal_init_done();
+    Ok(())
 }
 
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    init_report::set_homotopy_steps(0);
+    assert_warn_store::reset();
     e.call1("functionParameters", sim_data)?;
     // Params first (a start expression may read one), then fill start slots, then
     // start overrides (replacing the just-computed start).
@@ -607,17 +771,29 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;
     }
-    // Direct attempt (no continuation).
+
+    // A model whose initial system contains `homotopy()` (`has_homotopy`) is solved
+    // with the global equidistant homotopy continuation on the first try — C's
+    // default `-homotopyOnFirstTry` for homotopy-support models — not tried directly
+    // first. This matches C's initialization path and its "with N homotopy steps"
+    // report. A model without homotopy is solved directly.
+    if layout.has_homotopy {
+        run_homotopy_continuation(e, sim_data, layout)?;
+        init_report::set_homotopy_steps(HOMOTOPY_STEPS as u32);
+        return Ok(());
+    }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     e.call1("functionInitialEquations", sim_data)?;
-    if check_nls(e, sim_data, layout).is_ok() {
-        return Ok(());
-    }
-    if !layout.has_homotopy {
-        check_nls(e, sim_data, layout)?; // re-surface the failure
-        return Ok(());
-    }
+    check_nls(e, sim_data, layout)?;
+    Ok(())
+}
+
+/// Global equidistant homotopy continuation (C's `solveWithGlobalHomotopy`):
+/// lambda 0 → 1 in `HOMOTOPY_STEPS` steps, step 0 solving the simplified
+/// `functionInitialEquations_lambda0`, each step seeded by the previous solution.
+/// Leaves lambda = 1.
+fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     for step in 0..=HOMOTOPY_STEPS {
         let lambda = step as f64 / HOMOTOPY_STEPS as f64;
         write_f64(e, sim_data + layout.lambda_off, lambda)?;
@@ -668,7 +844,8 @@ fn emit_row(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &
     e.call1("functionODE", sim_data)?;
     e.call1("functionAlgebraics", sim_data)?;
     check_nls(e, sim_data, layout)?;
-    capture_row(e, rows, sim_data, layout)
+    capture_row(e, rows, sim_data, layout)?;
+    check_asserts(e, sim_data, layout)
 }
 
 /// Pre-event snapshot row (state just before a discrete update). Skips
@@ -806,20 +983,17 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// already written.
 fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
-    // this pass's relations; the discrete state settles across passes.
-    update_relations_pre(e, sim_data, layout)?;
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)?;
-    let mut prev = discrete_snapshot(e, sim_data, layout)?;
-    for _ in 1..MAX_EVENT_ITER {
+    // this pass's relations, then re-evaluates the continuous system; the discrete
+    // state settles across passes. Comparing the snapshot before and after the
+    // evaluation lets an already-settled system stop after a single evaluation.
+    for _ in 0..MAX_EVENT_ITER {
+        let prev = discrete_snapshot(e, sim_data, layout)?;
         update_relations_pre(e, sim_data, layout)?;
         e.call1("functionODE", sim_data)?;
         e.call1("functionAlgebraics", sim_data)?;
-        let cur = discrete_snapshot(e, sim_data, layout)?;
-        if cur == prev {
+        if discrete_snapshot(e, sim_data, layout)? == prev {
             break;
         }
-        prev = cur;
     }
     Ok(())
 }
@@ -1023,7 +1197,7 @@ pub fn drive(
     // the cancel flag; the driver only polls it via the installed hook).
     let layout = &model.layout;
     let n_reals = layout.n_row_total();
-    let n_rows = model.n_intervals + 1;
+    let n_rows = model.n_output_rows();
     let start = model.start_time;
     let stop = model.stop_time;
 
@@ -1108,7 +1282,7 @@ impl EulerDriver {
         // stay fresh (mode 2, set by run_initialization); `rt_solve_nls` still holds
         // them internally around its Newton solve.
         run_initialization(e, sim_data, &model.layout)?;
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_reals = model.layout.n_row_total();
         Ok(EulerDriver {
             sim_data,
@@ -1124,7 +1298,7 @@ impl Driver for EulerDriver {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let n_states = layout.n_states;
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
@@ -1180,7 +1354,7 @@ impl Driver for EulerDriver {
     }
 
     fn fill_stats(&mut self, model: &SimModel, stats: &mut SolveStats) {
-        stats.steps = model.n_intervals as u64;
+        stats.steps = (model.n_output_rows() - 1) as u64;
     }
 }
 
@@ -1493,7 +1667,7 @@ impl DasslDriver {
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
         let ders_base = states_base + layout.n_states * 8;
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
@@ -1585,7 +1759,7 @@ impl Driver for DasslDriver {
             self.finished = true;
             return Ok(Advance::Terminated);
         }
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
@@ -1670,6 +1844,16 @@ impl Driver for DasslDriver {
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
             let mut tout =
                 self.pending_tout.unwrap_or(if self.row == n_steps { stop } else { start + self.row as f64 * h });
+            // Zero-length final interval (stop == start): daskr rejects TOUT == T,
+            // so emit the held state directly instead of stepping.
+            if tout <= self.t {
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
+                emit_row(e, &mut self.rows, sim_data, layout, tout)?;
+                self.row += 1;
+                continue;
+            }
             unsafe {
                 solver::ddaskr(
                     dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(),
@@ -2080,6 +2264,7 @@ impl DasslCore {
                     event_update(e, sim_data, layout, None, troot)?;
                     if let Some(r) = rows.as_deref_mut() {
                         capture_row(e, r, sim_data, layout)?;
+                        check_asserts(e, sim_data, layout)?;
                     }
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
@@ -2440,7 +2625,7 @@ impl DasslEventsDriver {
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
@@ -2466,7 +2651,6 @@ impl DasslEventsDriver {
             core.read_states(e)?;
         }
         let _ = states_base;
-
         Ok(DasslEventsDriver {
             core,
             row: 1,
@@ -2493,7 +2677,7 @@ impl Driver for DasslEventsDriver {
             self.finished = true;
             return Ok(Advance::Terminated);
         }
-        let n_rows = model.n_intervals + 1;
+        let n_rows = model.n_output_rows();
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
@@ -2544,6 +2728,7 @@ impl Driver for DasslEventsDriver {
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
+                        check_asserts(e, sim_data, layout)?;
                         if terminated(e, sim_data, layout)? {
                             self.finished = true;
                             return Ok(Advance::Terminated);

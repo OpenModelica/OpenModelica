@@ -32,6 +32,13 @@ pub fn take_stdout_capture() -> String {
         .unwrap_or_default()
 }
 
+/// Write to stdout (fd 1) through the same capture/host routing as a guest
+/// `fd_write` — for a host that emits model output (`print`) directly rather than
+/// through the WASI ABI.
+pub fn stdout_write(bytes: &[u8]) {
+    write_std(bytes, false);
+}
+
 /// Route a stdout/stderr write to the capture buffer if active, else to the host.
 fn write_std(bytes: &[u8], is_err: bool) {
     let captured = STDOUT_CAPTURE.with(|c| match c.borrow_mut().as_mut() {

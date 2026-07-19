@@ -238,6 +238,26 @@ fn define_external_imports(
     Ok(())
 }
 
+/// The `print` builtin's host import (`rt.rt_print`): read the String handle's
+/// bytes from the shared linear memory and write them to the model's captured
+/// stdout. The handle stays owned by the generated code, which releases it after.
+fn define_print_import(linker: &mut wasmtime::Linker<()>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, ()>, handle: i32| {
+        if handle == 0 {
+            return;
+        }
+        // String layout: [refcount:u32][len:u32][utf8]; bytes start at handle + 8.
+        let data = memory.data(&caller);
+        let h = handle as usize;
+        let Some(lenb) = data.get(h + 4..h + 8) else { return };
+        let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
+        if let Some(bytes) = data.get(h + 8..h + 8 + len) {
+            openmodelica_wasi::wasi::stdout_write(bytes);
+        }
+    }))?;
+    Ok(())
+}
+
 /// Call native external `addr` through libffi, marshalling by the C-call
 /// [`ExtCallSig`]. Input args (in `extArgs` order) come from the wasm parameters:
 /// scalars (Real→f64, Integer/Boolean→i64) by value; `Str` as a NUL-terminated
@@ -526,6 +546,7 @@ fn instantiate_modules(model: &SimModel) -> Result<Instantiated> {
     let rt_str_new = wt(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_new"))?;
     let rt_str_data = wt(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data"))?;
     define_external_imports(&mut linker, model, memory, rt_str_new, rt_str_data)?;
+    define_print_import(&mut linker, memory)?;
     let instance = wt(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wt(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
@@ -654,6 +675,9 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
         crate::CodegenWasmJitFunctions::runtime::take_pending_assert()
     }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+        crate::CodegenWasmJitFunctions::runtime::take_pending_warnings()
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -754,6 +778,9 @@ impl sim_driver::SimEngine for InWasmSession {
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
         crate::CodegenWasmJitFunctions::runtime::take_pending_assert()
+    }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+        crate::CodegenWasmJitFunctions::runtime::take_pending_warnings()
     }
 }
 

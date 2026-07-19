@@ -131,6 +131,20 @@ pub(crate) fn add_host_builtins(store: &mut Store, imports: &mut wasmer::Imports
             },
         ),
     );
+    // `rt_assert_warning` (see `super::ENV_EXTRA`): a non-fatal warning-level
+    // violation; record its handles for the driver to format post-step.
+    imports.define(
+        "rt",
+        "rt_assert_warning",
+        Function::new_typed(
+            store,
+            |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
+                PENDING_WARNINGS.with(|p| {
+                    p.borrow_mut().push([cond, msg, file, sline, scol, eline, ecol, read_only]);
+                });
+            },
+        ),
+    );
     // The in-wasm session driver (`rt_sim_*`) polls these for its chunk budget and
     // cooperative cancel, wasm-side, so it uses the *same* clock/cancel source as
     // the host driver. Present in every runtime instantiation (unused by the host
@@ -165,6 +179,15 @@ thread_local! {
     /// The most recent assertion recorded by `rt_assert` on this thread, consumed
     /// by [`load_and_execute`]. Single-threaded per call, so a plain cell suffices.
     static PENDING_ASSERT: std::cell::RefCell<Option<PendingAssert>> = const { std::cell::RefCell::new(None) };
+    /// Warning-level violations recorded by `rt_assert_warning`, drained by the
+    /// driver after `functionCheckAsserts`. See the wasmtime backend for the shape.
+    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 8]>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Take (and clear) the warning-level assertion violations recorded by
+/// `rt_assert_warning` since the last call.
+pub(crate) fn take_pending_warnings() -> Vec<[i32; 8]> {
+    PENDING_WARNINGS.with(|p| core::mem::take(&mut *p.borrow_mut()))
 }
 
 /// Take the pending assertion recorded by `rt_assert` (message + source-info

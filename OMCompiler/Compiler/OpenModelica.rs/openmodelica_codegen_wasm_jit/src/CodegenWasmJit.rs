@@ -492,24 +492,37 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
 /// `CodegenWasmJit.runSimulation`: run the prepared model in-process and write
 /// the result file. Returns 0 on success, 1 on failure (matching the exit code
 /// the C target's executable would return, which `simulate` checks).
+/// The initialization success line, from the homotopy-step count the last
+/// `run_initialization` recorded (0 → "without homotopy method").
+fn init_success_line() -> String {
+    let steps = sim_driver::init_homotopy_steps();
+    if steps == 0 {
+        "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.".to_string()
+    } else {
+        format!("LOG_SUCCESS       | info    | The initialization finished successfully with {steps} homotopy steps.")
+    }
+}
+
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
-    let (res, output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
-    // The simulate scripting flow reads `<prefix>.log` after a run (the C target's
-    // executable writes one); match the C target's log exactly so rtest diffs are
-    // clean. `output` is the model's captured stdout (Streams.print, LOG_STATS, ...)
-    // folded in so it shows in the log instead of the process console. No start
-    // banner or flags line: OMEdit echoes those via its own compilation output.
+    let (res, init_output, sim_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
+    // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
+    // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
+    // process console.
+    let init_line = init_success_line();
+    // `LOG_ASSERT` warnings (min/max attribute violations, …) recorded during the run.
+    let warns: String = sim_driver::take_assert_warnings().concat();
+    let init_out = init_output.unwrap_or_default();
+    let combined = format!("{init_out}{sim_output}");
     let log = match &res {
+        // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
-            "{output}LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n\
+            "{init_out}{init_line}\n{warns}{sim_output}\
              LOG_SUCCESS       | info    | The simulation finished successfully.\n"
         ),
-        // Chattering abort (`-abortSlowSimulation`): init succeeded, then the driver's
-        // own `output` carries the chattering + aborting lines.
-        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!(
-            "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\n{output}"
-        ),
-        Err(e) => format!("{output}LOG_ERROR         | error   | wasm-jit simulation failed: {e:#}\n"),
+        // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
+        // chattering + aborting lines.
+        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_line}\n{warns}{combined}"),
+        Err(e) => format!("{combined}{warns}LOG_ERROR         | error   | wasm-jit simulation failed: {e:#}\n"),
     };
     let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
     // Error is in `<prefix>.log` (hence the result `messages`); no stderr.
@@ -659,14 +672,37 @@ fn resolve_overrides(model: &SimModel, simflags: &str) -> (Vec<(u32, WTy, f64)>,
     (params, starts)
 }
 
-fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Result<()>, String) {
+thread_local! {
+    /// Model stdout captured during initialization, split from the simulation-phase
+    /// output so the log stays ordered. `None` until initialization completes.
+    static INIT_OUTPUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+    /// Only [`run_simulation_inner`] wants the split; other `run_initialization`
+    /// callers (the interactive session) share the hook but must not split. Armed
+    /// for one firing.
+    static SPLIT_ARMED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Init-done hook: take the init-phase stdout and restart the capture. A no-op
+/// unless [`run_simulation_inner`] armed it; disarms after firing.
+fn on_init_done() {
+    if !SPLIT_ARMED.with(|a| a.replace(false)) {
+        return;
+    }
+    let init = openmodelica_wasi::wasi::take_stdout_capture();
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(init));
+    openmodelica_wasi::wasi::start_stdout_capture();
+}
+
+/// Run the model, returning the result and the model's stdout split into the
+/// initialization segment (`Some` once init completed) and the simulation segment.
+fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Result<()>, Option<String>, String) {
     let model = sim_models()
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .get(prefix)
         .cloned();
     let Some(model) = model else {
-        return (Err("no prepared wasm-jit model for (translateModel not run?)"), String::new());
+        return (Err("no prepared wasm-jit model for (translateModel not run?)"), None, String::new());
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
@@ -676,6 +712,9 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(simflags.split_whitespace().any(|t| t == "-abortSlowSimulation"));
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
+    sim_driver::set_init_done_hook(on_init_done);
+    SPLIT_ARMED.with(|a| a.set(true));
     openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
     let res = (|| -> Result<()> {
@@ -701,8 +740,13 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
         extra.push_str(&line);
         extra.push('\n');
     }
-    let captured = openmodelica_wasi::wasi::take_stdout_capture();
-    (res, format!("{captured}{extra}"))
+    // Disarm in case init failed before the hook fired.
+    SPLIT_ARMED.with(|a| a.set(false));
+    // Everything captured after the split is the simulation phase (plus `extra`:
+    // LOG_STATS / chattering lines). `INIT_OUTPUT` is `None` when init failed.
+    let sim_output = format!("{}{extra}", openmodelica_wasi::wasi::take_stdout_capture());
+    let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
+    (res, init_output, sim_output)
 }
 
 // ===========================================================================
@@ -2157,6 +2201,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     index_list(&sim_code.parameterEquations, &mut eq_index);
     index_list(&sim_code.removedEquations, &mut eq_index);
     index_list(&sim_code.startValueEquations, &mut eq_index);
+    index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
     for part in lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)) {
         index_list(part, &mut eq_index);
     }
@@ -2237,6 +2282,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     };
     let initial_eqs = flatten_eqs(&sim_code.initialEquations);
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
+    let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
@@ -2527,6 +2573,18 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         });
         idx
     };
+    // Min/max variable-attribute (and equation) assertion checks: C's
+    // `checkForAsserts`, evaluated at each accepted output point. Warning-level
+    // asserts record a `LOG_ASSERT` via `rt_assert_warning` and continue.
+    let check_asserts_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if assert_eqs.is_empty() {
+            empty_eqfn()
+        } else {
+            build_eq_fn("functionCheckAsserts", assert_eqs, &var_map, &eq_index, &by_name, &mut literals)?
+        });
+        idx
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -2554,6 +2612,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionZeroCrossings: (i32) -> ()
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
+    functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -2577,6 +2636,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionZeroCrossings", we::ExportKind::Func, zc_idx);
     exports.export("functionStateSetJacobians", we::ExportKind::Func, stateset_jac_idx);
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
+    exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
 
     let mut module = we::Module::new();
     module.section(&types);

@@ -51,6 +51,8 @@ use metamodelica::List;
 
 use openmodelica_ast::Absyn;
 use openmodelica_frontend_dump::AbsynUtil;
+use openmodelica_frontend_dump::ExpressionDumpTpl;
+use openmodelica_tpl::Tpl;
 use openmodelica_frontend_types::{ClassInf, DAE, Values};
 use openmodelica_simcode_types::SimCodeFunction;
 
@@ -314,11 +316,29 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly)` records a pending
 /// assertion failure (the message and source-info handles) for `load_and_execute`
 /// to route to the error buffer; the generated code then traps (`unreachable`).
-pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[(
-    "rt_assert",
-    &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
-    &[],
-)];
+///
+/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly)`
+/// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
+/// (dumped condition, message, file) plus source position — for the driver to
+/// format as a `LOG_ASSERT` warning after the step. The generated code continues
+/// (no trap), matching C's `omc_assert_warning`.
+///
+/// `rt_print(str)` writes the String's bytes to the model's stdout (the `print`
+/// builtin). The host reads the handle's bytes from the shared memory during the
+/// call; the generated code releases the (owned) handle afterwards.
+pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
+    (
+        "rt_assert",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[],
+    ),
+    (
+        "rt_assert_warning",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[],
+    ),
+    ("rt_print", &[WTy::I32], &[]),
+];
 
 /// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
 /// and `RT_BUILTINS`).
@@ -1329,7 +1349,7 @@ impl<'a> FnCtx<'a> {
                 self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
                 Ok(())
             }
-            W::ASSERT { condition, message, source, .. } => emit_assert(self, condition, message, source),
+            W::ASSERT { condition, message, level, source } => emit_assert(self, condition, message, level, source),
             W::NORETCALL { exp, .. } => emit_noretcall(self, exp),
         }
     }
@@ -2550,23 +2570,54 @@ fn emit_noretcall(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
 /// distinguished here), so a failed assert routes its message + source info to
 /// the error buffer (host import `rt_assert`, read back by `load_and_execute`)
 /// and then traps, matching the `[file:l:c-l:c:writable] Error: <msg>` output.
+/// A warning-level assert (`AssertionLevel.warning`, `level` enum index 1 — e.g.
+/// the min/max variable-attribute checks) instead calls `rt_assert_warning` and
+/// continues: the driver formats the recorded violation as a `LOG_ASSERT` warning
+/// after the step, matching C's `omc_assert_warning` (warn once, do not throw).
 /// Shared by `STMT_ASSERT` and the `when`-body `ASSERT` operator.
 fn emit_assert(
     ctx: &mut FnCtx,
-    cond: &DAE::Exp,
+    cond: &Arc<DAE::Exp>,
     msg: &DAE::Exp,
+    level: &DAE::Exp,
     source: &DAE::ElementSource,
 ) -> Result<()> {
+    let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
     let c = compile_exp(ctx, cond)?;
     coerce(ctx, c, WTy::I32);
     ctx.emit(we::Instruction::I32Eqz);
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    let info = &source.info;
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    if is_warning {
+        // The dumped condition (C's `assert_cond`), then the message, then the
+        // source position — all consumed by `rt_assert_warning`; execution
+        // continues afterwards (no trap).
+        let cond_str = Tpl::textString(ExpressionDumpTpl::dumpExp(
+            Tpl::emptyTxt.clone(),
+            cond.clone(),
+            arcstr::literal!("\""),
+        )?)?;
+        emit_str_literal(ctx, cond_str.as_bytes())?; // dumped condition
+        let mw = compile_exp(ctx, msg)?; // owned message String handle
+        if mw != WTy::I32 {
+            return Err("CodegenWasmJit: assert message is not a String");
+        }
+        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
+        ctx.emit(we::Instruction::End);
+        return Ok(());
+    }
     let mw = compile_exp(ctx, msg)?; // owned String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
     }
-    let info = &source.info;
-    emit_str_literal(ctx, info.fileName.as_bytes())?; // file String handle
+    emit_str_literal(ctx, file.as_bytes())?; // file String handle
     ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
     ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
     ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
@@ -2620,7 +2671,7 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
             Ok(())
         }
         S::STMT_NORETCALL { exp, .. } => emit_noretcall(ctx, exp),
-        S::STMT_ASSERT { cond, msg, source, .. } => emit_assert(ctx, cond, msg, source),
+        S::STMT_ASSERT { cond, msg, level, source } => emit_assert(ctx, cond, msg, level, source),
         S::STMT_FOR { iter, range, statementLst, type_, .. } => compile_for(ctx, iter, range, statementLst, type_),
         S::STMT_BREAK { .. } => {
             let (brk, _) = *ctx
@@ -3211,6 +3262,61 @@ fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
+/// The value type of a component reference's leaf, after applying its final
+/// subscripts (so `states[2]` of `states : ThermodynamicState[2]` yields the
+/// record element type). Array dims are peeled one per index subscript.
+fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<Arc<DAE::Type>> {
+    use DAE::ComponentRef as C;
+    let (identType, nsubs) = match cr {
+        C::CREF_QUAL { componentRef, .. } => return cref_leaf_value_type(componentRef),
+        C::CREF_IDENT { identType, subscriptLst, .. } => {
+            (identType, (&**subscriptLst).into_iter().count())
+        }
+        _ => return Err("CodegenWasmJit: unsupported component reference"),
+    };
+    let mut ty = identType.clone();
+    let mut remaining = nsubs;
+    while remaining > 0 {
+        let DAE::Type::T_ARRAY { ty: inner, dims } = &*ty else { break };
+        let nd = (&**dims).into_iter().count();
+        if remaining < nd {
+            break;
+        }
+        remaining -= nd;
+        ty = inner.clone();
+    }
+    Ok(ty)
+}
+
+/// Append `field` (of DAE type `field_ty`) to the leaf of `cr`, turning e.g.
+/// `pipe.flowModel.states[2]` into `pipe.flowModel.states[2].field`.
+fn cref_append_field(
+    cr: &DAE::ComponentRef,
+    field: &DAE::Ident,
+    field_ty: Arc<DAE::Type>,
+) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_IDENT { ident, identType, subscriptLst } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: Arc::new(C::CREF_IDENT {
+                ident: field.clone(),
+                identType: field_ty,
+                subscriptLst: metamodelica::nil(),
+            }),
+        }),
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: cref_append_field(componentRef, field, field_ty),
+        }),
+        other => Arc::new(other.clone()),
+    }
+}
+
 /// Push the byte address of array element `base[e1,…,en]` within `SimData` onto
 /// the stack, for a `group` whose scalarized elements are contiguous row-major
 /// (verified in `finalize_array_groups`). The row-major linear index is built at
@@ -3331,6 +3437,11 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             // range into a fresh runtime array object.
             if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
                 emit_sim_array_gather(ctx, &group)?;
+                return Ok(Some(WTy::I32));
+            }
+            // A whole record model variable: gather its scalar field slots into a
+            // fresh runtime record object.
+            if try_emit_sim_record_gather(ctx, cref)? {
                 return Ok(Some(WTy::I32));
             }
             return Err("CodegenWasmJit: simulation reference to unknown variable")
@@ -3495,6 +3606,53 @@ fn emit_sim_array_gather(ctx: &mut FnCtx, group: &ArrayGroup) -> Result<()> {
     ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(())
+}
+
+/// If `cref` names a whole record model variable (its leaf, after subscripts, is
+/// a record), build a fresh runtime record from the scalar `SimData` slots of
+/// its fields and leave the owned handle on the stack. Each field is read through
+/// its own extended cref, so nested records / arrays-of-records gather
+/// recursively. Returns `Ok(true)` when it handled the reference.
+fn try_emit_sim_record_gather(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let leaf_ty = cref_leaf_value_type(cref)?;
+    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { .. }, varLst, .. } = &*leaf_ty
+    else {
+        return Ok(false);
+    };
+    let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
+    let mut fields = Vec::with_capacity(vars.len());
+    for v in &vars {
+        fields.push((v.name.clone(), sig_ty(&v.ty)?));
+    }
+    let layout = record_layout(&fields);
+    ctx.emit(we::Instruction::I32Const(layout.heap.len() as i32));
+    ctx.emit(we::Instruction::I32Const(layout.size as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_new")?));
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (k, (kind, foff)) in layout.heap.iter().enumerate() {
+        let base = 8 + k as u32 * 8;
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(*kind as i32));
+        ctx.emit(we::Instruction::I32Store(mem_arg(base, 2)));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(*foff as i32));
+        ctx.emit(we::Instruction::I32Store(mem_arg(base + 4, 2)));
+    }
+    for (i, v) in vars.iter().enumerate() {
+        let fty = fields[i].1.clone();
+        let field_cref = cref_append_field(cref, &v.name, v.ty.clone());
+        let wty = compile_sim_cref_read(ctx, &field_cref)?
+            .ok_or("CodegenWasmJit: record field is not a simulation variable")?;
+        coerce(ctx, wty, fty.wty());
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(true)
 }
 
 /// Emit code that scatters a whole-array assignment into a model variable's
@@ -3732,6 +3890,35 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::REDUCTION { reductionInfo, expr, iterators } => {
             compile_reduction(ctx, reductionInfo, expr, iterators)
         }
+        // `f(...)[ix]` — pick one value out of a multi-output call's result
+        // tuple. Compile the call (leaving all results on the stack, first
+        // deepest), keep the `ix`-th (1-based) and release the rest.
+        E::TSUB { exp, ix, .. } => {
+            let DAE::Exp::CALL { path, expLst, attr } = &**exp else {
+                return Err("CodegenWasmJit: tuple subscript of a non-call expression");
+            };
+            let results = compile_call(ctx, path, expLst, attr)?;
+            let want = (*ix as usize).checked_sub(1)
+                .filter(|&i| i < results.len())
+                .ok_or("CodegenWasmJit: tuple subscript index out of range")?;
+            let mut temps = vec![0u32; results.len()];
+            for i in (0..results.len()).rev() {
+                let vt = ctx.alloc_temp(results[i].wty());
+                ctx.emit(we::Instruction::LocalSet(vt));
+                temps[i] = vt;
+            }
+            for (i, sty) in results.iter().enumerate() {
+                if i == want {
+                    continue;
+                }
+                if let Some(release_fn) = sty.release_fn() {
+                    ctx.emit(we::Instruction::LocalGet(temps[i]));
+                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+                }
+            }
+            ctx.emit(we::Instruction::LocalGet(temps[want]));
+            Ok(results[want].wty())
+        }
         other => return Err("CodegenWasmJit: expression not yet supported"),
     }
 }
@@ -3757,6 +3944,7 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::SIZE { .. } | E::RECORD { .. } => WTy::I32,
         E::REDUCTION { reductionInfo, .. } => sig_ty(&reductionInfo.exprType)?.wty(),
         E::RSUB { ty, .. } => sig_ty(ty)?.wty(),
+        E::TSUB { ty, .. } => sig_ty(ty)?.wty(),
         E::ASUB { .. } => exp_sigty(exp).map(|s| s.wty()).unwrap_or(WTy::I32),
         _ => WTy::F64,
     })
@@ -3858,6 +4046,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
         // A record constructor / field access carry their type directly.
         E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty(ty)?,
+        E::TSUB { ty, .. } => sig_ty(ty)?,
         other => return Err("CodegenWasmJit: cannot determine type of expression"),
     })
 }
@@ -4254,6 +4443,24 @@ fn compile_call(
     }
     // Otherwise it must be a (builtin) math/string function.
     let name = AbsynUtil::pathLastIdent(Arc::new(path.clone()))?.to_string();
+    // `print(s)`: write the String to the model's stdout via the host `rt_print`.
+    // A void procedure, so it yields no result; the owned handle is released after.
+    if name == "print" {
+        let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+        if argv.len() != 1 {
+            return Err("CodegenWasmJit: print expects one argument");
+        }
+        let w = compile_exp(ctx, argv[0])?;
+        if w != WTy::I32 {
+            return Err("CodegenWasmJit: print expects a String");
+        }
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        ctx.emit(we::Instruction::LocalGet(t));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_print")?));
+        release_temp(ctx, t)?;
+        return Ok(Vec::new());
+    }
     compile_math_builtin(ctx, &name, args, attr).map(|s| vec![s])
 }
 

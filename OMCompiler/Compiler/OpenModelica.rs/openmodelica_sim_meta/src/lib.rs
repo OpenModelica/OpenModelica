@@ -338,6 +338,19 @@ pub struct SimMeta {
     pub zc_desc: Vec<String>,
 }
 
+impl SimMeta {
+    /// Number of equidistant output rows the run writes. `n_intervals + 1` for a
+    /// real interval; a zero-length run (`stop <= start`) writes the start and stop
+    /// points only — 2 rows, regardless of `numberOfIntervals`.
+    pub fn n_output_rows(&self) -> u32 {
+        if self.stop_time > self.start_time {
+            self.n_intervals + 1
+        } else {
+            2
+        }
+    }
+}
+
 // ─────────────────────────────── wire format ─────────────────────────────────
 //
 // A flat little-endian encoding behind a 4-byte magic + version. Strings are

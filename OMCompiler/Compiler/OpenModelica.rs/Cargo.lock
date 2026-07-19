@@ -6513,6 +6513,7 @@ dependencies = [
  "openmodelica_modelica_utilities",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
+ "openmodelica_tpl",
  "openmodelica_util",
  "openmodelica_wasi",
  "openmodelica_wasi_libc",

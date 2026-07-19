@@ -549,7 +549,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                     out_arrays.push((off, dst, bytes, data_off));
                 }
             }
-            other => return Err("input argument type not marshalled for the web target"),
+            _ => return Err("input argument type not marshalled for the web target"),
         }
     }
 
@@ -578,7 +578,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
             SigTy::Real => Value::F64(f64::from_le_bytes(raw)),
             SigTy::Int | SigTy::Bool | SigTy::Ptr => Value::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
             SigTy::Str => Value::I32(make(store, u32::from_le_bytes(raw[..4].try_into().unwrap()))? as i32),
-            other => return Err("output type not marshalled for the web target"),
+            _ => return Err("output type not marshalled for the web target"),
         })
     };
 
@@ -611,6 +611,38 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
         }
     });
     Ok(results)
+}
+
+/// `rt.rt_print` for the web target: read the String handle's bytes from the
+/// shared memory and write them to the model's captured stdout. The wasmer
+/// counterpart of `sim_runtime_wasmtime::define_print_import`.
+fn define_print_import(store: &mut Store, imports: &mut wasmer::Imports, memory: &wasmer::Memory) {
+    use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut};
+    let env = FunctionEnv::new(&mut *store, memory.clone());
+    let f = Function::new_typed_with_env(
+        &mut *store,
+        &env,
+        |env: FunctionEnvMut<wasmer::Memory>, handle: i32| {
+            if handle == 0 {
+                return;
+            }
+            // String layout: [refcount:u32][len:u32][utf8]; bytes start at handle + 8.
+            let mem = env.data().clone();
+            let store_ref = env.as_store_ref();
+            let view = mem.view(&store_ref);
+            let h = handle as u64;
+            let mut lenb = [0u8; 4];
+            if view.read(h + 4, &mut lenb).is_err() {
+                return;
+            }
+            let mut bytes = vec![0u8; u32::from_le_bytes(lenb) as usize];
+            if view.read(h + 8, &mut bytes).is_err() {
+                return;
+            }
+            openmodelica_wasi::wasi::stdout_write(&bytes);
+        },
+    );
+    imports.define("rt", "rt_print", f);
 }
 
 /// Read a NUL-terminated C string from the side module's memory at `off`.
@@ -743,6 +775,7 @@ fn instantiate_modules(model: &SimModel) -> Result<Instantiated> {
         let rt_str_data: wasmer::TypedFunction<u32, u32> = wt(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
         define_external_imports(&mut store, &mut imports, model, &memory, &rt_str_new, &rt_str_data)?;
     }
+    define_print_import(&mut store, &mut imports, &memory);
 
     let instance = wt(wasmer::Instance::new(&mut store, &model_module, &imports))?;
     let inst_time = t_inst.elapsed();
@@ -811,6 +844,9 @@ impl sim_driver::SimEngine for WasmerEngine {
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
         crate::CodegenWasmJitFunctions::runtime::take_pending_assert()
+    }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+        crate::CodegenWasmJitFunctions::runtime::take_pending_warnings()
     }
 }
 
@@ -914,6 +950,9 @@ impl sim_driver::SimEngine for InWasmSession {
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
         crate::CodegenWasmJitFunctions::runtime::take_pending_assert()
+    }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+        crate::CodegenWasmJitFunctions::runtime::take_pending_warnings()
     }
 }
 
