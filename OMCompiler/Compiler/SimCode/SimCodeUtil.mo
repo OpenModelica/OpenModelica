@@ -15951,7 +15951,7 @@ protected
   list<Absyn.Exp> elems;
   Option<SimCode.FmiPlot> op;
 algorithm
-  elems := match oexp case SOME(e) then figureExpElements(e); else {}; end match;
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
   for e in elems loop
     op := fmiPlotFromExp(e, nameMap, terminals);
     if isSome(op) then
@@ -15993,7 +15993,7 @@ protected
   list<Absyn.Exp> elems;
   Option<SimCode.FmiCurve> oc;
 algorithm
-  elems := match oexp case SOME(e) then figureExpElements(e); else {}; end match;
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
   for e in elems loop
     oc := fmiCurveFromExp(e, nameMap);
     if isSome(oc) then
@@ -16016,21 +16016,22 @@ protected
   Boolean dropX;
 algorithm
   args := figureArgs(exp, {"x", "y", "legend"});
-  yref := match figureArgExp(args, "y") case SOME(e) then resolveFigureRef(e, nameMap); else NONE(); end match;
+  yref := match figureArgExp(args, "y") local Absyn.Exp e; case SOME(e) then resolveFigureRef(e, nameMap); else NONE(); end match;
   if isNone(yref) then
     return;
   end if;
   SOME(yc) := yref;
-  (xVar, dropX) := match figureArgExp(args, "x")
+  xVar := NONE();
+  dropX := false;
+  () := match figureArgExp(args, "x")
     local Absyn.Exp xe;
-    case NONE() then (NONE(), false);
-    case SOME(xe) guard isFigureTime(xe) then (NONE(), false);
+    case NONE() then ();
+    case SOME(xe) guard isFigureTime(xe) then ();
     case SOME(xe)
-      then match resolveFigureRef(xe, nameMap)
-        local DAE.ComponentRef xc;
-        case SOME(xc) then (SOME(xc), false);
-        else (NONE(), true);
-      end match;
+      algorithm
+        xVar := resolveFigureRef(xe, nameMap);
+        dropX := isNone(xVar);
+      then ();
   end match;
   if dropX then
     return;
@@ -16044,7 +16045,7 @@ protected function fmiAxisFromArg
 protected
   list<tuple<String, Absyn.Exp>> args;
 algorithm
-  args := match oexp case SOME(e) then figureArgs(e, {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  args := match oexp local Absyn.Exp e; case SOME(e) then figureArgs(e, {"min", "max", "unit", "label", "scale"}); else {}; end match;
   axis := SimCode.FMI_FIGURE_AXIS(
     figureStrArg(args, "label"),
     figureStrArg(args, "unit"),
