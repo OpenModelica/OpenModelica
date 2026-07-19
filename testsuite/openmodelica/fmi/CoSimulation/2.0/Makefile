@@ -6,6 +6,7 @@ ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 fmi_interpolation_01.mos \
 FmuExportFlags.mos \
+issue10790_memory_leak.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
