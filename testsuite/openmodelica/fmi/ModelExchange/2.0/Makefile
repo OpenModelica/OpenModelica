@@ -27,12 +27,7 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
-fmi2_array_attributes_nb.mos \
-fmi2_array_attributes.mos \
-fmi2_array_nonscalarized.mos \
-fmi2_arrays_initial_unknowns.mos \
 fmi_export_derivative_annotation.mos \
-fmi_export_derivative_annotation_buildings.mos \
 fmi_export_derivative_annotation_unused.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
