@@ -15885,6 +15885,22 @@ algorithm
   figures := listReverse(figures);
 end getFMI3Figures;
 
+public function getFMI3VisualizationResource
+  "The <name>_visual.xml resource -d=visxml exported, or \"\" if none. CodegenFMU3
+   emits it as the OpenModelica <Visualization> vendor annotation."
+  input SimCode.SimCode simCode;
+  output String resource = "";
+protected
+  String path;
+algorithm
+  if Flags.isSet(Flags.VISUAL_XML) then
+    path := simCode.fileNamePrefix + "_visual.xml";
+    if System.regularFileExists(path) then
+      resource := simCode.fileNamePrefix + "_visual.xml";
+    end if;
+  end if;
+end getFMI3VisualizationResource;
+
 protected function figureExpsFromMod
   input Option<Absyn.Modification> mod;
   output list<Absyn.Exp> exps;

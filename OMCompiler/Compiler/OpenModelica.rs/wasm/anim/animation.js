@@ -1,7 +1,7 @@
 // 3D animation view for MultiBody models. Consumes the scene + per-frame
-// transform buffer produced by the omc module (omc_anim_* → openmodelica_animation
-// crate) and renders it with three.js. The transform math lives in Rust so this
-// file only builds meshes and plays them back.
+// transform buffer produced by the shared anim core (anim-core.js →
+// openmodelica_animation crate) and renders it with three.js. The transform math
+// lives in Rust so this file only builds meshes and plays them back.
 //
 // Frame buffer layout (STRIDE floats per shape, from the crate):
 //   [0] kind, [1..9] rot (res._T, row-major), [10..12] pos, [13..15] size
@@ -117,7 +117,7 @@ export class Animator {
     this.renderAt(this.time);
   }
 
-  // Build a mesh from a CAD shape's triangle data (from omc_dxf_mesh, attached
+  // Build a mesh from a CAD shape's triangle data (from anim-core dxfMesh, attached
   // by the worker). Vertices are in the file's own coordinates; the per-frame
   // transform (with the CAD orientation) and length/width/height scale place it.
   _buildCadMesh(s) {

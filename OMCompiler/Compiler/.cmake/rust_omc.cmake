@@ -1052,14 +1052,21 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_SCRIPTING_API)
     set(_wasm_scripting_feature ",libopenmodelica_compiler/scripting_api")
   endif()
+  # Standalone animation wasm for the browser pages, built in the same cargo pass
+  # (features package-qualified so the extra -p stays unambiguous).
+  set(_anim_pkg "")
+  if(_host STREQUAL "web")
+    set(_anim_pkg -p openmodelica_animation_wasm)
+  endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
-                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus
+                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus ${_anim_pkg}
                      --no-default-features
                      --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature})
   else()
-    set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
-                     --no-default-features --features engine-wasmer,codegen_fmu${_wasm_scripting_feature})
+    set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler ${_anim_pkg}
+                     --no-default-features
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature})
   endif()
 
   if(_profile STREQUAL "release")
@@ -1150,12 +1157,17 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/home/index.html
         ${RUST_OMC_DIR}/wasm/simulator/index.html
         ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
-        ${RUST_OMC_DIR}/wasm/simulator/animation.js
-        ${RUST_OMC_DIR}/wasm/simulator/OrbitControls.js
         ${RUST_OMC_DIR}/wasm/simulator/config.json
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/theme.css
+        # Shared 3D animation view (anim/), used by both simulator pages.
+        ${RUST_OMC_DIR}/wasm/anim/animation.js
+        ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
+        ${RUST_OMC_DIR}/wasm/anim/anim-view.js
+        ${RUST_OMC_DIR}/wasm/anim/anim-core.js
+        ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
+        ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
@@ -1177,12 +1189,22 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/simulator/index.html
                 ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
-                ${RUST_OMC_DIR}/wasm/simulator/animation.js
-                ${RUST_OMC_DIR}/wasm/simulator/OrbitControls.js
                 ${RUST_OMC_DIR}/wasm/simulator/config.json
-                ${_three_js} ${_web_dir}/simulator/
+                ${_web_dir}/simulator/
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
+        # Shared anim/ module: the wasm-bindgen'd anim wasm plus the renderer/panel
+        # JS and three.js, imported by both simulator pages as ../anim/*.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/anim
+        COMMAND ${WASM_BINDGEN_EXECUTABLE}
+                ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_animation_wasm.wasm
+                --out-dir ${_web_dir}/anim --target web
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/anim/animation.js
+                ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
+                ${RUST_OMC_DIR}/wasm/anim/anim-view.js
+                ${RUST_OMC_DIR}/wasm/anim/anim-core.js
+                ${_three_js} ${_web_dir}/anim/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html

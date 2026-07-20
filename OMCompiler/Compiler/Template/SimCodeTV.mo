@@ -1480,6 +1480,11 @@ package SimCodeUtil
     output list<SimCode.FmiFigure> figures;
   end getFMI3Figures;
 
+  function getFMI3VisualizationResource
+    input SimCode.SimCode simCode;
+    output String resource;
+  end getFMI3VisualizationResource;
+
   function isFMI3NestableAlias
     input SimCodeVar.SimVar simVar;
     output Boolean nestable;

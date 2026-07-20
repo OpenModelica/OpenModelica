@@ -777,6 +777,44 @@ algorithm
    callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType,program);
 end callTargetTemplatesOMSICpp;
 
+protected function visualizationCadFiles
+  "Absolute paths of the CAD files referenced as shape types in the visxml, so the
+   exported FMU can embed them (a portable FMU cannot resolve the modelica:// URIs
+   on another machine)."
+  input String visualXmlFile;
+  output list<String> paths = {};
+protected
+  Absyn.Program program;
+  Boolean prevType = false;
+  String low, path;
+algorithm
+  if not System.regularFileExists(visualXmlFile) then
+    return;
+  end if;
+  program := SymbolTable.getAbsyn();
+  // strtok on "<>" yields the type text as the token right after each "type".
+  for tok in System.strtok(System.readFile(visualXmlFile), "<>") loop
+    if prevType then
+      low := System.tolower(tok);
+      if StringUtil.endsWith(low, ".dxf") or StringUtil.endsWith(low, ".stl") or
+         StringUtil.endsWith(low, ".obj") or StringUtil.endsWith(low, ".3ds") then
+        if System.stringFind(tok, "modelica://") == 0 then
+          path := ProgramUtil.getFullPathFromUri(program, tok, true);
+        elseif System.stringFind(tok, "file://") == 0 then
+          path := substring(tok, 8, stringLength(tok));
+        else
+          path := tok;
+        end if;
+        if not listMember(path, paths) then
+          paths := path :: paths;
+        end if;
+      end if;
+    end if;
+    prevType := stringEqual(tok, "type");
+  end for;
+  paths := listReverse(paths);
+end visualizationCadFiles;
+
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
@@ -872,6 +910,21 @@ algorithm
           else
             then();
           end match;
+
+        // -d=visxml scene as a resource, referenced by the <Visualization>
+        // annotation, plus the CAD files it references (a portable FMU cannot rely
+        // on the importer having the libraries the modelica:// URIs point at).
+        if Flags.isSet(Flags.VISUAL_XML) and System.regularFileExists(simCode.fileNamePrefix + "_visual.xml") then
+          if 0 <> System.systemCall("cp -f \"" + simCode.fileNamePrefix + "_visual.xml\" \"" + resourcesDir + simCode.fileNamePrefix + "_visual.xml\"") then
+            Error.addInternalError("Failed to copy " + simCode.fileNamePrefix + "_visual.xml to " + resourcesDir, sourceInfo());
+          end if;
+          for cad in visualizationCadFiles(simCode.fileNamePrefix + "_visual.xml") loop
+            if System.regularFileExists(cad) and
+               0 <> System.systemCall("cp -f \"" + cad + "\" \"" + resourcesDir + System.basename(cad) + "\"") then
+              Error.addInternalError("Failed to copy CAD file " + cad + " to " + resourcesDir, sourceInfo());
+            end if;
+          end for;
+        end if;
 
         SerializeSparsityPattern.serialize(simCode);
         for jac in simCode.jacobianMatrices loop

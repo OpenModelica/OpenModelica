@@ -71,31 +71,7 @@
   /* Enum: name dropdown, no unit column. */
   .ic-item.enum { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); }
 
-  /* 3D animation view: sits above the charts (both visible). Canvas fills the
-     pane, a control bar pinned below it, view presets overlaid top-right. */
-  .anim { flex:0 0 46%; display:flex; flex-direction:column; min-height:200px;
-    border-bottom:1px solid var(--border); }
-  .anim[hidden] { display:none; }
-  .anim-view { flex:1 1 auto; min-height:0; position:relative; background:#1e1e1e; overflow:hidden; }
-  .anim-views { position:absolute; top:6px; right:8px; z-index:2; display:flex; gap:4px; }
-  .anim-views button { background:#0009; border:1px solid var(--border); color:var(--fg);
-    padding:3px 8px; font-size:12px; border-radius:4px; cursor:pointer; }
-  .anim-views button:hover { background:#000c; border-color:var(--accent); }
-  .anim-bar { flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:8px 12px;
-    border-top:1px solid var(--border); background:var(--panel); }
-  .anim-bar input[type=range] { flex:1 1 auto; width:auto; padding:0; accent-color:var(--accent); }
-  .anim-bar .t { color:var(--muted); font:12.5px ui-monospace,Menlo,Consolas,monospace; min-width:5.5em; text-align:right; }
-  .anim-bar select { width:auto; font-size:13px; padding:4px 6px; }
-  .anim-speed-wrap { display:inline-flex; align-items:center; gap:2px; }
-  .anim-bar input.anim-speed { width:5em; font-size:13px; padding:4px 6px; text-align:right; }
-  .anim-speed-x { color:var(--muted); font-size:13px; }
-  /* Play and repeat share one neutral scheme so they read as a matched pair. */
-  .anim-play, .anim-loop { background:transparent; border:1px solid var(--border); color:var(--fg);
-    border-radius:4px; height:30px; min-width:34px; padding:0 10px; font-size:14px; line-height:1;
-    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
-  .anim-play:hover:not(:disabled), .anim-loop:hover { background:#2d2d30; border-color:var(--accent); color:var(--fg); }
-  .anim-loop svg { width:16px; height:16px; display:block; }
-  .anim-loop.active { color:var(--accent); border-color:var(--accent); }
+  /* The 3D animation panel styles live in the shared theme.css (anim/anim-view.js). */
 
   /* charts area: one card per plot, scrollable */
   /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
@@ -109,8 +85,6 @@
     .grid2 { grid-template-columns:auto 1fr; }
     #icPanel { max-height:none; }
     .charts { overflow:visible; }
-    .anim { flex:none; height:auto; }
-    .anim-view { height:70vw; min-height:320px; }
     header { flex-wrap:wrap; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
     .ex-select { max-width:56%; }
@@ -137,7 +111,7 @@
   }
 </style>
 <script type="importmap">
-{ "imports": { "three": "./three.module.min.js" } }
+{ "imports": { "three": "../anim/three.module.min.js" } }
 </script>
 </head>
 <body>
@@ -167,37 +141,7 @@
     </div>
   </div>
 
-  <div class="right">
-    <div class="anim" id="anim" hidden>
-      <div class="anim-view" id="animView">
-        <div class="anim-views" id="animViews">
-          <button data-view="iso" title="Isometric">Iso</button>
-          <button data-view="side" title="Side (look −Z; x→ right, y↑ up)">Side</button>
-          <button data-view="front" title="Front (look −X)">Front</button>
-          <button data-view="top" title="Top (look −Y)">Top</button>
-          <button data-view="fit" title="Reset view">Fit</button>
-        </div>
-      </div>
-      <div class="anim-bar">
-        <button class="anim-play" id="animPlay" title="Play/pause">▶</button>
-        <button class="anim-loop" id="animLoop" title="Repeat" aria-label="Repeat" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        </button>
-        <input type="range" id="animSeek" min="0" max="1000" value="0" step="1" aria-label="Time" />
-        <span class="t" id="animTime">0.000 s</span>
-        <span class="anim-speed-wrap" title="Playback speed: simulated seconds per real second (any positive number, e.g. 1e-9 or 1e6)">
-          <input id="animSpeed" class="anim-speed" list="speedPresets" type="text" inputmode="decimal"
-                 value="1" aria-label="Playback speed (simulated seconds per real second)" />
-          <span class="anim-speed-x">×</span>
-        </span>
-        <datalist id="speedPresets">
-          <option value="1e-9"></option><option value="1e-6"></option><option value="1e-3"></option>
-          <option value="0.25"></option><option value="0.5"></option><option value="1"></option>
-          <option value="2"></option><option value="4"></option><option value="10"></option>
-          <option value="100"></option><option value="1e3"></option><option value="1e6"></option>
-        </datalist>
-      </div>
-    </div>
+  <div class="right" id="right">
     <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Run a model to see results.</div></div>
   </div>
 
@@ -265,7 +209,7 @@
 </div>
 
 <script type="module">
-import { Animator } from './animation.js';
+import { AnimView } from '../anim/anim-view.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
@@ -295,9 +239,7 @@ const charts = createCharts(chartsEl);
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 const exSel = el('examples'), docBody = el('docBody');
 const settingsBtn = el('settingsBtn'), settingsBackdrop = el('settingsBackdrop'), settingsClose = el('settingsClose');
-const animEl = el('anim'), animView = el('animView'), animPlay = el('animPlay'), animLoop = el('animLoop');
-const animSeek = el('animSeek'), animTime = el('animTime'), animSpeed = el('animSpeed'), animViews = el('animViews');
-let animLoopOn = false;   // repeat preference, persisted across runs
+const rightEl = el('right');
 
 // Documentation collapse/expand, driven from inside the widget: a chevron in the
 // doc header hides it; when collapsed it leaves a thin rail (desktop) or header
@@ -305,7 +247,7 @@ let animLoopOn = false;   // repeat preference, persisted across runs
 let docsUserToggled = false;   // once the user decides, stop auto-collapsing
 function reflowDocs() {
   charts.redraw();                                   // chart width changed
-  if (animator && !animEl.hidden) animator.resize();
+  if (animView) animView.resize();
 }
 function toggleDocs() {
   docsUserToggled = true;
@@ -344,7 +286,7 @@ const log = (...a) => { if (DEBUG) console.log('[sim ' + tstamp() + ']', ...a); 
 if (DEBUG) window.__sim = {
   get snap() { return snap; }, get mode() { return mode; },
   get builtModel() { return builtModel; }, get figures() { return modelFigures; },
-  get anim() { return animInfo; }, get animator() { return animator; },
+  get anim() { return animView && animView.info; }, get animView() { return animView; },
   finalValue: (n) => { const c = snap && snap.cols && snap.cols[n]; return c ? c[c.length - 1] : null; },
 };
 
@@ -467,8 +409,7 @@ let mslJobStarted = false;    // true once a real MSL job is requested → skip 
 let copyName = null;          // top-level name of the current library copy (copyClass), else null
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
-let animator = null;          // the three.js Animator (lazily created on first use)
-let animInfo = null;          // last run's {scene,times,data,stride,start,stop} or null
+let animView = null;          // the shared 3D animation panel (lazily created on first use)
 
 function overrideFlag() {
   const parts = [];
@@ -593,7 +534,7 @@ function showBuilding() {
   charts.clear(chartsEmpty);
   chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
   docBody.className = 'doc-body empty'; docBody.textContent = '…';
-  animInfo = null; if (animator) animator.pause(); animEl.hidden = true;
+  if (animView) animView.hide();
 }
 
 async function selectExample(ex) {
@@ -799,53 +740,31 @@ function bound(arr) { return Array.isArray(arr) && arr.length ? arr[0] : null; }
 
 // Click a time-based chart to jump the animation (and the shared cursor) to that time.
 chartsEl.addEventListener('click', (ev) => {
-  if (!animator || !animInfo) return;
+  if (!animView || !animView.info) return;
   const c = charts.at(ev.target);
   if (!c || !c.state || !c.spec.xIsTime || !c.state.active.length) return;
   const st = c.state, xs = st.active[0].xs;
   const vbX = (ev.clientX - c.svgEl.getBoundingClientRect().left) / c.svgEl.clientWidth * st.geom.W;
   let best = 0, bd = Infinity;
   for (let i = 0; i < xs.length; i++) { const d = Math.abs(st.px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } }
-  animator.pause(); animator.seek(xs[best]); animPlay.textContent = '▶';
+  animView.seek(xs[best]);
 });
 
 // --- 3D animation (shown alongside the charts) ------------------------------
-// Ask the worker for the last run's MultiBody scene. Present only when the model
-// produced a visxml scene with shapes; otherwise the 3D pane stays hidden and the
-// charts take the whole column.
+// Ask the worker for the last run's scene; show the panel only if it has shapes.
+// Playback drives the shared time cursor on the charts (onTime).
 async function fetchAnim(worker) {
-  animInfo = null;
+  let info = null;
   try {
     const r = await call(worker, 'anim');
-    if (r && r.available) animInfo = { ...r };
+    if (r && r.available) info = { shapes: r.shapes, times: r.times, data: r.data, stride: r.stride };
   } catch (e) { log('anim fetch failed', e); }
-  if (animInfo) { animEl.hidden = false; loadAnimator(); }
-  else { if (animator) animator.pause(); animEl.hidden = true; }
-}
-
-function loadAnimator() {
-  if (!animInfo) return;
-  if (!animator) { animator = new Animator(animView); animator.onTime = reflectAnimTime; }
-  animator.setData(animInfo.scene, animInfo.times, animInfo.data, animInfo.stride);
-  animator.speed = readSpeed();
-  animator.loop = animLoopOn;
-  animPlay.textContent = '▶';
-  requestAnimationFrame(() => animator.resize());   // size now that the pane is visible
-  reflectAnimTime(animInfo.times && animInfo.times.length ? animInfo.times[0] : 0);
-}
-
-function animTimeRange() {
-  const T = animInfo && animInfo.times;
-  return T && T.length ? [T[0], T[T.length - 1]] : [0, 1];
-}
-// Playback callback: keep the timeline UI in sync and draw the matching time
-// marker on the (time-based) charts, so the plotted values line up with the pose.
-function reflectAnimTime(t) {
-  animTime.textContent = (+t).toFixed(3) + ' s';
-  const [s, e] = animTimeRange();
-  animSeek.value = String(e > s ? Math.round((t - s) / (e - s) * 1000) : 0);
-  if (animator) animPlay.textContent = animator.playing ? '❚❚' : '▶';
-  setChartsCursor(t);
+  if (info) {
+    if (!animView) { animView = new AnimView({ onTime: setChartsCursor }); rightEl.insertBefore(animView.el, chartsEl); }
+    animView.setData(info);
+  } else if (animView) {
+    animView.hide();
+  }
 }
 
 // --- synchronized time cursor on the charts ---------------------------------
@@ -880,23 +799,6 @@ function setChartsCursor(t) {
     placeCursor(chart, nearestByX(chart.state.active[0].xs, t));
   }
 }
-
-animPlay.addEventListener('click', () => { if (animator) { animator.toggle(); animPlay.textContent = animator.playing ? '❚❚' : '▶'; } });
-animLoop.addEventListener('click', () => {
-  animLoopOn = !animLoopOn;
-  animLoop.classList.toggle('active', animLoopOn);
-  animLoop.setAttribute('aria-pressed', String(animLoopOn));
-  if (animator) { animator.loop = animLoopOn; if (animLoopOn && !animator.playing) { animator.play(); animPlay.textContent = '❚❚'; } }
-});
-animSeek.addEventListener('input', () => { if (!animator) return; const [s, e] = animTimeRange(); animator.pause(); animator.seek(s + (e - s) * (+animSeek.value / 1000)); animPlay.textContent = '▶'; });
-// Playback speed = simulated seconds per real second; any positive value (1e-9
-// for picosecond models, 1e6 for year-scale). Invalid input falls back to 1×.
-function readSpeed() { const s = parseFloat(animSpeed.value); return (isFinite(s) && s > 0) ? s : 1; }
-animSpeed.addEventListener('change', () => { const s = readSpeed(); animSpeed.value = String(s); if (animator) animator.speed = s; });
-animViews.addEventListener('click', (e) => {
-  const v = e.target && e.target.dataset && e.target.dataset.view; if (!v || !animator) return;
-  if (v === 'fit') animator.fit(); else animator.setView(v);
-});
 
 // --- settings dialog --------------------------------------------------------
 function openSettings() { settingsBackdrop.hidden = false; }

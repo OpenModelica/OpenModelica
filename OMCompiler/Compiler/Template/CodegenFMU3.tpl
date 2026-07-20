@@ -109,29 +109,48 @@ case SIMCODE(__) then
     <%DefaultExperiment3(simulationSettingsOpt)%>
     <%fmiModelVariables3(simCode, FMUType)%>
     <%modelStructure3(simCode, modelStructure)%>
-    <%fmiFiguresAnnotation(simCode)%>
+    <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
 
-template fmiFiguresAnnotation(SimCode simCode)
- "The model's figures annotation as the OpenModelica <Figures> vendor annotation,
-  so an importer can offer default plots. Empty (schema-valid) when the model has
-  no resolvable figures. Common to the C and wasm FMU export."
+template fmiOpenModelicaAnnotations(SimCode simCode)
+ "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Tool
+  element; empty when the model has neither. C and wasm FMU export."
+::=
+  let figures = fmiFiguresBody(simCode)
+  let visualization = fmiVisualizationElement(simCode)
+  if boolAnd(stringEq(figures,""), stringEq(visualization,"")) then '' else
+  <<
+  <Annotations>
+    <Tool name="OpenModelica">
+      <%figures%>
+      <%visualization%>
+    </Tool>
+  </Annotations>
+  >>
+end fmiOpenModelicaAnnotations;
+
+template fmiFiguresBody(SimCode simCode)
+ "The <Figures> element, or nothing when no figures resolve."
 ::=
 match SimCodeUtil.getFMI3Figures(simCode)
 case {} then ''
 case figures then
   <<
-  <Annotations>
-    <Tool name="OpenModelica">
-      <Figures version="1">
-        <%figures |> f => Figure3(f) ;separator="\n"%>
-      </Figures>
-    </Tool>
-  </Annotations>
+  <Figures version="1">
+    <%figures |> f => Figure3(f) ;separator="\n"%>
+  </Figures>
   >>
-end fmiFiguresAnnotation;
+end fmiFiguresBody;
+
+template fmiVisualizationElement(SimCode simCode)
+ "A <Visualization> element pointing at the _visual.xml resource, or nothing."
+::=
+  let resource = SimCodeUtil.getFMI3VisualizationResource(simCode)
+  if stringEq(resource, "") then '' else
+    '<Visualization version="1" file="<%Util.escapeModelicaStringToXmlString(resource)%>"/>'
+end fmiVisualizationElement;
 
 template Figure3(FmiFigure figure)
 ::=

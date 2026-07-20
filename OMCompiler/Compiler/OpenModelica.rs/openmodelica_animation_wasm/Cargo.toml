@@ -1,0 +1,17 @@
+[package]
+name = "openmodelica_animation_wasm"
+version = "0.1.0"
+edition = "2024"
+
+# Standalone wasm-bindgen wrapper around openmodelica_animation, so a web client
+# without the omc module (the FMI simulator) can turn a <model>_visual.xml plus
+# its own result columns into per-shape transforms. The Modelica simulator uses
+# it too, sharing one animation core across both pages.
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+openmodelica_animation.workspace = true
+wasm-bindgen = "=0.2.125"
+js-sys = "0.3.102"

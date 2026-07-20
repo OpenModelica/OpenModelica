@@ -4804,7 +4804,6 @@ dependencies = [
  "libc",
  "metamodelica",
  "mimalloc",
- "openmodelica_animation",
  "openmodelica_backend_main",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
@@ -6066,6 +6065,15 @@ name = "openmodelica_animation"
 version = "0.1.0"
 dependencies = [
  "roxmltree",
+]
+
+[[package]]
+name = "openmodelica_animation_wasm"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "openmodelica_animation",
+ "wasm-bindgen",
 ]
 
 [[package]]
