@@ -1121,6 +1121,32 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
+    /// Emit `functionUpdateRelations`: store each relation's exact value into
+    /// `relations[i]`, C's `function_updateRelations(data, 0)`. No hysteresis band
+    /// and no held `relationsPre`, so the event handler can snapshot the result as
+    /// the band direction. `None` entries keep their index without a store.
+    pub(crate) fn emit_update_relations(
+        &mut self,
+        relations: &[Option<Arc<DAE::Exp>>],
+        relations_off: u32,
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        if relations.len() > self.sim()?.n_relations as usize {
+            return Err("CodegenWasmJit: relations list longer than the relations[] region");
+        }
+        for (i, rel) in relations.iter().enumerate() {
+            let Some(rel) = rel else { continue };
+            let DAE::Exp::RELATION { exp1, operator, exp2, .. } = &**rel else {
+                return Err("CodegenWasmJit: non-relation in the relations list");
+            };
+            self.emit(we::Instruction::LocalGet(data));
+            let w = compile_relation_fresh(self, exp1, operator, exp2)?;
+            coerce(self, w, WTy::I32);
+            self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
+        }
+        Ok(())
+    }
+
     /// Lower a `when {conditions} then whenStmtLst; elseWhen` equation. The body
     /// runs on the rising edge of any condition — `cond && !pre(cond)`, matching
     /// the C target (`equationWhen`) — so it fires once per event and pre-values

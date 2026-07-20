@@ -42,6 +42,7 @@ unsafe extern "C" {
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
+    fn functionUpdateRelations(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
@@ -92,6 +93,7 @@ impl SimEngine for StandaloneEngine {
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
+                "functionUpdateRelations" => functionUpdateRelations(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 _ => return Err("wasm-jit standalone: unknown model function"),

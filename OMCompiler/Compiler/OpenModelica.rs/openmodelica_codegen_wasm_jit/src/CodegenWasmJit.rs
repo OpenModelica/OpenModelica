@@ -2148,6 +2148,25 @@ fn collect_zero_crossings(
     Ok(out)
 }
 
+/// Collect `SimCode.relations`, one slot per entry as in C's `functionRelations`:
+/// `Some` for a bare relation, `None` for a form C's `relationTpl` also leaves
+/// untouched while still consuming its index.
+fn collect_relations(
+    rels: &Arc<List<openmodelica_backend_types::BackendDAE::ZeroCrossing>>,
+) -> Result<Vec<Option<Arc<DAE::Exp>>>> {
+    let mut out = Vec::new();
+    for zc in lst(rels) {
+        if zc.iter.is_some() {
+            return Err("CodegenWasmJit: for-loop (iterator) relation not yet supported");
+        }
+        out.push(match &*zc.relation_ {
+            DAE::Exp::RELATION { .. } => Some(zc.relation_.clone()),
+            _ => None,
+        });
+    }
+    Ok(out)
+}
+
 /// Collect the model's `SAMPLE_TIME_EVENT`s in order. For-loop samples (with an
 /// `iter`) expand to multiple runtime samples and are not handled yet, so bail
 /// loudly rather than mis-simulate.
@@ -2180,6 +2199,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let n_real_param = count(&vars.paramVars) as u32;
     let samples = collect_samples(&sim_code.timeEvents)?;
     let zero_crossings = collect_zero_crossings(&sim_code.zeroCrossings)?;
+    let relations = collect_relations(&sim_code.relations)?;
     let stateset_scratch_f64 = stateset_scratch_f64(&sim_code.stateSets)?;
     let all_eqs = flatten_eqs(&sim_code.allEquations);
     let has_when = all_eqs.iter().any(|e| matches!(&**e, SimCode::SimEqSystem::SES_WHEN { .. }));
@@ -2620,6 +2640,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         });
         idx
     };
+    let update_relations_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if relations.iter().all(Option::is_none) {
+            empty_eqfn()
+        } else {
+            build_update_relations_fn(&relations, &var_map, &by_name, &mut literals)?
+        });
+        idx
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -2648,6 +2677,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
+    functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -2672,6 +2702,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionStateSetJacobians", we::ExportKind::Func, stateset_jac_idx);
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
+    exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
 
     let mut module = we::Module::new();
     module.section(&types);
@@ -3158,6 +3189,46 @@ fn build_zero_crossings_fn(
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_zero_crossings(crossings, layout.zc_off)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionUpdateRelations(SimData*)`: C's `function_updateRelations(data,
+/// 0)`, the exact recomputation of every `relations[]` entry.
+fn build_update_relations_fn(
+    relations: &[Option<Arc<DAE::Exp>>],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let sim = SimCtx {
+        data_local: 0,
+        vars: var_map.vars.clone(),
+        starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
+        array_groups: var_map.array_groups.clone(),
+        terminate_off: var_map.terminate_off,
+        nls_fail_off: var_map.nls_fail_off,
+        nls_jobs: var_map.nls_jobs.clone(),
+        sample_map: var_map.sample_map.clone(),
+        sample_active_off: var_map.sample_active_off,
+        relations_off: var_map.relations_off,
+        rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
+        n_relations: var_map.n_relations,
+        mathevents_off: var_map.mathevents_off,
+        n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
+        zc_context: true,
+    };
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_update_relations(relations, var_map.relations_off)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -3896,6 +3967,7 @@ mod standalone_tests {
             "functionZeroCrossings",
             "functionStateSetJacobians",
             "functionInitialEquations_lambda0",
+            "functionUpdateRelations",
         ];
 
         let mut funcs = we::FunctionSection::new();

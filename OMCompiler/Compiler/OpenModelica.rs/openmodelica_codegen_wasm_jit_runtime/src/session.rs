@@ -51,10 +51,11 @@ const SLOT_INIT_SAMPLE: u32 = 7;
 const SLOT_SIMULATE: u32 = 8;
 const SLOT_EXT_DESTRUCT: u32 = 9;
 const SLOT_INIT_EQ_LAMBDA0: u32 = 10;
+const SLOT_UPDATE_RELATIONS: u32 = 11;
 /// Number of table slots the host must populate (in the order above). The host
 /// (a separate crate) mirrors this count and order in its table wiring.
 #[allow(dead_code)]
-pub const N_SLOTS: u32 = 11;
+pub const N_SLOTS: u32 = 12;
 
 fn slot_of(name: &str) -> Option<u32> {
     Some(match name {
@@ -68,6 +69,7 @@ fn slot_of(name: &str) -> Option<u32> {
         "functionZeroCrossings" => SLOT_ZERO_CROSSINGS,
         "initSample" => SLOT_INIT_SAMPLE,
         "callExternalObjectDestructors" => SLOT_EXT_DESTRUCT,
+        "functionUpdateRelations" => SLOT_UPDATE_RELATIONS,
         _ => return None,
     })
 }
