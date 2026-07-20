@@ -1,6 +1,7 @@
-// name: AliasCyclic
-// keywords: NewBackend
+// name: AliasCyclic6
+// keywords: NewBackend, Alias, ASSC
 // status: correct
+// function: Testing Bareiss algorithm.
 
 loadString("
   model AliasCyclic6

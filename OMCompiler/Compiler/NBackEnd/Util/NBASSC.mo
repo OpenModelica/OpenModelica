@@ -77,7 +77,7 @@ public
   protected
     array<list<Integer>> indices, values;
     Integer num_crefs, num_eqns, num_nonzero_val;
-    array<Integer> op_val1, op_val2, op_val3, op_val4;
+    array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
     Integer num_op, count_zero_row;
     UnorderedMap<EquationPointer, Expression>  lhs_map;
     array<Expression> lhs_array;
@@ -86,11 +86,11 @@ public
     (indices, values, num_crefs, num_eqns, num_nonzero_val, lhs_map) := buildSparseRepresentation(eqns, vars);
     setMatrix(num_crefs, num_eqns, num_nonzero_val, indices, values);
     (indices, values) := performBareissElimination(indices, values);
-    (num_op, op_val1, op_val2, op_val3, op_val4, lhs_array) := applyRecordedOperations(lhs_map);
+    (num_op, op_modes, op_val1, op_val2, op_val3, op_val4, lhs_array) := applyRecordedOperations(lhs_map);
     // check if the matrix is singular
     (singular, count_zero_row) := checkSingularity(indices, num_eqns);
     if singular then
-      tracebackZeroRows(eqns, num_eqns, count_zero_row, num_op, op_val1, op_val2, op_val3, op_val4);
+      tracebackZeroRows(eqns, num_eqns, count_zero_row, num_op, op_modes, op_val1, op_val2, op_val3, op_val4);
     else
       // create new equations from the transformed matrix
       resolved_eqns := createEquations(vars, index, indices, values, num_eqns, lhs_array);
@@ -222,10 +222,10 @@ public
     "Applies the recorded Bareiss operations to the left-hand side expressions."
     input UnorderedMap<EquationPointer, Expression>  lhs_map;
     output Integer num_op;
-    output array<Integer> op_val1, op_val2, op_val3, op_val4;
+    output array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
     output array<Expression> lhs_array;
   protected
-    array<Integer> nop, op_modes;
+    array<Integer> nop;
     Integer mode;
   algorithm
     nop := arrayCreate(1,-1);
@@ -331,7 +331,7 @@ public
     "Reconstructs the symbolic expression of each zero row and generates a detailed error message for singular systems."
     input list<Pointer<Equation>> eqns;
     input Integer num_eqns, count_zero_row, num_op;
-    input array<Integer> op_val1, op_val2, op_val3, op_val4;
+    input array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
   protected
     Integer current_zero_row;
     DAE.Exp exp_dae;
@@ -344,7 +344,7 @@ public
     for zero_row in 1:count_zero_row loop
       current_zero_row := num_eqns - zero_row;
       // reconstruct the linear combination that produced the zero row.
-      exp_dae := traceEquation(current_zero_row, num_op, op_val1, op_val2, op_val3, op_val4);
+      exp_dae := traceEquation(current_zero_row, num_op, op_modes, op_val1, op_val2, op_val3, op_val4);
       if Flags.isSet(Flags.DUMP_ASSC) then
         print("Reconstructed zero row: "+ExpressionBasics.printExpStr(exp_dae)+"\n");
       end if;
@@ -364,67 +364,105 @@ public
   end tracebackZeroRows;
 
   function traceEquation
-    "Recursively reconstructs the expression of the given equation."
-    input Integer current_eq, num_op;
-    input array<Integer> op_val1, op_val2, op_val3, op_val4;
+    "Recursively reconstructs the expression of a matrix row by tracing back elimination operations."
+    input Integer current_row, last_op;
+    input array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
     output DAE.Exp exp_dae;
   protected
-    list<Integer> predecessors, factors_pivot, factors_update;
     list<DAE.Exp> expressions;
+    Boolean found;
+    Integer pre_op, pre_mode, row1, row2, factor1, factor2, gcd;
+    DAE.Exp pivot_exp, update_exp;
   algorithm
-    (predecessors, factors_pivot, factors_update) := getPredecessors(current_eq, num_op, op_val1, op_val2, op_val3, op_val4);
-    if listLength(predecessors) == 0 then
-      exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(current_eq)+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
+    (found, pre_op, pre_mode, row1, row2, factor1, factor2, gcd) := findLastOperation(current_row, last_op, op_modes, op_val1, op_val2, op_val3, op_val4);
+    if not found then
+      exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(current_row)+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
       return;
     end if;
     expressions := {};
-    for pre_eq in listReverse(predecessors) loop
-      expressions := traceEquation(pre_eq, num_op, op_val1, op_val2, op_val3, op_val4) :: expressions;
-    end for;
-    exp_dae := buildExpression(current_eq, factors_pivot, factors_update, expressions);
+    _:= match pre_mode
+        case 0 algorithm // mode for pivot-update operation
+          pivot_exp := traceEquation(row1, pre_op, op_modes, op_val1, op_val2, op_val3, op_val4);
+          update_exp := traceEquation(row2, pre_op, op_modes, op_val1, op_val2, op_val3, op_val4);
+          exp_dae := buildExpression(factor1, factor2, pivot_exp, update_exp);
+          return;
+        then pre_mode;
+        case 1 algorithm // mode for swap-rows operation
+          if row1 == current_row then
+            exp_dae := traceEquation(row2, pre_op, op_modes, op_val1, op_val2, op_val3, op_val4);
+          elseif row2 == current_row then
+            exp_dae := traceEquation(row1, pre_op, op_modes, op_val1, op_val2, op_val3, op_val4);
+          end if;
+          return;
+        then pre_mode;
+        case 2 algorithm // mode for gcd operation
+          //gcd := op_val2[i];
+          exp_dae := DAE.BINARY(traceEquation(row1, pre_op, op_modes, op_val1, op_val2, op_val3, op_val4), DAE.DIV(DAE.T_REAL_DEFAULT), DAE.RCONST(gcd));
+          return;
+        then pre_mode;
+        else pre_mode;
+      end match;
     return;
   end traceEquation;
 
-  function getPredecessors
-    "Returns the predecessor equations and the associated pivot and update factors of the elimination operations."
-    input Integer current_eq, num_op;
-    input array<Integer> op_val1, op_val2, op_val3, op_val4;
-    output list<Integer> predecessors, factors_pivot, factors_update;
+  function findLastOperation
+    "Finds the last elimination operation affecting the given row and returns the required information to reconstruct the previous state."
+    input Integer current_row, last_op;
+    input array<Integer> op_modes, op_val1, op_val2, op_val3, op_val4;
+    output Boolean found = false;
+    output Integer pre_op, pre_mode, row1, row2, factor1, factor2, gcd;
   algorithm
-    (predecessors, factors_pivot, factors_update) := ({},{},{});
+    (pre_op, pre_mode, row1, row2, factor1, factor2, gcd) := (0,0,0,0,0,0,0);
     // trace back how each zero row was created
-    for op in num_op:-1:1 loop // each operation backwards
-      if op_val3[op] == current_eq then
-        predecessors := op_val1[op] :: predecessors;
-        factors_pivot := op_val2[op] :: factors_pivot;
-        factors_update := op_val4[op] :: factors_update;
+    for op in last_op:-1:1 loop // each operation backwards
+      // mode for pivot-update operation
+      if op_val3[op] == current_row and op_modes[op] == 0 then
+        pre_mode := 0;
+        row1 := op_val1[op];
+        row2 := op_val3[op];
+        factor1 := op_val2[op];
+        factor2 := op_val4[op];
+        found := true;
+        pre_op := op - 1;
+        return;
+      // mode for swap-rows operation
+      elseif (op_val1[op] == current_row or op_val2[op] == current_row) and op_modes[op] == 1 then
+        pre_mode := 1;
+        row1 := op_val1[op];
+        row2 := op_val2[op];
+        found := true;
+        pre_op := op - 1;
+        return;
+      // mode for gcd operation
+      elseif op_val1[op] == current_row and op_modes[op] == 2 then
+        pre_mode := 2;
+        row1 := op_val1[op];
+        gcd := op_val2[op];
+        found := true;
+        pre_op := op - 1;
+        return;
       end if;
     end for;
-  end getPredecessors;
+  end findLastOperation;
 
   function buildExpression
-    "Constructs the symbolic expression of an equation from the recursively reconstructed predecessor expressions."
-    input Integer current_eq;
-    input list<Integer> factors_pivot, factors_update;
-    input list<DAE.Exp> expressions;
+    "Constructs the symbolic expression resulting from a pivot-update operation."
+    input Integer factor_pivot, factor_update;
+    input DAE.Exp pivot_exp, update_exp;
     output DAE.Exp exp_dae;
   protected
     DAE.Exp exp_dae_elem;
   algorithm
     // ToDo: switch to new simplify
-    exp_dae := DAE.CREF(DAE.CREF_IDENT("("+intString(current_eq)+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
     if Flags.isSet(Flags.DUMP_ASSC) then
       print("Step-by-step construction of the zero row:\n");
     end if;
-    for eq in 1:listLength(expressions) loop
-      exp_dae_elem := listGet(expressions,eq);
-      exp_dae := DAE.BINARY(DAE.BINARY(DAE.ICONST(listGet(factors_pivot, eq)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae),
-                            DAE.SUB(DAE.T_REAL_DEFAULT),
-                            DAE.BINARY(DAE.ICONST(listGet(factors_update, eq)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae_elem));
-      if Flags.isSet(Flags.DUMP_ASSC) then
-        print(ExpressionBasics.printExpStr(exp_dae)+"\n");
-      end if;
-    end for;
+    exp_dae := DAE.BINARY(DAE.BINARY(DAE.RCONST(factor_pivot), DAE.MUL(DAE.T_REAL_DEFAULT), update_exp),
+                          DAE.SUB(DAE.T_REAL_DEFAULT),
+                          DAE.BINARY(DAE.RCONST(factor_update), DAE.MUL(DAE.T_REAL_DEFAULT), pivot_exp));
+    if Flags.isSet(Flags.DUMP_ASSC) then
+      print(ExpressionBasics.printExpStr(exp_dae)+"\n");
+    end if;
     (exp_dae, _) := ExpressionSimplify.simplify(exp_dae);
     if Flags.isSet(Flags.DUMP_ASSC) then
         print("Simplified expression: "+ExpressionBasics.printExpStr(exp_dae)+"\n");
