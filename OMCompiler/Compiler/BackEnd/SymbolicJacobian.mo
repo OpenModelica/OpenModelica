@@ -1731,6 +1731,7 @@ public function createFMIModelDerivativesForInitialization
   input BackendDAE.SparsePattern sparsePattern_;
   input BackendDAE.SparseColoring sparseColoring_;
   output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
+  output AvlTreePathFunction.Tree outFunctionTree "may contain functions created by the differentiation, e.g. partial derivatives";
 protected
   BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
   BackendDAE.EqSystem eqSyst, currentSystem;
@@ -1862,6 +1863,7 @@ try
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
     outJacobianMatrices := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
+    outFunctionTree := initDAE.shared.functionTree;
   else
     // prepare more needed variables
     paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1871,17 +1873,19 @@ try
     depVarsArr := BackendVariable.listVar1(depVars);
 
     //(outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, BackendVariable.emptyVars(), BackendVariable.emptyVars(), BackendVariable.emptyVars(), depVarsArr, depVars, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
-    (outJacobian, _, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
 
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
     end if;
     // kabdelhak: maybe also pass nonlinearity pattern to add it here
     outJacobianMatrices := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
+    outFunctionTree := AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
   end if;
 else
   Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());
   outJacobianMatrices := {};
+  outFunctionTree := initDAE.shared.functionTree;
 end try;
 end createFMIModelDerivativesForInitialization;
 

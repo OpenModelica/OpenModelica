@@ -27,6 +27,8 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+fmi_export_derivative_annotation.mos \
+fmi_export_derivative_annotation_unused.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
 ModelWithAlias.mos \
