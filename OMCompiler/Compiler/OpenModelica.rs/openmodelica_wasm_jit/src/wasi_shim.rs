@@ -174,7 +174,9 @@ mod wasmtime_impl {
     /// the process exit code (0 if `_start` returns normally). Files land in
     /// `openmodelica_wasi`, with relative paths keyed under `cwd`.
     pub fn run_command(wasm: &[u8], cwd: &str, args: Vec<String>) -> Result<u32> {
-        let engine = wasmtime::Engine::default();
+        let mut cfg = wasmtime::Config::new();
+        crate::tune_memory(&mut cfg);
+        let engine = wasmtime::Engine::new(&cfg).map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let module = wasmtime::Module::new(&engine, wasm).map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let mut linker = Linker::new(&engine);
         add_to_linker(&mut linker)?;
