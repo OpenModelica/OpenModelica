@@ -73,29 +73,18 @@ use openmodelica_sim_meta::{
 // Engine selected at compile time; same module interface across all three
 // (mirrors the block in CodegenWasmJitFunctions.rs, including the misconfig
 // guards). The `SimModel` below stores compiled modules as `sim_runtime::Module`.
-// Engine-independent simulation drivers (shared by the wasmtime and wasmer
-// backends via the `sim_driver::SimEngine` trait); absent in the stub build.
+// Engine, model data and driver flags live in `openmodelica_wasm_jit`; the
+// orchestration below keeps its `sim_runtime::`/`SimModel` paths via these.
+use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
-mod sim_driver;
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-#[path = "CodegenWasmJit/sim_runtime_wasmtime.rs"]
-mod sim_runtime;
-#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
-#[path = "CodegenWasmJit/sim_runtime_wasmer.rs"]
-mod sim_runtime;
-#[cfg(not(feature = "jit"))]
-#[path = "CodegenWasmJit/sim_runtime_stub.rs"]
-mod sim_runtime;
-
-// The `wasi_snapshot_preview1` shim over `openmodelica_wasi`, for running the
-// standalone wasip1 simulation command module. Not yet wired into the run path
-// (its consumer — the merged standalone module — is a later step), so it is
-// dead until then. The engine-independent `WasiCtx` is registered for both the
-// wasmtime (native default) and wasmer (worker / native-wasmer) engines.
+use openmodelica_wasm_jit::wasi_shim;
+pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ModelCompileJob, SimModel};
 #[cfg(feature = "jit")]
-#[path = "CodegenWasmJit/wasi_shim.rs"]
-#[allow(dead_code)]
-mod wasi_shim;
+pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
+#[cfg(feature = "jit")]
+pub(crate) use openmodelica_wasm_jit::model::{
+    encode_overrides, inwasm_driver_enabled, sim_bench_enabled, INWASM_SLOT_NAMES,
+};
 
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
@@ -113,97 +102,11 @@ const TIME_OFF: u32 = 0;
 const REAL_OFF: u32 = 8;
 
 
-/// A pending model-module compile. Native builds run it on a background thread
-/// (overlapping the rest of the OMC pipeline); wasm has no threads, so it is
-/// compiled eagerly and the result stored directly. [`sim_runtime`] takes it via
-/// `take_compiled_model`, which joins on native and unwraps on wasm.
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) type ModelCompileJob = std::thread::JoinHandle<Result<sim_runtime::Module, String>>;
-#[cfg(target_arch = "wasm32")]
-pub(crate) type ModelCompileJob = Result<sim_runtime::Module, String>;
 
 /// Solver statistics, filled by the driver (now `openmodelica_sim_meta`, shared
 /// with the in-wasm driver) and rendered here into the `LOG_STATS` block.
 pub(crate) use openmodelica_sim_meta::SolveStats;
 
-#[cfg(feature = "jit")]
-static INWASM_OVERRIDE: std::sync::atomic::AtomicI8 = std::sync::atomic::AtomicI8::new(-1);
-#[cfg(feature = "jit")]
-static SIM_BENCH_FORCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// Force the driver choice: `1` in-wasm, `0` host, `-1` default. Wins over the env
-/// var and the target default — wasm has no environment.
-#[cfg(feature = "jit")]
-pub fn set_inwasm_driver_override(mode: i32) {
-    INWASM_OVERRIDE.store(mode.clamp(-1, 1) as i8, std::sync::atomic::Ordering::Relaxed);
-}
-
-/// Force the bench lines on, for hosts with no `OMC_WASM_SIM_BENCH` to set.
-#[cfg(feature = "jit")]
-pub fn set_sim_bench(on: bool) {
-    SIM_BENCH_FORCE.store(on, std::sync::atomic::Ordering::Relaxed);
-}
-
-#[cfg(feature = "jit")]
-pub(crate) fn sim_bench_enabled() -> bool {
-    SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
-        || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
-}
-
-/// Whether to run the simulation through the in-wasm session driver (`rt_sim_*`,
-/// the model reached wasm->wasm) instead of the host driver. wasm32 defaults on;
-/// native defaults off — there the host driver is faster and is the parity oracle.
-#[cfg(feature = "jit")]
-pub(super) fn inwasm_driver_enabled() -> bool {
-    match INWASM_OVERRIDE.load(std::sync::atomic::Ordering::Relaxed) {
-        0 => return false,
-        1 => return true,
-        _ => {}
-    }
-    match std::env::var("OMC_WASM_INWASM_DRIVER").ok().as_deref() {
-        Some("0") | Some("false") => false,
-        Some(_) => true,
-        None => cfg!(target_arch = "wasm32"),
-    }
-}
-
-/// Encode the host's parameter/start overrides for `rt_sim_set_overrides`. The
-/// runtime module has its own copy of the driver's override store, so a session
-/// driven in-wasm only sees them if they are handed across.
-#[cfg(feature = "jit")]
-pub(super) fn encode_overrides() -> Vec<u8> {
-    let (params, starts) = sim_driver::param_overrides();
-    let mut b = Vec::new();
-    for group in [&params, &starts] {
-        b.extend_from_slice(&(group.len() as u32).to_le_bytes());
-        for &(off, wty, val) in group.iter() {
-            b.extend_from_slice(&off.to_le_bytes());
-            b.extend_from_slice(&(if matches!(wty, WTy::F64) { 0u32 } else { 1u32 }).to_le_bytes());
-            b.extend_from_slice(&val.to_le_bytes());
-        }
-    }
-    b
-}
-
-/// Model export names in the fixed table-slot order the in-wasm session driver
-/// (`openmodelica_codegen_wasm_jit_runtime::session`, `N_SLOTS`) expects. The
-/// host appends these funcrefs to the shared `__indirect_function_table` at
-/// `fn_base + slot`; a name the model doesn't export leaves a null slot and a
-/// cleared `present_mask` bit. Must stay in sync with `session.rs`.
-#[cfg(feature = "jit")]
-pub(super) const INWASM_SLOT_NAMES: [&str; 11] = [
-    "functionParameters",
-    "functionInitStartValues",
-    "functionInitialEquations",
-    "functionODE",
-    "functionAlgebraics",
-    "functionStateSetJacobians",
-    "functionZeroCrossings",
-    "initSample",
-    "simulate",
-    "callExternalObjectDestructors",
-    "functionInitialEquations_lambda0",
-];
 
 /// Render the `LOG_STATS` block the C runtime emits at simulation end, so it shows
 /// in the simulation log (and thus the OMEdit output widget). Host-only: the
@@ -225,74 +128,6 @@ fn log_stats_block(s: &SolveStats) -> String {
     )
 }
 
-/// The prepared, ready-to-run artifact for one model, stashed in-process by
-/// [`translateModel`] and consumed by [`runSimulation`] (keyed by file-name
-/// prefix). This is the in-memory replacement for the C target's `_init.xml`
-/// + `_info.json` + the built executable.
-struct SimModel {
-    wasm: Vec<u8>,
-    layout: SimLayout,
-    result_vars: Vec<ResultVar>,
-    /// The `ext.<extName>` host imports (external "C" functions), with the full
-    /// C-call shape ([`ExtCallSig`]: input/output args + return) so the host
-    /// trampoline can marshal strings/arrays/pointers and output pointers — the
-    /// wasm `FuncType` only sees i32/f64.
-    ext_imports: Vec<ExtCallSig>,
-    model_name: String,
-    start_time: f64,
-    stop_time: f64,
-    n_intervals: u32,
-    output_format: String,
-    /// Integration method requested by `simulate(..., method=...)` (e.g.
-    /// `"dassl"`, `"euler"`). Selects the driver in [`sim_runtime::run`].
-    method: String,
-    /// Relative/absolute tolerance for the adaptive integrators (DASSL).
-    tolerance: f64,
-    /// Background JIT job for the model module, spawned by [`translateModel`] so
-    /// the (cranelift) compile overlaps the rest of the OMC pipeline instead of
-    /// landing on `runSimulation`'s critical path. Joined by [`finishCompile`]
-    /// (in `buildModel`'s compile phase) or, failing that, by `runSimulation`.
-    compiled: Mutex<Option<ModelCompileJob>>,
-    /// The compiled model module once [`finishCompile`] has joined the job, so
-    /// `runSimulation` can instantiate without recompiling.
-    prepared: Mutex<Option<sim_runtime::Module>>,
-    /// Dynamic state selection metadata (one per `$STATESET`); empty for models
-    /// without state sets. The driver evaluates each set's Jacobian
-    /// (`functionStateSetJacobians`), pivots, and rebuilds `A` between steps.
-    state_sets: Vec<StateSetInfo>,
-    /// ODE state Jacobian ∂f/∂x ("A") sparsity + coloring for the colored-FD path;
-    /// `None` ⇒ daskr's own numerical Jacobian.
-    jac_a: Option<JacAInfo>,
-    /// Per-state nominal magnitude `max(|nominal|, 1e-32)` (integrator order) for the
-    /// per-state atol `tol·nominal[i]`; constant-folded, `1.0` if absent.
-    state_nominals: Vec<f64>,
-    /// User-settable initial conditions (parameters with `isValueChangeable`):
-    /// name/unit/slot, so a host can list them and `-override` them by name.
-    editable_params: Vec<EditableParam>,
-    /// Result-variable display name -> unit (e.g. `h` -> `m`), for a host to label
-    /// plotted signals. Empty units are omitted.
-    var_units: HashMap<String, String>,
-    /// The driver-facing metadata (layout, result vars, solver info) — the same
-    /// blob embedded in the model module and decoded by the in-wasm driver, so the
-    /// host and in-wasm drivers share one model view. Passed to `sim_driver::drive`.
-    meta: SimMeta,
-}
-
-/// A user-settable parameter (an editable initial condition): its display name,
-/// unit, and `SimData` slot so an `-override=name=value` can write it.
-#[derive(Clone)]
-struct EditableParam {
-    name: String,
-    comment: String,
-    unit: String,
-    off: u32,
-    wty: WTy,
-    /// A state's start value (vs. a plain parameter): shown as the state's `t0`
-    /// value, and overridden after `functionInitStartValues` rather than before.
-    is_start: bool,
-    /// Enumeration literal names (1-based index → name), empty for non-enum.
-    enum_names: Vec<String>,
-}
 
 /// Process-wide table of prepared models, keyed by file-name prefix. Populated
 /// by `translateModel` (during `callTargetTemplates`) and read by
@@ -695,14 +530,14 @@ fn on_init_done() {
 
 /// Run the model, returning the result and the model's stdout split into the
 /// initialization segment (`Some` once init completed) and the simulation segment.
-fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Result<()>, Option<String>, String) {
+fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std::result::Result<(), String>, Option<String>, String) {
     let model = sim_models()
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .get(prefix)
         .cloned();
     let Some(model) = model else {
-        return (Err("no prepared wasm-jit model for (translateModel not run?)"), None, String::new());
+        return (Err("no prepared wasm-jit model for (translateModel not run?)".to_string()), None, String::new());
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
@@ -717,12 +552,12 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (Res
     SPLIT_ARMED.with(|a| a.set(true));
     openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
-    let res = (|| -> Result<()> {
+    let res = (|| -> std::result::Result<(), String> {
         // `empty` runs the integration but writes no result file — useful for
         // benchmarking the solver in isolation from the `.mat` writer.
         let fmt = model.output_format.as_str();
         if fmt != "mat" && fmt != "empty" {
-            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)");
+            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)".to_string());
         }
         let run = sim_runtime::run(&model)?;
         if log_stats {
@@ -855,7 +690,7 @@ mod session {
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
         let inwasm = inwasm_driver_enabled();
-        let built = (|| -> Result<SessionBackend> {
+        let built = (|| -> std::result::Result<SessionBackend, String> {
             if inwasm {
                 Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model)?))
             } else {
@@ -871,7 +706,7 @@ mod session {
             Err(e) => {
                 let _ = openmodelica_wasi::wasi::take_stdout_capture();
                 record_error(format!("wasm-jit simulation failed: {e:#}"));
-                return Err(e);
+                return Err("CodegenWasmJit: wasm-jit simulation failed");
             }
         };
         SIM_SESSION.with(|s| {
@@ -1019,7 +854,7 @@ pub fn sim_free() {}
 /// wasip1 build was unavailable (see `build.rs`); [`emit_standalone_module`] then
 /// reports the absence rather than producing a broken module.
 #[cfg(not(target_arch = "wasm32"))]
-static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1.wasm"));
+use openmodelica_wasm_jit::RUNTIME_WASIP1;
 
 /// Emit a self-contained `wasm32-wasip1` *command* module for `sim_code`: lower
 /// the model to its wasm module, then `wasm-merge` it with the standalone runtime
@@ -1083,10 +918,10 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
 
 /// The model-agnostic FMI3 adapters, built + embedded by build.rs as dylink side
 /// modules: one per FMU type (the same crate, two WIT worlds).
-static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
-static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));
+use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
+use openmodelica_wasm_jit::FMI3_CS_ADAPTER;
 /// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
-static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
+use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
 
 /// The external-"C" FMU artifacts, linked in only when the model uses `external
 /// "C"`. Any is empty when that omc was built without the toolchain.
@@ -2888,12 +2723,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // wasm: no threads — compile eagerly and store the result for take_compiled_model.
     #[cfg(not(target_arch = "wasm32"))]
     let compiled = Mutex::new(Some(std::thread::spawn(move || {
-        sim_runtime::compile_model_module(&compile_wasm).map_err(|e| format!("{e:#}"))
+        sim_runtime::compile_model_module(&compile_wasm)
     })));
     #[cfg(target_arch = "wasm32")]
-    let compiled = Mutex::new(Some(
-        sim_runtime::compile_model_module(&compile_wasm).map_err(|e| format!("{e:#}")),
-    ));
+    let compiled = Mutex::new(Some(sim_runtime::compile_model_module(&compile_wasm)));
 
     Ok(SimModel {
         wasm,

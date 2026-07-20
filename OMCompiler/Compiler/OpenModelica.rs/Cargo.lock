@@ -6508,8 +6508,6 @@ name = "openmodelica_codegen_wasm_jit"
 version = "0.1.0"
 dependencies = [
  "arcstr",
- "daskr",
- "libffi",
  "metamodelica",
  "openmodelica_ast",
  "openmodelica_backend",
@@ -6518,13 +6516,13 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
- "openmodelica_modelica_utilities",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
  "openmodelica_util",
  "openmodelica_wasi",
  "openmodelica_wasi_libc",
+ "openmodelica_wasm_jit",
  "ordered-float",
  "wasm-encoder 0.252.0",
  "wasmer",
@@ -6889,6 +6887,25 @@ dependencies = [
 [[package]]
 name = "openmodelica_wasi_libc"
 version = "0.1.0"
+
+[[package]]
+name = "openmodelica_wasm_jit"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "daskr",
+ "libc",
+ "libffi",
+ "metamodelica",
+ "openmodelica_error",
+ "openmodelica_modelica_utilities",
+ "openmodelica_sim_meta",
+ "openmodelica_util",
+ "openmodelica_wasi",
+ "wasm-encoder 0.252.0",
+ "wasmer",
+ "wasmtime",
+]
 
 [[package]]
 name = "openssl"
