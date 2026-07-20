@@ -249,26 +249,43 @@ omc_add_subdirectory(OMCompiler)
 # The Qt GUI clients cannot target wasm; in the wasm build OM_ENABLE_GUI_CLIENTS
 # instead selects the OMShell web pages (handled in omc_rust_setup_wasm), so skip
 # these native subdirs there.
-if(OM_ENABLE_GUI_CLIENTS AND NOT OM_OMC_WASM)
+if(NOT OM_OMC_WASM)
+  option (OM_ENABLE_OMSIMULATOR "Enable OMSimulator" ON)
+  if (OM_ENABLE_OMSIMULATOR)
+    omc_add_subdirectory(OMSimulator)
+  endif ()
+
   # select qt version 5/6
   set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
 
-  omc_add_subdirectory(OMParser)
-  omc_add_subdirectory(OMPlot)
-  omc_add_subdirectory(OMShell)
-  omc_add_subdirectory(OMNotebook)
-  omc_add_subdirectory(OMSimulator)
-  omc_add_subdirectory(OMEdit)
-  omc_add_subdirectory(OMSens_Qt)
+  option (OM_ENABLE_OMSHELL "Enable OMShell gui client" ${OM_ENABLE_GUI_CLIENTS})
+  if (OM_ENABLE_OMSHELL)
+    omc_add_subdirectory(OMShell)
+  endif ()
+
+  option (OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ${OM_ENABLE_GUI_CLIENTS})
+  if (OM_ENABLE_OMNOTEBOOK)
+    omc_add_subdirectory(OMNotebook)
+  endif ()
+
+  option (OM_ENABLE_OMEDIT "Enable OMEdit gui client" ${OM_ENABLE_GUI_CLIENTS})
+  if (OM_ENABLE_OMEDIT)
+    omc_add_subdirectory(OMParser)
+    omc_add_subdirectory(OMPlot)
+    omc_add_subdirectory(OMEdit)
+  endif ()
+
+  option (OM_ENABLE_OMSENS_QT "Enable OMSens_Qt gui client" ${OM_ENABLE_GUI_CLIENTS})
+  if (OM_ENABLE_OMSENS_QT)
+    omc_add_subdirectory(OMSens_Qt)
+  endif ()
 
   if(OM_OMOPTIM_ENABLE)
     omc_add_subdirectory(OMOptim)
   endif()
-endif()
 
-# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
-# skip them so `make all` builds only the wasm target in that mode.
-if(NOT OM_OMC_WASM)
+  # The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+  # skip them so `make all` builds only the wasm target in that mode.
   omc_add_subdirectory(libraries)
   omc_add_subdirectory(testsuite)
 endif()
