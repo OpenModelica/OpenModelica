@@ -2629,6 +2629,87 @@ fn emit_assert(
     Ok(())
 }
 
+/// Trap on a model error whose message String handle is already on the stack
+/// (dummy source position).
+fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
+    emit_str_literal(ctx, b"")?; // file
+    for _ in 0..5 {
+        ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
+    }
+    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Unreachable);
+    Ok(())
+}
+
+/// The dumped source form of `e`, for embedding in an assertion message.
+fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
+}
+
+/// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
+/// sign-preserving for odd n — guarded by two model-error assertions: n must be
+/// > 0, and even n requires v >= 0.
+fn emit_nth_root(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], name: &str) -> Result<SigTy> {
+    need_args(argv, 2, name)?;
+    let vw = compile_exp(ctx, argv[0])?;
+    coerce(ctx, vw, WTy::F64);
+    let vt = ctx.alloc_temp(WTy::F64);
+    ctx.emit(we::Instruction::LocalSet(vt));
+    let nw = compile_exp(ctx, argv[1])?;
+    coerce(ctx, nw, WTy::I32);
+    let nt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(nt));
+
+    let (vstr, nstr) = (dumped_exp(argv[0])?, dumped_exp(argv[1])?);
+
+    // assert(n > 0, "…must be > 0, got <n>")
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(we::Instruction::End);
+
+    // assert(mod(n, 2) != 0 or v >= 0, "…must be >= 0 if the second is even, got <v>")
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::I32Const(2));
+    ctx.emit(we::Instruction::I32RemS);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32Ne);
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+    ctx.emit(we::Instruction::F64Ge);
+    ctx.emit(we::Instruction::I32Or);
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_str_literal(ctx, format!("Model error: First argument of nthRoot({vstr}, {nstr}) must be >= 0 if the second is even, got ").as_bytes())?;
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::I32Const(6)); // significant digits
+    ctx.emit(we::Instruction::I32Const(0)); // minimum length
+    ctx.emit(we::Instruction::I32Const(0)); // left justified
+    ctx.emit(we::Instruction::Call(rt_index("rt_real_format")?));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(we::Instruction::End);
+
+    // copysign(pow(|v|, 1/n), v)
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Abs);
+    ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+    ctx.emit(we::Instruction::LocalGet(nt));
+    coerce(ctx, WTy::I32, WTy::F64);
+    ctx.emit(we::Instruction::F64Div);
+    ctx.emit(we::Instruction::Call(builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Copysign);
+    Ok(SigTy::Real)
+}
+
 fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
     use DAE::Statement as S;
     match stmt {
@@ -3384,23 +3465,15 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
         match ident.as_str() {
             "$START" => {
                 let key = sim_cref_key(componentRef)?;
-                // Read the overridable start slot if this state has one.
-                if let Some(&off) = ctx.sim()?.start_slots.get(&key) {
-                    let data = ctx.sim()?.data_local;
-                    ctx.emit(we::Instruction::LocalGet(data));
-                    ctx.emit(we::Instruction::F64Load(mem_arg(off, 3)));
-                    return Ok(Some(WTy::F64));
+                if let Some(wty) = emit_sim_start_scalar(ctx, &key)? {
+                    return Ok(Some(wty));
                 }
-                let start = ctx.sim()?.starts.get(&key).cloned();
-                return match start {
-                    Some(Some(exp)) => Ok(Some(compile_exp(ctx, &exp)?)),
-                    Some(None) => {
-                        // No explicit start: the type default (0.0 for Real).
-                        ctx.emit(we::Instruction::F64Const(0.0.into()));
-                        Ok(Some(WTy::F64))
-                    }
-                    None => return Err("CodegenWasmJit: $START for unknown variable"),
-                };
+                // Whole-array `$START.y` (e.g. `y := $START.y`).
+                if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
+                    emit_sim_start_array_gather(ctx, &group, &key)?;
+                    return Ok(Some(WTy::I32));
+                }
+                return Err("CodegenWasmJit: $START for unknown variable");
             }
             "$PRE" => {
                 // A registered `$PRE.<var>` slot resolves via the normal path
@@ -3681,6 +3754,68 @@ fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: &DAE::Exp) -
     // Consume the rhs reference (we copied out the element data, not the handle).
     ctx.emit(we::Instruction::LocalGet(h));
     ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
+/// Push a scalar variable's `$START` value: its overridable start slot, else its
+/// start expression, else `0.0`. `None` (nothing emitted) if `key` has no start.
+fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
+    if let Some(&off) = ctx.sim()?.start_slots.get(key) {
+        let data = ctx.sim()?.data_local;
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::F64Load(mem_arg(off, 3)));
+        return Ok(Some(WTy::F64));
+    }
+    match ctx.sim()?.starts.get(key).cloned() {
+        Some(Some(exp)) => Ok(Some(compile_exp(ctx, &exp)?)),
+        Some(None) => {
+            ctx.emit(we::Instruction::F64Const(0.0.into()));
+            Ok(Some(WTy::F64))
+        }
+        None => Ok(None),
+    }
+}
+
+/// Gather a whole array's per-element `$START` values into a fresh (refcount-1)
+/// runtime array object, leaving the owned handle on the stack.
+fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &str) -> Result<()> {
+    let (ek, stride) = sim_array_elem_kind_stride(group.wty);
+    let ndims = group.dims.len() as u32;
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(ndims as i32));
+    ctx.emit(we::Instruction::I32Const(group.total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in group.dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    for (lin, idx) in crate::CodegenWasmJit::row_major_indices(&group.dims).into_iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+        if lin > 0 {
+            ctx.emit(we::Instruction::I32Const((lin as u32 * stride) as i32));
+            ctx.emit(we::Instruction::I32Add);
+        }
+        let mut elem_key = String::from(base_key);
+        for i in &idx {
+            elem_key.push('[');
+            elem_key.push_str(&i.to_string());
+            elem_key.push(']');
+        }
+        let wty = emit_sim_start_scalar(ctx, &elem_key)?
+            .ok_or("CodegenWasmJit: $START for unknown array element")?;
+        coerce(ctx, wty, group.wty);
+        match group.wty {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(0, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(0, 2))),
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
     Ok(())
 }
 
@@ -4688,6 +4823,7 @@ fn compile_math_builtin(
             unary_f64(ctx, &argv, we::Instruction::F64Sqrt)?;
             Ok(SigTy::Real)
         }
+        "nthRoot" => emit_nth_root(ctx, &argv, name),
         "floor" => {
             unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
             Ok(SigTy::Real)
