@@ -5,6 +5,7 @@ Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpe
 Buildings.Fluid.Humidifiers.Examples.Humidifier_u.mos \
 Buildings.Fluid.Boilers.Examples.BoilerPolynomial.mos \
 Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves.mos \
+Buildings.Controls.OBC.CDL.Logical.Validation.Latch.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

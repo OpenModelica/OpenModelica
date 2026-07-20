@@ -1000,6 +1000,8 @@ protected
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
+    list<Pointer<Variable>> wc_vars;
+    list<Pointer<Equation>> wc_eqns;
   algorithm
     eventInfo := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
@@ -1011,6 +1013,17 @@ protected
         bucket := Pointer.access(bucket_ptr);
 
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
+
+        // after event collection, simplify any remaining complex when-equation conditions
+        // into plain discrete CREFs so that getBodyAttributes can process them.
+        // This handles boolean expressions like (not x.u) that were not turned into
+        // zero-crossings (e.g. purely discrete conditions).
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.simulation, eqData.uniqueIndex);
+        auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
+        auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
+        (wc_vars, wc_eqns) := simplifyWhenConditions(eqData.clocked, eqData.uniqueIndex);
+        auxiliary_vars := listAppend(wc_vars, auxiliary_vars);
+        auxiliary_eqns := listAppend(wc_eqns, auxiliary_eqns);
 
         // add auxiliary variables
         varData.variables := VariablePointers.addList(auxiliary_vars, varData.variables);
@@ -1226,6 +1239,113 @@ protected
       (exp, bucket) := StateEvent.create(exp, bucket, iter, eqn, createEqn);
     end if;
   end collectEventsCondition;
+
+  function simplifyWhenConditions
+    "Post-processing step after event collection: any when-equation condition
+    that is not already a plain component reference (CREF) is extracted into a
+    new discrete Boolean auxiliary variable ($WC_n) with a DISCRETE assignment
+    equation.  This normalises the condition so that WhenEquationBody.getBodyAttributes
+    can always find a simple CREF, regardless of whether the original expression
+    involved zero-crossings or was a purely discrete boolean like (not x.u)."
+    input EquationPointers equations;
+    input Pointer<Integer> idx;
+    output list<Pointer<Variable>> new_vars = {};
+    output list<Pointer<Equation>> new_eqns = {};
+  protected
+    Pointer<Integer> cnt = Pointer.create(0);
+    Pointer<list<Pointer<Variable>>> vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Equation>>> eqns_ptr = Pointer.create({});
+  algorithm
+    EquationPointers.mapPtr(equations, function simplifyWhenConditionEqn(
+      idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr));
+    new_vars := Pointer.access(vars_ptr);
+    new_eqns := Pointer.access(eqns_ptr);
+  end simplifyWhenConditions;
+
+  function simplifyWhenConditionEqn
+    "Worker for simplifyWhenConditions: processes a single equation pointer."
+    input output Pointer<Equation> eqn_ptr;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  protected
+    Equation eqn = Pointer.access(eqn_ptr);
+    Equation body_eqn;
+  algorithm
+    eqn := match eqn
+      case Equation.WHEN_EQUATION() algorithm
+        eqn.body := simplifyWhenConditionBody(eqn.body, idx, cnt, vars_ptr, eqns_ptr);
+      then eqn;
+
+      case Equation.FOR_EQUATION(body = {body_eqn as Equation.WHEN_EQUATION()}) algorithm
+        body_eqn.body := simplifyWhenConditionBody(body_eqn.body, idx, cnt, vars_ptr, eqns_ptr);
+        eqn.body := {body_eqn};
+      then eqn;
+
+      else eqn;
+    end match;
+
+    if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
+      Pointer.update(eqn_ptr, eqn);
+    end if;
+  end simplifyWhenConditionEqn;
+
+  function simplifyWhenConditionBody
+    "Recursively walks a WhenEquationBody chain and extracts any non-CREF condition."
+    input output WhenEquationBody body;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  algorithm
+    body.condition := simplifyWhenConditionExp(body.condition, idx, cnt, vars_ptr, eqns_ptr);
+    body.else_when := Util.applyOption(body.else_when,
+      function simplifyWhenConditionBody(idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr));
+  end simplifyWhenConditionBody;
+
+  function simplifyWhenConditionExp
+    "Replaces a non-CREF when-condition expression with a fresh $WC_n discrete
+    variable and records the assignment equation $WC_n = exp."
+    input output Expression cond;
+    input Pointer<Integer> idx;
+    input Pointer<Integer> cnt;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+  protected
+    Pointer<Variable> aux_var;
+    ComponentRef aux_cref;
+    Pointer<Equation> aux_eqn;
+    Integer i;
+  algorithm
+    cond := match cond
+      // already a plain variable reference – nothing to do
+      case Expression.CREF() then cond;
+
+      // array of conditions (e.g. when {c1, c2} then) – recurse per element
+      case Expression.ARRAY() algorithm
+        cond.elements := Array.map(cond.elements,
+          function simplifyWhenConditionExp(idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr));
+      then cond;
+
+      // initial() is a special built-in allowed in when-conditions – leave it
+      case Expression.CALL() guard(Call.isNamed(cond.call, "initial")) then cond;
+
+      // any other expression: extract into $WC_n
+      else algorithm
+        i := Pointer.access(cnt);
+        Pointer.update(cnt, i + 1);
+        (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.WHEN_CONDITION_STR, i,
+                                                       Expression.typeOf(cond));
+        aux_eqn := Equation.makeAssignment(Expression.fromCref(aux_cref), cond, idx, "WC",
+                                           Iterator.EMPTY(),
+                                           EquationAttributes.default(EquationKind.DISCRETE, false));
+        Pointer.update(vars_ptr, aux_var :: Pointer.access(vars_ptr));
+        Pointer.update(eqns_ptr, aux_eqn :: Pointer.access(eqns_ptr));
+        cond := Expression.fromCref(aux_cref);
+      then cond;
+    end match;
+  end simplifyWhenConditionExp;
 
   function containsTimeTraverseExp
     input output Expression exp;

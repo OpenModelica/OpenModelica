@@ -118,6 +118,7 @@ public
   constant String SEED_STR                = "$SEED";
   constant String TIME_EVENT_STR          = "$TEV";
   constant String STATE_EVENT_STR         = "$SEV";
+  constant String WHEN_CONDITION_STR      = "$WC";
   constant String CLOCK_STR               = "$CLK";
 
   function toString
