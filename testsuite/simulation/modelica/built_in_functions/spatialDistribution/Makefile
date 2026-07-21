@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \
+	singleOutputSpatialDistribution.mos \
 	negativeVelocity.mos \
 	pulseInput.mos \
 	mixedVelocity.mos \

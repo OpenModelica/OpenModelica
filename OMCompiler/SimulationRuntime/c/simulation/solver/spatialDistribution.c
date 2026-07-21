@@ -360,7 +360,8 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   double deltaX;
   double eventPreValue;
   double outValue;
-  double out0;    /* Output variable */
+  double out0;      /* First output variable */
+  double out1Val;   /* Second output variable, only written to *out1 if out1 != NULL */
 
   /* Access spatialDistribution */
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
@@ -401,8 +402,11 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     firstNodeData = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
     lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
     out0 = firstNodeData->value;
-    *out1 = lastNodeData->value;
-    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
+    out1Val = lastNodeData->value;
+    if (out1 != NULL) {
+      *out1 = out1Val;
+    }
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, out1Val);
     messageClose(OMC_LOG_SPATIALDISTR);
     return out0;
   }
@@ -434,19 +438,23 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     } else {
       out0 = firstNodeData->value;
     }
-    *out1 = outValue;
+    out1Val = outValue;
   } else {
     out0 = outValue;
     if (jumped) {
-      *out1 = in1;
+      out1Val = in1;
     } else if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS) {
-      *out1 = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
+      out1Val = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
     } else {
-      *out1 = lastNodeData->value;
+      out1Val = lastNodeData->value;
     }
   }
 
-  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
+  if (out1 != NULL) {
+    *out1 = out1Val;
+  }
+
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, out1Val);
   messageClose(OMC_LOG_SPATIALDISTR);
   return out0;
 }
