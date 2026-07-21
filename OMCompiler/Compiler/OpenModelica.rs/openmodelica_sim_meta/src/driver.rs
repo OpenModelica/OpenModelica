@@ -893,6 +893,16 @@ fn store_relations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     e.write_bytes(sim_data + layout.stored_rel_off, &buf)
 }
 
+/// C's `updateDiscreteSystem` prologue: recompute every relation exactly, then
+/// seed both `relationsPre` and the held snapshot from it. Without it the snapshot
+/// comes from the banded evaluation the old snapshot itself steers, so a crossing
+/// is never consumed.
+fn refresh_relations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    e.call1("functionUpdateRelations", sim_data)?;
+    update_relations_pre(e, sim_data, layout)?;
+    store_relations(e, sim_data, layout)
+}
+
 /// Copy `relations[]` into `relationsPre`. Freezing it before an event-iteration
 /// pass keeps held relations fixed while that pass's NLS solve runs.
 fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
@@ -1100,7 +1110,7 @@ pub fn event_update(
         if let Some(s) = samples.as_deref_mut() {
             s.fire(e, sim_data, time)?;
         }
-        store_relations(e, sim_data, layout)?;
+        refresh_relations(e, sim_data, layout)?;
         // `fire` cleared the `active` flag; re-evaluate so the condition reads
         // false and `pre` records it, or the next firing sees no edge.
         e.call1("functionODE", sim_data)?;
@@ -1108,7 +1118,7 @@ pub fn event_update(
     } else {
         // `pre(x)` of a continuous variable must be its value at the crossing.
         save_pre_real(e, sim_data, layout)?;
-        store_relations(e, sim_data, layout)?;
+        refresh_relations(e, sim_data, layout)?;
         iterate_discrete(e, sim_data, layout)?;
         store_relations(e, sim_data, layout)?;
         check_nls(e, sim_data, layout)?;
@@ -2302,7 +2312,7 @@ impl DasslCore {
                 }
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
-                store_relations(e, sim_data, layout)?; // advance the hysteresis direction
+                refresh_relations(e, sim_data, layout)?;
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut() {
                     emit_row(e, r, sim_data, layout, te)?;
@@ -2449,7 +2459,7 @@ impl CsDriver {
         }
         // Refresh the outputs at the communication point, and re-select states there
         // (see `DasslDriver`).
-        write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         write_f64(e, sim_data + TIME_OFF, t_target)?;
         e.call1("functionODE", sim_data)?;
         e.call1_if_present("functionAlgebraics", sim_data)?;
@@ -2517,7 +2527,7 @@ impl CsDriver {
             Step::Reached { .. } => {}
         }
         // Communication point reached with no event: refresh outputs like `step_to`.
-        write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         write_f64(e, sim_data + TIME_OFF, t_target)?;
         e.call1("functionODE", sim_data)?;
         e.call1_if_present("functionAlgebraics", sim_data)?;
@@ -2636,7 +2646,7 @@ impl DasslEventsDriver {
         // A sample scheduled exactly at the start time fires before row 0.
         if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
             samp.fire(e, sim_data, start)?;
-            store_relations(e, sim_data, layout)?;
+            refresh_relations(e, sim_data, layout)?;
             core.time_events += 1;
         }
         emit_row(e, &mut rows, sim_data, layout, start)?;
@@ -2747,7 +2757,7 @@ impl Driver for DasslEventsDriver {
                         emit_row(e, &mut self.rows, sim_data, layout, te)?; // pre-event row
                         write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
                         self.samp.fire(e, sim_data, te)?;
-                        store_relations(e, sim_data, layout)?;
+                        refresh_relations(e, sim_data, layout)?;
                         self.core.time_events += 1;
                         emit_row(e, &mut self.rows, sim_data, layout, te)?; // post-event row
                         if terminated(e, sim_data, layout)? {
@@ -2766,10 +2776,7 @@ impl Driver for DasslEventsDriver {
                     }
                 }
                 if !grid_covered {
-                    // Fresh (mode 1) output solve: every event up to `tout` is already
-                    // handled above, so no when-edge fires here, while an algebraic loop
-                    // (e.g. an ideal-diode network) needs its relations solved fresh.
-                    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+                    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                     emit_row(e, &mut self.rows, sim_data, layout, tout)?;
                     if terminated(e, sim_data, layout)? {
                         self.finished = true;
@@ -2822,7 +2829,7 @@ impl Driver for DasslEventsDriver {
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
             if !self.grid_covered {
-                write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+                write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
                 emit_row(e, &mut self.rows, sim_data, layout, tout)?;
                 if terminated(e, sim_data, layout)? {
