@@ -41,6 +41,7 @@ FMUResourceTest.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
+issue10978.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
