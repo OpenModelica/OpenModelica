@@ -423,16 +423,14 @@ pub extern "C" fn rt_solve_nls(
 
     let mut scratch = vec![0.0f64; n];
     let mut x = guess.clone();
-    // At an event (mode 1) keep relations hysteretic during Newton, as C does (its
-    // residual recomputes them via `LessZC`/`GreaterZC` each eval). Freezing to
-    // `relationsPre` (mode 0) locks the discrete branch of a coupled system such as
-    // Rotational friction (sa ↔ mode/startForward) to the guess, converging to a
-    // different root than C. Integration (0) stays held/smooth; init (2) stays fresh.
+    // C's `solve_nonlinear_system`: Newton holds relations (`solveContinuous`); at an
+    // event, prime once live then hold, priming and solving from `nlsxOld` (=`warm`).
+    // Extrapolating past a just-switched branch re-flips the relation the event set.
     if saved_rel_fresh == 1 {
-        // Prime relations at the guess so a branch switch reaches the driver's event
-        // loop, then leave mode 1 for Newton.
         unsafe { store_u32(rel_fresh_addr, 1) };
-        eval(&x, &mut scratch);
+        eval(&warm, &mut scratch);
+        unsafe { store_u32(rel_fresh_addr, 0) };
+        x.copy_from_slice(&warm);
     } else if saved_rel_fresh == 0 {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
