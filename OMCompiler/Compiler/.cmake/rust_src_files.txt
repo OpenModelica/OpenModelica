@@ -16,6 +16,9 @@ daskr/src/linpack.rs
 daskr/src/solver.rs
 daskr/tests/cref.rs
 daskr/tests/solver_cref.rs
+minpack/Cargo.toml
+minpack/LICENSE
+minpack/src/lib.rs
 libopenmodelica_compiler/Cargo.toml
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh

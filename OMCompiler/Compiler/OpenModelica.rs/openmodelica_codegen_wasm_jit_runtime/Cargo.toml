@@ -25,6 +25,9 @@ session = []
 
 [dependencies]
 dlmalloc = { version = "0.2.14", features = ["global"] }
+# MINPACK hybrd for the in-wasm nonlinear solver (`nls.rs`): converges to `xtol`
+# like C's default solver, unlike the crude Newton it replaces. no_std + libm.
+minpack = { path = "../minpack", default-features = false }
 # Self-contained (in-wasm) `pow` for element-wise array power, so the JIT loop
 # never crosses the wasm↔host boundary per element.
 libm = "0.2"
