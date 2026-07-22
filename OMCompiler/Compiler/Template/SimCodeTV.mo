@@ -604,6 +604,7 @@ end SparsityRow;
       DAE.Exp initPnts      "initial grid points";
       DAE.Exp initVals      "initial grid values";
       Integer initSize      "number of initial points";
+      Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
     end SPATIAL_DISTRIBUTION;
   end SpatialDistribution;
 

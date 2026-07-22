@@ -9,6 +9,7 @@ TESTFILES = \
 	mixedVelocity.mos \
 	bigSteps.mos \
 	nonZeroStartPosition.mos \
+	SpatialDistributionEvent.mos \
 	test1.mos \
 	test2.mos \
 	test3.mos \

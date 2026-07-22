@@ -5894,21 +5894,33 @@ protected
   list<SimCode.SpatialDistribution> spatial_lst;
   Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
 algorithm
-  (_,spatial_lst) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), {}));
+  // Traverse top-down so we can keep track of the guard condition of the
+  // enclosing if-branch a spatialDistribution() operator sits in. The
+  // storeSpatialDistribution() callback must be guarded by the same condition
+  (_, (_, spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsTopDownHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (NONE(), {})));
   spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
 end extractSpatialDistributionInfo;
 
 function extractSpatialDistributionInfoExp
+  "Top-down expression traversal that collects every spatialDistribution() call
+   together with the guard condition of the enclosing if-branch it sits in.
+   The condition is carried in the traversal argument and conjoined per branch
+   (then = cond, else = not cond) so the generated storeSpatialDistribution
+   callback can be guarded by the same event as the operator's evaluation."
   input output DAE.Exp callExp;
-  input output list<SimCode.SpatialDistribution> spatialInfo;
+  output Boolean cont "Continue descending flag for Expression.traverseExpTopDown";
+  input output tuple<Option<DAE.Exp>, list<SimCode.SpatialDistribution>> tpl "current guard condition and collected operators";
   input Mutable<Integer> maxIndex_ptr;
 algorithm
-  spatialInfo := match callExp
+  (cont, tpl) := match callExp
     local
       Integer i, initSize;
-      DAE.Exp in0, in1, pos, dir, initPnts, initVals;
+      DAE.Exp in0, in1, pos, dir, initPnts, initVals, cond, tb, fb;
+      Option<DAE.Exp> curCond;
+      list<SimCode.SpatialDistribution> spatialInfo;
     case DAE.CALL(path = Absyn.IDENT("spatialDistribution"), expLst={DAE.ICONST(i), in0, in1, pos, dir, initPnts, initVals})
       algorithm
+        (curCond, spatialInfo) := tpl;
         if i > Mutable.access(maxIndex_ptr) then
           Mutable.update(maxIndex_ptr, i);
         end if;
@@ -5916,10 +5928,35 @@ algorithm
           Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
         end if;
         initSize := Expression.sizeOf(Expression.typeof(initPnts));
-    then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
-    else spatialInfo;
+        spatialInfo := SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize, curCond) :: spatialInfo;
+    then (true, (curCond, spatialInfo));
+
+    // Descend into the branches ourselves so the accumulated guard condition
+    // can differ between the then- and else-branch. Return cont=false to keep
+    // the generic traversal from visiting the children a second time.
+    case DAE.IFEXP(cond, tb, fb)
+      algorithm
+        (curCond, spatialInfo) := tpl;
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(cond, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (curCond, spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(tb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, cond)), spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(fb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, Expression.negate(cond))), spatialInfo));
+    then (false, (curCond, spatialInfo));
+
+    else (true, tpl);
   end match;
 end extractSpatialDistributionInfoExp;
+
+function combineGuardCondition
+  "Conjoins an outer guard condition (if any) with a branch condition."
+  input Option<DAE.Exp> outerCond;
+  input DAE.Exp branchCond;
+  output DAE.Exp cond;
+algorithm
+  cond := match outerCond
+    case SOME(cond) then DAE.LBINARY(cond, DAE.AND(DAE.T_BOOL_DEFAULT), branchCond);
+    else branchCond;
+  end match;
+end combineGuardCondition;
 
 public function createExtObjInfo
   input BackendDAE.Shared shared;
