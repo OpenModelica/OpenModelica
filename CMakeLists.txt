@@ -57,7 +57,6 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 
 ## OPTIONS #################################################################################################
-omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
 
 # Web (wasm) target: build the browser/Node WebAssembly bundle of omc. It is a
 # Rust-omc build (OM_OMC_ENABLE_RUST) compiled for wasm32-unknown-unknown, so the
@@ -79,9 +78,24 @@ mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
 
-## OMOptim is the legacy optimization GUI. It is disabled by default; enable it
-## with -DOM_OMOPTIM_ENABLE=ON (requires OM_ENABLE_GUI_CLIENTS). See issue #14506.
-omc_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF)
+cmake_dependent_option(OM_ENABLE_OMSIMULATOR "Enable OMSimulator" ON "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSIMULATOR)
+
+# GUI options
+omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+# Qt version (5/6) used by the GUI clients.
+set(OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
+# The Qt clients are unused in the wasm build, so force them off when OM_OMC_WASM is set.
+cmake_dependent_option(OM_ENABLE_OMSHELL    "Enable OMShell gui client"    ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMSENS_QT  "Enable OMSens_Qt gui client"  ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSHELL)
+omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
+omc_add_to_report(OM_ENABLE_OMEDIT)
+omc_add_to_report(OM_ENABLE_OMSENS_QT)
+omc_add_to_report(OM_OMOPTIM_ENABLE)
 
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
@@ -246,44 +260,38 @@ enable_testing()
 
 omc_add_subdirectory(OMCompiler)
 
-# The Qt GUI clients cannot target wasm; in the wasm build OM_ENABLE_GUI_CLIENTS
-# instead selects the OMShell web pages (handled in omc_rust_setup_wasm), so skip
-# these native subdirs there.
+if(OM_ENABLE_OMSIMULATOR)
+  omc_add_subdirectory(OMSimulator)
+endif()
+
+# OMPlot provides OMPlotLib and the omqwt target, needed by OMEdit, OMNotebook
+# and OMOptim, so build it whenever any of those clients is enabled.
+if(OM_ENABLE_OMEDIT OR OM_ENABLE_OMNOTEBOOK OR OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMPlot)
+endif()
+
+if(OM_ENABLE_OMEDIT)
+  omc_add_subdirectory(OMParser)
+  omc_add_subdirectory(OMEdit)
+endif()
+
+if(OM_ENABLE_OMSHELL)
+  omc_add_subdirectory(OMShell)
+endif()
+
+if(OM_ENABLE_OMNOTEBOOK)
+  omc_add_subdirectory(OMNotebook)
+endif()
+
+if(OM_ENABLE_OMSENS_QT)
+  omc_add_subdirectory(OMSens_Qt)
+endif()
+
+if(OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMOptim)
+endif()
+
 if(NOT OM_OMC_WASM)
-  option (OM_ENABLE_OMSIMULATOR "Enable OMSimulator" ON)
-  if (OM_ENABLE_OMSIMULATOR)
-    omc_add_subdirectory(OMSimulator)
-  endif ()
-
-  # select qt version 5/6
-  set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
-
-  option (OM_ENABLE_OMSHELL "Enable OMShell gui client" ${OM_ENABLE_GUI_CLIENTS})
-  if (OM_ENABLE_OMSHELL)
-    omc_add_subdirectory(OMShell)
-  endif ()
-
-  option (OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ${OM_ENABLE_GUI_CLIENTS})
-  if (OM_ENABLE_OMNOTEBOOK)
-    omc_add_subdirectory(OMNotebook)
-  endif ()
-
-  option (OM_ENABLE_OMEDIT "Enable OMEdit gui client" ${OM_ENABLE_GUI_CLIENTS})
-  if (OM_ENABLE_OMEDIT)
-    omc_add_subdirectory(OMParser)
-    omc_add_subdirectory(OMPlot)
-    omc_add_subdirectory(OMEdit)
-  endif ()
-
-  option (OM_ENABLE_OMSENS_QT "Enable OMSens_Qt gui client" ${OM_ENABLE_GUI_CLIENTS})
-  if (OM_ENABLE_OMSENS_QT)
-    omc_add_subdirectory(OMSens_Qt)
-  endif ()
-
-  if(OM_OMOPTIM_ENABLE)
-    omc_add_subdirectory(OMOptim)
-  endif()
-
   # The Modelica libraries and the testsuite are not part of the wasm/web bundle;
   # skip them so `make all` builds only the wasm target in that mode.
   omc_add_subdirectory(libraries)
