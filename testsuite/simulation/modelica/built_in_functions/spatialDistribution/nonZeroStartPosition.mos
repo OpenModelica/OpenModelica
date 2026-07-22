@@ -1,0 +1,72 @@
+// name:                nonZeroStartPosition.mos
+// keywords:            spatialDistribution, initialization
+// status:              correct
+// teardown_command:    rm -f SingleBeltNonZeroStartX*
+//
+// Regression test for issue #16100.
+// The spatial coordinate x of spatialDistribution does not start at 0. Only the
+// change of x (the transport distance) is physically relevant, so this must give
+// the same result as the same model with x(start=0). Previously the simulation
+// aborted at the initial event with
+//   "x got reinitialized during an event at time 0.000000. OpenModelica can't handle that."
+// because the operator's internal previous position was left at 0 instead of x(t0).
+
+loadModel(Modelica); getErrorString();
+loadString("
+  model SingleBeltNonZeroStartX
+    \"Single conveyor belt with constant positive velocity and input from the
+    left side, but with a spatial coordinate x that starts at 3.7 instead of 0.
+    rightOutput must match the analytical solution just like when x starts at 0.\"
+  extends Modelica.Icons.Example;
+  Real leftInput = sin(time);
+  Real rightInput = 0;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {0.0, 1.0};
+  Real v = 1;
+  Boolean posV = v >= 0;
+  Real x(start = 3.7, fixed = true);
+  Real solution = if time < 1 then 1-time else sin(time-1);
+equation
+  v = der(x);
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end SingleBeltNonZeroStartX;"); getErrorString();
+
+// Simulate
+simulate(SingleBeltNonZeroStartX, stopTime=2.0); getErrorString();
+
+// Initial value at the right output
+val(rightOutput, 0.0);  val(solution, 0.0);
+val(rightOutput, 0.5);  val(solution, 0.5);
+val(rightOutput, 1.0);  val(solution, 1.0);
+
+// Input from 1 second ago (belt fully traversed)
+val(rightOutput, 1.5);  val(solution, 1.5);
+val(rightOutput, 2.0);  val(solution, 2.0);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SingleBeltNonZeroStartX_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingleBeltNonZeroStartX', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// 0.5040000000000004
+// 0.5
+// 0.0040000000000004485
+// 0.0
+// 0.4759113823183197
+// 0.479425538604203
+// 0.8414709848078961
+// 0.8414709848078965
+// endResult
