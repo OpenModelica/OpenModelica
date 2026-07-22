@@ -4558,7 +4558,7 @@ fn compile_math_event(
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::F64Load(mem_arg(base, 3)));
             match name {
-                "integer" => { ctx.emit(I::I32TruncF64S); Ok(SigTy::Int) }
+                "integer" => { ctx.emit(I::I32TruncSatF64S); Ok(SigTy::Int) }
                 "ceil" => { ctx.emit(I::F64Ceil); Ok(SigTy::Real) }
                 _ => { ctx.emit(I::F64Floor); Ok(SigTy::Real) }
             }
@@ -4700,7 +4700,7 @@ fn compile_math_builtin(
         // integer(r): largest Integer <= r.
         "integer" => {
             unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
-            ctx.emit(we::Instruction::I32TruncF64S);
+            ctx.emit(we::Instruction::I32TruncSatF64S);
             Ok(SigTy::Int)
         }
         // `Integer(e)` — the ordinal of an enumeration value. Enum values are
@@ -6414,7 +6414,9 @@ fn need_args(argv: &[&Arc<DAE::Exp>], n: usize, name: &str) -> Result<()> {
 fn coerce(ctx: &mut FnCtx, from: WTy, to: WTy) {
     match (from, to) {
         (WTy::I32, WTy::F64) => ctx.emit(we::Instruction::F64ConvertI32S),
-        (WTy::F64, WTy::I32) => ctx.emit(we::Instruction::I32TruncF64S),
+        // Saturating (non-trapping): a transient NaN/out-of-range value from an NLS
+        // probe must not trap the module.
+        (WTy::F64, WTy::I32) => ctx.emit(we::Instruction::I32TruncSatF64S),
         _ => {}
     }
 }
