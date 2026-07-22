@@ -291,9 +291,9 @@ if(OM_OMOPTIM_ENABLE)
   omc_add_subdirectory(OMOptim)
 endif()
 
+# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+# skip them so `make all` builds only the wasm target in that mode.
 if(NOT OM_OMC_WASM)
-  # The Modelica libraries and the testsuite are not part of the wasm/web bundle;
-  # skip them so `make all` builds only the wasm target in that mode.
   omc_add_subdirectory(libraries)
   omc_add_subdirectory(testsuite)
 endif()
