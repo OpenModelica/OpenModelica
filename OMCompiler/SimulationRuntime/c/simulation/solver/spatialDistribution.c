@@ -106,6 +106,9 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
   for(i=0; i<nSpatialDistributions; i++) {
     spatialDistributionData[i].index = i;
     spatialDistributionData[i].isInitialized = 0 /* false */;
+    spatialDistributionData[i].startPosXSet = 0 /* false */;
+    spatialDistributionData[i].startPosX = 0.0 /* false */;
+    spatialDistributionData[i].oldPosX = 0.0;
     spatialDistributionData[i].transportedQuantity = allocDoubleEndedList(sizeof(TRANSPORTED_QUANTITY_DATA)); /* empty double ended list */
     spatialDistributionData[i].storedEvents = allocDoubleEndedList(sizeof(TRANSPORTED_EVENT_DATA));           /* empty double ended list */
     spatialDistributionData[i].lastStoredEventValue = 0;
@@ -235,6 +238,30 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
 
 
 /**
+ * @brief Shift posX so that the operator internally starts at x = 0.
+ *
+ * The spatialDistribution operator only depends on the change of the spatial
+ * coordinate x (the transport distance), not on its absolute value, and its
+ * initial profile (initialPoints/initialValues) is stored assuming x(t0) = 0.
+ * The value of x at the very first call is captured once and subtracted from
+ * every subsequent posX, so a model where x has a nonzero start value behaves
+ * exactly like one starting at x = 0 (and no longer triggers a spurious
+ * "x got reinitialized during an event" error at the initial event).
+ *
+ * @param spatialDistribution   Spatial distribution to shift for.
+ * @param posX                  Value of position x.
+ * @return double               posX relative to its value at the first call.
+ */
+static double shiftToStartPosX(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double posX) {
+  if (!spatialDistribution->startPosXSet) {
+    spatialDistribution->startPosX = posX;
+    spatialDistribution->startPosXSet = 1 /* true */;
+  }
+  return posX - spatialDistribution->startPosX;
+}
+
+
+/**
  * @brief Store spatial distribution data for an accepted step.
  *
  * @param data                Data
@@ -258,6 +285,9 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
   transportedQuantityList = spatialDistribution->transportedQuantity;
   storedEventsList = spatialDistribution->storedEvents;
+
+  /* Shift x so the operator starts at x = 0 (only the change of x matters) */
+  posX = shiftToStartPosX(spatialDistribution, posX);
 
   /* Debug log */
   infoStreamPrint(OMC_LOG_SPATIALDISTR, 1, "Calling storeSpatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
@@ -367,10 +397,12 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
   transportedQuantityList = spatialDistribution->transportedQuantity;
 
+  /* Shift x so the operator starts at x = 0 (only the change of x matters) */
+  posX = shiftToStartPosX(spatialDistribution, posX);
+
   /* Debug log */
   infoStreamPrint(OMC_LOG_SPATIALDISTR, 1, "Calling spatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
-  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = spatialDistribution(%f, %f, %f, %s)", in0, in1, posX, isPositiveVelocity?"true":"false");
-  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "                                     in0        in1        x     isPositiveVelocity");
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = spatialDistribution(in0=%f, in1=%f, x=%f, isPositiveVelocity=%s)", in0, in1, posX, isPositiveVelocity?"true":"false");
   doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   /* Get deltaX */
@@ -494,9 +526,12 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
   storedEventsList = spatialDistribution->storedEvents;
 
+  /* Shift x so the operator starts at x = 0 (only the change of x matters) */
+  posX = shiftToStartPosX(spatialDistribution, posX);
+
   if (doubleEndedListLen(storedEventsList) == 0) {
     zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
-    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "spatialDistributionZeroCrossing(%e) = %e (no stored events, returning previous value)", posX, zeroCrossingValue);
     return zeroCrossingValue;
   }
 
@@ -565,7 +600,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   }
 
 
-  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e", posX, zeroCrossingValue);
   doubleEndedListPrint(storedEventsList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   return zeroCrossingValue;
@@ -783,7 +818,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
 
   currentDistance = fabs(currentNodeData->position - edgeNodePosition);
   if (currentDistance + SPATIAL_EPS < 1) {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug report about it.");
     omc_throw_function(NULL);
     return walkedOverEvents;
   }
