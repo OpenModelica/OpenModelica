@@ -84,125 +84,7 @@ pub(crate) mod runtime;
 // wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
 // trait rather than an inherent method.
 pub(crate) use openmodelica_sim_meta::WTy;
-
-pub(crate) trait WTyVal {
-    fn val(self) -> we::ValType;
-}
-impl WTyVal for WTy {
-    fn val(self) -> we::ValType {
-        match self {
-            WTy::I32 => we::ValType::I32,
-            WTy::F64 => we::ValType::F64,
-        }
-    }
-}
-
-/// One Modelica value type, as the wasm-jit models it and as recorded in the
-/// `.wasm.sig` sidecar so `loadAndExecute` can map wasm values back to the right
-/// `Values.Value` constructor (an `i32` result is otherwise ambiguous between
-/// Integer, Boolean and a heap handle).
-///
-/// Scalars map to a wasm value type ([`SigTy::wty`]). `Str` and `Array` are
-/// reference-counted heap values represented by an `i32` handle into the shared
-/// runtime heap. `Array` carries its scalar element type and rank (number of
-/// dimensions); Modelica arrays are rectangular, so the rank captures every
-/// dimension rather than nesting `Array`s. The element stride, load/store value
-/// type, release entry point and marshalling are all derivable from `elem`; the
-/// runtime array object additionally records the element kind and the per-axis
-/// sizes in its header so a single `rt_array_release` frees nested heap
-/// elements and indexing/`size` work for any rank.
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub(crate) enum SigTy {
-    Int,
-    Real,
-    Bool,
-    /// A `String`: an `i32` handle; the bytes live in linear memory.
-    Str,
-    /// An N-dimensional array of `elem` with `rank` dimensions: an `i32` handle
-    /// to a runtime array object (flat row-major storage).
-    Array { elem: Arc<SigTy>, rank: u32 },
-    /// A record: an `i32` handle to a runtime record object. `path` is the
-    /// record's class name (for `Values.RECORD`); `fields` are its components in
-    /// declaration order (name + type), which fix the field layout.
-    Record { path: ArcStr, fields: Arc<Vec<(ArcStr, SigTy)>> },
-    /// An external object: a native `void*` (e.g. a table `tableID`). Held in
-    /// wasm as an opaque `i32` handle into the host's pointer registry; not a
-    /// wasm heap value (no ARC — freed by the object's `destructor`).
-    Ptr,
-}
-
-impl SigTy {
-    /// Append this type's `.wasm.sig` encoding to `out`. Scalars are a single
-    /// letter; a rank-`k` array is `k` `'['`s followed by its scalar element
-    /// encoding (e.g. `"[R"` for `Real[:]`, `"[[I"` for `Integer[:,:]`). The
-    /// `'['` prefix lets the reader consume one whole type without separators
-    /// ([`parse_sig_types`]).
-    fn write_code(&self, out: &mut String) {
-        match self {
-            SigTy::Int => out.push('I'),
-            SigTy::Real => out.push('R'),
-            SigTy::Bool => out.push('B'),
-            SigTy::Str => out.push('S'),
-            SigTy::Array { elem, rank } => {
-                for _ in 0..*rank {
-                    out.push('[');
-                }
-                elem.write_code(out);
-            }
-            // `{path;name:code;name:code…}` — a record, brace-delimited so the
-            // reader can consume one whole (possibly nested) record type. Names
-            // and dotted paths never contain `{};:` so those are safe delimiters.
-            SigTy::Record { path, fields } => {
-                out.push('{');
-                out.push_str(path);
-                for (name, code) in fields.iter() {
-                    out.push(';');
-                    out.push_str(name);
-                    out.push(':');
-                    code.write_code(out);
-                }
-                out.push('}');
-            }
-            SigTy::Ptr => out.push('P'),
-        }
-    }
-    pub(crate) fn wty(&self) -> WTy {
-        match self {
-            SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr => WTy::I32,
-            SigTy::Real => WTy::F64,
-        }
-    }
-    /// The runtime element-kind tag stored in an array header when this type is
-    /// the array's element. Must stay in sync with the runtime's `EK_*` constants.
-    fn elem_kind(&self) -> u32 {
-        match self {
-            SigTy::Int => 0,
-            SigTy::Real => 1,
-            SigTy::Bool => 2,
-            SigTy::Str => 3,
-            SigTy::Array { .. } => 4,
-            SigTy::Record { .. } => 5,
-            // Not a real runtime element kind: arrays of external objects don't
-            // occur (table data is Real/Integer). Stored 4-byte, non-heap.
-            SigTy::Ptr => 0,
-        }
-    }
-    /// The runtime release entry point for a heap value of this type, or `None`
-    /// for a non-heap scalar. Used wherever an owned heap value is freed.
-    fn release_fn(&self) -> Option<&'static str> {
-        match self {
-            SigTy::Str => Some("rt_release"),
-            SigTy::Array { .. } => Some("rt_array_release"),
-            SigTy::Record { .. } => Some("rt_record_release"),
-            _ => None,
-        }
-    }
-    /// Whether this is a reference-counted heap value (needs ARC on
-    /// assignment / at scope exit).
-    fn is_heap(&self) -> bool {
-        self.release_fn().is_some()
-    }
-}
+pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, FnSig, SigTy, WTyVal};
 
 /// Parse one `.wasm.sig` line into a list of [`SigTy`]s (see [`SigTy::write_code`]
 /// for the encoding). Types are concatenated without separators; an `'['`
@@ -510,11 +392,6 @@ pub(crate) fn mangle(path: &Absyn::Path) -> Result<String> {
 /// Signature of a generated wasm function: parameter and result Modelica types
 /// (`SigTy`, so String parameters/results are distinguishable for reference
 /// counting; the wasm value types are `SigTy::wty`).
-#[derive(Clone)]
-pub(crate) struct FnSig {
-    pub(crate) params: Vec<SigTy>,
-    pub(crate) results: Vec<SigTy>,
-}
 
 /// Everything the second pass needs to resolve a `CALL` to another generated
 /// function: its final wasm function index and signature.
@@ -523,44 +400,6 @@ pub(crate) struct FnInfo {
     pub(crate) sig: FnSig,
 }
 
-/// The C-call shape of a general external "C" import. `args` is the C argument
-/// list in `extArgs` order, each flagged as an `_Out_` pointer or not; `ret` is
-/// the C return-value type (`None` for a `void` function). The corresponding wasm
-/// import takes the *input* args (and any *output arrays*, which are pre-allocated
-/// by the wasm side and passed by pointer) as parameters, and returns the scalar/
-/// string outputs — the C return value first (if any), then each `_Out_` scalar/
-/// string pointer's written value — as multi-value results. Array outputs are
-/// filled in place (native) or copied back by the host (web), so they are NOT
-/// results. The host trampoline owns all pointer marshalling.
-#[derive(Clone)]
-pub(crate) struct ExtCallSig {
-    pub(crate) name: String,
-    pub(crate) args: Vec<(SigTy, bool)>,
-    pub(crate) ret: Option<SigTy>,
-}
-
-impl ExtCallSig {
-    /// Array args are always passed by pointer (the buffer is pre-allocated on the
-    /// wasm side), so both input and output arrays are wasm *parameters*; only
-    /// scalar/string `_Out_` args come back as results.
-    fn as_result(ty: &SigTy, is_out: bool) -> bool {
-        is_out && !matches!(ty, SigTy::Array { .. })
-    }
-    /// The wasm import parameters: input args + output arrays, in `extArgs` order.
-    pub(crate) fn wasm_params(&self) -> Vec<SigTy> {
-        self.args.iter().filter(|(t, is_out)| !Self::as_result(t, *is_out)).map(|(t, _)| t.clone()).collect()
-    }
-    /// The wasm import results: the C return value (if any) then each scalar/string
-    /// `_Out_` arg, in `extArgs` order — matching those output variables' order.
-    pub(crate) fn wasm_results(&self) -> Vec<SigTy> {
-        let mut r: Vec<SigTy> = self.ret.iter().cloned().collect();
-        r.extend(self.args.iter().filter(|(t, is_out)| Self::as_result(t, *is_out)).map(|(t, _)| t.clone()));
-        r
-    }
-    pub(crate) fn wasm_sig(&self) -> FnSig {
-        FnSig { params: self.wasm_params(), results: self.wasm_results() }
-    }
-}
 
 /// Build the wasm module for `fnCode`. Returns the encoded module bytes and the
 /// input/output `SigTy`s of the main function (for the sidecar).
@@ -1278,6 +1117,32 @@ impl<'a> FnCtx<'a> {
                 }
             }
             self.emit(we::Instruction::F64Store(mem_arg(zc_off + k as u32 * 8, 3)));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionUpdateRelations`: store each relation's exact value into
+    /// `relations[i]`, C's `function_updateRelations(data, 0)`. No hysteresis band
+    /// and no held `relationsPre`, so the event handler can snapshot the result as
+    /// the band direction. `None` entries keep their index without a store.
+    pub(crate) fn emit_update_relations(
+        &mut self,
+        relations: &[Option<Arc<DAE::Exp>>],
+        relations_off: u32,
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        if relations.len() > self.sim()?.n_relations as usize {
+            return Err("CodegenWasmJit: relations list longer than the relations[] region");
+        }
+        for (i, rel) in relations.iter().enumerate() {
+            let Some(rel) = rel else { continue };
+            let DAE::Exp::RELATION { exp1, operator, exp2, .. } = &**rel else {
+                return Err("CodegenWasmJit: non-relation in the relations list");
+            };
+            self.emit(we::Instruction::LocalGet(data));
+            let w = compile_relation_fresh(self, exp1, operator, exp2)?;
+            coerce(self, w, WTy::I32);
+            self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
         }
         Ok(())
     }

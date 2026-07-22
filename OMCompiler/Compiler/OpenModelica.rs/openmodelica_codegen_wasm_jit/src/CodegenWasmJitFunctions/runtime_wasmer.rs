@@ -30,7 +30,7 @@ fn wt<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> Result<T> {
 /// module, which imports its `memory` and `rt_*` exports — so the allocator,
 /// reference counting and string ops are shared precompiled code, not re-emitted
 /// per module.
-pub(super) static RUNTIME_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime.wasm"));
+pub(super) use openmodelica_wasm_jit::RUNTIME_WASM;
 
 /// Process-wide JIT cache shared across all `load_and_execute` calls.
 ///
@@ -100,106 +100,6 @@ fn read_sig(path: &str) -> Result<Sig> {
     Ok(Sig { inputs, outputs })
 }
 
-/// Register the host-imported math builtins (module `"env"`) into `imports`,
-/// matching `super::BUILTINS` one-for-one. wasmer host functions are bound to
-/// the `Store` they are created in, so (unlike the wasmtime `Linker`) this is
-/// rebuilt per instantiation rather than cached; it is cheap function-handle
-/// creation with no compilation.
-pub(crate) fn add_host_builtins(store: &mut Store, imports: &mut wasmer::Imports) -> Result<()> {
-    use wasmer::Function;
-    // The transcendental math `BUILTINS` are now provided in-wasm by the runtime
-    // module (`rt_math*` exports, via libm) and imported under the `rt` namespace,
-    // so they no longer cross the wasm<->host boundary. Only the effectful
-    // `ENV_EXTRA` imports remain host-side here.
-    // `rt_assert` (see `super::ENV_EXTRA`): record the failing assertion's message
-    // and source-info handles so `load_and_execute` can route them to the error
-    // buffer after the generated code traps. The handles point into the shared
-    // linear memory, which is still live when `load_and_execute` reads them.
-    // Registered under `rt` (not `env`): the model imports rt_assert from `rt` so
-    // the standalone wasip1 export — where the merged runtime provides it — never
-    // needs an `env` namespace. The runtime instance does not export rt_assert, so
-    // merging it into the `rt` namespace alongside `rt_inst.exports` cannot collide.
-    imports.define(
-        "rt",
-        "rt_assert",
-        Function::new_typed(
-            store,
-            |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-                PENDING_ASSERT.with(|p| {
-                    *p.borrow_mut() = Some(PendingAssert { msg, file, sline, scol, eline, ecol, read_only: read_only != 0 });
-                });
-            },
-        ),
-    );
-    // `rt_assert_warning` (see `super::ENV_EXTRA`): a non-fatal warning-level
-    // violation; record its handles for the driver to format post-step.
-    imports.define(
-        "rt",
-        "rt_assert_warning",
-        Function::new_typed(
-            store,
-            |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-                PENDING_WARNINGS.with(|p| {
-                    p.borrow_mut().push([cond, msg, file, sline, scol, eline, ecol, read_only]);
-                });
-            },
-        ),
-    );
-    // The in-wasm session driver (`rt_sim_*`) polls these for its chunk budget and
-    // cooperative cancel, wasm-side, so it uses the *same* clock/cancel source as
-    // the host driver. Present in every runtime instantiation (unused by the host
-    // driver path).
-    imports.define(
-        "env",
-        "rt_host_now_ms",
-        Function::new_typed(store, || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }),
-    );
-    imports.define(
-        "env",
-        "rt_host_cancel",
-        Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }),
-    );
-    Ok(())
-}
-
-/// A failing assertion recorded by the `rt_assert` host import, to be reported by
-/// [`load_and_execute`] after the wasm trap. The `msg`/`file` fields are handles
-/// into the shared linear memory (read with [`read_rt_string`]).
-struct PendingAssert {
-    msg: i32,
-    file: i32,
-    sline: i32,
-    scol: i32,
-    eline: i32,
-    ecol: i32,
-    read_only: bool,
-}
-
-thread_local! {
-    /// The most recent assertion recorded by `rt_assert` on this thread, consumed
-    /// by [`load_and_execute`]. Single-threaded per call, so a plain cell suffices.
-    static PENDING_ASSERT: std::cell::RefCell<Option<PendingAssert>> = const { std::cell::RefCell::new(None) };
-    /// Warning-level violations recorded by `rt_assert_warning`, drained by the
-    /// driver after `functionCheckAsserts`. See the wasmtime backend for the shape.
-    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 8]>> = const { std::cell::RefCell::new(Vec::new()) };
-}
-
-/// Take (and clear) the warning-level assertion violations recorded by
-/// `rt_assert_warning` since the last call.
-pub(crate) fn take_pending_warnings() -> Vec<[i32; 8]> {
-    PENDING_WARNINGS.with(|p| core::mem::take(&mut *p.borrow_mut()))
-}
-
-/// Take the pending assertion recorded by `rt_assert` (message + source-info
-/// handles into shared memory) as raw fields
-/// `[msg, file, sline, scol, eline, ecol, read_only]`, or `None`. Lets the
-/// simulation drivers surface a failed `assert()` after a `functionODE`/
-/// `functionAlgebraics` trap (the function-eval path uses `report_pending_assert`).
-pub(crate) fn take_pending_assert() -> Option<[i32; 7]> {
-    PENDING_ASSERT
-        .with(|p| p.borrow_mut().take())
-        .map(|pa| [pa.msg, pa.file, pa.sline, pa.scol, pa.eline, pa.ecol, pa.read_only as i32])
-}
 
 /// Extract a numeric argument as an `f64`, accepting any scalar `Values.Value`.
 fn value_as_f64(v: &Values::Value) -> Result<f64> {
@@ -242,7 +142,7 @@ pub(super) fn load_and_execute(
     let module = get_or_compile_module(cache, &bytes)?;
     let mut store = wasmer::Store::new(cache.engine.clone());
     let mut imports = wasmer::Imports::new();
-    add_host_builtins(&mut store, &mut imports)?;
+    openmodelica_wasm_jit::host::add_host_builtins(&mut store, &mut imports)?;
     let rt_inst = wt(wasmer::Instance::new(&mut store, &cache.runtime_module, &imports))?;
     imports.register_namespace("rt", rt_inst.exports.iter().map(|(k, v)| (k.clone(), v.clone())));
     let instance = wt(wasmer::Instance::new(&mut store, &module, &imports))?;
@@ -286,7 +186,7 @@ pub(super) fn load_and_execute(
 
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
-    PENDING_ASSERT.with(|p| *p.borrow_mut() = None);
+    openmodelica_wasm_jit::host::clear_pending_assert();
     // wasmer returns the result values directly (no out-parameter buffer).
     let results = match func.call(&mut store, &params) {
         Ok(r) => r,
@@ -297,7 +197,7 @@ pub(super) fn load_and_execute(
             // `META_FAIL` directly — this is an expected runtime failure, not an
             // internal error, so it should not be reported as a wasm trap on
             // stderr by `loadAndExecute`.
-            if let Some(pa) = PENDING_ASSERT.with(|p| p.borrow_mut().take()) {
+            if let Some(pa) = openmodelica_wasm_jit::host::take_pending_assert_raw() {
                 report_pending_assert(&mut store, &rt, &pa)?;
                 return Ok(Arc::new(Values::Value::META_FAIL));
             }
@@ -337,7 +237,7 @@ fn read_rt_str(store: &mut Store, rt: &RtFns, handle: i32) -> Result<String> {
 /// `[file:l:c-l:c:writable] Error: <msg>` output. The `%s`-templated
 /// `COMPILER_ERROR` message renders the assertion message verbatim at `Error`
 /// severity.
-fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &PendingAssert) -> Result<()> {
+fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &openmodelica_wasm_jit::host::PendingAssert) -> Result<()> {
     use openmodelica_util::Error;
     let msg = read_rt_str(store, rt, pa.msg)?;
     let file = read_rt_str(store, rt, pa.file)?;
@@ -648,7 +548,7 @@ mod tests {
         let module = wasmer::Module::from_binary(&engine, RUNTIME_WASM).unwrap();
         let mut store = wasmer::Store::new(engine);
         let mut imports = wasmer::Imports::new();
-        add_host_builtins(&mut store, &mut imports).unwrap();
+        openmodelica_wasm_jit::host::add_host_builtins(&mut store, &mut imports).unwrap();
         let inst = wasmer::Instance::new(&mut store, &module, &imports).unwrap();
         (store, inst)
     }
