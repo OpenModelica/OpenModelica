@@ -3954,18 +3954,37 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
 ::=
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
-  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, in0=in0, in1=in1, pos=pos, dir=dir) =>
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, in0=in0, in1=in1, pos=pos, dir=dir, condition=condition) =>
       let &preExp = buffer ""
       let in0T = daeExp(in0, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let in1T = daeExp(in1, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let posT = daeExp(pos, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let dirT = daeExp(dir, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       // TODO @kabdelhak Use index of equation here, not the index of the spatial distribution
-      <<
-      equationIndexes[1] = <%index%>;
-      <%preExp%>
-      storeSpatialDistribution(data, threadData, <%index%>, <%in0T%>, <%in1T%>, <%posT%>, <%dirT%>);<%\n%>
-      >>
+      let storeStmts =
+        <<
+        equationIndexes[1] = <%index%>;
+        <%preExp%>
+        storeSpatialDistribution(data, threadData, <%index%>, <%in0T%>, <%in1T%>, <%posT%>, <%dirT%>);
+        >>
+      // When the spatialDistribution() operator sits inside an if-branch its
+      // evaluation is guarded by an event; the store must use the same guard,
+      // otherwise the operator's buffer is mutated while it is inactive (#16099).
+      match condition
+        case SOME(cond) then
+          let &condPreExp = buffer ""
+          let condT = daeExp(cond, contextSimulationNonDiscrete, &condPreExp, &varDecls, &auxFunction)
+          <<
+          <%condPreExp%>
+          if(<%condT%>)
+          {
+            <%storeStmts%>
+          }<%\n%>
+          >>
+        else
+          <<
+          <%storeStmts%><%\n%>
+          >>
     ))
   <<
   <%auxFunction%>

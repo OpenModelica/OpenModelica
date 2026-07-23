@@ -526,8 +526,17 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
   storedEventsList = spatialDistribution->storedEvents;
 
-  /* Shift x so the operator starts at x = 0 (only the change of x matters) */
-  posX = shiftToStartPosX(spatialDistribution, posX);
+  /* Shift x so the operator starts at x = 0 (only the change of x matters).
+   * Do NOT capture the start position here: the zero-crossing function is
+   * evaluated unconditionally by the solver, also while the operator is frozen
+   * inside an inactive if-branch. Capturing the start position here would mark
+   * the operator as started too early and make the guarded storeSpatialDistribution/
+   * spatialDistribution calls see a spurious jump in x (#16099). While the
+   * operator has not started yet its event list is empty and the returned value
+   * does not depend on posX anyway. */
+  if (spatialDistribution->startPosXSet) {
+    posX = posX - spatialDistribution->startPosX;
+  }
 
   if (doubleEndedListLen(storedEventsList) == 0) {
     zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
