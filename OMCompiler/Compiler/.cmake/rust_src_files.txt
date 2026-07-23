@@ -154,6 +154,7 @@ openmodelica_codegen_wasm_jit_runtime/.gitignore
 openmodelica_codegen_wasm_jit_runtime/Cargo.lock
 openmodelica_codegen_wasm_jit_runtime/Cargo.toml
 openmodelica_codegen_wasm_jit_runtime/build-runtime.sh
+openmodelica_codegen_wasm_jit_runtime/src/delay.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs

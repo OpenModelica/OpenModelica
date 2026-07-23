@@ -1384,6 +1384,10 @@ struct SimVarMap {
     lambda_off: u32,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance (`SimCtx::zctol_off`).
     zctol_off: u32,
+    /// `SimData` byte offset of `zeroCrossingsPre` (`SimLayout::zc_pre_off`).
+    zc_pre_off: u32,
+    /// Number of `delay(...)` expression buffers (`delayedExps.maxDelayedIndex + 1`).
+    n_delays: u32,
 }
 
 /// Display name of a model variable's component reference (OMC `.`-separated
@@ -1670,6 +1674,8 @@ fn build_var_map(
         n_mathevents: layout.n_math,
         lambda_off: layout.lambda_off,
         zctol_off: layout.zctol_off,
+        zc_pre_off: layout.zc_pre_off,
+        n_delays: 0,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
     // User-settable parameters (isValueChangeable), collected as they are laid out.
@@ -2245,6 +2251,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         samples.iter().enumerate().map(|(k, s)| (s.index, k as u32)).collect();
     var_map.sample_map = Arc::new(sample_map);
     var_map.sample_active_off = layout.sample_active_off;
+    // Delay-expression buffer count (`maxDelayedIndex + 1`, 0 when the model has
+    // no `delay(...)`), baked into `functionInitDelay`'s `rt_delay_init` call.
+    var_map.n_delays = (sim_code.delayedExps.maxDelayedIndex + 1).max(0) as u32;
 
     // State sets: register the Jacobian seed/result crefs at the scratch region
     // and collect the driver-side selection metadata (candidate/state/A offsets).
@@ -2673,6 +2682,27 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         });
         idx
     };
+    // `functionStoreDelayed`: append each `delay(...)` expression's current value
+    // to its ring buffer (C's `function_storeDelayed`). `functionInitDelay`:
+    // `rt_delay_init(n_delays, startTime)` to reset the buffers for a fresh run.
+    let store_delayed_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if var_map.n_delays == 0 {
+            empty_eqfn()
+        } else {
+            build_store_delayed_fn(sim_code, &var_map, &by_name, &mut literals)?
+        });
+        idx
+    };
+    let init_delay_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if var_map.n_delays == 0 {
+            empty_eqfn()
+        } else {
+            build_init_delay_fn(var_map.n_delays)
+        });
+        idx
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -2708,6 +2738,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
+    functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
+    functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -2733,6 +2765,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
+    exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
+    exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
 
     let mut module = we::Module::new();
     module.section(&types);
@@ -3069,6 +3103,7 @@ fn build_eq_fn_with_prelude(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -3124,6 +3159,7 @@ fn build_init_sample_fn(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -3169,6 +3205,7 @@ fn build_init_start_values_fn(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -3215,6 +3252,7 @@ fn build_zero_crossings_fn(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: true,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -3255,6 +3293,7 @@ fn build_update_relations_fn(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: true,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -3265,6 +3304,66 @@ fn build_update_relations_fn(
         func.instruction(i);
     }
     Ok(func)
+}
+
+/// Build `functionStoreDelayed(SimData*)`: append each `delay(...)` expression's
+/// current value to its ring buffer (C's `function_storeDelayed`). Evaluated in a
+/// normal (non-discrete) equation context.
+fn build_store_delayed_fn(
+    sim_code: &SimCode::SimCode,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let delayed: Vec<(i32, Arc<DAE::Exp>, Arc<DAE::Exp>, Arc<DAE::Exp>)> =
+        lst(&sim_code.delayedExps.delayedExps)
+            .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
+            .collect();
+    let sim = SimCtx {
+        data_local: 0,
+        vars: var_map.vars.clone(),
+        starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
+        array_groups: var_map.array_groups.clone(),
+        terminate_off: var_map.terminate_off,
+        nls_fail_off: var_map.nls_fail_off,
+        nls_jobs: var_map.nls_jobs.clone(),
+        sample_map: var_map.sample_map.clone(),
+        sample_active_off: var_map.sample_active_off,
+        relations_off: var_map.relations_off,
+        rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
+        n_relations: var_map.n_relations,
+        mathevents_off: var_map.mathevents_off,
+        n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
+        zc_context: false,
+    };
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_store_delayed(&delayed)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionInitDelay(SimData*)`: `rt_delay_init(n_delays, time)` to reset
+/// the ring buffers for a fresh run. Called at init when `time == startTime`, so
+/// `TIME_OFF` supplies the start time the runtime records.
+fn build_init_delay_fn(n_delays: u32) -> we::Function {
+    use we::Instruction as I;
+    let mut f = we::Function::new([]);
+    f.instruction(&I::I32Const(n_delays as i32));
+    f.instruction(&I::LocalGet(0)); // SimData*
+    f.instruction(&I::F64Load(crate::CodegenWasmJitFunctions::mem_arg(0, 3))); // time (TIME_OFF)
+    f.instruction(&I::Call(rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin")));
+    f.instruction(&I::End);
+    f
 }
 
 /// Lower a single `SimEqSystem` into the current equation function.
@@ -3780,6 +3879,7 @@ fn build_nls_fns(
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
     };
     let finish = |ctx: FnCtx| -> we::Function {
@@ -4202,6 +4302,8 @@ mod standalone_tests {
             "functionStateSetJacobians",
             "functionInitialEquations_lambda0",
             "functionUpdateRelations",
+            "functionStoreDelayed",
+            "functionInitDelay",
         ];
 
         let mut funcs = we::FunctionSection::new();
