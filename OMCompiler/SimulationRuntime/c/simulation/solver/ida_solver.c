@@ -1290,7 +1290,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 #endif
 
   if (!success) {
-    retVal = -1;  /* Non-recoverable error */
+    retVal = 1;  /* Recoverable error, reduce step size and retry */
   }
 
   threadData->currentErrorStage = saveJumpState;
