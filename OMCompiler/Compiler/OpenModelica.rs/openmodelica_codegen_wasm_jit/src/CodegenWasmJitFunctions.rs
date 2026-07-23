@@ -371,6 +371,11 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
     ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
+    ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
+    ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
+    ("rt_delay_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -867,6 +872,9 @@ pub(crate) struct SimCtx {
     /// `functionZeroCrossings` so a relation stays put within the band — this keeps
     /// a bouncing ball from chattering through the floor near rest.
     pub(crate) zctol_off: u32,
+    /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
+    /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
+    pub(crate) zc_pre_off: u32,
 }
 
 /// One nonlinear system's `rt_solve_nls` wiring: `k` is the job ordinal (its
@@ -1162,6 +1170,26 @@ impl<'a> FnCtx<'a> {
             let w = compile_relation_fresh(self, exp1, operator, exp2)?;
             coerce(self, w, WTy::I32);
             self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionStoreDelayed`: `rt_delay_store(idx, time, e, d, dmax)` per
+    /// `delay(...)` expression (C's `function_storeDelayed`).
+    pub(crate) fn emit_store_delayed(
+        &mut self,
+        delayed: &[(i32, Arc<DAE::Exp>, Arc<DAE::Exp>, Arc<DAE::Exp>)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (idx, e, d, dmax) in delayed {
+            self.emit(we::Instruction::I32Const(*idx));
+            self.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            self.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for exp in [e, d, dmax] {
+                let w = compile_exp(self, exp)?;
+                coerce(self, w, WTy::F64);
+            }
+            self.emit(we::Instruction::Call(rt_index("rt_delay_store")?));
         }
         Ok(())
     }
@@ -3306,6 +3334,164 @@ fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
+/// If `cr` is `base[i1,…,ik, :, …, :]` — leading `INDEX` subscripts followed by
+/// only whole-dimension subscripts, subscripts on the final component and every
+/// ancestor unsubscripted — return `(base key, leading index expressions)`. The
+/// selected sub-array is a contiguous block in the row-major `SimData` layout
+/// (the trailing whole dimensions span the fastest-varying axes). Returns `None`
+/// for a plain scalar (no `:`), a `SLICE`, or an `INDEX` after a whole dim (that
+/// selection is not contiguous).
+fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut node = cr;
+    loop {
+        match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => {
+                base.push_str(ident);
+                let mut leading = Vec::new();
+                let mut seen_whole = false;
+                for sub in &**subscriptLst {
+                    match &**sub {
+                        DAE::Subscript::INDEX { exp } if !seen_whole => leading.push(exp.clone()),
+                        DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } => seen_whole = true,
+                        _ => return Ok(None),
+                    }
+                }
+                if !seen_whole {
+                    return Ok(None);
+                }
+                return Ok(Some((base, leading)));
+            }
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                if !subscriptLst.is_empty() {
+                    return Ok(None);
+                }
+                base.push_str(ident);
+                base.push('.');
+                node = componentRef;
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+/// If `cr` is `base[subs]` — subscripts on the final component, every ancestor
+/// unsubscripted — return `(base key, final subscript list)`. Unlike
+/// [`sim_slice_of`] the subscripts are returned raw (any `INDEX`/`SLICE`/whole
+/// mix), for the general gather-then-slice read path.
+fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut node = cr;
+    loop {
+        match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => {
+                base.push_str(ident);
+                if subscriptLst.is_empty() {
+                    return Ok(None);
+                }
+                return Ok(Some((base, subscriptLst.clone())));
+            }
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                if !subscriptLst.is_empty() {
+                    return Ok(None);
+                }
+                base.push_str(ident);
+                base.push('.');
+                node = componentRef;
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+/// Push the byte address of the first element of the contiguous sub-array
+/// `group[leading, :, …]` (leading 1-based indices, remaining axes whole) and
+/// return `(trailing_element_count, element_stride)`. The trailing dimensions
+/// are the fastest-varying axes, so the block spans `trailing_total * stride`
+/// contiguous bytes from this address.
+fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<(u32, u32)> {
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let k = leading.len();
+    if k >= group.dims.len() {
+        return Err("CodegenWasmJit: array slice indexes all dimensions");
+    }
+    let trailing_total: u32 = group.dims[k..].iter().product();
+    let data = ctx.sim()?.data_local;
+    ctx.emit(we::Instruction::I32Const(0)); // acc = 0
+    for (axis, exp) in leading.iter().enumerate() {
+        ctx.emit(we::Instruction::I32Const(group.dims[axis] as i32));
+        ctx.emit(we::Instruction::I32Mul); // acc * dims[axis]
+        let wt = compile_exp(ctx, exp)?;
+        coerce(ctx, wt, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub); // e - 1
+        ctx.emit(we::Instruction::I32Add); // acc = acc*dims[axis] + (e - 1)
+    }
+    // addr = data + base_off + acc * (trailing_total * stride)
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
+    ctx.emit(we::Instruction::I32Add);
+    Ok((trailing_total, stride))
+}
+
+/// Gather the contiguous sub-array `group[leading, :, …]` from `SimData` into a
+/// fresh (refcount-1) runtime array of the trailing dimensions, leaving the
+/// owned handle on the stack.
+fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<()> {
+    let (ek, stride) = sim_array_elem_kind_stride(group.wty);
+    let trailing: Vec<u32> = group.dims[leading.len()..].to_vec();
+    let trailing_total: u32 = trailing.iter().product();
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(trailing.len() as i32));
+    ctx.emit(we::Instruction::I32Const(trailing_total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in trailing.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    // memory.copy(dst = obj data, src = slice addr, len = trailing_total * stride).
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_sim_slice_addr(ctx, group, leading)?;
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// Scatter a runtime array `rhs` into the contiguous sub-array
+/// `group[leading, :, …]` of `SimData` (the reverse of [`emit_sim_slice_gather`]).
+fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>], rhs: RhsSource) -> Result<()> {
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let trailing_total: u32 = group.dims[leading.len()..].iter().product();
+    let h = ctx.alloc_temp(WTy::I32);
+    let rw = rhs.push(ctx)?;
+    if rw != WTy::I32 {
+        return Err("CodegenWasmJit: array-slice assignment rhs is not an array handle");
+    }
+    ctx.emit(we::Instruction::LocalSet(h));
+    // memory.copy(dst = slice addr, src = rhs data, len = trailing_total * stride).
+    emit_sim_slice_addr(ctx, group, leading)?;
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
 /// The value type of a component reference's leaf, after applying its final
 /// subscripts (so `states[2]` of `states : ThermodynamicState[2]` yields the
 /// record element type). Array dims are peeled one per index subscript.
@@ -3464,6 +3650,26 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
         }
     }
+    // Contiguous sub-array slice `base[i,…,:]` (dynamic index + trailing whole
+    // dims): gather the row-major block into a runtime array.
+    if let Some((base, leading)) = sim_slice_of(cref)? {
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            emit_sim_slice_gather(ctx, &group, &leading)?;
+            return Ok(Some(WTy::I32));
+        }
+    }
+    // Any other slice `base[subs]` (a column `[:,1]`, a strided range, …): gather
+    // the whole array and apply the runtime slice, which handles arbitrary
+    // `INDEX`/`SLICE`/whole subscript mixes.
+    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if !is_scalar_index(&subs, group.dims.len() as u32) {
+                emit_sim_array_gather(ctx, &group)?;
+                let wty = slice_loaded(ctx, &subs)?;
+                return Ok(Some(wty));
+            }
+        }
+    }
     let key = sim_cref_key(cref)?;
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
@@ -3581,6 +3787,14 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
                 }
                 return Ok(true);
             }
+        }
+    }
+    // Contiguous sub-array slice `base[i,…,:] := arr` (dynamic index + trailing
+    // whole dims): scatter the runtime array into the row-major block.
+    if let Some((base, leading)) = sim_slice_of(cref)? {
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
+            return Ok(true);
         }
     }
     let key = sim_cref_key(cref)?;
@@ -5111,6 +5325,47 @@ fn compile_math_builtin(
         // raises `active[k]` for the firing sample before the discrete update, so
         // this reads that i32 flag. `start`/`interval` are handled by `initSample`
         // and the driver, not evaluated here.
+        // delay(index, e, d, delayMax): `e` at `time - d` from buffer `index`.
+        "delay" => {
+            need_args(&argv, 4, name)?;
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `delay` index must be an integer literal");
+            };
+            let data = ctx.sim()?.data_local;
+            ctx.emit(we::Instruction::I32Const(*index));
+            ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for a in &argv[1..4] {
+                let w = compile_exp(ctx, a)?;
+                coerce(ctx, w, WTy::F64);
+            }
+            ctx.emit(we::Instruction::Call(rt_index("rt_delay_eval")?));
+            Ok(SigTy::Real)
+        }
+        // delayZeroCrossing(index, rindex, d): zeroCrossingsPre[rindex], sign-
+        // flipped when a buffered event lies in the (time - d) window.
+        "delayZeroCrossing" => {
+            need_args(&argv, 3, name)?;
+            if !ctx.sim()?.zc_context {
+                return Err("CodegenWasmJit: delayZeroCrossing outside a zero-crossing context");
+            }
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` index must be an integer literal");
+            };
+            let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` relation index must be an integer literal");
+            };
+            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            ctx.emit(we::Instruction::I32Const(*index));
+            ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            let w = compile_exp(ctx, argv[2])?; // delay time
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
+            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
+            Ok(SigTy::Real)
+        }
         "sample" => {
             need_args(&argv, 3, name)?;
             let DAE::Exp::ICONST { integer } = &**argv[0] else {
@@ -5219,6 +5474,13 @@ fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>]) -> Result<SigTy
     // stringify the index. Carrying enum names would need the literal table
     // threaded through from the DAE type into the sidecar/runtime.
     if exp_is_enumeration(argv[0]) {
+        // `String(enum, format)`: the printf-directive variant formats the 1-based
+        // Integer index (C's `String(x, "d")`), *not* the literal name — and unlike
+        // the name path it never traps on an out-of-range value (e.g. a min/max
+        // warning-assert message built while an enum is transiently 0).
+        if argv.len() == 2 && exp_sigty(argv[1])? == SigTy::Str {
+            return emit_string_format(ctx, argv[0], argv[1], &SigTy::Int);
+        }
         let Some(names) = exp_enum_names(argv[0]) else {
             return Err("CodegenWasmJit: String(Enumeration) on an enum literal whose names are not in scope");
         };

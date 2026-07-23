@@ -90,6 +90,10 @@ pub struct Layout {
     pub n_zc: u32,
     /// Base of the zero-crossing value region (one f64 per crossing).
     pub zc_off: u32,
+    /// `zeroCrossingsPre`: the previous accepted g-value of each crossing (one f64
+    /// per crossing). `delayZeroCrossing` reads it; the driver snapshots it from
+    /// `zc_off` at init and after each accepted point/event.
+    pub zc_pre_off: u32,
     /// Number of indexed relations (hysteresis count).
     pub n_rel: u32,
     /// Base of the held relation values (one i32 per indexed relation).
@@ -161,7 +165,8 @@ impl Layout {
         let sample_off = (lambda_off + 8 + 7) & !7;
         let sample_active_off = sample_off + n_samples * 16;
         let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
-        let relations_off = zc_off + n_zc * 8;
+        let zc_pre_off = zc_off + n_zc * 8;
+        let relations_off = zc_pre_off + n_zc * 8;
         let rel_fresh_off = relations_off + n_rel * 4;
         let stored_rel_off = rel_fresh_off + 4;
         let relations_pre_off = stored_rel_off + n_rel * 4;
@@ -175,7 +180,7 @@ impl Layout {
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
-            terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off,
+            terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, total,
         }
@@ -393,7 +398,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
         l.terminate_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
-        l.n_zc, l.zc_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
+        l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
     ] {
         put_u32(o, v);
@@ -547,6 +552,7 @@ impl<'a> Reader<'a> {
             sample_active_off: self.u32()?,
             n_zc: self.u32()?,
             zc_off: self.u32()?,
+            zc_pre_off: self.u32()?,
             n_rel: self.u32()?,
             relations_off: self.u32()?,
             rel_fresh_off: self.u32()?,

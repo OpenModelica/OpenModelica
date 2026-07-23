@@ -743,8 +743,18 @@ pub fn take_chatter_log() -> Vec<String> {
 /// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
 /// step seeded by the previous one's solution. Leaves lambda = 1, then seeds
 /// `relationsPre` for the continuous phase's held relations.
-pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
+    // Set the start time and reset the delay buffers before any equation function
+    // runs (`rt_delay_eval` traps on unallocated buffers; `functionInitDelay`
+    // reads `startTime` from `TIME_OFF`).
+    write_f64(e, sim_data + TIME_OFF, start_time)?;
+    e.call1_if_present("functionInitDelay", sim_data)?;
     run_initialization_impl(e, sim_data, layout)?;
+    // C's `storePreValues` after the initial solve (initialization.c:903): `pre(x)`
+    // for the discrete update is the value the initial system left in `x`, not the
+    // start value seeded before the solve. Without this, a discrete alg var assigned
+    // `x := pre(x)` by a non-firing `when` (a digital gate's `y_old`) reverts to 0.
+    seed_pre_from_live(e, sim_data, layout)?;
     // Seed the continuous phase's held relations from a full discrete fixed point.
     // The initial system does not necessarily touch every relation guarding the
     // continuous equations, so a straight snapshot of `relations[]` here would
@@ -752,6 +762,14 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     iterate_discrete(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)?;
     update_relations_pre(e, sim_data, layout)?;
+    // Seed the delay buffers at `startTime` and snapshot the crossings as
+    // `zeroCrossingsPre` so `delayZeroCrossing` has a held value on step 1.
+    e.call1_if_present("functionStoreDelayed", sim_data)?;
+    if layout.n_zc > 0 {
+        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+        e.call1("functionZeroCrossings", sim_data)?;
+        save_zc_pre(e, sim_data, layout)?;
+    }
     // Initialization output is complete; the next model output is the simulation
     // phase. Let the host close the init segment of the capture.
     signal_init_done();
@@ -767,6 +785,10 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     apply_param_overrides(e, sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
     apply_start_overrides(e, sim_data)?;
+    // C's `storePreValues` before the initial solve: `pre(x)` at initialization is
+    // the start value, so a `$PRE.<discrete>` read in an initial equation (e.g. a
+    // cross-coupled digital latch) sees `start`, not 0.
+    seed_pre_from_live(e, sim_data, layout)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;
@@ -876,8 +898,39 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     e.write_bytes(sim_data + layout.pre_real_off, &buf)
 }
 
+/// Copy the live real/integer/boolean regions into their `pre()` mirrors (C's
+/// `storePreValues`), so `$PRE.<var>` reads the current value. Used at init to
+/// seed `pre` from the start values before the initial system solves.
+fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    let regions = [
+        (REAL_OFF, layout.pre_real_off, (2 * layout.n_states + layout.n_real_alg) * 8),
+        (layout.int_off, layout.pre_int_off, layout.n_int_alg() * 4),
+        (layout.bool_off, layout.pre_bool_off, layout.n_bool_alg() * 4),
+    ];
+    for (live, pre, bytes) in regions {
+        if bytes == 0 {
+            continue;
+        }
+        let mut buf = vec![0u8; bytes as usize];
+        e.read_bytes(sim_data + live, &mut buf)?;
+        e.write_bytes(sim_data + pre, &buf)?;
+    }
+    Ok(())
+}
+
 /// Upper bound on discrete-update iterations at one event (C's `maxEventIterations`).
 const MAX_EVENT_ITER: usize = 20;
+
+/// Snapshot the zero-crossing g-values into `zeroCrossingsPre` (C's
+/// `saveZeroCrossings`); `delayZeroCrossing` reads it as the held g-value.
+fn save_zc_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.n_zc == 0 {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; (layout.n_zc * 8) as usize];
+    e.read_bytes(sim_data + layout.zc_off, &mut buf)?;
+    e.write_bytes(sim_data + layout.zc_pre_off, &buf)
+}
 
 /// Copy `relations[]` into the held relation snapshot at `stored_rel_off`. The
 /// hysteresis band and the zero-crossing function read the snapshot as their
@@ -996,8 +1049,16 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     // this pass's relations, then re-evaluates the continuous system; the discrete
     // state settles across passes. Comparing the snapshot before and after the
     // evaluation lets an already-settled system stop after a single evaluation.
-    for _ in 0..MAX_EVENT_ITER {
+    for iter in 0..MAX_EVENT_ITER {
         let prev = discrete_snapshot(e, sim_data, layout)?;
+        // C's `updateDiscreteSystem`: `storePreValues` at the head of each iteration
+        // after the first, so a discrete var this pass recomputes (a friction
+        // clutch's `mode`) is visible as `pre(mode)` to the next pass. Without it a
+        // `pre()`-dependent discrete equation (`locked = … not(pre(mode)==-1 …)`)
+        // never settles and the system fixes on the wrong branch.
+        if iter > 0 {
+            seed_pre_from_live(e, sim_data, layout)?;
+        }
         update_relations_pre(e, sim_data, layout)?;
         e.call1("functionODE", sim_data)?;
         e.call1("functionAlgebraics", sim_data)?;
@@ -1291,7 +1352,7 @@ impl EulerDriver {
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2, set by run_initialization); `rt_solve_nls` still holds
         // them internally around its Newton solve.
-        run_initialization(e, sim_data, &model.layout)?;
+        run_initialization(e, sim_data, &model.layout, model.start_time)?;
         let n_rows = model.n_output_rows();
         let n_reals = model.layout.n_row_total();
         Ok(EulerDriver {
@@ -1672,7 +1733,7 @@ impl DasslDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2); `rt_solve_nls` still holds them internally.
-        run_initialization(e, sim_data, layout)?;
+        run_initialization(e, sim_data, layout, model.start_time)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -2631,7 +2692,7 @@ impl DasslEventsDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.
-        run_initialization(e, sim_data, layout)?;
+        run_initialization(e, sim_data, layout, model.start_time)?;
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
@@ -2745,7 +2806,9 @@ impl Driver for DasslEventsDriver {
                             return Ok(Advance::Terminated);
                         }
                         self.core.t = tr;
+                        e.call1_if_present("functionStoreDelayed", sim_data)?;
                         eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
+                        save_zc_pre(e, sim_data, layout)?;
                         continue;
                     }
                     // No state event before the next sample time. Fire the sample if
@@ -2765,8 +2828,10 @@ impl Driver for DasslEventsDriver {
                             return Ok(Advance::Terminated);
                         }
                         self.core.t = te;
+                        e.call1_if_present("functionStoreDelayed", sim_data)?;
                         if layout.n_zc > 0 {
                             eval_zero_crossings(e, sim_data, layout, te, &mut zc0)?;
+                            save_zc_pre(e, sim_data, layout)?;
                         }
                         if te >= tout - eps {
                             grid_covered = true;
@@ -2782,8 +2847,10 @@ impl Driver for DasslEventsDriver {
                         self.finished = true;
                         return Ok(Advance::Terminated);
                     }
+                    e.call1_if_present("functionStoreDelayed", sim_data)?;
                     if layout.n_zc > 0 {
                         eval_zero_crossings(e, sim_data, layout, tout, &mut zc0)?;
+                        save_zc_pre(e, sim_data, layout)?;
                     }
                 }
                 self.core.t = tout;
