@@ -358,7 +358,8 @@ macro_rules! shared_instance_methods {
         let starts = core::mem::take(&mut st.init_start_overrides);
         set_param_overrides(params, starts);
         let mut e = Engine;
-        if run_initialization(&mut e, st.sim_data, &st.layout).is_err() {
+        let start_time = st.read_f64(TIME_OFF);
+        if run_initialization(&mut e, st.sim_data, &st.layout, start_time).is_err() {
             return Status::Error;
         }
         // Apply deferred String parameter sets now that init equations have run, so

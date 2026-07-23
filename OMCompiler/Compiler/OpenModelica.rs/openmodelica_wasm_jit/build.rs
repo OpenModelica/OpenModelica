@@ -61,6 +61,7 @@ fn main() {
 /// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
 /// a dylink side module, linked with the per-model module at FMU-export time.
 /// Built here regardless of omc's own target arch: build scripts run on the host.
+/// Mandatory: a failed build aborts rather than shipping an omc without it.
 fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path) {
     for v in ADAPTER_VARIANTS {
         build_fmi3_adapter(crate_dir, out_dir, v);
@@ -159,13 +160,13 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
                 copy(&committed, &dest);
                 std::fs::write(&stamp, "prebuilt").ok();
             } else {
-                println!(
-                    "cargo:warning=could not build the FMI3 {} adapter ({e}); that FMI3 wasm \
-                     export will be unavailable. Install `rustup target add wasm32-unknown-unknown`.",
+                panic!(
+                    "failed to build the FMI3 {} adapter: {e}\n\
+                     FMI3 wasm FMU export requires it. Install the wasm target and std \
+                     sources (`rustup target add wasm32-unknown-unknown`, \
+                     `rustup component add rust-src`), or set {env_override} to a prebuilt .wasm.",
                     v.label
                 );
-                std::fs::write(&dest, []).ok();
-                std::fs::write(&stamp, "missing").ok();
             }
         }
     }
