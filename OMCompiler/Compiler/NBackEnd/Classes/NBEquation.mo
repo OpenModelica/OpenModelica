@@ -1803,12 +1803,11 @@ public
       "gets the left hand side expression of an equation."
       input Equation eq;
       output Option<Expression> lhs;
-    protected
-      Boolean success;
     algorithm
       lhs := match eq
         local
           Expression exp;
+          Boolean success;
         case SCALAR_EQUATION()        then SOME(eq.lhs);
         case ARRAY_EQUATION()         then SOME(eq.lhs);
         case RECORD_EQUATION()        then SOME(eq.lhs);
@@ -1826,11 +1825,16 @@ public
       output Option<Expression> rhs;
     algorithm
       rhs := match eq
+        local
+          Expression exp;
+          Boolean success;
         case SCALAR_EQUATION()        then SOME(eq.rhs);
         case ARRAY_EQUATION()         then SOME(eq.rhs);
         case RECORD_EQUATION()        then SOME(eq.rhs);
         case FOR_EQUATION(body = {_}) then getRHS(listHead(eq.body));
-        case IF_EQUATION()            then SOME(IfEquationBody.getRHS(eq.body));
+        case IF_EQUATION()            algorithm
+          (exp, success) := IfEquationBody.getRHS(eq.body);
+        then if success then SOME(exp) else NONE();
         else NONE();
       end match;
     end getRHS;
@@ -3279,29 +3283,43 @@ public
           end if;
         then new_exp;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of un-split if-equation:\n" + toString(body)});
-        then fail();
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+          end if;
+          success := false;
+        then exp;
       end match;
     end getLHS;
 
     function getRHS
       "needs the if equation to be split"
       input IfEquationBody body;
-      output Expression exp;
+      output Expression exp = Expression.END();
+      output Boolean success;
     protected
       Pointer<Equation> eqn_ptr;
-      Expression new_exp;
+      Expression new_exp, new_exp2;
     algorithm
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
-            new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, getRHS(Util.getOption(body.else_if)));
+            (new_exp2, success) := getRHS(Util.getOption(body.else_if));
+            if success then 
+              new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, new_exp2);
+            else
+              new_exp := Expression.END();
+            end if;
+          else
+            success := true;
           end if;
         then new_exp;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of un-split if-equation:\n" + toString(body)});
-        then fail();
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+          end if;
+          success := false;
+        then exp;
       end match;
     end getRHS;
 
@@ -3311,21 +3329,37 @@ public
       output list<IfEquationBody> bodies = {};
     protected
       list<Expression> conditions = {};
-      array<list<Pointer<Equation>>> then_eqns = arrayCreate(listLength(body.then_eqns), {});
+      Integer s = listLength(body.then_eqns);
+      array<list<Pointer<Equation>>> then_eqns;
       Expression condition;
       Pointer<Equation> eqn;
       Option<IfEquationBody> tmp;
     algorithm
-      (conditions, then_eqns) := splitCollect(sortForSplit(body), conditions, then_eqns);
-      for i in 1:arrayLength(then_eqns) loop
-        tmp := NONE();
-        for tpl in List.zip(conditions, then_eqns[i]) loop
-          (condition, eqn) := tpl;
-          tmp := SOME(IF_EQUATION_BODY(condition, {eqn}, tmp));
+      if isSplittable(body, s) then
+        then_eqns := arrayCreate(s, {});
+        (conditions, then_eqns) := splitCollect(sortForSplit(body), conditions, then_eqns);
+        for i in 1:arrayLength(then_eqns) loop
+          tmp := NONE();
+          for tpl in List.zip(conditions, then_eqns[i]) loop
+            (condition, eqn) := tpl;
+            tmp := SOME(IF_EQUATION_BODY(condition, {eqn}, tmp));
+          end for;
+          bodies := Util.getOption(tmp) :: bodies;
         end for;
-        bodies := Util.getOption(tmp) :: bodies;
-      end for;
+      else
+        bodies := {body};
+      end if;
     end split;
+
+    function isSplittable
+      input IfEquationBody body;
+      input Integer s;
+      output Boolean b = listLength(body.then_eqns) == s;
+    algorithm
+      if b then
+        b := Util.applyOptionOrDefault(body.else_if, function isSplittable(s = s), true);
+      end if;
+    end isSplittable;
 
     function simplify
       "removes unreachable branches by looking at literal conditions"
