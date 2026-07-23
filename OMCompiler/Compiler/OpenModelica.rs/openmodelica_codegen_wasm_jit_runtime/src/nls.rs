@@ -1,10 +1,7 @@
-//! Dense nonlinear solver (Newton with a forward-difference Jacobian and a
-//! backtracking line search) shared by every `SES_NONLINEAR` system. Previously
-//! this Newton driver was emitted as wasm into each system; it now lives here as
-//! one compiled-once function. `newton_solve` is the pure numeric core (generic
-//! over the residual, so it unit-tests natively); `rt_solve_nls` is the wasm
-//! entry point the generated modules call, bridging the residual to a model
-//! `residual`/`load` function pair via `call_indirect` over the shared table.
+//! Dense nonlinear solvers shared by every `SES_NONLINEAR` system. `rt_solve_nls`
+//! (the wasm entry point) bridges the model `residual`/`load` pair to
+//! [`minpack::hybrj`] (analytic Jacobian) or [`minpack::hybrd`] (numeric), with
+//! [`newton_solve`] and [`lm_solve`] as fallbacks.
 
 use alloc::vec;
 
@@ -12,12 +9,11 @@ use crate::{load_f64, load_u32, rt_alloc, rt_free, store_f64, store_u32};
 
 /// sqrt(DBL_EPSILON): the classic forward-difference relative step.
 const SQRT_EPS: f64 = 1.4901161193847656e-08;
-/// Convergence tolerance (C's `newtonData->ftol`/`xtol`): the iteration stops
-/// once *any* of the residual / step / residual-change measures drops below it.
+/// Newton/LM convergence tolerance: stop once a residual / step measure drops below.
 const NEWTON_EPS: f64 = 1.0e-6;
 const MAX_ITER: i32 = 100;
-/// Line-search damping floor (2^-10): below this, keep the small step and let
-/// the outer iteration retry (or hit the iteration limit → recoverable failure).
+/// Line-search damping floor (2^-10): below this, keep the small step and let the
+/// outer iteration retry (or hit the iteration limit → recoverable failure).
 const LAMBDA_MIN: f64 = 9.765625e-4;
 
 /// Euclidean norm (C's `enorm_`). NaN propagates, so a diverged residual falls
@@ -335,6 +331,95 @@ pub(crate) fn lm_solve(
     }
 }
 
+/// [`minpack::hybrd`] run in coordinates scaled by `max(|x[i]|, nominal[i])`, so
+/// the relative `xtol` resolves every variable to its own magnitude.
+fn hybrd_scaled(
+    n: usize,
+    x: &mut [f64],
+    fvec: &mut [f64],
+    nominal: &[f64],
+    maxfev: usize,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    let mut scale = vec![0.0f64; n];
+    for i in 0..n {
+        let s = x[i].abs().max(nominal[i]);
+        scale[i] = if s > 0.0 { s } else { 1.0 };
+    }
+    for i in 0..n {
+        x[i] /= scale[i];
+    }
+    let mut real = vec![0.0f64; n];
+    let mut seval = |sx: &[f64], r: &mut [f64]| {
+        for i in 0..n {
+            real[i] = sx[i] * scale[i];
+        }
+        eval(&real, r);
+    };
+    let status = minpack::hybrd(&mut seval, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
+    drop(seval);
+    for i in 0..n {
+        x[i] *= scale[i];
+    }
+    nls_accept(status, fvec)
+}
+
+/// A solve succeeds when MINPACK reports convergence or the residual is already at
+/// the tolerance (an exact Jacobian can reach the root before the step test fires,
+/// leaving `Stalled` with a machine-zero residual).
+fn nls_accept(status: minpack::Status, fvec: &[f64]) -> bool {
+    status == minpack::Status::Converged || enorm(fvec) <= 1.0e-12
+}
+
+/// [`minpack::hybrj`] with the same scaling as [`hybrd_scaled`], using the model's
+/// analytic Jacobian. `jac(x, fjac)` fills the column-major `n×n` Jacobian
+/// `∂f_i/∂x_j` at the unscaled `x`; column `j` is scaled by `scale[j]`.
+#[allow(clippy::too_many_arguments)]
+fn hybrj_scaled(
+    n: usize,
+    x: &mut [f64],
+    fvec: &mut [f64],
+    nominal: &[f64],
+    maxfev: usize,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jac: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    let mut scale = vec![0.0f64; n];
+    for i in 0..n {
+        let s = x[i].abs().max(nominal[i]);
+        scale[i] = if s > 0.0 { s } else { 1.0 };
+    }
+    for i in 0..n {
+        x[i] /= scale[i];
+    }
+    let mut real = vec![0.0f64; n];
+    let mut seval = |sx: &[f64], r: &mut [f64]| {
+        for i in 0..n {
+            real[i] = sx[i] * scale[i];
+        }
+        eval(&real, r);
+    };
+    let mut realj = vec![0.0f64; n];
+    let mut sjac = |sx: &[f64], fj: &mut [f64]| {
+        for i in 0..n {
+            realj[i] = sx[i] * scale[i];
+        }
+        jac(&realj, fj);
+        for j in 0..n {
+            for i in 0..n {
+                fj[i + j * n] *= scale[j];
+            }
+        }
+    };
+    let status = minpack::hybrj(&mut seval, &mut sjac, n, x, fvec, 1e-12, maxfev, 100.0);
+    drop(seval);
+    drop(sjac);
+    for i in 0..n {
+        x[i] *= scale[i];
+    }
+    nls_accept(status, fvec)
+}
+
 /// wasm entry point: solve one `SES_NONLINEAR` system. `res_idx`/`load_idx` are
 /// shared-table indices of the model's `residual(sim_data, x, r)` and
 /// `load(sim_data, x)` functions; `n` is the unknown count; `nls_fail_addr` is
@@ -364,6 +449,8 @@ pub extern "C" fn rt_solve_nls(
     hist_addr: u32,
     time: f64,
     rel_fresh_addr: u32,
+    nominal_addr: u32,
+    jac_idx: u32,
 ) -> i32 {
     let n = n as usize;
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -387,6 +474,12 @@ pub extern "C" fn rt_solve_nls(
         warm[i] = unsafe { load_f64(x_ptr + (i * 8) as u32) };
     }
 
+    // Per-variable nominal values for x-scaling.
+    let mut nominal = vec![0.0f64; n];
+    for i in 0..n {
+        nominal[i] = unsafe { load_f64(nominal_addr + (i * 8) as u32) };
+    }
+
     let mut eval = |xs: &[f64], r: &mut [f64]| {
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
@@ -394,6 +487,21 @@ pub extern "C" fn rt_solve_nls(
         residual(sim_data, x_ptr, r_ptr);
         for i in 0..n {
             r[i] = unsafe { load_f64(r_ptr + (i * 8) as u32) };
+        }
+    };
+
+    // Analytic Jacobian callback: `jac(sim_data, x, jptr)` fills a column-major
+    // `n×n` matrix. `u32::MAX` means none, so numeric `hybrd` is used.
+    let has_jac = jac_idx != u32::MAX;
+    let jac_ptr = if has_jac { rt_alloc((n * n * 8) as u32) } else { 0 };
+    let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
+        let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
+        for i in 0..n {
+            unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
+        }
+        jacf(sim_data, x_ptr, jac_ptr);
+        for k in 0..n * n {
+            fj[k] = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
         }
     };
 
@@ -434,19 +542,34 @@ pub extern "C" fn rt_solve_nls(
     } else if saved_rel_fresh == 0 {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
-    let mut converged = newton_solve(n, &mut x, &mut eval);
+    // hybrj (analytic Jacobian) when available, else numeric hybrd; on failure
+    // retry from the warm start, then Newton and LM.
+    let mut fvec = vec![0.0f64; n];
+    let maxfev = n * 10000;
+    let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
+        if has_jac {
+            hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
+        } else {
+            hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
+        }
+    };
+    let mut converged = solve(&mut x, &mut fvec);
     if !converged {
-        // Second start value, then a trust-region globaliser from each start.
+        x.copy_from_slice(&warm);
+        converged = solve(&mut x, &mut fvec);
+    }
+    drop(solve);
+    if !converged {
         x.copy_from_slice(&warm);
         converged = newton_solve(n, &mut x, &mut eval);
-        if !converged {
-            x.copy_from_slice(&guess);
-            converged = lm_solve(n, &mut x, &mut eval);
-        }
-        if !converged {
-            x.copy_from_slice(&warm);
-            converged = lm_solve(n, &mut x, &mut eval);
-        }
+    }
+    if !converged {
+        x.copy_from_slice(&guess);
+        converged = lm_solve(n, &mut x, &mut eval);
+    }
+    if !converged {
+        x.copy_from_slice(&warm);
+        converged = lm_solve(n, &mut x, &mut eval);
     }
     if converged {
         // Leave the slots + torn variables at the solution (held/init mode, so an
@@ -487,6 +610,9 @@ pub extern "C" fn rt_solve_nls(
 
     rt_free(x_ptr);
     rt_free(r_ptr);
+    if has_jac {
+        rt_free(jac_ptr);
+    }
     ret
 }
 

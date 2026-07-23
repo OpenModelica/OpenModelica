@@ -76,6 +76,15 @@ pub(crate) mod runtime;
 #[path = "CodegenWasmJitFunctions/runtime_stub.rs"]
 pub(crate) mod runtime;
 
+/// Record a message naming the unresolved variable (the `Result` error is a
+/// `&'static str`; `translateModel` surfaces the recorded message).
+fn unknown_variable(name: &str) -> &'static str {
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: reference to unknown variable `{name}`"
+    ));
+    "CodegenWasmJit: reference to unknown variable"
+}
+
 /// A wasm value type. MetaModelica `Integer` is the port's `i32`
 /// ([[funcbuiltin-i32-intmaxlit]]); `Boolean` and `Enumeration` indices also
 /// live in an `i32`; `Real` is an `f64`.
@@ -361,7 +370,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -870,6 +879,12 @@ pub(crate) struct NlsJob {
     pub(crate) k: u32,
     pub(crate) n: u32,
     pub(crate) hist_off: u32,
+    /// Byte offset of this system's `n` nominal values into the nominal block
+    /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
+    pub(crate) nominal_off: u32,
+    /// The system has a symbolic Jacobian: shared-table slot `3k+2` holds an
+    /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
+    pub(crate) has_jac: bool,
 }
 
 /// Bytes of extrapolation history a system with `n` unknowns needs: a count
@@ -882,6 +897,10 @@ pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
 /// Model global holding the base address of the NLS extrapolation-history block
 /// (`rt_alloc`ated once by `start`; zeroed, so every system's count starts 0).
 pub(crate) const NLS_HIST_GLOBAL: u32 = 1;
+
+/// Model global holding the base address of the NLS nominal block (`n` `f64`
+/// per system, filled with codegen-time constants by `start`).
+pub(crate) const NLS_NOMINAL_GLOBAL: u32 = 2;
 
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
@@ -1700,7 +1719,7 @@ fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()>
     };
     // Simulation mode: assigning to a model variable writes into the shared
     // `SimData` block. Returns false for an ordinary wasm local handled below.
-    if compile_sim_cref_assign(ctx, componentRef, rhs)? {
+    if compile_sim_cref_assign(ctx, componentRef, RhsSource::Exp(rhs))? {
         return Ok(());
     }
     // A qualified-cref assignment `base[..].f1[..].….fn[..] := rhs`: navigate to
@@ -1816,7 +1835,12 @@ fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: 
 /// Store a freshly-owned value held in temp `vt` into an arbitrary cref target
 /// (simple local, array element, or record field — possibly a subscripted
 /// field). Used by tuple assignment, where each result is already computed.
-fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, vt: u32) -> Result<()> {
+fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt: u32) -> Result<()> {
+    // A target naming a model variable (not a wasm local) stores into SimData;
+    // `false` means an ordinary local, handled below.
+    if compile_sim_cref_assign(ctx, cref, RhsSource::Temp { local: vt, wty })? {
+        return Ok(());
+    }
     if let DAE::ComponentRef::CREF_QUAL { .. } = cref {
         let (rec, fields, leaf, lsubs) = navigate_qual(ctx, cref)?;
         if lsubs.is_empty() {
@@ -1891,7 +1915,7 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
             }
             continue;
         }
-        store_fresh_into_cref(ctx, componentRef, vt)?;
+        store_fresh_into_cref(ctx, componentRef, sty.wty(), vt)?;
     }
     Ok(())
 }
@@ -2165,7 +2189,7 @@ fn push_owned_record_base(
     let (idx, sty) = ctx
         .locals
         .get(ident)
-        .ok_or_else(|| "CodegenWasmJit: reference to unknown variable")?
+        .ok_or_else(|| unknown_variable(ident))?
         .clone();
     if subs.is_empty() {
         let SigTy::Record { fields, .. } = sty else {
@@ -2635,7 +2659,81 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
             ctx.branch_to(cont);
             Ok(())
         }
-        other => return Err("CodegenWasmJit: statement not yet supported"),
+        S::STMT_WHEN { conditions, statementLst, elseWhen, .. } => {
+            compile_stmt_when(ctx, conditions, statementLst, elseWhen)
+        }
+        other => {
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: statement not yet supported: {}", stmt_kind(other)
+            ));
+            Err("CodegenWasmJit: statement not yet supported")
+        }
+    }
+}
+
+/// Lower a `when {conditions} then body; elsewhen …` algorithm statement, C's
+/// `algStmtWhen`: the body runs on the rising edge of any condition
+/// (`cond && !pre(cond)`), the elsewhen clause as an `else if` on its own edge.
+/// C's `discreteCall == 1` guard is subsumed by the per-step pre-value save, as
+/// for when-equations ([`FnCtx::sim_when`]).
+fn compile_stmt_when(
+    ctx: &mut FnCtx,
+    conditions: &Arc<List<Arc<DAE::ComponentRef>>>,
+    stmts: &Arc<List<Arc<DAE::Statement>>>,
+    else_when: &Option<Arc<DAE::Statement>>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let conds: Vec<&Arc<DAE::ComponentRef>> = (&**conditions).into_iter().collect();
+    if conds.is_empty() {
+        ctx.emit(I::I32Const(0));
+    } else {
+        for (i, c) in conds.iter().enumerate() {
+            if compile_sim_cref_read(ctx, c)?.is_none() {
+                return Err("CodegenWasmJit: when-statement condition is not a model variable");
+            }
+            let pre = pre_cref(c);
+            compile_sim_cref_read(ctx, &pre)?;
+            ctx.emit(I::I32Eqz); // !pre(cond)
+            ctx.emit(I::I32And); // cond && !pre(cond)
+            if i > 0 {
+                ctx.emit(I::I32Or);
+            }
+        }
+    }
+    ctx.emit(I::If(we::BlockType::Empty));
+    compile_stmts(ctx, stmts)?;
+    if let Some(ew) = else_when {
+        ctx.emit(I::Else);
+        let DAE::Statement::STMT_WHEN { conditions, statementLst, elseWhen, .. } = &**ew else {
+            return Err("CodegenWasmJit: elsewhen is not a when-statement");
+        };
+        compile_stmt_when(ctx, conditions, statementLst, elseWhen)?;
+    }
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// The variant name of a statement, for diagnostics.
+fn stmt_kind(stmt: &DAE::Statement) -> &'static str {
+    use DAE::Statement as S;
+    match stmt {
+        S::STMT_ASSIGN { .. } => "STMT_ASSIGN",
+        S::STMT_TUPLE_ASSIGN { .. } => "STMT_TUPLE_ASSIGN",
+        S::STMT_ASSIGN_ARR { .. } => "STMT_ASSIGN_ARR",
+        S::STMT_IF { .. } => "STMT_IF",
+        S::STMT_FOR { .. } => "STMT_FOR",
+        S::STMT_PARFOR { .. } => "STMT_PARFOR",
+        S::STMT_WHILE { .. } => "STMT_WHILE",
+        S::STMT_WHEN { .. } => "STMT_WHEN",
+        S::STMT_ASSERT { .. } => "STMT_ASSERT",
+        S::STMT_TERMINATE { .. } => "STMT_TERMINATE",
+        S::STMT_REINIT { .. } => "STMT_REINIT",
+        S::STMT_NORETCALL { .. } => "STMT_NORETCALL",
+        S::STMT_RETURN { .. } => "STMT_RETURN",
+        S::STMT_BREAK { .. } => "STMT_BREAK",
+        S::STMT_CONTINUE { .. } => "STMT_CONTINUE",
+        S::STMT_ARRAY_INIT { .. } => "STMT_ARRAY_INIT",
+        S::STMT_FAILURE { .. } => "STMT_FAILURE",
     }
 }
 
@@ -3382,6 +3480,9 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             if try_emit_sim_record_gather(ctx, cref)? {
                 return Ok(Some(WTy::I32));
             }
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: simulation reference to unknown variable `{key}`"
+            ));
             return Err("CodegenWasmJit: simulation reference to unknown variable")
         }
     };
@@ -3415,11 +3516,30 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     Ok(Some(slot.wty))
 }
 
+/// The value stored into a simulation variable: an expression to evaluate, or
+/// an already-computed owned value in a temp (a tuple assignment's result).
+enum RhsSource<'a> {
+    Exp(&'a DAE::Exp),
+    Temp { local: u32, wty: WTy },
+}
+
+impl RhsSource<'_> {
+    fn push(&self, ctx: &mut FnCtx) -> Result<WTy> {
+        match self {
+            RhsSource::Exp(e) => compile_exp(ctx, e),
+            RhsSource::Temp { local, wty } => {
+                ctx.emit(we::Instruction::LocalGet(*local));
+                Ok(*wty)
+            }
+        }
+    }
+}
+
 /// In simulation mode, try to assign to a model variable in the `SimData`
 /// block. Returns `true` when `cref` resolved to a writable model variable.
 /// Aliases are never assigned (they are removed by the backend); `$START`/`time`
 /// are not assignment targets in the equation systems handled here.
-fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE::Exp) -> Result<bool> {
+fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSource) -> Result<bool> {
     if ctx.sim.is_none() {
         return Ok(false);
     }
@@ -3453,7 +3573,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE:
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
             if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
                 let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?; // [addr]
-                let rw = compile_exp(ctx, rhs)?;
+                let rw = rhs.push(ctx)?;
                 coerce(ctx, rw, wty);
                 match wty {
                     WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(0, 3))),
@@ -3473,6 +3593,9 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE:
                 emit_sim_array_scatter(ctx, &group, rhs)?;
                 return Ok(true);
             }
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: simulation assignment to unknown variable `{key}`"
+            ));
             return Err("CodegenWasmJit: simulation assignment to unknown variable")
         }
     };
@@ -3491,7 +3614,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE:
     // Stack order for a store is [addr, value]: push the base, evaluate the rhs,
     // coerce to the slot type, then store at the constant offset.
     ctx.emit(we::Instruction::LocalGet(data));
-    let rw = compile_exp(ctx, rhs)?;
+    let rw = rhs.push(ctx)?;
     coerce(ctx, rw, slot.wty);
     match slot.wty {
         WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
@@ -3598,11 +3721,11 @@ fn try_emit_sim_record_gather(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Resu
 /// `memory.copy` its (row-major, scalar) element data over the slots, then
 /// release the handle. Real/Integer elements are flat scalars, so the bulk copy
 /// is a complete (deep) value copy — no per-element retain is needed.
-fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: &DAE::Exp) -> Result<()> {
+fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: RhsSource) -> Result<()> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let data = ctx.sim()?.data_local;
     let h = ctx.alloc_temp(WTy::I32);
-    let rw = compile_exp(ctx, rhs)?;
+    let rw = rhs.push(ctx)?;
     if rw != WTy::I32 {
         return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
     }
@@ -3687,7 +3810,7 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    compile_linear_system, compile_linear_system_symbolic, emit_nls_load_body,
+    compile_linear_system, compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_load_body,
     emit_nls_residual_body, emit_solve_nls_call,
 };
 
@@ -3742,7 +3865,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             let (idx, sty) = ctx
                 .locals
                 .get(&name)
-                .ok_or_else(|| "CodegenWasmJit: reference to unknown variable")?
+                .ok_or_else(|| unknown_variable(&name))?
                 .clone();
             if subscriptLst.is_empty() {
                 ctx.emit(we::Instruction::LocalGet(idx));
@@ -3839,7 +3962,9 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             }
             Ok(WTy::I32)
         }
-        E::RELATION { exp1, operator, exp2, index, .. } => compile_relation(ctx, exp1, operator, exp2, *index),
+        E::RELATION { exp1, operator, exp2, index, optionExpisASUB } => {
+            compile_relation(ctx, exp1, operator, exp2, *index, optionExpisASUB)
+        }
         E::IFEXP { expCond, expThen, expElse } => {
             let c = compile_exp(ctx, expCond)?;
             coerce(ctx, c, WTy::I32);
@@ -4185,7 +4310,14 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
     Ok(wty)
 }
 
-fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp, index: i32) -> Result<WTy> {
+fn compile_relation(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    op: &DAE::Operator,
+    e2: &DAE::Exp,
+    index: i32,
+    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+) -> Result<WTy> {
     use DAE::Operator as O;
     // String comparisons go through the runtime: equality via `rt_streq`,
     // ordering via `rt_strcmp` (which returns -1/0/1) compared against 0.
@@ -4222,17 +4354,35 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
     let real_ineq = operand_type_of_relation(op)? == WTy::F64
         && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
     let data = ctx.sim()?.data_local;
-    let rel_off = ctx.sim()?.relations_off + index as u32 * 4;
-    // Held mode returns the frozen `relationsPre[index]`; the fresh branches store
-    // the live `relations[index]`.
-    let pre_off = ctx.sim()?.relations_pre_off + index as u32 * 4;
-    // The hysteresis band's direction is the held relation snapshot, not the live
-    // `relations[]` that an event's discrete update rewrites.
-    let dir_off = ctx.sim()?.stored_rel_off + index as u32 * 4;
+    // Region bases: `relations[]` (live), `relationsPre[]` (held) and the held
+    // snapshot the hysteresis band's direction reads. Element `k` is at
+    // `base + k*4`.
+    let relations_off = ctx.sim()?.relations_off;
+    let pre_off = ctx.sim()?.relations_pre_off;
+    let dir_off = ctx.sim()?.stored_rel_off;
     let fresh_off = ctx.sim()?.rel_fresh_off;
+    // The slot address `data + eff_index*4`. A relation inside a `for`-loop shares
+    // one AST node across iterations, so its effective index is
+    // `index + (iterator - i)/j` (C's `daeExpRelationSim`); otherwise it is `index`.
+    let slot = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(index));
+    if let Some((iter, i, j)) = asub {
+        let w = compile_exp(ctx, iter)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(*i));
+        ctx.emit(we::Instruction::I32Sub);
+        ctx.emit(we::Instruction::I32Const(*j));
+        ctx.emit(we::Instruction::I32DivS);
+        ctx.emit(we::Instruction::I32Add); // index + (iterator - i)/j
+    }
+    ctx.emit(we::Instruction::I32Const(4));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add); // data + eff_index*4
+    ctx.emit(we::Instruction::LocalSet(slot));
     if ctx.sim()?.zc_context {
         if real_ineq {
-            compile_relation_hyst(ctx, e1, op, e2, dir_off)?;
+            compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
         } else {
             compile_relation_fresh(ctx, e1, op, e2)?;
         }
@@ -4252,18 +4402,18 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
         ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
         compile_relation_fresh(ctx, e1, op, e2)?;
         ctx.emit(we::Instruction::Else);
-        compile_relation_hyst(ctx, e1, op, e2, dir_off)?;
+        compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
         ctx.emit(we::Instruction::End);
     } else {
         compile_relation_fresh(ctx, e1, op, e2)?;
     }
     ctx.emit(we::Instruction::LocalSet(v));
-    ctx.emit(we::Instruction::LocalGet(data)); // store relations[index] = v
+    ctx.emit(we::Instruction::LocalGet(slot)); // store relations[eff] = v
     ctx.emit(we::Instruction::LocalGet(v));
-    ctx.emit(we::Instruction::I32Store(mem_arg(rel_off, 2)));
+    ctx.emit(we::Instruction::I32Store(mem_arg(relations_off, 2)));
     ctx.emit(we::Instruction::LocalGet(v));
     ctx.emit(we::Instruction::Else);
-    ctx.emit(we::Instruction::LocalGet(data)); // held: relationsPre[index]
+    ctx.emit(we::Instruction::LocalGet(slot)); // held: relationsPre[eff]
     ctx.emit(we::Instruction::I32Load(mem_arg(pre_off, 2)));
     ctx.emit(we::Instruction::End);
     Ok(WTy::I32)
@@ -4272,14 +4422,16 @@ fn compile_relation(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE
 /// Emit a Real inequality with a zero-crossing hysteresis band, leaving an i32
 /// boolean on the stack. The comparison boundary is offset by
 /// ±`eps = tolZC * (max(|a|,|b|) + max(nominal(a), nominal(b)))` in the direction
-/// that resists a flip, using the held relation snapshot at `dir_off` as the
+/// that resists a flip, using the held relation snapshot (`slot + dir_off`) as the
 /// current side: once true the relation stays true until the operand clears the
-/// band, and vice versa. `tolZC` is read from `SimData` (`zctol_off`).
+/// band, and vice versa. `slot` addresses the relation's element (`data + eff*4`);
+/// `tolZC` is read from `SimData` (`zctol_off`).
 fn compile_relation_hyst(
     ctx: &mut FnCtx,
     e1: &DAE::Exp,
     op: &DAE::Operator,
     e2: &DAE::Exp,
+    slot: u32,
     dir_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -4317,8 +4469,8 @@ fn compile_relation_hyst(
     ctx.emit(I::F64Sub);
     ctx.emit(I::LocalSet(diff));
 
-    // The held snapshot at `dir_off` chooses which band edge applies.
-    ctx.emit(I::LocalGet(data));
+    // The held snapshot (`slot + dir_off`) chooses which band edge applies.
+    ctx.emit(I::LocalGet(slot));
     ctx.emit(I::I32Load(mem_arg(dir_off, 2)));
     ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
     emit_hyst_cmp(ctx, op, diff, eps, true)?;
@@ -4988,7 +5140,12 @@ fn compile_math_builtin(
                 None => return Err("CodegenWasmJit: der() is only supported in simulation mode"),
             }
         }
-        other => return Err("CodegenWasmJit: builtin function not yet supported"),
+        other => {
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: builtin function not yet supported: {other}"
+            ));
+            Err("CodegenWasmJit: builtin function not yet supported")
+        }
     }
 }
 

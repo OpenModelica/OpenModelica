@@ -78,6 +78,56 @@ pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[u32]) -> Result<()> {
     Ok(())
 }
 
+/// Emit a nonlinear system's analytic-Jacobian `jac(sim_data, x, jptr)` callback
+/// (wasm locals: 0 = `SimData`, 1 = `x`, 2 = `jptr` = column-major `n×n` output).
+/// Copies `x` into the iteration slots and runs the inner (torn) equations to set
+/// the intermediate variables, evaluates the constant equations once, then for each
+/// seed column sets that seed to 1 (others 0), zeros the result slots, runs the
+/// column equations, and stores the result slots as column `j` (`jptr[j*n + i] =
+/// ∂f_i/∂x_j`). Zeroing the result slots first keeps structurally-zero rows at 0.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn emit_nls_jac_body(
+    ctx: &mut FnCtx,
+    iter_slots: &[u32],
+    seed_offs: &[u32],
+    result_offs: &[u32],
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let n = iter_slots.len();
+    for (j, &off) in iter_slots.iter().enumerate() {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::LocalGet(1));
+        ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
+        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    }
+    lower_inner(ctx)?;
+    lower_constant(ctx)?;
+    let store_const = |ctx: &mut FnCtx, off: u32, val: f64| {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::F64Const(val.into()));
+        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    };
+    for j in 0..n {
+        for (k, &soff) in seed_offs.iter().enumerate() {
+            store_const(ctx, soff, if k == j { 1.0 } else { 0.0 });
+        }
+        for &roff in result_offs {
+            store_const(ctx, roff, 0.0);
+        }
+        lower_column(ctx)?;
+        for (i, &roff) in result_offs.iter().enumerate() {
+            ctx.emit(I::LocalGet(2));
+            ctx.emit(I::LocalGet(0));
+            ctx.emit(I::F64Load(mem_arg(roff, 3)));
+            ctx.emit(I::F64Store(mem_arg(((j * n + i) as u32) * 8, 3)));
+        }
+    }
+    Ok(())
+}
+
 /// Lower a torn linear system `A x = b` (the `SES_LINEAR` residual form) into the
 /// current simulation equation function.
 ///
@@ -321,10 +371,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     let rel_fresh_off = ctx.sim()?.rel_fresh_off;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
-    ctx.emit(I::I32Const((2 * job.k) as i32));
+    ctx.emit(I::I32Const((3 * job.k) as i32));
     ctx.emit(I::I32Add); // residual table index
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
-    ctx.emit(I::I32Const((2 * job.k + 1) as i32));
+    ctx.emit(I::I32Const((3 * job.k + 1) as i32));
     ctx.emit(I::I32Add); // load table index
     ctx.emit(I::I32Const(job.n as i32));
     ctx.emit(I::LocalGet(data));
@@ -342,6 +392,18 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
+    // nominal block address (x-scaling).
+    ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
+    ctx.emit(I::I32Const(job.nominal_off as i32));
+    ctx.emit(I::I32Add);
+    // analytic-Jacobian table index, or `u32::MAX` when the system has none.
+    if job.has_jac {
+        ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
+        ctx.emit(I::I32Const((3 * job.k + 2) as i32));
+        ctx.emit(I::I32Add);
+    } else {
+        ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
+    }
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

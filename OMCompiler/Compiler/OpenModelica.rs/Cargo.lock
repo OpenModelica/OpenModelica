@@ -5238,6 +5238,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "minpack"
+version = "0.1.0"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "mio"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

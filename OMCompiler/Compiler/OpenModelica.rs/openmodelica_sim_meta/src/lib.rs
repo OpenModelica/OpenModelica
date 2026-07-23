@@ -102,6 +102,9 @@ pub struct Layout {
     pub relations_pre_off: u32,
     /// Base of the state-set Jacobian scratch region (f64).
     pub stateset_off: u32,
+    /// Base of the nonlinear-system analytic-Jacobian scratch region (f64): the
+    /// per-system seed and column-result slots the emitted `nls_jac` callbacks use.
+    pub nls_jac_off: u32,
     /// `mathEventsValuePre` length.
     pub n_math: u32,
     /// Base of the held math-event values (f64 each).
@@ -133,6 +136,7 @@ impl Layout {
         n_zc: u32,
         n_rel: u32,
         n_stateset_f64: u32,
+        n_nlsjac_f64: u32,
         n_math: u32,
         has_when: bool,
         has_homotopy: bool,
@@ -162,7 +166,8 @@ impl Layout {
         let stored_rel_off = rel_fresh_off + 4;
         let relations_pre_off = stored_rel_off + n_rel * 4;
         let stateset_off = (relations_pre_off + n_rel * 4 + 7) & !7;
-        let mathevents_off = stateset_off + n_stateset_f64 * 8;
+        let nls_jac_off = stateset_off + n_stateset_f64 * 8;
+        let mathevents_off = nls_jac_off + n_nlsjac_f64 * 8;
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
@@ -171,7 +176,7 @@ impl Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off,
-            n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, n_math,
+            n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, total,
         }
     }
@@ -389,7 +394,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
         l.terminate_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
-        l.stateset_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
+        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
     ] {
         put_u32(o, v);
     }
@@ -548,6 +553,7 @@ impl<'a> Reader<'a> {
             stored_rel_off: self.u32()?,
             relations_pre_off: self.u32()?,
             stateset_off: self.u32()?,
+            nls_jac_off: self.u32()?,
             n_math: self.u32()?,
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
@@ -652,7 +658,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,

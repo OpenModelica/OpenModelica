@@ -56,7 +56,7 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_symbolic,
-    emit_nls_load_body,
+    emit_nls_load_body, emit_nls_jac_body,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general, function_signature, rt_index, sim_cref_key,
 };
@@ -2201,8 +2201,18 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let zero_crossings = collect_zero_crossings(&sim_code.zeroCrossings)?;
     let relations = collect_relations(&sim_code.relations)?;
     let stateset_scratch_f64 = stateset_scratch_f64(&sim_code.stateSets)?;
+    let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
-    let has_when = all_eqs.iter().any(|e| matches!(&**e, SimCode::SimEqSystem::SES_WHEN { .. }));
+    // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
+    // when-statements inside an algorithm — both need the per-step pre-value save
+    // and the full `allEquations` list as the per-step function.
+    let has_when = all_eqs.iter().any(|e| match &**e {
+        SimCode::SimEqSystem::SES_WHEN { .. } => true,
+        SimCode::SimEqSystem::SES_ALGORITHM { statements, .. } => {
+            (&**statements).into_iter().any(|s| matches!(&**s, DAE::Statement::STMT_WHEN { .. }))
+        }
+        _ => false,
+    });
     // The backend only emits a lambda-0 initial system when the model uses
     // `homotopy()`; its presence is the signal to wire up the continuation.
     let has_homotopy = (&*sim_code.initialEquations_lambda0).into_iter().next().is_some();
@@ -2221,6 +2231,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         zero_crossings.len() as u32,
         vi.numRelations.max(0) as u32,
         stateset_scratch_f64,
+        nls_jac_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
         has_when,
         has_homotopy,
@@ -2343,8 +2354,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
-    let (nls_systems, nls_jobs, nls_hist_bytes) =
-        collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs]);
+    let nls_nominal_map = build_nls_nominal_map(vars);
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals) =
+        collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs], &nls_nominal_map);
+    // Register the analytic-Jacobian seed/result crefs before the equation
+    // functions are lowered, so the column equations resolve their slots.
+    let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
 
     // --- Type section: one type per import, per model function, per equation
@@ -2567,19 +2582,28 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // references validate. Emitted only when the model has nonlinear systems. ---
     let nls_wiring = if let Some((_, _, _)) = nls_types {
         let mut callback_indices: Vec<u32> = Vec::new(); // for the declared segment
-        let mut fn_indices: Vec<(u32, u32)> = Vec::new(); // (residual, load) per system
+        // (residual, load, Option<jac>) per system; the shared table gets 3 slots
+        // per system (`3k`, `3k+1`, `3k+2`), the jac slot left null when absent.
+        let mut fn_indices: Vec<(u32, u32, Option<u32>)> = Vec::new();
         for sys in &nls_systems {
-            let (res_fn, load_fn) = build_nls_fns(sys, &var_map, &eq_index, &by_name, &mut literals)?;
+            let (res_fn, load_fn, jac_fn) =
+                build_nls_fns(sys, &var_map, &eq_index, &by_name, &mut literals, nls_jac_infos.get(&sys.index))?;
             let res_idx = import_base + bodies.len() as u32;
             bodies.push(res_fn);
             let load_idx = import_base + bodies.len() as u32;
             bodies.push(load_fn);
             callback_indices.push(res_idx);
             callback_indices.push(load_idx);
-            fn_indices.push((res_idx, load_idx));
+            let jac_idx = jac_fn.map(|f| {
+                let idx = import_base + bodies.len() as u32;
+                bodies.push(f);
+                callback_indices.push(idx);
+                idx
+            });
+            fn_indices.push((res_idx, load_idx, jac_idx));
         }
         let start_idx = import_base + bodies.len() as u32;
-        bodies.push(build_nls_start_fn(&fn_indices, nls_hist_bytes));
+        bodies.push(build_nls_start_fn(&fn_indices, nls_hist_bytes, &nls_nominals));
         Some((start_idx, callback_indices))
     } else {
         None
@@ -2666,9 +2690,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // destructors, nls callbacks/start, initSample, zc, statesetJac, lambda0).
     functions.function(eqfn_type); // callExternalObjectDestructors
     if let Some((residual_type, load_type, start_type)) = nls_types {
-        for _ in &nls_systems {
+        for sys in &nls_systems {
             functions.function(residual_type);
             functions.function(load_type);
+            // The analytic-Jacobian callback (3 params, like the residual) is emitted
+            // and type-listed only for systems that have a usable symbolic Jacobian —
+            // matching the conditional body push in `nls_wiring`.
+            if nls_jac_infos.contains_key(&sys.index) {
+                functions.function(residual_type);
+            }
         }
         functions.function(start_type);
     }
@@ -2712,9 +2742,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // nonlinear-solver table wiring; present only when the model has NLS systems.
     if nls_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
-        // NLS_BASE_GLOBAL (shared-table base) and NLS_HIST_GLOBAL (history block
-        // base); both are set by the module `start` function.
-        for _ in 0..2 {
+        // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
+        // and NLS_NOMINAL_GLOBAL (nominal block base); all set by the `start` function.
+        for _ in 0..3 {
             globals.global(
                 we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
                 &we::ConstExpr::i32_const(0),
@@ -3532,11 +3562,16 @@ fn nls_parts(
 /// threaded to the equation lowering via `SimVarMap`/`SimCtx`.
 fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32) {
+    nominal_of: &HashMap<String, f64>,
+) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
     let mut hist_off = 0u32;
+    let mut nominal_off = 0u32;
+    // Concatenated nominal values, in system order; the module `start` writes them
+    // into the nominal block, and each job's `nominal_off` indexes into it.
+    let mut nominals: Vec<f64> = Vec::new();
     for list in eq_lists {
         for e in *list {
             if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
@@ -3544,13 +3579,159 @@ fn collect_nls_jobs(
                     continue;
                 }
                 let n = lst(&nlSystem.crefs).count() as u32;
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off });
+                let has_jac = nls_jac_usable(nlSystem);
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac });
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
+                nominal_off += 8 * n;
+                for cr in lst(&nlSystem.crefs) {
+                    let nom = sim_cref_key(cr).ok().and_then(|k| nominal_of.get(&k).copied()).unwrap_or(1.0);
+                    nominals.push(nom);
+                }
                 systems.push(nlSystem.clone());
             }
         }
     }
-    (systems, jobs, hist_off)
+    (systems, jobs, hist_off, nominals)
+}
+
+/// Map each scalar real variable's cref key to its nominal attribute, defaulting to
+/// 1.0 when unset or non-constant. Feeds the NLS x-scaling nominal block.
+fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, f64> {
+    let mut map = HashMap::new();
+    let all = lst(&vars.stateVars)
+        .chain(lst(&vars.algVars))
+        .chain(lst(&vars.discreteAlgVars))
+        .chain(lst(&vars.paramVars))
+        .chain(lst(&vars.aliasVars));
+    for sv in all {
+        if let Ok(key) = sim_cref_key(&sv.name) {
+            let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
+            map.entry(key).or_insert(nom);
+        }
+    }
+    map
+}
+
+/// Per-system scratch offsets for the analytic-Jacobian `nls_jac` callback: the
+/// seed slots (one per differentiation column) and the column-result slots (one
+/// per residual row). Both live in the `nls_jac_off` region, registered as var
+/// slots so the Jacobian `columnEqns` resolve their `$SEED.*`/`$pDER.*` crefs.
+struct NlsJacInfo {
+    seed_offs: Vec<u32>,
+    result_offs: Vec<u32>,
+}
+
+/// The residual row a Jacobian result var maps to, from its name
+/// `$res_<matrixName>_<K>.…` → `K - 1`. `None` if the name has no positive
+/// trailing index.
+fn jac_result_row(cr: &Arc<DAE::ComponentRef>) -> Option<usize> {
+    let name = cref_display(cr).ok()?;
+    let first = name.split('.').next()?;
+    let k: usize = first.rsplit('_').next()?.parse().ok()?;
+    k.checked_sub(1)
+}
+
+/// The residual rows of a column's `JAC_VAR` result variables, in `columnVars`
+/// order, iff they form a valid permutation of `0..n` (so the dense Jacobian rows
+/// can be placed unambiguously); otherwise `None`.
+fn nls_jac_result_rows(col: &SimCode::JacobianColumn, n: usize) -> Option<Vec<usize>> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let rows: Vec<usize> = lst(&col.columnVars)
+        .filter(|v| matches!(v.varKind, VarKind::JAC_VAR))
+        .map(|v| jac_result_row(&v.name))
+        .collect::<Option<Vec<_>>>()?;
+    let mut sorted = rows.clone();
+    sorted.sort_unstable();
+    if sorted.len() == n && sorted.iter().enumerate().all(|(i, &r)| i == r) {
+        Some(rows)
+    } else {
+        None
+    }
+}
+
+/// A nonlinear system has a usable symbolic Jacobian: a `jacobianMatrix` with one
+/// seed per iteration variable and `JAC_VAR` results covering every residual row
+/// (a square dense Jacobian, as `hybrj` needs).
+fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
+    let Some(jm) = &nlsystem.jacobianMatrix else { return false };
+    let Some(col) = lst(&jm.columns).next() else { return false };
+    let n = lst(&nlsystem.crefs).count();
+    n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(col, n).is_some()
+}
+
+/// Total f64 scratch slots the NLS analytic Jacobians need: seeds + column
+/// variables per usable system. Scans a superset of the systems
+/// [`collect_nls_jobs`] registers, so the region is always large enough.
+fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
+    use SimCode::SimEqSystem as E;
+    let mut seen: HashSet<i32> = HashSet::new();
+    let mut total = 0u32;
+    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+        for e in &eqs {
+            if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
+                if seen.insert(nlSystem.index) && nls_jac_usable(nlSystem) {
+                    // seeds + all column variables (results + intermediates) get slots.
+                    let jm = nlSystem.jacobianMatrix.as_ref().unwrap();
+                    let col = lst(&jm.columns).next().unwrap();
+                    total += count(&jm.seedVars) as u32 + count(&col.columnVars) as u32;
+                }
+            }
+        }
+    };
+    scan(flatten_eqs(&sim_code.parameterEquations));
+    scan(flatten_eqs(&sim_code.initialEquations));
+    scan(flatten_eqs(&sim_code.initialEquations_lambda0));
+    scan(flatten_eqs_ll(&sim_code.odeEquations));
+    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
+    scan(flatten_eqs(&sim_code.allEquations));
+    total
+}
+
+/// Register each system's Jacobian seed/result crefs at the `nls_jac_off` scratch
+/// region (mirroring [`build_state_set_infos`]) and return the per-system offsets.
+/// `nls_systems` is in [`collect_nls_jobs`] order, so offsets are assigned in the
+/// same order the jobs were.
+fn build_nls_jac_infos(
+    nls_systems: &[Arc<SimCode::NonlinearSystem>],
+    layout: &SimLayout,
+    var_map: &mut SimVarMap,
+) -> Result<HashMap<i32, NlsJacInfo>> {
+    let mut infos = HashMap::new();
+    let mut cursor = layout.nls_jac_off;
+    for sys in nls_systems {
+        if !nls_jac_usable(sys) {
+            continue;
+        }
+        let jm = sys.jacobianMatrix.as_ref().unwrap();
+        let col = lst(&jm.columns).next().unwrap();
+        let mut seed_offs = Vec::new();
+        for sv in lst(&jm.seedVars) {
+            let off = cursor;
+            cursor += 8;
+            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            seed_offs.push(off);
+        }
+        // Every column variable (results + intermediates) needs a slot so the
+        // column equations resolve; the `JAC_VAR` results are placed at their
+        // residual row (`$res_..._K` → row `K-1`), since `columnVars` order need
+        // not be row order.
+        use openmodelica_backend_types::BackendDAE::VarKind;
+        let n = seed_offs.len();
+        let mut result_offs = vec![0u32; n];
+        for sv in lst(&col.columnVars) {
+            let off = cursor;
+            cursor += 8;
+            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            if matches!(sv.varKind, VarKind::JAC_VAR) {
+                let row = jac_result_row(&sv.name)
+                    .filter(|&r| r < n)
+                    .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian result var has no row index")?;
+                result_offs[row] = off;
+            }
+        }
+        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
+    }
+    Ok(infos)
 }
 
 /// Build the `residual(sim_data, x, r)` and `load(sim_data, x)` callback
@@ -3562,7 +3743,8 @@ fn build_nls_fns(
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
-) -> Result<(we::Function, we::Function)> {
+    jac_info: Option<&NlsJacInfo>,
+) -> Result<(we::Function, we::Function, Option<we::Function>)> {
     let (inner, res_exps, iter_vars) = nls_parts(nlsystem)?;
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());
@@ -3627,7 +3809,43 @@ fn build_nls_fns(
         emit_nls_load_body(&mut ctx, &slots)?;
         finish(ctx)
     };
-    Ok((residual, load))
+    // jac(sim_data, x, jptr): column-major `n×n` analytic Jacobian, emitted only
+    // when the system carries a usable symbolic Jacobian.
+    let jac = match (&nlsystem.jacobianMatrix, jac_info) {
+        (Some(jm), Some(info)) => {
+            let col = lst(&jm.columns)
+                .next()
+                .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian has no column")?;
+            let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
+            let column_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
+            let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 3);
+            let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
+                for eq in &inner {
+                    lower_equation(c, eq, eq_index)?;
+                }
+                Ok(())
+            };
+            let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
+                for eq in &constant_eqns {
+                    lower_equation(c, eq, eq_index)?;
+                }
+                Ok(())
+            };
+            let mut lower_column = |c: &mut FnCtx| -> Result<()> {
+                for eq in &column_eqns {
+                    lower_equation(c, eq, eq_index)?;
+                }
+                Ok(())
+            };
+            emit_nls_jac_body(
+                &mut ctx, &slots, &info.seed_offs, &info.result_offs,
+                &mut lower_inner, &mut lower_constant, &mut lower_column,
+            )?;
+            Some(finish(ctx))
+        }
+        _ => None,
+    };
+    Ok((residual, load, jac))
 }
 
 /// Build the module `start` function: grow the shared
@@ -3637,8 +3855,9 @@ fn build_nls_fns(
 /// (`fn_indices[k] = (residual, load)`). `rt_solve_nls` reads these indices back
 /// via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
 /// extrapolation-history block (`hist_bytes`) into `NLS_HIST_GLOBAL`.
-fn build_nls_start_fn(fn_indices: &[(u32, u32)], hist_bytes: u32) -> we::Function {
+fn build_nls_start_fn(fn_indices: &[(u32, u32, Option<u32>)], hist_bytes: u32, nominals: &[f64]) -> we::Function {
     use we::Instruction as I;
+    use crate::CodegenWasmJitFunctions::NLS_NOMINAL_GLOBAL;
     let mut f = we::Function::new([]);
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
@@ -3646,24 +3865,39 @@ fn build_nls_start_fn(fn_indices: &[(u32, u32)], hist_bytes: u32) -> we::Functio
         f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
         f.instruction(&I::GlobalSet(NLS_HIST_GLOBAL));
     }
-    // base = table.grow(null, 2n) — returns the old size (the growable table's max
-    // is unbounded, so this cannot fail here).
+    // nominal block: rt_alloc, then store each system's iteration-variable nominal
+    // constants (concatenated in system order) for `rt_solve_nls`'s x-scaling.
+    if !nominals.is_empty() {
+        f.instruction(&I::I32Const((nominals.len() * 8) as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
+        f.instruction(&I::GlobalSet(NLS_NOMINAL_GLOBAL));
+        for (i, nom) in nominals.iter().enumerate() {
+            f.instruction(&I::GlobalGet(NLS_NOMINAL_GLOBAL));
+            f.instruction(&I::F64Const((*nom).into()));
+            f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
+        }
+    }
+    // base = table.grow(null, 3n) — returns the old size (the growable table's max
+    // is unbounded, so this cannot fail here). Three slots per system:
+    // `3k`=residual, `3k+1`=load, `3k+2`=jac (left null when there is no Jacobian).
     f.instruction(&I::RefNull(we::HeapType::FUNC));
-    f.instruction(&I::I32Const((2 * fn_indices.len()) as i32));
+    f.instruction(&I::I32Const((3 * fn_indices.len()) as i32));
     f.instruction(&I::TableGrow(0));
     f.instruction(&I::GlobalSet(NLS_BASE_GLOBAL));
-    for (k, (res_idx, load_idx)) in fn_indices.iter().enumerate() {
-        let base_off = (2 * k) as i32;
+    let mut set_slot = |f: &mut we::Function, off: i32, idx: u32| {
         f.instruction(&I::GlobalGet(NLS_BASE_GLOBAL));
-        f.instruction(&I::I32Const(base_off));
+        f.instruction(&I::I32Const(off));
         f.instruction(&I::I32Add);
-        f.instruction(&I::RefFunc(*res_idx));
+        f.instruction(&I::RefFunc(idx));
         f.instruction(&I::TableSet(0));
-        f.instruction(&I::GlobalGet(NLS_BASE_GLOBAL));
-        f.instruction(&I::I32Const(base_off + 1));
-        f.instruction(&I::I32Add);
-        f.instruction(&I::RefFunc(*load_idx));
-        f.instruction(&I::TableSet(0));
+    };
+    for (k, (res_idx, load_idx, jac_idx)) in fn_indices.iter().enumerate() {
+        let base_off = (3 * k) as i32;
+        set_slot(&mut f, base_off, *res_idx);
+        set_slot(&mut f, base_off + 1, *load_idx);
+        if let Some(jac_idx) = jac_idx {
+            set_slot(&mut f, base_off + 2, *jac_idx);
+        }
     }
     f.instruction(&I::End);
     f
