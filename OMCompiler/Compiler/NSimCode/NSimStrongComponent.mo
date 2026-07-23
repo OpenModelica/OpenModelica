@@ -901,10 +901,18 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
+        // Array equations with record element type need per-field expansion which happens in
+        // toStatement; route through createAlgorithm so that path is used.
+        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT)
+          guard(Type.isComplex(Type.arrayElementType(eqn.ty))) algorithm
+          (tmp, simCodeIndices) := createAlgorithm(eqn, simCodeIndices, equation_map);
+        then tmp;
+
         case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           // expand scalar rhs to array when lhs is array (implicit broadcast in Modelica)
           rhs := if Type.isArray(Expression.typeOf(eqn.rhs)) then eqn.rhs else Expression.fillType(eqn.ty, eqn.rhs);
-          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, rhs, eqn.source, eqn.attr);
+          lhs := eqn.lhs;
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, lhs, rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 

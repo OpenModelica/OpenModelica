@@ -693,6 +693,16 @@ public
     end match;
   end isTuple;
 
+  function isTupleOfReals
+    input Type ty;
+    output Boolean b;
+  algorithm
+    b := match ty
+      case TUPLE() then List.all(ty.types, isReal);
+      else false;
+    end match;
+  end isTupleOfReals;
+
   function isUnknown
     input Type ty;
     output Boolean isUnknown;

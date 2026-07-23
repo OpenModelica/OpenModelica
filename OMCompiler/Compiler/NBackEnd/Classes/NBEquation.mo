@@ -2947,6 +2947,26 @@ public
         case SCALAR_EQUATION()
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
+        // Array equations whose element type is a record are expanded per field so that each
+        // primitive field array assignment goes through the primitive indexed_assign path.
+        case ARRAY_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec))
+          guard(Type.isComplex(Type.arrayElementType(eqn.ty))) algorithm
+          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec, sourceInfo()));
+          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec, sourceInfo()));
+          lhs_subs := ComponentRef.subscriptsAllFlat(lhs_rec);
+          rhs_subs := ComponentRef.subscriptsAllFlat(rhs_rec);
+          if List.compareLength(lhs_lst, rhs_lst) == 0 and not listEmpty(lhs_lst) then
+            for tpl in List.zip(lhs_lst, rhs_lst) loop
+              (lhs, rhs) := tpl;
+              lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
+              rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
+              stmts := Statement.ASSIGNMENT(lhs_exp, rhs_exp, Expression.typeOf(lhs_exp), eqn.source) :: stmts;
+            end for;
+          else
+            stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
+          end if;
+        then stmts;
+
         case ARRAY_EQUATION()
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 

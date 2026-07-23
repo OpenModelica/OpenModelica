@@ -531,6 +531,7 @@ public
   algorithm
     ty := match cref
       case CREF()
+        algorithm
         then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts), includeScope);
       else Type.UNKNOWN();
     end match;

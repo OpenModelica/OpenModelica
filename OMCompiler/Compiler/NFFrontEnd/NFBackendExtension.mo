@@ -1174,8 +1174,7 @@ public
           length              = length
         );
 
-        // kabdelhak: ToDo: need to discuss this case
-        case VAR_ATTR_RECORD() then {attributes};
+        case VAR_ATTR_RECORD() then list(attributes for i in 1:length);
 
         else algorithm
           Error.terminate(getInstanceName() + "failed. Not yet handled: " + toString(attributes), sourceInfo());

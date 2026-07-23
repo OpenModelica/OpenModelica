@@ -265,6 +265,8 @@ protected
 
           // only remove trivial alias vars from the array of all variables
           varData.variables   := VariablePointers.removeList(alias_vars, varData.variables);
+          varData.records     := VariablePointers.removeList(alias_vars, varData.records);
+          varData.knowns      := VariablePointers.removeList(alias_vars, varData.knowns);
 
           // split off constant alias
           // update constant start values and add to parameters

@@ -2869,12 +2869,10 @@ function isJacobianResultVar
           varData.clocks      := VariablePointers.addList(var_lst, varData.clocks);
         then varData;
 
-        // IMPORTANT: requires the record elements to be added as children beforehand!
         case (VAR_DATA_SIM(), VarType.RECORD) algorithm
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.records     := VariablePointers.addList(var_lst, varData.records);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
-          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases

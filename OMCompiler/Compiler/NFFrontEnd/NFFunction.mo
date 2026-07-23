@@ -3044,7 +3044,10 @@ protected
             if isSome(stmt.range) then
               checkUseBeforeAssignExp(unassigned, Util.getOption(stmt.range), info, generatedName);
             end if;
-
+            // The for-loop iterator is assigned by the loop on each iteration
+            markAssignedOutput(unassigned,
+              Expression.fromCref(ComponentRef.fromNode(stmt.iterator, InstNode.getType(stmt.iterator))),
+              isSome(generatedName));
             checkUseBeforeAssign2(unassigned, stmt.body, generatedName);
           then
             ();

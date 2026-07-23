@@ -619,6 +619,7 @@ public
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
         case VariableKind.LOOP_SOLVED()             then OldBackendDAE.LOOP_SOLVED();
+        case VariableKind.RECORD()                  then OldBackendDAE.VARIABLE();
         case VariableKind.FRONTEND_DUMMY()
           algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong VariableKind FRONTEND_DUMMY(). This should not exist after frontend."});

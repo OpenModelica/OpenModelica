@@ -1590,6 +1590,67 @@ protected
     end if;
   end tupleSolvable;
 
+  function expandArrayCrefExp
+    "Replaces a bare array cref with an explicit array of its elements:
+    e.g. Fs_fg (Real[2]) -> {Fs_fg[1], Fs_fg[2]}. Used to make sliced solving possible."
+    input output Expression exp;
+    input ComponentRef arrayCref;
+  protected
+    Type arrTy, elemTy;
+    list<Dimension> dims;
+    list<Integer> sizes;
+    list<Expression> elements;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(ComponentRef.isEqual(exp.cref, arrayCref)) algorithm
+        arrTy    := ComponentRef.getSubscriptedType(arrayCref, true);
+        elemTy   := Type.arrayElementType(arrTy);
+        dims     := Type.arrayDims(arrTy);
+        sizes    := list(Dimension.size(dim) for dim in dims);
+        elements := expandArraySumExpDim(sizes, arrayCref, elemTy);
+      then Expression.makeArray(arrTy, listArray(elements), false);
+      else exp;
+    end match;
+  end expandArrayCrefExp;
+
+  function distributeSubscriptExp
+    "Distributes a flat list of subscripts over arithmetic operations.
+    Only descends into array-typed operands so scalar operands are left untouched.
+    For CREF and ARRAY applies subscripts directly.
+    Used to extract a scalar row from an ARRAY_EQUATION."
+    input output Expression exp;
+    input list<Subscript> subs;
+  protected
+    Operator scalar_op;
+  algorithm
+    exp := match exp
+      // For MULTARY, only distribute into array-typed operands (scalars stay unchanged)
+      case Expression.MULTARY() algorithm
+        scalar_op := Operator.toScalar(exp.operator);
+      then Expression.MULTARY(
+        list(if Type.isArray(Expression.typeOf(e)) then distributeSubscriptExp(e, subs) else e
+             for e in exp.arguments),
+        list(if Type.isArray(Expression.typeOf(e)) then distributeSubscriptExp(e, subs) else e
+             for e in exp.inv_arguments),
+        scalar_op);
+
+      // For BINARY, only distribute into the array-typed side
+      case Expression.BINARY() algorithm
+        scalar_op := Operator.toScalar(exp.operator);
+      then Expression.BINARY(
+        if Type.isArray(Expression.typeOf(exp.exp1)) then distributeSubscriptExp(exp.exp1, subs) else exp.exp1,
+        scalar_op,
+        if Type.isArray(Expression.typeOf(exp.exp2)) then distributeSubscriptExp(exp.exp2, subs) else exp.exp2);
+
+      // For UNARY negation the operand must be array (same type as result), distribute into it
+      case Expression.UNARY() algorithm
+        scalar_op := Operator.scalarize(exp.operator);
+      then Expression.UNARY(scalar_op, distributeSubscriptExp(exp.exp, subs));
+
+      else Expression.applySubscripts(subs, exp);
+    end match;
+  end distributeSubscriptExp;
+
   function expandArraySumExp
     "Replaces sum(arrayCref) with arrayCref[1] + ... + arrayCref[n] for 1D arrays.
     sum(A) without explicit iterator is represented as TYPED_CALL, not TYPED_REDUCTION."
@@ -1715,8 +1776,25 @@ protected
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
     elseif solve_status == Status.IMPLICIT then
-      // var_cref is a parent array containing cref as a slice; expand array sums to enable explicit solving
-      eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
+      // var_cref is a parent array containing cref as a scalar slice.
+      // For ARRAY_EQUATION: extract the scalar row first, then solve the resulting
+      // SCALAR_EQUATION for cref (avoids wrong-type results from solveLinear on arrays).
+      // For other equation types: try expanding sum expressions.
+      eqn := match eqn
+        local
+          list<Subscript> subs;
+          Expression lhs_scalar, rhs_scalar;
+        case Equation.ARRAY_EQUATION() algorithm
+          // expand bare var_cref array cref to explicit element crefs
+          eqn.lhs  := Expression.map(eqn.lhs, function expandArrayCrefExp(arrayCref = var_cref));
+          eqn.rhs  := Expression.map(eqn.rhs, function expandArrayCrefExp(arrayCref = var_cref));
+          // extract the scalar row corresponding to cref by distributing its subscripts
+          subs       := ComponentRef.subscriptsAllFlat(cref);
+          lhs_scalar := distributeSubscriptExp(eqn.lhs, subs);
+          rhs_scalar := distributeSubscriptExp(eqn.rhs, subs);
+        then Equation.SCALAR_EQUATION(Expression.typeOf(lhs_scalar), lhs_scalar, rhs_scalar, eqn.source, eqn.attr);
+        else Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
+      end match;
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       if solve_status < Status.UNSOLVABLE then
         eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
