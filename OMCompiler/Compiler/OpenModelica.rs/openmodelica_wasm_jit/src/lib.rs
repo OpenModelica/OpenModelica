@@ -4,6 +4,12 @@
 // the codegen crate (standalone/FMU emission).
 pub static RUNTIME_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime.wasm"));
 pub static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1.wasm"));
+/// The interactive `wasm32-wasip1` (std) runtime: exports `rt_*`+`memory`+table
+/// like `RUNTIME_WASM`, but built with std so the sparse solver (`rsparse`) links
+/// in; imports `wasi_snapshot_preview1` (satisfied by `wasi_shim`). Empty when the
+/// wasip1 target was unavailable at build time (host then uses `RUNTIME_WASM`).
+pub static RUNTIME_WASM_INTERACTIVE_WASIP1: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1_interactive.wasm"));
 pub static EXTERNAL_C_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modelicaexternalc.wasm"));
 pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
 pub static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));

@@ -80,16 +80,14 @@ fn trap() -> ! {
 // wasm32-wasip1 target. It uses std (file I/O over WASI) + daskr + the shared
 // sim-meta / mat-writer crates, all wasi-gated, so the no_std JIT runtime
 // (wasm32-unknown-unknown) is unaffected.
-#[cfg(target_os = "wasi")]
+#[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
 
-// The in-wasm session driver (`rt_sim_*`), only on the no_std JIT runtime target
-// (wasm32-unknown-unknown): the shared driver + daskr compiled in-wasm so the
-// model's functionODE etc. are reached wasm->wasm via the shared table. Gated by
-// the default `session` feature so the FMI3 adapter (which links this crate for
-// its allocator + rt_* but drives the model via direct `model` imports, not the
-// `env` table) can drop it and avoid a dangling `env` table import.
-#[cfg(all(target_arch = "wasm32", target_os = "unknown", feature = "session"))]
+// The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
+// in-wasm so the model is reached wasm->wasm via the shared table. Both JIT
+// runtimes (unknown-unknown for web, wasip1 for native) enable it via the
+// `session` feature; the FMI3 adapter drops it to avoid a dangling table import.
+#[cfg(all(target_arch = "wasm32", feature = "session"))]
 mod session;
 
 // ---------------------------------------------------------------------------
@@ -2026,8 +2024,20 @@ pub extern "C" fn rt_sim_store_row(buf: u32, row: u32, sim_data: u32, n_reals: u
 ///
 /// LU with partial pivoting first (like C's `dgesv`); on a singular matrix a
 /// total-pivot search runs as fallback, mirroring C's `LS_DEFAULT`.
+/// Count of linear-system solves in the current run (every dense + sparse path).
+/// The session resets it per run via [`reset_lin_solves`]; surfaced in `LOG_STATS`.
+static LIN_SOLVES: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
+pub fn lin_solves() -> u64 {
+    LIN_SOLVES.load(core::sync::atomic::Ordering::Relaxed)
+}
+pub fn reset_lin_solves() {
+    LIN_SOLVES.store(0, core::sync::atomic::Ordering::Relaxed);
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
@@ -2036,6 +2046,197 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     } else {
         1
     }
+}
+
+/// Solve a sparse `n`×`n` system `A x = b` in place, `A` given in CSC:
+/// `colptr` = `n+1` i32 column pointers, `rowidx`/`values` = `nnz` row indices /
+/// f64 values (column-major). `b ← x` on success (returns 0), 1 if singular.
+///
+/// Sparse LU with AMD fill-reducing ordering via `rsparse::lusol` (a CSparse port)
+/// on the in-wasm-solve build; the others densify and reuse the dense LU.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    let n = n as usize;
+    let nnz = nnz as usize;
+    let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+    let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+    {
+        let a = rsparse::data::Sprs {
+            nzmax: nnz,
+            m: n,
+            n,
+            p: colp.iter().map(|&x| x as isize).collect(),
+            i: rowi.iter().map(|&x| x as usize).collect(),
+            x: vals.to_vec(),
+        };
+        // order 2 = AMD on A'A (CSparse's LU ordering); tol 1.0 = partial pivoting.
+        match rsparse::lusol(&a, b, 2, 1.0) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        }
+    }
+    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
+    {
+        // No in-wasm rsparse (native interactive / no_std): densify + dense LU.
+        let mut dense = alloc::vec![0.0f64; n * n];
+        for col in 0..n {
+            for k in colp[col] as usize..colp[col + 1] as usize {
+                dense[col * n + rowi[k] as usize] = vals[k];
+            }
+        }
+        if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
+            0
+        } else {
+            1
+        }
+    }
+}
+
+/// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64): scan its
+/// structural nonzeros into CSC, then [`rt_solve_lin_sparse`]. 0 ok, 1 singular.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    let n = n as usize;
+    let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+    {
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        let mut p = alloc::vec![0isize; n + 1];
+        let mut i = alloc::vec::Vec::new();
+        let mut x = alloc::vec::Vec::new();
+        for col in 0..n {
+            for row in 0..n {
+                let v = a[col * n + row];
+                if v != 0.0 {
+                    i.push(row);
+                    x.push(v);
+                }
+            }
+            p[col + 1] = i.len() as isize;
+        }
+        let sp = rsparse::data::Sprs { nzmax: i.len(), m: n, n, p, i, x };
+        match rsparse::lusol(&sp, b, 2, 1.0) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        }
+    }
+    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
+    {
+        // No in-wasm rsparse: A is already dense column-major, solve directly.
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+            0
+        } else {
+            1
+        }
+    }
+}
+
+// Native rsparse solve on the host (`openmodelica_wasm_jit::host::lin_solve`),
+// which caches the symbolic analysis host-side. Returns 0 (solved) or 1 (singular).
+#[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    fn rt_host_lin_solve(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32;
+}
+
+// Per-system cached sparse-LU symbolic analysis (keyed by `handle`): the pattern is
+// constant over a run, so `sqr` runs once and each solve only refactors.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+struct CachedLss {
+    a: rsparse::data::Sprs<f64>, // p/i fixed; x refreshed each solve
+    s: rsparse::data::Symb,
+    x: alloc::vec::Vec<f64>,
+}
+
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+thread_local! {
+    static LSS_CACHE: core::cell::RefCell<std::collections::HashMap<u32, CachedLss>> =
+        core::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// Like [`rt_solve_lin_sparse`] but reuses the cached symbolic analysis for `handle`
+/// (pattern read only to seed the cache on the first call).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_sparse_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: u32,
+    nnz: u32,
+) -> i32 {
+    let n = n as usize;
+    let nnz = nnz as usize;
+
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    // Native interactive runtime: the host solves natively (cheap crossings).
+    #[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
+    {
+        return unsafe { rt_host_lin_solve(handle, colptr, rowidx, values, b_ptr, n as u32, nnz as u32) };
+    }
+    // In-wasm rsparse cache: web interactive (boundary too costly) + standalone.
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve", not(feature = "host_lin_solve")))]
+    {
+        return solve_lin_sparse_cached_inwasm(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    }
+    // no_std (JIT fallback): densify + dense LU.
+    #[cfg(not(all(target_os = "wasi", any(feature = "host_lin_solve", feature = "inwasm_solve"))))]
+    {
+        let _ = handle;
+        rt_solve_lin_sparse(colptr, rowidx, values, b_ptr, n as u32, nnz as u32)
+    }
+}
+
+/// In-wasm cached sparse solve (rsparse) — the web interactive + standalone
+/// wasip1 runtimes (no host solver). Reuses the cached symbolic analysis for `handle`.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: usize, nnz: usize) -> i32 {
+    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    LSS_CACHE.with(|cell| {
+        let mut cache = cell.borrow_mut();
+        let entry = cache.entry(handle).or_insert_with(|| {
+            let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+            let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+            let a = rsparse::data::Sprs {
+                nzmax: nnz,
+                m: n,
+                n,
+                p: colp.iter().map(|&x| x as isize).collect(),
+                i: rowi.iter().map(|&x| x as usize).collect(),
+                x: vals.to_vec(),
+            };
+            let s = rsparse::sqr(&a, 2, false); // AMD ordering + symbolic, once
+            CachedLss { a, s, x: alloc::vec![0.0f64; n] }
+        });
+        entry.a.x.copy_from_slice(vals);
+        let CachedLss { a, s, x } = entry;
+        let nm = match rsparse::lu(a, s, 1.0) {
+            Ok(nm) => nm,
+            Err(_) => return 1,
+        };
+        // x = P*b, solve L/U, b = Q*x; rsparse's `ipvec` permute is private.
+        match &nm.pinv {
+            Some(p) => for k in 0..n { x[p[k] as usize] = b[k]; },
+            None => x[..n].copy_from_slice(&b[..n]),
+        }
+        rsparse::lsolve(&nm.l, &mut x[..]);
+        rsparse::usolve(&nm.u, &mut x[..]);
+        match &s.q {
+            Some(q) => for k in 0..n { b[q[k] as usize] = x[k]; },
+            None => b[..n].copy_from_slice(&x[..n]),
+        }
+        0
+    })
 }
 
 // ---------------------------------------------------------------------------

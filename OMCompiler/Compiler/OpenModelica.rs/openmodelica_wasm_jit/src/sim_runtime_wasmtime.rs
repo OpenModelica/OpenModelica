@@ -28,7 +28,22 @@ use crate::model::SimModel;
 use crate::host::add_host_builtins;
 
 /// The runtime module, embedded the same way the function half embeds it.
-use crate::RUNTIME_WASM;
+use crate::{RUNTIME_WASM, RUNTIME_WASM_INTERACTIVE_WASIP1};
+use crate::wasi_shim;
+use openmodelica_wasi::wasi::WasiCtx;
+
+/// The runtime module the interactive host instantiates: the std wasip1 build
+/// (so the sparse solver links in) when it was produced, else the no_std
+/// `RUNTIME_WASM` fallback. Both export the same `rt_*`+`memory`+table interface;
+/// the wasip1 one additionally imports `wasi_snapshot_preview1` (served by the
+/// `wasi_shim`).
+fn runtime_blob() -> &'static [u8] {
+    if RUNTIME_WASM_INTERACTIVE_WASIP1.is_empty() {
+        RUNTIME_WASM
+    } else {
+        RUNTIME_WASM_INTERACTIVE_WASIP1
+    }
+}
 
 /// The compiled-module type for this backend; `CodegenWasmJit::SimModel` stores
 /// it backend-agnostically as `sim_runtime::Module`.
@@ -82,8 +97,8 @@ pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String
 fn runtime_cache_path() -> std::path::PathBuf {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    RUNTIME_WASM.len().hash(&mut h);
-    RUNTIME_WASM.hash(&mut h);
+    runtime_blob().len().hash(&mut h);
+    runtime_blob().hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
     let key = h.finish();
 
@@ -111,7 +126,7 @@ fn load_or_compile_runtime() -> std::result::Result<wasmtime::Module, String> {
         // Incompatible/corrupt cache (e.g. wasmtime upgrade): fall through to
         // recompile and overwrite it below.
     }
-    let module = wts(wasmtime::Module::new(engine, RUNTIME_WASM))?;
+    let module = wts(wasmtime::Module::new(engine, runtime_blob()))?;
     // Best-effort: persist the compiled artifact for the next process. Write to
     // a temp sibling then rename, so a concurrent reader never sees a partial file.
     if let Ok(bytes) = module.serialize() {
@@ -158,7 +173,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
     }
 }
 
-type Store = wasmtime::Store<()>;
+type Store = wasmtime::Store<WasiCtx>;
 
 /// `SimEngine`-trait errors: collapse to the crate `&'static str` (a model
 /// `assert()` is decoded downstream by `enrich_trap`).
@@ -217,7 +232,7 @@ fn wty_valtype(w: crate::sig::WTy) -> wasmtime::ValType {
 /// natively and binds a marshalling trampoline sharing the runtime's linear
 /// memory (`memory`).
 fn define_external_imports(
-    linker: &mut wasmtime::Linker<()>,
+    linker: &mut wasmtime::Linker<WasiCtx>,
     model: &SimModel,
     memory: wasmtime::Memory,
     rt_str_new: wasmtime::TypedFunc<u32, u32>,
@@ -249,8 +264,8 @@ fn define_external_imports(
 /// The `print` builtin's host import (`rt.rt_print`): read the String handle's
 /// bytes from the shared linear memory and write them to the model's captured
 /// stdout. The handle stays owned by the generated code, which releases it after.
-fn define_print_import(linker: &mut wasmtime::Linker<()>, memory: wasmtime::Memory) -> Result<()> {
-    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, ()>, handle: i32| {
+fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, WasiCtx>, handle: i32| {
         if handle == 0 {
             return;
         }
@@ -280,7 +295,7 @@ fn define_print_import(linker: &mut wasmtime::Linker<()>, memory: wasmtime::Memo
 unsafe fn call_external(
     addr: usize,
     sig: &crate::sig::ExtCallSig,
-    caller: &mut wasmtime::Caller<'_, ()>,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
     memory: wasmtime::Memory,
     rt_str_new: &wasmtime::TypedFunc<u32, u32>,
     rt_str_data: &wasmtime::TypedFunc<u32, u32>,
@@ -457,8 +472,11 @@ pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, Strin
     let n_steps = model.n_intervals;
     let n_rows = n_steps + 1;
     let t0 = Instant::now();
-    let (result, driver_label) =
+    let (mut result, driver_label) =
         sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench)?;
+    // The linear solves ran host-side (`rt_host_lin_solve`); the driver's stats
+    // don't see them, so surface the host counter for LOG_STATS.
+    result.stats.lin_solves = crate::host::lin_solve::count();
     if bench {
         let elapsed = t0.elapsed();
         eprintln!(
@@ -507,9 +525,14 @@ struct Instantiated {
 /// sharing the runtime's `memory`).
 fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, String> {
     let bench = crate::model::sim_bench_enabled();
+    crate::host::lin_solve::reset(); // drop the previous run's host-side LSS cache
     let engine = sim_engine();
     let mut linker = wasmtime::Linker::new(engine);
     add_host_builtins(&mut linker)?;
+    // The interactive runtime is the std wasip1 build; its `wasi_snapshot_preview1`
+    // imports (panic `fd_write`, `proc_exit`, `environ_*`) are served by the shared
+    // shim. Harmless for the no_std fallback, which imports none of them.
+    wasi_shim::add_to_linker(&mut linker)?;
 
     // Phase 1: obtain the compiled modules. The runtime module is compiled once
     // per process (cached); the model module was JIT-compiled on a background
@@ -534,13 +557,13 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     if bench {
         eprintln!(
             "wasm-jit sim: module fetch — runtime.wasm ({} KB) {:?} (cached/compiled), model.wasm ({} KB) {:?} (join/compile)",
-            RUNTIME_WASM.len() / 1024, rt_compile, model.wasm.len() / 1024, model_compile,
+            runtime_blob().len() / 1024, rt_compile, model.wasm.len() / 1024, model_compile,
         );
     }
 
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
-    let mut store = wasmtime::Store::new(engine, ());
+    let mut store = wasmtime::Store::new(engine, WasiCtx::new(".", Vec::new()));
     let rt_inst = wts(linker.instantiate(&mut store, runtime_module))?;
     // The generated module imports the runtime's exports under module name "rt".
     wts(linker.instance(&mut store, "rt", rt_inst))?;
@@ -829,6 +852,7 @@ impl InWasmSession {
         stats.conv_test_fails = stat(4)?;
         stats.state_events = stat(5)?;
         stats.time_events = stat(6)?;
+        stats.lin_solves = stat(7)?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats })
     }
 }

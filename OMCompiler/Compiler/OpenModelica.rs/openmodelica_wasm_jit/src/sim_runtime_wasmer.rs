@@ -44,7 +44,18 @@ use crate::sig::WTy;
 use crate::host::add_host_builtins;
 
 /// The runtime module, embedded the same way the function half embeds it.
-use crate::RUNTIME_WASM;
+use crate::{RUNTIME_WASM, RUNTIME_WASM_INTERACTIVE_WASIP1};
+
+/// The std wasip1 interactive runtime (in-wasm rsparse) when it was produced, else
+/// the no_std `RUNTIME_WASM` fallback (densifies). The interactive blob additionally
+/// imports `wasi_snapshot_preview1`, served by `wasi_shim`.
+fn runtime_blob() -> &'static [u8] {
+    if RUNTIME_WASM_INTERACTIVE_WASIP1.is_empty() {
+        RUNTIME_WASM
+    } else {
+        RUNTIME_WASM_INTERACTIVE_WASIP1
+    }
+}
 
 /// The ModelicaExternalC WASI side module (`build.rs`), providing the
 /// `ext.Modelica*_*` external functions (table blocks, string scanning, …) on the
@@ -123,8 +134,8 @@ pub fn runtime_module() -> std::result::Result<&'static wasmer::Module, String> 
 fn runtime_cache_path() -> std::path::PathBuf {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    RUNTIME_WASM.len().hash(&mut h);
-    RUNTIME_WASM.hash(&mut h);
+    runtime_blob().len().hash(&mut h);
+    runtime_blob().hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
     let key = h.finish();
 
@@ -145,7 +156,7 @@ fn load_or_compile_runtime() -> std::result::Result<wasmer::Module, String> {
     // the in-memory OnceLock already caches the compiled module for the session,
     // so compile straight from the embedded bytes.
     #[cfg(target_arch = "wasm32")]
-    return wts(wasmer::Module::from_binary(engine, RUNTIME_WASM));
+    return wts(wasmer::Module::from_binary(engine, runtime_blob()));
     #[cfg(not(target_arch = "wasm32"))]
     {
     let path = runtime_cache_path();
@@ -160,7 +171,7 @@ fn load_or_compile_runtime() -> std::result::Result<wasmer::Module, String> {
         // Incompatible/corrupt cache (e.g. wasmer upgrade): fall through to
         // recompile and overwrite it below.
     }
-    let module = wts(wasmer::Module::from_binary(engine, RUNTIME_WASM))?;
+    let module = wts(wasmer::Module::from_binary(engine, runtime_blob()))?;
     // Best-effort: persist the compiled artifact for the next process. Write to
     // a temp sibling then rename, so a concurrent reader never sees a partial file.
     if let Ok(bytes) = module.serialize() {
@@ -750,7 +761,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     if bench {
         eprintln!(
             "wasm-jit sim: module fetch — runtime.wasm ({} KB) {:?} (cached/compiled), model.wasm ({} KB) {:?} (join/compile)",
-            RUNTIME_WASM.len() / 1024, rt_compile, model.wasm.len() / 1024, model_compile,
+            runtime_blob().len() / 1024, rt_compile, model.wasm.len() / 1024, model_compile,
         );
     }
 
@@ -761,11 +772,17 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let mut store = wasmer::Store::new(engine.clone());
     let mut imports = wasmer::Imports::new();
     add_host_builtins(&mut store, &mut imports)?;
+    // The interactive (std wasip1) runtime imports `wasi_snapshot_preview1`; serve it
+    // from the same shim the ext-C side module uses, bound to the runtime's memory
+    // (set after instantiation, once the export exists). No-op for the no_std fallback.
+    let rt_wasi_env = wasmer::FunctionEnv::new(&mut store, crate::wasi_shim::Env::new("/"));
+    crate::wasi_shim::add_to_imports(&mut store, &rt_wasi_env, &mut imports);
     let rt_inst = wts(wasmer::Instance::new(&mut store, runtime_module, &imports))?;
     // The generated module imports the runtime's exports under module name "rt".
     imports.register_namespace("rt", rt_inst.exports.iter().map(|(k, v)| (k.clone(), v.clone())));
 
     let memory = wts(rt_inst.exports.get_memory("memory"))?.clone();
+    rt_wasi_env.as_mut(&mut store).set_memory(memory.clone());
 
     // External "C" functions (`ext.*`): resolved by the ModelicaExternalC WASI side
     // module (table blocks / external objects / string scanning). Must be wired

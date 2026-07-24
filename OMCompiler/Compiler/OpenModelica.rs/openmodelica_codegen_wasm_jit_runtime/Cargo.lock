@@ -180,6 +180,7 @@ dependencies = [
  "nalgebra",
  "openmodelica_mat_writer",
  "openmodelica_sim_meta",
+ "rsparse",
 ]
 
 [[package]]
@@ -193,6 +194,12 @@ dependencies = [
  "daskr",
  "libm",
 ]
+
+[[package]]
+name = "rsparse"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d65dc8db760bdc8c94f4163c5d09be710f76fc92a4a1f698c441925db83c09e"
 
 [[package]]
 name = "shlex"

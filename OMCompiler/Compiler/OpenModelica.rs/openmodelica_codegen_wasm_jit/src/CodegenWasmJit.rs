@@ -55,7 +55,8 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_symbolic,
+    SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
+    compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general, function_signature, rt_index, sim_cref_key,
@@ -122,9 +123,10 @@ fn log_stats_block(s: &SolveStats) -> String {
          LOG_STATS         | info    | |   {:5} calls of functionODE\n\
          LOG_STATS         | info    | |   {:5} evaluations of jacobian\n\
          LOG_STATS         | info    | |   {:5} error test failures\n\
-         LOG_STATS         | info    | |   {:5} convergence test failures\n",
+         LOG_STATS         | info    | |   {:5} convergence test failures\n\
+         LOG_STATS         | info    | |   {:5} linear system solves\n",
         s.state_events, s.time_events, s.method, s.steps,
-        s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails,
+        s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails, s.lin_solves,
     )
 }
 
@@ -581,6 +583,13 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     // LOG_STATS / chattering lines). `INIT_OUTPUT` is `None` when init failed.
     let sim_output = format!("{}{extra}", openmodelica_wasi::wasi::take_stdout_capture());
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
+    // C prints the sparse-solver announcements (initializeLinearSystems) ahead of
+    // the init-success line; prepend our pre-rendered copy to the init output.
+    let init_output = if model.sparse_lss_log.is_empty() {
+        init_output
+    } else {
+        Some(format!("{}{}", model.sparse_lss_log, init_output.unwrap_or_default()))
+    };
     (res, init_output, sim_output)
 }
 
@@ -2207,7 +2216,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let zero_crossings = collect_zero_crossings(&sim_code.zeroCrossings)?;
     let relations = collect_relations(&sim_code.relations)?;
     let stateset_scratch_f64 = stateset_scratch_f64(&sim_code.stateSets)?;
-    let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code);
+    // Jacobian scratch region: nonlinear-system slots + torn-linear slots (after).
+    let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code) + lin_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
     // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
     // when-statements inside an algorithm — both need the per-step pre-value save
@@ -2369,6 +2379,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
+    // Same, for torn linear systems that assemble A analytically.
+    build_lin_jac_infos(sim_code, &layout, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
 
     // --- Type section: one type per import, per model function, per equation
@@ -2844,7 +2856,112 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         editable_params,
         var_units,
         meta,
+        sparse_lss_log: build_sparse_lss_log(sim_code),
     })
+}
+
+/// `LOG_STDOUT` prefix for the first line of a message, and the continuation
+/// prefix OMC's `streamPrint` uses for wrapped lines (see the C runtime output).
+const LOG_STDOUT_PREFIX: &str = "LOG_STDOUT        | info    | ";
+const LOG_CONT_PREFIX: &str = "|                 | |       | ";
+
+/// Wrap a `\n`-separated message in the `LOG_STDOUT`/continuation prefixes.
+fn format_log_stdout(msg: &str) -> String {
+    let mut out = String::new();
+    for (i, line) in msg.split('\n').enumerate() {
+        out.push_str(if i == 0 { LOG_STDOUT_PREFIX } else { LOG_CONT_PREFIX });
+        out.push_str(line);
+        out.push('\n');
+    }
+    out
+}
+
+/// Reproduce C's `initializeLinearSystems` sparse-solver announcements
+/// (`linearSystem.c`): for each torn linear system chosen as sparse (by
+/// [`lin_use_sparse`]), one message keyed on why (density and/or size), then one
+/// aggregate flag-hint. Systems are taken across the init + simulation equation
+/// lists, deduplicated and ordered by `indexLinearSystem` (C's array order).
+fn build_sparse_lss_log(sim_code: &SimCode::SimCode) -> String {
+    use crate::CodegenWasmJitFunctions::{lin_use_sparse, LSS_MAX_DENSITY, LSS_MIN_SIZE};
+    // (indexLinearSystem, size, nnz), deduped by index, in index order.
+    let mut seen: HashSet<i32> = HashSet::new();
+    let mut systems: Vec<(i32, usize, usize)> = Vec::new();
+    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+        for e in &eqs {
+            if let SimCode::SimEqSystem::SES_LINEAR { lSystem, .. } = &**e {
+                let size = count(&lSystem.vars) as usize;
+                let nnz = lin_system_nnz(lSystem);
+                if seen.insert(lSystem.indexLinearSystem) {
+                    systems.push((lSystem.indexLinearSystem, size, nnz));
+                }
+            }
+        }
+    };
+    scan(flatten_eqs(&sim_code.parameterEquations));
+    scan(flatten_eqs(&sim_code.initialEquations));
+    scan(flatten_eqs_ll(&sim_code.odeEquations));
+    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
+    systems.sort_by_key(|&(idx, _, _)| idx);
+
+    let mut out = String::new();
+    let mut some_small_density = false;
+    let mut some_big_size = false;
+    for (idx, size, nnz) in &systems {
+        let (size, nnz) = (*size, *nnz);
+        if size == 0 || !lin_use_sparse(size, nnz) {
+            continue;
+        }
+        let density = nnz as f64 / (size * size) as f64;
+        let small_density = density < LSS_MAX_DENSITY;
+        let big_size = size > LSS_MIN_SIZE;
+        let body = if small_density {
+            some_small_density = true;
+            if big_size {
+                some_big_size = true;
+                format!(
+                    "Using sparse solver for linear system {idx},\nbecause density of {density:.3} remains under threshold of {LSS_MAX_DENSITY:.3}\nand size of {size} exceeds threshold of {LSS_MIN_SIZE}."
+                )
+            } else {
+                format!(
+                    "Using sparse solver for linear system {idx},\nbecause density of {density:.3} remains under threshold of {LSS_MAX_DENSITY:.3}."
+                )
+            }
+        } else {
+            some_big_size = true;
+            format!("Using sparse solver for linear system {idx},\nbecause size of {size} exceeds threshold of {LSS_MIN_SIZE}.")
+        };
+        out.push_str(&format_log_stdout(&body));
+    }
+    let hint = if some_small_density {
+        if some_big_size {
+            Some("The maximum density and the minimal system size for using sparse solvers can be\nspecified using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.")
+        } else {
+            Some("The maximum density for using sparse solvers can be specified\nusing the runtime flag '<-lssMaxDensity=value>'.")
+        }
+    } else if some_big_size {
+        Some("The minimal system size for using sparse solvers can be specified\nusing the runtime flag '<-lssMinSize=value>'.")
+    } else {
+        None
+    };
+    if let Some(h) = hint {
+        out.push_str(&format_log_stdout(h));
+    }
+    out
+}
+
+/// The nonzero count of a linear system's matrix `A`, matching C's
+/// `initializeLinearSystems`: `listLength(simJac)` for the non-torn (method-0)
+/// form, else the symbolic Jacobian's sparsity nnz (method 1, torn systems).
+fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
+    let sj = count(&lsystem.simJac) as usize;
+    if sj > 0 {
+        return sj;
+    }
+    lsystem
+        .jacobianMatrix
+        .as_ref()
+        .map(|jm| lst(&jm.sparsity).map(|(_, rows)| lst(rows).count()).sum())
+        .unwrap_or(0)
 }
 
 fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAInfo> {
@@ -3404,13 +3521,16 @@ fn lower_equation(
     }
 }
 
-/// Lower a `SES_LINEAR` (torn) system. The `residual` list is partitioned into
-/// the inner constraint equations (which compute the torn variables from the
-/// iteration unknowns) and the `SES_RESIDUAL` residual expressions; the unknowns
-/// are `lSystem.vars`. The numerical-Jacobian assembly + solve + scatter is in
-/// [`compile_linear_system`]; here we just supply the unknowns, residual
-/// expressions, and a closure that lowers the inner equations (re-invoked for
-/// each residual probe).
+/// Lower a `SES_LINEAR` system. Matching the C runtime, `A` is assembled
+/// symbolically from `simJac` (`(row, col, SES_RESIDUAL(exp))`, 0-based,
+/// column-major) and `b` from `beqs` — `setLinearMatrixA`/`setLinearVectorb` —
+/// rather than by residual probing; [`compile_linear_system_symbolic`] then solves
+/// dense or sparse per the density/size threshold. For a torn system the
+/// `residual` list's non-`SES_RESIDUAL` entries are the inner equations that
+/// recover the non-iteration torn variables, run once at the solution.
+///
+/// The residual-probing path ([`compile_linear_system`]) is the fallback for the
+/// rare system without a usable `simJac`.
 fn lower_linear_system(
     ctx: &mut FnCtx,
     lsystem: &SimCode::LinearSystem,
@@ -3425,44 +3545,99 @@ fn lower_linear_system(
             _ => inner.push(e.clone()),
         }
     }
-    if res_exps.is_empty() {
-        // Non-torn symbolic form: A from `simJac`, b from `beqs` (the C runtime's
-        // setA/setb path). No inner equations — the entries are functions of the
-        // already-computed variables.
-        return lower_linear_system_symbolic(ctx, lsystem);
+    let torn = !res_exps.is_empty();
+    let vars: Vec<Arc<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
+    let n = vars.len();
+
+    // A from simJac, b from beqs. `usable` false if any entry is not an ordinary
+    // scalar residual (e.g. a for-residual we can't index statically).
+    let mut a_entries: Vec<(usize, usize, &Arc<DAE::Exp>)> = Vec::new();
+    let mut usable = true;
+    for entry in lst(&lsystem.simJac) {
+        let (row, col, eq) = entry;
+        match &**eq {
+            E::SES_RESIDUAL { exp, .. } => a_entries.push((*row as usize, *col as usize, exp)),
+            _ => {
+                usable = false;
+                break;
+            }
+        }
     }
-    let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
+    let b_exps: Vec<&Arc<DAE::Exp>> = lst(&lsystem.beqs).collect();
+
+    if usable && !a_entries.is_empty() && b_exps.len() == n {
+        // Torn systems recover their inner variables at the solution; the non-torn
+        // form has none (its `inner` is empty regardless).
+        let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
+            if torn {
+                for eq in &inner {
+                    lower_equation(c, eq, eq_index)?;
+                }
+            }
+            Ok(())
+        };
+        return compile_linear_system_symbolic(ctx, &vars, n, &a_entries, &b_exps, &mut lower_inner, lsystem.index);
+    }
+
+    // Only a torn system supplies the residuals both assembly paths need.
+    if !torn {
+        return Err("CodegenWasmJit: SES_LINEAR has neither a usable simJac nor residual equations");
+    }
+    let use_sparse = lin_torn_use_sparse(lsystem, n);
     let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
         for eq in &inner {
             lower_equation(c, eq, eq_index)?;
         }
         Ok(())
     };
-    compile_linear_system(ctx, &iter_vars, &res_exps, &mut lower_inner)
+
+    // Prefer analytic-Jacobian assembly (C's method 1); probe only when there is no
+    // usable Jacobian (its slots were registered by `build_lin_jac_infos`).
+    if lin_jac_usable(lsystem, res_exps.len()) {
+        let (seed_offs, result_offs) = {
+            let vars = &ctx.sim()?.vars;
+            lin_jac_offsets(lsystem, vars, n)?
+        };
+        let jm = lsystem.jacobianMatrix.as_ref().unwrap();
+        let col = lst(&jm.columns).next().unwrap();
+        let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
+        let column_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
+        let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
+            for eq in &constant_eqns { lower_equation(c, eq, eq_index)?; }
+            Ok(())
+        };
+        let mut lower_column = |c: &mut FnCtx| -> Result<()> {
+            for eq in &column_eqns { lower_equation(c, eq, eq_index)?; }
+            Ok(())
+        };
+        // Sparse: assemble straight into CSC (no dense n² buffer) when the pattern
+        // remaps cleanly to res_index rows; otherwise dense A + runtime nonzero scan.
+        if use_sparse {
+            if let Some((colptr, rowidx)) = lin_jac_csc_pattern(lsystem, n) {
+                return compile_linear_system_analytic_csc(
+                    ctx, lsystem.index, &vars, &res_exps, &seed_offs, &result_offs, &colptr, &rowidx,
+                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                );
+            }
+        }
+        return compile_linear_system_analytic(
+            ctx, &vars, &res_exps, &seed_offs, &result_offs,
+            &mut lower_inner, &mut lower_constant, &mut lower_column, use_sparse,
+        );
+    }
+
+    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse)
 }
 
-/// Lower a non-torn `SES_LINEAR` system given symbolically as `A x = b`, where
-/// `A` comes from `simJac` (a sparse list of `(row, col, SES_RESIDUAL(exp))`,
-/// 0-based, column-major) and `b` from `beqs` (one expression per row). Mirrors
-/// the C `setLinearMatrixA`/`setLinearVectorb` + `dgesv` path: assemble A and b
-/// (both functions of already-solved variables), solve, and scatter into `vars`.
-fn lower_linear_system_symbolic(
-    ctx: &mut FnCtx,
-    lsystem: &SimCode::LinearSystem,
-) -> Result<()> {
-    use SimCode::SimEqSystem as E;
-    let vars: Vec<Arc<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
-    let n = vars.len();
-    let mut a_entries: Vec<(usize, usize, &Arc<DAE::Exp>)> = Vec::new();
-    for entry in lst(&lsystem.simJac) {
-        let (row, col, eq) = entry;
-        match &**eq {
-            E::SES_RESIDUAL { exp, .. } => a_entries.push((*row as usize, *col as usize, exp)),
-            other => return Err("CodegenWasmJit: SES_LINEAR simJac entry is not SES_RESIDUAL"),
-        }
+/// Whether a torn linear system uses the sparse solver (C's density/size
+/// threshold). `nnz` from `lin_system_nnz` so it agrees with the log message.
+fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
+    use crate::CodegenWasmJitFunctions::lin_use_sparse;
+    if n == 0 {
+        return false;
     }
-    let b_exps: Vec<&Arc<DAE::Exp>> = lst(&lsystem.beqs).collect();
-    compile_linear_system_symbolic(ctx, &vars, n, &a_entries, &b_exps, lsystem.index)
+    let nnz = lin_system_nnz(lsystem);
+    nnz > 0 && lin_use_sparse(n, nnz)
 }
 
 
@@ -3782,6 +3957,16 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(col, n).is_some()
 }
 
+/// Torn linear system usable for analytic assembly: square Jacobian with one seed
+/// per iteration variable and `JAC_VAR` results covering every residual row
+/// (`n_res` = number of `SES_RESIDUAL`). The `nls_jac_usable` analogue for linear.
+fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: usize) -> bool {
+    let Some(jm) = &lsystem.jacobianMatrix else { return false };
+    let Some(col) = lst(&jm.columns).next() else { return false };
+    let n = count(&lsystem.vars) as usize;
+    n > 0 && n == n_res && count(&jm.seedVars) as usize == n && nls_jac_result_rows(col, n).is_some()
+}
+
 /// Total f64 scratch slots the NLS analytic Jacobians need: seeds + column
 /// variables per usable system. Scans a superset of the systems
 /// [`collect_nls_jobs`] registers, so the region is always large enough.
@@ -3855,6 +4040,169 @@ fn build_nls_jac_infos(
         infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
     }
     Ok(infos)
+}
+
+/// Number of scalar `SES_RESIDUAL` in a linear system (its `A x = b` row count).
+fn lin_n_res(lsystem: &SimCode::LinearSystem) -> usize {
+    use SimCode::SimEqSystem as E;
+    lst(&lsystem.residual).filter(|e| matches!(&***e, E::SES_RESIDUAL { .. })).count()
+}
+
+/// Usable torn linear systems, deduped by index. `lin_jac_scratch_f64` (reserve)
+/// and `build_lin_jac_infos` (register) both call this so they agree on the set.
+fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem>> {
+    use SimCode::SimEqSystem as E;
+    let mut seen: HashSet<i32> = HashSet::new();
+    let mut out: Vec<Arc<SimCode::LinearSystem>> = Vec::new();
+    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+        for e in &eqs {
+            if let E::SES_LINEAR { lSystem, .. } = &**e {
+                if lSystem.tornSystem && seen.insert(lSystem.index) && lin_jac_usable(lSystem, lin_n_res(lSystem)) {
+                    out.push(lSystem.clone());
+                }
+            }
+        }
+    };
+    scan(flatten_eqs(&sim_code.parameterEquations));
+    scan(flatten_eqs(&sim_code.initialEquations));
+    scan(flatten_eqs(&sim_code.initialEquations_lambda0));
+    scan(flatten_eqs_ll(&sim_code.odeEquations));
+    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
+    scan(flatten_eqs(&sim_code.allEquations));
+    out
+}
+
+/// f64 scratch slots the torn-linear analytic Jacobians need: seeds + all column
+/// variables per usable system. Reserved after the NLS portion of the Jacobian
+/// scratch region.
+fn lin_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
+    let mut total = 0u32;
+    for sys in lin_jac_systems(sim_code) {
+        let jm = sys.jacobianMatrix.as_ref().unwrap();
+        let col = lst(&jm.columns).next().unwrap();
+        total += count(&jm.seedVars) as u32 + count(&col.columnVars) as u32;
+    }
+    total
+}
+
+/// Register each torn-linear system's Jacobian seed/column-result crefs in the
+/// Jacobian scratch region, starting after the NLS portion (`nls_jac_scratch_f64`).
+/// The column equations then resolve their `$SEED`/`$pDER` slots when lowered, and
+/// [`lin_jac_offsets`] reads the same slots back for assembly.
+fn build_lin_jac_infos(
+    sim_code: &SimCode::SimCode,
+    layout: &SimLayout,
+    var_map: &mut SimVarMap,
+) -> Result<()> {
+    let mut cursor = layout.nls_jac_off + nls_jac_scratch_f64(sim_code) * 8;
+    for sys in lin_jac_systems(sim_code) {
+        let jm = sys.jacobianMatrix.as_ref().unwrap();
+        let col = lst(&jm.columns).next().unwrap();
+        for sv in lst(&jm.seedVars).chain(lst(&col.columnVars)) {
+            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+            cursor += 8;
+        }
+    }
+    Ok(())
+}
+
+/// Seed slots (in `seedVars`/column order) and result slots (at residual row via
+/// `jac_result_row`) for a torn-linear Jacobian, read from the slots
+/// `build_lin_jac_infos` registered. Feeds `compile_linear_system_analytic`.
+fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &HashMap<String, SimSlot>, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let jm = lsystem.jacobianMatrix.as_ref().ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
+    let col = lst(&jm.columns).next().ok_or("CodegenWasmJit: torn-linear Jacobian has no column")?;
+    let lookup = |cr: &Arc<DAE::ComponentRef>| -> Result<u32> {
+        let key = sim_cref_key(cr)?;
+        Ok(vars.get(&key).ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?.off)
+    };
+    let seed_offs: Vec<u32> = lst(&jm.seedVars).map(|sv| lookup(&sv.name)).collect::<Result<_>>()?;
+    let mut result_offs = vec![u32::MAX; n];
+    for sv in lst(&col.columnVars) {
+        if matches!(sv.varKind, VarKind::JAC_VAR) {
+            let row = jac_result_row(&sv.name).filter(|&r| r < n)
+                .ok_or("CodegenWasmJit: torn-linear Jacobian result var has no row index")?;
+            result_offs[row] = lookup(&sv.name)?;
+        }
+    }
+    if seed_offs.len() != n || result_offs.iter().any(|&o| o == u32::MAX) {
+        return Err("CodegenWasmJit: torn-linear Jacobian seed/result mismatch");
+    }
+    Ok((seed_offs, result_offs))
+}
+
+/// Accumulate into `dep[lhs]` the seed columns that `eq`'s RHS depends on, for the
+/// [`lin_jac_csc_pattern`] dataflow: a seed cref contributes its own column, any
+/// other cref contributes its already-computed `dep` set (the column equations are
+/// in dependency order). Only `SES_SIMPLE_ASSIGN` is handled; anything else -> None.
+fn csc_accum_dep(
+    eq: &Arc<SimCode::SimEqSystem>,
+    seed_col: &HashMap<String, usize>,
+    dep: &mut HashMap<String, Vec<usize>>,
+) -> Option<()> {
+    use SimCode::SimEqSystem as E;
+    let E::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { return None };
+    let mut s: Vec<usize> = Vec::new();
+    let crefs = openmodelica_frontend_base::Expression::extractCrefsFromExp(exp.clone()).ok()?;
+    for cr in &*crefs {
+        let k = sim_cref_key(cr).ok()?;
+        if let Some(&c) = seed_col.get(&k) {
+            if !s.contains(&c) { s.push(c); }
+        } else if let Some(ds) = dep.get(&k) {
+            for &c in ds { if !s.contains(&c) { s.push(c); } }
+        }
+    }
+    dep.insert(sim_cref_key(cref).ok()?, s);
+    Some(())
+}
+
+/// CSC pattern (`colptr`, `rowidx`, in `res_index` rows / iteration-variable cols)
+/// of a torn-linear system's `A`, derived by propagating seed dependencies through
+/// the Jacobian column equations: `A[row][col] != 0` iff the residual `row`'s
+/// derivative depends on seed `col`. This is the true sparsity in the assembler's
+/// own row order — the Jacobian's stored `sparsity` is in a dependent-var order
+/// that does not map to `res_index`. Returns `None` for any unsupported equation
+/// (caller falls back to dense assembly).
+fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> Option<(Vec<i32>, Vec<i32>)> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let jm = lsystem.jacobianMatrix.as_ref()?;
+    let col = lst(&jm.columns).next()?;
+    let mut seed_col: HashMap<String, usize> = HashMap::new();
+    for (j, sv) in lst(&jm.seedVars).enumerate() {
+        seed_col.insert(sim_cref_key(&sv.name).ok()?, j);
+    }
+    let mut dep: HashMap<String, Vec<usize>> = HashMap::new();
+    for eq in lst(&col.constantEqns) {
+        csc_accum_dep(eq, &seed_col, &mut dep)?;
+    }
+    for eq in lst(&col.columnEqns) {
+        csc_accum_dep(eq, &seed_col, &mut dep)?;
+    }
+    // Column c (iteration var) gets residual row r whenever result r depends on seed c.
+    let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
+    for sv in lst(&col.columnVars) {
+        if !matches!(sv.varKind, VarKind::JAC_VAR) {
+            continue;
+        }
+        let r = jac_result_row(&sv.name).filter(|&r| r < n)?;
+        if let Some(ds) = dep.get(&sim_cref_key(&sv.name).ok()?) {
+            for &c in ds {
+                cols[c].push(r as i32);
+            }
+        }
+    }
+    let mut colptr = vec![0i32; n + 1];
+    let mut rowidx = Vec::new();
+    for c in 0..n {
+        cols[c].sort_unstable();
+        rowidx.extend_from_slice(&cols[c]);
+        colptr[c + 1] = colptr[c] + cols[c].len() as i32;
+    }
+    if rowidx.is_empty() {
+        return None;
+    }
+    Some((colptr, rowidx))
 }
 
 /// Build the `residual(sim_data, x, r)` and `load(sim_data, x)` callback
