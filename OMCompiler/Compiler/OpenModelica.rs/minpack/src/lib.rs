@@ -92,7 +92,9 @@ pub fn enorm(x: &[f64]) -> f64 {
 }
 
 /// Forward-difference Jacobian, dense (`ml+mu+1 >= n`) path. `fjac` is filled
-/// column-major; `eval(x, f)` computes the residual.
+/// column-major; `eval(x, f)` computes the residual. The perturbation matches the C
+/// runtime's `getNumericalJacobian` (floored at `sqrt(epsfcn)`, signed by `fvec[j]`),
+/// not stock MINPACK's `eps*|x|`, which stalls on systems with a huge start residual.
 fn fdjac1(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     n: usize,
@@ -102,13 +104,16 @@ fn fdjac1(
     epsfcn: f64,
     wa1: &mut [f64],
 ) {
-    let eps = sqrt(fmax(epsfcn, EPSMCH));
+    let delta_h = sqrt(fmax(epsfcn, EPSMCH));
     for j in 0..n {
         let temp = x[j];
-        let mut h = eps * abs(temp);
-        if h == 0.0 {
-            h = eps;
+        let delta_hhh = epsfcn * fvec[j];
+        let mut h = fmax(delta_h * fmax(abs(temp), abs(delta_hhh)), delta_h);
+        if fvec[j] < 0.0 {
+            h = -h;
         }
+        // Force h to the representable difference, as C does (`x+h-x`).
+        h = (temp + h) - temp;
         x[j] = temp + h;
         eval(x, wa1);
         x[j] = temp;

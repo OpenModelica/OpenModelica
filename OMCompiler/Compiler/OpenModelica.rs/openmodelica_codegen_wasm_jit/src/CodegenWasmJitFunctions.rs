@@ -385,6 +385,9 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
     ("rt_delay_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
     ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
+    ("rt_nls_recovering", &[], &[WTy::I32]),
+    ("rt_nls_note_assert", &[], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -2538,6 +2541,17 @@ fn emit_assert(
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::End);
         return Ok(());
+    }
+    // In a nonlinear-solver residual, note the failed assert and return so the solver
+    // backs off (C's ERROR_NONLINEARSOLVER) instead of trapping. Only in a void
+    // function (residuals are void) — a bare `return` in a value-returning function is
+    // invalid wasm, and such a function is not an NLS residual anyway.
+    if ctx.outputs.is_empty() {
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        ctx.emit(we::Instruction::Return);
+        ctx.emit(we::Instruction::End);
     }
     let mw = compile_exp(ctx, msg)?; // owned String handle
     if mw != WTy::I32 {
