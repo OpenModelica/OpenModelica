@@ -203,6 +203,7 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
 pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u32) -> i32 {
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
+    crate::reset_lin_solves();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
     let model = match openmodelica_sim_meta::decode(bytes) {
@@ -318,6 +319,7 @@ pub extern "C" fn rt_sim_stat(which: u32) -> u64 {
         4 => s.stats.conv_test_fails,
         5 => s.stats.state_events,
         6 => s.stats.time_events,
+        7 => crate::lin_solves(),
         _ => 0,
     })
 }

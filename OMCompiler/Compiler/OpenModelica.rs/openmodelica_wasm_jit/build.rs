@@ -54,6 +54,7 @@ fn main() {
     // invocation (the JIT build short-circuits on its own cache/override).
     build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
     build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
+    build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
     build_external_c_wasm(&crate_dir, &out_dir);
     build_fmi3_me_adapter(&crate_dir, &out_dir);
 }
@@ -413,7 +414,14 @@ fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, ha
         return;
     }
 
-    match build_runtime_wasm(runtime_dir, out_dir, "wasm32-wasip1") {
+    match build_runtime_wasm_named(
+        runtime_dir,
+        out_dir,
+        "wasm32-wasip1",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "runtime-target",
+        &["--no-default-features", "--features", "standalone"],
+    ) {
         Ok(produced) => {
             copy(&produced, &dest);
             std::fs::write(&stamp, hash).expect("write runtime_wasip1.wasm.hash");
@@ -449,6 +457,69 @@ fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, ha
 /// build's lock, and scrubs host `RUSTFLAGS`/codegen-backend settings (the host
 /// workspace selects the cranelift backend, which cannot target wasm — the
 /// runtime must build with the default LLVM backend).
+/// Build + embed the `wasm32-wasip1` **interactive** runtime (`runtime_wasip1_
+/// interactive.wasm`): the crate with `--features session` (host-driven in-wasm
+/// driver) so it exports `rt_*`+`memory`+`__indirect_function_table` (the model
+/// imports them) and imports only `wasi_snapshot_preview1` — the std runtime the
+/// sparse solver (`rsparse`) needs, instantiated with the existing `wasi_shim`.
+/// Native omc adds `host_lin_solve` (delegate the solve to the host); web omc
+/// omits it and solves in-wasm.
+fn build_wasip1_interactive_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, hash: &str) {
+    let dest = out_dir.join("runtime_wasip1_interactive.wasm");
+    let stamp = out_dir.join("runtime_wasip1_interactive.wasm.hash");
+
+    // omc-on-wasm builds this too (Part A2 uses it via wasmer-js); no wasm-merge is
+    // needed, unlike the standalone variant, so it is not skipped for wasm32 omc.
+    if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1_INTERACTIVE") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1_INTERACTIVE");
+
+    // Native wasmtime: lean host-delegating blob (`host_lin_solve`), no in-wasm
+    // driver/solver linked in. Web (wasm32) and native-wasmer solve in-wasm
+    // (`session,inwasm_solve`) — the wasmer host has no native solver. `inwasm_driver`
+    // opts the native build into the in-wasm variant for OMC_WASM_INWASM_DRIVER=1.
+    let native = std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("wasm32");
+    let wasmer = std::env::var("CARGO_FEATURE_ENGINE_WASMER").is_ok();
+    let inwasm_driver = std::env::var("CARGO_FEATURE_INWASM_DRIVER").is_ok();
+    let features = if native && !wasmer && !inwasm_driver {
+        "host_lin_solve"
+    } else {
+        "session,inwasm_solve"
+    };
+    // The feature set is part of the cache key: toggling the engine must rebuild.
+    let stamp_val = format!("{hash}:{features}");
+
+    if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(stamp_val.as_str()) {
+        return;
+    }
+
+    match build_runtime_wasm_named(
+        runtime_dir,
+        out_dir,
+        "wasm32-wasip1",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "runtime-interactive-target",
+        &["--no-default-features", "--features", features],
+    ) {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            std::fs::write(&stamp, &stamp_val).expect("write runtime_wasip1_interactive.wasm.hash");
+        }
+        Err(e) => {
+            // Hard error, not a silent fallback: the no_std runtime would dense-solve.
+            let _ = crate_dir;
+            panic!(
+                "failed to build the wasip1 interactive runtime: {e}\n\
+                 Install the target with `rustup target add wasm32-wasip1`, or set \
+                 OMC_WASM_RUNTIME_WASIP1_INTERACTIVE=/path/to/runtime_wasip1_interactive.wasm."
+            );
+        }
+    }
+}
+
 fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Result<PathBuf, String> {
     build_runtime_wasm_named(
         runtime_dir,
@@ -456,26 +527,30 @@ fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Resul
         target,
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-target",
+        &[],
     )
 }
 
 /// Compile a wasm-only cdylib crate at `crate_dir` to `target` (release) and
 /// return the produced `<artifact>.wasm`. `target_dir_prefix` isolates its cargo
-/// target dir so parallel variants don't churn each other's cache. Scrubs the
-/// host build's RUSTFLAGS / codegen-backend so the wasm build uses the default
-/// LLVM backend.
+/// target dir so parallel variants don't churn each other's cache. `extra_args`
+/// passes cargo feature flags (e.g. `--no-default-features`). Scrubs the host
+/// build's RUSTFLAGS / codegen-backend so the wasm build uses the default LLVM
+/// backend.
 fn build_runtime_wasm_named(
     crate_dir: &Path,
     out_dir: &Path,
     target: &str,
     artifact: &str,
     target_dir_prefix: &str,
+    extra_args: &[&str],
 ) -> Result<PathBuf, String> {
     let target_dir = out_dir.join(format!("{target_dir_prefix}-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let status = Command::new(cargo)
         .current_dir(crate_dir)
         .args(["build", "--release", "--target", target])
+        .args(extra_args)
         .arg("--target-dir")
         .arg(&target_dir)
         // Don't inherit the host build's flags/backend selection.

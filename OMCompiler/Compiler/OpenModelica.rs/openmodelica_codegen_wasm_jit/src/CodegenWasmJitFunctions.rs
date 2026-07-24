@@ -363,6 +363,15 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Dense linear solve `A x = b` in place (A column-major `n*n` f64 at a_ptr,
     // b `n` f64 at b_ptr; solution overwrites b). Returns 0 ok, 1 singular.
     ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
+    // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
+    // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
+    ("rt_solve_lin_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Solve `A x = b` from dense column-major A via the sparse solver; see
+    // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, n) -> 0 ok / 1 singular.
+    ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // (handle, colptr, rowidx, values, b, n, nnz) -> 0 ok / 1 singular; cached analysis.
+    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // Raw deallocation (frees a block from `rt_alloc`); used to release the
     // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
     ("rt_free", &[WTy::I32], &[]),
@@ -4014,8 +4023,10 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    NlsResidual, compile_linear_system, compile_linear_system_symbolic, emit_nls_jac_body,
-    emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call,
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NlsResidual, compile_linear_system,
+    compile_linear_system_analytic, compile_linear_system_analytic_csc,
+    compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_load_body,
+    emit_nls_residual_body, emit_solve_nls_call, lin_use_sparse,
 };
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {

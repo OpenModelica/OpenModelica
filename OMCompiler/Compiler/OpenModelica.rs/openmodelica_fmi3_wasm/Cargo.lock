@@ -260,13 +260,10 @@ dependencies = [
 name = "openmodelica_codegen_wasm_jit_runtime"
 version = "0.1.0"
 dependencies = [
- "daskr",
  "dlmalloc",
  "libm",
  "minpack",
  "nalgebra",
- "openmodelica_mat_writer",
- "openmodelica_sim_meta",
 ]
 
 [[package]]
@@ -277,10 +274,6 @@ dependencies = [
  "openmodelica_sim_meta",
  "wit-bindgen",
 ]
-
-[[package]]
-name = "openmodelica_mat_writer"
-version = "0.1.0"
 
 [[package]]
 name = "openmodelica_sim_meta"

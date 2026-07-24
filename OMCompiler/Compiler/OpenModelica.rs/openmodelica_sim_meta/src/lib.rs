@@ -292,6 +292,7 @@ pub struct SolveStats {
     pub conv_test_fails: u64,
     pub state_events: u64,
     pub time_events: u64,
+    pub lin_solves: u64,
 }
 
 /// One FMI value reference and the `SimData` slot it names. The value references
