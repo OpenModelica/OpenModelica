@@ -1,0 +1,77 @@
+// name:     cppruntime_constcast
+// keywords: cpp runtime external const cast integer array
+// status:   correct
+// teardown_command: rm -rf cppruntime_constcast.fmu cppruntime_constcast_systemCall.log cppruntime_constcast_res.mat/ cppruntime_constcast-tmp/
+// cflags: -d=-newInst
+//
+// The C++ code generator wraps input Integer array arguments with
+// ConstArray().getData() which returns const int*. External C
+// functions (e.g. ModelicaRandom_xorshift128plus) expect non-const
+// int*, causing compilation errors.
+//
+// This test verifies that const_cast is applied in the generated
+// code, allowing C++ FMUs with external C functions taking Integer
+// arrays as inputs to compile and produce correct results.
+//
+// See #13060
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadString("
+  model cppruntime_constcast
+    Integer state[Modelica.Math.Random.Generators.Xorshift128plus.nState];
+    discrete Real r;
+  initial equation
+    pre(state) = Modelica.Math.Random.Generators.Xorshift128plus.initialState(42, 42);
+  equation
+    when sample(0, 0.1) then
+      (r, state) = Modelica.Math.Random.Generators.Xorshift128plus.random(pre(state));
+    end when;
+  end cppruntime_constcast;
+"); getErrorString();
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+buildModelFMU(cppruntime_constcast, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator cppruntime_constcast.fmu --intervals=2 --stopTime=0.2 --resultFile=\"cppruntime_constcast_res.mat\" --suppressPath=true --tempDir=\"cppruntime_constcast-tmp\"", "cppruntime_constcast_systemCall.log"); getErrorString();
+readFile("cppruntime_constcast_systemCall.log");
+
+val(r, 0.05, "cppruntime_constcast_res.mat");
+val(r, 0.15, "cppruntime_constcast_res.mat");
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "cppruntime_constcast.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "info:    *** FMU Simulation Info ***
+//           - model:     cppruntime_constcast (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  0.200000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    model doesn't contain any continuous state
+// info:    maximum step size for 'cppruntime_constcast.root': 0.002000
+// info:    Result file: cppruntime_constcast_res.mat (bufferSize=1)
+// 
+// [CVODES WARNING]  CVode
+//   At the end of the first step, there are still some root functions identically 0. This warning will not be issued again.
+// 
+// 
+// [CVODES WARNING]  CVode
+//   At the end of the first step, there are still some root functions identically 0. This warning will not be issued again.
+// 
+// info:    Final Statistics for 'cppruntime_constcast.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// 0.17705481746509288
+// 0.7748463214570349
+// endResult
