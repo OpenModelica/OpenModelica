@@ -473,7 +473,12 @@ pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, Strin
     let n_rows = n_steps + 1;
     let t0 = Instant::now();
     let (mut result, driver_label) =
-        sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench)?;
+        match sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(e.to_string());
+            }
+        };
     // The linear solves ran host-side (`rt_host_lin_solve`); the driver's stats
     // don't see them, so surface the host counter for LOG_STATS.
     result.stats.lin_solves = crate::host::lin_solve::count();
@@ -607,7 +612,7 @@ pub fn build_engine(model: &SimModel) -> std::result::Result<(Box<dyn sim_driver
         run_table_probe(&mut store, rt_inst, instance, memory, sim_data, layout.total)?;
     }
 
-    let engine = WasmtimeEngine { store, memory, instance, funcs: HashMap::new() };
+    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new() };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -668,6 +673,7 @@ struct WasmtimeEngine {
     store: Store,
     memory: wasmtime::Memory,
     instance: wasmtime::Instance,
+    rt_inst: wasmtime::Instance,
     funcs: HashMap<String, wasmtime::TypedFunc<u32, ()>>,
 }
 

@@ -582,17 +582,30 @@ fn build_runtime_wasm_named(
 /// (`rt_sim_start failed`), not at build time.
 fn hash_inputs(runtime_dir: &Path) -> (String, Vec<PathBuf>) {
     let mut files = Vec::new();
-    let deps = runtime_dir.parent().expect("crate has a parent dir");
-    for d in [runtime_dir, &deps.join("openmodelica_sim_meta"), &deps.join("openmodelica_mat_writer")] {
-        collect_files(&d.join("src"), &mut files);
+    // Hash the runtime crate and every crate it reaches via `path = "..."` deps,
+    // discovered transitively from the Cargo.toml files: a hardcoded list silently
+    // misses edits to an unlisted path-dep and bakes a stale crate into the wasm.
+    let mut queue = vec![runtime_dir.to_path_buf()];
+    let mut seen: std::collections::BTreeSet<PathBuf> = std::collections::BTreeSet::new();
+    while let Some(dir) = queue.pop() {
+        let key = std::fs::canonicalize(&dir).unwrap_or_else(|_| dir.clone());
+        if !seen.insert(key) {
+            continue;
+        }
+        collect_files(&dir.join("src"), &mut files);
+        let manifest = dir.join("Cargo.toml");
         for m in ["Cargo.toml", "Cargo.lock"] {
-            let p = d.join(m);
+            let p = dir.join(m);
             if p.exists() {
                 files.push(p);
             }
         }
+        for dep in path_deps(&manifest) {
+            queue.push(dir.join(dep));
+        }
     }
     files.sort();
+    files.dedup();
     // Map path -> content, hashed deterministically (FNV-1a over sorted entries).
     let mut entries: BTreeMap<String, Vec<u8>> = BTreeMap::new();
     for f in &files {
@@ -614,6 +627,28 @@ fn hash_inputs(runtime_dir: &Path) -> (String, Vec<PathBuf>) {
         feed(&[0]);
     }
     (format!("{h:016x}"), files)
+}
+
+/// Relative `path = "..."` values from a Cargo.toml (local path dependencies).
+fn path_deps(manifest: &Path) -> Vec<String> {
+    let Ok(text) = std::fs::read_to_string(manifest) else { return Vec::new() };
+    let mut out = Vec::new();
+    for line in text.lines() {
+        let Some(rest) = line.split_once("path").and_then(|(_, r)| {
+            let r = r.trim_start();
+            r.strip_prefix('=').map(|r| r.trim_start())
+        }) else {
+            continue;
+        };
+        let bytes = rest.as_bytes();
+        if bytes.first() != Some(&b'"') {
+            continue;
+        }
+        if let Some(end) = rest[1..].find('"') {
+            out.push(rest[1..=end].to_string());
+        }
+    }
+    out
 }
 
 fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) {

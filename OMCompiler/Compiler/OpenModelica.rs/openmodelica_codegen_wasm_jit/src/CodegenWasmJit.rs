@@ -704,9 +704,15 @@ mod session {
                 Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model)?))
             } else {
                 let (mut engine, sim_data) = sim_runtime::build_engine(&model)?;
-                let (driver, _label) =
+                let made =
                     sim_driver::make_driver(&mut *engine, &model.meta, sim_data, model.method.as_str())
-                        .map_err(|err| sim_driver::enrich_trap(&mut *engine, err))?;
+                        .map_err(|err| sim_driver::enrich_trap(&mut *engine, err));
+                let (driver, _label) = match made {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(e.to_string());
+                    }
+                };
                 Ok(SessionBackend::Host { engine, driver, sim_data })
             }
         })();
@@ -3708,17 +3714,14 @@ fn build_state_set_infos(
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
 
-        // A is a flat `nStates*nCandidates` integer array named `A[k]` (1-based,
-        // row-major: A[(row-1)*nCandidates + col]); a_offs stays in that order.
+        // `$STATESET.A` is an `nStates × nCandidates` integer selection matrix.
+        // a_offs is row-major (the driver reads `a_offs[row*nc+col]`).
         let a_base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
         let a_base = sim_cref_key(&a_base_cref)?;
         let mut a_offs = Vec::new();
         for row in 1..=n_states {
             for c in 1..=n_candidates {
-                let key = format!("{a_base}[{}]", (row - 1) * n_candidates + c);
-                let slot = var_map
-                    .vars
-                    .get(&key)
+                let slot = stateset_a_slot(var_map, &a_base, row, c, n_candidates)
                     .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
                 a_offs.push(slot.off);
             }
@@ -3758,6 +3761,22 @@ fn build_stateset_jac_fn(
     build_eq_fn("functionStateSetJacobians", eqs, var_map, eq_index, by_name, literals)
 }
 
+/// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend
+/// scalarizes `$STATESET{n}.A` either 2D (key `A[row][col]`) or flat row-major (key
+/// `A[k]`, `k = (row-1)*nCandidates + col`); try the 2D key first, then the flat one.
+fn stateset_a_slot<'a>(
+    var_map: &'a SimVarMap,
+    a_base: &str,
+    row: u32,
+    col: u32,
+    n_candidates: u32,
+) -> Option<&'a SimSlot> {
+    var_map.vars.get(&format!("{a_base}[{row}][{col}]")).or_else(|| {
+        let k = (row - 1) * n_candidates + col;
+        var_map.vars.get(&format!("{a_base}[{k}]"))
+    })
+}
+
 /// Byte offsets of the diagonal `$STATESET.A[n,n]` integer slots for every state
 /// set, so [`FnCtx::emit_stateset_diag_init`] can seed an identity state
 /// selection before initialisation (C's `initializeStateSetPivoting`). The A
@@ -3774,14 +3793,11 @@ fn stateset_diag_offsets(
     let mut offs = Vec::new();
     for set in lst(state_sets) {
         // `crA` names the first `A` element; strip its subscripts to the base `A`.
-        // A is flat row-major, so the diagonal A[n,n] is `A[(n-1)*nCandidates + n]`.
         let base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
         let base = sim_cref_key(&base_cref)?;
-        for n in 1..=set.nStates {
-            let key = format!("{base}[{}]", (n - 1) * set.nCandidates + n);
-            let slot = var_map
-                .vars
-                .get(&key)
+        let n_candidates = set.nCandidates.max(0) as u32;
+        for n in 1..=set.nStates.max(0) as u32 {
+            let slot = stateset_a_slot(var_map, &base, n, n, n_candidates)
                 .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
             if slot.wty != WTy::I32 {
                 return Err("CodegenWasmJit: state-set matrix entry is not an Integer variable");
