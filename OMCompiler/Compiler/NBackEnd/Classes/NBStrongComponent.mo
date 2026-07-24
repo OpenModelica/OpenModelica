@@ -60,7 +60,7 @@ protected
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator, IfEquationBody};
   import Initialization = NBInitialization;
   import Inline = NBInline;
   import NBJacobian.JacobianType;
@@ -677,13 +677,34 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   protected
-    Pointer<Equation> eqn = Slice.getT(eqn_slice);
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Equation eqn = Pointer.access(eqn_ptr);
+    IfEquationBody body;
+    function simpleSolvedEquation
+      input Equation eqn;
+      input Pointer<Equation> eqn_ptr;
+      output StrongComponent comp;
+    algorithm
+      comp := match Equation.getLHS(eqn)
+        local
+          Expression lhs;
+        case SOME(lhs as Expression.CREF()) then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(lhs), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+        else MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
+      end match;
+    end simpleSolvedEquation;
   algorithm
-    comp := match Pointer.access(eqn)
-      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+    comp := match eqn
+      case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr); 
+      case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+      case Equation.IF_EQUATION(body = body) algorithm
+        if IfEquationBody.isSplit(body) then
+          comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+        else
+          // ToDo: equation needs to be named
+          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(Equation.makeAlgorithm(Equation.toStatement(eqn), Equation.isInitial(eqn_ptr)), {}), NBSolve.Status.EXPLICIT);
+        end if;
+      then comp;
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
