@@ -1171,6 +1171,13 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     } else {
         ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
     }
+    // `relations[]` base + count and the mixed-system flag (`rt_solve_nls`).
+    let (rel_off, n_rel) = (ctx.sim()?.relations_off, ctx.sim()?.n_relations);
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Const(rel_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(n_rel as i32));
+    ctx.emit(I::I32Const(job.mixed as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

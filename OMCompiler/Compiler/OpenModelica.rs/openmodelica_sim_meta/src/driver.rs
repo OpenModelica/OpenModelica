@@ -684,6 +684,37 @@ pub fn take_assert_warnings() -> Vec<String> {
     assert_warn_store::take()
 }
 
+/// Reported-once latch for the fired `terminate(...)`.
+mod term_report {
+    #[cfg(feature = "std")]
+    mod imp {
+        use core::cell::Cell;
+        std::thread_local! {
+            static DONE: Cell<bool> = const { Cell::new(false) };
+        }
+        pub fn reset() {
+            DONE.with(|d| d.set(false));
+        }
+        pub fn mark() -> bool {
+            DONE.with(|d| !d.replace(true))
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<bool>);
+        unsafe impl Sync for Store {}
+        static DONE: Store = Store(UnsafeCell::new(false));
+        pub fn reset() {
+            unsafe { *DONE.0.get() = false };
+        }
+        pub fn mark() -> bool {
+            unsafe { !core::mem::replace(&mut *DONE.0.get(), true) }
+        }
+    }
+    pub use imp::{mark, reset};
+}
+
 /// Format `%f`-style (C's `%f`: 6 fractional digits), for the assertion time value.
 fn format_f(v: f64) -> String {
     alloc::format!("{v:.6}")
@@ -774,6 +805,7 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     init_report::set_homotopy_steps(0);
     assert_warn_store::reset();
+    term_report::reset();
     e.call1("functionParameters", sim_data)?;
     // Params first (a start expression may read one), then fill start slots, then
     // start overrides (replacing the just-computed start).
@@ -845,9 +877,30 @@ fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &S
     Ok(())
 }
 
-/// True if `terminate()` raised the `SimData` flag during the last step.
+/// True if `terminate()` raised the `SimData` flag during the last step. The
+/// first observation reports it (C's `checkSimulationTerminated`).
 fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
-    Ok(read_i32(e, sim_data + layout.terminate_off)? != 0)
+    if read_i32(e, sim_data + layout.terminate_off)? == 0 {
+        return Ok(false);
+    }
+    if term_report::mark() {
+        let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
+        let msg = read_rt_string(e, w(0)?)?;
+        let file = read_rt_string(e, w(1)?)?;
+        let mut line = String::new();
+        if !file.is_empty() {
+            let ro = if w(6)? != 0 { "readonly" } else { "writable" };
+            line = alloc::format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?);
+        }
+        line.push_str(&alloc::format!(
+            "{}Simulation call terminate() at time {}\n{}Message : {msg}",
+            log_prefix("LOG_STDOUT", "info"),
+            format_f(read_f64(e, sim_data + TIME_OFF)?),
+            log_prefix("|", "|"),
+        ));
+        chatter_store::push(line);
+    }
+    Ok(true)
 }
 
 /// Emit one result row from SimData at `time`, recomputing `functionODE`/
