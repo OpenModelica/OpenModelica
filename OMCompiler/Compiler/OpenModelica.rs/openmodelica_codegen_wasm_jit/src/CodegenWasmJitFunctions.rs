@@ -3334,13 +3334,10 @@ fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
-/// If `cr` is `base[i1,…,ik, :, …, :]` — leading `INDEX` subscripts followed by
-/// only whole-dimension subscripts, subscripts on the final component and every
-/// ancestor unsubscripted — return `(base key, leading index expressions)`. The
-/// selected sub-array is a contiguous block in the row-major `SimData` layout
-/// (the trailing whole dimensions span the fastest-varying axes). Returns `None`
-/// for a plain scalar (no `:`), a `SLICE`, or an `INDEX` after a whole dim (that
-/// selection is not contiguous).
+/// `base[i1,…,ik, :, …, :]` (leading `INDEX` subscripts, then whole dims; final
+/// component subscripted, ancestors bare) -> `(base key, leading index exprs)`.
+/// Such a selection is a contiguous row-major block. `None` for a scalar, a
+/// `SLICE`, or an `INDEX` after a whole dim.
 fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -3376,10 +3373,8 @@ fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
-/// If `cr` is `base[subs]` — subscripts on the final component, every ancestor
-/// unsubscripted — return `(base key, final subscript list)`. Unlike
-/// [`sim_slice_of`] the subscripts are returned raw (any `INDEX`/`SLICE`/whole
-/// mix), for the general gather-then-slice read path.
+/// `base[subs]` (final component subscripted, ancestors bare) -> `(base key, raw
+/// subscript list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
 fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -3406,11 +3401,9 @@ fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<Lis
     }
 }
 
-/// Push the byte address of the first element of the contiguous sub-array
-/// `group[leading, :, …]` (leading 1-based indices, remaining axes whole) and
-/// return `(trailing_element_count, element_stride)`. The trailing dimensions
-/// are the fastest-varying axes, so the block spans `trailing_total * stride`
-/// contiguous bytes from this address.
+/// Push the byte address of element `group[leading, 1, …]` and return
+/// `(trailing_element_count, element_stride)`; the block spans
+/// `trailing_count * stride` contiguous bytes from there.
 fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<(u32, u32)> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let k = leading.len();
@@ -3650,17 +3643,15 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
         }
     }
-    // Contiguous sub-array slice `base[i,…,:]` (dynamic index + trailing whole
-    // dims): gather the row-major block into a runtime array.
+    // Contiguous slice `base[i,…,:]`: gather the row-major block.
     if let Some((base, leading)) = sim_slice_of(cref)? {
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
             emit_sim_slice_gather(ctx, &group, &leading)?;
             return Ok(Some(WTy::I32));
         }
     }
-    // Any other slice `base[subs]` (a column `[:,1]`, a strided range, …): gather
-    // the whole array and apply the runtime slice, which handles arbitrary
-    // `INDEX`/`SLICE`/whole subscript mixes.
+    // Any other slice (a column `[:,1]`, a strided range): gather the whole array
+    // and let the runtime slice handle it.
     if let Some((base, subs)) = sim_array_base_subs(cref)? {
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
             if !is_scalar_index(&subs, group.dims.len() as u32) {
@@ -3789,8 +3780,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
             }
         }
     }
-    // Contiguous sub-array slice `base[i,…,:] := arr` (dynamic index + trailing
-    // whole dims): scatter the runtime array into the row-major block.
+    // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
     if let Some((base, leading)) = sim_slice_of(cref)? {
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
             emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
@@ -4024,8 +4014,8 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    compile_linear_system, compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_load_body,
-    emit_nls_residual_body, emit_solve_nls_call,
+    NlsResidual, compile_linear_system, compile_linear_system_symbolic, emit_nls_jac_body,
+    emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call,
 };
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
@@ -5229,6 +5219,19 @@ fn compile_math_builtin(
             ctx.emit(we::Instruction::I32Sub);
             Ok(SigTy::Int)
         }
+        // `$_signNoNull(x)` = (x >= 0.0 ? 1.0 : -1.0); a division-guard helper the
+        // backend's `ExpressionSolve` emits when solving torn equations.
+        "$_signNoNull" => {
+            need_args(&argv, 1, name)?;
+            ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+            ctx.emit(we::Instruction::F64Const((-1.0f64).into()));
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::Select);
+            Ok(SigTy::Real)
+        }
         // Number → String formatting via the runtime: a scalar becomes a freshly
         // allocated (refcount 1) String handle. The typed builtin names are
         // unambiguous; `String(x)` dispatches on the argument's Modelica type.
@@ -5474,10 +5477,8 @@ fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>]) -> Result<SigTy
     // stringify the index. Carrying enum names would need the literal table
     // threaded through from the DAE type into the sidecar/runtime.
     if exp_is_enumeration(argv[0]) {
-        // `String(enum, format)`: the printf-directive variant formats the 1-based
-        // Integer index (C's `String(x, "d")`), *not* the literal name — and unlike
-        // the name path it never traps on an out-of-range value (e.g. a min/max
-        // warning-assert message built while an enum is transiently 0).
+        // `String(enum, format)` formats the 1-based index (C's `String(x, "d")`),
+        // not the name, and does not trap on an out-of-range value.
         if argv.len() == 2 && exp_sigty(argv[1])? == SigTy::Str {
             return emit_string_format(ctx, argv[0], argv[1], &SigTy::Int);
         }

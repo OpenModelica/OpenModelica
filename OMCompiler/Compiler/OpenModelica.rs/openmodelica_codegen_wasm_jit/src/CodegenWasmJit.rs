@@ -56,7 +56,7 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_symbolic,
-    emit_nls_load_body, emit_nls_jac_body,
+    NlsResidual, emit_nls_load_body, emit_nls_jac_body,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general, function_signature, rt_index, sim_cref_key,
 };
@@ -2251,8 +2251,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         samples.iter().enumerate().map(|(k, s)| (s.index, k as u32)).collect();
     var_map.sample_map = Arc::new(sample_map);
     var_map.sample_active_off = layout.sample_active_off;
-    // Delay-expression buffer count (`maxDelayedIndex + 1`, 0 when the model has
-    // no `delay(...)`), baked into `functionInitDelay`'s `rt_delay_init` call.
+    // Delay-buffer count (0 when the model has no `delay(...)`).
     var_map.n_delays = (sim_code.delayedExps.maxDelayedIndex + 1).max(0) as u32;
 
     // State sets: register the Jacobian seed/result crefs at the scratch region
@@ -2262,12 +2261,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Index -> equation map (for SES_ALIAS, which re-runs another equation by
     // index). An alias may point at an equation defined in a different system
     // list than the one being lowered (e.g. a parameter-equation alias to an
-    // initial equation), so index every list. `eqFunction_<n>` is emitted once in
-    // the C target and shared; here the target equation is inlined.
+    // initial equation), or at an equation nested inside a torn linear/nonlinear
+    // (or mixed / if-) system, so index every list recursively. `eqFunction_<n>`
+    // is emitted once in the C target and shared; here the target is inlined.
     let mut eq_index: HashMap<i32, Arc<SimCode::SimEqSystem>> = HashMap::new();
-    let mut index_list = |eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>| {
+    let index_list = |eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>| {
         for e in lst(eqs) {
-            idx.entry(eq_index_of(e)).or_insert_with(|| e.clone());
+            index_eq_recursive(e, idx);
         }
     };
     index_list(&sim_code.allEquations, &mut eq_index);
@@ -2500,7 +2500,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     bodies.push(build_eq_fn("odeEquations", ode_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
     bodies.push(build_eq_fn_with_prelude("algebraicEquations", &[], algebraic_eqs, &var_map, &eq_index, &by_name, &mut literals, &save_pre, &[])?);
     // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
-    bodies.push(build_init_start_values_fn(&states, &layout, &var_map, &by_name, &mut literals)?);
+    let real_algs: Vec<&SimCodeVar::SimVar> =
+        lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
+    bodies.push(build_init_start_values_fn(&states, &real_algs, &layout, &var_map, &by_name, &mut literals)?);
     // The integrator loop.
     bodies.push(build_simulate(&layout, &eqfn)?);
 
@@ -2682,9 +2684,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         });
         idx
     };
-    // `functionStoreDelayed`: append each `delay(...)` expression's current value
-    // to its ring buffer (C's `function_storeDelayed`). `functionInitDelay`:
-    // `rt_delay_init(n_delays, startTime)` to reset the buffers for a fresh run.
+    // `functionStoreDelayed` / `functionInitDelay` (C's `function_storeDelayed` +
+    // `rt_delay_init`); empty stubs when the model has no `delay(...)`.
     let store_delayed_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.push(if var_map.n_delays == 0 {
@@ -3174,12 +3175,14 @@ fn build_init_sample_fn(
     Ok(func)
 }
 
-/// Build `functionInitStartValues(SimData*)`: fill each state's start slot from its
-/// `start` expression. Called after `functionParameters` (so parameter-bound starts
-/// see final values) and before the initial equations. Empty `start_slots` here so
-/// the expressions compile inline (slots fill exactly as the old inline read).
+/// Build `functionInitStartValues(SimData*)`: seed each state's `$START` slot and
+/// each real algebraic's live slot from its `start` expression (C's
+/// `setAllVarsToStart`, initialization.c:809), so an NLS iteration variable's
+/// Newton guess is its start value. Called after `functionParameters` and before
+/// the initial equations. Empty `start_slots` so start expressions compile inline.
 fn build_init_start_values_fn(
     states: &[&SimCodeVar::SimVar],
+    real_algs: &[&SimCodeVar::SimVar],
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
@@ -3209,9 +3212,12 @@ fn build_init_start_values_fn(
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32)> = Vec::with_capacity(states.len());
+    let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32)> = Vec::with_capacity(states.len() + real_algs.len());
     for (i, sv) in states.iter().enumerate() {
         pairs.push((sv.initialValue.clone(), layout.state_start_off(i as u32)));
+    }
+    for (j, sv) in real_algs.iter().enumerate() {
+        pairs.push((sv.initialValue.clone(), REAL_OFF + (2 * layout.n_states + j as u32) * 8));
     }
     ctx.emit_init_start_values(&pairs)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -3306,9 +3312,8 @@ fn build_update_relations_fn(
     Ok(func)
 }
 
-/// Build `functionStoreDelayed(SimData*)`: append each `delay(...)` expression's
-/// current value to its ring buffer (C's `function_storeDelayed`). Evaluated in a
-/// normal (non-discrete) equation context.
+/// Build `functionStoreDelayed(SimData*)` (C's `function_storeDelayed`): append
+/// each `delay(...)` expression's current value to its ring buffer.
 fn build_store_delayed_fn(
     sim_code: &SimCode::SimCode,
     var_map: &SimVarMap,
@@ -3352,9 +3357,8 @@ fn build_store_delayed_fn(
     Ok(func)
 }
 
-/// Build `functionInitDelay(SimData*)`: `rt_delay_init(n_delays, time)` to reset
-/// the ring buffers for a fresh run. Called at init when `time == startTime`, so
-/// `TIME_OFF` supplies the start time the runtime records.
+/// Build `functionInitDelay(SimData*)`: `rt_delay_init(n_delays, time)`, called at
+/// init with `time == startTime`.
 fn build_init_delay_fn(n_delays: u32) -> we::Function {
     use we::Instruction as I;
     let mut f = we::Function::new([]);
@@ -3529,13 +3533,14 @@ fn build_state_set_infos(
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
 
-        // A[row][col] integer slots, row-major.
+        // A is a flat `nStates*nCandidates` integer array named `A[k]` (1-based,
+        // row-major: A[(row-1)*nCandidates + col]); a_offs stays in that order.
         let a_base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
         let a_base = sim_cref_key(&a_base_cref)?;
         let mut a_offs = Vec::new();
         for row in 1..=n_states {
             for c in 1..=n_candidates {
-                let key = format!("{a_base}[{row}][{c}]");
+                let key = format!("{a_base}[{}]", (row - 1) * n_candidates + c);
                 let slot = var_map
                     .vars
                     .get(&key)
@@ -3593,11 +3598,12 @@ fn stateset_diag_offsets(
 ) -> Result<Vec<u32>> {
     let mut offs = Vec::new();
     for set in lst(state_sets) {
-        // `crA` names the `A[1,1]` element; strip its subscripts to the base `A`.
+        // `crA` names the first `A` element; strip its subscripts to the base `A`.
+        // A is flat row-major, so the diagonal A[n,n] is `A[(n-1)*nCandidates + n]`.
         let base_cref = openmodelica_frontend_dump::ComponentReferenceBasics::crefStripLastSubs(set.crA.clone())?;
         let base = sim_cref_key(&base_cref)?;
         for n in 1..=set.nStates {
-            let key = format!("{base}[{n}][{n}]");
+            let key = format!("{base}[{}]", (n - 1) * set.nCandidates + n);
             let slot = var_map
                 .vars
                 .get(&key)
@@ -3635,24 +3641,36 @@ fn lower_nonlinear_system(
 /// [`build_nls_fns`] (which emits the callbacks).
 fn nls_parts(
     nlsystem: &SimCode::NonlinearSystem,
-) -> Result<(Vec<Arc<SimCode::SimEqSystem>>, Vec<Arc<DAE::Exp>>, Vec<Arc<DAE::ComponentRef>>)> {
+) -> Result<(Vec<Arc<SimCode::SimEqSystem>>, Vec<NlsResidual>, Vec<Arc<DAE::ComponentRef>>)> {
     use SimCode::SimEqSystem as E;
     let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
-    let mut res_exps: Vec<Arc<DAE::Exp>> = Vec::new();
+    let mut residuals: Vec<NlsResidual> = Vec::new();
     for e in lst(&nlsystem.eqs) {
         match &**e {
-            E::SES_RESIDUAL { exp, .. } => res_exps.push(exp.clone()),
+            E::SES_RESIDUAL { exp, res_index, .. } => {
+                residuals.push(NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index });
+            }
+            E::SES_FOR_RESIDUAL { iterators, exp, res_index, .. } => {
+                residuals.push(NlsResidual::For {
+                    iterators: lst(iterators).cloned().collect(),
+                    exp: exp.clone(),
+                    res_index: *res_index,
+                });
+            }
             _ => inner.push(e.clone()),
         }
     }
-    if res_exps.is_empty() {
+    if residuals.is_empty() {
         return Err("CodegenWasmJit: SES_NONLINEAR has no residual equations");
     }
     let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
-    if iter_vars.len() != res_exps.len() {
+    // A for-residual's count is only known at run time, so validate the unknown
+    // count only for scalar-only systems.
+    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
+    if all_scalar && iter_vars.len() != residuals.len() {
         return Err("CodegenWasmJit: SES_NONLINEAR unknown/residual count mismatch");
     }
-    Ok((inner, res_exps, iter_vars))
+    Ok((inner, residuals, iter_vars))
 }
 
 /// Scan the compiled equation lists for `SES_NONLINEAR` systems (deduplicated by
@@ -3752,6 +3770,12 @@ fn nls_jac_result_rows(col: &SimCode::JacobianColumn, n: usize) -> Option<Vec<us
 /// seed per iteration variable and `JAC_VAR` results covering every residual row
 /// (a square dense Jacobian, as `hybrj` needs).
 fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
+    use SimCode::SimEqSystem as E;
+    // For/generic-residual Jacobian columns are array-valued, which the flat
+    // `emit_nls_jac_body` can't model; use the numerical Jacobian instead.
+    if lst(&nlsystem.eqs).any(|e| matches!(&**e, E::SES_FOR_RESIDUAL { .. } | E::SES_GENERIC_RESIDUAL { .. })) {
+        return false;
+    }
     let Some(jm) = &nlsystem.jacobianMatrix else { return false };
     let Some(col) = lst(&jm.columns).next() else { return false };
     let n = lst(&nlsystem.crefs).count();
@@ -3844,7 +3868,7 @@ fn build_nls_fns(
     literals: &mut Vec<Vec<u8>>,
     jac_info: Option<&NlsJacInfo>,
 ) -> Result<(we::Function, we::Function, Option<we::Function>)> {
-    let (inner, res_exps, iter_vars) = nls_parts(nlsystem)?;
+    let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());
     for cr in &iter_vars {
@@ -3900,7 +3924,7 @@ fn build_nls_fns(
             }
             Ok(())
         };
-        emit_nls_residual_body(&mut ctx, &slots, &res_exps, &mut lower_inner)?;
+        emit_nls_residual_body(&mut ctx, &slots, &residuals, &mut lower_inner)?;
         finish(ctx)
     };
     // load(sim_data, x): 2 params.
@@ -4031,6 +4055,60 @@ pub(crate) fn eq_kind_name(eq: &SimCode::SimEqSystem) -> &'static str {
 
 /// The `index` of a `SimEqSystem` (best-effort; systems without a top-level
 /// index report -1).
+/// Index `e` by its own index and recurse into nested equations (torn-system
+/// inner constraints, mixed cont/disc parts, if-branches), which an `SES_ALIAS`
+/// may target but which the top-level lists don't reach.
+fn index_eq_recursive(e: &Arc<SimCode::SimEqSystem>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>) {
+    use SimCode::SimEqSystem as E;
+    let key = eq_index_of(e);
+    if key >= 0 {
+        idx.entry(key).or_insert_with(|| e.clone());
+    }
+    match &**e {
+        E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+            let mut index_lin = |s: &Arc<SimCode::LinearSystem>, idx: &mut _| {
+                for inner in lst(&s.residual) {
+                    index_eq_recursive(inner, idx);
+                }
+                for (_, _, inner) in lst(&s.simJac) {
+                    index_eq_recursive(inner, idx);
+                }
+            };
+            index_lin(lSystem, idx);
+            if let Some(alt) = alternativeTearing {
+                index_lin(alt, idx);
+            }
+        }
+        E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+            for inner in lst(&nlSystem.eqs) {
+                index_eq_recursive(inner, idx);
+            }
+            if let Some(alt) = alternativeTearing {
+                for inner in lst(&alt.eqs) {
+                    index_eq_recursive(inner, idx);
+                }
+            }
+        }
+        E::SES_MIXED { cont, discEqs, .. } => {
+            index_eq_recursive(cont, idx);
+            for inner in lst(discEqs) {
+                index_eq_recursive(inner, idx);
+            }
+        }
+        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+            for (_, eqs) in lst(ifbranches) {
+                for inner in lst(eqs) {
+                    index_eq_recursive(inner, idx);
+                }
+            }
+            for inner in lst(elsebranch) {
+                index_eq_recursive(inner, idx);
+            }
+        }
+        _ => {}
+    }
+}
+
 fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
     use SimCode::SimEqSystem as E;
     match eq {
@@ -4048,7 +4126,12 @@ fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
         | E::SES_INVERSE_ALGORITHM { index, .. }
         | E::SES_MIXED { index, .. }
         | E::SES_WHEN { index, .. }
+        | E::SES_ALGEBRAIC_SYSTEM { index, .. }
         | E::SES_FOR_LOOP { index, .. } => *index,
+        // Torn systems carry their index inside the system record, not as a
+        // top-level field; an `SES_ALIAS` can point at the whole system.
+        E::SES_LINEAR { lSystem, .. } => lSystem.index,
+        E::SES_NONLINEAR { nlSystem, .. } => nlSystem.index,
         _ => -1,
     }
 }

@@ -744,16 +744,12 @@ pub fn take_chatter_log() -> Vec<String> {
 /// step seeded by the previous one's solution. Leaves lambda = 1, then seeds
 /// `relationsPre` for the continuous phase's held relations.
 pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
-    // Set the start time and reset the delay buffers before any equation function
-    // runs (`rt_delay_eval` traps on unallocated buffers; `functionInitDelay`
-    // reads `startTime` from `TIME_OFF`).
+    // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
+    // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_f64(e, sim_data + TIME_OFF, start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
     run_initialization_impl(e, sim_data, layout)?;
-    // C's `storePreValues` after the initial solve (initialization.c:903): `pre(x)`
-    // for the discrete update is the value the initial system left in `x`, not the
-    // start value seeded before the solve. Without this, a discrete alg var assigned
-    // `x := pre(x)` by a non-firing `when` (a digital gate's `y_old`) reverts to 0.
+    // C's `storePreValues` after the initial solve (initialization.c:903).
     seed_pre_from_live(e, sim_data, layout)?;
     // Seed the continuous phase's held relations from a full discrete fixed point.
     // The initial system does not necessarily touch every relation guarding the
@@ -762,8 +758,7 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     iterate_discrete(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)?;
     update_relations_pre(e, sim_data, layout)?;
-    // Seed the delay buffers at `startTime` and snapshot the crossings as
-    // `zeroCrossingsPre` so `delayZeroCrossing` has a held value on step 1.
+    // Seed the delay buffers and snapshot `zeroCrossingsPre` for step 1.
     e.call1_if_present("functionStoreDelayed", sim_data)?;
     if layout.n_zc > 0 {
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -785,9 +780,8 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     apply_param_overrides(e, sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
     apply_start_overrides(e, sim_data)?;
-    // C's `storePreValues` before the initial solve: `pre(x)` at initialization is
-    // the start value, so a `$PRE.<discrete>` read in an initial equation (e.g. a
-    // cross-coupled digital latch) sees `start`, not 0.
+    // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
+    // an initial equation sees `start`, not 0.
     seed_pre_from_live(e, sim_data, layout)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
     if layout.n_samples > 0 {
@@ -1051,11 +1045,8 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     // evaluation lets an already-settled system stop after a single evaluation.
     for iter in 0..MAX_EVENT_ITER {
         let prev = discrete_snapshot(e, sim_data, layout)?;
-        // C's `updateDiscreteSystem`: `storePreValues` at the head of each iteration
-        // after the first, so a discrete var this pass recomputes (a friction
-        // clutch's `mode`) is visible as `pre(mode)` to the next pass. Without it a
-        // `pre()`-dependent discrete equation (`locked = … not(pre(mode)==-1 …)`)
-        // never settles and the system fixes on the wrong branch.
+        // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
+        // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
         if iter > 0 {
             seed_pre_from_live(e, sim_data, layout)?;
         }
