@@ -15,7 +15,7 @@ endif(NOT BUILD_SHARED_LIBS)
 message(STATUS "Sundials Libraries used for linking:")
 message(STATUS "${SUNDIALS_LIBRARIES}")
 
-target_link_libraries(${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
+target_link_libraries(${CVodeName} ${SolverName} ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${CVodeName} runtime/include/Solver/Modelica.h)
 
 

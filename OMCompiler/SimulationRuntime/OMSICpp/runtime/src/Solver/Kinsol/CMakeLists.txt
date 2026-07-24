@@ -4,11 +4,11 @@ project(${KinsolName})
 if(DGESV_FOUND)
   include_directories (${DGESV_INCLUDE_DIR})
   add_library(${KinsolName} Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp  ${DGESV_SRCS})
-  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES}  ${ModelicaName} )
+  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES}  ${ModelicaName} )
 else()
   #use full Lapack
   add_library(${KinsolName} Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
-  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES}  ${ModelicaName} ${LAPACK_LIBRARIES})
+  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES}  ${ModelicaName} ${LAPACK_LIBRARIES})
 endif(DGESV_FOUND)
 
 if(NOT BUILD_SHARED_LIBS)
@@ -20,7 +20,7 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${KinsolName} Include/Core/Modelica.h)
-target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES}  ${ModelicaName} )
+target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES}  ${ModelicaName} )
 
 
 
