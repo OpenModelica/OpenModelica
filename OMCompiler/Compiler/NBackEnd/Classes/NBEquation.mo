@@ -1926,6 +1926,36 @@ public
       end match;
     end swapLHSandRHS;
 
+    function getLHSVars
+      "use only on solved equations"
+      input Equation eqn;
+      output list<Slice<VariablePointer>> vars;
+      function getLHSVarsExp
+        input Expression exp;
+        output list<Slice<VariablePointer>> vars;
+      algorithm
+        vars := match exp
+          local
+            ComponentRef cref;
+          case Expression.CREF(cref = cref) then {Slice.SLICE(BVariable.getVarPointer(cref, sourceInfo()), {})};
+          case Expression.TUPLE() then List.flatten(list(getLHSVarsExp(elem) for elem in exp.elements));
+          case Expression.ARRAY() then List.flatten(list(getLHSVarsExp(elem) for elem in exp.elements));
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+          then fail();
+        end match;
+      end getLHSVarsExp;
+    algorithm
+       vars := match eqn
+        case SCALAR_EQUATION()  then getLHSVarsExp(eqn.lhs);
+        case ARRAY_EQUATION()   then getLHSVarsExp(eqn.lhs);
+        case RECORD_EQUATION()  then getLHSVarsExp(eqn.lhs);
+        case FOR_EQUATION()     then List.flatten(list(getLHSVars(b) for b in eqn.body));
+        case IF_EQUATION()      then List.flatten(list(getLHSVars(Pointer.access(b)) for b in eqn.body.then_eqns));
+        else {};
+      end match;
+    end getLHSVars;
+
     function simplify
       input output Equation eq;
       input String name = "";
@@ -3352,6 +3382,7 @@ public
     end split;
 
     function isSplittable
+      "an if equation can be split if all branches have the same size"
       input IfEquationBody body;
       input Integer s;
       output Boolean b = listLength(body.then_eqns) == s;
@@ -3360,6 +3391,12 @@ public
         b := Util.applyOptionOrDefault(body.else_if, function isSplittable(s = s), true);
       end if;
     end isSplittable;
+
+    function isSplit
+      "an if equation is already split if all branches only have one equation"
+      input IfEquationBody body;
+      output Boolean b = isSplittable(body, 1);
+    end isSplit;
 
     function simplify
       "removes unreachable branches by looking at literal conditions"
