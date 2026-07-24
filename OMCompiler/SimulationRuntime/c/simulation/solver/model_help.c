@@ -413,7 +413,7 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
   }
 
   /* check cols (or rows?) */
-  colCheck = (char*) calloc(nlsSize, sizeof(char));
+  colCheck = (char*) calloc(nlsSize + 1, sizeof(char));
 
   for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
   {
