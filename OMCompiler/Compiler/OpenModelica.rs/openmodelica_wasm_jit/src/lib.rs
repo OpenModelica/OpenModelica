@@ -18,6 +18,22 @@ pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/
 pub mod sig;
 pub mod model;
 
+// A wasm trap collapses to the crate's `&'static str` error on the way out of the
+// engine, losing the trap kind and the backtrace. The engine parks its message
+// here for the caller that gives up on the run to add to the Error buffer.
+std::thread_local! {
+    static ENGINE_ERROR_DETAIL: std::cell::RefCell<Option<String>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+pub fn set_engine_error_detail(msg: String) {
+    ENGINE_ERROR_DETAIL.with(|e| *e.borrow_mut() = Some(msg));
+}
+
+pub fn take_engine_error_detail() -> Option<String> {
+    ENGINE_ERROR_DETAIL.with(|e| e.borrow_mut().take())
+}
+
 #[cfg(feature = "jit")]
 pub mod host;
 

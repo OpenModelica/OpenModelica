@@ -269,7 +269,7 @@ pub fn enrich_trap(e: &mut dyn SimEngine, err: &'static str) -> &'static str {
         let f: fn(&AssertInfo) = unsafe { core::mem::transmute(p) };
         f(&info);
     }
-    "assertion failed"
+    ASSERT_ERR
 }
 
 /// Result of a simulation run.
@@ -535,6 +535,8 @@ fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
 
 /// Returned to abort a run on detected chattering (`-abortSlowSimulation`).
 pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to chattering";
+/// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
+pub const ASSERT_ERR: &str = "assertion failed";
 
 /// Log-line prefix `<stream>| <level>| ` at the runtime's column widths.
 fn log_prefix(stream: &str, level: &str) -> String {
