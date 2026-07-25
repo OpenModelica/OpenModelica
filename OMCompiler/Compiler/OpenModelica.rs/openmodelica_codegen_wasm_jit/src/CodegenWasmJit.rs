@@ -1371,6 +1371,8 @@ struct SimVarMap {
     array_acc: HashMap<String, Vec<(Vec<i32>, u32, WTy)>>,
     /// `SimData` byte offset of the `terminate` flag (see [`SimLayout`]).
     terminate_off: u32,
+    /// `SimData` byte offset of the fired `terminate`'s message + source position.
+    term_info_off: u32,
     /// `SimData` byte offset of the nonlinear-solver failure flag (see [`SimLayout`]).
     nls_fail_off: u32,
     /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job. Filled by
@@ -1676,6 +1678,7 @@ fn build_var_map(
         array_groups: HashMap::new(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
+        term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
         nls_jobs: Arc::new(HashMap::new()),
         sample_map: Arc::new(HashMap::new()),
@@ -3214,6 +3217,7 @@ fn build_eq_fn_with_prelude(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3270,6 +3274,7 @@ fn build_init_sample_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3318,6 +3323,7 @@ fn build_init_start_values_fn(
         start_slots: HashMap::new(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3368,6 +3374,7 @@ fn build_zero_crossings_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3409,6 +3416,7 @@ fn build_update_relations_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3454,6 +3462,7 @@ fn build_store_delayed_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),
@@ -3888,7 +3897,8 @@ fn collect_nls_jobs(
                 }
                 let n = lst(&nlSystem.crefs).count() as u32;
                 let has_jac = nls_jac_usable(nlSystem);
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac });
+                let mixed = nlSystem.mixedSystem;
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed });
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
@@ -4254,6 +4264,7 @@ fn build_nls_fns(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
         sample_map: var_map.sample_map.clone(),

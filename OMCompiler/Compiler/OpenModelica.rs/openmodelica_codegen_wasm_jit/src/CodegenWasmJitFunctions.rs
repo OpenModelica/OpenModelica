@@ -379,7 +379,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -846,6 +846,9 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
     pub(crate) terminate_off: u32,
+    /// `SimData` byte offset of the fired `terminate(...)`'s message + source
+    /// position (C's `TermMsg`/`TermInfo`).
+    pub(crate) term_info_off: u32,
     /// `SimData` byte offset of the nonlinear-solver failure flag, raised by a
     /// non-converging `SES_NONLINEAR` system (`rt_solve_nls`).
     pub(crate) nls_fail_off: u32,
@@ -905,6 +908,8 @@ pub(crate) struct NlsJob {
     /// The system has a symbolic Jacobian: shared-table slot `3k+2` holds an
     /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
     pub(crate) has_jac: bool,
+    /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
+    pub(crate) mixed: bool,
 }
 
 /// Bytes of extrapolation history a system with `n` unknowns needs: a count
@@ -1264,10 +1269,34 @@ impl<'a> FnCtx<'a> {
             // `terminate(msg)`: request a clean early end of the simulation by
             // raising the `SimData` terminate flag; the drivers poll it after each
             // communication point and stop (writing results up to that row). The
-            // message is a diagnostic only and is not evaluated here.
-            W::TERMINATE { .. } => {
+            // message and source position go to C's `TermMsg`/`TermInfo` slots.
+            W::TERMINATE { message, source } => {
                 let data = self.sim()?.data_local;
                 let off = self.sim()?.terminate_off;
+                let info_off = self.sim()?.term_info_off;
+                let info = &source.info;
+                let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+                self.emit(we::Instruction::LocalGet(data));
+                let mw = compile_exp(self, message)?;
+                if mw != WTy::I32 {
+                    return Err("CodegenWasmJit: terminate message is not a String");
+                }
+                self.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
+                self.emit(we::Instruction::LocalGet(data));
+                emit_str_literal(self, file.as_bytes())?;
+                self.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
+                let pos = [
+                    info.lineNumberStart,
+                    info.columnNumberStart,
+                    info.lineNumberEnd,
+                    info.columnNumberEnd,
+                    info.isReadOnly as i32,
+                ];
+                for (i, v) in pos.iter().enumerate() {
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::I32Const(*v));
+                    self.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
+                }
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(1));
                 self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
@@ -4580,6 +4609,21 @@ fn compile_relation(
     if !indexed {
         return compile_relation_fresh(ctx, e1, op, e2);
     }
+    compile_relation_indexed(ctx, e1, op, e2, index, asub)
+}
+
+/// The held/banded/exact indexed-relation evaluation (integration, event, init modes
+/// selected on `rel_fresh`). Callers guarantee the relation is indexed
+/// (`0 <= index < n_relations`).
+fn compile_relation_indexed(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    op: &DAE::Operator,
+    e2: &DAE::Exp,
+    index: i32,
+    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+) -> Result<WTy> {
+    use DAE::Operator as O;
     let real_ineq = operand_type_of_relation(op)? == WTy::F64
         && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
     let data = ctx.sim()?.data_local;

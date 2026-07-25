@@ -1133,6 +1133,9 @@ pub extern "C" fn rt_solve_nls(
     rel_fresh_addr: u32,
     nominal_addr: u32,
     jac_idx: u32,
+    rel_addr: u32,
+    n_rel: u32,
+    mixed: u32,
 ) -> i32 {
     let n = n as usize;
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -1233,9 +1236,16 @@ pub extern "C" fn rt_solve_nls(
     // C's `solve_nonlinear_system`: Newton holds relations (`solveContinuous`); at an
     // event, prime once live then hold, priming and solving from `nlsxOld` (=`warm`).
     // Extrapolating past a just-switched branch re-flips the relation the event set.
-    if saved_rel_fresh == 1 {
+    let discrete_call = saved_rel_fresh == 1;
+    let mixed = mixed != 0 && discrete_call;
+    // C's `solveHomotopy` `relationsPreBackup`.
+    let mut rel_backup = alloc::vec::Vec::new();
+    if discrete_call {
         unsafe { store_u32(rel_fresh_addr, 1) };
         eval(&warm, &mut scratch);
+        if mixed {
+            rel_backup = (0..n_rel).map(|i| unsafe { load_u32(rel_addr + i * 4) }).collect();
+        }
         unsafe { store_u32(rel_fresh_addr, 0) };
         x.copy_from_slice(&warm);
     } else if saved_rel_fresh == 0 {
@@ -1311,9 +1321,28 @@ pub extern "C" fn rt_solve_nls(
         }
     }
     if converged {
-        // Leave the slots + torn variables at the solution (held/init mode, so an
-        // event keeps the fresh-at-guess relations).
-        eval(&x, &mut scratch);
+        // Leave the slots + torn variables at the solution. C's `solveHomotopy`: a
+        // mixed system at an event re-checks the relations live at the solution and,
+        // if the branch moved, re-solves once from the start point with them live.
+        if mixed {
+            unsafe { store_u32(rel_fresh_addr, 1) };
+            eval(&x, &mut scratch);
+            if (0..n_rel).any(|i| unsafe { load_u32(rel_addr + i * 4) } != rel_backup[i as usize]) {
+                let held = core::mem::replace(&mut x, warm.clone());
+                let ok = if has_jac {
+                    hybrj_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval, &mut jaceval)
+                } else {
+                    hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval)
+                };
+                if !ok {
+                    x = held;
+                }
+                eval(&x, &mut scratch);
+            }
+            unsafe { store_u32(rel_fresh_addr, 0) };
+        } else {
+            eval(&x, &mut scratch);
+        }
     }
 
     let ret = if converged {
