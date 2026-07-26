@@ -57,7 +57,7 @@ use crate::CodegenWasmJitFunctions::{
     ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
-    NlsResidual, emit_nls_load_body, emit_nls_jac_body,
+    NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general, function_signature, rt_index, sim_cref_key,
 };
@@ -610,12 +610,12 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     // LOG_STATS / chattering lines). `INIT_OUTPUT` is `None` when init failed.
     let sim_output = format!("{}{extra}", openmodelica_wasi::wasi::take_stdout_capture());
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
-    // C prints the sparse-solver announcements (initializeLinearSystems) ahead of
-    // the init-success line; prepend our pre-rendered copy to the init output.
-    let init_output = if model.sparse_lss_log.is_empty() {
+    // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
+    // ahead of the init-success line; prepend our pre-rendered copy to the init output.
+    let init_output = if model.sparse_solver_log.is_empty() {
         init_output
     } else {
-        Some(format!("{}{}", model.sparse_lss_log, init_output.unwrap_or_default()))
+        Some(format!("{}{}", model.sparse_solver_log, init_output.unwrap_or_default()))
     };
     (res, init_output, sim_output)
 }
@@ -2413,7 +2413,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals) =
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_patterns) =
         collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs], &nls_nominal_map);
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
@@ -2800,7 +2800,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
         if let Some((fn_indices, _)) = &nls_wiring {
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals);
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_patterns);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -2907,9 +2907,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // shared-table wiring: NLS callbacks and/or closure thunks.
     if start_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
-        // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base)
-        // and NLS_NOMINAL_GLOBAL (nominal block base) when the model has nonlinear
-        // systems, then the closure-thunk table base; all set by `start`.
+        // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
+        // NLS_NOMINAL_GLOBAL (nominal block base) and NLS_PAT_GLOBAL (sparse-pattern
+        // block base) when the model has nonlinear systems, then the closure-thunk
+        // table base; all set by `start`.
         let n_globals = if thunk_indices.is_empty() { closure_global } else { closure_global + 1 };
         for _ in 0..n_globals {
             globals.global(
@@ -2977,7 +2978,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         editable_params,
         var_units,
         meta,
-        sparse_lss_log: build_sparse_lss_log(sim_code),
+        sparse_solver_log: format!("{}{}", build_sparse_lss_log(sim_code), build_sparse_nls_log(sim_code)),
     })
 }
 
@@ -3059,6 +3060,80 @@ fn build_sparse_lss_log(sim_code: &SimCode::SimCode) -> String {
     out
 }
 
+/// Reproduce C's `initializeNonlinearSystems` sparse-solver announcements
+/// (`nonlinearSystem.c`): one message per system handed to kinsol+KLU, keyed on
+/// why (density and/or size), then one aggregate flag-hint. Systems are in
+/// `indexNonLinearSystem` order (C's array order), matching the `sysNum` printed.
+fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
+    use crate::CodegenWasmJitFunctions::{nls_use_sparse, NLSS_MAX_DENSITY, NLSS_MIN_SIZE};
+    let mut seen: HashSet<i32> = HashSet::new();
+    // (sysNum, equationIndex, size, nnz), deduped, in system-number order.
+    let mut systems: Vec<(i32, i32, usize, usize)> = Vec::new();
+    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
+        for e in &eqs {
+            if let SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } = &**e {
+                if seen.insert(nlSystem.indexNonLinearSystem) {
+                    let size = lst(&nlSystem.crefs).count();
+                    systems.push((
+                        nlSystem.indexNonLinearSystem,
+                        nlSystem.index,
+                        size,
+                        nls_system_nnz(nlSystem),
+                    ));
+                }
+            }
+        }
+    };
+    scan(flatten_eqs(&sim_code.parameterEquations));
+    scan(flatten_eqs(&sim_code.initialEquations));
+    scan(flatten_eqs_ll(&sim_code.odeEquations));
+    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
+    systems.sort_by_key(|&(idx, _, _, _)| idx);
+
+    let mut out = String::new();
+    let mut some_small_density = false;
+    let mut some_big_size = false;
+    for &(idx, eq_index, size, nnz) in &systems {
+        if size == 0 || nnz == 0 || !nls_use_sparse(size, nnz) {
+            continue;
+        }
+        let density = nnz as f64 / (size * size) as f64;
+        let big_size = size > NLSS_MIN_SIZE;
+        let body = if density < NLSS_MAX_DENSITY {
+            some_small_density = true;
+            if big_size {
+                some_big_size = true;
+                format!(
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}\nand size of {size} exceeds threshold of {NLSS_MIN_SIZE}."
+                )
+            } else {
+                format!(
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}."
+                )
+            }
+        } else {
+            some_big_size = true;
+            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {NLSS_MIN_SIZE}.")
+        };
+        out.push_str(&format_log_stdout(&body));
+    }
+    let hint = if some_small_density {
+        if some_big_size {
+            Some("The maximum density and the minimal system size for using sparse solvers can be\nspecified using the runtime flags '<-nlssMaxDensity=value>' and '<-nlssMinSize=value>'.")
+        } else {
+            Some("The maximum density for using sparse solvers can be specified\nusing the runtime flag '<-nlssMaxDensity=value>'.")
+        }
+    } else if some_big_size {
+        Some("The minimal system size for using sparse solvers can be specified\nusing the runtime flag '<-nlssMinSize=value>'.")
+    } else {
+        None
+    };
+    if let Some(h) = hint {
+        out.push_str(&format_log_stdout(h));
+    }
+    out
+}
+
 /// The nonzero count of a linear system's matrix `A`, matching C's
 /// `initializeLinearSystems`: `listLength(simJac)` for the non-torn (method-0)
 /// form, else the symbolic Jacobian's sparsity nnz (method 1, torn systems).
@@ -3072,6 +3147,80 @@ fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
         .as_ref()
         .map(|jm| lst(&jm.sparsity).map(|(_, rows)| lst(rows).count()).sum())
         .unwrap_or(0)
+}
+
+/// A nonlinear system's Jacobian sparsity in CSC — `colptr` (`n+1`), `rowidx`
+/// (`nnz`) and the column coloring — the same pattern C's
+/// `initialResizableAnalyticJacobian` builds: the column of a dependency is the
+/// seed variable's `SimVar.index`, the row of a solved `$pDER` cref is that
+/// variable's index. Only scalar rows are handled; an array-valued row (equation
+/// iterators or subscripted crefs) needs the run-time loops the C template emits,
+/// so those systems keep the numerical Jacobian.
+struct NlsJacPattern {
+    colptr: Vec<i32>,
+    rowidx: Vec<i32>,
+    colors: Vec<Vec<u32>>,
+}
+
+fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
+    let mut seed_col: HashMap<String, usize> = HashMap::new();
+    for sv in lst(&jm.seedVars) {
+        seed_col.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
+    }
+    let mut res_row: HashMap<String, usize> = HashMap::new();
+    for sv in &jac_column_vars(jm) {
+        if matches!(sv.varKind, VarKind::JAC_VAR) {
+            res_row.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
+        }
+    }
+    let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
+    for row in lst(rows) {
+        if lst(&row.equation_iterators).next().is_some() {
+            return None;
+        }
+        for sc in lst(&row.solved_crefs) {
+            let r = *res_row.get(&sim_cref_key(sc).ok()?)?;
+            if r >= n {
+                return None;
+            }
+            for (seed, _, _) in lst(&row.dependencies) {
+                let c = *seed_col.get(&sim_cref_key(seed).ok()?)?;
+                if c >= n {
+                    return None;
+                }
+                cols[c].push(r as i32);
+            }
+        }
+    }
+    let mut colptr = vec![0i32; n + 1];
+    let mut rowidx: Vec<i32> = Vec::new();
+    for c in 0..n {
+        cols[c].sort_unstable();
+        cols[c].dedup();
+        rowidx.extend_from_slice(&cols[c]);
+        colptr[c + 1] = rowidx.len() as i32;
+    }
+    if rowidx.is_empty() {
+        return None;
+    }
+    let (color_ptr, color_cols) =
+        crate::CodegenWasmJitFunctions::lin_jac_coloring(&colptr, &rowidx, n);
+    let colors = (0..color_ptr.len() - 1)
+        .map(|c| {
+            color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize].iter().map(|&j| j as u32).collect()
+        })
+        .collect();
+    Some(NlsJacPattern { colptr, rowidx, colors })
+}
+
+/// The nonzero count of a nonlinear system's Jacobian, matching C's
+/// `initializeNonlinearSystemData` (`sparsePattern->nnz`).
+fn nls_system_nnz(nlsystem: &SimCode::NonlinearSystem) -> usize {
+    let Some(jm) = nlsystem.jacobianMatrix.as_ref() else { return 0 };
+    let n = lst(&nlsystem.crefs).count();
+    nls_jac_pattern(jm, n).map_or(0, |p| p.rowidx.len())
 }
 
 fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAInfo> {
@@ -3987,12 +4136,16 @@ fn nls_parts(
 fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, f64>,
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>) {
+) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<i32>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
     let mut hist_off = 0u32;
     let mut nominal_off = 0u32;
+    let mut pat_off = 0u32;
+    // Concatenated `colptr[n+1] | rowidx[nnz]` of every sparsely-solved system, in
+    // system order; the module `start` writes them into the pattern block.
+    let mut patterns: Vec<i32> = Vec::new();
     // Concatenated nominal values, in system order; the module `start` writes them
     // into the nominal block, and each job's `nominal_off` indexes into it.
     let mut nominals: Vec<f64> = Vec::new();
@@ -4005,7 +4158,31 @@ fn collect_nls_jobs(
                 let n = lst(&nlSystem.crefs).count() as u32;
                 let has_jac = nls_jac_usable(nlSystem);
                 let mixed = nlSystem.mixedSystem;
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed });
+                // Sparse (kinsol+KLU in C) when the symbolic pattern is available
+                // and passes C's density/size rule; the pattern is emitted into the
+                // pattern block so `rt_solve_nls` can factorize it.
+                let pat = has_jac
+                    .then(|| nls_jac_pattern(nlSystem.jacobianMatrix.as_ref().unwrap(), n as usize))
+                    .flatten()
+                    .filter(|p| nls_use_sparse(n as usize, p.rowidx.len()));
+                let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
+                if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
+                    eprintln!(
+                        "wasm-jit nls {}: n={n} nnz={} jac={has_jac} mixed={mixed} sparse={} colors={}",
+                        nlSystem.index,
+                        nls_system_nnz(nlSystem),
+                        nnz != 0,
+                        pat.as_ref().map_or(0, |p| p.colors.len()),
+                    );
+                }
+                if let Some(p) = &pat {
+                    patterns.extend_from_slice(&p.colptr);
+                    patterns.extend_from_slice(&p.rowidx);
+                }
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed, nnz, pat_off });
+                if nnz != 0 {
+                    pat_off += 4 * (n + 1 + nnz);
+                }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
@@ -4016,7 +4193,7 @@ fn collect_nls_jobs(
             }
         }
     }
-    (systems, jobs, hist_off, nominals)
+    (systems, jobs, hist_off, nominals, patterns)
 }
 
 /// Map each scalar real variable's cref key to its nominal attribute, defaulting to
@@ -4046,24 +4223,72 @@ struct NlsJacInfo {
     result_offs: Vec<u32>,
 }
 
-/// The residual row a Jacobian result var maps to, from its name
-/// `$res_<matrixName>_<K>.…` → `K - 1`. `None` if the name has no positive
-/// trailing index.
-fn jac_result_row(cr: &Arc<DAE::ComponentRef>) -> Option<usize> {
-    let name = cref_display(cr).ok()?;
-    let first = name.split('.').next()?;
-    let k: usize = first.rsplit('_').next()?.parse().ok()?;
-    k.checked_sub(1)
+/// The residual row a Jacobian result var maps to: its `SimVar.index`, which is
+/// what the C template indexes `jacobian->resultVars[]` with.
+fn jac_result_row(sv: &SimCodeVar::SimVar) -> Option<usize> {
+    usize::try_from(sv.index).ok()
 }
 
-/// The residual rows of a column's `JAC_VAR` result variables, in `columnVars`
-/// order, iff they form a valid permutation of `0..n` (so the dense Jacobian rows
-/// can be placed unambiguously); otherwise `None`.
-fn nls_jac_result_rows(col: &SimCode::JacobianColumn, n: usize) -> Option<Vec<usize>> {
+/// Every variable a Jacobian's column equations can reference, other than the
+/// seeds: the `$pDER` results and the temporaries. The old backend lists them in
+/// `columnVars`; the new backend leaves that empty and registers them (together
+/// with the seeds, which are filtered out here) in `crefsHT` only.
+fn jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<SimCodeVar::SimVar> {
     use openmodelica_backend_types::BackendDAE::VarKind;
-    let rows: Vec<usize> = lst(&col.columnVars)
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
+    let mut push = |sv: &SimCodeVar::SimVar| {
+        if matches!(sv.varKind, VarKind::SEED_VAR) {
+            return;
+        }
+        if let Ok(key) = sim_cref_key(&sv.name) {
+            if seen.insert(key) {
+                out.push(sv.clone());
+            }
+        }
+    };
+    for sv in lst(&jm.columns).next().into_iter().flat_map(|c| lst(&c.columnVars)) {
+        push(sv);
+    }
+    if let Some((_, (_, _, entries), _, _)) = &jm.crefsHT {
+        for e in entries.borrow().iter().flatten() {
+            push(&e.1);
+        }
+    }
+    out
+}
+
+/// Whether a symbolic Jacobian can be lowered at all: every seed / column
+/// variable resolves to a scratch slot, and every column equation is a scalar
+/// assignment whose crefs do too. An array-valued Jacobian (whole-dimension seeds,
+/// sliced results) needs the run-time loops the C template emits, so such a system
+/// keeps the numerical Jacobian instead.
+fn jac_lowerable(jm: &SimCode::JacobianMatrix) -> bool {
+    use SimCode::SimEqSystem as E;
+    let Some(col) = lst(&jm.columns).next() else { return false };
+    if lst(&jm.seedVars).any(|sv| sim_cref_key(&sv.name).is_err()) {
+        return false;
+    }
+    if lst(&col.columnVars).any(|sv| sim_cref_key(&sv.name).is_err()) {
+        return false;
+    }
+    lst(&col.constantEqns).chain(lst(&col.columnEqns)).all(|eq| {
+        let E::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { return false };
+        sim_cref_key(cref).is_ok()
+            && openmodelica_frontend_base::Expression::extractCrefsFromExp(exp.clone())
+                .is_ok_and(|crs| lst(&crs).all(|c| sim_cref_key(c).is_ok()))
+    })
+}
+
+/// The residual rows of the Jacobian's `JAC_VAR` result variables, in/// The residual rows of the Jacobian's `JAC_VAR` result variables, in
+/// [`jac_column_vars`] order, iff they form a valid permutation of `0..n` (so the
+/// Jacobian rows can be placed unambiguously); otherwise `None`.
+fn nls_jac_result_rows(jm: &SimCode::JacobianMatrix, n: usize) -> Option<Vec<usize>> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let rows: Vec<usize> = jac_column_vars(jm)
+        .iter()
         .filter(|v| matches!(v.varKind, VarKind::JAC_VAR))
-        .map(|v| jac_result_row(&v.name))
+        .map(jac_result_row)
         .collect::<Option<Vec<_>>>()?;
     let mut sorted = rows.clone();
     sorted.sort_unstable();
@@ -4072,6 +4297,21 @@ fn nls_jac_result_rows(col: &SimCode::JacobianColumn, n: usize) -> Option<Vec<us
     } else {
         None
     }
+}
+
+/// The seed slot offsets in *column* order (`SimVar.index`, what the C template
+/// indexes `jacobian->seedVars[]` with), from the offsets registered for
+/// `jm.seedVars`. `None` unless the indices are a permutation of `0..n`.
+fn jac_seed_offs_by_column(jm: &SimCode::JacobianMatrix, offs: &[u32], n: usize) -> Option<Vec<u32>> {
+    let mut by_col = vec![u32::MAX; n];
+    for (sv, &off) in lst(&jm.seedVars).zip(offs) {
+        let c = usize::try_from(sv.index).ok()?;
+        if c >= n || by_col[c] != u32::MAX {
+            return None;
+        }
+        by_col[c] = off;
+    }
+    by_col.iter().all(|&o| o != u32::MAX).then_some(by_col)
 }
 
 /// A nonlinear system has a usable symbolic Jacobian: a `jacobianMatrix` with one
@@ -4084,10 +4324,25 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     if lst(&nlsystem.eqs).any(|e| matches!(&**e, E::SES_FOR_RESIDUAL { .. } | E::SES_GENERIC_RESIDUAL { .. })) {
         return false;
     }
+    // `emit_nls_residual_body` writes `r[i]` for the i-th scalar residual while the
+    // Jacobian rows are in `res_index` space (C's `res[res_index]`), so the two only
+    // line up when the residuals are already in that order.
+    if lst(&nlsystem.eqs)
+        .filter_map(|e| match &**e {
+            E::SES_RESIDUAL { res_index, .. } => Some(*res_index),
+            _ => None,
+        })
+        .enumerate()
+        .any(|(i, r)| r != i as i32)
+    {
+        return false;
+    }
     let Some(jm) = &nlsystem.jacobianMatrix else { return false };
-    let Some(col) = lst(&jm.columns).next() else { return false };
+    if lst(&jm.columns).next().is_none_or(|c| lst(&c.columnEqns).next().is_none()) || !jac_lowerable(jm) {
+        return false;
+    }
     let n = lst(&nlsystem.crefs).count();
-    n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(col, n).is_some()
+    n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, n).is_some()
 }
 
 /// Torn linear system usable for analytic assembly: square Jacobian with one seed
@@ -4095,9 +4350,11 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
 /// (`n_res` = number of `SES_RESIDUAL`). The `nls_jac_usable` analogue for linear.
 fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: usize) -> bool {
     let Some(jm) = &lsystem.jacobianMatrix else { return false };
-    let Some(col) = lst(&jm.columns).next() else { return false };
+    if lst(&jm.columns).next().is_none_or(|c| lst(&c.columnEqns).next().is_none()) || !jac_lowerable(jm) {
+        return false;
+    }
     let n = count(&lsystem.vars) as usize;
-    n > 0 && n == n_res && count(&jm.seedVars) as usize == n && nls_jac_result_rows(col, n).is_some()
+    n > 0 && n == n_res && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, n).is_some()
 }
 
 /// Total f64 scratch slots the NLS analytic Jacobians need: seeds + column
@@ -4113,8 +4370,7 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
                 if seen.insert(nlSystem.index) && nls_jac_usable(nlSystem) {
                     // seeds + all column variables (results + intermediates) get slots.
                     let jm = nlSystem.jacobianMatrix.as_ref().unwrap();
-                    let col = lst(&jm.columns).next().unwrap();
-                    total += count(&jm.seedVars) as u32 + count(&col.columnVars) as u32;
+                    total += count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32;
                 }
             }
         }
@@ -4144,31 +4400,35 @@ fn build_nls_jac_infos(
             continue;
         }
         let jm = sys.jacobianMatrix.as_ref().unwrap();
-        let col = lst(&jm.columns).next().unwrap();
-        let mut seed_offs = Vec::new();
+        let mut listed_offs = Vec::new();
         for sv in lst(&jm.seedVars) {
             let off = cursor;
             cursor += 8;
             var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
-            seed_offs.push(off);
+            listed_offs.push(off);
         }
         // Every column variable (results + intermediates) needs a slot so the
         // column equations resolve; the `JAC_VAR` results are placed at their
-        // residual row (`$res_..._K` → row `K-1`), since `columnVars` order need
-        // not be row order.
+        // residual row (`SimVar.index`), since the listing order need not be row
+        // order. Seeds are likewise placed at their column index.
         use openmodelica_backend_types::BackendDAE::VarKind;
-        let n = seed_offs.len();
-        let mut result_offs = vec![0u32; n];
-        for sv in lst(&col.columnVars) {
+        let n = listed_offs.len();
+        let seed_offs = jac_seed_offs_by_column(jm, &listed_offs, n)
+            .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian seed columns are not a permutation")?;
+        let mut result_offs = vec![u32::MAX; n];
+        for sv in &jac_column_vars(jm) {
             let off = cursor;
             cursor += 8;
             var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
             if matches!(sv.varKind, VarKind::JAC_VAR) {
-                let row = jac_result_row(&sv.name)
+                let row = jac_result_row(sv)
                     .filter(|&r| r < n)
                     .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian result var has no row index")?;
                 result_offs[row] = off;
             }
+        }
+        if result_offs.contains(&u32::MAX) {
+            return Err("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row");
         }
         infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
     }
@@ -4212,8 +4472,7 @@ fn lin_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     let mut total = 0u32;
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
-        let col = lst(&jm.columns).next().unwrap();
-        total += count(&jm.seedVars) as u32 + count(&col.columnVars) as u32;
+        total += count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32;
     }
     total
 }
@@ -4230,8 +4489,7 @@ fn build_lin_jac_infos(
     let mut cursor = layout.nls_jac_off + nls_jac_scratch_f64(sim_code) * 8;
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
-        let col = lst(&jm.columns).next().unwrap();
-        for sv in lst(&jm.seedVars).chain(lst(&col.columnVars)) {
+        for sv in lst(&jm.seedVars).chain(jac_column_vars(jm).iter()) {
             var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
             cursor += 8;
         }
@@ -4245,16 +4503,17 @@ fn build_lin_jac_infos(
 fn lin_jac_offsets(lsystem: &SimCode::LinearSystem, vars: &HashMap<String, SimSlot>, n: usize) -> Result<(Vec<u32>, Vec<u32>)> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let jm = lsystem.jacobianMatrix.as_ref().ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
-    let col = lst(&jm.columns).next().ok_or("CodegenWasmJit: torn-linear Jacobian has no column")?;
     let lookup = |cr: &Arc<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
         Ok(vars.get(&key).ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?.off)
     };
-    let seed_offs: Vec<u32> = lst(&jm.seedVars).map(|sv| lookup(&sv.name)).collect::<Result<_>>()?;
+    let listed: Vec<u32> = lst(&jm.seedVars).map(|sv| lookup(&sv.name)).collect::<Result<_>>()?;
+    let seed_offs = jac_seed_offs_by_column(jm, &listed, n)
+        .ok_or("CodegenWasmJit: torn-linear Jacobian seed columns are not a permutation")?;
     let mut result_offs = vec![u32::MAX; n];
-    for sv in lst(&col.columnVars) {
+    for sv in &jac_column_vars(jm) {
         if matches!(sv.varKind, VarKind::JAC_VAR) {
-            let row = jac_result_row(&sv.name).filter(|&r| r < n)
+            let row = jac_result_row(sv).filter(|&r| r < n)
                 .ok_or("CodegenWasmJit: torn-linear Jacobian result var has no row index")?;
             result_offs[row] = lookup(&sv.name)?;
         }
@@ -4302,8 +4561,8 @@ fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> Option<(Vec
     let jm = lsystem.jacobianMatrix.as_ref()?;
     let col = lst(&jm.columns).next()?;
     let mut seed_col: HashMap<String, usize> = HashMap::new();
-    for (j, sv) in lst(&jm.seedVars).enumerate() {
-        seed_col.insert(sim_cref_key(&sv.name).ok()?, j);
+    for sv in lst(&jm.seedVars) {
+        seed_col.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
     }
     let mut dep: HashMap<String, Vec<usize>> = HashMap::new();
     for eq in lst(&col.constantEqns) {
@@ -4314,13 +4573,16 @@ fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> Option<(Vec
     }
     // Column c (iteration var) gets residual row r whenever result r depends on seed c.
     let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
-    for sv in lst(&col.columnVars) {
+    for sv in &jac_column_vars(jm) {
         if !matches!(sv.varKind, VarKind::JAC_VAR) {
             continue;
         }
-        let r = jac_result_row(&sv.name).filter(|&r| r < n)?;
+        let r = jac_result_row(sv).filter(|&r| r < n)?;
         if let Some(ds) = dep.get(&sim_cref_key(&sv.name).ok()?) {
             for &c in ds {
+                if c >= n {
+                    return None;
+                }
                 cols[c].push(r as i32);
             }
         }
@@ -4444,10 +4706,21 @@ fn build_nls_fns(
                 }
                 Ok(())
             };
-            emit_nls_jac_body(
-                &mut ctx, &slots, &info.seed_offs, &info.result_offs,
-                &mut lower_inner, &mut lower_constant, &mut lower_column,
-            )?;
+            // Colored CSC assembly (C's `evalJacobian`) whenever the symbolic
+            // sparsity is available: `#colors` column-equation passes instead of
+            // `n`, into CSC values for a sparse system or a dense `n×n` otherwise.
+            match nls_jac_pattern(jm, slots.len()) {
+                Some(pat) => emit_nls_jac_csc_body(
+                    &mut ctx, &slots, &info.seed_offs, &info.result_offs,
+                    &pat.colptr, &pat.rowidx, &pat.colors,
+                    !nls_use_sparse(slots.len(), pat.rowidx.len()),
+                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                )?,
+                None => emit_nls_jac_body(
+                    &mut ctx, &slots, &info.seed_offs, &info.result_offs,
+                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                )?,
+            }
             Some(finish(ctx))
         }
         _ => None,
@@ -4462,9 +4735,15 @@ fn build_nls_fns(
 /// (`fn_indices[k] = (residual, load, jac)`). `rt_solve_nls` reads these indices
 /// back via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
 /// extrapolation-history block (`hist_bytes`) into `NLS_HIST_GLOBAL`.
-fn emit_nls_start(f: &mut we::Function, fn_indices: &[(u32, u32, Option<u32>)], hist_bytes: u32, nominals: &[f64]) {
+fn emit_nls_start(
+    f: &mut we::Function,
+    fn_indices: &[(u32, u32, Option<u32>)],
+    hist_bytes: u32,
+    nominals: &[f64],
+    patterns: &[i32],
+) {
     use we::Instruction as I;
-    use crate::CodegenWasmJitFunctions::NLS_NOMINAL_GLOBAL;
+    use crate::CodegenWasmJitFunctions::{NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
         f.instruction(&I::I32Const(hist_bytes as i32));
@@ -4481,6 +4760,18 @@ fn emit_nls_start(f: &mut we::Function, fn_indices: &[(u32, u32, Option<u32>)], 
             f.instruction(&I::GlobalGet(NLS_NOMINAL_GLOBAL));
             f.instruction(&I::F64Const((*nom).into()));
             f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
+        }
+    }
+    // sparse-pattern block: the concatenated `colptr`/`rowidx` of every system
+    // solved sparsely, indexed by each job's `pat_off`.
+    if !patterns.is_empty() {
+        f.instruction(&I::I32Const((patterns.len() * 4) as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
+        f.instruction(&I::GlobalSet(NLS_PAT_GLOBAL));
+        for (i, v) in patterns.iter().enumerate() {
+            f.instruction(&I::GlobalGet(NLS_PAT_GLOBAL));
+            f.instruction(&I::I32Const(*v));
+            f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg((i * 4) as u32, 2)));
         }
     }
     // base = table.grow(null, 3n) — returns the old size (the growable table's max

@@ -398,7 +398,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -415,10 +415,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
 pub(crate) const NLS_BASE_GLOBAL: u32 = 0;
 
 /// Module global holding the base index this module's closure thunks were
-/// appended to the shared table at (set by `start`): after the three
+/// appended to the shared table at (set by `start`): after the four
 /// nonlinear-solver globals, or the only global when there are none.
 pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
-    if has_nls { NLS_NOMINAL_GLOBAL + 1 } else { 0 }
+    if has_nls { NLS_PAT_GLOBAL + 1 } else { 0 }
 }
 
 /// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
@@ -1045,6 +1045,13 @@ pub(crate) struct NlsJob {
     pub(crate) has_jac: bool,
     /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
     pub(crate) mixed: bool,
+    /// Nonzero count of the Jacobian's CSC pattern when the system is solved
+    /// sparsely (C's kinsol+KLU choice), else 0: the `nls_jac` callback then fills
+    /// `nnz` CSC values instead of a dense `n×n` matrix.
+    pub(crate) nnz: u32,
+    /// Byte offset of this system's `colptr`/`rowidx` pattern into the pattern
+    /// block (`NLS_PAT_GLOBAL`); only meaningful when `nnz != 0`.
+    pub(crate) pat_off: u32,
 }
 
 /// Bytes of extrapolation history a system with `n` unknowns needs: a count
@@ -1061,6 +1068,10 @@ pub(crate) const NLS_HIST_GLOBAL: u32 = 1;
 /// Model global holding the base address of the NLS nominal block (`n` `f64`
 /// per system, filled with codegen-time constants by `start`).
 pub(crate) const NLS_NOMINAL_GLOBAL: u32 = 2;
+
+/// Model global holding the base address of the sparse-NLS pattern block
+/// (`colptr[n+1]` then `rowidx[nnz]`, `i32`, per sparsely-solved system).
+pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
 
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
@@ -4420,10 +4431,10 @@ pub(crate) mod closures;
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    LSS_MAX_DENSITY, LSS_MIN_SIZE, NlsResidual, compile_linear_system,
-    compile_linear_system_analytic, compile_linear_system_analytic_csc,
-    compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_load_body,
-    emit_nls_residual_body, emit_solve_nls_call, lin_use_sparse,
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual,
+    compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
+    compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_load_body,
+    emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring, lin_use_sparse, nls_use_sparse,
 };
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
