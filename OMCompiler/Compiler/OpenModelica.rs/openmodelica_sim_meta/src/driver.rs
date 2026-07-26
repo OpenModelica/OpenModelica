@@ -725,7 +725,11 @@ fn format_f(v: f64) -> String {
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
 /// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
 /// block, once per site. Called by the drivers after each accepted output step.
-fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+///
+/// `level`: C reports a violation met while the integrator updates the system
+/// (`simulationUpdate`, which sets `noThrowAsserts`) as `info`, one met anywhere
+/// else — initialization, the terminal step — as `warning`.
+fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, level: &str) -> Result<()> {
     e.call1_if_present("functionCheckAsserts", sim_data)?;
     let pending = e.take_pending_warnings();
     if pending.is_empty() {
@@ -741,7 +745,7 @@ fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
         // C (`omc_error.c` messageText + printInfo): a header line with the source
         // position, then the message split on '\n' onto continuation lines whose
         // stream/type columns are "|".
-        let head = log_prefix("LOG_ASSERT", "info");
+        let head = log_prefix("LOG_ASSERT", level);
         let cont = log_prefix("|", "|");
         // C wraps the already-parenthesised `assert_cond` = "(<dumped>)" once more
         // in the `(%s)` format, so the displayed condition is double-parenthesised.
@@ -798,6 +802,9 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
         e.call1("functionZeroCrossings", sim_data)?;
         save_zc_pre(e, sim_data, layout)?;
     }
+    // C's `initializeModel` ends with `checkForAsserts` — before the
+    // initialization-success line.
+    check_asserts(e, sim_data, layout, "warning")?;
     // Initialization output is complete; the next model output is the simulation
     // phase. Let the host close the init segment of the capture.
     signal_init_done();
@@ -909,14 +916,46 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
 /// `functionAlgebraics` first so the reported derivatives/algebraics are consistent.
 /// The integrator has accepted the state, so a non-converging NLS here is a genuine
 /// failure; `nls_fail` is cleared first so `check_nls` sees only this point's solve.
-fn emit_row(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
+fn emit_row(
+    e: &mut dyn SimEngine,
+    rows: &mut Vec<f64>,
+    sim_data: u32,
+    layout: &SimLayout,
+    time: f64,
+    stop: f64,
+) -> Result<()> {
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)?;
+    if time >= stop {
+        // C's `finishSimulation`: the row at the stop time is the terminal step,
+        // a *discrete* update with `terminal()` true, so a `when terminal()`
+        // body fires and reaches the result file. (C emits the stop time twice,
+        // before and after; we keep one row per output point, the updated one.)
+        write_i32(e, sim_data + layout.terminal_off, 1)?;
+        iterate_discrete(e, sim_data, layout)?;
+        write_i32(e, sim_data + layout.terminal_off, 0)?;
+    } else {
+        e.call1("functionODE", sim_data)?;
+        e.call1("functionAlgebraics", sim_data)?;
+    }
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
-    check_asserts(e, sim_data, layout)
+    check_asserts(e, sim_data, layout, if time >= stop { "warning" } else { "info" })
+}
+
+/// The initial result row. C emits it straight after `initializeModel` with no
+/// re-evaluation: `SimData` is already consistent, and re-running the equations
+/// would repeat any side effect they have (`Streams.print`).
+fn emit_initial_row(
+    e: &mut dyn SimEngine,
+    rows: &mut Vec<f64>,
+    sim_data: u32,
+    layout: &SimLayout,
+    time: f64,
+) -> Result<()> {
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    capture_row(e, rows, sim_data, layout)?;
+    check_asserts(e, sim_data, layout, "warning")
 }
 
 /// Pre-event snapshot row (state just before a discrete update). Skips
@@ -1433,12 +1472,14 @@ impl Driver for EulerDriver {
                 return Ok(Advance::Cancelled);
             }
             did_step = true;
-            let time = start + self.row as f64 * h;
-            write_f64(e, sim_data + TIME_OFF, time)?;
-            e.call1("functionODE", sim_data)?;
-            e.call1("functionAlgebraics", sim_data)?;
+            // The last row lands exactly on `stop`: the terminal step.
+            let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            if self.row == 0 {
+                emit_initial_row(e, &mut self.rows, sim_data, layout, time)?;
+            } else {
+                emit_row(e, &mut self.rows, sim_data, layout, time, stop)?;
+            }
             check_nls(e, sim_data, layout)?; // Euler cannot back off — non-convergence is fatal
-            capture_row(e, &mut self.rows, sim_data, layout)?;
             // terminate() fired in functionAlgebraics: keep this row, stop the run.
             if terminated(e, sim_data, layout)? {
                 self.row = n_rows;
@@ -1790,7 +1831,7 @@ impl DasslDriver {
 
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
         // Row 0 at the start time.
-        emit_row(e, &mut rows, sim_data, layout, start)?;
+        emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?; // terminate() at the initial point
 
         // Dynamic state selection: seed the identity pivots (matching the wasm-side
@@ -1896,7 +1937,7 @@ impl Driver for DasslDriver {
                 }
                 did_step = true;
                 let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
-                emit_row(e, &mut self.rows, sim_data, layout, time)?;
+                emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -1968,7 +2009,7 @@ impl Driver for DasslDriver {
                 for i in 0..n_states {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
                 }
-                emit_row(e, &mut self.rows, sim_data, layout, tout)?;
+                emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
                 self.row += 1;
                 continue;
             }
@@ -2004,7 +2045,7 @@ impl Driver for DasslDriver {
             for i in 0..n_states {
                 write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
             }
-            emit_row(e, &mut self.rows, sim_data, layout, tout)?;
+            emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated; // terminate() fired: keep this row, stop
             }
@@ -2382,7 +2423,7 @@ impl DasslCore {
                     event_update(e, sim_data, layout, None, troot)?;
                     if let Some(r) = rows.as_deref_mut() {
                         capture_row(e, r, sim_data, layout)?;
-                        check_asserts(e, sim_data, layout)?;
+                        check_asserts(e, sim_data, layout, "info")?;
                     }
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
@@ -2415,14 +2456,14 @@ impl DasslCore {
                     return Ok(Step::Event { time: te });
                 }
                 if let Some(r) = rows.as_deref_mut() {
-                    emit_row(e, r, sim_data, layout, te)?; // pre-event row (held)
+                    emit_row(e, r, sim_data, layout, te, model.stop_time)?; // pre-event row (held)
                 }
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
                 refresh_relations(e, sim_data, layout)?;
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut() {
-                    emit_row(e, r, sim_data, layout, te)?;
+                    emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
                 if terminated(e, sim_data, layout)? {
                     return Ok(Step::Terminated);
@@ -2756,7 +2797,7 @@ impl DasslEventsDriver {
             refresh_relations(e, sim_data, layout)?;
             core.time_events += 1;
         }
-        emit_row(e, &mut rows, sim_data, layout, start)?;
+        emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
         // Dynamic state selection: identity pivots, then re-pivot at the initial
@@ -2846,7 +2887,7 @@ impl Driver for DasslEventsDriver {
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
-                        check_asserts(e, sim_data, layout)?;
+                        check_asserts(e, sim_data, layout, "info")?;
                         if terminated(e, sim_data, layout)? {
                             self.finished = true;
                             return Ok(Advance::Terminated);
@@ -2863,12 +2904,12 @@ impl Driver for DasslEventsDriver {
                     if te <= tout + eps {
                         let te = if (te - tout).abs() <= eps { tout } else { te };
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
-                        emit_row(e, &mut self.rows, sim_data, layout, te)?; // pre-event row
+                        emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?; // pre-event row
                         write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
                         self.samp.fire(e, sim_data, te)?;
                         refresh_relations(e, sim_data, layout)?;
                         self.core.time_events += 1;
-                        emit_row(e, &mut self.rows, sim_data, layout, te)?; // post-event row
+                        emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?; // post-event row
                         if terminated(e, sim_data, layout)? {
                             self.finished = true;
                             return Ok(Advance::Terminated);
@@ -2888,7 +2929,7 @@ impl Driver for DasslEventsDriver {
                 }
                 if !grid_covered {
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-                    emit_row(e, &mut self.rows, sim_data, layout, tout)?;
+                    emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
                     if terminated(e, sim_data, layout)? {
                         self.finished = true;
                         return Ok(Advance::Terminated);
@@ -2944,7 +2985,7 @@ impl Driver for DasslEventsDriver {
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
-                emit_row(e, &mut self.rows, sim_data, layout, tout)?;
+                emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
                 if terminated(e, sim_data, layout)? {
                     break Advance::Terminated;
                 }

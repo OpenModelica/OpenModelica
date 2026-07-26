@@ -283,7 +283,9 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
         SigTy::Str => wasmtime::Val::I32(str_to_handle(store, rt, v)?),
         SigTy::Array { elem, rank } => wasmtime::Val::I32(array_to_handle(store, rt, elem, *rank, v)?),
         SigTy::Record { fields, .. } => wasmtime::Val::I32(record_to_handle(store, rt, fields, v)?),
-        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 
@@ -389,7 +391,9 @@ fn write_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize, v: &Valu
             let h = record_to_handle(store, rt, fields, v)?;
             write_bytes(store, rt, addr, &h.to_le_bytes())?;
         }
-        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     }
     Ok(())
 }
@@ -422,7 +426,9 @@ fn marshal_out(store: &mut Store, rt: &RtFns, ty: &SigTy, val: &wasmtime::Val) -
             let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 record handle result")?;
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 
@@ -503,7 +509,9 @@ fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result
             let h = i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?);
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => return Err("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 

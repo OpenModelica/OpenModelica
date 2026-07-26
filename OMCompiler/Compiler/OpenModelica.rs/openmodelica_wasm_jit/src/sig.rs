@@ -53,6 +53,10 @@ pub enum SigTy {
     /// wasm as an opaque `i32` handle into the host's pointer registry; not a
     /// wasm heap value (no ARC — freed by the object's `destructor`).
     Ptr,
+    /// A function reference (`function f(w=3)`): an `i32` handle to a runtime
+    /// closure (see the codegen's `closures` module). The signature is what the
+    /// holder may call, fixing the `call_indirect` type at every call site.
+    Func { params: Arc<Vec<SigTy>>, results: Arc<Vec<SigTy>> },
 }
 
 impl SigTy {
@@ -87,12 +91,25 @@ impl SigTy {
                 out.push('}');
             }
             SigTy::Ptr => out.push('P'),
+            // `<params|results>` — a function reference, angle-delimited so the
+            // reader can consume one whole (possibly nested) signature.
+            SigTy::Func { params, results } => {
+                out.push('<');
+                for p in params.iter() {
+                    p.write_code(out);
+                }
+                out.push('|');
+                for r in results.iter() {
+                    r.write_code(out);
+                }
+                out.push('>');
+            }
         }
     }
     pub fn wty(&self) -> WTy {
         match self {
-            SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr => WTy::I32,
             SigTy::Real => WTy::F64,
+            _ => WTy::I32,
         }
     }
     /// The runtime element-kind tag stored in an array header when this type is
@@ -104,7 +121,8 @@ impl SigTy {
             SigTy::Bool => 2,
             SigTy::Str => 3,
             SigTy::Array { .. } => 4,
-            SigTy::Record { .. } => 5,
+            // A closure is a record object, so it releases/copies like one.
+            SigTy::Record { .. } | SigTy::Func { .. } => 5,
             // Not a real runtime element kind: arrays of external objects don't
             // occur (table data is Real/Integer). Stored 4-byte, non-heap.
             SigTy::Ptr => 0,
@@ -116,7 +134,7 @@ impl SigTy {
         match self {
             SigTy::Str => Some("rt_release"),
             SigTy::Array { .. } => Some("rt_array_release"),
-            SigTy::Record { .. } => Some("rt_record_release"),
+            SigTy::Record { .. } | SigTy::Func { .. } => Some("rt_record_release"),
             _ => None,
         }
     }

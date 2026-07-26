@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 openmodelica_wasi.workspace = true
+# Shared `LOG_STDOUT` message formatting (also used by the ModelicaMessage shim).
+openmodelica_modelica_utilities.workspace = true
 # Host-side wasm execution engine (drivers, sim runtime, model, wasm artifacts).
 openmodelica_wasm_jit.workspace = true
 # External-"C" wasm-FMU artifacts, consumed by the FMU linker.

@@ -244,7 +244,21 @@ unsafe extern "C" {
     /// up here. See [`ensure_sim_error_interception`] and `runtime_error_shim.c`.
     fn omrs_install_modelica_error_panic(err_slot: *mut c_void, verr_slot: *mut c_void);
     fn omrs_install_omc_assert_panic(assert_slot: *mut c_void);
+
+    /// C shim: rebind the runtime's `OpenModelica_ModelicaVFormat{Message,Warning}`
+    /// slots so an external function's messages reach the running simulation's
+    /// log instead of the runtime's never-enabled `OMC_LOG_STDOUT` stream.
+    fn omrs_install_modelica_message(
+        msg_slot: *mut c_void,
+        warn_slot: *mut c_void,
+        msg_hook: ModelicaMessageHook,
+        warn_hook: ModelicaMessageHook,
+    );
 }
+
+/// Renders a `ModelicaMessage`/`ModelicaWarning` for the simulation host;
+/// returns whether it took it. See [`install_modelica_message_interception`].
+pub type ModelicaMessageHook = extern "C" fn(*const core::ffi::c_char) -> i32;
 
 /// Rebind the loaded runtime's `ModelicaError`/`ModelicaFormatError` hooks, the
 /// analogue of `Error_registerModelicaFormatError` (which the C compiler runs at
@@ -424,10 +438,10 @@ pub fn external_symbol(name: &str) -> Option<usize> {
 
 /// Install the panic-mode `ModelicaError`/`omc_assert` interception for the
 /// simulation host, once. A `ModelicaError` from an external library (e.g. a
-/// missing table file) then records its message in the compiler Error buffer and
-/// raises a Rust panic (`omrs_runtime_abort`), which the libffi call site catches
+/// missing table file) then records its message in the compiler Error buffer and raises a Rust panic
+/// (`omrs_runtime_abort`), which the libffi call site catches
 /// (`ErrorExt::catch_runtime_error`) — instead of longjmp-ing into an unset jump
-/// buffer and crashing. The runtime's `OpenModelica_Modelica*Error`/`omc_assert`
+/// buffer and crashing. The runtime's `OpenModelica_Modelica*`/`omc_assert`
 /// slots resolve through the global scope (`ensure_runtime_solibs` loaded the
 /// runtime `RTLD_GLOBAL`).
 fn ensure_sim_error_interception() {
@@ -443,6 +457,31 @@ fn ensure_sim_error_interception() {
         }
         if let Some(assert_slot) = dlsym_addr(me, "omc_assert") {
             unsafe { omrs_install_omc_assert_panic(assert_slot as *mut c_void) };
+        }
+    });
+}
+
+/// Route an external function's `ModelicaMessage`/`ModelicaWarning` to `msg_hook`
+/// / `warn_hook` — the runtime sends them to `OMC_LOG_STDOUT`, a stream the
+/// compiler process never enables, so `Streams.print` output would vanish. A
+/// message the hook declines still reaches the original.
+pub fn install_modelica_message_interception(msg_hook: ModelicaMessageHook, warn_hook: ModelicaMessageHook) {
+    use std::sync::Once;
+    static ONCE: Once = Once::new();
+    ONCE.call_once(|| {
+        ensure_runtime_solibs();
+        let Ok(me) = dl::open_self() else { return };
+        let msg_slot = dlsym_addr(me, "OpenModelica_ModelicaVFormatMessage");
+        let warn_slot = dlsym_addr(me, "OpenModelica_ModelicaVFormatWarning");
+        if msg_slot.is_some() || warn_slot.is_some() {
+            unsafe {
+                omrs_install_modelica_message(
+                    msg_slot.unwrap_or(0) as *mut c_void,
+                    warn_slot.unwrap_or(0) as *mut c_void,
+                    msg_hook,
+                    warn_hook,
+                )
+            };
         }
     });
 }

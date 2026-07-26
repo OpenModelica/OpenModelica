@@ -545,14 +545,15 @@ thread_local! {
     static SPLIT_ARMED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-/// Init-done hook: take the init-phase stdout and restart the capture. A no-op
-/// unless [`run_simulation_inner`] armed it; disarms after firing.
+/// Init-done hook: take the init-phase stdout and `LOG_ASSERT` warnings, then
+/// restart the capture. A no-op unless [`run_simulation_inner`] armed it.
 fn on_init_done() {
     if !SPLIT_ARMED.with(|a| a.replace(false)) {
         return;
     }
     let init = openmodelica_wasi::wasi::take_stdout_capture();
-    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(init));
+    let warns: String = sim_driver::take_assert_warnings().concat();
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(format!("{init}{warns}")));
     openmodelica_wasi::wasi::start_stdout_capture();
 }
 
@@ -1397,6 +1398,7 @@ struct SimVarMap {
     array_acc: HashMap<String, Vec<(Vec<i32>, u32, WTy)>>,
     /// `SimData` byte offset of the `terminate` flag (see [`SimLayout`]).
     terminate_off: u32,
+    terminal_off: u32,
     /// `SimData` byte offset of the fired `terminate`'s message + source position.
     term_info_off: u32,
     /// `SimData` byte offset of the nonlinear-solver failure flag (see [`SimLayout`]).
@@ -1704,6 +1706,7 @@ fn build_var_map(
         array_groups: HashMap::new(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
+        terminal_off: layout.terminal_off,
         term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
         nls_jobs: Arc::new(HashMap::new()),
@@ -2464,9 +2467,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // `om_meta_ptr`/`om_meta_len` type: () -> i32.
     let meta_fn_type = types.len();
     types.ty().function([], [we::ValType::I32]);
-    // Nonlinear-solver callback + `start` types (only when the model has
-    // nonlinear systems, so output stays byte-identical otherwise): `residual`
-    // (i32,i32,i32)->(), `load` (i32,i32)->(), `start` ()->().
+    // Nonlinear-solver callback types (only when the model has nonlinear systems,
+    // so output stays byte-identical otherwise): `residual` (i32,i32,i32)->(),
+    // `load` (i32,i32)->(). The `start` type is allocated at the end, with the
+    // closure thunks' types.
     let nls_types = if nls_systems.is_empty() {
         None
     } else {
@@ -2474,10 +2478,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         types.ty().function([we::ValType::I32, we::ValType::I32, we::ValType::I32], []);
         let load_type = types.len();
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
-        let start_type = types.len();
-        types.ty().function([], []);
-        Some((residual_type, load_type, start_type))
+        Some((residual_type, load_type))
     };
+    // Function references met while lowering the bodies add thunks to the closure
+    // pool; this global holds their shared-table base.
+    let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
+    crate::CodegenWasmJitFunctions::closures::begin(types.len(), closure_global);
 
     // --- Import section. ---
     let mut imports = we::ImportSection::new();
@@ -2505,18 +2511,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // the host (dlopen-self native; side module on wasm).
     for (i, sig) in ext_imports.iter().enumerate() {
         imports.import("ext", &sig.name, we::EntityType::Function(ext_type[i]));
-    }
-    // Share the runtime's `__indirect_function_table` (as with `rt.memory`) so
-    // the `start` function can append this model's `residual`/`load` callbacks and
-    // `rt_solve_nls` can reach them by `call_indirect`.
-    if !nls_systems.is_empty() {
-        imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
-            element_type: we::RefType::FUNCREF,
-            table64: false,
-            minimum: 1,
-            maximum: None,
-            shared: false,
-        }));
     }
 
     // --- Compile bodies (collecting String literals into the module pool). ---
@@ -2634,12 +2628,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         eq_base + 8
     };
 
-    // --- Nonlinear-system callbacks + `start`. For each system emit its
-    // `residual`/`load` functions, then one `start` function that appends them to
-    // the shared table (base recorded in the `nls_base` global). All `ref.func`d
-    // callbacks are also listed in a declared element segment (below) so the
-    // references validate. Emitted only when the model has nonlinear systems. ---
-    let nls_wiring = if let Some((_, _, _)) = nls_types {
+    // --- Nonlinear-system callbacks: per system a `residual`/`load` function.
+    // The module's `start` (built last, shared with the closure thunks) appends
+    // them to the shared table, base in the `nls_base` global; every `ref.func`d
+    // callback is also listed in the declared element segment below so the
+    // references validate. Only when the model has nonlinear systems. ---
+    let nls_wiring = if nls_types.is_some() {
         let mut callback_indices: Vec<u32> = Vec::new(); // for the declared segment
         // (residual, load, Option<jac>) per system; the shared table gets 3 slots
         // per system (`3k`, `3k+1`, `3k+2`), the jac slot left null when absent.
@@ -2661,9 +2655,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             });
             fn_indices.push((res_idx, load_idx, jac_idx));
         }
-        let start_idx = import_base + bodies.len() as u32;
-        bodies.push(build_nls_start_fn(&fn_indices, nls_hist_bytes, &nls_nominals));
-        Some((start_idx, callback_indices))
+        Some((fn_indices, callback_indices))
     } else {
         None
     };
@@ -2766,9 +2758,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(meta_fn_type); // om_meta_ptr
     functions.function(meta_fn_type); // om_meta_len
     // Optional eq functions — always emitted (order must match the `bodies` pushes:
-    // destructors, nls callbacks/start, initSample, zc, statesetJac, lambda0).
+    // destructors, nls callbacks, initSample, zc, statesetJac, lambda0, …, then
+    // the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
-    if let Some((residual_type, load_type, start_type)) = nls_types {
+    if let Some((residual_type, load_type)) = nls_types {
         for sys in &nls_systems {
             functions.function(residual_type);
             functions.function(load_type);
@@ -2779,7 +2772,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
                 functions.function(residual_type);
             }
         }
-        functions.function(start_type);
     }
     functions.function(eqfn_type); // initSample: (i32) -> ()
     functions.function(eqfn_type); // functionZeroCrossings: (i32) -> ()
@@ -2789,6 +2781,49 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
+
+    // --- Closure thunks and the module `start`. The thunks come after every
+    // other body — their `ref.func` indices are only known here. ---
+    let closure_wiring = crate::CodegenWasmJitFunctions::closures::take();
+    let mut thunk_indices: Vec<u32> = Vec::new();
+    for (type_index, body) in closure_wiring.thunks {
+        thunk_indices.push(import_base + bodies.len() as u32);
+        functions.function(type_index);
+        bodies.push(body);
+    }
+    for (params, results) in &closure_wiring.types {
+        types.ty().function(params.iter().copied(), results.iter().copied());
+    }
+    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() {
+        let start_type = types.len();
+        types.ty().function([], []);
+        let start_idx = import_base + bodies.len() as u32;
+        let mut f = we::Function::new([]);
+        if let Some((fn_indices, _)) = &nls_wiring {
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals);
+        }
+        if !thunk_indices.is_empty() {
+            crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
+        }
+        f.instruction(&we::Instruction::End);
+        functions.function(start_type);
+        bodies.push(f);
+        let mut declared: Vec<u32> =
+            nls_wiring.as_ref().map(|(_, cbs)| cbs.clone()).unwrap_or_default();
+        declared.extend_from_slice(&thunk_indices);
+        Some((start_idx, declared))
+    } else {
+        None
+    };
+    if start_wiring.is_some() {
+        imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
+            element_type: we::RefType::FUNCREF,
+            table64: false,
+            minimum: 1,
+            maximum: None,
+            shared: false,
+        }));
+    }
 
     // --- Code section. ---
     let mut code = we::CodeSection::new();
@@ -2818,7 +2853,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
 
     // --- Name section: without it a trap backtrace is bare function indices. The
-    // unnamed remainder is the NLS callbacks. ---
+    // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
     let mut names: Vec<(u32, String)> = Vec::new();
     for (i, name) in BUILTINS
         .iter()
@@ -2869,12 +2904,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     module.section(&imports);
     module.section(&functions);
     // Global + Start + Element sections (in the canonical order) carry the
-    // nonlinear-solver table wiring; present only when the model has NLS systems.
-    if nls_wiring.is_some() {
+    // shared-table wiring: NLS callbacks and/or closure thunks.
+    if start_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
-        // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
-        // and NLS_NOMINAL_GLOBAL (nominal block base); all set by the `start` function.
-        for _ in 0..3 {
+        // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base)
+        // and NLS_NOMINAL_GLOBAL (nominal block base) when the model has nonlinear
+        // systems, then the closure-thunk table base; all set by `start`.
+        let n_globals = if thunk_indices.is_empty() { closure_global } else { closure_global + 1 };
+        for _ in 0..n_globals {
             globals.global(
                 we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
                 &we::ConstExpr::i32_const(0),
@@ -2883,10 +2920,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         module.section(&globals);
     }
     module.section(&exports);
-    if let Some((start_idx, callback_indices)) = &nls_wiring {
+    if let Some((start_idx, declared)) = &start_wiring {
         module.section(&we::StartSection { function_index: *start_idx });
         let mut elements = we::ElementSection::new();
-        elements.declared(we::Elements::Functions(callback_indices.as_slice().into()));
+        elements.declared(we::Elements::Functions(declared.as_slice().into()));
         module.section(&elements);
     }
     if !literals.is_empty() {
@@ -2944,20 +2981,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     })
 }
 
-/// `LOG_STDOUT` prefix for the first line of a message, and the continuation
-/// prefix OMC's `streamPrint` uses for wrapped lines (see the C runtime output).
-const LOG_STDOUT_PREFIX: &str = "LOG_STDOUT        | info    | ";
-const LOG_CONT_PREFIX: &str = "|                 | |       | ";
-
 /// Wrap a `\n`-separated message in the `LOG_STDOUT`/continuation prefixes.
 fn format_log_stdout(msg: &str) -> String {
-    let mut out = String::new();
-    for (i, line) in msg.split('\n').enumerate() {
-        out.push_str(if i == 0 { LOG_STDOUT_PREFIX } else { LOG_CONT_PREFIX });
-        out.push_str(line);
-        out.push('\n');
-    }
-    out
+    openmodelica_modelica_utilities::format_log_stdout(msg, openmodelica_modelica_utilities::LOG_STDOUT_INFO)
 }
 
 /// Reproduce C's `initializeLinearSystems` sparse-solver announcements
@@ -3292,6 +3318,7 @@ fn build_eq_fn_with_prelude(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -3349,6 +3376,7 @@ fn build_init_sample_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -3398,6 +3426,7 @@ fn build_init_start_values_fn(
         start_slots: HashMap::new(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -3449,6 +3478,7 @@ fn build_zero_crossings_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -3491,6 +3521,7 @@ fn build_update_relations_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -3537,6 +3568,7 @@ fn build_store_delayed_fn(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -4339,6 +4371,7 @@ fn build_nls_fns(
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
         terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
@@ -4422,17 +4455,16 @@ fn build_nls_fns(
     Ok((residual, load, jac))
 }
 
-/// Build the module `start` function: grow the shared
-/// `rt.__indirect_function_table` by `2 * n` slots, record the base (the old
+/// The nonlinear-solver part of the module `start`: grow the shared
+/// `rt.__indirect_function_table` by `3 * n` slots, record the base (the old
 /// size) in the `nls_base` global, then write each system's `residual`/`load`
-/// function references into `base + 2k` / `base + 2k + 1`
-/// (`fn_indices[k] = (residual, load)`). `rt_solve_nls` reads these indices back
-/// via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
+/// function references into `base + 3k` / `base + 3k + 1`
+/// (`fn_indices[k] = (residual, load, jac)`). `rt_solve_nls` reads these indices
+/// back via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
 /// extrapolation-history block (`hist_bytes`) into `NLS_HIST_GLOBAL`.
-fn build_nls_start_fn(fn_indices: &[(u32, u32, Option<u32>)], hist_bytes: u32, nominals: &[f64]) -> we::Function {
+fn emit_nls_start(f: &mut we::Function, fn_indices: &[(u32, u32, Option<u32>)], hist_bytes: u32, nominals: &[f64]) {
     use we::Instruction as I;
     use crate::CodegenWasmJitFunctions::NLS_NOMINAL_GLOBAL;
-    let mut f = we::Function::new([]);
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
         f.instruction(&I::I32Const(hist_bytes as i32));
@@ -4458,23 +4490,22 @@ fn build_nls_start_fn(fn_indices: &[(u32, u32, Option<u32>)], hist_bytes: u32, n
     f.instruction(&I::I32Const((3 * fn_indices.len()) as i32));
     f.instruction(&I::TableGrow(0));
     f.instruction(&I::GlobalSet(NLS_BASE_GLOBAL));
-    let mut set_slot = |f: &mut we::Function, off: i32, idx: u32| {
+    fn set_slot(f: &mut we::Function, off: i32, idx: u32) {
+        use we::Instruction as I;
         f.instruction(&I::GlobalGet(NLS_BASE_GLOBAL));
         f.instruction(&I::I32Const(off));
         f.instruction(&I::I32Add);
         f.instruction(&I::RefFunc(idx));
         f.instruction(&I::TableSet(0));
-    };
+    }
     for (k, (res_idx, load_idx, jac_idx)) in fn_indices.iter().enumerate() {
         let base_off = (3 * k) as i32;
-        set_slot(&mut f, base_off, *res_idx);
-        set_slot(&mut f, base_off + 1, *load_idx);
+        set_slot(f, base_off, *res_idx);
+        set_slot(f, base_off + 1, *load_idx);
         if let Some(jac_idx) = jac_idx {
-            set_slot(&mut f, base_off + 2, *jac_idx);
+            set_slot(f, base_off + 2, *jac_idx);
         }
     }
-    f.instruction(&I::End);
-    f
 }
 
 pub(crate) fn eq_kind_name(eq: &SimCode::SimEqSystem) -> &'static str {
@@ -4669,6 +4700,15 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     f.instruction(&I::F64Mul);
     f.instruction(&I::F64Add);
     f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(TIME_OFF, 3)));
+
+    // terminal = (row == n_steps): C's `finishSimulation` evaluates the last
+    // point with `terminal()` true. This path has no events, so raising the flag
+    // is the whole discrete update.
+    f.instruction(&I::LocalGet(SIM_DATA));
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::LocalGet(N_STEPS));
+    f.instruction(&I::I32Eq);
+    f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg(layout.terminal_off, 2)));
 
     // functionODE(sim_data); functionAlgebraics(sim_data)
     f.instruction(&I::LocalGet(SIM_DATA));
