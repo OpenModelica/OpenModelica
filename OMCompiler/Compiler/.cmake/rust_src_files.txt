@@ -155,11 +155,13 @@ openmodelica_codegen_wasm_jit_runtime/.gitignore
 openmodelica_codegen_wasm_jit_runtime/Cargo.lock
 openmodelica_codegen_wasm_jit_runtime/Cargo.toml
 openmodelica_codegen_wasm_jit_runtime/build-runtime.sh
+openmodelica_codegen_wasm_jit_runtime/build.rs
 openmodelica_codegen_wasm_jit_runtime/src/delay.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
+openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
 openmodelica_fmi3_wasm/Cargo.lock
 openmodelica_fmi3_wasm/Cargo.toml
 openmodelica_fmi3_wasm/src/lib.rs
@@ -219,6 +221,7 @@ openmodelica_scripting_qt/src/lib.rs
 openmodelica_sim_meta/Cargo.toml
 openmodelica_sim_meta/src/driver.rs
 openmodelica_sim_meta/src/lib.rs
+openmodelica_sim_meta/src/simflags.rs
 openmodelica_simcode_types/Cargo.toml
 openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml

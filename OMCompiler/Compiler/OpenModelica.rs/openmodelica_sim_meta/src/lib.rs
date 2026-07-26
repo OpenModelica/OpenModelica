@@ -25,6 +25,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod simflags;
 
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;

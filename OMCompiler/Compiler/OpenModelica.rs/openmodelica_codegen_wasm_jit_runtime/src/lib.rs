@@ -42,6 +42,10 @@ extern crate alloc;
 
 mod delay;
 mod nls;
+// SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
+// when the build script found them, so `cfg(sundials)` gates the calls; the module
+// itself compiles everywhere for its capability report.
+mod sundials;
 
 use alloc::format;
 use alloc::string::String;
@@ -2018,12 +2022,6 @@ pub extern "C" fn rt_sim_store_row(buf: u32, row: u32, sim_data: u32, n_reals: u
 // algorithm class as LAPACK's `dgesv`, so results track the C target closely.
 // ---------------------------------------------------------------------------
 
-/// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
-/// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
-/// and 0 is returned; 1 only when the system is genuinely unsolvable.
-///
-/// LU with partial pivoting first (like C's `dgesv`); on a singular matrix a
-/// total-pivot search runs as fallback, mirroring C's `LS_DEFAULT`.
 /// Count of linear-system solves in the current run (every dense + sparse path).
 /// The session resets it per run via [`reset_lin_solves`]; surfaced in `LOG_STATS`.
 static LIN_SOLVES: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
@@ -2035,10 +2033,27 @@ pub fn reset_lin_solves() {
     LIN_SOLVES.store(0, core::sync::atomic::Ordering::Relaxed);
 }
 
+/// [`lin_solves`] for a host driving the model itself, which has no session and so
+/// no `rt_sim_stat` to read the counter from.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_lin_solves() -> u64 {
+    lin_solves()
+}
+
+/// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
+/// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
+/// and 0 is returned; 1 only when the system is genuinely unsolvable.
+///
+/// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
+/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu` uses KLU instead.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
+    #[cfg(sundials)]
+    if sundials::ls_is_klu() {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
@@ -2097,12 +2112,17 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
     }
 }
 
-/// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64): scan its
-/// structural nonzeros into CSC, then [`rt_solve_lin_sparse`]. 0 ok, 1 singular.
+/// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64) with the
+/// `-lss` solver: its structural nonzeros are scanned into CSC first. There is no
+/// system handle, so nothing is cached. 0 ok, 1 singular.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
+    #[cfg(sundials)]
+    if sundials::lss_backend() == sundials::Sparse::Klu {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
@@ -2162,8 +2182,8 @@ thread_local! {
         core::cell::RefCell::new(std::collections::HashMap::new());
 }
 
-/// Like [`rt_solve_lin_sparse`] but reuses the cached symbolic analysis for `handle`
-/// (pattern read only to seed the cache on the first call).
+/// Solve the CSC system with the `-lss` solver, reusing `handle`'s cached symbolic
+/// analysis (the pattern is read only to seed the cache on the first call).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_sparse_cached(
     handle: u32,
@@ -2175,12 +2195,13 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     nnz: u32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz)
+    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, sundials::lss_backend())
 }
 
 /// [`rt_solve_lin_sparse_cached`] without the statistics counter — the sparse
 /// nonlinear solver's inner factorizations are kinsol/KLU solves in C, which the
-/// `### STATISTICS ###` "linear system solves" line does not count.
+/// `### STATISTICS ###` "linear system solves" line does not count. `backend` is
+/// the caller's selector: `-lss` here, `-nlsLS` inside the nonlinear solver.
 pub(crate) fn lin_sparse_cached(
     handle: u32,
     colptr: u32,
@@ -2189,9 +2210,17 @@ pub(crate) fn lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
+    backend: sundials::Sparse,
 ) -> i32 {
     let n = n as usize;
     let nnz = nnz as usize;
+
+    #[cfg(sundials)]
+    if backend == sundials::Sparse::Klu {
+        return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    }
+    #[cfg(not(sundials))]
+    let _ = backend;
 
     // Native interactive runtime: the host solves natively (cheap crossings).
     #[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]

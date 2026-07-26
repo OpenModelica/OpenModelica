@@ -26,6 +26,7 @@
 
 use openmodelica_mat_writer::{MatKind, MatVar};
 use openmodelica_sim_meta::driver::{self, SimEngine};
+use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
 
 // Model exports, resolved by wasm-merge (module "model"). Calls are unsafe; a
@@ -43,6 +44,9 @@ unsafe extern "C" {
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
+    fn functionCheckAsserts(sim_data: u32);
+    fn functionStoreDelayed(sim_data: u32);
+    fn functionInitDelay(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
@@ -94,6 +98,9 @@ impl SimEngine for StandaloneEngine {
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
+                "functionCheckAsserts" => functionCheckAsserts(arg),
+                "functionStoreDelayed" => functionStoreDelayed(arg),
+                "functionInitDelay" => functionInitDelay(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 _ => return Err("wasm-jit standalone: unknown model function"),
@@ -162,11 +169,25 @@ fn run() {
     std::fs::write(format!("{}_res.mat", m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
 }
 
-/// The command entry point. Runs wasi-libc ctors (preopen/stdio init) then the
-/// simulation. Exported by the cdylib; the merged module is a WASI command.
+/// The command entry point. Runs wasi-libc ctors (preopen/stdio init), takes the
+/// runtime flags off the command line, then simulates. The merged module is a WASI
+/// command, so `wasmtime model.wasm -nls=kinsol` arrives through `args_get`.
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() {
     unsafe { __wasm_call_ctors() };
+    let argv: Vec<String> = std::env::args().collect();
+    match simflags::parse(&argv).and_then(|f| {
+        simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
+    }) {
+        Ok(f) => {
+            crate::sundials::apply_flags(&f);
+            simflags::set_flags(f);
+        }
+        Err(e) => {
+            eprintln!("wasm-jit standalone: {e}");
+            core::arch::wasm32::unreachable()
+        }
+    }
     run();
 }
 

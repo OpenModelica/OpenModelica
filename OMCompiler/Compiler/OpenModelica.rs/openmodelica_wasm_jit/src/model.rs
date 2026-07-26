@@ -128,20 +128,7 @@ pub fn encode_overrides() -> Vec<u8> {
     b
 }
 
-/// Model export names in the fixed table-slot order the in-wasm session driver
-/// expects; must stay in sync with `openmodelica_codegen_wasm_jit_runtime::session`.
+/// Model export names in table-slot order. The runtime's `session::slot_of` derives
+/// from the same list, so the two sides cannot drift.
 #[cfg(feature = "jit")]
-pub const INWASM_SLOT_NAMES: [&str; 12] = [
-    "functionParameters",
-    "functionInitStartValues",
-    "functionInitialEquations",
-    "functionODE",
-    "functionAlgebraics",
-    "functionStateSetJacobians",
-    "functionZeroCrossings",
-    "initSample",
-    "simulate",
-    "callExternalObjectDestructors",
-    "functionInitialEquations_lambda0",
-    "functionUpdateRelations",
-];
+pub const INWASM_SLOT_NAMES: &[&str] = openmodelica_sim_meta::driver::MODEL_FNS;

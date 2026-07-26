@@ -45,16 +45,27 @@ fn main() {
     println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME");
 
     // Hash of every input that affects the produced wasm.
-    let (hash, tracked) = hash_inputs(&runtime_dir);
+    let (mut hash, tracked) = hash_inputs(&runtime_dir);
     for f in &tracked {
         println!("cargo:rerun-if-changed={}", f.display());
     }
+    // SUNDIALS/KLU for the wasip1 runtimes. Part of the stamp key: gaining or
+    // losing the archives changes the runtime's exports, so the blobs must rebuild.
+    let sundials = build_sundials_wasm(&crate_dir, &out_dir);
+    println!("cargo::rustc-check-cfg=cfg(sundials)");
+    if let Some((_, key)) = &sundials {
+        hash = format!("{hash}:{key}");
+        // Backs the crate's `SUNDIALS` const: with the archives, `-lss=klu` is
+        // servable.
+        println!("cargo:rustc-cfg=sundials");
+    }
+    let sundials_dir = sundials.as_ref().map(|(d, _)| d.as_path());
     // The JIT runtime (wasm32-unknown-unknown) and the standalone runtime
     // (wasm32-wasip1) are built from the same sources; both must run on every
     // invocation (the JIT build short-circuits on its own cache/override).
     build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
-    build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
-    build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash);
+    build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
+    build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
     build_external_c_wasm(&crate_dir, &out_dir);
     build_fmi3_me_adapter(&crate_dir, &out_dir);
 }
@@ -334,6 +345,240 @@ fn placeholder(dest: &Path) {
     }
 }
 
+/// The CMake targets cross-compiled to wasm: KLU and its SuiteSparse deps, then
+/// the SUNDIALS modules. Consumers pick from `lib/`; the link order lives in the
+/// runtime crate's build script.
+const SUITESPARSE_TARGETS: &[&str] = &["klu", "amd", "colamd", "btf", "suitesparseconfig"];
+const SUNDIALS_TARGETS: &[&str] = &[
+    "sundials_kinsol_static", "sundials_ida_static", "sundials_cvode_static",
+    "sundials_nvecserial_static", "sundials_sunmatrixdense_static",
+    "sundials_sunmatrixsparse_static", "sundials_sunlinsoldense_static",
+    "sundials_sunlinsolklu_static",
+];
+
+/// Bumped when the recipe below changes, to invalidate cached archives.
+const SUNDIALS_RECIPE: u32 = 2;
+
+/// Cross-compile the vendored SUNDIALS + SuiteSparse/KLU to `wasm32-wasip1` static
+/// archives, driving each project's own CMake with a generated wasi toolchain file
+/// (both configure and build unmodified; only shared libs must be off). Returns the
+/// directory holding `lib/*.a` plus a cache key, or `None` when the sources or the
+/// toolchain are missing — the runtime then builds without the real solvers and
+/// keeps using the pure-Rust ones.
+fn build_sundials_wasm(crate_dir: &Path, out_dir: &Path) -> Option<(PathBuf, String)> {
+    for var in ["OMC_SUNDIALS_WASM_DIR", "OMC_SUNDIALS_SOURCES", "OMC_SUITESPARSE_SOURCES",
+                "OMC_WASI_CLANG", "OMC_WASI_SYSROOT"] {
+        println!("cargo:rerun-if-env-changed={var}");
+    }
+    if let Ok(dir) = std::env::var("OMC_SUNDIALS_WASM_DIR") {
+        let dir = PathBuf::from(dir);
+        if dir.join("lib").is_dir() {
+            return Some((dir, "override".to_owned()));
+        }
+        println!("cargo:warning=OMC_SUNDIALS_WASM_DIR={} has no lib/", dir.display());
+        return None;
+    }
+
+    let third_party = |var: &str, name: &str| -> Option<PathBuf> {
+        std::env::var(var).ok().map(PathBuf::from).or_else(|| {
+            crate_dir.parent().and_then(Path::parent).and_then(Path::parent)
+                .map(|omc| omc.join("3rdParty").join(name))
+        }).filter(|p| p.join("CMakeLists.txt").exists())
+    };
+    let (Some(sundials_src), Some(suitesparse_src)) = (
+        third_party("OMC_SUNDIALS_SOURCES", "sundials-5.4.0"),
+        third_party("OMC_SUITESPARSE_SOURCES", "SuiteSparse-5.8.1"),
+    ) else {
+        println!("cargo:warning=no vendored SUNDIALS/SuiteSparse sources found; the wasm-jit \
+                  runtime will use its pure-Rust solvers. Set OMC_SUNDIALS_SOURCES / \
+                  OMC_SUITESPARSE_SOURCES.");
+        return None;
+    };
+
+    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
+    let sysroot = std::env::var("OMC_WASI_SYSROOT").unwrap_or_else(|_| "/usr".to_owned());
+    let root = out_dir.join("sundials-wasm");
+    let lib = root.join("lib");
+    let stamp = root.join("stamp");
+    let key = {
+        let mut h: u64 = 0xcbf29ce484222325;
+        let mut mix = |bytes: &[u8]| for &b in bytes { h ^= b as u64; h = h.wrapping_mul(0x100000001b3); };
+        // The pinned trees don't change in place; their paths carry the version, and
+        // the top-level CMakeLists catches an in-place patch.
+        for p in [&sundials_src, &suitesparse_src] {
+            mix(p.to_string_lossy().as_bytes());
+            if let Ok(b) = std::fs::read(p.join("CMakeLists.txt")) { mix(&b); }
+        }
+        mix(clang.as_bytes());
+        mix(sysroot.as_bytes());
+        mix(&SUNDIALS_RECIPE.to_le_bytes());
+        format!("{h:016x}")
+    };
+    if std::fs::read_to_string(&stamp).ok().as_deref() == Some(key.as_str()) {
+        return Some((root, key));
+    }
+
+    match build_sundials_archives(&sundials_src, &suitesparse_src, &root, &lib, &clang, &sysroot) {
+        Ok(()) => {
+            std::fs::write(&stamp, &key).ok();
+            Some((root, key))
+        }
+        Err(e) => {
+            println!("cargo:warning=could not cross-compile SUNDIALS/KLU to wasm ({e}); the \
+                      wasm-jit runtime will use its pure-Rust solvers. Needs cmake, clang with \
+                      a wasm32 target, llvm-ar and a wasi sysroot (OMC_WASI_SYSROOT).");
+            std::fs::remove_file(&stamp).ok();
+            None
+        }
+    }
+}
+
+/// Configure + build both trees for `wasm32-wasip1` and collect every `.a` into `lib`.
+fn build_sundials_archives(
+    sundials_src: &Path,
+    suitesparse_src: &Path,
+    root: &Path,
+    lib: &Path,
+    clang: &str,
+    sysroot: &str,
+) -> Result<(), String> {
+    let (ar, ranlib) = find_llvm_ar_ranlib(clang)
+        .ok_or("no llvm-ar/llvm-ranlib found (GNU ar cannot archive wasm objects)")?;
+    // `CMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY` keeps CMake's compiler check
+    // from linking an executable, which needs a `libclang_rt.builtins` path clang
+    // does not find for this triple.
+    let toolchain = root.join("wasi-toolchain.cmake");
+    std::fs::create_dir_all(root).map_err(|e| format!("create {}: {e}", root.display()))?;
+    std::fs::write(&toolchain, format!(
+        "set(CMAKE_SYSTEM_NAME WASI)\n\
+         set(CMAKE_SYSTEM_PROCESSOR wasm32)\n\
+         set(CMAKE_C_COMPILER {clang})\n\
+         set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n\
+         set(CMAKE_SYSROOT {sysroot})\n\
+         set(CMAKE_AR {})\n\
+         set(CMAKE_RANLIB {})\n\
+         set(CMAKE_C_FLAGS_INIT \"-O2\")\n\
+         set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n\
+         set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n",
+        ar.display(), ranlib.display(),
+    )).map_err(|e| format!("write toolchain file: {e}"))?;
+
+    // Fresh build dirs: this only runs when the stamp is invalid, and a cache left
+    // by a previous recipe must not decide anything.
+    let ss_build = root.join("suitesparse-build");
+    let sd_build = root.join("sundials-build");
+    std::fs::remove_dir_all(&ss_build).ok();
+    std::fs::remove_dir_all(&sd_build).ok();
+    let toolchain_arg = format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain.display());
+
+    cmake(&[
+        "-S", &suitesparse_src.to_string_lossy(), "-B", &ss_build.to_string_lossy(),
+        &toolchain_arg, "-DBUILD_SHARED_LIBS=OFF",
+    ])?;
+    cmake_build(&ss_build, SUITESPARSE_TARGETS)?;
+
+    // `klu.h` includes `amd.h`/`btf.h`/`SuiteSparse_config.h`, which live in sibling
+    // dirs. They go in via CMAKE_C_FLAGS rather than KLU_INCLUDE_DIR, because
+    // `config/FindKLU.cmake` overwrites that variable with the single directory its
+    // `find_path(… klu.h …)` lands on, silently dropping any others.
+    let sibling_includes = ["AMD/Include", "COLAMD/Include", "BTF/Include", "SuiteSparse_config"]
+        .iter()
+        .map(|d| format!(" -I{}", suitesparse_src.join(d).display()))
+        .collect::<String>();
+    let mut args = vec![
+        "-S".to_owned(), sundials_src.to_string_lossy().into_owned(),
+        "-B".to_owned(), sd_build.to_string_lossy().into_owned(),
+        toolchain_arg,
+        "-DSUNDIALS_BUILD_STATIC_LIBS=ON".to_owned(),
+        // Shared libs must be off: their link step fails on the builtins path.
+        "-DSUNDIALS_BUILD_SHARED_LIBS=OFF".to_owned(),
+        // No LAPACK in the wasi sysroot; SUNDIALS' own dense solver is used instead.
+        "-DSUNDIALS_LAPACK_ENABLE=OFF".to_owned(),
+        "-DSUNDIALS_EXAMPLES_ENABLE_C=OFF".to_owned(),
+        "-DSUNDIALS_KLU_ENABLE=ON".to_owned(),
+        // 32-bit indices, unlike the native build's 64. Mandatory here:
+        // `sunlinsol_klu.c` *casts* `sunindextype*` to `KLU_INDEXTYPE*`, which it
+        // maps to `long int` for 64-bit indices — 4 bytes on wasm32, so an int64
+        // index array would be reinterpreted as int32 and the sparsity pattern
+        // silently garbled. With 32 both sides are `int`.
+        "-DSUNDIALS_INDEX_SIZE=32".to_owned(),
+        format!("-DKLU_INCLUDE_DIR={}", suitesparse_src.join("KLU/Include").display()),
+        format!("-DCMAKE_C_FLAGS=-O2{sibling_includes}"),
+    ];
+    for (var, name) in [("KLU_LIBRARY", "libklu.a"), ("AMD_LIBRARY", "libamd.a"),
+                        ("COLAMD_LIBRARY", "libcolamd.a"), ("BTF_LIBRARY", "libbtf.a"),
+                        ("SUITESPARSECONFIG_LIBRARY", "libsuitesparseconfig.a")] {
+        args.push(format!("-D{var}={}", ss_build.join(name).display()));
+    }
+    cmake(&args.iter().map(String::as_str).collect::<Vec<_>>())?;
+    cmake_build(&sd_build, SUNDIALS_TARGETS)?;
+
+    // Start from an empty lib/: a stale archive from an earlier recipe (e.g. the
+    // 64-bit-index build) must not survive into the link.
+    std::fs::remove_dir_all(lib).ok();
+    std::fs::create_dir_all(lib).map_err(|e| format!("create {}: {e}", lib.display()))?;
+    let mut found = Vec::new();
+    for dir in [&ss_build, &sd_build] {
+        collect_archives(dir, &mut found);
+    }
+    if found.is_empty() {
+        return Err("the CMake builds produced no .a".into());
+    }
+    for a in &found {
+        copy(a, &lib.join(a.file_name().expect("archive has a file name")));
+    }
+    Ok(())
+}
+
+fn cmake(args: &[&str]) -> Result<(), String> {
+    let status = Command::new("cmake").args(args).status()
+        .map_err(|e| format!("spawn cmake: {e}"))?;
+    status.success().then_some(()).ok_or_else(|| format!("cmake configure exited with {status}"))
+}
+
+fn cmake_build(build_dir: &Path, targets: &[&str]) -> Result<(), String> {
+    let jobs = std::env::var("NUM_JOBS").unwrap_or_else(|_| "1".to_owned());
+    let status = Command::new("cmake")
+        .args(["--build", &build_dir.to_string_lossy(), "-j", &jobs, "--target"])
+        .args(targets)
+        .status()
+        .map_err(|e| format!("spawn cmake --build: {e}"))?;
+    status.success().then_some(()).ok_or_else(|| format!("cmake --build exited with {status}"))
+}
+
+fn collect_archives(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    for e in rd.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            collect_archives(&p, out);
+        } else if p.extension().map(|x| x == "a").unwrap_or(false) {
+            out.push(p);
+        }
+    }
+}
+
+/// `llvm-ar` + `llvm-ranlib`, unversioned or `-<N>` from clang's major (Ubuntu
+/// ships only the versioned names).
+fn find_llvm_ar_ranlib(clang: &str) -> Option<(PathBuf, PathBuf)> {
+    let mut stems = vec![String::new()];
+    if let Ok(out) = Command::new(clang).arg("-dumpversion").output() {
+        if let Some(major) = String::from_utf8_lossy(&out.stdout).trim().split('.').next() {
+            stems.push(format!("-{major}"));
+        }
+    }
+    stems.iter().find_map(|stem| {
+        let (ar, ranlib) = (which(&format!("llvm-ar{stem}")), which(&format!("llvm-ranlib{stem}")));
+        Some((ar?, ranlib?))
+    })
+}
+
+fn which(name: &str) -> Option<PathBuf> {
+    std::env::var_os("PATH").and_then(|paths| {
+        std::env::split_paths(&paths).map(|d| d.join(name)).find(|p| p.is_file())
+    })
+}
+
 /// Build + embed the `wasm32-unknown-unknown` JIT runtime (`runtime.wasm`): the
 /// allocator / refcount / string + array primitives the generated model/function
 /// modules import at JIT time. Honours the `OMC_WASM_RUNTIME` override and an
@@ -388,7 +633,13 @@ fn build_jit_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, dest:
 /// the omc target is wasm32 or the wasip1 target/build is unavailable, so the
 /// native `include_bytes!` still compiles (`emit_standalone_module` reports the
 /// absence at call time).
-fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, hash: &str) {
+fn build_wasip1_runtime(
+    crate_dir: &Path,
+    runtime_dir: &Path,
+    out_dir: &Path,
+    hash: &str,
+    sundials_dir: Option<&Path>,
+) {
     let dest = out_dir.join("runtime_wasip1.wasm");
     let stamp = out_dir.join("runtime_wasip1.wasm.hash");
 
@@ -421,6 +672,7 @@ fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, ha
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-target",
         &["--no-default-features", "--features", "standalone"],
+        sundials_dir,
     ) {
         Ok(produced) => {
             copy(&produced, &dest);
@@ -464,7 +716,13 @@ fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, ha
 /// sparse solver (`rsparse`) needs, instantiated with the existing `wasi_shim`.
 /// Native omc adds `host_lin_solve` (delegate the solve to the host); web omc
 /// omits it and solves in-wasm.
-fn build_wasip1_interactive_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, hash: &str) {
+fn build_wasip1_interactive_runtime(
+    crate_dir: &Path,
+    runtime_dir: &Path,
+    out_dir: &Path,
+    hash: &str,
+    sundials_dir: Option<&Path>,
+) {
     let dest = out_dir.join("runtime_wasip1_interactive.wasm");
     let stamp = out_dir.join("runtime_wasip1_interactive.wasm.hash");
 
@@ -503,6 +761,7 @@ fn build_wasip1_interactive_runtime(crate_dir: &Path, runtime_dir: &Path, out_di
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-interactive-target",
         &["--no-default-features", "--features", features],
+        sundials_dir,
     ) {
         Ok(produced) => {
             copy(&produced, &dest);
@@ -528,6 +787,7 @@ fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Resul
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-target",
         &[],
+        None,
     )
 }
 
@@ -544,11 +804,12 @@ fn build_runtime_wasm_named(
     artifact: &str,
     target_dir_prefix: &str,
     extra_args: &[&str],
+    sundials_dir: Option<&Path>,
 ) -> Result<PathBuf, String> {
     let target_dir = out_dir.join(format!("{target_dir_prefix}-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let status = Command::new(cargo)
-        .current_dir(crate_dir)
+    let mut cmd = Command::new(cargo);
+    cmd.current_dir(crate_dir)
         .args(["build", "--release", "--target", target])
         .args(extra_args)
         .arg("--target-dir")
@@ -557,9 +818,14 @@ fn build_runtime_wasm_named(
         .env_remove("RUSTFLAGS")
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        .status()
-        .map_err(|e| format!("could not spawn cargo: {e}"))?;
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    match sundials_dir {
+        Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
+        // Cargo's env is inherited; clear a stale outer setting so the nested build
+        // agrees with what this script actually produced.
+        None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
+    }
+    let status = cmd.status().map_err(|e| format!("could not spawn cargo: {e}"))?;
     if !status.success() {
         return Err(format!("cargo build for {target} exited with {status}"));
     }

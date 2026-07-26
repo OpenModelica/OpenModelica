@@ -213,7 +213,12 @@ list(APPEND CARGO_ENV
      # ModelicaExternalC C-Sources dir, so openmodelica_codegen_wasm_jit's build.rs
      # can compile the ModelicaExternalC WASI side module (modelicaexternalc.wasm) —
      # the crate builds from a synced copy (rust-src) whose relative path can't reach it.
-     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources")
+     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
+     # Same reason for the vendored solver sources: build.rs cross-compiles SUNDIALS
+     # and SuiteSparse/KLU to wasm (their own CMake, a wasi toolchain file) for the
+     # wasip1 wasm-jit runtimes.
+     "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+     "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
 
 # wasi-libc source (pinned wasi-sdk-32) for build.rs to build a -fPIC libc.so
 # (Debian's is non-PIC), passed as OMC_WASI_LIBC_SRC. Download failure is a WARNING,

@@ -1251,8 +1251,8 @@ pub(crate) fn nls_lss_handle(k: u32) -> u32 {
 /// residual probing. Solve `A x = b`, write each `x_j` back into its slot, then
 /// (torn systems) run `inner` to recover the non-iteration torn variables.
 ///
-/// Dense (`rt_linsolve`, LAPACK-like) or sparse (`rt_solve_lin_sparse`, KLU-like
-/// AMD-ordered CSC LU) per [`lin_use_sparse`], matching C's per-system choice.
+/// Dense (`rt_linsolve`) or sparse (`rt_solve_lin_sparse_cached`) per
+/// [`lin_use_sparse`], matching C's per-system choice.
 pub(crate) fn compile_linear_system_symbolic(
     ctx: &mut FnCtx,
     vars: &[Arc<DAE::ComponentRef>],
@@ -1260,7 +1260,7 @@ pub(crate) fn compile_linear_system_symbolic(
     a_entries: &[(usize, usize, &Arc<DAE::Exp>)],
     b_exps: &[&Arc<DAE::Exp>],
     inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
-    _index: i32,
+    index: i32,
 ) -> Result<()> {
     use we::Instruction as I;
     if n == 0 {
@@ -1337,7 +1337,10 @@ pub(crate) fn compile_linear_system_symbolic(
             ctx.emit(I::F64Store(mem_arg(values_off + (k as u32) * 8, 3)));
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
-        // rt_solve_lin_sparse(colptr, rowidx, values, b, n, nnz).
+        // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, n, nnz). The
+        // pattern is a compile-time constant, so the system index keys the runtime's
+        // cache and the symbolic factorization is computed once per run, as in C.
+        ctx.emit(I::I32Const(index));
         ctx.emit(I::LocalGet(base)); // colptr (off 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(rowidx_off as i32));
@@ -1350,7 +1353,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
-        ctx.emit(I::Call(rt_index("rt_solve_lin_sparse")?));
+        ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
         // Dense layout: A (n*n column-major) | b (n).
         let a_off: u32 = 0;

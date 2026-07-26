@@ -28,6 +28,35 @@ pub extern "C" fn rt_nls_note_assert() {
     NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
 }
 
+/// `Default` is the density-based choice plus the full retry ladder.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum NlsPick {
+    Default,
+    Hybrid,
+    Kinsol,
+    Newton,
+    Mixed,
+    Homotopy,
+}
+
+/// Without `session`/`standalone` there is no flag store to read (the FMI3 adapter).
+#[cfg(any(feature = "session", feature = "standalone"))]
+fn nls_pick() -> NlsPick {
+    use openmodelica_sim_meta::simflags::Nls;
+    match openmodelica_sim_meta::simflags::flags().nls {
+        None => NlsPick::Default,
+        Some(Nls::Hybrid) => NlsPick::Hybrid,
+        Some(Nls::Kinsol) => NlsPick::Kinsol,
+        Some(Nls::Newton) => NlsPick::Newton,
+        Some(Nls::Mixed) => NlsPick::Mixed,
+        Some(Nls::Homotopy) => NlsPick::Homotopy,
+    }
+}
+#[cfg(not(any(feature = "session", feature = "standalone")))]
+fn nls_pick() -> NlsPick {
+    NlsPick::Default
+}
+
 /// sqrt(DBL_EPSILON): the classic forward-difference relative step.
 const SQRT_EPS: f64 = 1.4901161193847656e-08;
 /// Newton/LM convergence tolerance: stop once a residual / step measure drops below.
@@ -1233,6 +1262,7 @@ fn kinsol_sparse_solve(
             }
             if crate::lin_sparse_cached(
                 handle, colptr_addr, rowidx_addr, val_ptr, b_ptr, n as u32, nnz as u32,
+                crate::sundials::nls_ls_backend(),
             ) != 0
             {
                 break; // singular: next attempt
@@ -1434,6 +1464,14 @@ pub extern "C" fn rt_solve_nls(
     }
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
+    // `-nls=` overrides the codegen-time density choice; the dense solvers force
+    // the dense path.
+    let pick = nls_pick();
+    let sparse = match pick {
+        NlsPick::Default => sparse,
+        NlsPick::Kinsol => sparse,
+        _ => false,
+    };
     // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
     // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
     // O(n^3) per step, which is what the sparse choice exists to avoid.
@@ -1442,9 +1480,29 @@ pub extern "C" fn rt_solve_nls(
             n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
             pat_addr, nnz as usize, lss_handle, &mut eval,
         )
+    } else if pick == NlsPick::Newton {
+        let mut ok = newton_c(n, &mut x, &nominal, &mut eval, &mut jaceval, has_jac);
+        if !ok {
+            x.copy_from_slice(&warm);
+            ok = newton_solve(n, &mut x, &mut eval);
+        }
+        ok
+    } else if pick == NlsPick::Homotopy {
+        // Both start directions, as C's runHomotopy.
+        let mut ok = false;
+        for &dir in &[1.0f64, -1.0] {
+            let mut hx = guess.clone();
+            if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                x.copy_from_slice(&hx);
+                ok = true;
+                break;
+            }
+        }
+        ok
     } else {
         // hybrj (analytic Jacobian) when available, else numeric hybrd; on failure
-        // retry from the warm start, then Newton and LM.
+        // retry from the warm start, then Newton and LM. `-nls=hybrid` and `mixed`
+        // land here too: this ladder is minpack-first with the homotopy tail.
         let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
             if has_jac {
                 hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)

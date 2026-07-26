@@ -66,6 +66,7 @@ use crate::CodegenWasmJitFunctions::{
 // defined once in `openmodelica_sim_meta` and shared with the in-wasm driver, so
 // the emitted module and the driver's readback cannot drift. Aliased to their
 // historical host names.
+use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
     FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar, SimMeta,
     StateSetInfo,
@@ -514,22 +515,39 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 // output — Modelica `Streams.print`, `ModelicaMessage`, …) alongside the result.
 // Capturing keeps that output out of the process stdout (the browser console on
 // the web target) so the caller can fold it into the simulation log.
-/// Parse `-override=name=value,...` tokens out of `simflags` and resolve each to
-/// its editable parameter's `SimData` slot. Unknown names / unparsable values are
-/// skipped (an unknown override is a no-op, as in the C runtime).
+/// What the wasm-jit runtimes can serve, for `simflags::check`. Checked at the host
+/// parse, where a rejection still has a message channel to report on.
+const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
+    klu: openmodelica_wasm_jit::SUNDIALS,
+    ida: false,
+    cvode: false,
+    gbode: false,
+};
+
+/// Parse `simflags` as an argv and install the result for this run. omc hands the
+/// flags over as one whitespace-separated string; `argv[0]` stands in for the
+/// program name a WASI command would see, so the same parser serves this path and a
+/// standalone `wasmtime model.wasm …` run.
+fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, String> {
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(simflags.split_whitespace().map(str::to_string))
+        .collect();
+    let f = simflags::parse(&argv)?;
+    simflags::check(&f, CAPABILITIES)?;
+    simflags::set_flags(f.clone());
+    Ok(f)
+}
+
+/// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
+/// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
 /// values, applied at different points of initialization (see `run_initialization`).
-fn resolve_overrides(model: &SimModel, simflags: &str) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
+fn resolve_overrides(model: &SimModel, flags: &simflags::SimFlags) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
     let mut params = Vec::new();
     let mut starts = Vec::new();
-    for tok in simflags.split_whitespace() {
-        let Some(list) = tok.strip_prefix("-override=") else { continue };
-        for item in list.split(',') {
-            let Some((name, value)) = item.split_once('=') else { continue };
-            let Ok(val) = value.trim().parse::<f64>() else { continue };
-            if let Some(p) = model.editable_params.iter().find(|p| p.name == name.trim()) {
-                if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, val));
-            }
+    for (name, val) in &flags.overrides {
+        if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
+            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, *val));
         }
     }
     (params, starts)
@@ -568,14 +586,19 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let Some(model) = model else {
         return (Err("no prepared wasm-jit model for (translateModel not run?)".to_string()), None, String::new());
     };
+    // The caller prefixes the failure, so this is the bare reason.
+    let flags = match install_sim_flags(simflags) {
+        Ok(f) => f,
+        Err(e) => return (Err(e), None, String::new()),
+    };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
-    let log_stats = simflags.contains("LOG_STATS") || simflags.contains("LOG_ALL");
+    let log_stats = flags.has_log("LOG_STATS");
     // `-override=name=value,...`: resolve each editable parameter to its SimData
     // slot and hand the list to the driver (applied after `functionParameters`).
-    let (param_ov, start_ov) = resolve_overrides(&model, simflags);
+    let (param_ov, start_ov) = resolve_overrides(&model, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
-    sim_driver::set_abort_slow(simflags.split_whitespace().any(|t| t == "-abortSlowSimulation"));
+    sim_driver::set_abort_slow(flags.abort_slow);
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
     SPLIT_ARMED.with(|a| a.set(true));
@@ -719,7 +742,11 @@ mod session {
         if fmt != "mat" && fmt != "empty" {
             return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)");
         }
-        let (param_ov, start_ov) = resolve_overrides(&model, simflags);
+        let flags = install_sim_flags(simflags).map_err(|e| {
+            record_error(format!("wasm-jit: {e}"));
+            "CodegenWasmJit: unusable simulation flags"
+        })?;
+        let (param_ov, start_ov) = resolve_overrides(&model, &flags);
         sim_driver::set_param_overrides(param_ov, start_ov);
         sim_driver::clear_cancel();
         openmodelica_wasi::wasi::start_stdout_capture();
@@ -5166,6 +5193,7 @@ mod standalone_tests {
             "functionStateSetJacobians",
             "functionInitialEquations_lambda0",
             "functionUpdateRelations",
+            "functionCheckAsserts",
             "functionStoreDelayed",
             "functionInitDelay",
         ];

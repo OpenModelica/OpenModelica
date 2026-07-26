@@ -486,9 +486,9 @@ pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, Strin
                 return Err(e.to_string());
             }
         };
-    // The linear solves ran host-side (`rt_host_lin_solve`); the driver's stats
-    // don't see them, so surface the host counter for LOG_STATS.
-    result.stats.lin_solves = crate::host::lin_solve::count();
+    // The solves ran host-side (`rt_host_lin_solve`) or in-wasm (KLU/rsparse);
+    // either way the driver's stats don't see them, so surface both counters.
+    result.stats.lin_solves = crate::host::lin_solve::count() + engine.lin_solves();
     if bench {
         let elapsed = t0.elapsed();
         eprintln!(
@@ -593,6 +593,12 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
+    // Which of `-ls`/`-lss`/`-nlsLS` want KLU: the host-driven runtime links no flag
+    // store of its own. The session sets the same bits from the argv it receives.
+    if let Ok(set_klu) = rt_inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_lin_set_klu") {
+        let (ls, lss, nls_ls) = openmodelica_sim_meta::simflags::flags().klu_selectors();
+        wts(set_klu.call(&mut store, (ls as i32, lss as i32, nls_ls as i32)))?;
+    }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
     }
@@ -722,6 +728,12 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
         crate::host::take_pending_warnings()
     }
+    fn lin_solves(&mut self) -> u64 {
+        match self.rt_inst.get_typed_func::<(), u64>(&mut self.store, "rt_lin_solves") {
+            Ok(f) => f.call(&mut self.store, ()).unwrap_or(0),
+            Err(_) => 0,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -778,6 +790,15 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
     let set_ov = wts(rt_inst.get_typed_func::<(u32, u32), i32>(&mut store, "rt_sim_set_overrides"))?;
     if wts(set_ov.call(&mut store, (ov_ptr, ov.len() as u32)))? < 0 {
         return Err("CodegenWasmJit: rt_sim_set_overrides failed".to_string());
+    }
+
+    // Same for the runtime flags, as the argv bytes a WASI command would receive.
+    let args = openmodelica_sim_meta::simflags::flags().to_wasi_args();
+    let args_ptr = wts(rt_alloc.call(&mut store, args.len().max(1) as u32))?;
+    wts(memory.write(&mut store, args_ptr as usize, &args))?;
+    let set_args = wts(rt_inst.get_typed_func::<(u32, u32), i32>(&mut store, "rt_sim_set_args"))?;
+    if wts(set_args.call(&mut store, (args_ptr, args.len() as u32)))? < 0 {
+        return Err("CodegenWasmJit: the runtime rejected the simulation flags".to_string());
     }
 
     let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u32), i32>(&mut store, "rt_sim_start"))?;
