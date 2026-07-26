@@ -17,6 +17,7 @@ use core::cell::UnsafeCell;
 
 use openmodelica_sim_meta::WTy;
 use openmodelica_sim_meta::driver::{self, Advance, Driver, SimEngine};
+use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{SimMeta, SolveStats};
 
 // Host imports for the per-chunk budget clock and the cooperative cancel poll.
@@ -36,42 +37,16 @@ fn cancel_hook() -> bool {
     unsafe { rt_host_cancel() != 0 }
 }
 
-// Fixed table-slot order the host populates (relative to `fn_base`). The runtime
-// reaches slot `s` via `call_indirect(fn_base + s)`. Absent exports (optional
-// hooks, or functions a model without events/state-sets does not emit) get a
-// cleared `present_mask` bit.
-const SLOT_PARAMETERS: u32 = 0;
-const SLOT_INIT_START: u32 = 1;
-const SLOT_INIT_EQ: u32 = 2;
-const SLOT_ODE: u32 = 3;
-const SLOT_ALGEBRAICS: u32 = 4;
-const SLOT_STATE_SET_JAC: u32 = 5;
-const SLOT_ZERO_CROSSINGS: u32 = 6;
-const SLOT_INIT_SAMPLE: u32 = 7;
-const SLOT_SIMULATE: u32 = 8;
-const SLOT_EXT_DESTRUCT: u32 = 9;
-const SLOT_INIT_EQ_LAMBDA0: u32 = 10;
-const SLOT_UPDATE_RELATIONS: u32 = 11;
-/// Number of table slots the host must populate (in the order above). The host
-/// (a separate crate) mirrors this count and order in its table wiring.
+// Table-slot order the host populates (relative to `fn_base`): a function's slot is
+// its index in `driver::MODEL_FNS`, the one list both sides derive from. The runtime
+// reaches slot `s` via `call_indirect(fn_base + s)`; an export the model does not
+// have gets a cleared `present_mask` bit.
+/// Number of table slots the host must populate, in `MODEL_FNS` order.
 #[allow(dead_code)]
-pub const N_SLOTS: u32 = 12;
+pub const N_SLOTS: u32 = driver::MODEL_FNS.len() as u32;
 
 fn slot_of(name: &str) -> Option<u32> {
-    Some(match name {
-        "functionParameters" => SLOT_PARAMETERS,
-        "functionInitStartValues" => SLOT_INIT_START,
-        "functionInitialEquations" => SLOT_INIT_EQ,
-        "functionInitialEquations_lambda0" => SLOT_INIT_EQ_LAMBDA0,
-        "functionODE" => SLOT_ODE,
-        "functionAlgebraics" => SLOT_ALGEBRAICS,
-        "functionStateSetJacobians" => SLOT_STATE_SET_JAC,
-        "functionZeroCrossings" => SLOT_ZERO_CROSSINGS,
-        "initSample" => SLOT_INIT_SAMPLE,
-        "callExternalObjectDestructors" => SLOT_EXT_DESTRUCT,
-        "functionUpdateRelations" => SLOT_UPDATE_RELATIONS,
-        _ => return None,
-    })
+    driver::MODEL_FNS.iter().position(|&n| n == name).map(|i| i as u32)
 }
 
 /// In-wasm [`SimEngine`]: linear memory is directly addressable (the runtime *is*
@@ -122,10 +97,11 @@ impl SimEngine for InWasmEngine {
         Ok(())
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
-        if !self.present(SLOT_SIMULATE) {
+        let slot = slot_of("simulate").ok_or("in-wasm engine: `simulate` has no table slot")?;
+        if !self.present(slot) {
             return Err("in-wasm engine: no `simulate` export");
         }
-        let idx = self.fn_base + SLOT_SIMULATE;
+        let idx = self.fn_base + slot;
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
     }
@@ -158,6 +134,27 @@ static SESSION: SessionCell = SessionCell(UnsafeCell::new(None));
 
 fn session() -> &'static mut Option<Session> {
     unsafe { &mut *SESSION.0.get() }
+}
+
+/// Set the runtime flags for the next [`rt_sim_start`] from an argv blob in the
+/// WASI `args_get` layout (NUL-terminated strings back to back, `argv[0]` the
+/// program name). Returns 0, or -1 if a flag is malformed or asks for something
+/// this runtime cannot do — the host parses the same argv with the same code, so
+/// it reports *which* flag without a second error channel.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
+    let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
+    let argv = simflags::argv_from_bytes(bytes);
+    match simflags::parse(&argv).and_then(|f| {
+        simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
+    }) {
+        Ok(f) => {
+            crate::sundials::apply_flags(&f);
+            simflags::set_flags(f);
+            0
+        }
+        Err(_) => -1,
+    }
 }
 
 /// Set the parameter/start overrides for the next [`rt_sim_start`]. The host's own
@@ -204,6 +201,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
+    crate::sundials::reset_caches();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
     let model = match openmodelica_sim_meta::decode(bytes) {

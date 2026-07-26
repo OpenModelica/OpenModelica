@@ -182,6 +182,28 @@ fn run_state_selection(
     Ok(changed)
 }
 
+/// Every model entry point the drivers below may pass to [`SimEngine::call1`] /
+/// [`SimEngine::call1_if_present`], in the table-slot order the in-wasm session
+/// uses. The host's table wiring and the runtime's dispatch both derive from this,
+/// so they cannot disagree about which functions exist or where they sit.
+pub const MODEL_FNS: &[&str] = &[
+    "functionParameters",
+    "functionInitStartValues",
+    "functionInitialEquations",
+    "functionODE",
+    "functionAlgebraics",
+    "functionStateSetJacobians",
+    "functionZeroCrossings",
+    "initSample",
+    "simulate",
+    "callExternalObjectDestructors",
+    "functionInitialEquations_lambda0",
+    "functionUpdateRelations",
+    "functionCheckAsserts",
+    "functionStoreDelayed",
+    "functionInitDelay",
+];
+
 /// The per-run capabilities a backend must expose: read/write the instance's
 /// linear memory and call its exported functions. Object-safe so the drivers can
 /// take `&mut dyn SimEngine` (and the DASSL residual callback a `*mut dyn`).
@@ -211,6 +233,11 @@ pub trait SimEngine {
     /// emit C's `LOG_ASSERT` warnings. Default: none (backends without the import).
     fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
         Vec::new()
+    }
+    /// Linear-system solves the runtime performed in-wasm, which the host driver
+    /// never sees. Default: none (backends whose solver runs host-side).
+    fn lin_solves(&mut self) -> u64 {
+        0
     }
 }
 
@@ -1300,12 +1327,24 @@ pub fn set_zc_tolerance(
 /// Build the resumable driver (init + row 0 + the zero-crossing band); shared by
 /// [`drive`] and the session. `method` empty = DASSL. Any events force the
 /// event-aware DASSL driver regardless of `method`.
+/// `-s=` wins over the method compiled into the model's metadata. `ida`/`cvode`/
+/// `gbode` never reach here — `simflags::check` rejects them at startup rather than
+/// let them silently run as DASSL.
+pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
+    match crate::simflags::flags().solver {
+        Some(crate::simflags::Solver::Euler) => "euler",
+        Some(crate::simflags::Solver::Dassl) => "dassl",
+        _ => method,
+    }
+}
+
 pub fn make_driver(
     e: &mut (dyn SimEngine + 'static),
     model: &SimModel,
     sim_data: u32,
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
+    let method = effective_method(method);
     let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
 
@@ -1359,6 +1398,7 @@ pub fn drive(
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0;
+    let method = effective_method(method);
 
     let (rows, label) = if !use_events && method == "euler" && !host_driven {
         // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
