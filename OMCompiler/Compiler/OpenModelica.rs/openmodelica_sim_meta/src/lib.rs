@@ -80,6 +80,9 @@ pub struct Layout {
     pub pre_bool_off: u32,
     /// `terminate(...)` flag (i32).
     pub terminate_off: u32,
+    /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
+    /// the driver for the run's final discrete update.
+    pub terminal_off: u32,
     /// C's `TermMsg`/`TermInfo`: the fired `terminate(...)`'s message and source
     /// position, as `[msg, file, lineStart, colStart, lineEnd, colEnd, readOnly]`
     /// (i32 each; the first two are String handles).
@@ -167,7 +170,8 @@ impl Layout {
         let pre_int_off = pre_real_off + n_real * 8;
         let pre_bool_off = pre_int_off + n_int_alg * 4;
         let terminate_off = pre_bool_off + n_bool_alg * 4;
-        let term_info_off = terminate_off + 4;
+        let terminal_off = terminate_off + 4;
+        let term_info_off = terminal_off + 4;
         let n_out_off = term_info_off + TERM_INFO_WORDS * 4;
         let nls_fail_off = n_out_off + 4;
         let lambda_off = (nls_fail_off + 4 + 7) & !7;
@@ -189,7 +193,7 @@ impl Layout {
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
-            terminate_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
+            terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, total,
         }
@@ -407,7 +411,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
-        l.terminate_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
+        l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
     ] {
@@ -555,6 +559,7 @@ impl<'a> Reader<'a> {
             pre_int_off: self.u32()?,
             pre_bool_off: self.u32()?,
             terminate_off: self.u32()?,
+            terminal_off: self.u32()?,
             term_info_off: self.u32()?,
             n_out_off: self.u32()?,
             nls_fail_off: self.u32()?,

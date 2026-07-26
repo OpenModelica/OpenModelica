@@ -6524,6 +6524,7 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
+ "openmodelica_modelica_utilities",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
@@ -6677,6 +6678,7 @@ name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "openmodelica_wasi",
 ]
 
 [[package]]

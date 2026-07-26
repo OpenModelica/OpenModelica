@@ -155,6 +155,24 @@ fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<Si
             }
             Ok(SigTy::Record { path: ArcStr::from(path.as_str()), fields: Arc::new(fields) })
         }
+        // `<params|results>` — a function reference (see [`SigTy::write_code`]).
+        Some('<') => {
+            let mut params = Vec::new();
+            while !matches!(chars.peek(), Some('|') | None) {
+                params.push(parse_sig_type(chars)?);
+            }
+            if chars.next() != Some('|') {
+                return Err("CodegenWasmJit: expected `|` in function-reference signature");
+            }
+            let mut results = Vec::new();
+            while !matches!(chars.peek(), Some('>') | None) {
+                results.push(parse_sig_type(chars)?);
+            }
+            if chars.next() != Some('>') {
+                return Err("CodegenWasmJit: expected a closing `>` in function-reference signature");
+            }
+            Ok(SigTy::Func { params: Arc::new(params), results: Arc::new(results) })
+        }
         other => return Err("CodegenWasmJit: malformed signature type code"),
     }
 }
@@ -396,6 +414,13 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
 /// `rt.__indirect_function_table` (set once by the module's `start` function).
 pub(crate) const NLS_BASE_GLOBAL: u32 = 0;
 
+/// Module global holding the base index this module's closure thunks were
+/// appended to the shared table at (set by `start`): after the three
+/// nonlinear-solver globals, or the only global when there are none.
+pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
+    if has_nls { NLS_NOMINAL_GLOBAL + 1 } else { 0 }
+}
+
 /// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
 pub(crate) fn rt_index(name: &str) -> Result<u32> {
     let pos = RT_BUILTINS
@@ -501,13 +526,49 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
 
     // Compile the function bodies first (collecting any String literals into a
     // module-wide pool), so the data-segment count is known before the code
-    // section is emitted.
+    // section is emitted. Function references met on the way add thunks to the
+    // closure pool; the module's only global holds their table base.
+    closures::begin(types.len(), closure_base_global(false));
     let mut functions = we::FunctionSection::new();
     let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
     let mut literals: Vec<Vec<u8>> = Vec::new();
     for (id, f) in funcs.iter().enumerate() {
         functions.function(base + id as u32); // type index = base + id
         bodies.push(compile_function(f, &by_name, &mut literals)?);
+    }
+    // Closure thunks, then the `start` that appends them to the shared table.
+    let closure_wiring = closures::take();
+    let mut thunk_indices: Vec<u32> = Vec::new();
+    for (type_index, body) in closure_wiring.thunks {
+        thunk_indices.push(base + bodies.len() as u32);
+        functions.function(type_index);
+        bodies.push(body);
+    }
+    for (params, results) in &closure_wiring.types {
+        types.ty().function(params.iter().copied(), results.iter().copied());
+    }
+    let start_idx = if thunk_indices.is_empty() {
+        None
+    } else {
+        let start_type = types.len();
+        types.ty().function([], []);
+        let idx = base + bodies.len() as u32;
+        let mut f = we::Function::new([]);
+        closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        f.instruction(&we::Instruction::End);
+        functions.function(start_type);
+        bodies.push(f);
+        Some(idx)
+    };
+    if start_idx.is_some() {
+        // The thunks are reached by `call_indirect` through the runtime's table.
+        imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
+            element_type: we::RefType::FUNCREF,
+            table64: false,
+            minimum: 1,
+            maximum: None,
+            shared: false,
+        }));
     }
     let mut code = we::CodeSection::new();
     for body in &bodies {
@@ -522,7 +583,21 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
+    if start_idx.is_some() {
+        let mut globals = we::GlobalSection::new();
+        globals.global(
+            we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
+            &we::ConstExpr::i32_const(0),
+        );
+        module.section(&globals);
+    }
     module.section(&exports);
+    if let Some(start_idx) = start_idx {
+        module.section(&we::StartSection { function_index: start_idx });
+        let mut elements = we::ElementSection::new();
+        elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
+        module.section(&elements);
+    }
     // String literals become passive data segments materialized at runtime with
     // `memory.init` (see SCONST in `compile_exp`). The DataCount section must
     // precede the code section; the Data section follows it.
@@ -714,10 +789,12 @@ fn main_sig_types(f: &SimCodeFunction::Function::Function) -> Result<(Vec<SigTy>
 fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Result<Vec<SigTy>> {
     let mut out = Vec::new();
     for v in &**vars {
-        let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = &**v else {
-            return Err("CodegenWasmJit: unsupported variable kind (function pointer)");
-        };
-        out.push(variable_sigty(ty, instDims)?);
+        out.push(match &**v {
+            SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } => variable_sigty(ty, instDims)?,
+            SimCodeFunction::Variable::Variable::FUNCTION_PTR { tys, args, .. } => {
+                closures::function_ptr_sigty(tys, args)?
+            }
+        });
     }
     Ok(out)
 }
@@ -785,6 +862,15 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
                 }
             }
             SigTy::Record { path: path_str, fields: Arc::new(fields) }
+        }
+        // A function reference's argument/result types arrive MetaModelica-boxed
+        // (C calls one boxed `boxptr_` shape); our closures are typed and pass
+        // values unboxed, so the box is nothing.
+        DAE::Type::T_METABOXED { ty } => sig_ty(ty)?,
+        // A function reference: a closure handle, callable with the wrapped
+        // function type's signature.
+        DAE::Type::T_FUNCTION_REFERENCE_VAR { .. } | DAE::Type::T_FUNCTION_REFERENCE_FUNC { .. } => {
+            closures::reference_sigty(ty)?
         }
         DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
         other => return Err("CodegenWasmJit: type not supported"),
@@ -892,6 +978,9 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
     pub(crate) terminate_off: u32,
+    /// `SimData` byte offset of the `terminal()` flag, raised by the driver for
+    /// the run's final discrete update.
+    pub(crate) terminal_off: u32,
     /// `SimData` byte offset of the fired `terminate(...)`'s message + source
     /// position (C's `TermMsg`/`TermInfo`).
     pub(crate) term_info_off: u32,
@@ -1839,10 +1928,14 @@ fn release_heap_locals(ctx: &mut FnCtx) -> Result<()> {
 /// Name and Modelica type of a `VARIABLE` (combining `ty` and `instDims`; see
 /// [`variable_sigty`]). The name must be a plain `CREF_IDENT`.
 fn var_name_ty(v: &SimCodeFunction::Variable::Variable) -> Result<(String, SigTy)> {
-    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, instDims, .. } = v else {
-        return Err("CodegenWasmJit: function-pointer variables not supported");
-    };
-    Ok((cref_ident(name)?, variable_sigty(ty, instDims)?))
+    match v {
+        SimCodeFunction::Variable::Variable::VARIABLE { name, ty, instDims, .. } => {
+            Ok((cref_ident(name)?, variable_sigty(ty, instDims)?))
+        }
+        SimCodeFunction::Variable::Variable::FUNCTION_PTR { name, tys, args, .. } => {
+            Ok((name.to_string(), closures::function_ptr_sigty(tys, args)?))
+        }
+    }
 }
 
 /// The identifier of a scalar `CREF_IDENT` component reference (no subscripts /
@@ -4321,6 +4414,9 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
     Ok(())
 }
 
+#[path = "CodegenWasmJitFunctions/closures.rs"]
+pub(crate) mod closures;
+
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
@@ -4560,6 +4656,14 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             ctx.emit(we::Instruction::LocalGet(temps[want]));
             Ok(results[want].wty())
         }
+        // MetaModelica boxing around a call through a function reference; our
+        // closures pass values unboxed, so both are the identity.
+        E::BOX { exp } | E::UNBOX { exp, .. } => compile_exp(ctx, exp),
+        // `function f(w=3)` — a closure over the applied arguments (`closures`).
+        E::PARTEVALFUNCTION { .. } => {
+            closures::compile_parteval(ctx, exp)?;
+            Ok(WTy::I32)
+        }
         other => return Err("CodegenWasmJit: expression not yet supported"),
     }
 }
@@ -4587,6 +4691,8 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::RSUB { ty, .. } => sig_ty(ty)?.wty(),
         E::TSUB { ty, .. } => sig_ty(ty)?.wty(),
         E::ASUB { .. } => exp_sigty(exp).map(|s| s.wty()).unwrap_or(WTy::I32),
+        E::BOX { exp } => exp_wty_hint(ctx, exp)?,
+        E::UNBOX { ty, .. } => sig_ty(ty)?.wty(),
         _ => WTy::F64,
     })
 }
@@ -4688,6 +4794,10 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         // A record constructor / field access carry their type directly.
         E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty(ty)?,
         E::TSUB { ty, .. } => sig_ty(ty)?,
+        // A function reference: what the value it produces may be called with.
+        E::PARTEVALFUNCTION { ty, .. } => closures::reference_sigty(ty)?,
+        E::BOX { exp } => exp_sigty(exp)?,
+        E::UNBOX { ty, .. } => sig_ty(ty)?,
         other => return Err("CodegenWasmJit: cannot determine type of expression"),
     })
 }
@@ -5097,6 +5207,14 @@ fn compile_call(
     args: &Arc<List<Arc<DAE::Exp>>>,
     attr: &DAE::CallAttributes,
 ) -> Result<Vec<SigTy>> {
+    // A call through a function-reference variable: `call_indirect` on the
+    // closure it holds. C likewise dispatches on the variable, not the path.
+    if attr.isFunctionPointerCall {
+        let Absyn::Path::IDENT { name } = path else {
+            return Err("CodegenWasmJit: function-pointer calls are only supported through a local variable");
+        };
+        return closures::compile_fnptr_call(ctx, name, args);
+    }
     let mangled = mangle(path)?;
     // A call to another generated function. Heap arguments are passed as owned
     // (+1) references — a generated function *consumes* its heap parameters
@@ -5715,6 +5833,15 @@ fn compile_math_builtin(
             ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
             Ok(SigTy::Real)
         }
+        // `terminal()` — C's `simulationInfo->terminal`, true only during the
+        // run's final discrete update.
+        "terminal" => {
+            need_args(&argv, 0, name)?;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.terminal_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            Ok(SigTy::Bool)
+        }
         "sample" => {
             need_args(&argv, 3, name)?;
             let DAE::Exp::ICONST { integer } = &**argv[0] else {
@@ -6067,7 +6194,7 @@ fn format_scalar_string(ctx: &mut FnCtx, arg: &DAE::Exp, ty: SigTy) -> Result<Si
         }
         // `String(array)` / `String(record)` are not scalar conversions (the
         // frontend would not produce them here); reject rather than mis-format.
-        SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr => {
+        SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr | SigTy::Func { .. } => {
             return Err("CodegenWasmJit: String() of an array/record/external-object is not supported")
         }
     }
