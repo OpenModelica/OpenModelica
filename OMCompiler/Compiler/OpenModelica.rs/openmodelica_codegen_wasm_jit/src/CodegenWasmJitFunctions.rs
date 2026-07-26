@@ -50,6 +50,7 @@ use arcstr::ArcStr;
 use metamodelica::List;
 
 use openmodelica_ast::Absyn;
+use openmodelica_frontend_base::Types;
 use openmodelica_frontend_dump::AbsynUtil;
 use openmodelica_frontend_dump::ExpressionDumpTpl;
 use openmodelica_tpl::Tpl;
@@ -430,6 +431,7 @@ pub(crate) struct FnInfo {
 /// Build the wasm module for `fnCode`. Returns the encoded module bytes and the
 /// input/output `SigTy`s of the main function (for the sidecar).
 fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec<SigTy>, Vec<SigTy>)> {
+    set_record_decls(&fn_code.extraRecordDecls)?;
     // Collect the functions: the main function first (wasm index BUILTINS.len()),
     // then the dependencies.
     let mut funcs: Vec<&SimCodeFunction::Function::Function> = Vec::new();
@@ -770,14 +772,58 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
             };
             let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
             let mut fields = Vec::new();
-            for v in &**varLst {
-                fields.push((v.name.clone(), sig_ty(&v.ty)?));
+            match record_decl_fields(&path_str) {
+                Some(decl) => {
+                    for (name, ty) in decl.iter() {
+                        fields.push((name.clone(), sig_ty(ty)?));
+                    }
+                }
+                None => {
+                    for v in &**varLst {
+                        fields.push((v.name.clone(), sig_ty(&v.ty)?));
+                    }
+                }
             }
             SigTy::Record { path: path_str, fields: Arc::new(fields) }
         }
         DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
         other => return Err("CodegenWasmJit: type not supported"),
     })
+}
+
+std::thread_local! {
+    /// One field list per record class (the C target's one `<Rec>` struct), keyed
+    /// by definition path. A record *expression*'s `T_COMPLEX` can disagree with
+    /// its consumer's about a field type, which would give the two ends different
+    /// field offsets; the declaration decides for both.
+    static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<(ArcStr, Arc<DAE::Type>)>>>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+/// Install the module's record declarations (see [`RECORD_DECLS`]).
+pub(crate) fn set_record_decls(
+    decls: &List<SimCodeFunction::RecordDeclaration>,
+) -> Result<()> {
+    let mut map = HashMap::new();
+    for d in decls {
+        // Only `RECORD_DECL_FULL` declares a layout.
+        let SimCodeFunction::RecordDeclaration::RECORD_DECL_FULL { defPath, variables, .. } = d else {
+            continue;
+        };
+        let path = AbsynUtil::pathString(defPath.clone(), arcstr::literal!("."), true, false)?;
+        let mut fields = Vec::new();
+        for v in &**variables {
+            let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, .. } = &**v else { continue };
+            fields.push((ArcStr::from(cref_ident(name)?), ty.clone()));
+        }
+        map.insert(path.to_string(), Arc::new(fields));
+    }
+    RECORD_DECLS.with(|r| *r.borrow_mut() = map);
+    Ok(())
+}
+
+fn record_decl_fields(path: &str) -> Option<Arc<Vec<(ArcStr, Arc<DAE::Type>)>>> {
+    RECORD_DECLS.with(|r| r.borrow().get(path).cloned())
 }
 
 // -------------------------------------------------------------------------
@@ -1105,14 +1151,17 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Store each state's `start` expression into its start slot (`0.0` when the
-    /// state has no explicit start, the Real default).
+    /// Store each variable's `start` expression (`0.0` when it has none) at `off`,
+    /// and at `live_off` when the variable also has a live slot (a state, whose
+    /// `off` is its start attribute). The second store is C's `setAllVarsToStart`:
+    /// an initial equation reading a state before the initial system solves it
+    /// must see `start`, not zero.
     pub(crate) fn emit_init_start_values(
         &mut self,
-        starts: &[(Option<Arc<DAE::Exp>>, u32)],
+        starts: &[(Option<Arc<DAE::Exp>>, u32, Option<u32>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
-        for (exp, off) in starts {
+        for (exp, off, live_off) in starts {
             self.emit(we::Instruction::LocalGet(data));
             match exp {
                 Some(e) => {
@@ -1121,7 +1170,16 @@ impl<'a> FnCtx<'a> {
                 }
                 None => self.emit(we::Instruction::F64Const(0.0f64.into())),
             }
-            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            if let Some(live) = live_off {
+                let v = self.alloc_temp(WTy::F64);
+                self.emit(we::Instruction::LocalTee(v));
+                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(v));
+                self.emit(we::Instruction::F64Store(mem_arg(*live, 3)));
+            } else {
+                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            }
         }
         Ok(())
     }
@@ -1364,6 +1422,35 @@ pub(crate) fn compile_function(
     // resized by the first whole-array assignment.
     for (slot, elem, dims) in &array_allocs {
         emit_array_alloc(&mut ctx, *slot, elem, dims)?;
+    }
+    // Record locals/outputs are default-constructed at entry (C's
+    // `<Rec>_construct`), so a record without a binding still has its class
+    // defaults and its array fields' descriptors.
+    let mut constructed: Vec<u32> = Vec::new();
+    for v in (&**outVars).into_iter().chain(&**variableDeclarations) {
+        let SimCodeFunction::Variable::Variable::VARIABLE { ty, bind_from_outside, .. } = &**v else {
+            continue;
+        };
+        let (name, sty) = var_name_ty(v)?;
+        let elem_record = match &sty {
+            SigTy::Record { .. } => true,
+            SigTy::Array { elem, .. } => matches!(&**elem, SigTy::Record { .. }),
+            _ => false,
+        };
+        if *bind_from_outside || !elem_record {
+            continue;
+        }
+        let Some((slot, _)) = ctx.locals.get(&name).cloned() else { continue };
+        if constructed.contains(&slot) {
+            continue;
+        }
+        constructed.push(slot);
+        if matches!(sty, SigTy::Array { .. }) {
+            emit_array_record_defaults(&mut ctx, slot, &Types::arrayElementType(ty.clone()))?;
+        } else {
+            emit_record_default(&mut ctx, ty)?;
+            ctx.emit(we::Instruction::LocalSet(slot));
+        }
     }
     // Default-binding initializers for protected/output variables, in
     // declaration order, mirroring the C target's `varInit` (driven by the
@@ -2090,23 +2177,14 @@ fn field_store(ctx: &mut FnCtx, wty: WTy, offset: u32) {
     }
 }
 
-/// Construct a record (`E::RECORD`): allocate the object, fill the inline
-/// heap-field table, then store each field value (matched to the type's fields
-/// by name, so out-of-order constructor arguments are handled). Leaves the owned
-/// (+1) record handle on the stack.
-/// Emit a record construction: allocate the object, fill the inline heap-field
-/// table, then store each field value (`field_exps` in declaration order). The
-/// record owns heap field values. Leaves the owned (+1) record handle on the
-/// stack.
-fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&Arc<DAE::Exp>]) -> Result<()> {
-    let layout = record_layout(fields);
+/// Allocate a record object and fill its inline heap-field table, returning the
+/// temp holding the owned (+1) handle. The field data is left zeroed.
+fn emit_record_alloc(ctx: &mut FnCtx, layout: &RecordLayout) -> Result<u32> {
     ctx.emit(we::Instruction::I32Const(layout.heap.len() as i32));
     ctx.emit(we::Instruction::I32Const(layout.size as i32));
     ctx.emit(we::Instruction::Call(rt_index("rt_record_new")?));
     let obj = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(obj));
-
-    // Inline heap-field table: (elem_kind, field_off) for each heap field.
     for (k, (kind, foff)) in layout.heap.iter().enumerate() {
         let base = 8 + k as u32 * 8;
         ctx.emit(we::Instruction::LocalGet(obj));
@@ -2116,6 +2194,16 @@ fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_e
         ctx.emit(we::Instruction::I32Const(*foff as i32));
         ctx.emit(we::Instruction::I32Store(mem_arg(base + 4, 2)));
     }
+    Ok(obj)
+}
+
+/// Emit a record construction: allocate the object, fill the inline heap-field
+/// table, then store each field value (`field_exps` in declaration order). The
+/// record owns heap field values. Leaves the owned (+1) record handle on the
+/// stack.
+fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&Arc<DAE::Exp>]) -> Result<()> {
+    let layout = record_layout(fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
         let w = compile_exp(ctx, field_exps[i])?;
         coerce(ctx, w, fty.wty());
@@ -2141,6 +2229,153 @@ fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_e
         field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
     }
     ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// The class default of record field `v` — the C target's `<Rec>_construct_p`
+/// field init plus `recordInitOutsideBindings`. A binding synthesized from a
+/// variable's own submods (`R r(i=2)`) is applied at its declaration, not here.
+fn record_field_default(v: &DAE::Var) -> Option<Arc<DAE::Exp>> {
+    match &*v.binding {
+        DAE::Binding::EQBOUND { source: DAE::BindingSource::BINDING_FROM_RECORD_SUBMODS, .. }
+            if !v.bind_from_outside => None,
+        DAE::Binding::EQBOUND { exp, .. } => Some(exp.clone()),
+        _ => None,
+    }
+}
+
+/// A record field: the list comes from the declaration (see [`RECORD_DECLS`]) so
+/// every site lays the record out alike, the default from the type's `varLst`.
+struct RecField {
+    name: ArcStr,
+    sig: SigTy,
+    ty: Arc<DAE::Type>,
+    default: Option<Arc<DAE::Exp>>,
+}
+
+/// The canonical fields of record type `ty`, or `None` if `ty` is not a record.
+fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
+    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, varLst, .. } = ty
+    else {
+        return Ok(None);
+    };
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
+    let declared: Vec<(ArcStr, Arc<DAE::Type>)> = match record_decl_fields(&path_str) {
+        Some(d) => d.iter().cloned().collect(),
+        None => vars.iter().map(|v| (v.name.clone(), v.ty.clone())).collect(),
+    };
+    let mut out = Vec::with_capacity(declared.len());
+    for (name, fty) in declared {
+        let var = vars.iter().find(|v| v.name == name);
+        out.push(RecField {
+            sig: sig_ty(&fty)?,
+            default: var.and_then(|v| record_field_default(v)),
+            ty: fty,
+            name,
+        });
+    }
+    Ok(Some(out))
+}
+
+fn rec_layout(fields: &[RecField]) -> RecordLayout {
+    record_layout(&fields.iter().map(|f| (f.name.clone(), f.sig.clone())).collect::<Vec<_>>())
+}
+
+/// Default-construct a record value of type `ty` (the C target's
+/// `<Rec>_construct`), leaving the owned handle on the stack.
+fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
+    let Some(fields) = record_fields(ty)? else {
+        return Err("CodegenWasmJit: default construction of a non-record type");
+    };
+    let layout = rec_layout(&fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, f) in fields.iter().enumerate() {
+        let fty = f.sig.clone();
+        match &f.default {
+            Some(exp) => {
+                let w = compile_exp(ctx, exp)?;
+                coerce(ctx, w, fty.wty());
+                if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
+                    if !value_rhs_is_fresh(exp) {
+                        let t = ctx.alloc_temp(WTy::I32);
+                        ctx.emit(we::Instruction::LocalSet(t));
+                        ctx.emit(we::Instruction::LocalGet(t));
+                        ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+                        ctx.emit(we::Instruction::LocalGet(t));
+                        ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+                    }
+                }
+            }
+            None => emit_type_default(ctx, &f.ty)?,
+        }
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// The value a variable of type `ty` has before anything is assigned to it: zero,
+/// an allocated (zeroed) array descriptor, or a default-built record.
+fn emit_type_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
+    match ty {
+        DAE::Type::T_REAL { .. } => ctx.emit(we::Instruction::F64Const(0.0f64.into())),
+        DAE::Type::T_STRING { .. } => {
+            let exp = DAE::Exp::SCONST { string: arcstr::literal!("") };
+            compile_exp(ctx, &exp)?;
+        }
+        DAE::Type::T_ARRAY { ty: elem, .. } => {
+            let SigTy::Array { elem: esig, .. } = sig_ty(ty)? else {
+                return Err("CodegenWasmJit: array type did not lower to an array");
+            };
+            let dims = type_array_dims(ty);
+            let slot = ctx.alloc_temp(WTy::I32);
+            emit_array_alloc(ctx, slot, &esig, &dims)?;
+            if matches!(&*esig, SigTy::Record { .. }) {
+                emit_array_record_defaults(ctx, slot, elem)?;
+            }
+            ctx.emit(we::Instruction::LocalGet(slot));
+        }
+        DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { .. }, .. } => {
+            emit_record_default(ctx, ty)?;
+        }
+        _ => ctx.emit(we::Instruction::I32Const(0)),
+    }
+    Ok(())
+}
+
+/// Fill the freshly allocated array in `slot` with default-constructed `elem`
+/// records (the C target's `generic_array_create` with the record constructor).
+fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE::Type) -> Result<()> {
+    let total = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(slot));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(total));
+    let i = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalSet(i));
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(i));
+    ctx.emit(we::Instruction::LocalGet(total));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(slot));
+    ctx.emit(we::Instruction::LocalGet(i));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_record_default(ctx, elem)?;
+    ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+    ctx.emit(we::Instruction::LocalGet(i));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(i));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End);
+    ctx.emit(we::Instruction::End);
     Ok(())
 }
 
@@ -3849,6 +4084,11 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
                 emit_sim_array_scatter(ctx, &group, rhs)?;
                 return Ok(true);
             }
+            // A whole record model variable: evaluate the rhs to a runtime record
+            // and store each field into its own scalar slot.
+            if try_emit_sim_record_scatter(ctx, cref, rhs)? {
+                return Ok(true);
+            }
             crate::CodegenWasmJit::record_error(format!(
                 "CodegenWasmJit: simulation assignment to unknown variable `{key}`"
             ));
@@ -3932,33 +4172,14 @@ fn emit_sim_array_gather(ctx: &mut FnCtx, group: &ArrayGroup) -> Result<()> {
 /// recursively. Returns `Ok(true)` when it handled the reference.
 fn try_emit_sim_record_gather(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
     let leaf_ty = cref_leaf_value_type(cref)?;
-    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { .. }, varLst, .. } = &*leaf_ty
-    else {
+    let Some(fields) = record_fields(&leaf_ty)? else {
         return Ok(false);
     };
-    let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
-    let mut fields = Vec::with_capacity(vars.len());
-    for v in &vars {
-        fields.push((v.name.clone(), sig_ty(&v.ty)?));
-    }
-    let layout = record_layout(&fields);
-    ctx.emit(we::Instruction::I32Const(layout.heap.len() as i32));
-    ctx.emit(we::Instruction::I32Const(layout.size as i32));
-    ctx.emit(we::Instruction::Call(rt_index("rt_record_new")?));
-    let obj = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(obj));
-    for (k, (kind, foff)) in layout.heap.iter().enumerate() {
-        let base = 8 + k as u32 * 8;
-        ctx.emit(we::Instruction::LocalGet(obj));
-        ctx.emit(we::Instruction::I32Const(*kind as i32));
-        ctx.emit(we::Instruction::I32Store(mem_arg(base, 2)));
-        ctx.emit(we::Instruction::LocalGet(obj));
-        ctx.emit(we::Instruction::I32Const(*foff as i32));
-        ctx.emit(we::Instruction::I32Store(mem_arg(base + 4, 2)));
-    }
-    for (i, v) in vars.iter().enumerate() {
-        let fty = fields[i].1.clone();
-        let field_cref = cref_append_field(cref, &v.name, v.ty.clone());
+    let layout = rec_layout(&fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, f) in fields.iter().enumerate() {
+        let fty = f.sig.clone();
+        let field_cref = cref_append_field(cref, &f.name, f.ty.clone());
         let wty = compile_sim_cref_read(ctx, &field_cref)?
             .ok_or("CodegenWasmJit: record field is not a simulation variable")?;
         coerce(ctx, wty, fty.wty());
@@ -3969,6 +4190,43 @@ fn try_emit_sim_record_gather(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Resu
         field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
     }
     ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(true)
+}
+
+/// The inverse of [`try_emit_sim_record_gather`]: evaluate `rhs` to an owned
+/// record and store each field into its own `SimData` slot, as the C target does
+/// for `$cse1 := f(...)`. Fields go through their own cref, so nested records and
+/// array fields scatter recursively.
+fn try_emit_sim_record_scatter(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSource) -> Result<bool> {
+    let leaf_ty = cref_leaf_value_type(cref)?;
+    let Some(fields) = record_fields(&leaf_ty)? else {
+        return Ok(false);
+    };
+    let layout = rec_layout(&fields);
+    let obj = ctx.alloc_temp(WTy::I32);
+    let rw = rhs.push(ctx)?;
+    if rw != WTy::I32 {
+        return Err("CodegenWasmJit: whole-record assignment rhs is not a record handle");
+    }
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (i, f) in fields.iter().enumerate() {
+        let fty = f.sig.clone();
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalGet(obj));
+        field_load(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+        ctx.emit(we::Instruction::LocalSet(vt));
+        if fty.is_heap() {
+            // The record keeps its reference; the assignment consumes one.
+            ctx.emit(we::Instruction::LocalGet(vt));
+            ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+        }
+        let field_cref = cref_append_field(cref, &f.name, f.ty.clone());
+        if !compile_sim_cref_assign(ctx, &field_cref, RhsSource::Temp { local: vt, wty: fty.wty() })? {
+            return Err("CodegenWasmJit: record field is not a simulation variable");
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok(true)
 }
 
@@ -5299,6 +5557,25 @@ fn compile_math_builtin(
             ctx.emit(we::Instruction::F64Const(0.0f64.into()));
             ctx.emit(we::Instruction::F64Ge);
             ctx.emit(we::Instruction::Select);
+            Ok(SigTy::Real)
+        }
+        // semiLinear(x, positiveSlope, negativeSlope) = x * (x >= 0 ? ps : ns).
+        "semiLinear" => {
+            need_args(&argv, 3, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            let p = compile_exp(ctx, argv[1])?;
+            coerce(ctx, p, WTy::F64);
+            let n = compile_exp(ctx, argv[2])?;
+            coerce(ctx, n, WTy::F64);
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::Select);
+            ctx.emit(we::Instruction::F64Mul);
             Ok(SigTy::Real)
         }
         // Number → String formatting via the runtime: a scalar becomes a freshly

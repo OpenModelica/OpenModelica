@@ -178,7 +178,10 @@ type Store = wasmtime::Store<WasiCtx>;
 /// `SimEngine`-trait errors: collapse to the crate `&'static str` (a model
 /// `assert()` is decoded downstream by `enrich_trap`).
 fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
-    r.map_err(|_| "CodegenWasmJit: wasm engine error")
+    r.map_err(|e| {
+        crate::set_engine_error_detail(format!("{e:?}"));
+        "CodegenWasmJit: wasm engine error"
+    })
 }
 
 /// Setup path: keep the real wasmtime message as a `String` for the run log.

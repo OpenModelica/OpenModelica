@@ -240,7 +240,10 @@ type Store = wasmer::Store;
 /// (a model `assert()` is decoded downstream by `enrich_trap`). wasmer's error
 /// types don't share one convertible type, hence the generic `Debug` bound.
 fn wt<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> Result<T> {
-    r.map_err(|_| "CodegenWasmJit: wasm engine error")
+    r.map_err(|e| {
+        crate::set_engine_error_detail(format!("{e:?}"));
+        "CodegenWasmJit: wasm engine error"
+    })
 }
 
 /// Setup path: keep the real wasmer message as a `String` for the run log.

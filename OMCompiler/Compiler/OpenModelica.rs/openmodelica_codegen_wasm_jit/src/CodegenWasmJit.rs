@@ -295,11 +295,34 @@ fn write_output(path: &str, bytes: &[u8]) -> std::io::Result<()> {
 /// panic traps the wasm instance, after which the buffered error can't be read
 /// back (the web omc then reports a bare "Translation failed"). Callers return
 /// after this instead — an unsupported construct is a normal failure, not a crash.
+/// The position is the Rust call site, as `sourceInfo()` gives a MetaModelica
+/// `addInternalError`.
+#[track_caller]
 pub(crate) fn record_error(msg: String) {
+    let loc = std::panic::Location::caller();
     let _ = openmodelica_util::Error::addInternalError(
         ArcStr::from(msg.as_str()),
-        openmodelica_util::Error::dummyInfo.clone(),
+        metamodelica::SourceInfo {
+            fileName: ArcStr::from(loc.file()),
+            isReadOnly: false,
+            lineNumberStart: loc.line() as i32,
+            columnNumberStart: loc.column() as i32,
+            lineNumberEnd: loc.line() as i32,
+            columnNumberEnd: loc.column() as i32,
+            lastModification: metamodelica::OrderedFloat(0.0),
+        },
     );
+}
+
+/// `e` plus the engine's own message (trap kind + wasm backtrace) that the
+/// `&'static str` error dropped — but not for a model `assert()`, which already
+/// reported itself.
+fn with_engine_detail(e: &str) -> String {
+    let detail = openmodelica_wasm_jit::take_engine_error_detail();
+    match detail {
+        Some(d) if e != sim_driver::ASSERT_ERR => format!("{e}\n{d}"),
+        _ => e.to_string(),
+    }
 }
 
 /// `CodegenWasmJit.translateModel`: lower `simCode` to a model wasm module, write
@@ -359,7 +382,10 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
         Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_line}\n{warns}{combined}"),
-        Err(e) => format!("{combined}{warns}LOG_ERROR         | error   | wasm-jit simulation failed: {e:#}\n"),
+        Err(e) => format!(
+            "{combined}{warns}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
+            with_engine_detail(e)
+        ),
     };
     let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
     // Error is in `<prefix>.log` (hence the result `messages`); no stderr.
@@ -720,7 +746,7 @@ mod session {
             Ok(v) => v,
             Err(e) => {
                 let _ = openmodelica_wasi::wasi::take_stdout_capture();
-                record_error(format!("wasm-jit simulation failed: {e:#}"));
+                record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(&e)));
                 return Err("CodegenWasmJit: wasm-jit simulation failed");
             }
         };
@@ -822,7 +848,7 @@ mod session {
                 }
                 Err(e) => {
                     let _ = openmodelica_wasi::wasi::take_stdout_capture();
-                    record_error(format!("wasm-jit simulation failed: {e:#}"));
+                    record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(e)));
                     *guard = None;
                     Err(e)
                 }
@@ -2212,6 +2238,7 @@ fn collect_samples(
 
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
 fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimModel> {
+    crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
     let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
@@ -2790,6 +2817,53 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
 
+    // --- Name section: without it a trap backtrace is bare function indices. The
+    // unnamed remainder is the NLS callbacks. ---
+    let mut names: Vec<(u32, String)> = Vec::new();
+    for (i, name) in BUILTINS
+        .iter()
+        .map(|b| b.0)
+        .chain(RT_BUILTINS.iter().map(|b| b.0))
+        .chain(ENV_EXTRA.iter().map(|b| b.0))
+        .enumerate()
+    {
+        names.push((i as u32, name.to_string()));
+    }
+    for (i, sig) in ext_imports.iter().enumerate() {
+        names.push((ext_base + i as u32, format!("ext.{}", sig.name)));
+    }
+    for (id, f) in model_fns.iter().enumerate() {
+        names.push((import_base + id as u32, function_signature(f)?.0));
+    }
+    for (name, idx) in [
+        ("functionParameters", eqfn.parameters),
+        ("functionInitialEquations", eqfn.initial),
+        ("functionInitStartValues", eqfn.init_start_values),
+        ("functionODE", eqfn.ode),
+        ("functionAlgebraics", eqfn.algebraics),
+        ("simulate", simulate_idx),
+        ("om_meta_ptr", om_meta_ptr_idx),
+        ("om_meta_len", om_meta_len_idx),
+        ("callExternalObjectDestructors", destructors_idx),
+        ("initSample", init_sample_idx),
+        ("functionZeroCrossings", zc_idx),
+        ("functionStateSetJacobians", stateset_jac_idx),
+        ("functionInitialEquations_lambda0", init_lambda0_idx),
+        ("functionCheckAsserts", check_asserts_idx),
+        ("functionUpdateRelations", update_relations_idx),
+        ("functionStoreDelayed", store_delayed_idx),
+        ("functionInitDelay", init_delay_idx),
+    ] {
+        names.push((idx, name.to_string()));
+    }
+    names.sort_by_key(|(idx, _)| *idx);
+    let mut fn_names = we::NameMap::new();
+    for (idx, name) in &names {
+        fn_names.append(*idx, name);
+    }
+    let mut name_section = we::NameSection::new();
+    name_section.functions(&fn_names);
+
     let mut module = we::Module::new();
     module.section(&types);
     module.section(&imports);
@@ -2826,6 +2900,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         }
         module.section(&data);
     }
+    module.section(&name_section);
     let wasm = module.finish();
 
     // Kick off the (cranelift) JIT compile of this model module on a background
@@ -3341,12 +3416,12 @@ fn build_init_start_values_fn(
         zc_context: false,
     };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32)> = Vec::with_capacity(states.len() + real_algs.len());
+    let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32, Option<u32>)> = Vec::with_capacity(states.len() + real_algs.len());
     for (i, sv) in states.iter().enumerate() {
-        pairs.push((sv.initialValue.clone(), layout.state_start_off(i as u32)));
+        pairs.push((sv.initialValue.clone(), layout.state_start_off(i as u32), Some(REAL_OFF + (i as u32) * 8)));
     }
     for (j, sv) in real_algs.iter().enumerate() {
-        pairs.push((sv.initialValue.clone(), REAL_OFF + (2 * layout.n_states + j as u32) * 8));
+        pairs.push((sv.initialValue.clone(), REAL_OFF + (2 * layout.n_states + j as u32) * 8, None));
     }
     ctx.emit_init_start_values(&pairs)?;
     let (locals, instrs) = ctx.finish_sim();
