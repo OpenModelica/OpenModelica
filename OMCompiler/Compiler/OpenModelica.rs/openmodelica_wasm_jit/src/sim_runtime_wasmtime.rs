@@ -242,6 +242,10 @@ fn define_external_imports(
     rt_str_data: wasmtime::TypedFunc<u32, u32>,
 ) -> Result<()> {
     registry_reset();
+    openmodelica_util::dynload::install_modelica_message_interception(
+        openmodelica_modelica_utilities::modelica_message_hook,
+        openmodelica_modelica_utilities::modelica_warning_hook,
+    );
     let engine = linker.engine().clone();
     for sig in &model.ext_imports {
         let functype = wasmtime::FuncType::new(

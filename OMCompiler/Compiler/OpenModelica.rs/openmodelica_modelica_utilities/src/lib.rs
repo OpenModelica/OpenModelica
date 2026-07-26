@@ -141,12 +141,13 @@ fn take_message(msg: *const c_char, prefix: &str) -> bool {
     true
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn omrs_modelica_message(msg: *const c_char) -> i32 {
+// The two hooks the simulation host hands to
+// `dynload::install_modelica_message_interception`.
+
+pub extern "C" fn modelica_message_hook(msg: *const c_char) -> i32 {
     take_message(msg, LOG_STDOUT_INFO) as i32
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn omrs_modelica_warning(msg: *const c_char) -> i32 {
+pub extern "C" fn modelica_warning_hook(msg: *const c_char) -> i32 {
     take_message(msg, LOG_STDOUT_WARNING) as i32
 }

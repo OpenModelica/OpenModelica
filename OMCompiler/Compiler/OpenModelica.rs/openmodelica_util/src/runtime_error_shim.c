@@ -224,16 +224,16 @@ void omrs_install_omc_assert_panic(omrs_assert_fn *assert_slot) {
  * simulation host. An external function's message would otherwise reach the
  * runtime's `va_infoStreamPrint(OMC_LOG_STDOUT, ...)`, a stream the compiler
  * process never enables, so `Streams.print` output vanished. The shims render
- * the message and offer it to Rust; anything not taken goes to the original,
- * leaving the compile-time `-d=gen` path unchanged.
+ * the message and offer it to the hook installed below; anything not taken goes
+ * to the original, leaving the compile-time `-d=gen` path unchanged.
  */
-extern int omrs_modelica_message(const char *msg);
-extern int omrs_modelica_warning(const char *msg);
-
 typedef void (*omrs_vmsg_fn)(const char *, va_list);
+typedef int (*omrs_msg_hook_fn)(const char *);
 
 static omrs_vmsg_fn omrs_orig_vformat_message = 0;
 static omrs_vmsg_fn omrs_orig_vformat_warning = 0;
+static omrs_msg_hook_fn omrs_message_hook = 0;
+static omrs_msg_hook_fn omrs_warning_hook = 0;
 
 static void omrs_modelica_vformat_message(const char *fmt, va_list ap) {
   char buf[8192];
@@ -241,7 +241,7 @@ static void omrs_modelica_vformat_message(const char *fmt, va_list ap) {
   va_copy(ap2, ap);
   vsnprintf(buf, sizeof(buf), fmt, ap2);
   va_end(ap2);
-  if (!omrs_modelica_message(buf) && omrs_orig_vformat_message) {
+  if (!(omrs_message_hook && omrs_message_hook(buf)) && omrs_orig_vformat_message) {
     omrs_orig_vformat_message(fmt, ap);
   }
 }
@@ -252,14 +252,20 @@ static void omrs_modelica_vformat_warning(const char *fmt, va_list ap) {
   va_copy(ap2, ap);
   vsnprintf(buf, sizeof(buf), fmt, ap2);
   va_end(ap2);
-  if (!omrs_modelica_warning(buf) && omrs_orig_vformat_warning) {
+  if (!(omrs_warning_hook && omrs_warning_hook(buf)) && omrs_orig_vformat_warning) {
     omrs_orig_vformat_warning(fmt, ap);
   }
 }
 
 /* The slots are the runtime's `OpenModelica_ModelicaVFormat{Message,Warning}`
-   function-pointer variables (dlsym'd in dynload::ensure_sim_error_interception). */
-void omrs_install_modelica_message(omrs_vmsg_fn *msg_slot, omrs_vmsg_fn *warn_slot) {
+   function-pointer variables (dlsym'd in
+   dynload::install_modelica_message_interception, which also supplies the
+   hooks — they live in the simulation host's crate, which this one does not
+   link against). */
+void omrs_install_modelica_message(omrs_vmsg_fn *msg_slot, omrs_vmsg_fn *warn_slot,
+                                   omrs_msg_hook_fn msg_hook, omrs_msg_hook_fn warn_hook) {
+  omrs_message_hook = msg_hook;
+  omrs_warning_hook = warn_hook;
   if (msg_slot) {
     omrs_orig_vformat_message = *msg_slot;
     *msg_slot = omrs_modelica_vformat_message;
