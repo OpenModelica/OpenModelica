@@ -48,10 +48,10 @@ pub struct SimModel {
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
     pub meta: SimMeta,
-    /// Pre-rendered `LOG_STDOUT` lines announcing which torn linear systems use the
-    /// sparse solver (C's `initializeLinearSystems` messages), prepended to the sim
-    /// log. Empty when no system is sparse.
-    pub sparse_lss_log: String,
+    /// Pre-rendered `LOG_STDOUT` lines announcing which linear and nonlinear systems
+    /// use a sparse solver (C's `initializeLinearSystems` / `initializeNonlinearSystems`
+    /// messages), prepended to the sim log. Empty when no system is sparse.
+    pub sparse_solver_log: String,
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,

@@ -2174,10 +2174,25 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     n: u32,
     nnz: u32,
 ) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz)
+}
+
+/// [`rt_solve_lin_sparse_cached`] without the statistics counter — the sparse
+/// nonlinear solver's inner factorizations are kinsol/KLU solves in C, which the
+/// `### STATISTICS ###` "linear system solves" line does not count.
+pub(crate) fn lin_sparse_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: u32,
+    nnz: u32,
+) -> i32 {
     let n = n as usize;
     let nnz = nnz as usize;
 
-    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     // Native interactive runtime: the host solves natively (cheap crossings).
     #[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
     {

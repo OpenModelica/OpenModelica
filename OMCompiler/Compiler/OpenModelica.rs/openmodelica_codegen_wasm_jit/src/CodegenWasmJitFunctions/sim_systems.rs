@@ -222,6 +222,287 @@ pub(crate) fn emit_nls_jac_body(
     Ok(())
 }
 
+/// Emit the body of a nonlinear system's colored `jac(sim_data, x, out)` callback,
+/// mirroring C's `evalJacobian` (`simulation/jacobian_util.c`): the CSC pattern
+/// `colptr`/`rowidx` and the column `colors` come from the symbolic Jacobian, one
+/// color is seeded at a time, the column equations run once per color, and each
+/// column of the color reads its pattern nonzeros out of the result slots. `out`
+/// receives the `nnz` CSC values when `dense_out` is false, else a column-major
+/// `n×n` matrix. The column body is emitted once inside a wasm loop, so the code
+/// size is independent of `n` (unlike [`emit_nls_jac_body`]).
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn emit_nls_jac_csc_body(
+    ctx: &mut FnCtx,
+    iter_slots: &[u32],
+    seed_offs: &[u32],
+    result_offs: &[u32],
+    colptr: &[i32],
+    rowidx: &[i32],
+    colors: &[Vec<u32>],
+    dense_out: bool,
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let n = iter_slots.len();
+    let nnz = rowidx.len();
+    if seed_offs.len() != n || result_offs.len() != n || colptr.len() != n + 1 {
+        return Err("CodegenWasmJit: nonlinear-system CSC Jacobian size mismatch");
+    }
+    let ncolors = colors.len();
+    // color_ptr/color_cols: color `c` owns `color_cols[color_ptr[c]..color_ptr[c+1]]`.
+    let mut color_ptr = vec![0i32; ncolors + 1];
+    let mut color_cols: Vec<i32> = Vec::with_capacity(n);
+    for (c, cols) in colors.iter().enumerate() {
+        color_cols.extend(cols.iter().map(|&j| j as i32));
+        color_ptr[c + 1] = color_cols.len() as i32;
+    }
+
+    for (j, &off) in iter_slots.iter().enumerate() {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::LocalGet(1));
+        ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
+        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    }
+    lower_inner(ctx)?;
+    lower_constant(ctx)?;
+
+    // Scratch index tables (i32): colptr | rowidx | seed_tab | res_tab |
+    // color_ptr | color_cols.
+    let colptr_off: u32 = 0;
+    let rowidx_off: u32 = ((n + 1) * 4) as u32;
+    let seed_tab_off: u32 = rowidx_off + (nnz * 4) as u32;
+    let res_tab_off: u32 = seed_tab_off + (n * 4) as u32;
+    let colorptr_off: u32 = res_tab_off + (n * 4) as u32;
+    let colorcols_off: u32 = colorptr_off + ((ncolors + 1) * 4) as u32;
+    let scratch_bytes: u32 = colorcols_off + (color_cols.len() * 4) as u32;
+    let base = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(scratch_bytes as i32));
+    ctx.emit(I::Call(rt_index("rt_alloc")?));
+    ctx.emit(I::LocalSet(base));
+    let store_i32 = |ctx: &mut FnCtx, off: u32, v: i32| {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::I32Const(v));
+        ctx.emit(I::I32Store(mem_arg(off, 2)));
+    };
+    for (k, &p) in colptr.iter().enumerate() {
+        store_i32(ctx, colptr_off + (k as u32) * 4, p);
+    }
+    for (k, &r) in rowidx.iter().enumerate() {
+        store_i32(ctx, rowidx_off + (k as u32) * 4, r);
+    }
+    for (k, &soff) in seed_offs.iter().enumerate() {
+        store_i32(ctx, seed_tab_off + (k as u32) * 4, soff as i32);
+    }
+    for (i, &roff) in result_offs.iter().enumerate() {
+        store_i32(ctx, res_tab_off + (i as u32) * 4, roff as i32);
+    }
+    for (k, &p) in color_ptr.iter().enumerate() {
+        store_i32(ctx, colorptr_off + (k as u32) * 4, p);
+    }
+    for (k, &j) in color_cols.iter().enumerate() {
+        store_i32(ctx, colorcols_off + (k as u32) * 4, j);
+    }
+
+    let cloc = ctx.alloc_temp(WTy::I32);
+    let mloc = ctx.alloc_temp(WTy::I32);
+    let mend = ctx.alloc_temp(WTy::I32);
+    let jloc = ctx.alloc_temp(WTy::I32);
+    let kloc = ctx.alloc_temp(WTy::I32);
+    let kend = ctx.alloc_temp(WTy::I32);
+
+    // Dense output keeps structural zeros at 0 (C memsets before the color loop).
+    if dense_out {
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::LocalSet(kloc));
+        ctx.emit(I::Block(we::BlockType::Empty));
+        ctx.emit(I::Loop(we::BlockType::Empty));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const((n * n) as i32));
+        ctx.emit(I::I32GeS);
+        ctx.emit(I::BrIf(1));
+        ctx.emit(I::LocalGet(2));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const(8));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const(1));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(kloc));
+        ctx.emit(I::Br(0));
+        ctx.emit(I::End);
+        ctx.emit(I::End);
+    }
+    for &soff in seed_offs {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(soff, 3)));
+    }
+
+    // `data + seed_tab[idx]`, the seed slot at run-time column index `idx`.
+    let push_seed_addr = |ctx: &mut FnCtx, idx: u32| {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::I32Const(4));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Load(mem_arg(seed_tab_off, 2)));
+        ctx.emit(I::I32Add);
+    };
+    let load_colorptr = |ctx: &mut FnCtx, dst: u32, addc: i32| {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(cloc));
+        if addc != 0 {
+            ctx.emit(I::I32Const(addc));
+            ctx.emit(I::I32Add);
+        }
+        ctx.emit(I::I32Const(4));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Load(mem_arg(colorptr_off, 2)));
+        ctx.emit(I::LocalSet(dst));
+    };
+    let load_j = |ctx: &mut FnCtx| {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(mloc));
+        ctx.emit(I::I32Const(4));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Load(mem_arg(colorcols_off, 2)));
+        ctx.emit(I::LocalSet(jloc));
+    };
+
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(cloc));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(cloc));
+    ctx.emit(I::I32Const(ncolors as i32));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    // seed every column of the color.
+    load_colorptr(ctx, mloc, 0);
+    load_colorptr(ctx, mend, 1);
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(mloc));
+    ctx.emit(I::LocalGet(mend));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    load_j(ctx);
+    push_seed_addr(ctx, jloc);
+    ctx.emit(I::F64Const(1.0f64.into()));
+    ctx.emit(I::F64Store(mem_arg(0, 3)));
+    ctx.emit(I::LocalGet(mloc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(mloc));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+    lower_column(ctx)?;
+    // read each column's pattern nonzeros, then clear its seed.
+    load_colorptr(ctx, mloc, 0);
+    load_colorptr(ctx, mend, 1);
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(mloc));
+    ctx.emit(I::LocalGet(mend));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    load_j(ctx);
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(jloc));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(colptr_off, 2)));
+    ctx.emit(I::LocalSet(kloc));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(jloc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(colptr_off, 2)));
+    ctx.emit(I::LocalSet(kend));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(kloc));
+    ctx.emit(I::LocalGet(kend));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    // destination address: out + nz*8 (CSC) or out + (j*n + row)*8 (dense).
+    ctx.emit(I::LocalGet(2));
+    if dense_out {
+        ctx.emit(I::LocalGet(jloc));
+        ctx.emit(I::I32Const(n as i32));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const(4));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Load(mem_arg(rowidx_off, 2)));
+        ctx.emit(I::I32Add);
+    } else {
+        ctx.emit(I::LocalGet(kloc));
+    }
+    ctx.emit(I::I32Const(8));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    // value = f64[data + res_tab[rowidx[k]]].
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(kloc));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(rowidx_off, 2)));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(res_tab_off, 2)));
+    ctx.emit(I::LocalGet(0));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
+    ctx.emit(I::F64Store(mem_arg(0, 3)));
+    ctx.emit(I::LocalGet(kloc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(kloc));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+    push_seed_addr(ctx, jloc);
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Store(mem_arg(0, 3)));
+    ctx.emit(I::LocalGet(mloc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(mloc));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(cloc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(cloc));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")?));
+    Ok(())
+}
+
 /// Lower a torn linear system `A x = b` by residual probing (the fallback when the
 /// system has no usable symbolic Jacobian; see `compile_linear_system_analytic`).
 /// `r(x) = A x - b` for a linear system, so `b_i = -r_i(0)` and
@@ -613,7 +894,7 @@ pub(crate) fn compile_linear_system_analytic(
 /// can be seeded at once and its nonzeros read from a single column-eqn pass. Returns
 /// `(color_ptr, color_cols)`: color `c` owns `color_cols[color_ptr[c]..color_ptr[c+1]]`.
 /// Cuts the analytic-assembly passes from `n` to `#colors` (≈ max row degree).
-fn lin_jac_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> (Vec<i32>, Vec<i32>) {
+pub(crate) fn lin_jac_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> (Vec<i32>, Vec<i32>) {
     let nrows = rowidx.iter().copied().max().map_or(0, |m| m as usize + 1);
     let mut row_cols: Vec<Vec<u32>> = vec![Vec::new(); nrows];
     for j in 0..n {
@@ -947,6 +1228,22 @@ pub(crate) fn lin_use_sparse(size: usize, nnz: usize) -> bool {
     (nnz as f64) < LSS_MAX_DENSITY * (size * size) as f64 || size > LSS_MIN_SIZE
 }
 
+/// C's nonlinear sparse-solver selection (`nonlinearSystem.c`
+/// `initializeNonlinearSystemData`): kinsol+KLU when the density is below
+/// `nlssMaxDensity` (default 0.1) or the size exceeds `nlssMinSize` (default 1000).
+pub(crate) const NLSS_MAX_DENSITY: f64 = 0.1;
+pub(crate) const NLSS_MIN_SIZE: usize = 1000;
+pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
+    (nnz as f64) / ((size * size) as f64) < NLSS_MAX_DENSITY || size > NLSS_MIN_SIZE
+}
+
+/// Cache key for a sparse nonlinear system's reused symbolic factorization. Torn
+/// linear systems key on their (non-negative) equation index, so the top bit keeps
+/// the two families apart in the runtime's one `rt_solve_lin_sparse_cached` cache.
+pub(crate) fn nls_lss_handle(k: u32) -> u32 {
+    0x8000_0000 | k
+}
+
 /// Lower a `SES_LINEAR` system given symbolically as `A x = b` from `simJac`/`beqs`
 /// (the C runtime's `setLinearMatrixA`/`setLinearVectorb`): `a_entries` are the
 /// nonzero elements `(row, col, exp)` (0-based, column-major); `b_exps` the dense
@@ -1178,6 +1475,18 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n_rel as i32));
     ctx.emit(I::I32Const(job.mixed as i32));
+    // Sparse systems: this system's `colptr`/`rowidx` in the pattern block, its
+    // nonzero count, and the cache key for the reused symbolic factorization.
+    // `nnz == 0` selects the dense solver ladder (`jac` fills an `n×n` matrix).
+    if job.nnz != 0 {
+        ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
+        ctx.emit(I::I32Const(job.pat_off as i32));
+        ctx.emit(I::I32Add);
+    } else {
+        ctx.emit(I::I32Const(0));
+    }
+    ctx.emit(I::I32Const(job.nnz as i32));
+    ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

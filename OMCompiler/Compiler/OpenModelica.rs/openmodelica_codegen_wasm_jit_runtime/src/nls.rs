@@ -1107,6 +1107,181 @@ fn newton_c(
     }
 }
 
+/// KINSOL function-norm / scaled-step stopping tolerances (C's `newtonFTol` /
+/// `newtonXTol`, `model_help.c`) and the norm below which C accepts a less
+/// accurate solution rather than failing (`FTOL_WITH_LESS_ACCURACY`).
+const KIN_FNORMTOL: f64 = 1.0e-12;
+const KIN_SCSTEPTOL: f64 = 1.0e-12;
+const KIN_FTOL_LESS_ACCURACY: f64 = 1.0e-6;
+
+/// `‖diag(scale)·v‖∞`, the norm KINSOL's stopping tests use.
+fn scaled_max_norm(v: &[f64], scale: &[f64]) -> f64 {
+    let mut m = 0.0f64;
+    for (a, s) in v.iter().zip(scale) {
+        let t = libm::fabs(a * s);
+        if !(t <= m) {
+            m = t;
+        }
+    }
+    m
+}
+
+/// The sparse (kinsol + KLU) nonlinear solver: a scaled Newton iteration with a
+/// line search over the symbolic Jacobian assembled straight into CSC, factorized
+/// by the runtime's sparse LU with its symbolic analysis cached per system.
+/// Mirrors C's `nlsKinsolSolve`: `xScale[i] = 1/max(nominal_i, |x_i|)`,
+/// `fScale[i] = 1/max_j |J_ij / xScale_j|`, convergence on `‖fScale·F‖∞ ≤ ftol`
+/// or a scaled step below `scsteptol`, and the same retry ladder
+/// (`nlsKinsolErrorHandler`) of start point / scaling / line-search variations.
+///
+/// `pat_addr` holds the compile-time pattern (`colptr[n+1]` then `rowidx[nnz]`),
+/// `val_ptr` the `nnz` values the model's `jac` callback fills, and `handle` keys
+/// the cached factorization.
+#[allow(clippy::too_many_arguments)]
+fn kinsol_sparse_solve(
+    n: usize,
+    x: &mut [f64],
+    guess: &[f64],
+    warm: &[f64],
+    nominal: &[f64],
+    sim_data: u32,
+    x_ptr: u32,
+    jac_idx: u32,
+    val_ptr: u32,
+    pat_addr: u32,
+    nnz: usize,
+    handle: u32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    let colptr_addr = pat_addr;
+    let rowidx_addr = pat_addr + ((n + 1) * 4) as u32;
+    let colptr: alloc::vec::Vec<usize> =
+        (0..=n).map(|k| unsafe { load_u32(colptr_addr + (k * 4) as u32) } as usize).collect();
+    let rowidx: alloc::vec::Vec<usize> =
+        (0..nnz).map(|k| unsafe { load_u32(rowidx_addr + (k * 4) as u32) } as usize).collect();
+    let b_ptr = rt_alloc((n * 8) as u32);
+
+    let mut vals = vec![0.0f64; nnz];
+    let assemble = |xs: &[f64], vals: &mut [f64]| {
+        let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
+        for i in 0..n {
+            unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
+        }
+        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+        jacf(sim_data, x_ptr, val_ptr);
+        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
+        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+        for (k, v) in vals.iter_mut().enumerate() {
+            *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
+        }
+    };
+
+    let mut f = vec![0.0f64; n];
+    let mut xscale = vec![1.0f64; n];
+    let mut fscale = vec![1.0f64; n];
+    let mut xnew = vec![0.0f64; n];
+    let mut dx = vec![0.0f64; n];
+
+    // `(start from the last accepted values, scaled, line search)` per attempt;
+    // attempt 0 is kinsol's configured default, the rest are C's retry ladder.
+    const ATTEMPTS: [(bool, bool, bool); 5] = [
+        (false, true, true),
+        (false, false, true),
+        (true, true, true),
+        (false, true, false),
+        (true, false, true),
+    ];
+    let mut solved = false;
+    for &(from_warm, scaled, linesearch) in ATTEMPTS.iter() {
+        x.copy_from_slice(if from_warm { warm } else { guess });
+        for i in 0..n {
+            xscale[i] = if scaled { 1.0 / libm::fmax(nominal[i], libm::fabs(x[i])) } else { 1.0 };
+        }
+        // f scaling from the column-scaled Jacobian at the entry point.
+        for s in fscale.iter_mut() {
+            *s = 1.0;
+        }
+        if scaled {
+            assemble(x, &mut vals);
+            let mut rowmax = vec![1.0e-12f64; n];
+            for c in 0..n {
+                for k in colptr[c]..colptr[c + 1] {
+                    let v = libm::fabs(vals[k] / xscale[c]);
+                    if v > rowmax[rowidx[k]] {
+                        rowmax[rowidx[k]] = v;
+                    }
+                }
+            }
+            for i in 0..n {
+                fscale[i] = 1.0 / rowmax[i];
+            }
+        }
+
+        eval(x, &mut f);
+        let mut fnorm = scaled_max_norm(&f, &fscale);
+        for _ in 0..100 * n {
+            if !fnorm.is_finite() {
+                break;
+            }
+            if fnorm <= KIN_FNORMTOL {
+                solved = true;
+                break;
+            }
+            assemble(x, &mut vals);
+            for i in 0..n {
+                unsafe { store_f64(b_ptr + (i * 8) as u32, -f[i]) };
+            }
+            if crate::lin_sparse_cached(
+                handle, colptr_addr, rowidx_addr, val_ptr, b_ptr, n as u32, nnz as u32,
+            ) != 0
+            {
+                break; // singular: next attempt
+            }
+            for i in 0..n {
+                dx[i] = unsafe { load_f64(b_ptr + (i * 8) as u32) };
+            }
+            // Damped step: halve until the scaled residual improves (kinsol's
+            // KIN_LINESEARCH; KIN_NONE takes the full step).
+            let mut lambda = 1.0f64;
+            let mut fnew;
+            loop {
+                for i in 0..n {
+                    xnew[i] = x[i] + lambda * dx[i];
+                }
+                eval(&xnew, &mut f);
+                fnew = scaled_max_norm(&f, &fscale);
+                if !linesearch || fnew < fnorm || lambda <= LAMBDA_MIN {
+                    break;
+                }
+                lambda *= 0.5;
+            }
+            // KIN_STEP_LT_STPTOL: a step this small cannot improve the iterate.
+            let mut step = 0.0f64;
+            for i in 0..n {
+                let d = libm::fabs(lambda * dx[i]) / libm::fmax(libm::fabs(x[i]), 1.0 / xscale[i]);
+                if !(d <= step) {
+                    step = d;
+                }
+            }
+            x.copy_from_slice(&xnew);
+            fnorm = fnew;
+            if step <= KIN_SCSTEPTOL {
+                solved = fnorm < KIN_FTOL_LESS_ACCURACY;
+                break;
+            }
+        }
+        if !solved && fnorm.is_finite() && fnorm < KIN_FTOL_LESS_ACCURACY {
+            // C's "move forward with a less accurate solution".
+            solved = true;
+        }
+        if solved {
+            break;
+        }
+    }
+    rt_free(b_ptr);
+    solved
+}
+
 /// The `load` callback copies the current unknown slots into `x` (warm start);
 /// `residual` writes `x` back into the slots, runs the inner (torn) equations,
 /// and evaluates the residuals into `r`. On convergence the slots (and torn
@@ -1136,6 +1311,9 @@ pub extern "C" fn rt_solve_nls(
     rel_addr: u32,
     n_rel: u32,
     mixed: u32,
+    pat_addr: u32,
+    nnz: u32,
+    lss_handle: u32,
 ) -> i32 {
     let n = n as usize;
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -1188,9 +1366,12 @@ pub extern "C" fn rt_solve_nls(
     };
 
     // Analytic Jacobian callback: `jac(sim_data, x, jptr)` fills a column-major
-    // `n×n` matrix. `u32::MAX` means none, so numeric `hybrd` is used.
+    // `n×n` matrix, or the `nnz` CSC values when the system is solved sparsely.
+    // `u32::MAX` means none, so numeric `hybrd` is used.
     let has_jac = jac_idx != u32::MAX;
-    let jac_ptr = if has_jac { rt_alloc((n * n * 8) as u32) } else { 0 };
+    let sparse = has_jac && nnz != 0;
+    let jac_len = if sparse { nnz as usize } else { n * n };
+    let jac_ptr = if has_jac { rt_alloc((jac_len * 8) as u32) } else { 0 };
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
         for i in 0..n {
@@ -1202,8 +1383,8 @@ pub extern "C" fn rt_solve_nls(
         jacf(sim_data, x_ptr, jac_ptr);
         NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
         NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
-        for k in 0..n * n {
-            fj[k] = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
+        for (k, v) in fj.iter_mut().enumerate() {
+            *v = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
         }
     };
 
@@ -1251,75 +1432,86 @@ pub extern "C" fn rt_solve_nls(
     } else if saved_rel_fresh == 0 {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
-    // hybrj (analytic Jacobian) when available, else numeric hybrd; on failure
-    // retry from the warm start, then Newton and LM.
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
-    let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
-        if has_jac {
-            hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
-        } else {
-            hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
+    // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
+    // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
+    // O(n^3) per step, which is what the sparse choice exists to avoid.
+    let mut converged = if sparse {
+        kinsol_sparse_solve(
+            n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
+            pat_addr, nnz as usize, lss_handle, &mut eval,
+        )
+    } else {
+        // hybrj (analytic Jacobian) when available, else numeric hybrd; on failure
+        // retry from the warm start, then Newton and LM.
+        let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
+            if has_jac {
+                hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
+            } else {
+                hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
+            }
+        };
+        let mut converged = solve(&mut x, &mut fvec);
+        if !converged {
+            x.copy_from_slice(&warm);
+            converged = solve(&mut x, &mut fvec);
         }
+        drop(solve);
+        if !converged {
+            x.copy_from_slice(&warm);
+            converged = newton_solve(n, &mut x, &mut eval);
+        }
+        // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
+        if !converged && saved_rel_fresh == 2 {
+            x.copy_from_slice(&guess);
+            converged = newton_c(n, &mut x, &nominal, &mut eval, &mut jaceval, has_jac);
+        }
+        if !converged && saved_rel_fresh == 2 {
+            x.copy_from_slice(&guess);
+            converged = hybrd_c(n, &mut x, &nominal, &mut eval);
+        }
+        // Seed collapsed zero unknowns (e.g. the spring-loop s_rel) to nominal, off the
+        // degenerate residual plateau, then re-solve — C's "zero start values to nominal".
+        if !converged && saved_rel_fresh == 2 {
+            x.copy_from_slice(&guess);
+            for i in 0..n {
+                if x[i] == 0.0 {
+                    x[i] = nominal[i];
+                }
+            }
+            converged = hybrd_c(n, &mut x, &nominal, &mut eval);
+        }
+        // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
+        if !converged {
+            converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+        }
+        if !converged {
+            x.copy_from_slice(&guess);
+            converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+        }
+        if !converged {
+            x.copy_from_slice(&guess);
+            converged = lm_solve(n, &mut x, &mut eval);
+        }
+        if !converged {
+            x.copy_from_slice(&warm);
+            converged = lm_solve(n, &mut x, &mut eval);
+        }
+        // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
+        if !converged && saved_rel_fresh == 2 {
+            // Forward then reversed start direction, as C's runHomotopy.
+            for &dir in &[1.0f64, -1.0f64] {
+                let mut hx = guess.clone();
+                if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                    x.copy_from_slice(&hx);
+                    converged = true;
+                    break;
+                }
+            }
+        }
+        converged
     };
-    let mut converged = solve(&mut x, &mut fvec);
-    if !converged {
-        x.copy_from_slice(&warm);
-        converged = solve(&mut x, &mut fvec);
-    }
-    drop(solve);
-    if !converged {
-        x.copy_from_slice(&warm);
-        converged = newton_solve(n, &mut x, &mut eval);
-    }
-    // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
-    if !converged && saved_rel_fresh == 2 {
-        x.copy_from_slice(&guess);
-        converged = newton_c(n, &mut x, &nominal, &mut eval, &mut jaceval, has_jac);
-    }
-    if !converged && saved_rel_fresh == 2 {
-        x.copy_from_slice(&guess);
-        converged = hybrd_c(n, &mut x, &nominal, &mut eval);
-    }
-    // Seed collapsed zero unknowns (e.g. the spring-loop s_rel) to nominal, off the
-    // degenerate residual plateau, then re-solve — C's "zero start values to nominal".
-    if !converged && saved_rel_fresh == 2 {
-        x.copy_from_slice(&guess);
-        for i in 0..n {
-            if x[i] == 0.0 {
-                x[i] = nominal[i];
-            }
-        }
-        converged = hybrd_c(n, &mut x, &nominal, &mut eval);
-    }
-    // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
-    if !converged {
-        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-    }
-    if !converged {
-        x.copy_from_slice(&guess);
-        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-    }
-    if !converged {
-        x.copy_from_slice(&guess);
-        converged = lm_solve(n, &mut x, &mut eval);
-    }
-    if !converged {
-        x.copy_from_slice(&warm);
-        converged = lm_solve(n, &mut x, &mut eval);
-    }
-    // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
-    if !converged && saved_rel_fresh == 2 {
-        // Forward then reversed start direction, as C's runHomotopy.
-        for &dir in &[1.0f64, -1.0f64] {
-            let mut hx = guess.clone();
-            if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                x.copy_from_slice(&hx);
-                converged = true;
-                break;
-            }
-        }
-    }
     if converged {
         // Leave the slots + torn variables at the solution. C's `solveHomotopy`: a
         // mixed system at an event re-checks the relations live at the solution and,
@@ -1329,7 +1521,12 @@ pub extern "C" fn rt_solve_nls(
             eval(&x, &mut scratch);
             if (0..n_rel).any(|i| unsafe { load_u32(rel_addr + i * 4) } != rel_backup[i as usize]) {
                 let held = core::mem::replace(&mut x, warm.clone());
-                let ok = if has_jac {
+                let ok = if sparse {
+                    kinsol_sparse_solve(
+                        n, &mut x, &warm, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
+                        pat_addr, nnz as usize, lss_handle, &mut eval,
+                    )
+                } else if has_jac {
                     hybrj_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval, &mut jaceval)
                 } else {
                     hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval)
