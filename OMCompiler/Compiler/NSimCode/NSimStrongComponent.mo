@@ -1003,10 +1003,12 @@ public
       list<Block> blcks = {};
     algorithm
       comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in body.then_eqns);
+
       for comp in listReverse(comps) loop
         (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
         blcks := blck :: blcks;
       end for;
+
       branches := (body.condition, blcks) :: branches;
       if isSome(body.else_if) then
         (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, kind, simcode_map, equation_map);

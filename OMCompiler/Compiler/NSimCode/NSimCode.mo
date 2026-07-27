@@ -517,6 +517,7 @@ public
       list<OldBackendDAE.ZeroCrossing> zeroCrossings;
       list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
       list<OldBackendDAE.TimeEvent> timeEvents;
+      OldSimCode.SpatialDistributionInfo spatialInfo;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       HashTableCrILst.HashTable varToIndexMapping;
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
@@ -524,7 +525,7 @@ public
       list<SimVar> residualVars;
     algorithm
       modelInfo := ModelInfo.convert(simCode.modelInfo);
-      (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
+      (zeroCrossings, relations, timeEvents, spatialInfo) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
       (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
@@ -571,7 +572,7 @@ public
         extObjInfo                    = ExtObjInfo.convert(simCode.extObjInfo), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
-        spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
+        spatialInfo                   = spatialInfo,
         jacobianMatrices              = list(SimJacobian.convert(jac) for jac in simCode.jacobians),
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = simCode.fileNamePrefix,
@@ -699,7 +700,7 @@ public
         sortedClasses                   = {},
         nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
         nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
-        nSpatialDistributions           = 0,
+        nSpatialDistributions           = listLength(eventInfo.spatial_lst),
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
         nonlinearLoops                  = nonlinearLoops);

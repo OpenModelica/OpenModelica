@@ -1,0 +1,70 @@
+// name:                SpatialDistributionEvent
+// keywords:            spatialDistribution, event
+// status:              correct
+//
+// Model with spatialDistribution inside if-equation
+// from ticket #16113
+
+loadString("
+model SpatialDistributionBehindEvent
+  \"spatialDistribution() sitting inside the then-branch of a state-event
+   condition. While myCondition = false (time < 0.5) the operator is frozen:
+   it stores nothing and out1 comes from the else-branch. At time = 0.5 the
+   operator activates and starts transporting in0 = time with velocity der(x) = 1.
+   Because the transport domain has length 1 (initialPoints = {0, 1}) the first
+   activated value reaches the right boundary one time unit later, so out1 stays
+   at the initial value 0 until time = 1.5 and then follows out1(t) = in0(t - 1)\".
+
+  Real x(start = 1.0, fixed = true) \"Spatial coordinate fed to spatialDistribution\";
+  Real v = 1 \"Velocity der(x)\";
+  Boolean myCondition = time >= 0.5 \"Event that gates the spatialDistribution operator\";
+  Real in0 = time \"Value entering on the left\";
+  Real out0 \"Value leaving on the left\";
+  Real out1 \"Value leaving on the right\";
+equation
+  der(x) = v;
+
+  if myCondition then
+    (out0, out1) = spatialDistribution(in0, 0.0, x, true,
+                                   initialPoints = {0.0, 1.0},
+                                   initialValues = {0.0, 0.0});
+  else
+    out0 = -1.0;
+    out1 = -1.0;
+  end if;
+
+  annotation (experiment(StopTime = 2.0, Tolerance = 1e-6));
+end SpatialDistributionBehindEvent;"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+// Simulate
+simulate(SpatialDistributionBehindEvent); getErrorString();
+
+val(out1, 0.48); // -1.0  operator inactive, out1 from else-branch
+val(out1, 0.52); //  0.0  operator just activated, still initial profile
+val(out1, 1.0);  //  0.0  within the transport delay, nothing transported yet
+val(out1, 1.6);  //  0.6  operator active: out1(t) = in0(t - 1)
+val(out1, 1.8);  //  0.8
+val(out1, 2.0);  //  1.0
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SpatialDistributionBehindEvent_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SpatialDistributionBehindEvent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.0
+// 0.0
+// 0.0
+// 0.5959999999999998
+// 0.7959999999999996
+// 1.0
+// endResult    

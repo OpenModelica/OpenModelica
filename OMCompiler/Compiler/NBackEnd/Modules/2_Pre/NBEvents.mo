@@ -77,6 +77,9 @@ protected
   import OldSimIterator = BackendDAE.SimIterator;
   import Block = NSimStrongComponent.Block;
 
+  // Old Simcode
+  import OldSimCode = SimCode;
+
   // Util
   import BackendUtil = NBBackendUtil;
   import StringUtil;
@@ -138,6 +141,7 @@ public
       UnorderedMap<Condition, CompositeEvent> time_map  "tracks full time events of the form $TEV_11 = ...";
       UnorderedMap<Condition, StateEvent> state_map     "tracks full state events of the form $SEV_4 = ...";
       Integer numberMathEvents                          "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+      list<SpatialDistribution> spatial_lst            "stores all spatial distribution calls";
     end EVENT_INFO;
 
     function toString
@@ -186,6 +190,7 @@ public
       input Bucket bucket;
       input VariablePointers variables;
       input Pointer<Integer> idx;
+      input list<SpatialDistribution> spatial_lst;
       output EventInfo eventInfo;
       output list<Pointer<Variable>> auxiliary_vars = {};
       output list<Pointer<Equation>> auxiliary_eqns = {};
@@ -210,7 +215,8 @@ public
         time_set          = bucket.time_set,
         time_map          = bucket.time_map,
         state_map         = bucket.state_map, // ToDo: StateEvent.updateIndices(stateEvents),
-        numberMathEvents  = 0 // ToDo
+        numberMathEvents  = 0, // ToDo
+        spatial_lst      = spatial_lst
       );
 
       if Flags.isSet(Flags.DUMP_EVENTS) then
@@ -275,7 +281,8 @@ public
         time_set          = UnorderedSet.new(TimeEvent.hash, TimeEvent.isEqual),
         time_map          = UnorderedMap.new<CompositeEvent>(Condition.hash, Condition.isEqual),
         state_map         = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
-        numberMathEvents  = 0
+        numberMathEvents  = 0,
+        spatial_lst      = {}
       );
     end empty;
 
@@ -291,6 +298,7 @@ public
       output list<OldBackendDAE.ZeroCrossing> zeroCrossings;
       output list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
       output list<OldBackendDAE.TimeEvent> timeEvents;
+      output OldSimCode.SpatialDistributionInfo spatialInfo;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
       list<TimeEvent> tev_lst;
@@ -302,6 +310,11 @@ public
       zeroCrossings := list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst);
       relations := zeroCrossings;
       timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
+      if listEmpty(eventInfo.spatial_lst) then
+        spatialInfo := OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0);
+      else
+        spatialInfo := OldSimCode.SPATIAL_DISTRIBUTION_INFO(list(SpatialDistribution.convert(sd) for sd in eventInfo.spatial_lst), listLength(eventInfo.spatial_lst) - 1);
+      end if;
     end convert;
   end EventInfo;
 
@@ -974,6 +987,125 @@ public
     sim_iter := if Iterator.isEmpty(iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(iter)));
   end convertEventIterator;
 
+  uniontype SpatialDistribution
+    record SPATIAL_DISTRIBUTION
+      Integer index                 "uniqueIndex";
+      Expression in0                "input 0";
+      Expression in1                "input 1";
+      Expression pos                "current pos";
+      Expression dir                "flow direction";
+      Expression initPnts           "initial grid points";
+      Expression initVals           "initial grid values";
+      Integer initSize              "number of initial points";
+      Option<Expression> condition  "guard condition of the enclosing if-branch, if any";
+    end SPATIAL_DISTRIBUTION;
+
+    function collect
+      input output Pointer<Equation> eqn_ptr;
+      input Option<Expression> condition;
+      input Pointer<list<SpatialDistribution>> spatial_lst;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr), new_eqn;
+    algorithm
+      new_eqn := match eqn
+        // found an if-equation. capture the surrounding branch conditions
+        case Equation.IF_EQUATION() algorithm
+          eqn.body := collectIfBody(eqn.body, condition, spatial_lst);
+        then eqn;
+
+        // just collect the spatial distributions
+        else Equation.map(eqn, function collectExp(condition = condition, spatial_lst = spatial_lst), NONE(), Expression.fakeMap);
+      end match;
+
+      // update the equation if it changed
+      if not referenceEq(eqn, new_eqn) then
+        Pointer.update(eqn_ptr, new_eqn);
+      end if;
+    end collect;
+
+    function collectIfBody
+      input output IfEquationBody body;
+      input Option<Expression> condition;
+      input Pointer<list<SpatialDistribution>> spatial_lst;
+    protected
+      Expression cond_true, cond_false;
+    algorithm
+      (cond_true, cond_false) := updateCondition(condition, body.condition);
+      body.then_eqns          := list(collect(eqn, SOME(cond_true), spatial_lst)for eqn in body.then_eqns);
+      body.else_if            := Util.applyOption(body.else_if, function collectIfBody(condition = SOME(cond_false), spatial_lst = spatial_lst));
+    end collectIfBody;
+
+    function collectExp
+      input output Expression exp;
+      input Option<Expression> condition;
+      input Pointer<list<SpatialDistribution>> spatial_lst;
+    algorithm
+      exp := match exp
+        local
+          Expression cond_true, cond_false;
+          Call call;
+          list<SpatialDistribution> slst;
+          Integer index;
+          Expression in0, in1, pos, dir, initPnts, initVals;
+
+        // found an if-expression. capture the surrounding branch conditions
+        case Expression.IF() algorithm
+          (cond_true, cond_false) := updateCondition(condition, exp.condition);
+          // use fakeMap and not mapShallow to make sure the topmost expression is handled as well
+          exp.trueBranch := Expression.fakeMap(exp.trueBranch, function collectExp(condition = SOME(cond_true), spatial_lst = spatial_lst));
+          exp.falseBranch := Expression.fakeMap(exp.falseBranch, function collectExp(condition = SOME(cond_false), spatial_lst = spatial_lst));
+        then exp;
+
+        // found a spatial distribution
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {in0, in1, pos, dir, initPnts as Expression.ARRAY(), initVals})) 
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "spatialDistribution") algorithm
+          slst      := Pointer.access(spatial_lst);
+          index     := listLength(slst);
+          exp.call  := Call.setArguments(call, Expression.INTEGER(index) :: {in0, in1, pos, dir, initPnts, initVals});
+          Pointer.update(spatial_lst, SPATIAL_DISTRIBUTION(index, in0, in1, pos, dir, initPnts, initVals, arrayLength(initPnts.elements), condition) :: slst);
+        then exp;
+
+        // just traverse deeper
+        else Expression.mapShallow(exp, function collectExp(condition = condition, spatial_lst = spatial_lst));
+      end match;
+    end collectExp;
+
+    function updateCondition
+      "updates the condition with a new condition creating a true and a false branch condition"
+      input Option<Expression> condition;
+      input Expression new_cond;
+      output Expression cond_true;
+      output Expression cond_false;
+    protected
+      Expression cond;
+    algorithm
+      (cond_true, cond_false) := match condition
+        case SOME(cond) then (Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), new_cond), 
+          Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), Expression.logicNegate(new_cond)));
+        else (new_cond, Expression.logicNegate(new_cond));
+      end match;
+    end updateCondition;
+
+    function convert
+      input SpatialDistribution sd;
+      output OldSimCode.SpatialDistribution osd;
+    algorithm
+      osd := OldSimCode.SPATIAL_DISTRIBUTION(
+        index     = sd.index,
+        in0       = Expression.toDAE(sd.in0),
+        in1       = Expression.toDAE(sd.in1),
+        pos       = Expression.toDAE(sd.pos),
+        dir       = Expression.toDAE(sd.dir),
+        initPnts  = Expression.toDAE(sd.initPnts),
+        initVals  = Expression.toDAE(sd.initVals),
+        initSize  = sd.initSize,
+        condition = if isSome(sd.condition) then SOME(Expression.toDAE(Util.getOption(sd.condition))) else NONE()
+      );
+    end convert;
+
+  end SpatialDistribution;
+
+
 // =========================================================================
 //                    PROTECTED UNIONTYPES AND FUNCTIONS
 // =========================================================================
@@ -995,13 +1127,14 @@ protected
       time_set    = UnorderedSet.new(TimeEvent.hash, TimeEvent.isEqual),
       time_map    = UnorderedMap.new<CompositeEvent>(Condition.hash, Condition.isEqual),
       state_map   = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
-      aux_stmts    = NONE(),
+      aux_stmts   = NONE(),
       stmt_index  = 1);
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
     list<Pointer<Variable>> wc_vars;
     list<Pointer<Equation>> wc_eqns;
+    Pointer<list<SpatialDistribution>> spatial_lst = Pointer.create({});
   algorithm
     eventInfo := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
@@ -1010,9 +1143,11 @@ protected
         EquationPointers.mapPtr(eqData.simulation, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
         EquationPointers.mapPtr(eqData.clocked, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
         EquationPointers.mapPtr(eqData.removed, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
+        // collect spatial distributions
+        EquationPointers.mapPtr(eqData.simulation, function SpatialDistribution.collect(condition = NONE(), spatial_lst = spatial_lst));
         bucket := Pointer.access(bucket_ptr);
 
-        (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
+        (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex, Pointer.access(spatial_lst));
 
         // after event collection, simplify any remaining complex when-equation conditions
         // into plain discrete CREFs so that getBodyAttributes can process them.

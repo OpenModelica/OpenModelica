@@ -701,8 +701,7 @@ public
         if IfEquationBody.isSplit(body) then
           comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
         else
-          // ToDo: equation needs to be named
-          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(Equation.makeAlgorithm(Equation.toStatement(eqn), Equation.isInitial(eqn_ptr)), {}), NBSolve.Status.EXPLICIT);
+          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
         end if;
       then comp;
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
