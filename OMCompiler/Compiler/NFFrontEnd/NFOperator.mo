@@ -408,6 +408,35 @@ public
     op.ty := Type.arrayElementType(op.ty);
   end scalarize;
 
+  function toScalar
+    "Converts any array operator to its element-wise scalar equivalent:
+     strips EW suffixes and converts SCALAR_ARRAY / ARRAY_SCALAR variants to the
+     plain scalar op, and sets ty to the element type.
+     Operators that are already scalar (ADD, MUL, …) are left unchanged except
+     for the type adjustment."
+    input output Operator op;
+  algorithm
+    op.ty := Type.arrayElementType(op.ty);
+    () := match op.op
+      case Op.ADD_EW           algorithm op.op := Op.ADD; then ();
+      case Op.SUB_EW           algorithm op.op := Op.SUB; then ();
+      case Op.MUL_EW           algorithm op.op := Op.MUL; then ();
+      case Op.DIV_EW           algorithm op.op := Op.DIV; then ();
+      case Op.POW_EW           algorithm op.op := Op.POW; then ();
+      case Op.ADD_SCALAR_ARRAY algorithm op.op := Op.ADD; then ();
+      case Op.ADD_ARRAY_SCALAR algorithm op.op := Op.ADD; then ();
+      case Op.SUB_SCALAR_ARRAY algorithm op.op := Op.SUB; then ();
+      case Op.SUB_ARRAY_SCALAR algorithm op.op := Op.SUB; then ();
+      case Op.MUL_SCALAR_ARRAY algorithm op.op := Op.MUL; then ();
+      case Op.MUL_ARRAY_SCALAR algorithm op.op := Op.MUL; then ();
+      case Op.DIV_SCALAR_ARRAY algorithm op.op := Op.DIV; then ();
+      case Op.DIV_ARRAY_SCALAR algorithm op.op := Op.DIV; then ();
+      case Op.POW_SCALAR_ARRAY algorithm op.op := Op.POW; then ();
+      case Op.POW_ARRAY_SCALAR algorithm op.op := Op.POW; then ();
+      else ();
+    end match;
+  end toScalar;
+
   function unlift
     input output Operator op;
   algorithm

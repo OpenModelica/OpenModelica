@@ -40,7 +40,7 @@ import NFFlatten.FunctionTree;
 
 protected
 import Attributes = NFAttributes;
-import NFBackendExtension.{BackendInfo, VariableAttributes};
+import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
@@ -260,6 +260,9 @@ function scalarizeComplexVariable
   have already been resolved with scalarizeVariable()."
   input Variable var;
   input output list<Variable> vars = {};
+protected
+  Variable child_var;
+  BackendInfo elem_binfo;
 algorithm
   vars := match var.backendinfo.attributes
       local
@@ -267,16 +270,32 @@ algorithm
         String name;
         Integer index;
         Variable elem_var;
+        list<Pointer<Variable>> children;
+        VariableKind varKind;
 
     case attr as VariableAttributes.VAR_ATTR_RECORD() algorithm
+      children := match var.backendinfo.varKind
+        case varKind as VariableKind.RECORD() then varKind.children;
+        else {};
+      end match;
       for tpl in UnorderedMap.toList(attr.indexMap) loop
         (name, index) := tpl;
         elem_var := var;
-        elem_var.name := ComponentRef.prepend(elem_var.name, ComponentRef.rename(name, elem_var.name));
-        elem_var.backendinfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index], var.backendinfo.annotations);
+        elem_var.name := ComponentRef.prepend(elem_var.name, ComponentRef.setSubscripts({}, ComponentRef.rename(name, elem_var.name)));
+        elem_binfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index], var.backendinfo.annotations);
+        // propagate varKind from the matching child variable
+        for child_ptr in children loop
+          child_var := Pointer.access(child_ptr);
+          if ComponentRef.firstName(child_var.name) == name then
+            elem_binfo.varKind := child_var.backendinfo.varKind;
+          end if;
+        end for;
+        elem_var.backendinfo := elem_binfo;
         // update the types accordingly
         elem_var.ty := VariableAttributes.elemType(attr.childrenAttr[index]);
         elem_var.name := ComponentRef.setNodeType(elem_var.ty, elem_var.name);
+        // update the binding: append the field name to a CREF binding
+        elem_var.binding := appendFieldToBinding(elem_var.binding, name, elem_var.ty);
         vars := elem_var :: vars;
       end for;
     then listReverse(vars);
@@ -284,6 +303,27 @@ algorithm
     else {var};
   end match;
 end scalarizeComplexVariable;
+
+function appendFieldToBinding
+  "Transforms a record CREF binding to a scalar field binding by appending the
+  field name. E.g. binding 'rec[1]' becomes 'rec[1].field' for field 'field'."
+  input output Binding binding;
+  input String fieldName;
+  input Type fieldTy;
+protected
+  ComponentRef bindCref, newCref;
+algorithm
+  binding := match binding
+    local
+      Expression bindExp;
+    case Binding.FLAT_BINDING(bindingExp = bindExp as Expression.CREF(cref = bindCref)) algorithm
+      newCref := ComponentRef.prepend(bindCref, ComponentRef.setSubscripts({}, ComponentRef.rename(fieldName, bindCref)));
+      newCref := ComponentRef.setNodeType(fieldTy, newCref);
+      binding.bindingExp := Expression.CREF(fieldTy, newCref);
+    then binding;
+    else binding;
+  end match;
+end appendFieldToBinding;
 
 function expandComplexCref
   input output Expression exp;

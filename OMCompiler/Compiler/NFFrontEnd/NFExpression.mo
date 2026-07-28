@@ -7117,5 +7117,25 @@ public
       products := SimplifyExp.simplify(res[i]) :: products;
     end for;
   end productOfListExceptSelf;
+
+  function stripCrefSubscriptsAll
+    "Strips all subscripts from the cref inside a CREF expression and restores
+     the cref's node array type via ComponentRef.nodeType. Returns the expression
+     unchanged for any non-CREF expression."
+    input Expression exp;
+    output Expression outExp;
+  protected
+    ComponentRef cr;
+  algorithm
+    outExp := match exp
+      case CREF()
+        algorithm
+          cr := ComponentRef.stripSubscriptsAll(exp.cref);
+          outExp := CREF(ComponentRef.nodeType(cr), cr);
+        then outExp;
+      else exp;
+    end match;
+  end stripCrefSubscriptsAll;
+
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFExpression;

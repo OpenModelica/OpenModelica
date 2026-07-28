@@ -3332,6 +3332,7 @@ match sparsity
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
       unsigned int col_fill[<%nCols%>];
+      threadData_t *threadData = NULL; /* for ASUB bounds error reporting (dead code for valid models) */
       <%varDecls%>
 
       <%preExp%>
@@ -4996,6 +4997,7 @@ match sparsityMatrix
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
       unsigned int col_fill[<%nCols%>];
+      threadData_t *threadData = NULL; /* for ASUB bounds error reporting (dead code for valid models) */
       <%varDeclsC%><%varDeclsF%>
 
       <%preExpC%><%preExpF%>
@@ -5956,6 +5958,9 @@ match row
   case SPARSITY_ROW(dependencies=deps) then
     let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
     let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
+    // innerPreExp collects pre-expressions that may reference equation iterator variables.
+    // It is placed inside the for loop body so loop variables are in scope.
+    let &innerPreExp = buffer ""
     let bodyCode = (solved_crefs |> sc hasindex k =>
       // depsCode: dep-aware; for REGULAR 1D WHOLEDIM seeds uses resizableColCountRegular(_wr<%k%>).
       // Dep/rep condition checked inline; only valid where the outer _wr<%k%> loop variable is in scope.
@@ -5966,22 +5971,22 @@ match row
             if not listEmpty(kinds) then
               if not listHead(kinds) then
                 match crefSubs(seed)
-                case {WHOLEDIM()} then resizableColCountRegular(seed, k, context, &preExp, &varDecls, &auxFunction)
-                else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
-              else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
-            else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
-          else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
-        else resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
+                case {WHOLEDIM()} then resizableColCountRegular(seed, k, context, &innerPreExp, &varDecls, &auxFunction)
+                else resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction)
+              else resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction)
+            else resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction)
+          else resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction)
+        else resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction)
       ;separator="\n")
       // depsCodeReduced: always REDUCTION; used for SLICE sc (column alignment differs) and non-loop cases
-      let depsCodeReduced = (deps |> (seed, _, _) => resizableColCount(seed, context, &preExp, &varDecls, &auxFunction) ;separator="\n")
+      let depsCodeReduced = (deps |> (seed, _, _) => resizableColCount(seed, context, &innerPreExp, &varDecls, &auxFunction) ;separator="\n")
       match crefSubs(sc)
         case {WHOLEDIM()} then
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case SIMVAR() then
-              let sz = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let sz = dimension(listHead(crefDims(sc)), context, &innerPreExp, &varDecls, &auxFunction)
               <<
               {
                 unsigned int _wr<%k%>;
@@ -5997,9 +6002,9 @@ match row
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case SIMVAR() then
-              let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+              let sliceArr = daeExp(sliceExp, context, &innerPreExp, &varDecls, &auxFunction)
               let nSlice = tempDecl("modelica_integer", &varDecls)
-              let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+              let &innerPreExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
               <<
               {
                 unsigned int _wr<%k%>;
@@ -6017,7 +6022,7 @@ match row
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
               match simVarFromHT(crefStripSubs(sc), jacHT)
               case SIMVAR() then
-                let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let sz = dimension(List.last(crefDims(sc)), context, &innerPreExp, &varDecls, &auxFunction)
                 <<
                 {
                   unsigned int _wr<%k%>;
@@ -6035,6 +6040,7 @@ match row
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] count */
       <%forIter%>
+        <%innerPreExp%>
         <%bodyCode%>
       <%forTail%>
       >>
@@ -6131,14 +6137,18 @@ match row
   case SPARSITY_ROW() then
     let forIter = (equation_iterators |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="\n";empty)
     let forTail = (equation_iterators |> it => '}' ;separator="\n";empty)
+    // innerPreExp collects pre-expressions that may reference equation iterator variables.
+    // It is placed inside the for loop body so loop variables are in scope.
+    let &innerPreExp = buffer ""
     let bodyCode = (solved_crefs |> sc hasindex k =>
-      resizableFillDepsForRow(row, k, sc, context, &preExp, &varDecls, &auxFunction, spPattern)
+      resizableFillDepsForRow(row, k, sc, context, &innerPreExp, &varDecls, &auxFunction, spPattern)
     ;separator="\n")
     let scNames = (solved_crefs |> sc => System.stringReplace(System.stringReplace(crefStrNoUnderscore(sc), "/*", ""), "*/", "") ;separator=", ")
     if bodyCode then
       <<
       /* <%crefStrNoUnderscore(equation_name)%> [<%scNames%>] fill */
       <%forIter%>
+        <%innerPreExp%>
         <%bodyCode%>
       <%forTail%>
       >>

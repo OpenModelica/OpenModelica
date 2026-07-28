@@ -2711,6 +2711,22 @@ public
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 
+      // I-c. differentiate tuple assignment — multiple Real outputs from a function call
+      // e.g. (m_flow_a, dm_flow_ddp_fric_a) := m_flow_of_dp_fric(...)
+      // Without this, derivative variables for the tuple outputs are never assigned,
+      // causing use-before-assign errors when later Real statements use them.
+      // Only apply when ALL tuple elements are Real; mixed tuples (e.g. (d, T, error)
+      // where error is Integer) must not be differentiated here, as the Integer
+      // derivative output would never be assigned.
+      case diff_stmt as Statement.ASSIGNMENT() guard(
+        Type.isTupleOfReals(Expression.typeOf(diff_stmt.lhs))
+      ) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
       // II. delegate differentiation to body and only return differentiated statement
       case diff_stmt as Statement.FOR() algorithm
         (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
