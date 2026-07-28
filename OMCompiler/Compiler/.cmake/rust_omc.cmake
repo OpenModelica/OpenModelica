@@ -236,6 +236,13 @@ endif()
 # Built by CMake using wasi-libc's own CMakeLists.txt with BUILD_SHARED=ON
 # so it produces a -fPIC libc.so (Debian's is non-PIC).
 # ---------------------------------------------------------------------------
+if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+  message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; required to build the wasi-libc PIC sysroot.")
+endif()
+if(NOT _wasi_builtins OR NOT EXISTS ${_wasi_builtins})
+  message(FATAL_ERROR "libclang_rt.builtins-wasm32.a not found (install libclang-rt-*-dev-wasm32).")
+endif()
+
 set(RUST_WASI_PIC_SYSROOT ${CMAKE_BINARY_DIR}/rust-wasi-pic-sysroot
     CACHE PATH "Output directory for the PIC wasi-libc sysroot.")
 
@@ -760,9 +767,10 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_LAPACK_NALGEBRA)
     list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
   endif()
-  # Disable the sundials feature when the wasm cross-compile is not enabled.
-  if(NOT RUST_OMC_ENABLE_SUNDIALS)
-    list(APPEND _rust_omc_features openmodelica_codegen_wasm_jit/no-sundials)
+  # --no-default-features makes sundials off by default; enable it only when
+  # the wasm cross-compile is enabled.
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    list(APPEND _rust_omc_features openmodelica_codegen_wasm_jit/sundials)
   endif()
   list(JOIN _rust_omc_features "," _rust_omc_features_csv)
   set(RUST_OMC_CDYLIB_FEATURES --no-default-features --features ${_rust_omc_features_csv})

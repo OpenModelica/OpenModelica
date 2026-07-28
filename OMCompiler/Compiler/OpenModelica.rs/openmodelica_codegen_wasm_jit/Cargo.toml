@@ -51,10 +51,9 @@ jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
 # (wasmer then wins over wasmtime), and mandatorily on wasm32 (its `js` backend
 # is the only engine that builds for wasm).
 engine-wasmer = ["jit", "dep:wasmer", "openmodelica_wasm_jit/engine-wasmer"]
-# SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web). Default on;
-# the build script cross-compiles SUNDIALS to wasm32-wasip1 when this feature
-# is enabled (or uses OMC_SUNDIALS_WASM_DIR if CMake prebuilt it). Off only
-# when the CMake build disables RUST_OMC_ENABLE_SUNDIALS.
+# SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web).
+# CMake sets this via --features when RUST_OMC_ENABLE_SUNDIALS is ON; the
+# runtime's build.rs then links the precompiled wasm32-wasip1 archives.
 sundials = []
 
 # wasmtime is native-only (no wasm32 build); the wasm target ignores

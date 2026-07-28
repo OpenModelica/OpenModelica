@@ -238,13 +238,21 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
 fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let dest = out_dir.join("modelicaexternalc.wasm");
     let stamp = out_dir.join("modelicaexternalc.wasm.hash");
-    let stubs = crate_dir.join("external_c_stubs.c");
+
+    // Check for prebuilt override (CI hand-off) before requiring OMC_EXTERNAL_C_SOURCES.
+    println!("cargo:rerun-if-env-changed=OMC_WASM_EXTERNAL_C");
+    if let Ok(path) = std::env::var("OMC_WASM_EXTERNAL_C") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
 
     println!("cargo:rerun-if-env-changed=OMC_EXTERNAL_C_SOURCES");
     let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES")
         .map(PathBuf::from)
         .expect("OMC_EXTERNAL_C_SOURCES not set (CMake provides it)");
 
+    let stubs = crate_dir.join("external_c_stubs.c");
     let sources = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
@@ -255,14 +263,6 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     println!("cargo:rerun-if-changed={}", stubs.display());
     for src in &src_paths {
         println!("cargo:rerun-if-changed={}", src.display());
-    }
-
-    // Check for prebuilt override (CI hand-off).
-    println!("cargo:rerun-if-env-changed=OMC_WASM_EXTERNAL_C");
-    if let Ok(path) = std::env::var("OMC_WASM_EXTERNAL_C") {
-        copy(Path::new(&path), &dest);
-        std::fs::write(&stamp, format!("override:{path}")).ok();
-        return;
     }
 
     // Verify all sources exist.

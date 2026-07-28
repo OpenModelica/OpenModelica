@@ -446,7 +446,10 @@ pub(crate) mod kinsol {
                 strategy: KIN_LINESEARCH,
                 maxstepfactor: MAXSTEPFACTOR,
             };
-            if s.kin.is_null() || s.u.is_null() || s.j.is_null() {
+            if s.kin.is_null()
+                || s.j.is_null()
+                || [s.u, s.xscale, s.fscale, s.ftmp].iter().any(|v| v.is_null())
+            {
                 return None;
             }
             s.ls = unsafe { SUNLinSol_KLU(s.u, s.j) };
@@ -578,6 +581,7 @@ pub(crate) mod kinsol {
             let mut success = false;
             let mut reset_tol = false;
             let mut retries = 0;
+            let mut passes = 0;
             loop {
                 data(self.u, self.n).copy_from_slice(guess);
                 self.x_scaling(nominal);
@@ -587,7 +591,8 @@ pub(crate) mod kinsol {
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
                 let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
                 retries += 1;
-                if success || !retry || retries >= RETRY_MAX {
+                passes += 1;
+                if success || !retry || retries >= RETRY_MAX || passes >= 2 * RETRY_MAX {
                     break;
                 }
             }
@@ -652,14 +657,16 @@ pub(crate) fn kinsol_solve(
     assemble: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     KIN_CACHE.with(|cell| {
-        let mut cache = cell.borrow_mut();
-        let solver = match cache.entry(handle) {
-            std::collections::hash_map::Entry::Occupied(e) => e.into_mut(),
-            std::collections::hash_map::Entry::Vacant(slot) => match kinsol::Solver::new(n, nnz) {
-                Some(s) => slot.insert(s),
+        // Detach solver so model callbacks can re-enter kinsol_solve for a nested system.
+        let mut solver = match cell.borrow_mut().remove(&handle) {
+            Some(s) => s,
+            None => match kinsol::Solver::new(n, nnz) {
+                Some(s) => s,
                 None => return false,
             },
         };
-        solver.solve(guess, nominal, colptr, rowidx, x, eval, assemble)
+        let ok = solver.solve(guess, nominal, colptr, rowidx, x, eval, assemble);
+        cell.borrow_mut().insert(handle, solver);
+        ok
     })
 }
