@@ -2220,8 +2220,9 @@ public
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
         subs := ComponentRef.subscriptsAllFlat(cref);
-        // get all Record children
+        // get all Record children that are relevant for current context
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+        crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
         // add original subscripts
         crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
