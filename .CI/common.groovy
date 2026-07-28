@@ -476,7 +476,10 @@ void buildRustOMC() {
   // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
   // without re-running codegen.
   stash name: 'rust-generated-src',
-        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs'
+        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs,' +
+                  'build_cmake/rust-wasi-pic-sysroot/**,' +
+                  'build_cmake/rust-sundials-wasm/**,' +
+                  'build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm'
   stash name: 'omc-cmake-rust-gui-inputs',
         includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
                   'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
@@ -659,8 +662,16 @@ void ctestRust() {
   // overlay them onto the crate source tree so cargo sees a complete workspace
   // (without the generated lib.rs the manifest load fails, "no targets specified").
   sh "cp -a build_cmake/OMCompiler/Compiler/rust-src/. OMCompiler/Compiler/OpenModelica.rs/"
+  // Env vars required by the openmodelica_wasi_libc and openmodelica_wasm_jit
+  // build.rs (wasm cross-compile artifacts from CMake build).
+  def wasmEnv = [
+    "OMC_WASI_PIC_SYSROOT=${env.WORKSPACE}/build_cmake/rust-wasi-pic-sysroot",
+    "OMC_SUNDIALS_WASM_DIR=${env.WORKSPACE}/build_cmake/rust-sundials-wasm",
+    "OMC_WASI_P1_ADAPTER=${env.WORKSPACE}/build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm",
+    "OMC_EXTERNAL_C_SOURCES=${env.WORKSPACE}/OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources",
+  ]
   try {
-    withSccache {
+    withSccache(wasmEnv) {
       sh "cd OMCompiler/Compiler/OpenModelica.rs && cargo nextest run --workspace --exclude openmodelica --profile ci --no-fail-fast"
     }
   } finally {
