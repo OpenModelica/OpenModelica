@@ -8,6 +8,7 @@ TESTFILES = \
 	pulseInput.mos \
 	mixedVelocity.mos \
 	bigSteps.mos \
+	nonZeroStartPosition.mos \
 	test1.mos \
 	test2.mos \
 	test3.mos \

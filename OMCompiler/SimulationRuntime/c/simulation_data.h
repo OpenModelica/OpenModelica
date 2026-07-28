@@ -779,6 +779,12 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
 
   modelica_real oldPosX;
 
+  modelica_boolean startPosXSet;  /* true once startPosX has been captured */
+  modelica_real startPosX;        /* value of x at the first call; x is shifted by
+                                     this so the operator always starts at x = 0.
+                                     Only the change of x (transport distance)
+                                     matters, so a nonzero start value of x is fine. */
+
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
