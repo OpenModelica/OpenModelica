@@ -53,14 +53,7 @@ fn main() {
     // losing the archives changes the runtime's exports, so the blobs must rebuild.
     // CMake sets OMC_SUNDIALS_WASM_DIR when the sundials feature is enabled.
     println!("cargo::rustc-check-cfg=cfg(sundials)");
-    let sundials = if std::env::var("OMC_SUNDIALS_WASM_DIR").is_ok() {
-        match build_sundials_wasm(&crate_dir, &out_dir) {
-            Some(s) => Some(s),
-            None => panic!("failed to build SUNDIALS/KLU for wasm32-wasip1"),
-        }
-    } else {
-        None
-    };
+    let sundials = sundials_wasm_dir();
     if let Some((_, key)) = &sundials {
         hash = format!("{hash}:{key}");
         // Backs the crate's `SUNDIALS` const: with the archives, `-lss=klu` is
@@ -355,20 +348,16 @@ fn find_wasm_builtins() -> Option<PathBuf> {
     cand.exists().then_some(cand)
 }
 
-/// Use the SUNDIALS/KLU wasm archives prebuilt by CMake (`rust_sundials_wasm` target).
+/// Return the SUNDIALS/KLU wasm archives dir prebuilt by CMake.
 ///
-/// Called only when the `sundials` cargo feature is enabled. Returns `Some(dir, key)`
-/// on success; the caller (main) panics on `None`.
-fn build_sundials_wasm(_crate_dir: &Path, _out_dir: &Path) -> Option<(PathBuf, String)> {
+/// Returns `Some((dir, key))` when `OMC_SUNDIALS_WASM_DIR` is set (the key is
+/// appended to the runtime stamp so sundials on/off toggles rebuild the blobs).
+/// Returns `None` when the env var is absent (sundials feature disabled).
+fn sundials_wasm_dir() -> Option<(PathBuf, String)> {
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
-    let dir = std::env::var("OMC_SUNDIALS_WASM_DIR")
-        .expect("OMC_SUNDIALS_WASM_DIR not set (CMake sets it when sundials feature is enabled)");
-    let dir = PathBuf::from(dir);
-    if dir.join("lib").is_dir() {
-        Some((dir, "cmake".to_owned()))
-    } else {
-        None
-    }
+    let dir = std::env::var("OMC_SUNDIALS_WASM_DIR").ok()?
+        .into();
+    Some((dir, "cmake".to_owned()))
 }
 
 /// Build + embed the `wasm32-unknown-unknown` JIT runtime (`runtime.wasm`): the
