@@ -385,7 +385,12 @@ pub(crate) mod kinsol {
         assemble: &'a mut dyn FnMut(&[f64], &mut [f64]),
     }
 
-    fn data(v: NVector, n: usize) -> &'static mut [f64] {
+    /// Extract the backing array pointer from an N_Vector.
+    ///
+    /// Returns `&mut [f64]` with a lifetime bounded by the `'a` parameter of the
+    /// enclosing Ud struct. The slice is only valid while the N_Vector exists;
+    /// the caller must not let it escape the callback scope.
+    fn data<'a>(v: NVector, n: usize) -> &'a mut [f64] {
         unsafe { core::slice::from_raw_parts_mut(N_VGetArrayPointer(v), n) }
     }
 

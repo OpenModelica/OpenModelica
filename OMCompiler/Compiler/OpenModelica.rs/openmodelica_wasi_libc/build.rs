@@ -55,7 +55,9 @@ fn ensure_pic_wasi_sysroot() -> PathBuf {
     let p = std::env::var("OMC_WASI_PIC_SYSROOT")
         .expect("OMC_WASI_PIC_SYSROOT not set — build via CMake which sets it");
     let p = PathBuf::from(p);
-    if p.join("lib/wasm32-wasip1/libc.so").exists() {
+    let libc_so = p.join("lib/wasm32-wasip1/libc.so");
+    println!("cargo:rerun-if-changed={}", libc_so.display());
+    if libc_so.exists() {
         return p;
     }
     panic!("OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());

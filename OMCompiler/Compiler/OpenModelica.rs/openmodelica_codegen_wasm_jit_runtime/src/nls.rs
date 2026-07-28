@@ -33,6 +33,29 @@ pub extern "C" fn rt_nls_note_assert() {
     NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
 }
 
+/// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
+fn make_assemble(
+    n: usize,
+    x_ptr: u32,
+    sim_data: u32,
+    jac_idx: u32,
+    val_ptr: u32,
+) -> impl FnMut(&[f64], &mut [f64]) {
+    move |xs: &[f64], vals: &mut [f64]| {
+        let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
+        for i in 0..n {
+            unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
+        }
+        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+        jacf(sim_data, x_ptr, val_ptr);
+        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
+        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+        for (k, v) in vals.iter_mut().enumerate() {
+            *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
+        }
+    }
+}
+
 /// `Default` is the density-based choice plus the full retry ladder.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum NlsPick {
@@ -1191,19 +1214,7 @@ fn kinsol_sparse_solve(
         let colptr = unsafe { core::slice::from_raw_parts(pat_addr as *const i32, n + 1) };
         let rowidx =
             unsafe { core::slice::from_raw_parts((pat_addr + ((n + 1) * 4) as u32) as *const i32, nnz) };
-        let mut assemble = |xs: &[f64], vals: &mut [f64]| {
-            let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
-            for i in 0..n {
-                unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
-            }
-            NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
-            jacf(sim_data, x_ptr, val_ptr);
-            NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-            NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
-            for (k, v) in vals.iter_mut().enumerate() {
-                *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
-            }
-        };
+        let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
         return crate::sundials::kinsol_solve(
             handle, n, nnz, colptr, rowidx, nominal, guess, x, eval, &mut assemble,
         );
@@ -1242,19 +1253,7 @@ fn newton_sparse_solve(
     let b_ptr = rt_alloc((n * 8) as u32);
 
     let mut vals = vec![0.0f64; nnz];
-    let assemble = |xs: &[f64], vals: &mut [f64]| {
-        let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
-        for i in 0..n {
-            unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
-        }
-        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
-        jacf(sim_data, x_ptr, val_ptr);
-        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
-        for (k, v) in vals.iter_mut().enumerate() {
-            *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
-        }
-    };
+    let assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
 
     let mut f = vec![0.0f64; n];
     let mut xscale = vec![1.0f64; n];
