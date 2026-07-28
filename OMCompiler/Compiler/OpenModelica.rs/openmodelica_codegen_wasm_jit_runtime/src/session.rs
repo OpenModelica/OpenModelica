@@ -165,12 +165,12 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
 pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let mut p = 0usize;
-    let mut u32_at = |p: &mut usize| -> Option<u32> {
+    let u32_at = |p: &mut usize| -> Option<u32> {
         let v = bytes.get(*p..*p + 4)?;
         *p += 4;
         Some(u32::from_le_bytes(v.try_into().ok()?))
     };
-    let mut group = |p: &mut usize| -> Option<Vec<(u32, WTy, f64)>> {
+    let group = |p: &mut usize| -> Option<Vec<(u32, WTy, f64)>> {
         let n = u32_at(p)? as usize;
         let mut out = Vec::with_capacity(n);
         for _ in 0..n {

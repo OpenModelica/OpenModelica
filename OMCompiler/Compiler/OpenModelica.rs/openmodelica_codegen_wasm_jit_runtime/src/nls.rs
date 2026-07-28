@@ -1253,7 +1253,7 @@ fn newton_sparse_solve(
     let b_ptr = rt_alloc((n * 8) as u32);
 
     let mut vals = vec![0.0f64; nnz];
-    let assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
+    let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
 
     let mut f = vec![0.0f64; n];
     let mut xscale = vec![1.0f64; n];
@@ -1525,7 +1525,7 @@ pub extern "C" fn rt_solve_nls(
     // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
     // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
     // O(n^3) per step, which is what the sparse choice exists to avoid.
-    let mut converged = if sparse {
+    let converged = if sparse {
         kinsol_sparse_solve(
             n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
             pat_addr, nnz as usize, lss_handle, &mut eval,
