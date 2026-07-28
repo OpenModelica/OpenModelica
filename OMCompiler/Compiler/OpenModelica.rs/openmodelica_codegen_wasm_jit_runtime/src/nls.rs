@@ -14,6 +14,11 @@ use crate::{load_f64, load_u32, rt_alloc, rt_free, store_f64, store_u32};
 static NLS_DEPTH: AtomicU32 = AtomicU32::new(0);
 static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
 
+/// Whether the last residual evaluation hit a recoverable model assert.
+pub(crate) fn assert_hit() -> bool {
+    NLS_ASSERT_HIT.load(Ordering::Relaxed) != 0
+}
+
 /// Model side (emitted by `emit_assert`): is a failed assert currently recoverable
 /// (i.e. inside a nonlinear-solver residual)? Non-zero → the model records the
 /// assert via [`rt_nls_note_assert`] and bails out instead of trapping.
@@ -1155,19 +1160,65 @@ fn scaled_max_norm(v: &[f64], scale: &[f64]) -> f64 {
     m
 }
 
-/// The sparse (kinsol + KLU) nonlinear solver: a scaled Newton iteration with a
-/// line search over the symbolic Jacobian assembled straight into CSC, factorized
-/// by the runtime's sparse LU with its symbolic analysis cached per system.
-/// Mirrors C's `nlsKinsolSolve`: `xScale[i] = 1/max(nominal_i, |x_i|)`,
-/// `fScale[i] = 1/max_j |J_ij / xScale_j|`, convergence on `‖fScale·F‖∞ ≤ ftol`
-/// or a scaled step below `scsteptol`, and the same retry ladder
-/// (`nlsKinsolErrorHandler`) of start point / scaling / line-search variations.
+/// The sparse nonlinear solver a system with an analytic sparsity pattern gets, as
+/// in C: KINSOL over the Jacobian assembled straight into CSC, factorized by KLU.
+/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, and
+/// serves `-nlsLS=rsparse`.
 ///
 /// `pat_addr` holds the compile-time pattern (`colptr[n+1]` then `rowidx[nnz]`),
 /// `val_ptr` the `nnz` values the model's `jac` callback fills, and `handle` keys
-/// the cached factorization.
+/// the solver kept for this system.
 #[allow(clippy::too_many_arguments)]
 fn kinsol_sparse_solve(
+    n: usize,
+    x: &mut [f64],
+    guess: &[f64],
+    warm: &[f64],
+    nominal: &[f64],
+    sim_data: u32,
+    x_ptr: u32,
+    jac_idx: u32,
+    val_ptr: u32,
+    pat_addr: u32,
+    nnz: usize,
+    handle: u32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    #[cfg(sundials)]
+    if crate::sundials::nls_ls_backend() == crate::sundials::Sparse::Klu {
+        // C's retry ladder re-picks the start point, but only through settings its
+        // loop head overrides; `warm` is the caller's own second attempt.
+        let colptr = unsafe { core::slice::from_raw_parts(pat_addr as *const i32, n + 1) };
+        let rowidx =
+            unsafe { core::slice::from_raw_parts((pat_addr + ((n + 1) * 4) as u32) as *const i32, nnz) };
+        let mut assemble = |xs: &[f64], vals: &mut [f64]| {
+            let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
+            for i in 0..n {
+                unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
+            }
+            NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+            jacf(sim_data, x_ptr, val_ptr);
+            NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
+            NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+            for (k, v) in vals.iter_mut().enumerate() {
+                *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
+            }
+        };
+        return crate::sundials::kinsol_solve(
+            handle, n, nnz, colptr, rowidx, nominal, guess, x, eval, &mut assemble,
+        );
+    }
+    newton_sparse_solve(
+        n, x, guess, warm, nominal, sim_data, x_ptr, jac_idx, val_ptr, pat_addr, nnz, handle, eval,
+    )
+}
+
+/// A scaled Newton iteration with a line search over the same CSC Jacobian, using
+/// the runtime's own sparse LU: KINSOL's scaling (`xScale[i] = 1/max(nominal_i,
+/// |x_i|)`, `fScale[i] = 1/max_j |J_ij / xScale_j|`) and stopping tests, with C's
+/// retry ladder approximated by five start-point / scaling / line-search variations.
+#[allow(clippy::too_many_arguments)]
+fn newton_sparse_solve(
     n: usize,
     x: &mut [f64],
     guess: &[f64],

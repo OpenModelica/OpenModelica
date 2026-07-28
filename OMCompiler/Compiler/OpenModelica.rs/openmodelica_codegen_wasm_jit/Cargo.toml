@@ -43,7 +43,7 @@ wasmparser = "0.252"
 # simulation target). Default on. Built without it, the crate still *emits* wasm
 # modules but cannot execute them (the entry points report the engine absent),
 # and neither wasmtime nor wasmer is pulled in.
-default = ["jit"]
+default = ["jit", "sundials"]
 # `jit` pulls the native default engine (wasmtime); on wasm32 the wasmtime dep
 # is target-absent and wasmer-js is used instead (requires `engine-wasmer`).
 jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
@@ -51,6 +51,11 @@ jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
 # (wasmer then wins over wasmtime), and mandatorily on wasm32 (its `js` backend
 # is the only engine that builds for wasm).
 engine-wasmer = ["jit", "dep:wasmer", "openmodelica_wasm_jit/engine-wasmer"]
+# SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web). Default on;
+# the build script cross-compiles SUNDIALS to wasm32-wasip1 when this feature
+# is enabled (or uses OMC_SUNDIALS_WASM_DIR if CMake prebuilt it). Off only
+# when the CMake build disables RUST_OMC_ENABLE_SUNDIALS.
+sundials = []
 
 # wasmtime is native-only (no wasm32 build); the wasm target ignores
 # engine-wasmtime and always uses wasmer-js.
