@@ -1452,6 +1452,20 @@ pub extern "C" fn rt_solve_nls(
     let sparse = has_jac && nnz != 0;
     let jac_len = if sparse { nnz as usize } else { n * n };
     let jac_ptr = if has_jac { rt_alloc((jac_len * 8) as u32) } else { 0 };
+    // `-nls=` overrides the codegen-time density choice; the dense solvers force
+    // the dense path.
+    let pick = nls_pick();
+    let sparse = match pick {
+        NlsPick::Default | NlsPick::Kinsol => sparse,
+        _ => false,
+    };
+    // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
+    let scatter = !sparse && nnz != 0 && jac_len == nnz as usize;
+    let pat: alloc::vec::Vec<u32> = if scatter {
+        (0..n + 1 + nnz as usize).map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) }).collect()
+    } else {
+        alloc::vec::Vec::new()
+    };
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
         for i in 0..n {
@@ -1463,6 +1477,16 @@ pub extern "C" fn rt_solve_nls(
         jacf(sim_data, x_ptr, jac_ptr);
         NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
         NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+        if scatter {
+            fj.fill(0.0);
+            for c in 0..n {
+                for k in pat[c] as usize..pat[c + 1] as usize {
+                    let row = pat[n + 1 + k] as usize;
+                    fj[c * n + row] = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
+                }
+            }
+            return;
+        }
         for (k, v) in fj.iter_mut().enumerate() {
             *v = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
         }
@@ -1514,14 +1538,6 @@ pub extern "C" fn rt_solve_nls(
     }
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
-    // `-nls=` overrides the codegen-time density choice; the dense solvers force
-    // the dense path.
-    let pick = nls_pick();
-    let sparse = match pick {
-        NlsPick::Default => sparse,
-        NlsPick::Kinsol => sparse,
-        _ => false,
-    };
     // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
     // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
     // O(n^3) per step, which is what the sparse choice exists to avoid.

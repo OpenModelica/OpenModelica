@@ -3177,19 +3177,49 @@ fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
 }
 
 /// A nonlinear system's Jacobian sparsity in CSC — `colptr` (`n+1`), `rowidx`
-/// (`nnz`) and the column coloring — the same pattern C's
-/// `initialResizableAnalyticJacobian` builds: the column of a dependency is the
-/// seed variable's `SimVar.index`, the row of a solved `$pDER` cref is that
-/// variable's index. Only scalar rows are handled; an array-valued row (equation
-/// iterators or subscripted crefs) needs the run-time loops the C template emits,
-/// so those systems keep the numerical Jacobian.
+/// (`nnz`) and the column coloring. Columns and rows are positional, as C's
+/// `evalJacobian` indexes `seedVars[column]` / `resultVars[row]`.
 struct NlsJacPattern {
     colptr: Vec<i32>,
     rowidx: Vec<i32>,
     colors: Vec<Vec<u32>>,
 }
 
+/// The two patterns C can carry, in the order `functionNonLinearResiduals` picks
+/// them.
 fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    match &jm.sparsityMatrix {
+        SimCode::Sparsity::SPARSITY { .. } => nls_jac_pattern_resizable(jm, n),
+        _ => nls_jac_pattern_static(jm, n),
+    }
+}
+
+/// C's `generateStaticSparseData`: one `sparsity` entry per column holding its
+/// nonzero rows, coloring precomputed in `coloredCols`.
+fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    let mut cols: Vec<Vec<i32>> =
+        lst(&jm.sparsity).map(|(_, rows)| lst(rows).copied().collect()).collect();
+    if cols.len() != n || cols.iter().flatten().any(|&r| r < 0 || r as usize >= n) {
+        return None;
+    }
+    let (colptr, rowidx) = csc_from_columns(&mut cols)?;
+    // A coloring that is not a partition of the columns would drop or double-count
+    // entries, so recompute instead of trusting it.
+    let colors: Vec<Vec<u32>> =
+        lst(&jm.coloredCols).map(|grp| lst(grp).map(|&c| c as u32).collect()).collect();
+    let mut seen = vec![false; n];
+    let partition = colors.iter().flatten().all(|&c| {
+        (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true)
+    }) && seen.iter().all(|&s| s);
+    let colors = if partition { colors } else { computed_coloring(&colptr, &rowidx, n) };
+    Some(NlsJacPattern { colptr, rowidx, colors })
+}
+
+/// C's `initialResizableAnalyticJacobian`: the column of a dependency is the seed
+/// variable's `SimVar.index`, the row of a solved `$pDER` cref is that variable's
+/// index. An array-valued row (equation iterators) needs the run-time loops the C
+/// template emits, so those systems keep the numerical Jacobian.
+fn nls_jac_pattern_resizable(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
     let mut seed_col: HashMap<String, usize> = HashMap::new();
@@ -3221,25 +3251,35 @@ fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPatte
             }
         }
     }
-    let mut colptr = vec![0i32; n + 1];
+    let (colptr, rowidx) = csc_from_columns(&mut cols)?;
+    let colors = computed_coloring(&colptr, &rowidx, n);
+    Some(NlsJacPattern { colptr, rowidx, colors })
+}
+
+/// Per-column row lists → CSC, sorted and deduplicated. `None` for an all-zero
+/// Jacobian.
+fn csc_from_columns(cols: &mut [Vec<i32>]) -> Option<(Vec<i32>, Vec<i32>)> {
+    let mut colptr = vec![0i32; cols.len() + 1];
     let mut rowidx: Vec<i32> = Vec::new();
-    for c in 0..n {
-        cols[c].sort_unstable();
-        cols[c].dedup();
-        rowidx.extend_from_slice(&cols[c]);
+    for (c, rows) in cols.iter_mut().enumerate() {
+        rows.sort_unstable();
+        rows.dedup();
+        rowidx.extend_from_slice(rows);
         colptr[c + 1] = rowidx.len() as i32;
     }
-    if rowidx.is_empty() {
-        return None;
-    }
+    (!rowidx.is_empty()).then_some((colptr, rowidx))
+}
+
+/// C's `computeColumnColoring`: one column-equation pass per group of columns
+/// sharing no row.
+fn computed_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> Vec<Vec<u32>> {
     let (color_ptr, color_cols) =
-        crate::CodegenWasmJitFunctions::lin_jac_coloring(&colptr, &rowidx, n);
-    let colors = (0..color_ptr.len() - 1)
+        crate::CodegenWasmJitFunctions::lin_jac_coloring(colptr, rowidx, n);
+    (0..color_ptr.len() - 1)
         .map(|c| {
             color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize].iter().map(|&j| j as u32).collect()
         })
-        .collect();
-    Some(NlsJacPattern { colptr, rowidx, colors })
+        .collect()
 }
 
 /// The nonzero count of a nonlinear system's Jacobian, matching C's

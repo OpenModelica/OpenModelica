@@ -1,0 +1,44 @@
+// name:     CevalModelicaStrings
+// keywords: ModelicaUtilities ceval
+// status: correct
+//
+// An external "C" function that allocates its result with
+// ModelicaAllocateString, evaluated at compile time. Guards against the
+// allocator resolving back into itself (a stack overflow in the Rust port,
+// where libOpenModelicaCompiler interposes on the runtime's
+// ModelicaAllocateString).
+//
+
+loadString("
+package P
+  function substring
+    input String string;
+    input Integer startIndex;
+    input Integer endIndex;
+    output String result;
+    external \"C\" result = ModelicaStrings_substring(string, startIndex, endIndex)
+      annotation(Library=\"ModelicaExternalC\");
+  end substring;
+  model M
+    constant String s = substring(\"Yd01\", 1, 2);
+    Real x(start = 1.0, fixed = true);
+  equation
+    der(x) = -x;
+  end M;
+end P;
+"); getErrorString();
+
+instantiateModel(P.M); getErrorString();
+
+// Result:
+// true
+// ""
+// "class P.M
+//   constant String s = \"Yd\";
+//   Real x(start = 1.0, fixed = true);
+// equation
+//   der(x) = -x;
+// end P.M;
+// "
+// ""
+// endResult
