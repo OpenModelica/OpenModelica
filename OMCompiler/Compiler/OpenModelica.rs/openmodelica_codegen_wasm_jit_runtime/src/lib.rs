@@ -125,6 +125,47 @@ unsafe fn store_f64(addr: u32, v: f64) {
 }
 
 // ---------------------------------------------------------------------------
+// Diagnostic counters
+// ---------------------------------------------------------------------------
+
+/// `rt_stat` slots, read by the host bench line (`OMC_WASM_SIM_BENCH`) — the
+/// wasm-jit analogue of C's `-lv=LOG_STATS`.
+pub const STAT_ALLOC: u32 = 0;
+pub const STAT_ARRAY_NEW: u32 = 1;
+pub const STAT_RECORD_NEW: u32 = 2;
+pub const STAT_STR_NEW: u32 = 3;
+pub const STAT_NLS_SOLVE: u32 = 4;
+pub const STAT_NLS_RES: u32 = 5;
+pub const STAT_NLS_JAC: u32 = 6;
+pub const STAT_NLS_FAIL: u32 = 7;
+pub const STAT_NLS_RETRY: u32 = 8;
+pub const STAT_ELEM_PTR: u32 = 9;
+pub const N_STATS: usize = 10;
+
+static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
+    [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
+
+#[inline]
+pub(crate) fn stat_inc(kind: u32) {
+    STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stat(kind: u32) -> u64 {
+    match STATS.get(kind as usize) {
+        Some(c) => c.load(core::sync::atomic::Ordering::Relaxed),
+        None => 0,
+    }
+}
+
+/// Called per run (`rt_sim_start`), so the counters are per-run.
+pub fn reset_stats() {
+    for c in STATS.iter() {
+        c.store(0, core::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Allocator + reference counting
 // ---------------------------------------------------------------------------
 
@@ -134,12 +175,45 @@ unsafe fn store_f64(addr: u32, v: f64) {
 const HEADER: usize = 8;
 const ALIGN: usize = 8;
 
+/// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
+/// one array/record per array/record-typed function local on every call (an IF97
+/// property evaluation does hundreds), so a same-size block is nearly always
+/// available and bucketing by 8-byte size class turns both into a push/pop.
+/// `rt_alloc` writes the *rounded* total into the size word, so `rt_free` finds the
+/// same class and `dlmalloc` gets the layout it was handed.
+const CACHE_MAX: usize = 1024;
+const CACHE_CLASSES: usize = CACHE_MAX / ALIGN + 1;
+
+struct FreeLists(core::cell::UnsafeCell<[u32; CACHE_CLASSES]>);
+// The runtime is single-threaded (as is the in-wasm session driver).
+unsafe impl Sync for FreeLists {}
+static FREE: FreeLists = FreeLists(core::cell::UnsafeCell::new([0; CACHE_CLASSES]));
+
+/// `None` when `total` is not cached: too big, or no room for the link word.
+#[inline]
+fn cache_class(total: usize) -> Option<usize> {
+    (total <= CACHE_MAX && total >= HEADER + 4).then(|| total / ALIGN)
+}
+
 /// Allocate an object of `size` payload bytes (including its 4-byte refcount),
 /// returning its pointer. The reference count is left zero — the typed
 /// constructors below set it to 1.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_alloc(size: u32) -> u32 {
-    let total = HEADER + size as usize;
+    stat_inc(STAT_ALLOC);
+    let mut total = HEADER + size as usize;
+    if total <= CACHE_MAX {
+        total = (total + ALIGN - 1) & !(ALIGN - 1);
+    }
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        let head = lists[class];
+        if head != 0 {
+            lists[class] = unsafe { load_u32(head + HEADER as u32) };
+            unsafe { store_u32(head, total as u32) };
+            return head + HEADER as u32;
+        }
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
@@ -158,6 +232,12 @@ pub extern "C" fn rt_free(obj: u32) {
     }
     let raw = obj - HEADER as u32;
     let total = unsafe { load_u32(raw) } as usize;
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        unsafe { store_u32(raw + HEADER as u32, lists[class]) };
+        lists[class] = raw;
+        return;
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }
@@ -277,17 +357,17 @@ fn arr_data(obj: u32) -> u32 {
 /// partially filled array is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
+    stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
-    let obj = rt_alloc(data_off + total * elem_stride(elem_kind));
+    let size = data_off + total * elem_stride(elem_kind);
+    let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + ARR_KIND_OFF, elem_kind);
         store_u32(obj + ARR_NDIMS_OFF, ndims);
         store_u32(obj + ARR_TOTAL_OFF, total);
         // Zero the dim words and the element area (rt_alloc does not zero).
-        for off in (ARR_DIMS_OFF..data_off + total * elem_stride(elem_kind)).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize);
     }
     obj
 }
@@ -328,6 +408,7 @@ pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
 /// the element's natural wasm type.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
+    stat_inc(STAT_ELEM_PTR);
     let total = rt_array_total(obj) as i32;
     if index < 1 || index > total {
         trap();
@@ -1055,13 +1136,12 @@ fn rec_data_off(nheap: u32) -> u32 {
 /// start as the null handle, so releasing a partially built record is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_record_new(nheap: u32, size: u32) -> u32 {
+    stat_inc(STAT_RECORD_NEW);
     let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + REC_NHEAP_OFF, nheap);
-        for off in (8..size).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + 8) as *mut u8, 0, size.saturating_sub(8) as usize);
     }
     obj
 }
@@ -1462,6 +1542,7 @@ const STR_DATA_OFF: u32 = 8;
 /// set). The caller fills `rt_str_data(obj)..+len` with the bytes.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_new(len: u32) -> u32 {
+    stat_inc(STAT_STR_NEW);
     let obj = rt_alloc(STR_DATA_OFF + len);
     unsafe {
         store_u32(obj, 1); // refcount

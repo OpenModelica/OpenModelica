@@ -6,7 +6,10 @@
 use alloc::vec;
 use core::sync::atomic::{AtomicU32, Ordering};
 
-use crate::{load_f64, load_u32, rt_alloc, rt_free, store_f64, store_u32};
+use crate::{
+    load_f64, load_u32, rt_alloc, rt_free, stat_inc, store_f64, store_u32, STAT_NLS_FAIL,
+    STAT_NLS_JAC, STAT_NLS_RES, STAT_NLS_RETRY, STAT_NLS_SOLVE,
+};
 
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
 /// failed model `assert()` records itself in `NLS_ASSERT_HIT` and returns instead of
@@ -1423,7 +1426,9 @@ pub extern "C" fn rt_solve_nls(
         nominal[i] = unsafe { load_f64(nominal_addr + (i * 8) as u32) };
     }
 
+    stat_inc(STAT_NLS_SOLVE);
     let mut eval = |xs: &[f64], r: &mut [f64]| {
+        stat_inc(STAT_NLS_RES);
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
         }
@@ -1467,6 +1472,7 @@ pub extern "C" fn rt_solve_nls(
         alloc::vec::Vec::new()
     };
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
+        stat_inc(STAT_NLS_JAC);
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
@@ -1578,11 +1584,13 @@ pub extern "C" fn rt_solve_nls(
         };
         let mut converged = solve(&mut x, &mut fvec);
         if !converged {
+            stat_inc(STAT_NLS_RETRY);
             x.copy_from_slice(&warm);
             converged = solve(&mut x, &mut fvec);
         }
         drop(solve);
         if !converged {
+            stat_inc(STAT_NLS_RETRY);
             x.copy_from_slice(&warm);
             converged = newton_solve(n, &mut x, &mut eval);
         }
@@ -1608,6 +1616,7 @@ pub extern "C" fn rt_solve_nls(
         }
         // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
         if !converged {
+            stat_inc(STAT_NLS_RETRY);
             converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
         }
         if !converged {
@@ -1690,6 +1699,7 @@ pub extern "C" fn rt_solve_nls(
         }
         eval(&warm, &mut scratch);
         unsafe { store_u32(nls_fail_addr, 1) };
+        stat_inc(STAT_NLS_FAIL);
         1
     };
 
