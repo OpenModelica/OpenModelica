@@ -486,6 +486,16 @@ public
     end match;
   end isUnknownRecord;
 
+  function isConstRecord extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(max_var = variability) guard(variability == NFPrefixes.Variability.CONSTANT) then true;
+      else false;
+    end match;
+  end isConstRecord;
+
   function isClock extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
@@ -711,6 +721,7 @@ function isJacobianResultVar
     b := match var.backendinfo.varKind
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isParamOrConst;
@@ -720,6 +731,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CONSTANT() then true;
+      case VariableKind.RECORD()   then isConstRecord(var_ptr);
       else false;
     end match;
   end isConst;
@@ -731,6 +743,7 @@ function isJacobianResultVar
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
       case VariableKind.STATE()     then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isKnown;
@@ -2836,7 +2849,7 @@ function isJacobianResultVar
       input VarType varType;
     algorithm
       if listEmpty(var_lst) then return; end if;
-      
+
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm

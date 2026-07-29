@@ -680,6 +680,11 @@ protected
         guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
+      // fail for top level inputs     
+      case Expression.CREF()
+        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+      then FAILED_CREF_TPL;
+
       // variable found
       // 1. not time and not param or const
       // 2. less than two previous variables
