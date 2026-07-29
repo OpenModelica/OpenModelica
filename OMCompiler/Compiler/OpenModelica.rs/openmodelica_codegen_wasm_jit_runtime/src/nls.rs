@@ -8,7 +8,8 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 use crate::{
     load_f64, load_u32, rt_alloc, rt_free, stat_inc, store_f64, store_u32, STAT_NLS_FAIL,
-    STAT_NLS_JAC, STAT_NLS_RES, STAT_NLS_RETRY, STAT_NLS_SOLVE,
+    STAT_NLS_ITER, STAT_NLS_JAC, STAT_NLS_NEWTON_FAIL, STAT_NLS_RES, STAT_NLS_RETRY,
+    STAT_NLS_SOLVE,
 };
 
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
@@ -90,6 +91,9 @@ fn nls_pick() -> NlsPick {
 
 /// sqrt(DBL_EPSILON): the classic forward-difference relative step.
 const SQRT_EPS: f64 = 1.4901161193847656e-08;
+/// `sqrt(DBL_EPSILON*2e1)`, the step `getNumericalJacobianHomotopy` uses. 4.5×
+/// `SQRT_EPS`: too small a step costs Newton iterations to FD noise.
+const FD_DELTA: f64 = 6.664001874625056e-08;
 /// Newton/LM convergence tolerance: stop once a residual / step measure drops below.
 const NEWTON_EPS: f64 = 1.0e-6;
 /// C's `newtonFTol`/`newtonXTol` (nonlinearSolverHomotopy.c). `newton_solve`
@@ -983,11 +987,13 @@ fn hybrj_scaled(
 /// C's `newtonAlgorithm` (`nonlinearSolverHomotopy.c`): damped Newton with a
 /// Numerical-Recipes cubic line search and two-tier residual-gated convergence.
 /// Analytic Jacobian when `has_jac`, else FD; `x` = guess in / last iterate out.
-/// Returns `true` only on a small-residual root.
+/// Returns `true` only on a small-residual root. `f0` is the residual at the
+/// incoming `x` when the caller already has it, else it is evaluated here.
 fn newton_c(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
+    f0: Option<&[f64]>,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
     has_jac: bool,
@@ -1016,29 +1022,8 @@ fn newton_c(
     let mut jac = vec![0.0f64; n * n];
     let mut res_scaling = vec![1.0f64; n];
 
-    eval(x, &mut fvec);
-    let mut error_f_sqrd = nsq(&fvec);
-
-    let mut iter = 0i32;
-    let mut neg_steps = 0i32;
-    let mut small_steps = 0i32;
-    loop {
-        // Jacobian at x: analytic (as C's newtonAlgorithm uses) when available, else FD.
-        if has_jac {
-            jaceval(x, &mut jac);
-        } else {
-            for col in 0..n {
-                let h = SQRT_EPS * (x[col].abs() + 1.0);
-                let saved = x[col];
-                x[col] = saved + h;
-                eval(x, &mut rp);
-                for i in 0..n {
-                    jac[col * n + i] = (rp[i] - fvec[i]) / h;
-                }
-                x[col] = saved;
-            }
-        }
-        // resScaling[i] = row abs-sum of J (C's matVecMultAbsBB with ones).
+    /// `resScaling[i]` = row abs-sum of `J` (C's `matVecMultAbsBB` with ones).
+    fn row_scaling(n: usize, jac: &[f64], res_scaling: &mut [f64]) {
         for i in 0..n {
             let mut s = 0.0;
             for j in 0..n {
@@ -1046,23 +1031,71 @@ fn newton_c(
             }
             res_scaling[i] = if s > 0.0 && s.is_finite() { s } else { 1.0 };
         }
-        let scaled = |v: &[f64]| -> f64 {
-            let mut s = 0.0;
-            for i in 0..n {
-                let t = v[i] / res_scaling[i];
-                s += t * t;
-            }
-            s
-        };
-        let error_f_sqrd_scaled = scaled(&fvec);
+    }
+    let scaled_sq = |v: &[f64], res_scaling: &[f64]| -> f64 {
+        let mut s = 0.0;
+        for i in 0..n {
+            let t = v[i] / res_scaling[i];
+            s += t * t;
+        }
+        s
+    };
 
-        // Newton step: solve J·d = f, then step = −d (so x1 = x + step).
+    match f0 {
+        Some(f) => fvec.copy_from_slice(f),
+        None => eval(x, &mut fvec),
+    }
+    let mut error_f_sqrd = nsq(&fvec);
+
+    // The Jacobian is w.r.t. *scaled* unknowns: both of C's paths scale column `j` by
+    // `xScaling[j]`, and the step is unscaled after the solve. `resScaling` is a row
+    // abs-sum of that column-equilibrated matrix, so the scaling is part of the
+    // convergence test, not just the rounding.
+    //
+    // The first one comes from C's `solveHomotopy` pre-phase and the loop re-forms it
+    // at its *bottom*, so the iteration that converges never pays for a Jacobian.
+    let form_jac = |x: &mut [f64], fvec: &[f64], jac: &mut [f64], rp: &mut [f64],
+                    xscaling: &[f64],
+                    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+                    jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
+        if has_jac {
+            jaceval(x, jac);
+            for col in 0..n {
+                for i in 0..n {
+                    jac[col * n + i] *= xscaling[col];
+                }
+            }
+        } else {
+            for col in 0..n {
+                let h = FD_DELTA * (x[col].abs() + 1.0);
+                let saved = x[col];
+                x[col] = saved + h;
+                eval(x, rp);
+                let inv = xscaling[col] / h;
+                for i in 0..n {
+                    jac[col * n + i] = (rp[i] - fvec[i]) * inv;
+                }
+                x[col] = saved;
+            }
+        }
+    };
+    form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval);
+    row_scaling(n, &jac, &mut res_scaling);
+    let mut error_f_sqrd_scaled = scaled_sq(&fvec, &res_scaling);
+
+    let mut iter = 0i32;
+    let mut neg_steps = 0i32;
+    let mut small_steps = 0i32;
+    loop {
+        stat_inc(STAT_NLS_ITER);
+        // Newton step: solve J·d = f in scaled unknowns, unscale (C's
+        // `vecMultScaling`), then step = −d (so x1 = x + step).
         step.copy_from_slice(&fvec);
         if !lu_solve(&jac, &mut step, n) {
             return false;
         }
-        for s in step.iter_mut() {
-            *s = -*s;
+        for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
+            *s = -*s * sc;
         }
 
         let grad_f = -2.0 * error_f_sqrd;
@@ -1087,7 +1120,7 @@ fn newton_c(
             return false;
         }
         let error_f1_sqrd = nsq(&fvec);
-        let error_f1_sqrd_scaled = scaled(&fvec);
+        let error_f1_sqrd_scaled = scaled_sq(&fvec, &res_scaling);
 
         // Numerical-Recipes damping: quadratic then cubic model of ‖f‖².
         if error_f1_sqrd > error_f_sqrd + ALPHA * lambda1 * grad_f
@@ -1143,17 +1176,21 @@ fn newton_c(
         let delta_x_sqrd_scaled = dxs;
         let error_f_old = error_f_sqrd;
         error_f_sqrd = nsq(&fvec);
-        let error_f_sqrd_scaled2 = scaled(&fvec);
+        error_f_sqrd_scaled = scaled_sq(&fvec, &res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
         if neg_steps > 20 {
             return false;
         }
+        // C's issue #6419: on success keep the previous `x` when the new residual is no
+        // better. Every other exit below also leaves `x` at the previous iterate.
+        let last_was_good = error_f_sqrd >= error_f_old;
 
-        x.copy_from_slice(&x1);
-
-        let f_ok = error_f_sqrd < ftol_sq || error_f_sqrd_scaled2 < ftol_sq;
+        let f_ok = error_f_sqrd < ftol_sq || error_f_sqrd_scaled < ftol_sq;
         let x_ok = delta_x_sqrd_scaled < xtol_sq || delta_x_sqrd < xtol_sq;
         if f_ok && x_ok {
+            if !last_was_good {
+                x.copy_from_slice(&x1);
+            }
             return true;
         }
         iter += 1;
@@ -1162,8 +1199,12 @@ fn newton_c(
         }
         small_steps += (delta_x_sqrd < xtol_sq * 1e4 || delta_x_sqrd_scaled < xtol_sq * 1e4) as i32;
         if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 {
-            return error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled2 < ftol_sq * 1e6;
+            return error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
         }
+
+        x.copy_from_slice(&x1);
+        form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval);
+        row_scaling(n, &jac, &mut res_scaling);
     }
 }
 
@@ -1507,8 +1548,16 @@ pub extern "C" fn rt_solve_nls(
 
     // Initial guess (getInitialGuess): extrapolate the last two solutions to
     // `time`, else the last solution, else the warm start.
+    // `getValues` short-circuits a time within `MINIMAL_STEP_SIZE` of a stored solution
+    // and returns it verbatim; `b + f*(a-b)` would land an ULP away even at `f == 1`,
+    // which for a residual linear in the unknowns costs an extra Newton iteration.
+    const MINIMAL_STEP_SIZE: f64 = 1.0e-12;
     let mut guess = warm.clone();
-    if count >= 2 && time1 != time2 {
+    if count >= 1 && libm::fabs(time - time1) <= MINIMAL_STEP_SIZE {
+        for i in 0..n {
+            guess[i] = unsafe { load_f64(x1_addr + (i * 8) as u32) };
+        }
+    } else if count >= 2 && time1 != time2 {
         let f = (time - time2) / (time1 - time2);
         for i in 0..n {
             let a = unsafe { load_f64(x1_addr + (i * 8) as u32) };
@@ -1553,7 +1602,7 @@ pub extern "C" fn rt_solve_nls(
             pat_addr, nnz as usize, lss_handle, &mut eval,
         )
     } else if pick == NlsPick::Newton {
-        let mut ok = newton_c(n, &mut x, &nominal, &mut eval, &mut jaceval, has_jac);
+        let mut ok = newton_c(n, &mut x, &nominal, None, &mut eval, &mut jaceval, has_jac);
         if !ok {
             x.copy_from_slice(&warm);
             ok = newton_solve(n, &mut x, &mut eval);
@@ -1572,9 +1621,27 @@ pub extern "C" fn rt_solve_nls(
         }
         ok
     } else {
-        // hybrj (analytic Jacobian) when available, else numeric hybrd; on failure
-        // retry from the warm start, then Newton and LM. `-nls=hybrid` and `mixed`
-        // land here too: this ladder is minpack-first with the homotopy tail.
+        // C's default `NLS_MIXED` runs `solveHomotopy`, whose primary solver is
+        // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
+        // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
+        // Both share the retry/homotopy tail below.
+        let start = x.clone();
+        let mut converged = false;
+        if matches!(pick, NlsPick::Default | NlsPick::Mixed) {
+            // `solveHomotopy`'s pre-phase: a start point that is already a root needs
+            // no Jacobian at all.
+            eval(&x, &mut fvec);
+            let e = enorm(&fvec);
+            converged = e * e < NEWTON_FTOL * NEWTON_FTOL * 1e-4;
+            if !converged {
+                let f0 = fvec.clone();
+                converged = newton_c(n, &mut x, &nominal, Some(&f0), &mut eval, &mut jaceval, has_jac);
+                if !converged {
+                    stat_inc(STAT_NLS_NEWTON_FAIL);
+                    x.copy_from_slice(&start);
+                }
+            }
+        }
         let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
             if has_jac {
                 hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
@@ -1582,7 +1649,9 @@ pub extern "C" fn rt_solve_nls(
                 hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
             }
         };
-        let mut converged = solve(&mut x, &mut fvec);
+        if !converged {
+            converged = solve(&mut x, &mut fvec);
+        }
         if !converged {
             stat_inc(STAT_NLS_RETRY);
             x.copy_from_slice(&warm);
@@ -1597,7 +1666,7 @@ pub extern "C" fn rt_solve_nls(
         // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
-            converged = newton_c(n, &mut x, &nominal, &mut eval, &mut jaceval, has_jac);
+            converged = newton_c(n, &mut x, &nominal, None, &mut eval, &mut jaceval, has_jac);
         }
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);

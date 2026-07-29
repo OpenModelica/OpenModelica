@@ -140,7 +140,9 @@ pub const STAT_NLS_JAC: u32 = 6;
 pub const STAT_NLS_FAIL: u32 = 7;
 pub const STAT_NLS_RETRY: u32 = 8;
 pub const STAT_ELEM_PTR: u32 = 9;
-pub const N_STATS: usize = 10;
+pub const STAT_NLS_ITER: u32 = 10;
+pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
+pub const N_STATS: usize = 12;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
