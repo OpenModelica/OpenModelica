@@ -133,6 +133,7 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->constantEqns,
     source->sparsePattern);
 
+  jacobian->isRowEval = source->isRowEval;
   jacobian->isBidirectional = source->isBidirectional;
   jacobian->adjointJacobian = source->adjointJacobian;  /* shared pointer, not deep copy */
   jacobian->recoverMask = source->recoverMask;           /* shared pointer, not deep copy */
@@ -231,8 +232,8 @@ void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
   }
 
   JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
-  const unsigned int activeDim = isRowEval ? t_jac->sizeRows : t_jac->sizeCols;
-  const int nRows = (int)t_jac->sizeRows;
+  const unsigned int activeDim = t_jac->sizeCols;
+  const int nRows = (int)(isRowEval ? t_jac->sizeCols : t_jac->sizeRows);
   jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : NULL;
 
   t_jac->dae_cj = dae_cj;
@@ -261,13 +262,11 @@ void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
   unsigned int rows        = source->sizeRows;
   unsigned int sizeTmpVars = source->sizeTmpVars;
   modelica_boolean isRowEval = source->isRowEval;
-  unsigned int seedVarsSize = isRowEval ? rows : columns;
-  unsigned int resultVarsSize = isRowEval ? columns : rows;
   unsigned int i;
 
   GC_allow_register_threads();
 
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval, seedVarsSize, resultVarsSize) shared(sparsePattern, jacColumns, i)
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval) shared(sparsePattern, jacColumns, i)
   {
   if (!GC_thread_is_registered()) {
     struct GC_stack_base sb;
@@ -281,8 +280,8 @@ void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
     (*jacColumns)[i].sizeRows      = rows;
     (*jacColumns)[i].sizeTmpVars   = sizeTmpVars;
     (*jacColumns)[i].tmpVars       = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-    (*jacColumns)[i].resultVars    = (modelica_real*) calloc(resultVarsSize, sizeof(modelica_real));
-    (*jacColumns)[i].seedVars      = (modelica_real*) calloc(seedVarsSize, sizeof(modelica_real));
+    (*jacColumns)[i].resultVars    = (modelica_real*) calloc(rows, sizeof(modelica_real));
+    (*jacColumns)[i].seedVars      = (modelica_real*) calloc(columns, sizeof(modelica_real));
     (*jacColumns)[i].sparsePattern = sparsePattern;
     (*jacColumns)[i].isRowEval     = isRowEval;
   }
@@ -474,8 +473,8 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
 {
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   const int isRowEval = (jacobian->isRowEval == TRUE);
-  const unsigned int activeDim = isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
-  const int nRows = (int)jacobian->sizeRows;
+  const unsigned int activeDim = jacobian->sizeCols;
+  const int nRows = (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows);
   int color;
 
   if (jacobian->constantEqns != NULL) {
@@ -513,16 +512,23 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
-  if (adjsp->nnz != nnz) return;
+  if (adj->sizeCols != nRows || adj->sizeRows != nCols || adjsp->nnz != nnz) return;
 
 #ifdef OMC_RUNTIME_USE_COLPACK
   /* The adjoint pattern is CSR(J), which is the format expected by ColPack.
    * Replace the independent distance-1 colorings with one joint star
    * bicoloring. If ColPack fails, retain the valid independent colorings. */
-  computeColPackStarBicoloring(nRows, nCols,
-                               adjsp->leadindex, adjsp->index,
-                               adjsp->colorCols, &adjsp->maxColors,
-                               fwdsp->colorCols, &fwdsp->maxColors);
+  if (computeColPackStarBicoloring(nRows, nCols,
+                                   adjsp->leadindex, adjsp->index,
+                                   adjsp->colorCols, &adjsp->maxColors,
+                                   fwdsp->colorCols, &fwdsp->maxColors)) {
+    infoStreamPrint(OMC_LOG_JAC, 0,
+                    "Runtime star bicoloring: %u column colors, %u row colors.",
+                    fwdsp->maxColors, adjsp->maxColors);
+  } else {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+                       "Runtime star bicoloring failed; using independent distance-1 colorings.");
+  }
 #endif
 
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
@@ -748,8 +754,11 @@ void jvp(DATA* data, threadData_t *threadData,
  * @param threadData      Thread data for error handling.
  * @param jacobian        Jacobian object (must have evalColumn and sparsePattern set).
  * @param parentJacobian  Parent Jacobian (if nested), can be NULL.
- * @param seed            Input seed vector s, length = jacobian->sizeRows.
- * @param out             Output vector y, length = jacobian->sizeCols.
+ * For a row-evaluation Jacobian, sizeCols is the primal row/seed count and
+ * sizeRows is the primal column/result count.
+ *
+ * @param seed            Input seed vector s, length = jacobian->sizeCols.
+ * @param out             Output vector y, length = jacobian->sizeRows.
  * @param zero_out        If true, zero-initialize out before accumulation.
  */
 void vjp(DATA* data, threadData_t *threadData,
@@ -769,11 +778,11 @@ void vjp(DATA* data, threadData_t *threadData,
 
   /* Optional: zero output before accumulation */
   if (zero_out) {
-    memset(out, 0, nCols * sizeof(modelica_real));
+    memset(out, 0, nRows * sizeof(modelica_real));
   }
 
   /* Ensure seeds are zeroed before use */
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
 
   /* Evaluate constant equations (if any) */
   if (jacobian->constantEqns != NULL) {
@@ -781,7 +790,7 @@ void vjp(DATA* data, threadData_t *threadData,
   }
 
   /* Set all seeds */
-  for (unsigned int row = 0; row < nRows; row++) {
+  for (unsigned int row = 0; row < nCols; row++) {
       jacobian->seedVars[row] = seed[row];
   }
 
@@ -790,11 +799,11 @@ void vjp(DATA* data, threadData_t *threadData,
   jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
   /* Accumulate results into out */
-  for (unsigned int col = 0; col < nCols; col++) {
+  for (unsigned int col = 0; col < nRows; col++) {
     out[col] += jacobian->resultVars[col];
   }
 
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
   evalJacobianCleanupRowEval(jacobian);
 }
 
@@ -1109,9 +1118,12 @@ void initAdjointCSRtoCSCMap(JACOBIAN* jacobian)
   if (jacobian->csrToCscMap != NULL) {
     return;
   }
+  /* Row-evaluation dimensions describe its vectors: sizeCols is the number
+   * of seeded primal rows (CSR outer dimension), while sizeRows is the number
+   * of resulting primal columns (CSC outer dimension after transposition). */
   jacobian->csrToCscMap = sparsePatternTransposeMap(jacobian->sparsePattern,
-                                                     jacobian->sizeRows,
                                                      jacobian->sizeCols,
+                                                     jacobian->sizeRows,
                                                      NULL);
 }
 
