@@ -47,7 +47,6 @@
 #include "../arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "meta/meta_modelica.h"
 #include "model_help.h"
 #include "omc_math.h"

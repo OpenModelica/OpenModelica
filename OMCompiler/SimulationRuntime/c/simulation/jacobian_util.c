@@ -33,6 +33,12 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 
+#ifdef USE_PARJAC
+  #define GC_THREADS
+  #include <gc/omc_gc.h>
+  #include "util/parallel_helper.h"
+#endif
+
 /**
  * @brief setJacElementFunc-compatible setter for a sparse CSC raw buffer.
  *
@@ -193,6 +199,106 @@ void evalJacobian(DATA* data, threadData_t* threadData, JACOBIAN* jacobian,
                  jac, isDense ? JAC_OUTPUT_DENSE : JAC_OUTPUT_SPARSE_RAW,
                  /*setFwd=*/NULL, /*setAdj=*/NULL);
 }
+
+#ifdef USE_PARJAC
+/**
+ * @brief Evaluate a colored Jacobian in parallel across OpenMP threads.
+ *
+ * Each worker evaluates assigned colors using its own thread-local Jacobian.
+ * Thread-local Jacobians do not have evalColumn set, so the generated callback
+ * is selected from data->callback based on the evaluation orientation.
+ */
+void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
+                                        JACOBIAN* jacColumns,
+                                        SPARSE_PATTERN* spp,
+                                        void* matrixA, setJacElementFunc setElement)
+{
+  const int isRowEval = (jacColumns[0].isRowEval == TRUE);
+  jacobianColumn_func_ptr evalFunc = isRowEval
+      ? data->callback->functionJacADJ_column
+      : data->callback->functionJacA_column;
+
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) shared(data, threadData, jacColumns, spp, matrixA, setElement, evalFunc, isRowEval)
+{
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
+  }
+
+  JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
+  const unsigned int activeDim = isRowEval ? t_jac->sizeRows : t_jac->sizeCols;
+  const int nRows = (int)t_jac->sizeRows;
+  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : NULL;
+
+  unsigned int color;
+#pragma omp for
+  for (color = 0; color < spp->maxColors; color++) {
+    evalJacobianOneColor(data, threadData, t_jac, NULL, spp, (int)color,
+                         activeDim, nRows, matrixA, setElement, evalFunc, cleanupFunc);
+  }
+}
+}
+
+/**
+ * @brief Allocate one thread-local Jacobian per OpenMP worker.
+ *
+ * Dimensions and the sparse pattern are shared with source. Work arrays are
+ * private to each worker so colors can be evaluated independently.
+ */
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
+{
+  int maxTh = omc_get_max_threads();
+  *jacColumns = (JACOBIAN*) malloc(maxTh * sizeof(JACOBIAN));
+  SPARSE_PATTERN* sparsePattern = source->sparsePattern;
+  unsigned int columns     = source->sizeCols;
+  unsigned int rows        = source->sizeRows;
+  unsigned int sizeTmpVars = source->sizeTmpVars;
+  modelica_boolean isRowEval = source->isRowEval;
+  unsigned int i;
+
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval) shared(sparsePattern, jacColumns, i)
+  {
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
+  }
+#pragma omp for schedule(runtime)
+  for (i = 0; i < maxTh; ++i) {
+    (*jacColumns)[i].sizeCols      = columns;
+    (*jacColumns)[i].sizeRows      = rows;
+    (*jacColumns)[i].sizeTmpVars   = sizeTmpVars;
+    (*jacColumns)[i].tmpVars       = (double*) calloc(sizeTmpVars, sizeof(double));
+    (*jacColumns)[i].resultVars    = (double*) calloc(rows,        sizeof(double));
+    (*jacColumns)[i].seedVars      = (double*) calloc(columns,     sizeof(double));
+    (*jacColumns)[i].sparsePattern = sparsePattern;
+    (*jacColumns)[i].isRowEval     = isRowEval;
+  }
+  }
+}
+
+/** Free thread-local Jacobians allocated by allocateThreadLocalJacobians. */
+void freeAnalyticalJacobian(JACOBIAN** jacColumns)
+{
+  int maxTh = omc_get_max_threads();
+  unsigned int i;
+
+  for (i = 0; i < maxTh; ++i) {
+    free((*jacColumns)[i].tmpVars);
+    free((*jacColumns)[i].resultVars);
+    free((*jacColumns)[i].seedVars);
+  }
+
+  free(*jacColumns);
+}
+#endif
 
 /**
  * @brief Evaluate a Jacobian using the specified method and output format.

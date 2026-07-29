@@ -57,7 +57,6 @@
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "simulation/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
