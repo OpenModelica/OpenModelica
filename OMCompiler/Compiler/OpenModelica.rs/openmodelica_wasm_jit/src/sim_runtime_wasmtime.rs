@@ -66,6 +66,14 @@ pub fn sim_engine() -> &'static wasmtime::Engine {
             Ok("speed_and_size") => { cfg.cranelift_opt_level(wasmtime::OptLevel::SpeedAndSize); }
             _ => {}
         }
+        // Inline across the model/runtime boundary. Generated code reaches the
+        // `rt_*` helpers as *imported* functions, and wasmtime's default is no
+        // inlining at all, so a handful of instructions cost a call; `Yes` also
+        // covers inter-module. Costs module compilation time, which the on-disk
+        // AOT cache pays once for the runtime.
+        if std::env::var("OMC_WASM_NO_INLINE").is_err() {
+            cfg.compiler_inlining(wasmtime::Inlining::Yes);
+        }
         wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine")
     })
 }
@@ -100,6 +108,7 @@ fn runtime_cache_path() -> std::path::PathBuf {
     runtime_blob().len().hash(&mut h);
     runtime_blob().hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
+    std::env::var("OMC_WASM_NO_INLINE").is_ok().hash(&mut h);
     let key = h.finish();
 
     let home = openmodelica_util::Settings::getHomeDir(false);
@@ -733,6 +742,15 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             Ok(f) => f.call(&mut self.store, ()).unwrap_or(0),
             Err(_) => 0,
         }
+    }
+    fn rt_stats(&mut self) -> [u64; sim_driver::RT_STATS] {
+        let mut out = [0u64; sim_driver::RT_STATS];
+        if let Ok(f) = self.rt_inst.get_typed_func::<u32, u64>(&mut self.store, "rt_stat") {
+            for (k, slot) in out.iter_mut().enumerate() {
+                *slot = f.call(&mut self.store, k as u32).unwrap_or(0);
+            }
+        }
+        out
     }
 }
 

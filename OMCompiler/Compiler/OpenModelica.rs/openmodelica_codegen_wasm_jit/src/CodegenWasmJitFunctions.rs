@@ -944,6 +944,9 @@ pub(crate) struct FnCtx<'a> {
     /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
     /// which aliases an element of the array that outlives the loop.
     borrowed_locals: Vec<u32>,
+    /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
+    /// straight-line, so one pair is enough.
+    elem_ptr_tmp: Option<(u32, u32)>,
     /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
@@ -1158,6 +1161,16 @@ impl<'a> FnCtx<'a> {
         self.extra_locals.push(wty.val());
         idx
     }
+    fn elem_ptr_temps(&mut self) -> (u32, u32) {
+        match self.elem_ptr_tmp {
+            Some(p) => p,
+            None => {
+                let p = (self.alloc_temp(WTy::I32), self.alloc_temp(WTy::I32));
+                self.elem_ptr_tmp = Some(p);
+                p
+            }
+        }
+    }
 
     /// Build a context for lowering one *simulation* equation function (see
     /// `CodegenWasmJit`). The function takes the `SimData` base pointer as its
@@ -1193,6 +1206,7 @@ impl<'a> FnCtx<'a> {
             ctrl_depth: 0,
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
+            elem_ptr_tmp: None,
             sim: Some(sim),
         }
     }
@@ -1515,7 +1529,7 @@ pub(crate) fn compile_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
     // Allocate every array local/output up front so it is a real (possibly empty)
     // array object, never a null handle — matching the C runtime, where the array
     // descriptor always exists. Unknown (`:`) dimensions start at size 0 and are
@@ -1615,7 +1629,7 @@ fn compile_external_function(
         outputs.push(slot);
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
     for (slot, elem, dims) in &array_allocs {
         emit_array_alloc(&mut ctx, *slot, elem, dims)?;
     }
@@ -2078,7 +2092,7 @@ fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigT
 /// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
 /// previous element first. The value is already owned, so no copy is made.
 fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], vt: u32) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, idx_exps)?;
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -2117,8 +2131,6 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
             let idx_exps = index_subscripts(lsubs, rank)?;
             store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
         }
-        ctx.emit(we::Instruction::LocalGet(rec));
-        ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
         return Ok(());
     }
     let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else {
@@ -2203,6 +2215,11 @@ fn value_rhs_is_fresh(e: &DAE::Exp) -> bool {
         _ => false,
     }
 }
+
+/// Array-object header offsets, matching the runtime's `ARR_*`.
+const ARR_NDIMS_OFF: u32 = 8;
+const ARR_TOTAL_OFF: u32 = 12;
+const ARR_DIMS_OFF: u32 = 16;
 
 // -------------------------------------------------------------------------
 // Record object layout (mirrors the runtime's record object)
@@ -2470,7 +2487,7 @@ fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE::Type) -> R
     ctx.emit(we::Instruction::BrIf(1));
     ctx.emit(we::Instruction::LocalGet(slot));
     ctx.emit(we::Instruction::LocalGet(i));
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &sig_ty(elem)?)?;
     emit_record_default(ctx, elem)?;
     ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
     ctx.emit(we::Instruction::LocalGet(i));
@@ -2584,12 +2601,11 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
     Ok(())
 }
 
-/// Push an owned record handle for the head of a qualified cref onto a fresh
-/// temp: either a record local (retained, so the local keeps its reference) or
-/// an array-of-records local subscripted down to a single record element.
-/// Returns the temp holding the owned handle and the record's fields; the caller
-/// is responsible for releasing the temp.
-fn push_owned_record_base(
+/// Push a *borrowed* record handle for the head of a qualified cref into a temp:
+/// either a record local, or an array-of-records local subscripted to one element.
+/// The head is always a function local, which holds the reference for the whole
+/// expression, so no retain/release pair is needed.
+fn push_record_base(
     ctx: &mut FnCtx,
     ident: &str,
     subs: &Arc<List<Arc<DAE::Subscript>>>,
@@ -2603,12 +2619,7 @@ fn push_owned_record_base(
         let SigTy::Record { fields, .. } = sty else {
             return Err("CodegenWasmJit: field access on non-record local");
         };
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
-        let t = ctx.alloc_temp(WTy::I32);
-        ctx.emit(we::Instruction::LocalSet(t));
-        Ok((t, fields))
+        Ok((idx, fields))
     } else {
         let SigTy::Array { elem, rank } = sty else {
             return Err("CodegenWasmJit: subscripting non-array local");
@@ -2620,21 +2631,31 @@ fn push_owned_record_base(
         if !is_scalar_index(subs, rank) {
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
         let idx_exps = index_subscripts(subs, rank)?;
-        index_loaded(ctx, &elem, &idx_exps)?; // owned record element on the stack
+        emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
         Ok((t, fields))
     }
 }
 
-/// Read field `name` from the owned record handle in temp `rec`, consuming it
-/// (the record is released). Leaves the field value in a fresh temp and returns
-/// `(value_temp, field_type)`; a heap field value is retained so it is owned.
-fn take_field(
+/// Retain the borrowed heap value on top of the stack, leaving it there: the
+/// expression protocol hands its consumer an owned value. No-op for a scalar.
+fn retain_on_stack(ctx: &mut FnCtx, ty: &SigTy) -> Result<()> {
+    if !ty.is_heap() {
+        return Ok(());
+    }
+    let v = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(v));
+    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    ctx.emit(we::Instruction::LocalGet(v));
+    Ok(())
+}
+
+/// Read field `name` out of the borrowed record in `rec` into a fresh temp. The
+/// value is borrowed too.
+fn load_field(
     ctx: &mut FnCtx,
     rec: u32,
     fields: &[(ArcStr, SigTy)],
@@ -2645,13 +2666,6 @@ fn take_field(
     ctx.emit(we::Instruction::LocalGet(rec));
     field_load(ctx, fty.wty(), off);
     ctx.emit(we::Instruction::LocalSet(vt));
-    if fty.is_heap() {
-        // Own the field value before releasing the record that holds it.
-        ctx.emit(we::Instruction::LocalGet(vt));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
-    }
-    ctx.emit(we::Instruction::LocalGet(rec));
-    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok((vt, fty))
 }
 
@@ -2666,7 +2680,7 @@ fn step_into_record(
     field: &str,
     fsubs: &Arc<List<Arc<DAE::Subscript>>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
-    let (vt, fty) = take_field(ctx, rec, fields, field)?;
+    let (vt, fty) = load_field(ctx, rec, fields, field)?;
     if fsubs.is_empty() {
         let SigTy::Record { fields: f2, .. } = fty else {
             return Err("CodegenWasmJit: field access on non-record field");
@@ -2683,9 +2697,9 @@ fn step_into_record(
         if !is_scalar_index(fsubs, rank) {
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
-        ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
         let idx_exps = index_subscripts(fsubs, rank)?;
-        index_loaded(ctx, &elem, &idx_exps)?; // owned record element
+        emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
         Ok((t, f2))
@@ -2700,24 +2714,31 @@ fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<W
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
     };
-    let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
             DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
-                let (vt, fty) = take_field(ctx, rec, &fields, field)?;
+                let (vt, fty) = load_field(ctx, rec, &fields, field)?;
                 if fsubs.is_empty() {
                     ctx.emit(we::Instruction::LocalGet(vt));
+                    retain_on_stack(ctx, &fty)?;
                     return Ok(fty.wty());
                 }
                 let SigTy::Array { elem, rank } = fty else {
                     return Err("CodegenWasmJit: subscripting non-array field");
                 };
-                ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
                 return if is_scalar_index(fsubs, rank) {
                     let idx_exps = index_subscripts(fsubs, rank)?;
-                    index_loaded(ctx, &elem, &idx_exps)
+                    emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
                 } else {
+                    // `slice_loaded` consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
                     slice_loaded(ctx, fsubs)
                 };
             }
@@ -2742,7 +2763,7 @@ fn navigate_qual<'c>(
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
-    let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
@@ -2781,9 +2802,6 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
         let idx_exps = index_subscripts(lsubs, rank)?;
         compile_elem_assign(ctx, arr_t, &elem, &idx_exps, rhs)?;
     }
-    // Release the navigated record handle (owned by us).
-    ctx.emit(we::Instruction::LocalGet(rec));
-    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok(())
 }
 
@@ -2792,7 +2810,7 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
 /// the slot is released and the new owned value moved in; the old value is
 /// released only *after* the rhs is computed, in case the rhs reads it.
 fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, idx_exps)?;
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -2820,7 +2838,7 @@ fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[
 /// Emit the byte address of array element `a[idx_exps...]`, reading the array
 /// handle from local `arr_idx` (the local owns it — no retain/release). Leaves
 /// the address on the stack. Same row-major linear index as [`index_loaded`].
-fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
     let acc = ctx.alloc_temp(WTy::I32);
     let w = compile_exp(ctx, &idx_exps[0])?;
     coerce(ctx, w, WTy::I32);
@@ -2830,8 +2848,7 @@ fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> 
     for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
         ctx.emit(we::Instruction::LocalGet(acc));
         ctx.emit(we::Instruction::LocalGet(arr_idx));
-        ctx.emit(we::Instruction::I32Const(axis0 as i32 + 1));
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        emit_array_dim(ctx, axis0 as u32 + 1)?;
         ctx.emit(we::Instruction::I32Mul);
         let w = compile_exp(ctx, ie)?;
         coerce(ctx, w, WTy::I32);
@@ -2844,8 +2861,7 @@ fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> 
     ctx.emit(we::Instruction::LocalGet(acc));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
-    Ok(())
+    emit_elem_ptr(ctx, elem)
 }
 
 /// Evaluate a call for its side effects and discard any results. A discarded
@@ -3320,7 +3336,7 @@ fn compile_for_array(
     // it = arr[k] (borrowed; the array outlives the loop).
     ctx.emit(we::Instruction::LocalGet(arr_t));
     ctx.emit(we::Instruction::LocalGet(k));
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &elem)?;
     elem_load(ctx, &elem);
     ctx.emit(we::Instruction::LocalSet(it));
     compile_loop_body(ctx, break_level, body)?;
@@ -3574,7 +3590,7 @@ fn compile_reduction(
         ctx.emit(we::Instruction::LocalGet(idx));
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::I32Add);
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+        emit_elem_ptr(ctx, &store_sty)?;
         let w = compile_exp(ctx, expr)?;
         coerce(ctx, w, elem_wty);
         elem_store(ctx, &store_sty);
@@ -4503,18 +4519,22 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 }
                 Ok(sty.wty())
             } else {
-                // Indexed read `v[i, ...]`: push the (retained, owned) array
-                // handle, then load the element (which releases the handle).
                 let SigTy::Array { elem, rank } = sty else {
                     return Err("CodegenWasmJit: subscripting non-array local");
                 };
-                ctx.emit(we::Instruction::LocalGet(idx));
-                ctx.emit(we::Instruction::LocalGet(idx));
-                ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                // The local keeps the array alive for the whole expression, so read
+                // the element straight out of it; only a heap element is retained.
                 if is_scalar_index(subscriptLst, rank) {
                     let idx_exps = index_subscripts(subscriptLst, rank)?;
-                    index_loaded(ctx, &elem, &idx_exps)
+                    emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
                 } else {
+                    // The slice path consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
                     slice_loaded(ctx, subscriptLst)
                 }
             }
@@ -6223,6 +6243,64 @@ fn emit_real_string(ctx: &mut FnCtx, arg: &DAE::Exp) -> Result<SigTy> {
 // Arrays (N-dimensional, flat row-major; see the runtime's Arrays section)
 // -------------------------------------------------------------------------
 
+/// Inline what `rt_array_elem_ptr` computes: the byte address of the element at
+/// row-major linear position `index` (1-based), with the same out-of-range trap.
+/// Stack is `[obj, index] -> [addr]`.
+///
+/// Inlined rather than called because element access is the hottest operation in
+/// generated model code (an IF97 property evaluation does hundreds) and the
+/// cross-module call dominated the per-evaluation cost. The stride follows the
+/// element's wasm type, which the load/store that follows already assumes.
+fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
+    use we::Instruction as I;
+    let (ot, it) = ctx.elem_ptr_temps();
+    let shift = match elem.wty() {
+        WTy::F64 => 3,
+        WTy::I32 => 2,
+    };
+    ctx.emit(I::LocalSet(it));
+    ctx.emit(I::LocalSet(ot));
+    // index < 1 || index > total -> trap.
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32LtS);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::Unreachable);
+    ctx.emit(I::End);
+    // obj + align8(ARR_DIMS_OFF + ndims*4) + (index - 1) * stride
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_NDIMS_OFF, 2)));
+    ctx.emit(I::I32Const(2));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Const(ARR_DIMS_OFF as i32 + 7));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(-8));
+    ctx.emit(I::I32And);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::I32Const(shift));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Add);
+    Ok(())
+}
+
+/// Inline `rt_array_dim` for a constant 1-based `axis`. Stack `[obj] -> [size]`.
+fn emit_array_dim(ctx: &mut FnCtx, axis: u32) -> Result<()> {
+    if axis == 0 {
+        return Err("CodegenWasmJit: array dimension axis is 1-based");
+    }
+    ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + (axis - 1) * 4, 2)));
+    Ok(())
+}
+
 /// Load one array element from the byte address on top of the stack, leaving its
 /// value. The wasm load instruction (and natural alignment) follow the element
 /// type.
@@ -6325,7 +6403,7 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
                 // Scalar element.
                 ctx.emit(we::Instruction::LocalGet(obj));
                 ctx.emit(we::Instruction::I32Const(k as i32 + 1));
-                ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+                emit_elem_ptr(ctx, &elem)?;
                 let w = compile_exp(ctx, leaf)?;
                 coerce(ctx, w, elem.wty());
                 elem_store(ctx, &elem);
@@ -6484,7 +6562,7 @@ fn compile_int_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE:
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &SigTy::Int)?;
     ctx.emit(we::Instruction::LocalGet(start_t));
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::LocalGet(step_t));
@@ -6581,7 +6659,7 @@ fn compile_real_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &SigTy::Real)?;
     ctx.emit(we::Instruction::LocalGet(val_t));
     elem_store(ctx, &SigTy::Real);
     ctx.emit(we::Instruction::LocalGet(val_t));
@@ -6767,8 +6845,7 @@ fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Re
     for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
         ctx.emit(we::Instruction::LocalGet(acc));
         ctx.emit(we::Instruction::LocalGet(arr_t));
-        ctx.emit(we::Instruction::I32Const(axis0 as i32 + 1)); // 1-based axis
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        emit_array_dim(ctx, axis0 as u32 + 1)?; // 1-based axis
         ctx.emit(we::Instruction::I32Mul);
         let w = compile_exp(ctx, ie)?;
         coerce(ctx, w, WTy::I32);
@@ -6777,12 +6854,11 @@ fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Re
         ctx.emit(we::Instruction::I32Add);
         ctx.emit(we::Instruction::LocalSet(acc));
     }
-    // addr = rt_array_elem_ptr(arr, acc + 1); load the element.
     ctx.emit(we::Instruction::LocalGet(arr_t));
     ctx.emit(we::Instruction::LocalGet(acc));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, elem)?;
     elem_load(ctx, elem);
 
     if elem.is_heap() {
@@ -7120,7 +7196,7 @@ fn compile_array_builtin(
             ctx.emit(we::Instruction::LocalSet(arr_t));
             ctx.emit(we::Instruction::LocalGet(arr_t));
             ctx.emit(we::Instruction::I32Const(1));
-            ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+            emit_elem_ptr(ctx, &elem)?;
             elem_load(ctx, &elem);
             if elem.is_heap() {
                 // Retain the borrowed handle so it outlives the array release.

@@ -111,6 +111,13 @@ impl SimEngine for InWasmEngine {
         // to take in-wasm.
         None
     }
+    fn rt_stats(&mut self) -> [u64; driver::RT_STATS] {
+        let mut out = [0u64; driver::RT_STATS];
+        for (k, slot) in out.iter_mut().enumerate() {
+            *slot = crate::rt_stat(k as u32);
+        }
+        out
+    }
 }
 
 /// One resumable in-wasm run: engine, driver, decoded model view, and the result
@@ -201,6 +208,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
+    crate::reset_stats();
     crate::sundials::reset_caches();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };

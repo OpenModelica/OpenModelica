@@ -433,12 +433,12 @@ fn build_wasip1_runtime(
         return;
     }
 
+    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1");
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
-    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1");
 
     // The wasip1 variant is built from the same sources, so the same input hash
     // gates the cache.
@@ -509,12 +509,12 @@ fn build_wasip1_interactive_runtime(
 
     // omc-on-wasm builds this too (Part A2 uses it via wasmer-js); no wasm-merge is
     // needed, unlike the standalone variant, so it is not skipped for wasm32 omc.
+    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1_INTERACTIVE");
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1_INTERACTIVE") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
-    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1_INTERACTIVE");
 
     // Native wasmtime: lean host-delegating blob (`host_lin_solve`), no in-wasm
     // driver/solver linked in. Web (wasm32) and native-wasmer solve in-wasm

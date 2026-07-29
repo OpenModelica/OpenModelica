@@ -239,7 +239,19 @@ pub trait SimEngine {
     fn lin_solves(&mut self) -> u64 {
         0
     }
+    /// The runtime's `rt_stat` counters, in slot order. Default: none.
+    fn rt_stats(&mut self) -> [u64; RT_STATS] {
+        [0; RT_STATS]
+    }
 }
+
+/// Must match the runtime's `N_STATS`.
+pub const RT_STATS: usize = 10;
+
+pub const RT_STAT_NAMES: [&str; RT_STATS] = [
+    "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
+    "elem_ptr",
+];
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
 /// its base; `0` is null) into a Rust `String`.
@@ -1433,6 +1445,12 @@ pub fn drive(
             "wasm-jit sim [{label}]: {} steps, {} residual evals, {} jacobian evals",
             stats.steps, stats.res_evals, stats.jac_evals
         );
+        let counters = e.rt_stats();
+        if counters.iter().any(|&c| c != 0) {
+            let line: Vec<String> =
+                RT_STAT_NAMES.iter().zip(counters.iter()).map(|(n, c)| format!("{n}={c}")).collect();
+            eprintln!("wasm-jit sim [{label}]: {}", line.join(" "));
+        }
     }
 
     let params = finalize_run(e, model, sim_data)?;
@@ -1850,6 +1868,24 @@ struct DasslDriver {
     jac_a: Option<JacAInfo>,
     /// Jacobian evaluation count, accumulated across chunks (for the bench line).
     nje: u64,
+    past: DaskrCounters,
+}
+
+/// DASKR zeroes its IWORK counters on a fresh start, so the run totals are folded
+/// in here before each restart.
+#[derive(Default)]
+struct DaskrCounters {
+    steps: u64,
+    err_test_fails: u64,
+    conv_test_fails: u64,
+}
+
+impl DaskrCounters {
+    fn fold(&mut self, iwork: &[i32]) {
+        self.steps += iwork.get(10).copied().unwrap_or(0).max(0) as u64;
+        self.err_test_fails += iwork.get(13).copied().unwrap_or(0).max(0) as u64;
+        self.conv_test_fails += iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+    }
 }
 
 impl DasslDriver {
@@ -1940,7 +1976,14 @@ impl DasslDriver {
             finished: false,
             jac_a,
             nje: 0,
+            past: DaskrCounters::default(),
         })
+    }
+
+    /// Restart DASKR (INFO(1)=0), banking the IWORK run totals first.
+    fn restart(&mut self) {
+        self.past.fold(&self.iwork);
+        self.info[0] = 0;
     }
 }
 
@@ -2098,7 +2141,7 @@ impl Driver for DasslDriver {
                     self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
                     self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
                 }
-                self.info[0] = 0;
+                self.restart();
             }
             self.row += 1;
         };
@@ -2116,12 +2159,17 @@ impl Driver for DasslDriver {
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         // DASKR IWORK counters (1-based): IWORK(11)=NST steps, IWORK(13)=NJE Jacobian
         // evals, IWORK(14)=NETF error-test failures, IWORK(15)=NCFN convergence fails.
-        let nst = self.iwork.get(10).copied().unwrap_or(0);
-        stats.steps = nst.max(0) as u64;
+        let mut total = DaskrCounters {
+            steps: self.past.steps,
+            err_test_fails: self.past.err_test_fails,
+            conv_test_fails: self.past.conv_test_fails,
+        };
+        total.fold(&self.iwork);
+        stats.steps = total.steps;
         stats.res_evals = self.nfe;
         stats.jac_evals = if self.jac_a.is_some() { self.nje } else { self.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
-        stats.err_test_fails = self.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
-        stats.conv_test_fails = self.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+        stats.err_test_fails = total.err_test_fails;
+        stats.conv_test_fails = total.conv_test_fails;
     }
 }
 
@@ -2169,6 +2217,7 @@ struct DasslCore {
     nfe: u64,
     /// Jacobian evaluation count, accumulated across chunks (for the bench line).
     nje: u64,
+    past: DaskrCounters,
     /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
     /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
@@ -2257,6 +2306,7 @@ impl DasslCore {
             t,
             nfe: 0,
             nje: 0,
+            past: DaskrCounters::default(),
             ev_retries: 0,
             jac_a,
             state_events: 0,
@@ -2289,6 +2339,13 @@ impl DasslCore {
     /// A step with no state event breaks the run.
     fn note_clean_step(&mut self) {
         self.chatter_consec = 0;
+    }
+
+    /// Restart DASKR (INFO(1)=0), banking the IWORK run totals first. Every event
+    /// restarts, so without this the step count is only the last segment's.
+    fn restart(&mut self) {
+        self.past.fold(&self.iwork);
+        self.info[0] = 0;
     }
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
@@ -2477,7 +2534,7 @@ impl DasslCore {
                     for i in 0..n_states {
                         self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
                     }
-                    self.info[0] = 0;
+                    self.restart();
                     continue;
                 }
                 // Reached the target with no state event: breaks a chattering run.
@@ -2518,7 +2575,7 @@ impl DasslCore {
                     for i in 0..n_states {
                         self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
                     }
-                    self.info[0] = 0;
+                    self.restart();
                 }
                 if te >= tout - eps {
                     grid_covered = true;
@@ -2654,7 +2711,7 @@ impl CsDriver {
         if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
             e.call1("functionODE", sim_data)?;
             self.core.read_states(e)?;
-            self.core.info[0] = 0;
+            self.core.restart();
         }
         if terminated(e, sim_data, layout)? {
             return Ok(CsStep::Terminated);
@@ -2680,7 +2737,7 @@ impl CsDriver {
             if self.core.n_states > 0 {
                 e.call1("functionODE", sim_data)?;
                 self.core.read_states(e)?;
-                self.core.info[0] = 0;
+                self.core.restart();
             }
             self.resume_reinit = false;
         }
@@ -2722,7 +2779,7 @@ impl CsDriver {
         if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
             e.call1("functionODE", sim_data)?;
             self.core.read_states(e)?;
-            self.core.info[0] = 0;
+            self.core.restart();
         }
         if terminated(e, sim_data, layout)? {
             return Ok(CsStep::Terminated);
@@ -2805,7 +2862,7 @@ impl CsDriver {
         stats.steps = if self.euler_h.is_some() {
             self.euler_steps
         } else {
-            c.iwork.get(10).copied().unwrap_or(0).max(0) as u64
+            c.past.steps + c.iwork.get(10).copied().unwrap_or(0).max(0) as u64
         };
         stats.res_evals = c.nfe;
         stats.state_events = c.state_events;
@@ -3037,7 +3094,7 @@ impl Driver for DasslEventsDriver {
                     self.core.y[i] = read_f64(e, self.core.states_base + (i as u32) * 8)?;
                     self.core.yp[i] = read_f64(e, self.core.ders_base + (i as u32) * 8)?;
                 }
-                self.core.info[0] = 0;
+                self.core.restart();
             }
             self.row += 1;
         };
@@ -3054,12 +3111,17 @@ impl Driver for DasslEventsDriver {
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
         let c = &self.core;
-        let nst = c.iwork.get(10).copied().unwrap_or(0);
-        stats.steps = nst.max(0) as u64;
+        let mut total = DaskrCounters {
+            steps: c.past.steps,
+            err_test_fails: c.past.err_test_fails,
+            conv_test_fails: c.past.conv_test_fails,
+        };
+        total.fold(&c.iwork);
+        stats.steps = total.steps;
         stats.res_evals = c.nfe;
         stats.jac_evals = if c.jac_a.is_some() { c.nje } else { c.iwork.get(12).copied().unwrap_or(0).max(0) as u64 };
-        stats.err_test_fails = c.iwork.get(13).copied().unwrap_or(0).max(0) as u64;
-        stats.conv_test_fails = c.iwork.get(14).copied().unwrap_or(0).max(0) as u64;
+        stats.err_test_fails = total.err_test_fails;
+        stats.conv_test_fails = total.conv_test_fails;
         stats.state_events = c.state_events;
         stats.time_events = c.time_events;
     }
