@@ -913,6 +913,15 @@ protected
     Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
+  public function lowerUnkownRecordChildren
+    input Pointer<Variable> var_ptr;
+    input VariablePointers variables;
+  algorithm
+    if BVariable.isUnknownRecord(var_ptr) then
+      lowerRecordChildren(var_ptr, variables);
+    end if;
+  end lowerUnkownRecordChildren;
+
   protected function lowerEquationData
     "Lowers all equations to backend structure.
     kabdelhak: Splitting up the creation of the equation array and the equation

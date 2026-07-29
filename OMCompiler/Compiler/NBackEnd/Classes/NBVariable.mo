@@ -486,6 +486,16 @@ public
     end match;
   end isUnknownRecord;
 
+  function isConstRecord extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(max_var = variability) guard(variability == NFPrefixes.Variability.CONSTANT) then true;
+      else false;
+    end match;
+  end isConstRecord;
+
   function isClock extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
@@ -711,6 +721,7 @@ function isJacobianResultVar
     b := match var.backendinfo.varKind
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isParamOrConst;
@@ -720,6 +731,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CONSTANT() then true;
+      case VariableKind.RECORD()   then isConstRecord(var_ptr);
       else false;
     end match;
   end isConst;
@@ -731,6 +743,7 @@ function isJacobianResultVar
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
       case VariableKind.STATE()     then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isKnown;
@@ -1337,6 +1350,13 @@ function isJacobianResultVar
     end match;
   end getRecordChildren;
 
+  function getRecordChildrenOrSelf
+    input Pointer<Variable> var;
+    output list<Pointer<Variable>> children = getRecordChildren(var);
+  algorithm
+    children := if listEmpty(children) then {var} else children;
+  end getRecordChildrenOrSelf;
+
   function getRecordChildrenCref
     input ComponentRef cref;
     output list<ComponentRef> children;
@@ -1356,13 +1376,31 @@ function isJacobianResultVar
     children := if listEmpty(children) then {cref} else children;
   end getRecordChildrenCrefOrSelf;
 
+  function setRecordVariability
+    input Pointer<Variable> var_ptr;
+    input Prefixes.Variability variability;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    _ := match var.backendinfo.varKind
+      local
+        VariableKind varKind;
+      case varKind as VariableKind.RECORD() algorithm
+        varKind.min_var := variability;
+        varKind.max_var := variability;
+        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+        Pointer.update(var_ptr, var);
+      then ();
+      else();
+    end match;
+  end setRecordVariability;
+
   function makeDummyState
     input Pointer<Variable> varPointer;
     output Pointer<Variable> derivative;
   protected
-    Variable var;
+    Variable var = Pointer.access(varPointer);
   algorithm
-    var := Pointer.access(varPointer);
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
         Variable der_var;
@@ -2810,6 +2848,8 @@ function isJacobianResultVar
       input list<Pointer<Variable>> var_lst;
       input VarType varType;
     algorithm
+      if listEmpty(var_lst) then return; end if;
+
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
@@ -2874,7 +2914,7 @@ function isJacobianResultVar
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.records     := VariablePointers.addList(var_lst, varData.records);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
-          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
+          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerUnkownRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases

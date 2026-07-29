@@ -246,6 +246,12 @@ protected
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
+          // update record variability and flatten to record children
+          for var in alias_vars loop
+            BVariable.setRecordVariability(var, NFPrefixes.Variability.PARAMETER);
+          end for;
+          alias_vars := List.flatten(list(BVariable.getRecordChildrenOrSelf(var) for var in alias_vars));
+
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
           eqData.equations  := EquationPointers.compress(eqData.equations);
@@ -277,7 +283,7 @@ protected
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
 
-          // add only the actual 1/-1 alias vars to alias vars
+          // add only the actual 1/-1 alias vars to alias vars.
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
@@ -522,11 +528,17 @@ protected
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
-      // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
+
       case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
+
+      case BEquation.RECORD_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
+
       else crefTpl;
     end match;
 
@@ -666,6 +678,11 @@ protected
       // fail for record elements for now
       case Expression.CREF()
         guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+      then FAILED_CREF_TPL;
+
+      // fail for top level inputs     
+      case Expression.CREF()
+        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -825,8 +842,6 @@ protected
     input output UnorderedMap<ComponentRef, Expression> replacements;
     input Partition.Kind kind;
   algorithm
-    // ToDo: fix variable attributes to keep
-    // report errors/warnings
     replacements := match set.const_opt
       local
         Expression rhs;
@@ -855,23 +870,28 @@ protected
         (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), var_to_keep);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
+
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;
+
         // create replacements from strong components
         Replacements.simple(comps, replacements);
         var_lst := VariablePointers.toList(vars);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
         end if;
+        
+        // solve equations for vars to have attribute conversion rules
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
+
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
         end if;
@@ -1460,16 +1480,16 @@ protected
         max_val_opt := UnorderedMap.get(var_cref, attrcollector.max_val_map);
       end if;
 
-      // if linear factor is negative => swap min and max
+      // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty)) then
+      if not Type.isContinuous(ty) or not Type.isInteger(Type.elementType(ty)) or Type.isRecord(ty) then
+        swap_min_max := false;
+      else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
         args.diffCref := var_cref;
         diff_rhs := Differentiate.differentiateExpression(rhs, args);
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
-      else
-        swap_min_max := false;
       end if;
       if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
