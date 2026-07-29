@@ -354,10 +354,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   JACOBIAN* jacobian = NULL;
   idaData->jacobianMethod = setJacobianMethod(threadData, data, &jacobian);
+  sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
   if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
     initAdjointCSRtoCSCMap(jacobian);
   }
-  sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
