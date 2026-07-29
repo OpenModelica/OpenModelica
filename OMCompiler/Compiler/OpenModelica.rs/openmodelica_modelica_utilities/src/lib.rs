@@ -36,19 +36,32 @@ fn arena_alloc(len: usize) -> *mut c_char {
     })
 }
 
-/// Allocation used outside simulation mode. Native: the C runtime's real
-/// `ModelicaAllocateString`, one hop up the symbol chain (past ours) — present when
-/// a runtime library is loaded (`-d=gen`); a leaking `malloc` otherwise (the caller
-/// contract is that the buffer is not freed by the caller). Wasm: no C runtime, so
-/// the arena is the only allocator.
+/// Allocation used outside simulation mode. Native: the C runtime's own
+/// allocator, one hop up the symbol chain (past ours) — present when a runtime
+/// library is loaded (`-d=gen`, or the FFI evaluation of an external "C"
+/// function); a leaking `malloc` otherwise (the caller contract is that the buffer
+/// is not freed by the caller). Wasm: no C runtime, so the arena is the only
+/// allocator.
+///
+/// The hop must target the leaf `ModelicaAllocateStringWithErrorReturn`: the C
+/// runtime's `ModelicaAllocateString` only wraps it, and that inner call resolves
+/// back to this crate's interposing definition — an unbounded cycle.
 #[cfg(not(target_arch = "wasm32"))]
 fn non_sim_alloc(len: usize) -> *mut c_char {
-    let next = unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateString".as_ptr()) };
+    let next =
+        unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr()) };
     if !next.is_null() {
         let f: extern "C" fn(usize) -> *mut c_char = unsafe { std::mem::transmute(next) };
-        return f(len);
+        let res = f(len);
+        if !res.is_null() {
+            return res;
+        }
     }
-    unsafe { libc::malloc(len + 1) as *mut c_char }
+    let res = unsafe { libc::malloc(len + 1) as *mut c_char };
+    if !res.is_null() {
+        unsafe { *res.add(len) = 0 };
+    }
+    res
 }
 
 #[cfg(target_arch = "wasm32")]

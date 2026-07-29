@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+CevalModelicaStrings.mos \
 ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalRHSFlag.mos \
