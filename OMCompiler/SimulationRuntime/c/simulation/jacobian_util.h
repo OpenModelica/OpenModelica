@@ -83,7 +83,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
                                jacobianCleanup_func_ptr cleanupFunc);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
-SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols);
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);

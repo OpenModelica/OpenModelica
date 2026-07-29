@@ -384,7 +384,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
 
-  /* Set NNZ – prefer adjoint pattern when only ADJ was compiled */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
   } else {

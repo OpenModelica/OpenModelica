@@ -923,7 +923,7 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  * @brief Greedy distance-1 column coloring of a CSC sparse pattern.
  *
  * Two columns may share a color only if they have no non-zero row in common.
- * Uses the existing csc_to_csr helper to build the row→columns map, then
+ * Uses the existing cscToCsr helper to build the row→columns map, then
  * assigns the smallest available color to each column in order.
  *
  * Needed for the resizable analytic Jacobian path: the C sparsity pattern
@@ -940,7 +940,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 {
   if (!sp || nCols == 0) return;
 
-  SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
+  SPARSE_PATTERN* csr = cscToCsr(sp, nRows, nCols);
   if (!csr) {
     /* Fallback: trivial one-column-per-color coloring. */
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
