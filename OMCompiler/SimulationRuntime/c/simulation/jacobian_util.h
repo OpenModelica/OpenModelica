@@ -76,6 +76,10 @@ void evalJacobianExtended(DATA* data, threadData_t* threadData,
                    void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
                    setJacElementFunc setFwd, setJacElementFunc setAdj);
 
+int computeColPackStarBicoloring(unsigned int nRows, unsigned int nCols,
+                                const unsigned int* rowPtr, const unsigned int* colIdx,
+                                unsigned int* rowColors, unsigned int* nRowColors,
+                                unsigned int* colColors, unsigned int* nColColors);
 void initBidirectionalRecovery(JACOBIAN* fwd);
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
                                JACOBIAN* fwd, JACOBIAN* parentJacobian,

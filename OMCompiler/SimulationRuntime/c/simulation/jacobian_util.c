@@ -503,19 +503,37 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
  */
 void initBidirectionalRecovery(JACOBIAN* fwd)
 {
-  JACOBIAN* adj = fwd->adjointJacobian;
-  if (!adj) return;
+  JACOBIAN* adj = fwd ? fwd->adjointJacobian : NULL;
+  if (!adj || !fwd->sparsePattern || !adj->sparsePattern) return;
 
-  const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
-  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
+  SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
+  SPARSE_PATTERN* adjsp = adj->sparsePattern;
   const unsigned int nCols = fwd->sizeCols;
   const unsigned int nRows = fwd->sizeRows;
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
+  if (adjsp->nnz != nnz) return;
+
+#ifdef OMC_RUNTIME_USE_COLPACK
+  /* The adjoint pattern is CSR(J), which is the format expected by ColPack.
+   * Replace the independent distance-1 colorings with one joint star
+   * bicoloring. If ColPack fails, retain the valid independent colorings. */
+  computeColPackStarBicoloring(nRows, nCols,
+                               adjsp->leadindex, adjsp->index,
+                               adjsp->colorCols, &adjsp->maxColors,
+                               fwdsp->colorCols, &fwdsp->maxColors);
+#endif
+
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
   adj->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
   adj->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
+  if (nnz > 0 && (!fwd->recoverMask || !adj->recoverMask || !adj->csrToCscMap)) {
+    free(fwd->recoverMask); fwd->recoverMask = NULL;
+    free(adj->recoverMask); adj->recoverMask = NULL;
+    free(adj->csrToCscMap); adj->csrToCscMap = NULL;
+    return;
+  }
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */
@@ -525,7 +543,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     // iterate over nonzeros (rows with nonzero) in this column via forward CSC pattern
     for (nz = fwdsp->leadindex[j]; nz < fwdsp->leadindex[j+1]; nz++) {
       i = fwdsp->index[nz]; // row index of current nonzero
-      int unique = 1; // assume current column is unique for this nonzero until we find otherwise
+      int unique = cj > 0; // color 0 means this column is covered by row evaluation
       // check all other columns with nonzero in the same row i via adjoint CSR pattern
       for (k = adjsp->leadindex[i]; k < adjsp->leadindex[i+1]; k++) {
         j2 = adjsp->index[k]; // column index of nonzero in same row
@@ -549,7 +567,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     unsigned int ri = adjsp->colorCols[i];
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz];
-      int unique = 1;
+      int unique = ri > 0; // color 0 means this row is covered by column evaluation
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         i2 = fwdsp->index[k];
         if (i2 != i && adjsp->colorCols[i2] == ri) {

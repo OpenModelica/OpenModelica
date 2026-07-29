@@ -5,6 +5,7 @@ find_package(LAPACK REQUIRED)
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
   "eval_dep.c"
+  "jacobian_bicoloring.cpp"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -183,6 +184,11 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     omc::3rd::lis
     ${LAPACK_LIBRARIES}
 )
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_RUNTIME_USE_COLPACK)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PRIVATE omc::3rd::colpack)
+endif()
 
 if(OM_OMC_ENABLE_PRIMME)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
