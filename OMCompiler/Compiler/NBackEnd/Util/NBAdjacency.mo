@@ -483,6 +483,7 @@ public
       input UnorderedSet<ComponentRef> seed_set;
       input UnorderedSet<ComponentRef> pder_set;
       input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+      input Boolean isAdjoint = false;
       output Matrix sparsity;
 
       type Dependencies = list<ComponentRef>;
@@ -589,13 +590,28 @@ public
                   UnorderedMap.add(cref, inner_deps, inner_map);
                 end for;
 
-                try
-                  pder_crefs := list(BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false)) for cref in pder_crefs);
+                if isAdjoint then
+                  // The adjoint evaluates rows of the primal Jacobian. Map each
+                  // primal result row to its adjoint seed variable. The runtime
+                  // later transposes the generated primal CSC pattern to CSR.
+                  pder_crefs := list(
+                    match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), diff_map)
+                      case SOME(pder_cref) then ComponentRef.copySubscripts(cref, pder_cref);
+                      else algorithm
+                        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no adjoint seed was found for "
+                          + ComponentRef.toString(cref) + " in diff_map."});
+                      then fail();
+                    end match
+                  for cref in pder_crefs);
                 else
-                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + List.toString(pder_crefs, ComponentRef.toString)
-                    + " because they were supposed to be a row vars but at least one does not have a corresponding partial derivative."});
-                  fail();
-                end try;
+                  try
+                    pder_crefs := list(BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false)) for cref in pder_crefs);
+                  else
+                    Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + List.toString(pder_crefs, ComponentRef.toString)
+                      + " because they were supposed to be a row vars but at least one does not have a corresponding partial derivative."});
+                    fail();
+                  end try;
+                end if;
 
                 // save the row/result dependencies
                 // get the iterators (potentially need local iterators?)

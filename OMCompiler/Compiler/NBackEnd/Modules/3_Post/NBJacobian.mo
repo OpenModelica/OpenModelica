@@ -1335,12 +1335,19 @@ protected
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+      if BVariable.isContinuous(v, staticAsContinuous) then
+        UnorderedSet.add(BVariable.getVarName(v), seed_set);
+      end if;
     end for;
     res_vars := Pointer.access(pDer_vars_ptr);
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
+
+    for v in old_res_vars loop
+      UnorderedSet.add(BVariable.getVarName(v), pder_set);
+    end for;
 
     for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous); end for;
     seed_vars := Pointer.access(seed_vars_ptr);
@@ -1421,7 +1428,7 @@ protected
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map);
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = newName,
