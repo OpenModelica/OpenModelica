@@ -120,6 +120,9 @@ impl SimEngine for StandaloneEngine {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
+    fn context_addr(&mut self) -> u32 {
+        crate::nls::rt_context_addr()
+    }
 }
 
 /// Run the prepared model with the shared driver and write its result file.
@@ -180,7 +183,7 @@ pub extern "C" fn _start() {
         simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
     }) {
         Ok(f) => {
-            crate::sundials::apply_flags(&f);
+            crate::solvers::apply_flags(&f);
             simflags::set_flags(f);
         }
         Err(e) => {

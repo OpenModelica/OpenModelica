@@ -803,10 +803,10 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let instance = wts(wasmer::Instance::new(&mut store, &model_module, &imports))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_alloc"))?;
-    // Which of `-ls`/`-lss`/`-nlsLS` want KLU; see the wasmtime runtime.
-    if let Ok(set_klu) = rt_inst.exports.get_typed_function::<(i32, i32, i32), ()>(&store, "rt_lin_set_klu") {
-        let (ls, lss, nls_ls) = openmodelica_sim_meta::simflags::flags().klu_selectors();
-        wts(set_klu.call(&mut store, ls as i32, lss as i32, nls_ls as i32))?;
+    // Solver selectors; see the wasmtime runtime.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32, u32), ()>(&store, "rt_set_solvers") {
+        let (nls, nls_ls, ls, lss) = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
+        wts(set.call(&mut store, nls, nls_ls, ls, lss))?;
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -879,6 +879,12 @@ impl sim_driver::SimEngine for WasmerEngine {
     }
     fn lin_solves(&mut self) -> u64 {
         match self.rt_inst.exports.get_typed_function::<(), u64>(&self.store, "rt_lin_solves") {
+            Ok(f) => f.call(&mut self.store).unwrap_or(0),
+            Err(_) => 0,
+        }
+    }
+    fn context_addr(&mut self) -> u32 {
+        match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_context_addr") {
             Ok(f) => f.call(&mut self.store).unwrap_or(0),
             Err(_) => 0,
         }

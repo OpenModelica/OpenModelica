@@ -159,7 +159,9 @@ openmodelica_codegen_wasm_jit_runtime/build.rs
 openmodelica_codegen_wasm_jit_runtime/src/delay.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
+openmodelica_codegen_wasm_jit_runtime/src/nls_c_trace.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
+openmodelica_codegen_wasm_jit_runtime/src/solvers.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
 openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
 openmodelica_fmi3_wasm/Cargo.lock

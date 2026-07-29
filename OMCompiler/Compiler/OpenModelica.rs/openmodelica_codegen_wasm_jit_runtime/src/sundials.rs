@@ -4,8 +4,6 @@
 //! Indices are `i32` (`SUNDIALS_INDEX_SIZE=32`, see the build script for why) and
 //! `sunrealtype` is `f64`.
 
-use core::sync::atomic::{AtomicBool, Ordering};
-
 /// Whether the real solvers are linked into this blob.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sundials_available() -> i32 {
@@ -21,62 +19,6 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         cvode: false,
         gbode: false,
     }
-}
-
-// Solver selection, with C's defaults: dense systems go to LAPACK, sparse ones to
-// KLU (`-ls=lapack`, `-lss=klu`, `-nlsLS=klu`).
-
-static KLU_LS: AtomicBool = AtomicBool::new(false);
-static KLU_LSS: AtomicBool = AtomicBool::new(true);
-static KLU_NLS_LS: AtomicBool = AtomicBool::new(true);
-
-/// Which backend serves a sparse solve.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Sparse {
-    Klu,
-    Rsparse,
-}
-
-fn pick(klu: &AtomicBool) -> Sparse {
-    if cfg!(sundials) && klu.load(Ordering::Relaxed) {
-        Sparse::Klu
-    } else {
-        Sparse::Rsparse
-    }
-}
-
-/// `-lss`: torn linear systems solved sparsely.
-pub(crate) fn lss_backend() -> Sparse {
-    pick(&KLU_LSS)
-}
-
-/// `-nlsLS`: the linear solver inside the sparse nonlinear solver.
-pub(crate) fn nls_ls_backend() -> Sparse {
-    pick(&KLU_NLS_LS)
-}
-
-/// `-ls=klu`: dense-stored linear systems handed to KLU.
-pub(crate) fn ls_is_klu() -> bool {
-    cfg!(sundials) && KLU_LS.load(Ordering::Relaxed)
-}
-
-fn set_klu(ls: bool, lss: bool, nls_ls: bool) {
-    KLU_LS.store(ls, Ordering::Relaxed);
-    KLU_LSS.store(lss, Ordering::Relaxed);
-    KLU_NLS_LS.store(nls_ls, Ordering::Relaxed);
-}
-
-/// The three selectors for a host-driven run: that build links no flag store, so
-/// its host parses `-ls`/`-lss`/`-nlsLS` and sets the bits here.
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_lin_set_klu(ls: i32, lss: i32, nls_ls: i32) {
-    set_klu(ls != 0, lss != 0, nls_ls != 0);
-}
-
-#[cfg(any(feature = "session", feature = "standalone"))]
-pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
-    let (ls, lss, nls_ls) = f.klu_selectors();
-    set_klu(ls, lss, nls_ls);
 }
 
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports
