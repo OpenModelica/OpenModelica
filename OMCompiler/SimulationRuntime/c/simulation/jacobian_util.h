@@ -46,7 +46,8 @@ void freeJacobianCopy(JACOBIAN* jac);
 void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
                                         JACOBIAN* jacColumns,
                                         SPARSE_PATTERN* spp,
-                                        void* matrixA, setJacElementFunc setElement);
+                                        void* matrixA, setJacElementFunc setElement,
+                                        modelica_real dae_cj);
 void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns);
 void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 #endif

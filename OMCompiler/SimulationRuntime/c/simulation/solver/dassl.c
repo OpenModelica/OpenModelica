@@ -389,14 +389,18 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       break;
     case BICOLOREDSYMJAC: {
       JACOBIAN* jac_A = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-      data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors
-          + (jac_A->adjointJacobian ? jac_A->adjointJacobian->sparsePattern->maxColors : 0);
       if (!jac_A->isBidirectional) {
         warningStreamPrint(OMC_LOG_SOLVER, 0,
             "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; "
             "falling back to standard colored symbolic evaluation.");
+        dasslData->dasslJacobian = COLOREDSYMJAC;
+        data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors;
+        dasslData->jacobianFunction = jacA_symColored;
+      } else {
+        data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors
+            + jac_A->adjointJacobian->sparsePattern->maxColors;
+        dasslData->jacobianFunction = jacA_symBiColored;
       }
-      dasslData->jacobianFunction = jacA_symBiColored;
       break;
     }
     case SYMJAC:

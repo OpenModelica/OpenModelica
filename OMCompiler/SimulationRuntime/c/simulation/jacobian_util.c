@@ -211,7 +211,8 @@ void evalJacobian(DATA* data, threadData_t* threadData, JACOBIAN* jacobian,
 void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
                                         JACOBIAN* jacColumns,
                                         SPARSE_PATTERN* spp,
-                                        void* matrixA, setJacElementFunc setElement)
+                                        void* matrixA, setJacElementFunc setElement,
+                                        modelica_real dae_cj)
 {
   const int isRowEval = (jacColumns[0].isRowEval == TRUE);
   jacobianColumn_func_ptr evalFunc = isRowEval
@@ -233,6 +234,8 @@ void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
   const unsigned int activeDim = isRowEval ? t_jac->sizeRows : t_jac->sizeCols;
   const int nRows = (int)t_jac->sizeRows;
   jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : NULL;
+
+  t_jac->dae_cj = dae_cj;
 
   unsigned int color;
 #pragma omp for
@@ -258,11 +261,13 @@ void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
   unsigned int rows        = source->sizeRows;
   unsigned int sizeTmpVars = source->sizeTmpVars;
   modelica_boolean isRowEval = source->isRowEval;
+  unsigned int seedVarsSize = isRowEval ? rows : columns;
+  unsigned int resultVarsSize = isRowEval ? columns : rows;
   unsigned int i;
 
   GC_allow_register_threads();
 
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval) shared(sparsePattern, jacColumns, i)
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval, seedVarsSize, resultVarsSize) shared(sparsePattern, jacColumns, i)
   {
   if (!GC_thread_is_registered()) {
     struct GC_stack_base sb;
@@ -275,9 +280,9 @@ void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
     (*jacColumns)[i].sizeCols      = columns;
     (*jacColumns)[i].sizeRows      = rows;
     (*jacColumns)[i].sizeTmpVars   = sizeTmpVars;
-    (*jacColumns)[i].tmpVars       = (double*) calloc(sizeTmpVars, sizeof(double));
-    (*jacColumns)[i].resultVars    = (double*) calloc(rows,        sizeof(double));
-    (*jacColumns)[i].seedVars      = (double*) calloc(columns,     sizeof(double));
+    (*jacColumns)[i].tmpVars       = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+    (*jacColumns)[i].resultVars    = (modelica_real*) calloc(resultVarsSize, sizeof(modelica_real));
+    (*jacColumns)[i].seedVars      = (modelica_real*) calloc(seedVarsSize, sizeof(modelica_real));
     (*jacColumns)[i].sparsePattern = sparsePattern;
     (*jacColumns)[i].isRowEval     = isRowEval;
   }
@@ -352,17 +357,25 @@ void evalJacobianExtended(DATA* data, threadData_t* threadData,
 #ifndef USE_PARJAC
     evalJacobianColored(data, threadData, evalJac, parentJacobian, outputMatrix, setter, cleanup);
 #else
-    evalJacobianColoredParallel(data, threadData, evalJac, jacobian->sparsePattern, outputMatrix, setter);
+  evalJacobianColoredParallel(data, threadData, evalJac, jacobian->sparsePattern,
+                outputMatrix, setter, jacobian->dae_cj);
 #endif
     break;
   }
-
   case BICOLOREDSYMJAC: {
-    evalJacobianBidirectional(data, threadData, jacobian, parentJacobian,
-                              outputMatrix, setFwd, evalJacobianCleanupRowEval);
+    if (jacobian->isBidirectional && jacobian->adjointJacobian != NULL &&
+        jacobian->recoverMask != NULL && jacobian->adjointJacobian->recoverMask != NULL &&
+        jacobian->adjointJacobian->csrToCscMap != NULL) {
+      evalJacobianBidirectional(data, threadData, jacobian, parentJacobian,
+                                outputMatrix, setFwd, evalJacobianCleanupRowEval);
+    } else {
+      warningStreamPrint(OMC_LOG_JAC, 0,
+          "Bidirectional Jacobian data unavailable; falling back to colored symbolic evaluation.");
+      evalJacobianColored(data, threadData, jacobian, parentJacobian,
+                          outputMatrix, setFwd, cleanup);
+    }
     break;
   }
-
   default:
     throwStreamPrint(threadData, "evalJacobian: unsupported method %d", (int)method);
     break;
@@ -705,6 +718,8 @@ void jvp(DATA* data, threadData_t *threadData,
   for (unsigned int row = 0; row < nRows; row++) {
     out[row] += jacobian->resultVars[row];
   }
+
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
 }
 
 
@@ -732,6 +747,8 @@ void vjp(DATA* data, threadData_t *threadData,
   const unsigned int nCols = jacobian->sizeCols;
   const unsigned int nRows = jacobian->sizeRows;
 
+  evalJacobianCleanupRowEval(jacobian);
+
   /* Optional: zero output before accumulation */
   if (zero_out) {
     memset(out, 0, nCols * sizeof(modelica_real));
@@ -758,6 +775,9 @@ void vjp(DATA* data, threadData_t *threadData,
   for (unsigned int col = 0; col < nCols; col++) {
     out[col] += jacobian->resultVars[col];
   }
+
+  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+  evalJacobianCleanupRowEval(jacobian);
 }
 
 /**
