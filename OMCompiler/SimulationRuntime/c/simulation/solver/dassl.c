@@ -355,21 +355,13 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   }
 
   JACOBIAN* jacobian = NULL;
-  if (dasslData->dasslJacobian == COLOREDSYMJACADJ) {
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-    data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
-  } else {
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-  }
+  dasslData->dasslJacobian = setJacobianMethod(threadData, data, &jacobian);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
     messageClose(OMC_LOG_SIMULATION);
   }
-
-  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability);
 
   // debug print jacobianMethod
   infoStreamPrint(OMC_LOG_STDOUT, 1, "Jacobian method: %s", JACOBIAN_METHOD_NAME[dasslData->dasslJacobian]);

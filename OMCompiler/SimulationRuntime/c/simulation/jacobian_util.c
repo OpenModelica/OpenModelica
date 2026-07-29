@@ -938,6 +938,38 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
   }
 }
 
+void initAdjointCSRtoCSCMap(JACOBIAN* jacobian)
+{
+  const SPARSE_PATTERN* sparsePattern;
+  unsigned int* columnHeads;
+  unsigned int position = 0;
+
+  if (jacobian->csrToCscMap != NULL) {
+    return;
+  }
+
+  sparsePattern = jacobian->sparsePattern;
+  jacobian->csrToCscMap = (unsigned int*) calloc(sparsePattern->nnz, sizeof(unsigned int));
+  columnHeads = (unsigned int*) calloc(jacobian->sizeCols, sizeof(unsigned int));
+
+  for (unsigned int nz = 0; nz < sparsePattern->nnz; nz++) {
+    columnHeads[sparsePattern->index[nz]]++;
+  }
+  for (unsigned int column = 0; column < jacobian->sizeCols; column++) {
+    const unsigned int count = columnHeads[column];
+    columnHeads[column] = position;
+    position += count;
+  }
+  for (unsigned int row = 0; row < jacobian->sizeRows; row++) {
+    for (unsigned int nz = sparsePattern->leadindex[row]; nz < sparsePattern->leadindex[row + 1]; nz++) {
+      const unsigned int column = sparsePattern->index[nz];
+      jacobian->csrToCscMap[nz] = columnHeads[column]++;
+    }
+  }
+
+  free(columnHeads);
+}
+
 /**
  * @brief Set Jacobian method from user flag and available Jacobian.
  *
@@ -946,10 +978,10 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
  * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
  * @return JACOBIAN_METHOD   Returns jacobian method that is availble.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN** jacobian)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
-  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
+  JACOBIAN_AVAILABILITY availability;
 
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (omc_flag[FLAG_JACOBIAN]) {
@@ -971,6 +1003,32 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
       omc_throw(threadData);
     }
   }
+
+  if (jacobianMethod == COLOREDSYMJACADJ) {
+    *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+      data->callback->initialAnalyticJacobianADJ(data, threadData, *jacobian);
+    }
+
+    /* An adjoint sparsity pattern alone cannot evaluate an adjoint symbolic
+     * Jacobian. Fall back to the forward Jacobian for numerical evaluation. */
+    if ((*jacobian)->availability != JACOBIAN_AVAILABLE) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Adjoint symbolic Jacobian not available, switching to internal numerical Jacobian.");
+      *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+        data->callback->initialAnalyticJacobianA(data, threadData, *jacobian);
+      }
+      jacobianMethod = INTERNALNUMJAC;
+    }
+  } else {
+    *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+      data->callback->initialAnalyticJacobianA(data, threadData, *jacobian);
+    }
+  }
+
+  availability = (*jacobian)->availability;
+  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
   /* Check if method is available */
   switch (availability)

@@ -352,61 +352,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
-  /* When the user explicitly requests the adjoint Jacobian method we must
-   * initialize INDEX_JAC_ADJ first so that setJacobianMethod sees the correct
-   * availability.  Initializing INDEX_JAC_A first would yield
-   * JACOBIAN_NOT_AVAILABLE (if only the adjoint was compiled) and force a
-   * fallback to INTERNALNUMJAC. */
-  int _adjRequested = 0;
-  if (omc_flag[FLAG_JACOBIAN]) {
-    for (int _m = 1; _m < JAC_MAX; _m++) {
-      if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[_m])) {
-        _adjRequested = (_m == COLOREDSYMJACADJ);
-        break;
-      }
-    }
-  }
-
-  JACOBIAN* jacobian;
-  if (_adjRequested) {
-    /* Use adjoint Jacobian availability to drive method selection */
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
-    data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
-
-    // for adjoint Jacobian we need to build a map from CSR to CSC to set elements correctly in the CSC matrix
-    if (jacobian->csrToCscMap == NULL) {
-      const SPARSE_PATTERN* adjsp = jacobian->sparsePattern;
-      const unsigned int nnz      = adjsp->nnz;
-      const unsigned int nRows    = jacobian->sizeRows;
-      const unsigned int nCols    = jacobian->sizeCols;
-      jacobian->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
-
-      /*  derive CSC positions from row-major
-        * traversal order (rows processed 0..nRows-1 → ascending row indices
-        * within each column → correct CSC ordering). */
-      unsigned int* colHead = (unsigned int*) calloc(nCols, sizeof(unsigned int));
-      /* Count nnz per column */
-      for (unsigned int nz = 0; nz < nnz; nz++)
-        colHead[adjsp->index[nz]]++;
-      /* Exclusive prefix sum → CSC column start positions */
-      unsigned int cumulative_sum = 0;
-      for (unsigned int j = 0; j < nCols; j++) {
-        unsigned int tmp = colHead[j];
-        colHead[j] = cumulative_sum;
-        cumulative_sum += tmp;
-      }
-      /* Assign CSC positions in row-major order */
-      for (unsigned int i = 0; i < nRows; i++) {
-        for (unsigned int nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i + 1]; nz++) {
-          const unsigned int j = adjsp->index[nz];
-          jacobian->csrToCscMap[nz] = colHead[j]++;
-        }
-      }
-      free(colHead);
-    }
-  } else { // this also handles bidirectional mode
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  JACOBIAN* jacobian = NULL;
+  idaData->jacobianMethod = setJacobianMethod(threadData, data, &jacobian);
+  if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
+    initAdjointCSRtoCSCMap(jacobian);
   }
 
   if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
@@ -415,8 +364,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
     messageClose(OMC_LOG_SIMULATION);
   }
-
-  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {

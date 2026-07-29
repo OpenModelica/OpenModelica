@@ -85,7 +85,8 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
 void freeSparsePattern(SPARSE_PATTERN *spp);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
 void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex);
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability);
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN** jacobian);
+void initAdjointCSRtoCSCMap(JACOBIAN* jacobian);
 
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
 
