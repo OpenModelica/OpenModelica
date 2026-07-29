@@ -2,10 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 dae_fmu_export_error.mos \
-fmi2_array_attributes.mos \
-fmi2_array_attributes_nb.mos \
-fmi2_array_nonscalarized.mos \
-fmi2_arrays_initial_unknowns.mos \
+EnumerationTest.mos \
+ExportFMUCLI.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -31,35 +29,42 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+fmi2_array_attributes_nb.mos \
+fmi2_array_attributes.mos \
+fmi2_array_nonscalarized.mos \
+fmi2_arrays_initial_unknowns.mos \
+fmi_export_derivative_annotation.mos \
+fmi_export_derivative_annotation_buildings.mos \
+fmi_export_derivative_annotation_unused.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
+HelloFMIWorld.mos \
+HelloFMIWorldEvent.mos \
+IntegerNetwork1.mos \
+issue10978.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
 RealFFT1.mos \
+testAssert.mos \
 testBug2764.mos \
 testBug2765.mos \
+testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug5673.mos \
+testChangeParam.mos \
 testDgesvSources.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
+testInitialEquationsFMI.mos \
 testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \
-EnumerationTest.mos \
-HelloFMIWorld.mos \
-HelloFMIWorldEvent.mos \
-IntegerNetwork1.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-testAssert.mos \
-testBug3034.mos \
-testChangeParam.mos \
-testInitialEquationsFMI.mos \
 ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.

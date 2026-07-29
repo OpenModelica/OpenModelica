@@ -126,23 +126,9 @@ buildModel(AlgorithmSSATest); getErrorString();
 //   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
 //   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + ($pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x);
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0}
-//   1:	{1}
+// Resizable Sparsity Pattern
+// ----------------------------
 //
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0}
-//   1:	{1}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {1, 0}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {1, 0}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)

@@ -14,7 +14,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
 
@@ -24,7 +24,7 @@ use metamodelica::List;
 macro_rules! nyi {
     ($name:literal) => {{
         eprintln!(concat!("NYI: IOStreamExt.", $name));
-        bail!(concat!("NYI: IOStreamExt.", $name));
+        return Err("NYI: IOStreamExt.");
     }};
 }
 
@@ -103,19 +103,19 @@ pub fn printReversedList(inStringLst: Arc<List<ArcStr>>, whereToPrint: i32) -> R
             let stdout = std::io::stdout();
             let mut f = stdout.lock();
             for s in chunks.into_iter().rev() {
-                f.write_all(s.as_bytes())?;
+                f.write_all(s.as_bytes()).map_err(|_| "IOStreamExt: write failed")?;
             }
-            f.flush()?;
+            f.flush().map_err(|_| "IOStreamExt: flush failed")?;
         }
         2 => {
             let stderr = std::io::stderr();
             let mut f = stderr.lock();
             for s in chunks.into_iter().rev() {
-                f.write_all(s.as_bytes())?;
+                f.write_all(s.as_bytes()).map_err(|_| "IOStreamExt: write failed")?;
             }
-            f.flush()?;
+            f.flush().map_err(|_| "IOStreamExt: flush failed")?;
         }
-        _ => bail!("IOStreamExt.printReversedList: invalid whereToPrint {whereToPrint}"),
+        _ => return Err("IOStreamExt.printReversedList: invalid whereToPrint {whereToPrint}"),
     }
     Ok(())
 }

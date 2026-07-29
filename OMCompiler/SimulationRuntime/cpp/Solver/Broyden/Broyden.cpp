@@ -78,9 +78,9 @@ Broyden::Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> a
 	,_T					('t')
 
 {
-	_sparse = _algLoop->getUseSparseFormat();
 	if (_algLoop)
 	{
+		_sparse = _algLoop->getUseSparseFormat();
 		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
 	}
 	else

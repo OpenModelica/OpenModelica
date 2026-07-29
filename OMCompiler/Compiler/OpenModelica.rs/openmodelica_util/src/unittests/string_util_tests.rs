@@ -6,7 +6,7 @@
 // Position indices are 1-based throughout (MetaModelica convention).
 // NO_POS (= 0) is returned when a character is not found.
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::{ArcStr, literal};
 use crate::StringUtil as S;
 

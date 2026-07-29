@@ -53,8 +53,8 @@ simulate(slice_for); getErrorString();
 //
 // Initial Partition
 // -------------------
-//   (4) x[1] := 1.0
-//   (3) Nonlinear System (size = 6, homotopy = false, mixed = false, torn = true)
+//   (6) x[1] := 1.0
+//   (5) Nonlinear System (size = 6, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{x[2], x[3], x[4], y[1], y[2], y[3]}
 //   --(1) For-Loop-Residual:
 //   --for {$i1 in 1:3} loop
@@ -67,51 +67,87 @@ simulate(slice_for); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (6) Alias of 4
-//   (5) Alias of 3
+//   (8) Alias of 6
+//   (7) Alias of 5
 //
 // Event Partition
 // -----------------
 //
+// =========================================================
+//   SimCode Jacobian INI_LS_JAC_1(idx = 0, partition = 0)
+// =========================================================
+//
+// SeedVars (size = 7)
+// *********************
+//   (0)[SEED] (1) Real $SEED_INI_LS_JAC_1.x[1]
+//   (1)[SEED] (1) Real $SEED_INI_LS_JAC_1.x[2]
+//   (2)[SEED] (1) Real $SEED_INI_LS_JAC_1.x[3]
+//   (3)[SEED] (1) Real $SEED_INI_LS_JAC_1.x[4]
+//   (4)[SEED] (1) Real $SEED_INI_LS_JAC_1.y[1]
+//   (5)[SEED] (1) Real $SEED_INI_LS_JAC_1.y[2]
+//   (6)[SEED] (1) Real $SEED_INI_LS_JAC_1.y[3]
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 6)
+// ***********************
+//
+// Column Equations (size = 2)
+// -----------------------------
+//   (4) Algorithm
+//   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_0[$i1] := ($SEED_INI_LS_JAC_1.x[$i1] + $SEED_INI_LS_JAC_1.x[1 + $i1]) - $SEED_INI_LS_JAC_1.y[$i1];
+//   end for;
+//   (3) Algorithm
+//   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_2[$i1] := -($SEED_INI_LS_JAC_1.y[4 - $i1] + $SEED_INI_LS_JAC_1.x[1 + $i1]);
+//   end for;
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_INI_LS_JAC_1.$RES_SIM_0[:]} ... {($SEED_INI_LS_JAC_1.y[$i1], {}, false), ($SEED_INI_LS_JAC_1.x[1 + $i1], {}, false), ($SEED_INI_LS_JAC_1.x[$i1], {}, false)}
+// $RES_SIM_2 ... {$pDER_INI_LS_JAC_1.$RES_SIM_2[:]} ... {($SEED_INI_LS_JAC_1.x[1 + $i1], {}, false), ($SEED_INI_LS_JAC_1.y[4 - $i1], {}, false)}
+//
 // ======================================================
-//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+//   [EMPTY] SimCode Jacobian A(idx = 1, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+//   [EMPTY] SimCode Jacobian B(idx = 3, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+//   [EMPTY] SimCode Jacobian C(idx = 4, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+//   [EMPTY] SimCode Jacobian D(idx = 5, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+//   [EMPTY] SimCode Jacobian F(idx = 6, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+//   [EMPTY] SimCode Jacobian H(idx = 7, partition = 0)
 // ======================================================
 //
 // ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+//   [EMPTY] SimCode Jacobian ADJ(idx = 2, partition = 0)
 // ========================================================
 //
 // ============================================================
-//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 8, partition = 0)
 // ============================================================
 //
 // ============================================================
-//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 8, partition = 0)
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 9, partition = 0)
 // ============================================================
 //
-// ===========================================================
-//   [EMPTY] SimCode Jacobian OPT_R0(idx = 9, partition = 0)
-// ===========================================================
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 10, partition = 0)
+// ============================================================
 //
 //
 //
@@ -123,8 +159,8 @@ simulate(slice_for); getErrorString();
 // allEquations:
 // ========================================
 //
-// 6: alias of 4
-// 5: alias of 3
+// 8: alias of 6
+// 7: alias of 5
 // ========================================
 //
 //
@@ -137,8 +173,8 @@ simulate(slice_for); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 6: alias of 4
-// 5: alias of 3
+// 8: alias of 6
+// 7: alias of 5
 // ========================================
 //
 //
@@ -150,11 +186,21 @@ simulate(slice_for); getErrorString();
 //
 // initialEquations: (2)
 // ========================================
-// 4: x[1]=1.0 [Real]
-// 3:  (NONLINEAR) index:0 jacobian: false
+// 6: x[1]=1.0 [Real]
+// 5:  (NONLINEAR) index:0 jacobian: true
 // crefs: x[2] , x[3] , x[4] , y[1] , y[2] , y[3]
 // 	1: x[$i1] + x[1 + $i1] - y[$i1] (FOR_RESIDUAL)
 // 	2: 1.0 - (y[4 - $i1] + x[1 + $i1]) (FOR_RESIDUAL)
+// 	Jacobian idx: 0
+// 	4:   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_0[$i1] := $SEED_INI_LS_JAC_1.x[$i1] + $SEED_INI_LS_JAC_1.x[1 + $i1] - $SEED_INI_LS_JAC_1.y[$i1];
+//   end for;
+//
+// 	3:   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_2[$i1] := -($SEED_INI_LS_JAC_1.y[4 - $i1] + $SEED_INI_LS_JAC_1.x[1 + $i1]);
+//   end for;
+//
+//
 //
 // ========================================
 //
@@ -199,8 +245,16 @@ simulate(slice_for); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
+// 	4:   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_0[$i1] := $SEED_INI_LS_JAC_1.x[$i1] + $SEED_INI_LS_JAC_1.x[1 + $i1] - $SEED_INI_LS_JAC_1.y[$i1];
+//   end for;
 //
-// 	Jacobian idx: 2
+// 	3:   for $i1 in 1:3 loop
+//     $pDER_INI_LS_JAC_1.$RES_SIM_2[$i1] := -($SEED_INI_LS_JAC_1.y[4 - $i1] + $SEED_INI_LS_JAC_1.x[1 + $i1]);
+//   end for;
+//
+//
+// 	Jacobian idx: 1
 //
 // 	Jacobian idx: 3
 //
@@ -210,13 +264,15 @@ simulate(slice_for); getErrorString();
 //
 // 	Jacobian idx: 6
 //
-// 	Jacobian idx: 1
-//
 // 	Jacobian idx: 7
+//
+// 	Jacobian idx: 2
 //
 // 	Jacobian idx: 8
 //
 // 	Jacobian idx: 9
+//
+// 	Jacobian idx: 10
 //
 //
 // modelInfo:

@@ -357,8 +357,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->jacobianMethod == COLOREDSYMJACADJ) {
     initAdjointCSRtoCSCMap(jacobian);
   }
-
-  if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+  sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
+  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
@@ -1306,7 +1306,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
 #endif
 
   if (!success) {
-    retVal = -1;  /* Non-recoverable error */
+    retVal = 1;  /* Recoverable error, reduce step size and retry */
   }
 
   threadData->currentErrorStage = saveJumpState;

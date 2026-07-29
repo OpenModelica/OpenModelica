@@ -55,19 +55,19 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %12.4g", buffer, matrix[i + j*(m-1)]);
+          p += sprintf(p, " %12.4g", matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -85,21 +85,23 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*22);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s -INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s +INF", buffer);
-    else
-      sprintf(buffer, "%s %16.8g", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, " -INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, " +INF");
       else
-        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
+        p += sprintf(p, " %16.8g", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %16.8g", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     free(buffer);

@@ -409,19 +409,19 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[indRow[i] + indCol[j]*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[indRow[i] + indCol[j]*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -442,19 +442,19 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[i + j*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -472,21 +472,23 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%16.8g", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
+        p += sprintf(p, "%16.8g", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %16.8g", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -502,21 +504,23 @@ void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, in
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -532,21 +536,23 @@ void debugVectorInt(int logName, char* vectorName, int* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -2289,13 +2295,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
         debugString(OMC_LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.1;
       }
     }
     if (success != NLS_SOLVED) {

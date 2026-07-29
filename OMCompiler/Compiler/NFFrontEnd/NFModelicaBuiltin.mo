@@ -3038,6 +3038,7 @@ function buildModelFMU
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
+  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -5884,7 +5885,7 @@ annotation(preferredView="text",Documentation(info="<html>
 end reverseLookup;
 
 // OMSimulator API calls
-type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
+type oms_system = enumeration(oms_system_none, oms_system_wc, oms_system_sc, oms_system_sc3) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
 type oms_signal_type = enumeration (oms_signal_type_real,
   oms_signal_type_integer,

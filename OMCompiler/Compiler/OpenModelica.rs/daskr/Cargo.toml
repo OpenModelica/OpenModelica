@@ -9,10 +9,20 @@ license = "BSD-3-Clause"
 # Pure-Rust, no I/O on the hot path: compiles to wasm32 with no extra toolchain.
 
 [features]
+default = ["std"]
+# `std` pulls the platform math library for `f64::{sqrt,powf}` and enables the
+# error-message printing path (`daux.c`'s `xerrwd`). Off = `no_std` + `libm`, so
+# the wasm-jit runtime can compile the solver into its in-wasm sim driver.
+std = []
 # `cref` builds the reference C library (OMCompiler/3rdParty/Cdaskr) and enables
 # the bit-exact cross-validation tests in tests/cref.rs. Off by default so the
 # crate stays standalone / wasm-buildable.
 cref = []
+
+[dependencies]
+# `no_std` builds only: pure-Rust `sqrt`/`pow`. Unused (and the platform libm is
+# used instead) when `std` is on, keeping the native/`cref` build bit-identical.
+libm = "0.2"
 
 [build-dependencies]
 cc = { workspace = true }

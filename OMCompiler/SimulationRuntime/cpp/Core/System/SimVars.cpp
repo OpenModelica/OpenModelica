@@ -149,7 +149,7 @@ void* SimVars::alignedMalloc(size_t required_bytes, size_t alignment)
 	void *p1;
 	void **p2;
 
-	int offset = alignment - 1 + sizeof(void*);
+	size_t offset = alignment - 1 + sizeof(void*);
 	p1 = malloc(required_bytes + offset);
 	p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
 	p2[-1]=p1;

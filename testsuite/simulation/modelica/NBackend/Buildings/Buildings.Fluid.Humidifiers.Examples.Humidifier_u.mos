@@ -1,0 +1,27 @@
+// name: Buildings.Fluid.Humidifiers.Examples.Humidifier_u
+// keywords: NewBackend Buildings moist air $START seed variable NLS Jacobian
+// status: correct
+// teardown_command: rm -rf Buildings.Fluid.Humidifiers.Examples.Humidifier_u.libs Buildings*.libs
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Buildings.Fluid.Humidifiers.Examples.Humidifier_u); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Buildings.Fluid.Humidifiers.Examples.Humidifier_u_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1200.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.Fluid.Humidifiers.Examples.Humidifier_u', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [SCAL] (1) humDyn.vol.p_start = humDyn.p_start; ($RES_BND_506)
+// "
+// endResult

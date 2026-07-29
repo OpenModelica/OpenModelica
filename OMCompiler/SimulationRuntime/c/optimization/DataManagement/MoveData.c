@@ -251,7 +251,6 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
     warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
-    fclose(pFile);
     return nsi;
   }
    while(1){
@@ -960,7 +959,7 @@ static inline void pickUpStates(OptData* optData){
         char buffer[200];
         rewind(pFile);
         for(i =0; i< n; ++i){
-          fscanf(pFile, "%s", buffer);
+          fscanf(pFile, "%199s", buffer);
           if (fscanf(pFile, "%lf", &start_value) <= 0) continue;
 
           for(j = 0, b = 0; j < optData->dim.nReal; ++j){

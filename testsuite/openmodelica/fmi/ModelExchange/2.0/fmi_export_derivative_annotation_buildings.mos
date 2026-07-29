@@ -1,0 +1,90 @@
+// name: fmi_export_derivative_annotation_buildings.mos
+// keywords: FMI 2.0 export, directional derivatives, derivative annotation, Buildings
+// status: correct
+// teardown_command: rm -rf LoopRepro3.fmu LoopRepro3.log LoopRepro3_tmp.xml LoopRepro3_dd.txt LoopRepro3_info.json *.fmutmp
+
+// The model reported in the issue, needs the Buildings library.
+// Buildings.Fluid.BaseClasses.FlowModels.basicFlowFunction_m_flow is called with parameter
+// arguments, so it is constant in the simulation jacobians but ends up in the jacobian of the
+// initialization DAE, where differentiating it creates the $DER$ function that used to be
+// dropped together with the function tree.
+
+setCommandLineOptions("-d=-disableDirectionalDerivatives");
+getErrorString();
+
+loadModel(Buildings); getErrorString();
+
+loadString("
+model LoopRepro3
+  \"Water loop: IdealSource mover (prescribed m_flow) + HeaterCooler_u\"
+  package Medium = Buildings.Media.Water;
+  parameter Modelica.Units.SI.MassFlowRate m_flow_nominal = 2;
+  parameter Modelica.Units.SI.PressureDifference dp_nominal = 10000;
+  Buildings.Fluid.HeatExchangers.HeaterCooler_u coo(
+    redeclare package Medium = Medium,
+    allowFlowReversal=false,
+    m_flow_nominal=m_flow_nominal,
+    dp_nominal=dp_nominal,
+    energyDynamics=Modelica.Fluid.Types.Dynamics.SteadyState,
+    Q_flow_nominal=10000);
+  Buildings.Fluid.Movers.BaseClasses.IdealSource mover(
+    redeclare package Medium = Medium,
+    allowFlowReversal=false,
+    m_flow_small=1e-4,
+    control_m_flow=true,
+    control_dp=false);
+  Buildings.Fluid.Sources.Boundary_pT bou(
+    redeclare package Medium = Medium,
+    use_T_in=true,
+    T(stateSelect=StateSelect.prefer),
+    nPorts=2);
+  Buildings.Fluid.Sensors.TemperatureTwoPort senTRet(
+    redeclare package Medium = Medium,
+    allowFlowReversal=false,
+    m_flow_nominal=m_flow_nominal,
+    tau=0,
+    initType=Modelica.Blocks.Types.Init.SteadyState,
+    transferHeat=false);
+  Modelica.Blocks.Interfaces.RealInput TSup(start=280.15);
+  Real x(start=293.15, fixed=true) \"zone temperature state\";
+  output Real copChi = 3 - 0.1*(273.15 + 10 - TSup);
+  output Real PCoo = -coo.Q_flow/copChi;
+  output Real TRet = senTRet.T;
+equation
+  der(x) = coo.Q_flow/1.0e6;
+  coo.u = max(0, min(1, 0.1*(x - 295.15)));
+  mover.m_flow_in = m_flow_nominal;
+  bou.T_in = TSup;
+  connect(bou.ports[1], mover.port_a);
+  connect(mover.port_b, coo.port_a);
+  connect(coo.port_b, senTRet.port_a);
+  connect(senTRet.port_b, bou.ports[2]);
+end LoopRepro3;
+"); getErrorString();
+
+// compiles the FMU, i.e. fails if the jacobian calls a function that is not emitted
+buildModelFMU(LoopRepro3, version="2.0", fmuType="me"); getErrorString();
+
+// the export is only useful if the directional derivatives actually made it into the FMU
+system("unzip -cqq LoopRepro3.fmu modelDescription.xml > LoopRepro3_tmp.xml"); getErrorString();
+system("grep -o 'providesDirectionalDerivative=\"[a-z]*\"' LoopRepro3_tmp.xml > LoopRepro3_dd.txt"); getErrorString();
+readFile("LoopRepro3_dd.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "LoopRepro3.fmu"
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// 0
+// ""
+// 0
+// ""
+// "providesDirectionalDerivative=\"true\"
+// "
+// ""
+// endResult

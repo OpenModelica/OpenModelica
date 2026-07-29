@@ -574,6 +574,10 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
     buffer[l][0] = 0;
   }
 
+  char **p = (char**)malloc(sizeof(char*)*n);
+  for (l=0; l<n; l++)
+    p[l] = buffer[l];
+
   k = 0;
   for (i = 0; i < n; i++)
   {
@@ -581,12 +585,12 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
     {
       if ((k < Ap[i + 1]) && (Ai[k] == j))
       {
-        sprintf(buffer[j], "%s %5g ", buffer[j], Ax[k]);
+        p[j] += sprintf(p[j], " %5g ", Ax[k]);
         k++;
       }
       else
       {
-        sprintf(buffer[j], "%s %5g ", buffer[j], 0.0);
+        p[j] += sprintf(p[j], " %5g ", 0.0);
       }
     }
   }
@@ -595,6 +599,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
     infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer[l]);
     free(buffer[l]);
   }
+  free(p);
   free(buffer);
 }
 
@@ -602,20 +607,21 @@ void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k;
   char *buffer = (char*)malloc(sizeof(char)*n*20);
+  char *q;
   k = 0;
   for (i = 0; i < n; i++)
   {
-    buffer[0] = 0;
+    q = buffer;
     for (j = 0; j < n; j++)
     {
       if ((k < Ap[i + 1]) && (Ai[k] == j))
       {
-        sprintf(buffer, "%s %5.2g ", buffer, Ax[k]);
+        q += sprintf(q, " %5.2g ", Ax[k]);
         k++;
       }
       else
       {
-        sprintf(buffer, "%s %5.2g ", buffer, 0.0);
+        q += sprintf(q, " %5.2g ", 0.0);
       }
     }
     infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);

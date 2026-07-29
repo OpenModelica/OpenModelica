@@ -1,0 +1,28 @@
+{
+  "title": "Simulator",
+  "defaultExample": "bouncing",
+  "examples": [
+    {
+      "id": "bouncing",
+      "label": "Bouncing ball",
+      "sourceFile": "examples/BouncingBall.mo"
+    },
+    {
+      "id": "pid",
+      "label": "PID controller (MSL)",
+      "library": "Modelica.Blocks.Examples.PID_Controller"
+    },
+    {
+      "id": "doublependulum",
+      "label": "Double pendulum (3D, MSL)",
+      "library": "Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum",
+      "figures": "Figure(title=\"Double pendulum\", plots={Plot(title=\"Joint angular velocity\", curves={Curve(y=revolute1.w, legend=\"revolute1.w\"), Curve(y=revolute2.w, legend=\"revolute2.w\")})}, caption=\"Angular velocity of the two revolute joints over time. The 3D view above shows the motion; the plot reads off the joint speeds the animation cannot convey.\")"
+    },
+    {
+      "id": "fullrobot",
+      "label": "Robot R3 (3D CAD, MSL)",
+      "library": "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.FullRobot",
+      "figures": "Figure(title=\"Robot R3\", plots={Plot(title=\"Joint angles\", curves={Curve(y=axis1.axisControlBus.angle, legend=\"axis 1\"), Curve(y=axis2.axisControlBus.angle, legend=\"axis 2\"), Curve(y=axis3.axisControlBus.angle, legend=\"axis 3\"), Curve(y=axis4.axisControlBus.angle, legend=\"axis 4\"), Curve(y=axis5.axisControlBus.angle, legend=\"axis 5\"), Curve(y=axis6.axisControlBus.angle, legend=\"axis 6\")})}, caption=\"Load-side angle of each of the six joints as the path-planning drives the robot from its start to its end configuration.\")"
+    }
+  ]
+}

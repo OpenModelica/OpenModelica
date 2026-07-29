@@ -6,7 +6,7 @@
 // Key invariant: key comparison uses stringCompare; smaller keys go LEFT, larger
 // keys go RIGHT.  listKeys/listKeysReverse traverse in ascending/descending order.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::{ArcStr, literal};

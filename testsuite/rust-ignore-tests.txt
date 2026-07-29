@@ -52,6 +52,11 @@
 ./flattening/modelica/scodeinst/FuncBuiltinMin2.mo
 ./flattening/modelica/scodeinst/FuncBuiltinReduction.mo
 ./flattening/modelica/scodeinst/CevalReduction1.mo
+# IntegerTest passes with the Rust port on the C runtime (modelica_integer is
+# 64-bit there). It only differs under --simCodeTarget=wasm-jit, whose runtime
+# Integer is i32, so `2147483647 * 2` wraps to -2 instead of 4294967294. Not an
+# ignore entry — left commented so it is not filtered out on the C-runtime path.
+#./simulation/modelica/types/IntegerTest.mos
 # saveTotalModel(obfuscate=true) replaces assert/terminate messages with
 # "<fn> message <stringHashDjb2(msg)>"; C's stringHashDjb2 accumulates djb2 in a
 # 64-bit modelica_integer (then labs), the port's Integer is i32 so the embedded

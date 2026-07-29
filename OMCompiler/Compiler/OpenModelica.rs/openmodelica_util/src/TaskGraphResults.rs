@@ -39,7 +39,7 @@
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use metamodelica::ext::{c_atof, c_atol};

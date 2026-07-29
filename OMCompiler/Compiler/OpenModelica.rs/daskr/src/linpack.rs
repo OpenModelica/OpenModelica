@@ -18,6 +18,9 @@
     clippy::assign_op_pattern
 )]
 
+#[cfg(not(feature = "std"))]
+use crate::FloatShim;
+
 /// `idamax`: index (1-based) of the element of largest absolute value.
 pub fn idamax(n: i32, dx: &[f64], incx: i32) -> i32 {
     if n < 1 {

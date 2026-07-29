@@ -3,6 +3,10 @@ def isWindows() {
   return !isUnix()
 }
 
+def isMac() {
+  return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
 
@@ -276,39 +280,75 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   sanityCheck('build', buildCpp)
 }
 
-void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
+/**
+ * Configure and build OMC via CMake, and run the sanity check.
+ *
+ * Detects the current platform and applies the platform-specific setup
+ * itself, so callers never need to wrap this in their own withEnv/OMDev
+ * boilerplate:
+ *  - Windows: clones/updates OMDev and extends PATH with its MSYS2 toolchain.
+ *  - macOS: prefers Homebrew/MacPorts tools on PATH.
+ *  - Linux: no extra setup.
+ *
+ * @param cmake_args list of individual CMake "-DFOO=BAR"-style arguments
+ *                   (not a pre-joined string); they are joined with spaces
+ *                   before being passed to the cmake CLI.
+ * @param cmake_exe  the cmake executable to invoke.
+ */
+void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
+  echo "Running on: ${env.NODE_NAME}"
   standardSetup()
 
-  if (isWindows()) {
-    bat (label: 'build', script: """
-      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      echo on
-      (
-      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-      echo cd \${MSYS_WORKSPACE}
-      echo which cmake
-      echo set -ex
-      echo mkdir build_cmake
-      echo ${cmake_exe} --version
-      echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
-      echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
-      ) > buildOMCWindows.sh
+  def cmake_args_str = cmake_args.join(' ')
 
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-    """)
+  if (isWindows()) {
+    withEnv (["OMDEV=C:\\OMDevUCRT",
+              "PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+      bat "echo PATH: %PATH%"
+      cloneOMDev()
+      bat (label: 'build', script: """
+        If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+        echo on
+        (
+        echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+        echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+        echo cd \${MSYS_WORKSPACE}
+        echo which cmake
+        echo set -ex
+        echo mkdir build_cmake
+        echo ${cmake_exe} --version
+        echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
+        echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
+        ) > buildOMCWindows.sh
+
+        set MSYSTEM=UCRT64
+        set MSYS2_PATH_TYPE=inherit
+        %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+      """)
+      sanityCheck('build', true)
+    }
+  }
+  else if (isMac()) {
+    withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+      sh "echo PATH: $PATH"
+      sh "mkdir ./build_cmake"
+      sh "${cmake_exe} --version"
+      sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
+      sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
+      sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+      sh "build/bin/omc --version"
+      sanityCheck('build', true)
+    }
   }
   else {
     sh "mkdir ./build_cmake"
     sh "${cmake_exe} --version"
-    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}"
+    sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+    sh "build/bin/omc --version"
+    sanityCheck('build', true)
   }
-
-  sanityCheck('build', true)
 }
 
 // sccache config for the cargo builds: a shared S3 (MinIO) compile cache at
@@ -436,7 +476,10 @@ void buildRustOMC() {
   // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
   // without re-running codegen.
   stash name: 'rust-generated-src',
-        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs'
+        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs,' +
+                  'build_cmake/rust-wasi-pic-sysroot/**,' +
+                  'build_cmake/rust-sundials-wasm/**,' +
+                  'build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm'
   stash name: 'omc-cmake-rust-gui-inputs',
         includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
                   'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
@@ -510,6 +553,24 @@ void assembleWeb() {
   sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
+
+  // Merge the three Rust-partest partition shards into one sorted failure list,
+  // archived so regressions are easy to diff between runs. Here (not a dedicated
+  // agent) since the web deliverable is already assembled; shards may be absent.
+  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
+  def haveShard = false
+  for (p in [1, 2, 3]) {
+    try {
+      unstash "partest-failed-${p}"
+      haveShard = true
+    } catch (ignored) {
+      echo "partest-failed-${p}: no shard (rust partest disabled or run failed)"
+    }
+  }
+  if (haveShard) {
+    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
+    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
+  }
 }
 
 void buildRustGUI() {
@@ -558,18 +619,34 @@ void partestRust(partition) {
     build/bin/omc-diff -v1.4
   """
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
-  sh """#!/bin/bash -x
-    ulimit -t 1500
-    ulimit -v 6291456
-    cd testsuite/partest
-    ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml${simCodeTargetArg}
-    CODE=\$?
-    # 0/7 == the run completed (7 means some tests failed); only fail the step on
-    # anything else, so junit below still publishes the per-test results.
-    test \$CODE = 0 -o \$CODE = 7 || exit 1
-  """
-  // TODO: Make this conditional on a flag
-  // junit 'testsuite/partest/result.xml'
+  try {
+    sh """#!/bin/bash
+      set -o pipefail
+      ulimit -t 1500
+      ulimit -v 6291456
+      rm -f testsuite/partest-failed-${partition}.txt
+      cd testsuite/partest
+      set -x
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+      CODE=\${PIPESTATUS[0]}
+      set +x
+      # 0/7 == the run completed (7 means some tests failed); only fail the step on
+      # anything else, so junit below still publishes the per-test results.
+      test \$CODE = 0 -o \$CODE = 7 || exit 1
+      # This partition's failures, from the 'Failed tests:' block (the only
+      # tab-indented lines). Parsing stdout rather than failed.<branch> avoids the
+      # die on branch names with '/'. Stashed and merged in assemble-web.
+      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
+      wc -l ../partest-failed-${partition}.txt
+    """
+    stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
+  } finally {
+    // Per-partition result.xml; disjoint shards merge into one per-test view in
+    // Jenkins. In finally so a hard shard failure still publishes what ran.
+    if (params.RUST_PARTEST_JUNIT) {
+      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    }
+  }
 }
 
 // Cargo workspace unit tests as their own stage (parallel with partest), in the
@@ -585,8 +662,16 @@ void ctestRust() {
   // overlay them onto the crate source tree so cargo sees a complete workspace
   // (without the generated lib.rs the manifest load fails, "no targets specified").
   sh "cp -a build_cmake/OMCompiler/Compiler/rust-src/. OMCompiler/Compiler/OpenModelica.rs/"
+  // Env vars required by the openmodelica_wasi_libc and openmodelica_wasm_jit
+  // build.rs (wasm cross-compile artifacts from CMake build).
+  def wasmEnv = [
+    "OMC_WASI_PIC_SYSROOT=${env.WORKSPACE}/build_cmake/rust-wasi-pic-sysroot",
+    "OMC_SUNDIALS_WASM_DIR=${env.WORKSPACE}/build_cmake/rust-sundials-wasm",
+    "OMC_WASI_P1_ADAPTER=${env.WORKSPACE}/build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm",
+    "OMC_EXTERNAL_C_SOURCES=${env.WORKSPACE}/OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources",
+  ]
   try {
-    withSccache {
+    withSccache(wasmEnv) {
       sh "cd OMCompiler/Compiler/OpenModelica.rs && cargo nextest run --workspace --exclude openmodelica --profile ci --no-fail-fast"
     }
   } finally {
@@ -778,6 +863,16 @@ def cacheBranch() {
   return "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
 }
 
+// Send the default failure-notification email, but only for master builds.
+void notifyOnFailure() {
+  if (cacheBranch() == "master") {
+    emailext subject: '$DEFAULT_SUBJECT',
+    body: '$DEFAULT_CONTENT',
+    replyTo: '$DEFAULT_REPLYTO',
+    to: '$DEFAULT_TO'
+  }
+}
+
 def cacheBranchEscape() {
   def name = (cacheBranch()).replace('maintenance/v','')
   name = name.replace('/','-')
@@ -794,7 +889,7 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildUCRT() {
+private def shouldWeBuildUCRT() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MSYS2-UCRT64")) {
       return true
@@ -803,7 +898,34 @@ def shouldWeBuildUCRT() {
   return params.BUILD_MSYS2_UCRT64
 }
 
-def shouldWeDisableAllCMakeBuilds() {
+private def shouldWeBuildAlpine() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Alpine")) {
+      return true
+    }
+  }
+  return params.BUILD_ALPINE
+}
+
+private def shouldWeBuildEnterpriseLinux() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Enterprise Linux")) {
+      return true
+    }
+  }
+  return params.BUILD_ENTERPRISE_LINUX
+}
+
+private def shouldWeBuildFedora() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Fedora")) {
+      return true
+    }
+  }
+  return params.BUILD_FEDORA
+}
+
+private def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
       return true
@@ -812,7 +934,7 @@ def shouldWeDisableAllCMakeBuilds() {
   return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
-def shouldWeEnableUCRTCMakeBuild() {
+private def shouldWeEnableUCRTCMakeBuild() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCRT64")) {
       return true
@@ -821,7 +943,7 @@ def shouldWeEnableUCRTCMakeBuild() {
   return params.ENABLE_MSYS2_UCRT64_CMAKE_BUILD
 }
 
-def shouldWeEnableMacOSCMakeBuild() {
+private def shouldWeEnableMacOSCMakeBuild() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Enable/macOS")) {
       return true
@@ -830,7 +952,7 @@ def shouldWeEnableMacOSCMakeBuild() {
   return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
-def shouldWeRunRustTests() {
+private def shouldWeRunRustTests() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Enable Rust Tests")) {
       return true
@@ -845,7 +967,7 @@ def rustWasmOptCMakeFlag() {
   return isPR() ? "-DRUST_OMC_WASM_OPT=OFF" : "-DRUST_OMC_WASM_OPT=ON"
 }
 
-def shouldWeRunTests() {
+private def shouldWeRunTests() {
   if (isPR()) {
     def skipTestsFilesList = [".*[.]md",
                               "OMEdit/.*",
@@ -867,8 +989,39 @@ def shouldWeRunTests() {
   return true
 }
 
-def isPR() {
+private def isPR() {
   return env.CHANGE_ID ? true : false
+}
+
+/**
+ * Evaluate all the shouldWe... / isPR build flags used to gate pipeline stages,
+ * printing each one, and return them as a map. Centralising this in one
+ * function (instead of the Jenkinsfile calling+printing each individually)
+ * keeps the CPS-compiled pipeline script itself small.
+ */
+Map evaluateBuildFlags() {
+  def flags = [:]
+  flags.isPR = isPR()
+  print "isPR: ${flags.isPR}"
+  flags.shouldWeBuildUCRT = shouldWeBuildUCRT()
+  print "shouldWeBuildUCRT: ${flags.shouldWeBuildUCRT}"
+  flags.shouldWeBuildAlpine = shouldWeBuildAlpine()
+  print "shouldWeBuildAlpine: ${flags.shouldWeBuildAlpine}"
+  flags.shouldWeBuildEnterpriseLinux = shouldWeBuildEnterpriseLinux()
+  print "shouldWeBuildEnterpriseLinux: ${flags.shouldWeBuildEnterpriseLinux}"
+  flags.shouldWeBuildFedora = shouldWeBuildFedora()
+  print "shouldWeBuildFedora: ${flags.shouldWeBuildFedora}"
+  flags.shouldWeDisableAllCMakeBuilds = shouldWeDisableAllCMakeBuilds()
+  print "shouldWeDisableAllCMakeBuilds: ${flags.shouldWeDisableAllCMakeBuilds}"
+  flags.shouldWeEnableMacOSCMakeBuild = shouldWeEnableMacOSCMakeBuild()
+  print "shouldWeEnableMacOSCMakeBuild: ${flags.shouldWeEnableMacOSCMakeBuild}"
+  flags.shouldWeEnableUCRTCMakeBuild = shouldWeEnableUCRTCMakeBuild()
+  print "shouldWeEnableUCRTCMakeBuild: ${flags.shouldWeEnableUCRTCMakeBuild}"
+  flags.shouldWeRunTests = shouldWeRunTests()
+  print "shouldWeRunTests: ${flags.shouldWeRunTests}"
+  flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
+  print "shouldWeRunRustTests: ${flags.shouldWeRunRustTests}"
+  return flags
 }
 
 def outputSync()

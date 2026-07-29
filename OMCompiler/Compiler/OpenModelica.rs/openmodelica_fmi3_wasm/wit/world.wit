@@ -1,0 +1,121 @@
+
+package fmi:fmi3@3.0.0;
+
+// Copyright (C) 2026 Modelica Association Project "FMI"
+//               All rights reserved.
+//
+// Copied from the FMI Layered Standard WebAssembly (fmi-ls-wasm) repository
+// (https://github.com/modelica/fmi-ls-wasm), released under the BSD 2-Clause
+// license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// SPDX-License-Identifier: BSD-2-Clause
+
+// ── Model Exchange FMU ────────────────────────────────────────────────────────
+
+// World implemented by a Model Exchange FMU component.
+//
+// The FMU exports the `common` and `model-exchange` interfaces.
+// The host provides logging callbacks.
+world model-exchange-fmu {
+  // ── Imports (host provides) ──────────────────────────────────────────────
+  import callbacks;
+
+  // ── Exports (FMU provides) ───────────────────────────────────────────────
+
+  /// Common variable access, lifecycle, and state-save/restore functions.
+  export common;
+
+  /// Model-Exchange–specific functions (set-time, derivatives, event indicators).
+  export model-exchange;
+}
+
+// ── Co-Simulation FMU ─────────────────────────────────────────────────────────
+
+// World implemented by a Co-Simulation FMU component.
+//
+// The FMU exports the `common` and `co-simulation` interfaces.
+// The host provides logging and (optionally) intermediate-update callbacks.
+world co-simulation-fmu {
+  // ── Imports (host provides) ──────────────────────────────────────────────
+  import callbacks;
+
+  /// Optional: only required when instantiate-co-simulation is called with
+  /// early-return-allowed = true.
+  import intermediate-update-callbacks;
+
+  // ── Exports (FMU provides) ───────────────────────────────────────────────
+  export common;
+  export co-simulation;
+}
+
+// ── Model Exchange + Co-Simulation FMU (OpenModelica extension) ────────────────
+
+// A single component exporting both interfaces, the wasm equivalent of a classic
+// me_cs FMU (one binary, one modelIdentifier). Not part of upstream fmi-ls-wasm.
+world model-exchange-and-co-simulation-fmu {
+  import callbacks;
+  import intermediate-update-callbacks;
+
+  export common;
+  export model-exchange;
+  export co-simulation;
+}
+
+// ── Scheduled Execution FMU ───────────────────────────────────────────────────
+
+// World implemented by a Scheduled Execution FMU component.
+//
+// The FMU exports the `common` and `scheduled-execution` interfaces.
+// The host provides logging, clock-update, and preemption callbacks.
+world scheduled-execution-fmu {
+  // ── Imports (host provides) ──────────────────────────────────────────────
+
+  /// All four callbacks (log-message, clock-update,
+  /// lock-preemption, unlock-preemption) are mandatory for SE.
+  import callbacks;
+
+  // ── Exports (FMU provides) ───────────────────────────────────────────────
+  export common;
+  export scheduled-execution;
+}
+
+// ── Master Algorithm (importer) ───────────────────────────────────────────────
+
+// World implemented by a master algorithm / simulation environment that
+// can host all three FMU types simultaneously.
+//
+// This is a convenience world for toolchain authors; real masters typically
+// target one interface kind at a time.
+world master-algorithm {
+  // The master imports (i.e. uses) each FMU interface kind.
+  import common;
+  import model-exchange;
+  import co-simulation;
+  import scheduled-execution;
+
+  // The master exports the callback interfaces so FMUs can call back into it.
+  export callbacks;
+  export intermediate-update-callbacks;
+}

@@ -60,7 +60,7 @@ protected
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator, IfEquationBody};
   import Initialization = NBInitialization;
   import Inline = NBInline;
   import NBJacobian.JacobianType;
@@ -148,9 +148,10 @@ public
   end GENERIC_COMPONENT;
 
   record ENTWINED_COMPONENT
-    "component for entwined SLICED_COMPONENT or GENERIC_COMPONENT
-    the body equations have to be called in a specific pattern but do not form an algebraic loop"
-    list<StrongComponent> entwined_slices                     "has to be SLICED_COMPONENT()";
+    "component for entwined equations that have to be called in a specific interleaved order
+    but do not form an algebraic loop. Slices can be SLICED_COMPONENT, GENERIC_COMPONENT,
+    RESIZABLE_COMPONENT, SINGLE_COMPONENT or MULTI_COMPONENT."
+    list<StrongComponent> entwined_slices                     "one entry per distinct equation (for-loop or scalar)";
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
   end ENTWINED_COMPONENT;
 
@@ -445,11 +446,15 @@ public
       end match;
     end for;
 
-    // create individual slices
+    // create individual slices (array bucket → slice component, scalar → scalar component)
     for tpl in UnorderedMap.toList(elem_map) loop
       (eqn_arr_idx, scal_indices) := tpl;
-      var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
-      entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
+      if UnorderedMap.contains(eqn_arr_idx, cref_map) then
+        var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
+        entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
+      else
+        entwined_slices := createPseudoScalar(scal_indices, eqn_to_var, mapping, vars, eqns) :: entwined_slices;
+      end if;
     end for;
 
     // create scalar list for fallback
@@ -672,13 +677,33 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   protected
-    Pointer<Equation> eqn = Slice.getT(eqn_slice);
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Equation eqn = Pointer.access(eqn_ptr);
+    IfEquationBody body;
+    function simpleSolvedEquation
+      input Equation eqn;
+      input Pointer<Equation> eqn_ptr;
+      output StrongComponent comp;
+    algorithm
+      comp := match Equation.getLHS(eqn)
+        local
+          Expression lhs;
+        case SOME(lhs as Expression.CREF()) then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(lhs), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+        else MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
+      end match;
+    end simpleSolvedEquation;
   algorithm
-    comp := match Pointer.access(eqn)
-      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+    comp := match eqn
+      case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
+      case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+      case Equation.IF_EQUATION(body = body) algorithm
+        if IfEquationBody.isSplit(body) then
+          comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+        else
+          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
+        end if;
+      then comp;
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
@@ -942,6 +967,36 @@ public
     end match;
   end getVariables;
 
+  function getVariableCrefs
+    input StrongComponent comp;
+    output list<ComponentRef> var_crefs;
+  algorithm
+    var_crefs := match comp
+      case SINGLE_COMPONENT()     then {BVariable.getVarName(comp.var)};
+      case MULTI_COMPONENT()      then list(BVariable.getVarName(Slice.getT(v)) for v in comp.vars);
+      case SLICED_COMPONENT() algorithm
+        // EMPTY var_cref (NLS FOR residuals): use residual var for pder classification in fullToSparsity
+        if ComponentRef.isEmpty(comp.var_cref) then
+          try
+            var_crefs := {BVariable.getVarName(Equation.getResidualVar(Slice.getT(comp.eqn)))};
+          else
+            var_crefs := {comp.var_cref};
+          end try;
+        else
+          var_crefs := {comp.var_cref};
+        end if;
+      then var_crefs;
+      case RESIZABLE_COMPONENT()  then {comp.var_cref};
+      case GENERIC_COMPONENT()    then {comp.var_cref};
+      case ENTWINED_COMPONENT()   then List.flatten(list(list(BVariable.getVarName(var) for var in getVariables(slice)) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then list(BVariable.getVarName(var) for var in Tearing.getVariables(comp.strict));
+      case ALIAS()                then getVariableCrefs(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getVariableCrefs;
+
   function getVarCref
     input StrongComponent comp;
     output ComponentRef var_cref;
@@ -1002,7 +1057,10 @@ public
   algorithm
     b := match comp
       case SINGLE_COMPONENT()     then Equation.isDiscrete(comp.eqn);
-      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn));
+      // mixed algorithms assign both discrete (e.g. $SEV_0) and continuous vars;
+      // treat as discrete so Jacobian computation does not try to differentiate boolean assignments
+      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn)) or
+        List.any(list(Slice.getT(v) for v in comp.vars), BVariable.isDiscrete);
       case SLICED_COMPONENT()     then Equation.isDiscrete(Slice.getT(comp.eqn));
       case RESIZABLE_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT()   then List.all(comp.entwined_slices, isDiscrete);

@@ -120,11 +120,11 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
   for(i=0; i<n; i++)
   {
     char *buffer = (char*)malloc(sizeof(char)*A->ptr[i+1]*50);
-    buffer[0] = 0;
-    sprintf(buffer, "column %d: ", i);
+    char *p = buffer;
+    p += sprintf(p, "column %d: ", i);
     for(j = A->ptr[i]; j < A->ptr[i+1]; j++)
     {
-       sprintf(buffer, "%s(%d,%g) ", buffer, A->index[j], A->value[j]);
+       p += sprintf(p, "(%d,%g) ", A->index[j], A->value[j]);
     }
     infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     free(buffer);
@@ -274,8 +274,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     infoStreamPrint(OMC_LOG_LS_V, 1, "b vector [%d]", n);
     for(i=0; i<n; i++)
     {
-      buffer[0] = 0;
-      sprintf(buffer, "%s%20.12g ", buffer, solverData->b->value[i]);
+      sprintf(buffer, "%20.12g ", solverData->b->value[i]);
       infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     }
     messageClose(OMC_LOG_LS_V);

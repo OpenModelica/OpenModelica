@@ -10,7 +10,7 @@
 // Known bugs detected while writing these tests are documented inline with
 // "Bug:" prefixes.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use openmodelica_ast::parser::{parse, Grammar};

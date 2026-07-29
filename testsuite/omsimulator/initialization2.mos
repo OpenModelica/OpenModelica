@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2/
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.py input.csv
 
 loadString("
 model initialization2
@@ -20,30 +20,37 @@ writeFile("input.csv", "time,y
 1.0,2.3
 "); getErrorString();
 
-writeFile("initialization2.lua", "
-oms_setCommandLineOption(\"--suppressPath=true\")
-oms_setTempDirectory(\"./temp-initialization2/\")
+writeFile("initialization2.py", "
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"test\")
-oms_addSystem(\"test.root\", oms_system_sc)
-oms_addSubModel(\"test.root.A\", \"input.csv\")
-oms_addSubModel(\"test.root.B\", \"initialization2.fmu\")
-oms_addConnection(\"test.root.A.y\", \"test.root.B.u\")
-oms_setResultFile(\"test\", \"\")
+Settings.suppressPath = True
 
-oms_instantiate(\"test\")
-oms_initialize(\"test\")
-print(\"info:    Initialization\")
-print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
-print(\"info:      B.x: \" .. oms_getReal(\"test.root.B.x\"))
-print(\"info:      B.y: \" .. oms_getReal(\"test.root.B.y\"))
-print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+model = SSP()
+model.addResource('initialization2.fmu', new_name='resources/initialization2.fmu')
+model.addResource('input.csv', new_name='resources/input.csv')
+model.addComponent(CRef('default', 'A'), 'resources/input.csv')
+model.addComponent(CRef('default', 'B'), 'resources/initialization2.fmu')
+model.addConnection(CRef('default', 'A', 'y'), CRef('default', 'B', 'u'))
 
-oms_terminate(\"test\")
-oms_delete(\"test\")
+solver1 = {'name' : 'solver1',  'method': 'cvode'}
+model.newSolver(solver1)
+model.setSolver(CRef('default', 'B'), 'solver1')
+model.setSolver(CRef('default', 'A'), 'solver1')
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('')
+
+instantiated_model.initialize()
+print(f\"info:    Initialization\")
+print(f\"info:      A.y: {instantiated_model.getValue(CRef('default', 'A', 'y'))}\")
+print(f\"info:      B.x: {instantiated_model.getValue(CRef('default', 'B', 'x'))}\")
+print(f\"info:      B.y: {instantiated_model.getValue(CRef('default', 'B', 'y'))}\")
+print(f\"info:      B.u: {instantiated_model.getValue(CRef('default', 'B', 'u'))}\")
+
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization2.lua", "initialization2_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 initialization2.py", "initialization2_systemCall.log");
 readFile("initialization2_systemCall.log");
 
 // Result:
@@ -56,15 +63,15 @@ readFile("initialization2_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // info:    Initialization
 // info:      A.y: 2.3
 // info:      B.x: 2.3
 // info:      B.y: 2.3
 // info:      B.u: 2.3
-// info:    Final Statistics for 'test.root':
-//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
-//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

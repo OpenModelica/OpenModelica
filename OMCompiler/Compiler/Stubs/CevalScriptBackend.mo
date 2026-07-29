@@ -73,6 +73,22 @@ algorithm
   assert(false, getInstanceName());
 end translateModel;
 
+public function callBuildModelFMU
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String FMUVersion;
+  input String inFMUType;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  output FCore.Cache cache;
+  output Values.Value outValue;
+algorithm
+  assert(false, getInstanceName());
+end callBuildModelFMU;
+
 function getSimulationResultType
   output DAE.Type t;
 algorithm

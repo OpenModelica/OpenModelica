@@ -253,6 +253,28 @@ public
     end if;
   end isContinuousFold;
 
+  function containsContinuousVar
+    "Returns true if the expression contains at least one continuous variable.
+    Unlike isContinuous (ALL-fold), this is an OR-fold: any single continuous
+    variable makes the whole expression 'continuous' for event purposes."
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := Expression.fold(exp, containsContinuousVarFold, false);
+  end containsContinuousVar;
+
+  function containsContinuousVarFold
+    input Expression exp;
+    input output Boolean b;
+  algorithm
+    if not b then
+      b := match exp
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(staticAsContinuous = false), sourceInfo());
+        else false;
+      end match;
+    end if;
+  end containsContinuousVarFold;
+
   function getLocalSystem
     input array<list<Integer>> m          "global adjacency matrix";
     input Matching matching               "global matching";

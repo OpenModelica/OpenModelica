@@ -47,8 +47,10 @@ public
   import Type = NFType;
 
   // Backend imports
+  import Adjacency = NBAdjacency;
+  import NBAdjacency.Dependency;
   import BackendDAE = NBackendDAE;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
+  import NBEquation.{Equation, Iterator, EquationPointer, EquationPointers, EqData};
   import BEquation = NBEquation;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
@@ -65,12 +67,111 @@ public
 
   // Old SimCode imports
   import OldSimCode = SimCode;
+  import OldBackendDAE = BackendDAE;
 
   // Util imports
   import StringUtil;
 
-  type SparsityPattern = list<tuple<Integer, list<Integer>>>;
-  type SparsityColoring = list<list<Integer>>;
+  uniontype SparsityRow
+    record SPARSITY_ROW
+      ComponentRef equation_name "only for debugging";
+      list<SimGenericCall.SimIterator> equation_iterators;
+      list<tuple<ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
+      list<ComponentRef> solved_crefs;
+    end SPARSITY_ROW;
+
+    function create
+      input ComponentRef equation_name;
+      input Iterator equation_iterator;
+      input UnorderedMap<ComponentRef, Dependency> dependencies;
+      input UnorderedSet<ComponentRef> repetitions;
+      input list<ComponentRef> solved_crefs;
+      output SparsityRow row;
+    protected
+      list<ComponentRef> crefs;
+      list<Dependency> deps;
+      list<Boolean> reps;
+    algorithm
+      crefs := UnorderedMap.keyList(dependencies);
+      deps  := UnorderedMap.valueList(dependencies);
+      reps  := list(UnorderedSet.contains(cref, repetitions) for cref in crefs);
+
+      // add whole subscripts for code gen purposes
+      crefs := list(ComponentRef.fillSubscripts(cref) for cref in crefs);
+
+      row := SPARSITY_ROW(
+        equation_name       = equation_name,
+        equation_iterators  = SimGenericCall.SimIterator.fromIterator(equation_iterator),
+        dependencies        = list((cref, dep, rep) threaded for cref in crefs, dep in deps, rep in reps),
+        solved_crefs        = list(ComponentRef.fillSubscripts(cref) for cref in solved_crefs));
+    end create;
+
+    function convert
+      input SparsityRow row;
+      output OldSimCode.SparsityRow oldrow;
+    algorithm
+      oldrow := OldSimCode.SPARSITY_ROW(
+        equation_name       = ComponentRef.toDAE(row.equation_name),
+        equation_iterators  = list(SimGenericCall.SimIterator.convert(iter) for iter in row.equation_iterators),
+        dependencies        = list((ComponentRef.toDAE(Util.tuple31(tpl)), Dependency.convert(Util.tuple32(tpl)), Util.tuple33(tpl)) for tpl in row.dependencies),
+        solved_crefs        = list(ComponentRef.toDAE(cref) for cref in row.solved_crefs)
+      );
+    end convert;
+
+    function toString
+      input SparsityRow row;
+      output String str;
+      function dependencyString
+        input tuple<ComponentRef, Dependency, Boolean> tpl;
+        output String str = "(" + ComponentRef.toString(Util.tuple31(tpl)) + ", " + Dependency.toString(Util.tuple32(tpl)) + ", " + boolString(Util.tuple33(tpl)) + ")";
+      end dependencyString;
+    algorithm
+      str := ComponentRef.toString(row.equation_name) + " ... " + List.toString(row.solved_crefs, ComponentRef.toString) + " ... " + List.toString(row.dependencies, dependencyString);
+    end toString;
+  end SparsityRow;
+
+  uniontype Sparsity
+    record SPARSITY
+      list<SparsityRow> rows;
+    end SPARSITY;
+
+    record EMPTY
+    end EMPTY;
+
+    function create
+      input Adjacency.Matrix mat;
+      output Sparsity sparsity;
+    algorithm
+      sparsity := match mat
+        case Adjacency.SPARSITY() then SPARSITY(list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs));
+        case Adjacency.EMPTY() then EMPTY();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " can only handle sparsity or empty matrices but got:\n" + Adjacency.Matrix.toString(mat)});
+        then fail();
+      end match;
+    end create;
+
+    function convert
+      input Sparsity sparsity;
+      output OldSimCode.Sparsity oldsparsity;
+    algorithm
+      oldsparsity := match sparsity
+        case SPARSITY() then OldSimCode.SPARSITY(list(SparsityRow.convert(row) for row in sparsity.rows));
+        case EMPTY() then OldSimCode.EMPTY();
+      end match;
+    end convert;
+
+    function toString
+      input Sparsity sparsity;
+      output String str = StringUtil.headline_3("Resizable Sparsity Pattern");
+    algorithm
+      str := match sparsity
+        case SPARSITY() then str + List.toString(sparsity.rows, SparsityRow.toString, List.Style.NEWLINE) + "\n";
+        else str + " -- EMPTY -- \n";
+      end match;
+    end toString;
+  end Sparsity;
 
   uniontype SimJacobian
     record SIM_JAC
@@ -82,11 +183,7 @@ public
       list<SimStrongComponent.Block> constantEqns         "List of constant equations independent of seed variables";
       list<SimVar> columnVars                             "all column vars, none results vars index -1, the other corresponding to rows index";
       list<SimVar> seedVars                               "corresponds to the number of columns";
-      SparsityPattern sparsity                            "sparsity pattern in index form";
-      SparsityPattern sparsityT                           "transposed sparsity pattern";
-      SparsityColoring coloring                           "coloring columns in index form (column coloring)";
-      SparsityColoring rowColoring                        "coloring rows in index form (row coloring)";
-      Integer numColors                                   "number of colors";
+      Sparsity sparsityMatrix                             "new sparsity pattern";
       list<SimGenericCall> generic_loop_calls             "Generic for-loop and array calls";
       Option<UnorderedMap<ComponentRef, SimVar>> jac_map  "hash table for cref -> simVar";
       Boolean isAdjoint                                   "indicates if this is an adjoint jacobian";
@@ -98,9 +195,6 @@ public
     function toString
       input SimJacobian simJac;
       output String str = "";
-    protected
-      Integer idx;
-      list<Integer> dependencies;
     algorithm
       str := match simJac
         case SIM_JAC() algorithm
@@ -130,32 +224,8 @@ public
                 str := str + SimStrongComponent.Block.toString(eq, "  ");
               end for;
             end if;
-            str := str + "\n" + StringUtil.headline_4("Sparsity Pattern Cols");
-            if not listEmpty(simJac.sparsityT) then
-              for tpl in simJac.sparsityT loop
-                (idx, dependencies) := tpl;
-                str := str + "  " + intString(idx) + ":\t" + List.toString(dependencies, intString) + "\n";
-              end for;
-            end if;
-            str := str + "\n" + StringUtil.headline_4("Sparsity Pattern Rows");
-            if not listEmpty(simJac.sparsity) then
-              for tpl in simJac.sparsity loop
-                (idx, dependencies) := tpl;
-                str := str + "  " + intString(idx) + ":\t" + List.toString(dependencies, intString) + "\n";
-              end for;
-            end if;
-            str := str + "\n" + StringUtil.headline_4("Sparsity Coloring Columns");
-            if not listEmpty(simJac.coloring) then
-              for lst in simJac.coloring loop
-                str := str +  "  " + List.toString(lst, intString) + "\n";
-              end for;
-            end if;
-            str := str + "\n" + StringUtil.headline_4("Sparsity Coloring Rows");
-            if not listEmpty(simJac.rowColoring) then
-              for lst in simJac.rowColoring loop
-                str := str +  "  " + List.toString(lst, intString) + "\n";
-              end for;
-            end if;
+            str := str + "\n" + Sparsity.toString(simJac.sparsityMatrix);
+
             if not listEmpty(simJac.generic_loop_calls) then
               str := str + StringUtil.headline_3("Generic Calls");
               str := str + List.toString(simJac.generic_loop_calls, SimGenericCall.toString, List.Style.NEWLINE_INDENT);
@@ -240,10 +310,6 @@ public
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
           list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
-          UnorderedMap<ComponentRef, Integer> local_idx_map;
-          ComponentRef cref;
-          SparsityPattern sparsity, sparsityT;
-          SparsityColoring coloring, rowColoring;
           SimJacobian jac;
           UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
@@ -286,57 +352,26 @@ public
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
 
-          try
-            local_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
+          jac := SIM_JAC(
+            name                = jacobian.name,
+            jacobianIndex       = indices.jacobianIndex,
+            partitionIndex      = 0,
+            numberOfResultVars  = SimVars.numScalarElems(resVars),
+            columnEqns          = columnEqns,
+            constantEqns        = {},
+            columnVars          = tmpVars,
+            seedVars            = seedVars,
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity),
+            generic_loop_calls  = generic_loop_calls,
+            jac_map             = SOME(jac_map),
+            isAdjoint           = jacobian.isAdjoint,
+            isBidirectional     = false,
+            adjointJacobianIndex = -1,
+            adjointMatrixName   = ""
+          );
 
-            // build mappings from seed and result vars to local indices in the Jacobian
-            // always get the partner: SEED -> non-seed, pDer -> non-pDer that the sparsity pattern was built in the backend
-            for var in seedVars loop
-              cref := SimVar.getName(var);
-              if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
-                cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-              end if;
-              UnorderedMap.add(cref, var.index, local_idx_map);
-            end for;
-
-            for var in resVars loop
-              cref := SimVar.getName(var);
-              if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
-                cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
-              end if;
-              UnorderedMap.add(cref, var.index, local_idx_map);
-            end for;
-
-            (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, local_idx_map);
-
-            jac := SIM_JAC(
-              name                = jacobian.name,
-              jacobianIndex       = indices.jacobianIndex,
-              partitionIndex      = 0,
-              numberOfResultVars  = listLength(resVars),
-              columnEqns          = columnEqns,
-              constantEqns        = {},
-              columnVars          = tmpVars,
-              seedVars            = seedVars,
-              sparsity            = sparsity,
-              sparsityT           = sparsityT,
-              coloring            = coloring,
-              rowColoring         = rowColoring,
-              numColors           = listLength(coloring),
-              generic_loop_calls  = generic_loop_calls,
-              jac_map             = SOME(jac_map),
-              isAdjoint           = jacobian.isAdjoint,
-              isBidirectional     = false,
-              adjointJacobianIndex = -1,
-              adjointMatrixName   = ""
-            );
-
-            indices.jacobianIndex := indices.jacobianIndex + 1;
-            simJacobian := SOME(jac);
-          else
-            simJacobian := NONE();
-            Error.addCompilerWarning(getInstanceName() + " could not generate sparsity pattern of Jacobian " + NBJacobian.jacobianTypeString(jacobian.jacType) + ".");
-          end try;
+          indices.jacobianIndex := indices.jacobianIndex + 1;
+          simJacobian := SOME(jac);
         then simJacobian;
 
         else algorithm
@@ -478,82 +513,6 @@ public
       end if;
     end createOptimizationJacobian;
 
-    function createSparsity
-      input BackendDAE jacobian;
-      input UnorderedMap<ComponentRef, Integer> local_idx_map;
-      output SparsityPattern sparsity;
-      output SparsityPattern sparsityT;
-      output SparsityColoring coloring;
-      output SparsityColoring rowColoring;
-    algorithm
-      (sparsity, sparsityT, coloring, rowColoring) := match jacobian
-        local
-          Jacobian.SparsityPattern Bpattern;
-
-        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern) algorithm
-          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, local_idx_map);
-          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, local_idx_map);
-          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, local_idx_map);
-        then (sparsity, sparsityT, coloring, rowColoring);
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-        then fail();
-      end match;
-    end createSparsity;
-
-    function createSparsityPattern
-      input list<Jacobian.SparsityPatternCol> cols            "columns that need to be generated (can be used for rows too)";
-      input UnorderedMap<ComponentRef, Integer> local_idx_map "hash table cref --> index";
-      output SparsityPattern simPattern = {};
-    protected
-      ComponentRef cref;
-      list<ComponentRef> dependencies;
-      list<Integer> dep_indices;
-    algorithm
-      for col in cols loop
-        (cref, dependencies) := col;
-        // TODO: once this works consistently, strip aways these safety checks
-        if not UnorderedMap.contains(cref, local_idx_map) then
-          Error.addCompilerWarning(
-            getInstanceName() + ": column cref not found in Jacobian local_idx_map: " +
-            ComponentRef.toString(cref) + "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
-          fail();
-        end if;
-
-        dep_indices := {};
-        for dep in dependencies loop
-          // TODO: once this works consistently, strip aways these safety checks
-          if not UnorderedMap.contains(dep, local_idx_map) then
-            Error.addCompilerWarning(
-              getInstanceName() + ": dependency cref not found in Jacobian local_idx_map: " +
-              ComponentRef.toString(dep) + "\n\tWhile processing column: " + ComponentRef.toString(cref) +
-              "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
-            fail();
-          end if;
-          dep_indices := UnorderedMap.getOrFail(dep, local_idx_map) :: dep_indices;
-        end for;
-        simPattern := (UnorderedMap.getOrFail(cref, local_idx_map), List.sort(dep_indices, intGt)) :: simPattern;
-      end for;
-      simPattern := List.sort(simPattern, Util.compareTupleIntGt);
-    end createSparsityPattern;
-
-    function createSparsityColoring
-      input Jacobian.SparsityColoring coloring;
-      input UnorderedMap<ComponentRef, Integer> idx_map;
-      output SparsityColoring simColoringCols;
-      output SparsityColoring simColoringRows;
-    algorithm
-      (simColoringCols, simColoringRows) := match coloring
-        case Jacobian.SparsityColoring.SPARSITY_COLORING() then (
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
-        case Jacobian.SparsityColoring.SPARSITY_BICOLORING() then (
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols),
-          list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows));
-      end match;
-    end createSparsityColoring;
-
     function empty
       input String name = "";
       output SimJacobian emptyJac = EMPTY_SIM_JAC;
@@ -623,13 +582,14 @@ public
             columns             = {oldJacCol},
             seedVars            = SimVar.convertList(simJac.seedVars),
             matrixName          = simJac.name,
-            sparsity            = simJac.sparsity,
-            sparsityT           = simJac.sparsityT,
-            nonlinear           = {}, // kabdelhak: these have to be computed in the backend using the jacobian
+            sparsityMatrix      = Sparsity.convert(simJac.sparsityMatrix),
+            sparsity            = {},
+            sparsityT           = {},
+            nonlinear           = {},
             nonlinearT          = {},
-            coloredCols         = simJac.coloring,
-            coloredRows         = simJac.rowColoring,
-            maxColorCols        = simJac.numColors,
+            coloredCols         = {},
+            coloredRows         = {},
+            maxColorCols        = 0,
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
@@ -648,7 +608,8 @@ public
     end convert;
   end SimJacobian;
 
-  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE(), false, false, -1, "");
+  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {},
+    Sparsity.EMPTY(), {}, NONE(), false, false, -1, "");
 
   annotation(__OpenModelica_Interface="nbackend");
 end NSimJacobian;

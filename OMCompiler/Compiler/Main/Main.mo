@@ -386,9 +386,9 @@ algorithm
 end loadLib;
 
 protected function translateFile
-"This function invokes the translator on a source file.  The argument should be
-  a list with a single file name, with the rest of the list being an optional
-  list of libraries and .mo-files if the file is a .mo-file"
+  "This function invokes the translator on a source file.  The argument should be
+   a list with a single file name, with the rest of the list being an optional
+   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
 protected
   String f;
@@ -396,7 +396,9 @@ protected
   Absyn.Path cname;
   Boolean runBackend, runSilent;
   GlobalScript.Statements stmts;
-  String cls, fileNamePrefix;
+  String cls, fileNamePrefix, fmuVersion, fmuType, fmuPlatformsStr;
+  Integer fmuVersionInt;
+  list<String> fmuPlatforms, fmuTypeList;
 algorithm
   // Execute the given script if --cmd is used.
   if not stringEmpty(Flags.getConfigString(Flags.EXECUTE_COMMAND)) then
@@ -444,12 +446,30 @@ algorithm
         cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
         fileNamePrefix := Util.stringReplaceChar(AbsynUtil.pathString(cname), ".", "_");
 
-        runBackend := Config.simulationCg() or Config.simulation();
-        runSilent := Config.silent();
+        if Flags.getConfigBool(Flags.EXPORT_FMU) then
+          fmuVersionInt := Flags.getConfigEnum(Flags.FMU_VERSION);
+          fmuVersion := match fmuVersionInt
+            case 10 then "1.0";
+            case 20 then "2.0";
+            case 30 then "3.0";
+          end match;
+          FlagsUtil.setConfigString(Flags.FMI_VERSION, fmuVersion);
+          fmuTypeList := Flags.getConfigStringList(Flags.FMU_TYPE);
+          fmuType := stringDelimitList(fmuTypeList, "_");
+          fmuPlatformsStr := Flags.getConfigString(Flags.FMU_PLATFORMS);
+          fmuPlatforms := Util.stringSplitAtChar(fmuPlatformsStr, ",");
+          CevalScriptBackend.callBuildModelFMU(FCore.emptyCache(), FGraph.empty(), cname,
+            fmuVersion, fmuType, fileNamePrefix, true, fmuPlatforms, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          System.fflush();
+        else
+          runBackend := Config.simulationCg() or Config.simulation();
+          runSilent := Config.silent();
 
-        CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
-                                                                                fileNamePrefix, runBackend, runSilent, NONE());
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+                                                                                  fileNamePrefix, runBackend, runSilent, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+        end if;
       then ();
 
     /* Modelica script file .mos */

@@ -40,7 +40,7 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::SystemTime;
 
-use anyhow::{bail, Result};
+use metamodelica::Result;
 use arcstr::{literal, ArcStr};
 
 use metamodelica::{List, OrderedFloat};
@@ -448,7 +448,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
     // `readDataset` wrapper performed.
     let mut guard = match lock_reader(&filename)? {
         Some(g) => g,
-        None => bail!("readDataset: could not open {filename}"),
+        None => return Err("readDataset: could not open {filename}"),
     };
     match &mut guard.as_mut().unwrap().reader {
         ResultReader::Mat(reader) => {
@@ -458,7 +458,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
             } else if reader.nrows as i32 != dim {
                 drop(guard);
                 err(&ERROR_DIMSIZE_MISMATCH, [])?;
-                bail!("readDataset: dimension size mismatch for {filename}");
+                return Err("readDataset: dimension size mismatch for {filename}");
             }
             let dim = dim as usize;
             let mut rows: Vec<Arc<Values::Value>> = Vec::new();
@@ -468,7 +468,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                     None => {
                         drop(guard);
                         err(&ERROR_COULD_NOT_READ_VAR, [var.clone(), filename.clone()])?;
-                        bail!("readDataset: variable {var} not found in {filename}");
+                        return Err("readDataset: variable {var} not found in {filename}");
                     }
                 };
                 let info = &reader.allInfo[idx];
@@ -484,7 +484,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                         None => {
                             drop(guard);
                             err(&ERROR_COULD_NOT_READ_VAR, [var.clone(), filename.clone()])?;
-                            bail!("readDataset: could not read variable {var} in {filename}");
+                            return Err("readDataset: could not read variable {var} in {filename}");
                         }
                     };
                     (0..dim).map(|i| mk_real(vals[i])).collect()
@@ -503,12 +503,12 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                 let Some(interval) = interval else {
                     drop(guard);
                     err(&ERROR_PLT_INTERVAL_READ, [])?;
-                    bail!("readDataset: could not read interval size of {filename}");
+                    return Err("readDataset: could not read interval size of {filename}");
                 };
                 if interval as i32 != dimsize {
                     drop(guard);
                     err(&ERROR_PLT_INTERVAL_MISMATCH, [])?;
-                    bail!("readDataset: interval size not matching data size for {filename}");
+                    return Err("readDataset: interval size not matching data size for {filename}");
                 }
                 interval
             };
@@ -517,7 +517,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                 let Some(vals) = reader.dataset(var.as_str(), dim) else {
                     drop(guard);
                     err(&ERROR_PLT_VAR_NOT_FOUND, [var.clone()])?;
-                    bail!("readDataset: variable {var} not found in {filename}");
+                    return Err("readDataset: variable {var} not found in {filename}");
                 };
                 rows.push(make_array(vals.into_iter().map(mk_real).collect()));
             }
@@ -536,7 +536,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                     _ => {
                         drop(guard);
                         err(&ERROR_COULD_NOT_READ_VAR, [var.clone(), filename.clone()])?;
-                        bail!("readDataset: could not read variable {var} in {filename}");
+                        return Err("readDataset: could not read variable {var} in {filename}");
                     }
                 };
                 rows.push(make_array(col.iter().copied().map(mk_real).collect()));

@@ -1,7 +1,7 @@
 // name: problem2
 // keywords: omsi omsic fmu fmi
 // status: correct
-// teardown_command: rm -rf problem2.fmutmp problem2.fmu problem2_systemCall.log problem2_result_diff.log problem2*res.mat problem2-tmp *.fmutmp/ *.bin
+// teardown_command: rm -rf problem2.fmutmp problem2.fmu problem2_systemCall.log problem2_result_diff.log problem2*res.mat problem2-tmp *.fmutmp *.bin
 // cflags: -d=-newInst
 //
 // Tests simulating OMSIC OMSU/FMU with OMSimulator and check results
@@ -49,7 +49,7 @@ compareSimulationResults("problem2_OMS_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -61,11 +61,17 @@ compareSimulationResults("problem2_OMS_res.mat",
 // ""
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
+// "info:    *** FMU Simulation Info ***
+//           - model:     problem2 (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'problem2.root': 0.002000
 // info:    Result file: problem2_OMS_res.mat (bufferSize=1)
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 505 NumRhsEvals  = 510 NumLinSolvSetups = 30
-//          NumNonlinSolvIters = 509 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// info:    Final Statistics for 'problem2.root':
+//          NumSteps = 502 NumRhsEvals  = 505 NumLinSolvSetups = 27
+//          NumNonlinSolvIters = 504 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // {"Files Equal!"}
 // endResult

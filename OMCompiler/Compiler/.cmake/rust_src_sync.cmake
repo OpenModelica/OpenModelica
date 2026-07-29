@@ -22,6 +22,22 @@ foreach(_rel ${_lines})
   file(COPY ${SRC}/${_rel} DESTINATION ${DST}/${_dir})
 endforeach()
 
+# Clean up files removed from the source tree (so cargo doesn't pick up stale build.rs).
+get_filename_component(MANIFEST_DIR ${MANIFEST} DIRECTORY)
+set(_removed_file ${MANIFEST_DIR}/rust_src_removed.txt)
+if(EXISTS ${_removed_file})
+  file(STRINGS ${_removed_file} _removed_lines)
+  foreach(_rel ${_removed_lines})
+    string(STRIP "${_rel}" _rel)
+    if(_rel STREQUAL "" OR _rel MATCHES "^#")
+      continue()
+    endif()
+    if(EXISTS ${DST}/${_rel})
+      file(REMOVE ${DST}/${_rel})
+    endif()
+  endforeach()
+endif()
+
 # Builtin .mo that openmodelica_wasi include_str!s via ../../../{FrontEnd,NFFrontEnd}
 # (paths reaching past the crate tree into Compiler/); mirror them beside the copy
 # at the same relative depth. Keep in sync with openmodelica_wasi/src/lib.rs.

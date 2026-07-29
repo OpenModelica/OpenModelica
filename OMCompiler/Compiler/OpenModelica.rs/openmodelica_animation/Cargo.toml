@@ -1,0 +1,12 @@
+[package]
+name = "openmodelica_animation"
+version = "0.1.0"
+edition = "2024"
+
+# Reusable MultiBody-visualization core: parses the `<model>_visual.xml` that
+# `-d=visxml` emits and turns it, together with a simulation result, into
+# per-shape world transforms. Renderer- and host-agnostic (no GPU, no wasm):
+# the web client feeds it the wasm-jit result, native clients a MAT reader.
+
+[dependencies]
+roxmltree.workspace = true

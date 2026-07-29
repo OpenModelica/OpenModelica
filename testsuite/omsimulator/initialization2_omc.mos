@@ -1,7 +1,7 @@
 // name : initialization2_omc.mos
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2/
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2
 
 setCommandLineOptions("-g=MetaModelica");
 

@@ -1376,10 +1376,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       sprintf(buffer, "%s_nonlinsys%d_equidistant_local_homotopy.csv", data->modelData->modelFilePrefix, sysNumber);
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
       pFile = omc_fopen(buffer, "wt");
-      fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
-      for(j=0; j<nonlinsys->size; ++j)
-        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
-      fprintf(pFile, "\n");
+      if (pFile) {
+        fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
+        for(j=0; j<nonlinsys->size; ++j)
+          fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
+        fprintf(pFile, "\n");
+      }
     }
 #endif
 
@@ -1400,10 +1402,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       if(OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
       {
         infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
-        fprintf(pFile, "%.16g", data->simulationInfo->lambda);
-        for(j=0; j<nonlinsys->size; ++j)
-          fprintf(pFile, "%s%.16g", sep, nonlinsys->nlsx[j]);
-        fprintf(pFile, "\n");
+        if (pFile) {
+          fprintf(pFile, "%.16g", data->simulationInfo->lambda);
+          for(j=0; j<nonlinsys->size; ++j)
+            fprintf(pFile, "%s%.16g", sep, nonlinsys->nlsx[j]);
+          fprintf(pFile, "\n");
+        }
       }
 #endif
     }
@@ -1411,7 +1415,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #if !defined(OMC_NO_FILESYSTEM)
     if(OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
     {
-      fclose(pFile);
+      if (pFile) fclose(pFile);
     }
 #endif
     data->simulationInfo->homotopySteps += init_lambda_steps;

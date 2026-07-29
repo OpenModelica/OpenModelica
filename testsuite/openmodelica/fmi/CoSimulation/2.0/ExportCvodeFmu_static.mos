@@ -47,7 +47,13 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // ""
 // 0
 // ""
-// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// "info:    *** FMU Simulation Info ***
+//           - model:     Pendulum (co-simulation)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
 // LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
@@ -60,16 +66,16 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
 // info:    Result file: Pendulum_static_res.mat (bufferSize=1)
-// info:    Parameter model.root.Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter Pendulum.root.Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter Pendulum.root.Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
 // "
 // ""
 // 0.0
 // ""
 // 0.0
 // ""
-// -2.591643977798211
+// -2.5807275314932316
 // ""
-// 3.178793199957211
+// 3.1739934192737635
 // ""
 // endResult

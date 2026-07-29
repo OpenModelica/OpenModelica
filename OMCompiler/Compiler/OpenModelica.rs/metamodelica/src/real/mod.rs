@@ -1,7 +1,7 @@
 //! Real arithmetic, comparison and conversion builtins.
 //! The shortest-round-trip string formatter lives in [`ryu`].
 
-use anyhow::{Result, bail};
+use crate::Result;
 use ordered_float::OrderedFloat;
 use crate::Real;
 
@@ -44,7 +44,7 @@ pub fn realDiv(r1: Real, r2: Real) -> Real {
 #[inline(always)]
 pub fn real_div_checked(r1: Real, r2: Real) -> Result<Real> {
     if r2.0 == 0.0 {
-        bail!("Real division by zero");
+        return Err("Real division by zero");
     }
     Ok(r1 / r2)
 }

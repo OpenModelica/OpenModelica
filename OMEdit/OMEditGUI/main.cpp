@@ -117,7 +117,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#elif defined(__EMSCRIPTEN__) // wasm: no execinfo/backtrace, no addr2line subprocess
+#elif defined(__EMSCRIPTEN__) || (defined(__linux__) && !defined(__GLIBC__)) // wasm, and musl libc (e.g. Alpine): no execinfo/backtrace, no addr2line subprocess
 
 #include <signal.h>
 void signalHandler(int signalNumber)
@@ -125,7 +125,7 @@ void signalHandler(int signalNumber)
   exit(signalNumber);
 }
 
-#else // Unix
+#else // Unix with execinfo.h (glibc, macOS, FreeBSD, ...)
 
 #include <signal.h>
 #include <execinfo.h>

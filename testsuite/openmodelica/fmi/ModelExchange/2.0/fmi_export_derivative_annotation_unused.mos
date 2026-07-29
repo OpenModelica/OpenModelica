@@ -1,0 +1,56 @@
+// name: fmi_export_derivative_annotation_unused.mos
+// keywords: FMI 2.0 export, directional derivatives, derivative annotation
+// status: correct
+// teardown_command: rm -rf MUnusedDer.fmu MUnusedDer.log MUnusedDer_info.json *.fmutmp
+
+// Nothing in the DAE calls the function a derivative annotation points to, so
+// removeUnusedFunctions used to drop it. The symbolic differentiation of the jacobian
+// calls it later on though, and then the generated code refers to a function that was
+// never emitted.
+
+setCommandLineOptions("-d=-disableDirectionalDerivatives");
+getErrorString();
+
+loadString("
+package Min
+  function f
+    input Real x;
+    input Real k;
+    output Real y;
+  algorithm
+    y := k*x*x;
+    annotation(Inline=false, derivative(order=1, zeroDerivative=k) = f_der);
+  end f;
+
+  function f_der
+    input Real x;
+    input Real k;
+    input Real dx;
+    output Real dy;
+  algorithm
+    dy := 2*k*x*dx;
+    annotation(Inline=false);
+  end f_der;
+
+  model MUnusedDer
+    parameter Real p = 2 \"seeded as initial unknown\";
+    Real s(start=1, fixed=true);
+    output Real y;
+  equation
+    der(s) = -s + f(p, 3.0);
+    y = s + f(p, 3.0);
+  end MUnusedDer;
+end Min;
+"); getErrorString();
+
+// compiles the FMU, i.e. fails if the jacobian calls a function that is not emitted
+buildModelFMU(Min.MUnusedDer, version="2.0", fmuType="me"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "MUnusedDer.fmu"
+// ""
+// endResult

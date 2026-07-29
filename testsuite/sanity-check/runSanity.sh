@@ -40,13 +40,13 @@ while [ "$#" -gt 0 ]; do
 done
 
 # Normalize clean
-case "${CLEAN,,}" in
+case "$(printf '%s' "$CLEAN" | tr '[:upper:]' '[:lower:]')" in
   true|1|yes) CLEAN="true";;
   *) CLEAN="false";;
 esac
 
 # Normalize simCode target (accepts C or Cpp only)
-lc_sim="${SIM_CODE_TARGET,,}"
+lc_sim="$(printf '%s' "$SIM_CODE_TARGET" | tr '[:upper:]' '[:lower:]')"
 case "$lc_sim" in
   c) SIM_CODE_TARGET="C";;
   cpp) SIM_CODE_TARGET="Cpp";;

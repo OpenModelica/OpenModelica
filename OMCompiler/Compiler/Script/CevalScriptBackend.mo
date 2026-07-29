@@ -570,7 +570,8 @@ algorithm
   start_time := Expression.toReal(options.startTime);
   stop_time := Expression.toReal(options.stopTime);
   options.stepSize := DAE.RCONST(interval);
-  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval));
+  // Round to nearest integer
+  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval + 0.5));
 end setSimulationOptionsInterval;
 
 protected function simOptionsAsString
@@ -684,6 +685,7 @@ algorithm
       array<list<Integer>> m;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,v,v1,v2;
+      SimCode.SimulationSettings simSettings;
       Integer i,i1,resI;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel, direction;
@@ -1263,9 +1265,10 @@ algorithm
     case ("translateModelFMU", _)
       then Values.STRING("");
 
-    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
+    case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+        simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings));
       then
         ret_val;
 
@@ -1570,8 +1573,11 @@ algorithm
       algorithm
         p := SymbolTable.getAbsyn();
         absynClass := ProgramUtil.getPathedClassInProgram(classpath, p);
-        p := copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
-        SymbolTable.setAbsyn(p);
+        within_ := InteractiveUtil.parseWithinPath(path);
+        p := copyClass(absynClass, name, within_, classpath, p);
+        absynClass := ProgramUtil.getPathedClassInProgram(
+          match within_ case Absyn.WITHIN() then ProgramUtil.joinPaths(name, within_.path); else Absyn.IDENT(name); end match, p);
+        SymbolTable.setAbsynLoaded(p, Absyn.PROGRAM({absynClass}, within_));
       then
         Values.BOOL(true);
 
@@ -2723,7 +2729,11 @@ algorithm
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
         (p, b) := InteractiveUtil.setElementModifier(classpath, path, mod, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        if b then
+          SymbolTable.setAbsynClass(p, ProgramUtil.getPathedClassInProgram(classpath, p), classpath);
+        else
+          SymbolTable.setAbsyn(p);
+        end if;
       then
         Values.BOOL(b);
 
@@ -3325,7 +3335,7 @@ algorithm
     case ("deleteClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (b, p) := Interactive.deleteClass(classpath, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynDeleted(p, classpath);
       then
         ValuesMake.makeBoolean(b);
 
@@ -3741,6 +3751,10 @@ algorithm
     case (_, _)
       guard Error.getNumErrorMessages() == numError
       algorithm
+        // A user cancel unwinds with its message rolled back by the failed
+        // speculation above; re-emit it here (the accepted branch) so it is not
+        // masked by the generic "no error message" below.
+        Error.checkCancel();
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Instantiation of " + AbsynUtil.pathString(className) + " failed with no error message."});
         FlagsUtil.set(Flags.SCODE_INST, nf_inst_actual);
@@ -4624,6 +4638,25 @@ protected function OMGraphics_writePlacedConnectorIconPNG
   external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
 end OMGraphics_writePlacedConnectorIconPNG;
 
+protected function fmuSimulationSettings
+  "The SimulationSettings an FMU export runs with: the model's experiment defaults,
+   with `method` folded in when it is not \"<default>\" (a Co-Simulation FMU embeds
+   its integrator, so the solver is chosen at export time)."
+  input Absyn.Path className;
+  input String inFileNamePrefix;
+  input String method = "<default>";
+  output SimCode.SimulationSettings simSettings;
+protected
+  String filenameprefix;
+algorithm
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  simSettings := convertSimulationOptionsToSimCode(
+    buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions)));
+  if method <> "<default>" then
+    simSettings.method := method;
+  end if;
+end fmuSimulationSettings;
+
 protected function buildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -4657,7 +4690,7 @@ algorithm
   end if;
 end buildModelFMU;
 
-protected function callBuildModelFMU
+public function callBuildModelFMU
  " Author: Frenkel TUD
    Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
@@ -4675,12 +4708,13 @@ protected
   Boolean success;
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
-  InteractiveTypes.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
+  // platforms={"wasm"} routes to the fmi-ls-wasm component export (Model Exchange).
+  Boolean isWasmFMU = listMember("wasm", platforms);
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4714,8 +4748,12 @@ algorithm
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else
-    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
-    simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
+    simSettings := fmuSimulationSettings(className, inFileNamePrefix);
+  end if;
+  // The wasm FMU export uses the wasm-jit code generator; the flag change is
+  // reverted by buildModelFMU's saveFlags wrapper.
+  if isWasmFMU then
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
@@ -4740,6 +4778,17 @@ algorithm
   fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
+
+  // wasm FMU: CodegenWasmJit.emitMeFmu already wrote the self-contained
+  // <name>.fmu (component linked in Rust, ZIP assembled in Rust) — nothing to
+  // build or zip. Just confirm it exists.
+  if isWasmFMU then
+    if not System.regularFileExists(fmuTargetName + ".fmu") then
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
+      outValue := Values.STRING("");
+    end if;
+    return;
+  end if;
 
   // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
   // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to

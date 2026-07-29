@@ -224,41 +224,9 @@ buildModel(AdjointJacobian2); getErrorString();
 //   (27) Algorithm
 //   $pDER_ODE_JAC_ADJ.k := $pDER_ODE_JAC_ADJ.k .+ transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k;
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{1, 3, 4}
-//   1:	{3, 4}
-//   2:	{3, 4}
-//   3:	{3, 4}
-//   4:	{3, 4}
-//   5:	{5}
-//   6:	{6}
-//   7:	{7}
+// Resizable Sparsity Pattern
+// ----------------------------
 //
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{}
-//   1:	{0}
-//   2:	{}
-//   3:	{0, 1, 2, 3, 4}
-//   4:	{0, 1, 2, 3, 4}
-//   5:	{5}
-//   6:	{6}
-//   7:	{7}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {2, 1, 0, 7, 6, 5}
-//   {3}
-//   {4}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0, 7, 6, 5}
-//   {1}
-//   {2}
-//   {3}
-//   {4}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)

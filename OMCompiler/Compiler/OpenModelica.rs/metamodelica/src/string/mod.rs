@@ -2,7 +2,7 @@
 //! `substring`. Hashing lives in [`hash`], URI resolution in [`uri`].
 
 use std::sync::Arc;
-use anyhow::{Result, bail};
+use crate::Result;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
 use crate::{Real, list::List};
@@ -19,11 +19,11 @@ pub fn stringCharInt(ch: ArcStr) -> Result<i32> {
     // may span several bytes (e.g. "ö"). Count chars, not bytes, and return its
     // code point.
     if ch.chars().count() != 1 {
-        bail!("stringCharInt expects a single-character string, got '{}'", ch);
+        return Err("stringCharInt expects a single-character string, got '{}'");
     };
     ch.chars().next()
         .map(|c| c as i32)
-        .ok_or_else(|| anyhow::anyhow!("Failed to get character from string: {}", ch))
+        .ok_or_else(|| "Failed to get character from string: {}")
 }
 
 /// Returns a single-character string from an ASCII code point.
@@ -39,7 +39,7 @@ pub fn intStringChar(i: i32) -> ArcStr {
 pub fn stringInt(str: ArcStr) -> Result<i32> {
     str.trim_start_matches(c_isspace)
         .parse::<i32>()
-        .map_err(|_| anyhow::anyhow!("Failed to parse integer from string: {}", str))
+        .map_err(|_| "Failed to parse integer from string: {}")
 }
 
 /// The C-locale `isspace` set that `strtol`/`strtod` skip before a number.
@@ -59,7 +59,7 @@ pub fn stringReal(str: ArcStr) -> Result<Real> {
     str.trim_start_matches(c_isspace)
         .parse::<f64>()
         .map(OrderedFloat)
-        .map_err(|_| anyhow::anyhow!("Failed to parse real from string: {}", str))
+        .map_err(|_| "Failed to parse real from string: {}")
 }
 
 /// Converts a string to a list of single-character strings.
@@ -119,7 +119,7 @@ pub fn stringGet(str: ArcStr, index: i32) -> Result<i32> {
     let idx = (index - 1) as usize; // 1-based to 0-based
     str.bytes().nth(idx)
         .map(|b| b as i32)
-        .ok_or_else(|| anyhow::anyhow!("Index {} out of bounds for string of length {}", index, str.len()))
+        .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
 
 /// Returns the character at the given 1-based index as a string.
@@ -127,19 +127,19 @@ pub fn stringGetStringChar(str: ArcStr, index: i32) -> Result<ArcStr> {
     let idx = (index - 1) as usize; // 1-based to 0-based
     str.chars().nth(idx)
         .map(|c| format!("{}", c))
-        .ok_or_else(|| anyhow::anyhow!("Index {} out of bounds for string of length {}", index, str.chars().count()))
+        .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
 
 /// Updates the character at the given 1-based index with newch.
 /// newch should be a single character.
 pub fn stringUpdateStringChar(str: ArcStr, newch: ArcStr, index: i32) -> Result<ArcStr> {
     if newch.is_empty() {
-        bail!("newch must not be empty");
+        return Err("newch must not be empty");
     }
     let idx = (index - 1) as usize; // 1-based to 0-based
     let mut chars: Vec<char> = str.chars().collect();
     if idx >= chars.len() {
-        bail!("Index {} out of bounds for string with {} characters", index, chars.len());
+        return Err("Index {} out of bounds for string with {} characters");
     }
     let new_char = newch.chars().next().unwrap_or(' ');
     chars[idx] = new_char;
@@ -189,7 +189,7 @@ pub fn stringCompare(s1: ArcStr, s2: ArcStr) -> i32 {
 /// Fails for bogus start/stop values.
 pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
     if start < 1 || stop < start || start > stop {
-        bail!("Invalid substring range: start={}, stop={}", start, stop);
+        return Err("Invalid substring range: start={}, stop={}");
     }
     // `substring` is byte-indexed to match the rest of the MetaModelica
     // string surface (stringLength returns bytes via `.len()`, stringGet
@@ -201,7 +201,7 @@ pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
     let start_idx = (start - 1) as usize; // 1-based to 0-based
     let stop_idx = stop as usize;         // 1-based, inclusive -> exclusive
     if stop_idx > str.len() {
-        bail!("Stop index {} exceeds string length {}", stop, str.len());
+        return Err("Stop index {} exceeds string length {}");
     }
     match str.get(start_idx..stop_idx) {
         Some(slice) => Ok(ArcStr::from(slice)),
@@ -209,10 +209,7 @@ pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
         // no valid string to return. Surface this rather than silently
         // producing nonsense; the call site should be rewritten to use
         // codepoint indices if that's what it meant.
-        None => bail!(
-            "substring({}, {}) does not fall on UTF-8 character boundaries",
-            start, stop
-        ),
+        None => return Err("substring({}, {}) does not fall on UTF-8 character boundaries"),
     }
 }
 

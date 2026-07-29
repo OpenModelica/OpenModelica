@@ -1,22 +1,22 @@
 // name : initialization_omc.mos
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization/
+// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization
 
 setCommandLineOptions("-g=MetaModelica");
 
 loadString("
 model initialization
-  output Real y = x;
-  parameter Real x_start = 1.0;
+	output Real y = x;
+	parameter Real x_start = 1.0;
 protected
-  Real x(start=x_start, fixed=true);
-  Real w(fixed=false);
+	Real x(start=x_start, fixed=true);
+	Real w(fixed=false);
 initial equation
-  w = x;
+	w = x;
 equation
-  der(x) = time;
-  der(w) = 2*time;
+	der(x) = time;
+	der(w) = 2*time;
 end initialization;");
 getErrorString();
 
@@ -76,9 +76,9 @@ unloadOMSimulator();
 // info:      A.w:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       2.000499666333917
-// info:      A.w:       2.5009993326679916
+// info:      A.x:       2.0004999999999176
+// info:      A.w:       2.5009999999999915
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 52
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
 //          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // endResult

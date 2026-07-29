@@ -1,0 +1,45 @@
+// name: terminateTest
+// keywords: fmu export import terminate
+// status: correct
+// teardown_command: rm -rf terminateTest.fmu terminateTest.log terminateTest_systemCall.log terminateTest_info.json terminateTest_res.mat/
+
+loadString("
+  model terminateTest
+    Real x;
+  algorithm
+    when time > 1.2 then
+      terminate(\"Terminated.\");
+    end when;
+  equation
+    der(x) = -x;
+  end terminateTest;
+"); getErrorString();
+
+buildModelFMU(terminateTest, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator terminateTest.fmu --stopTime=1.5 --resultFile=terminateTest_res.mat --suppressPath=true", "terminateTest_systemCall.log");
+readFile("terminateTest_systemCall.log");
+
+
+// Result:
+// true
+// ""
+// "terminateTest.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// "info:    *** FMU Simulation Info ***
+//           - model:     terminateTest (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  1.500000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'terminateTest.root': 0.002000
+// info:    Result file: terminateTest_res.mat (bufferSize=1)
+// [<interactive>:6:7-6:31:writable]Modelica Terminate: Terminated.!
+// info:    Simulation terminated by FMU terminateTest.root.terminateTest at time 1.200000
+// info:    Final Statistics for 'terminateTest.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult

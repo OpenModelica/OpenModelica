@@ -449,14 +449,14 @@ public
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_REAL())
           algorithm
-            unit := Util.applyOptionOrDefault(varAttr.unit, Expression.stringValue, "");
-            displayUnit := Util.applyOptionOrDefault(varAttr.displayUnit, Expression.stringValue, "");
-            min := varAttr.min;
-            max := varAttr.max;
-            start := varAttr.start;
-            nominal := varAttr.nominal;
+            unit        := Util.applyOptionOrDefault(Util.applyOption(varAttr.unit,        Binding.getTypedExp), Expression.stringValue, "");
+            displayUnit := Util.applyOptionOrDefault(Util.applyOption(varAttr.displayUnit, Binding.getTypedExp), Expression.stringValue, "");
+            min         := Util.applyOption(varAttr.min,     Binding.getTypedExp);
+            max         := Util.applyOption(varAttr.max,     Binding.getTypedExp);
+            start       := Util.applyOption(varAttr.start,   Binding.getTypedExp);
+            nominal     := Util.applyOption(varAttr.nominal, Binding.getTypedExp);
             // FIXME parameters have default fixed = true
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
+            isFixed     := Util.applyOptionOrDefault(Util.applyOption(varAttr.fixed, Binding.getTypedExp), Expression.isAllTrue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
@@ -471,18 +471,18 @@ public
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_INT())
           algorithm
-            min := varAttr.min;
-            max := varAttr.max;
-            start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
+            min     := Util.applyOption(varAttr.min,   Binding.getTypedExp);
+            max     := Util.applyOption(varAttr.max,   Binding.getTypedExp);
+            start   := Util.applyOption(varAttr.start, Binding.getTypedExp);
+            isFixed := Util.applyOptionOrDefault(Util.applyOption(varAttr.fixed, Binding.getTypedExp), Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_BOOL())
           algorithm
-            start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
+            start   := Util.applyOption(varAttr.start, Binding.getTypedExp);
+            isFixed := Util.applyOptionOrDefault(Util.applyOption(varAttr.fixed, Binding.getTypedExp), Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -495,18 +495,18 @@ public
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_STRING())
           algorithm
-            start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
+            start   := Util.applyOption(varAttr.start, Binding.getTypedExp);
+            isFixed := Util.applyOptionOrDefault(Util.applyOption(varAttr.fixed, Binding.getTypedExp), Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_ENUMERATION())
           algorithm
-            min := varAttr.min;
-            max := varAttr.max;
-            start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
+            min     := Util.applyOption(varAttr.min,   Binding.getTypedExp);
+            max     := Util.applyOption(varAttr.max,   Binding.getTypedExp);
+            start   := Util.applyOption(varAttr.start, Binding.getTypedExp);
+            isFixed := Util.applyOptionOrDefault(Util.applyOption(varAttr.fixed, Binding.getTypedExp), Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -1284,6 +1284,19 @@ public
         then fail();
       end match;
     end getStrongComponentVars;
+
+  public
+    function numScalarElems
+      "Total scalar element count across a list of SimVars, independent of the
+       codegen target.  Unlike listScalarSize, always returns the product of
+       dimension sizes (not listLength).  Used by NBackEnd Jacobian generation
+       to compute the correct number of columns/rows when --simCodeScalarize=false
+       yields array SimVars (e.g. x[100] is one SimVar with numArrayElement=[100])."
+      input list<SimVar> vars;
+      output Integer n;
+    algorithm
+      n := sum(product(Expression.integerValueOrDefault(e, 1) for e in v.numArrayElement) for v in vars);
+    end numScalarElems;
 
   protected
     function getVars

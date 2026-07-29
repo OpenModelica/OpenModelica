@@ -180,7 +180,7 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements));
+    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
 
     // apply on bindings (is this necessary?)
     varData := match varData
@@ -238,6 +238,23 @@ public
       else exp;
     end match;
   end applySimpleExp;
+
+  function applySimpleCref
+    "Needs to be used as funcCref in Equation.map() to replace crefs that appear
+    as direct ComponentRef arguments (e.g. the state variable of a reinit statement)."
+    input output ComponentRef cref;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    Expression replacement;
+  algorithm
+    if UnorderedMap.contains(cref, replacements) then
+      replacement := UnorderedMap.getOrFail(cref, replacements);
+      cref := match replacement
+        case Expression.CREF() then replacement.cref;
+        else cref;
+      end match;
+    end if;
+  end applySimpleCref;
 
   function applySimpleVar
     "applys replacement on the variable binding expression"

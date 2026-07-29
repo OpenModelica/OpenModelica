@@ -443,7 +443,10 @@ public
           if BVariable.isBound(c_var) then
             BVariable.setBindingAsStart(c_var, true);
           end if;
-          (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          // Only recurse for record children; scalar children are already handled by the parameters pass
+          if BVariable.isRecord(c_var) then
+            (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+          end if;
         end for;
       end if;
 
@@ -453,7 +456,6 @@ public
       if not BVariable.hasEvaluableBinding(var) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
-        // generate equation only if variable is fixed
         if BVariable.isFixed(var) then
           parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
         end if;
@@ -828,6 +830,7 @@ public
         Equation new_eqn;
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
+        Algorithm alg;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -855,11 +858,15 @@ public
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
       // reduce the body of algorithms
-      case Equation.ALGORITHM() algorithm
-        stmts := removeWhenEquationAlgorithmBody(eqn.alg.statements);
+      case Equation.ALGORITHM(alg = alg) algorithm
+        stmts := removeWhenEquationAlgorithmBody(alg.statements);
         if not listEmpty(stmts) then
-          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
-          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+          // update alg in-place to preserve original equation kind: re-evaluating via
+          // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
+          alg.statements := stmts;
+          eqn.alg := Algorithm.setInputsOutputs(alg);
+          eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+          new_eqn := eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;

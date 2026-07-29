@@ -4,55 +4,38 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Simulator</title>
+<link rel="stylesheet" href="../theme.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg:#1e1e1e; --panel:#252526; --border:#333; --fg:#d4d4d4; --muted:#8a8a8a;
-    --accent:#23afe5; --accent-2:#0e639c; --teal:#4ec9b0; --err:#f48771;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; }
-  body {
-    font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    background:var(--bg); color:var(--fg);
-    display:flex; flex-direction:column; height:100vh; overflow:hidden;
-  }
-  header {
-    flex:0 0 auto; display:flex; align-items:center; gap:10px;
-    padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--border);
-  }
-  header .title { color:var(--teal); font-weight:650; }
-  header .status { color:var(--muted); flex:1; min-width:0; overflow:hidden;
-    text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
-  header .status.err { color:var(--err); }
-  header .status.busy { color:var(--accent); }
-  button {
-    background:var(--accent-2); color:#fff; border:0; border-radius:4px;
-    padding:7px 16px; font:inherit; font-size:15px; cursor:pointer;
-  }
-  button:hover:not(:disabled){ background:#1177bb; }
-  button:disabled{ background:#3a3a3a; color:#777; cursor:default; }
-  button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
-  button.ghost:hover:not(:disabled){ background:#2d2d30; }
 
   main { flex:1 1 auto; display:grid; grid-template-columns:minmax(320px,40%) 1fr; min-height:0; }
   .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow:hidden; }
   .right { display:flex; flex-direction:column; min-height:0; }
-
-  .section-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
-    color:var(--muted); padding:9px 12px 4px; flex:0 0 auto; }
+  /* Documentation column, shown only when the screen is wide enough (see below). */
+  .docs { display:none; flex-direction:column; min-height:0; border-left:1px solid var(--border); }
+  .docs-head { display:flex; align-items:center; gap:6px; padding-right:4px; flex:0 0 auto; }
+  .docs-head .section-label { flex:1 1 auto; }
+  .doc-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer;
+    padding:6px 8px; display:inline-flex; align-items:center; justify-content:center; }
+  .doc-toggle:hover { color:var(--fg); }
+  .doc-toggle svg { width:16px; height:16px; display:block; transition:transform .15s; }
+  .doc-expand { display:none; }                 /* the collapsed-rail reopen button (desktop) */
+  .doc-body { flex:1 1 auto; overflow-y:auto; padding:4px 14px 16px; font-size:13.5px; line-height:1.5; }
+  .doc-body.empty { color:var(--muted); display:grid; place-items:center; text-align:center; }
+  .doc-body img, .doc-body svg { max-width:100%; height:auto; }
+  .doc-body a { color:var(--accent); }
+  .doc-body table { border-collapse:collapse; max-width:100%; display:block; overflow-x:auto; }
+  .doc-body td, .doc-body th { border:1px solid var(--border); padding:3px 6px; }
+  .doc-body pre, .doc-body code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; }
+  .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
+  .editor-label { display:flex; align-items:center; gap:10px; }
+  .editor-label > span { flex:1 1 auto; }
+  .ex-select { text-transform:none; letter-spacing:normal; width:auto; min-width:0; max-width:60%;
+    background:#1b1b1b; color:var(--fg); border:1px solid var(--border); border-radius:4px;
+    padding:3px 6px; font:inherit; font-size:12px; }
   textarea {
     flex:1 1 auto; resize:none; border:0; outline:none; min-height:120px;
     background:#1b1b1b; color:var(--fg); padding:10px 12px;
     font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2;
-  }
-
-  .panel { flex:0 0 auto; border-top:1px solid var(--border); background:var(--panel); }
-  .grid2 { padding:10px 12px; display:grid; grid-template-columns:auto 1fr auto 1fr; gap:9px 10px; align-items:center; }
-  .grid2 label { color:var(--muted); font-size:14px; white-space:nowrap; }
-  input, select {
-    background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
-    border-radius:4px; padding:6px 8px; font:inherit; font-size:15px; width:100%; min-width:0;
   }
   /* log-scale tolerance stepper */
   .stepper { display:flex; align-items:stretch; gap:0; }
@@ -63,89 +46,93 @@
   .stepper button:last-child { border-radius:0 4px 4px 0; }
   .stepper button:hover { background:#2d2d30; }
 
+  /* Simulation-settings dialog (opened by the cogwheel). */
+  .modal-backdrop { position:fixed; inset:0; z-index:50; display:grid; place-items:center;
+    background:#0008; padding:16px; }
+  .modal-backdrop[hidden] { display:none; }
+  .modal { background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    width:min(460px,100%); box-shadow:0 14px 44px #000a; }
+  .modal-head { display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; border-bottom:1px solid var(--border); font-weight:650; color:var(--fg); }
+  .modal-body { padding:14px; display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; }
+  .modal-body > label { color:var(--muted); }
+  .modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+    border-radius:4px; padding:3px 6px; font:inherit; }
+  .modal-body select:disabled { opacity:.5; }
+  .chk-group { display:flex; flex-direction:column; gap:6px; }
+  .chk { display:flex; align-items:center; gap:7px; color:var(--fg); }
+  .chk input { width:auto; }
+  .modal-foot { display:flex; justify-content:flex-end; gap:8px;
+    padding:12px 14px; border-top:1px solid var(--border); }
+  .modal-hint { grid-column:1 / -1; color:var(--muted); font-size:12px; margin:0; }
+
   #icPanel { max-height:34%; overflow-y:auto; }
-  .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:minmax(0,1fr) 108px auto; gap:7px 10px; align-items:center; }
-  .ic-grid .nm { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ic-grid .unit { color:var(--muted); font-size:13px; min-width:2.5em; }
-  .ic-empty { color:var(--muted); font-size:13px; padding:0 12px 10px; }
+  /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
+  /* Enum: name dropdown, no unit column. */
+  .ic-item.enum { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); }
+
+  /* The 3D animation panel styles live in the shared theme.css (anim/anim-view.js). */
 
   /* charts area: one card per plot, scrollable */
-  .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
-  .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
-  .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
-  .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
-  .chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
-  .chart-card.solo .plot-wrap { flex:1 1 auto; height:auto; min-height:200px; }
-  .plot-head { color:var(--fg); font-size:13px; margin:1px 2px 4px; }
-  .plot-wrap { position:relative; height:230px; }
-  .plot-wrap svg.plot { width:100%; height:100%; display:block; }
-  .plot-note { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:16px; }
-  .tooltip { position:absolute; pointer-events:none; display:none; z-index:5;
-    background:#000c; border:1px solid var(--border); border-radius:5px; padding:6px 8px;
-    font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; max-width:70%; }
-  .tooltip .t { color:var(--muted); margin-bottom:2px; }
-  .tooltip .row { display:flex; align-items:center; gap:6px; }
-  .tooltip .sw { width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
-  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; }
-  .legend .item { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; user-select:none; }
-  .legend .item.off { opacity:.4; }
-  .legend .sw { width:13px; height:13px; border-radius:3px; flex:0 0 auto; }
-  .legend .empty { color:var(--muted); }
-  .legend .u { color:var(--muted); }
-  .caption { color:var(--muted); font-size:12.5px; white-space:pre-wrap; margin:6px 2px 0; }
   /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
-  sup { font-size:.7em; line-height:0; }
-  .frac { display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; line-height:1.02; }
-  .frac > .fn { border-bottom:1px solid currentColor; padding:0 .25em; }
-  .frac > .fd { padding:0 .25em; }
-  .xlabel { position:absolute; left:0; right:0; bottom:2px; text-align:center; color:var(--muted); font-size:11px; pointer-events:none; }
-  .ylabel { position:absolute; left:0; top:0; bottom:0; width:22px; display:flex; align-items:center; justify-content:center;
-    color:var(--muted); font-size:11px; pointer-events:none; }
-  .ylabel > .rot { transform:rotate(-90deg); white-space:nowrap; display:inline-flex; align-items:center; gap:.35em; }
 
   @media (max-width:820px), (orientation:portrait) {
     body { overflow:auto; height:auto; min-height:100vh; }
     main { grid-template-columns:1fr; }
     .left { border-right:0; border-bottom:1px solid var(--border); }
-    textarea { min-height:180px; }
+    /* Settings moved to the dialog, so the editor claims that height. */
+    textarea { min-height:46vh; }
     .grid2 { grid-template-columns:auto 1fr; }
     #icPanel { max-height:none; }
     .charts { overflow:visible; }
-    .chart-card.solo .plot-wrap { min-height:300px; height:56vw; }
     header { flex-wrap:wrap; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
+    .ex-select { max-width:56%; }
+    /* Documentation flows at the end of the page (scroll down to reach it). */
+    .docs { display:block; border-left:0; border-top:1px solid var(--border); }
+    .doc-body { overflow:visible; }
+    .doc-body.empty { min-height:80px; }
+    /* Collapsed: keep the header strip (with its reopen chevron), hide the body. */
+    body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .docs-head .doc-toggle svg { transform:rotate(180deg); }
+  }
+
+  /* Landscape screens: a third column for the model documentation. Always at
+     least a thin rail with a reopen chevron, so it never vanishes entirely — it
+     just starts collapsed on the narrower widths (see autoDocs). */
+  @media (min-width:821px) and (orientation:landscape) {
+    main { grid-template-columns:minmax(320px,30%) 1fr minmax(260px,22%); }
+    .docs { display:flex; }
+    /* Collapsed: the column becomes a thin rail with a reopen chevron. */
+    body.docs-hidden main { grid-template-columns:minmax(320px,40%) 1fr 34px; }
+    body.docs-hidden .docs-head, body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .doc-expand { display:flex; flex:1 1 auto; align-items:flex-start;
+      justify-content:center; width:100%; padding:10px 0; }
   }
 </style>
+<script type="importmap">
+{ "imports": { "three": "../anim/three.module.min.js" } }
+</script>
 </head>
 <body>
 <header>
   <span class="title">Simulator</span>
   <span class="status" id="status">Loading compiler…</span>
   <button id="viewToggle" class="ghost" style="display:none"></button>
+  <button id="settingsBtn" class="ghost icon-only" title="Simulation settings" aria-label="Simulation settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
   <button id="run" disabled>Run</button>
 </header>
 
 <main>
   <div class="left">
-    <div class="section-label">Modelica model</div>
-    <textarea id="src" spellcheck="false"></textarea>
-
-    <div class="panel">
-      <div class="grid2">
-        <label for="stop">Stop time</label>
-        <input id="stop" type="number" step="any" />
-        <label for="intervals">Intervals</label>
-        <input id="intervals" type="number" step="1" min="1" />
-        <label for="method">Solver</label>
-        <select id="method"><option value="dassl">dassl</option><option value="euler">euler</option></select>
-        <label for="tol">Tolerance</label>
-        <div class="stepper">
-          <button type="button" id="tolDn" title="÷10">▼</button>
-          <input id="tol" type="text" inputmode="decimal" />
-          <button type="button" id="tolUp" title="×10">▲</button>
-        </div>
-      </div>
+    <div class="section-label editor-label">
+      <span>Modelica model</span>
+      <select id="examples" class="ex-select" title="Load an example"></select>
     </div>
+    <textarea id="src" spellcheck="false"></textarea>
 
     <div class="panel" id="icPanel">
       <div class="section-label">Initial conditions &amp; parameters</div>
@@ -154,57 +141,133 @@
     </div>
   </div>
 
-  <div class="right">
+  <div class="right" id="right">
     <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Run a model to see results.</div></div>
+  </div>
+
+  <div class="docs" id="docs">
+    <div class="docs-head">
+      <span class="section-label">Documentation</span>
+      <button class="doc-toggle" id="docCollapse" title="Hide documentation" aria-label="Hide documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="doc-body empty" id="docBody">—</div>
+    <button class="doc-toggle doc-expand" id="docExpand" title="Show documentation" aria-label="Show documentation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
   </div>
 </main>
 
+<div class="modal-backdrop" id="settingsBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Simulation settings" aria-modal="true">
+    <div class="modal-head">
+      <span>Simulation settings</span>
+      <button class="icon-btn" id="settingsClose" title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="grid2">
+      <label for="stop">Stop time</label>
+      <input id="stop" type="number" step="any" />
+      <label for="intervals">Intervals</label>
+      <input id="intervals" type="number" step="1" min="1" />
+      <label for="method">Solver</label>
+      <select id="method"><option value="dassl">dassl</option><option value="euler">euler</option></select>
+      <label for="tol">Tolerance</label>
+      <div class="stepper">
+        <button type="button" id="tolDn" title="÷10">▼</button>
+        <input id="tol" type="text" inputmode="decimal" />
+        <button type="button" id="tolUp" title="×10">▲</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Export FMU" aria-modal="true">
+    <div class="modal-head">
+      <span>Export FMU</span>
+      <button class="icon-btn" id="exportClose" title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Interfaces</label>
+      <div class="chk-group">
+        <label class="chk"><input type="checkbox" id="fmiMe" checked /> Model Exchange</label>
+        <label class="chk"><input type="checkbox" id="fmiCs" checked /> Co-Simulation</label>
+      </div>
+      <label for="csSolver">CS solver</label>
+      <select id="csSolver">
+        <option value="dassl">dassl</option>
+        <option value="euler">euler</option>
+      </select>
+      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" id="exportCancel">Cancel</button>
+      <button id="exportGo">Export</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-import init, {
-  omc_set_env, omc_init, omc_eval,
-  omc_take_pending_downloads, wasi_write_file,
-  omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
-} from '../omc/OpenModelicaCompiler.js';
+import { AnimView } from '../anim/anim-view.js';
+import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+// The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
+// compile/simulate never freezes the UI. Two are spawned: a plain one that is
+// ready fast, and a second that installs the MSL in the background and takes
+// over once ready (so library examples like PID_Controller can run).
 
-// Guarded bouncing ball: the `flying` flag makes the ball rest at h=0 once its
-// bounces decay, rather than tunnelling through the floor (a known wasm-jit event
-// gap — see TODO). The figures annotation authors two plots (height, velocity)
-// that the view renders instead of auto-picking variables.
-const DEFAULT_MODEL = `model BouncingBall "A ball bouncing on the ground, losing energy until it rests"
-  parameter Real e=0.7 "coefficient of restitution";
-  parameter Real g(unit = "m/s2") = 9.81 "gravity acceleration";
-  Real h(unit = "m", fixed=true, start=1) "height of ball";
-  Real v(unit = "m/s", fixed=true) "velocity of ball";
-  Boolean flying(fixed=true, start=true) "true, if ball is flying";
-  Boolean impact;
-  Real v_new(fixed=true);
-equation
-  impact = h <= 0.0;
-  der(v) = if flying then -g else 0;
-  der(h) = v;
-  when {h <= 0.0 and v <= 0.0,impact} then
-    v_new = if edge(impact) then -e*pre(v) else 0;
-    flying = v_new > 0;
-    reinit(v, v_new);
-  end when;
-  annotation(experiment(StopTime = 3, Interval = 2e-3),
-    Documentation(figures = {
-      Figure(title = "Bouncing ball", preferred = true, plots = {
-        Plot(title = "Height", curves = {Curve(y = h, legend = "height")}),
-        Plot(title = "Velocity", curves = {Curve(y = v, legend = "velocity")})},
-        caption = "Height and velocity of a ball that retains %{e} of its speed at each bounce.")}));
-end BouncingBall;
-`;
+// Selectable examples come from ./config.json (shipped alongside this page), so a
+// host can curate their own set without touching the code. Each entry is either
+// inline (`source` text, or `sourceFile` fetched lazily) run on any worker, or a
+// `library` class inside the MSL (needs the MSL worker) with an optional `figures`
+// annotation that curates the plotted variables. Populated by loadConfig().
+let EXAMPLES = [];
+// Minimal safety net if config.json is missing or invalid — the app still runs.
+const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: [
+  { id: 'demo', label: 'Demo',
+    source: 'model Demo\n  Real x(start = 1, fixed = true);\nequation\n  der(x) = -x;\nend Demo;\n' } ] };
 
-const COLORS = ['#4ec9b0','#569cd6','#ce9178','#dcdcaa','#c586c0','#9cdcfe',
-                '#f48771','#b5cea8','#d7ba7d','#4fc1ff','#e2b93d','#77dd77'];
+// Categorical series palette, validated for the dark chart surface (#252526):
+// eight distinct hues in a fixed, CVD-optimized order (dataviz reference palette).
+// The always-present legend is the secondary encoding for the one adjacent pair
+// that sits in the CVD floor band.
 
 const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), srcEl = el('src');
 const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
+const charts = createCharts(chartsEl);
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
+const exSel = el('examples'), docBody = el('docBody');
+const settingsBtn = el('settingsBtn'), settingsBackdrop = el('settingsBackdrop'), settingsClose = el('settingsClose');
+const rightEl = el('right');
 
-srcEl.value = DEFAULT_MODEL;
+// Documentation collapse/expand, driven from inside the widget: a chevron in the
+// doc header hides it; when collapsed it leaves a thin rail (desktop) or header
+// strip (mobile) whose chevron reopens it. Collapsing widens the charts.
+let docsUserToggled = false;   // once the user decides, stop auto-collapsing
+function reflowDocs() {
+  charts.redraw();                                   // chart width changed
+  if (animView) animView.resize();
+}
+function toggleDocs() {
+  docsUserToggled = true;
+  document.body.classList.toggle('docs-hidden');
+  reflowDocs();
+}
+// Landscape screens narrower than the full 3-column layout start with the doc
+// column collapsed to its rail (the chevron stays, so it's never lost) rather
+// than vanishing. Wide screens start expanded; the user's choice overrides both.
+function autoDocs() {
+  if (docsUserToggled) return;
+  const landscape = window.matchMedia('(orientation:landscape)').matches && window.innerWidth >= 821;
+  const wantHidden = landscape && window.innerWidth < 1300;
+  if (document.body.classList.contains('docs-hidden') === wantHidden) return;
+  document.body.classList.toggle('docs-hidden', wantHidden);
+  reflowDocs();
+}
+el('docCollapse').addEventListener('click', toggleDocs);
+el('docExpand').addEventListener('click', toggleDocs);
+
 let tolValue = 1e-6;
 // Round to 6 significant figures so `1e-6 * 10` shows as `1e-5`, not `9.999…e-6`.
 const cleanTol = (v) => Number(v.toPrecision(6));
@@ -214,41 +277,139 @@ renderTol();
 function setStatus(text, cls='') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
 function num(v, d) { const n = parseFloat(v); return isFinite(n) ? n : d; }
 
-// --- omc download loop (models importing a library) ------------------------
-async function fetchToVfs(urls, filename) {
-  for (const url of urls) { try { const r = await fetch(url); if (!r.ok) continue;
-    wasi_write_file(filename, new Uint8Array(await r.arrayBuffer())); return true; } catch (_) {} }
-  return false;
+// --- logging ---------------------------------------------------------------
+const DEBUG = true;
+const T0 = performance.now();
+const tstamp = () => ((performance.now() - T0) / 1000).toFixed(2) + 's';
+const log = (...a) => { if (DEBUG) console.log('[sim ' + tstamp() + ']', ...a); };
+// Debug handle for the console: window.__sim.snap, .mode, .builtModel, etc.
+if (DEBUG) window.__sim = {
+  get snap() { return snap; }, get mode() { return mode; },
+  get builtModel() { return builtModel; }, get figures() { return modelFigures; },
+  get anim() { return animView && animView.info; }, get animView() { return animView; },
+  finalValue: (n) => { const c = snap && snap.cols && snap.cols[n]; return c ? c[c.length - 1] : null; },
+};
+
+// --- Worker RPC ------------------------------------------------------------
+let nextId = 1;
+let w1 = null, w2 = null;          // w1: plain, fast start. w2: MSL, ready later.
+let primaryWorker = null;          // w1 until the MSL worker is promoted, then w2
+let mslReady = null;               // resolves to w2 once its MSL is installed
+let jobWorker = null;              // worker running the current foreground job
+let statusFocus = null;            // also surface this worker's status (while awaiting MSL)
+
+function attach(worker, tag) {
+  worker._tag = tag; worker._pending = new Map();
+  worker.onmessage = (ev) => {
+    const d = ev.data;
+    if (d.type === 'log') { log(tag + ':', d.text); return; }
+    if (d.type === 'status') { if (worker === jobWorker || worker === statusFocus) setStatus(d.text, 'busy'); return; }
+    const p = worker._pending.get(d.id); if (!p) return;
+    worker._pending.delete(d.id);
+    if (d.ok) p.resolve(d.result); else p.reject(new Error(d.error));
+  };
+  worker.onerror = (e) => {
+    log(tag + ' onerror:', e.message || e);
+    for (const [, p] of worker._pending) p.reject(new Error('worker error: ' + (e.message || e)));
+    worker._pending.clear();
+  };
 }
-async function evalWithDownloads(src) {
-  const attempted = new Set();
-  for (;;) {
-    const result = omc_eval(src);
-    const pending = (omc_take_pending_downloads() || []).filter((p) => !attempted.has(p.filename));
-    if (pending.length === 0) return result;
-    omc_eval('getErrorString()');
-    for (const item of pending) { attempted.add(item.filename);
-      setStatus('Downloading ' + (item.filename.split('/').pop() || item.filename) + '…', 'busy');
-      await fetchToVfs(item.urls, item.filename); }
+function call(worker, cmd, args) {
+  const id = nextId++;
+  const t0 = performance.now();
+  log('→', worker._tag, cmd, args && args.name ? args.name : '');
+  return new Promise((resolve, reject) => {
+    worker._pending.set(id, {
+      resolve: (r) => { log('←', worker._tag, cmd, Math.round(performance.now() - t0) + 'ms'); resolve(r); },
+      reject,
+    });
+    worker.postMessage({ id, cmd, ...(args || {}) });
+  });
+}
+// `?driver=host|inwasm` overrides the simulation driver, for A/B'ing the two.
+const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).get('driver')] ?? null;
+
+// Per-worker cancel control block (SharedArrayBuffer, needs the page's COOP/COEP
+// headers): each worker gets its own so cancelling an export never disturbs another
+// worker's job, e.g. the background MSL install. activeExportWorker is the target.
+const canShareCancel = (typeof SharedArrayBuffer !== 'undefined');
+let activeExportWorker = null;
+function requestExportCancel() {
+  const w = activeExportWorker;
+  if (w && w._cancel) Atomics.store(w._cancel, 0, 1);
+}
+
+function makeWorker(tag) {
+  const w = new Worker(new URL('./omc-worker.js', import.meta.url), { type: 'module' });
+  attach(w, tag);
+  if (canShareCancel) {
+    w._cancel = new Int32Array(new SharedArrayBuffer(16));
+    w.postMessage({ cmd: 'setCancelBuffer', buf: w._cancel.buffer });
+  }
+  if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
+  return w;
+}
+// The MSL worker took over: make it primary and terminate the plain worker so we
+// keep a single wasm instance. A model built on w1 is dropped (rebuilt on demand).
+function promote() {
+  if (primaryWorker === w2) return;
+  primaryWorker = w2;
+  log('promoted MSL worker to primary');
+  retireW1();
+}
+function retireW1() {
+  if (primaryWorker !== w1 && w1 && jobWorker !== w1) {
+    log('terminating w1');
+    if (builtWorker === w1) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
+    w1.terminate(); w1 = null;
   }
 }
-function loadedClassName() {
-  const inner = omc_eval('getClassNames()').trim().replace(/^\{|\}$/g, '').trim();
-  if (!inner) return null;
-  const names = inner.split(',').map((s) => s.trim()).filter(Boolean);
-  return names[names.length - 1] || null;
+
+// A user model needs the MSL if it is a library copy, imports/extends Modelica,
+// or refers to a Modelica.* name. Such models must run on the MSL worker.
+function needsMsl(text) {
+  return mode === 'librarycopy' || /\bwithin\s+Modelica\b|\bimport\s+Modelica\b|\bextends\s+Modelica\b|\bModelica\./.test(text);
 }
-function esc(s) { return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t'); }
+async function pickWorker(text) {
+  if (needsMsl(text)) { mslJobStarted = true; if (!mslDone) statusFocus = w2; try { return await mslReady; } finally { statusFocus = null; } }
+  return primaryWorker;
+}
+
+// Protect the single loaded MSL: never load a class into the Modelica namespace
+// (a `within Modelica…` clause or a Modelica.* class name would modify it).
+function touchesModelica(text) {
+  if (/^\s*within\s+Modelica\b/m.test(text)) return true;
+  const name = parseModelName(text);
+  return !!(name && /^Modelica(\.|$)/.test(name));
+}
+
+// Model name from source: within-path + class name (so within-scoped copies and
+// plain models both resolve without relying on getClassNames against a busy AST).
+function parseModelName(text) {
+  const within = (text.match(/^\s*within\s+([\w.]+)\s*;/m) || [])[1] || '';
+  const cls = (text.match(/\b(?:model|class|block|package|record|connector|function)\s+([A-Za-z_]\w*)/) || [])[1] || '';
+  if (!cls) return null;
+  return within ? within + '.' + cls : cls;
+}
 
 // --- state ------------------------------------------------------------------
 let icValues = new Map();     // param name -> input value (string)
 let builtModel = null, lastText = null;
-let running = false, pendingKind = null;
-let modelFigures = null;      // parsed getModelFigures() for the current model, or null
+let running = false, pendingKind = null, runningKind = null;
+let modelFigures = null;      // parsed figures for the current model, or null
 let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
-const hidden = new Set();     // "chartKey|label" of series toggled off (persists across runs)
 let colMap = new Map();       // result-variable name -> { values:Float64Array, unit }
-let charts = [];              // live chart states for hover
+let snap = null;              // last simulation snapshot from a worker
+let modelDoc = '';            // current model's documentation HTML (persists across re-sims)
+let currentExample = null;
+let mode = 'inline';          // 'inline' | 'librarycopy'
+let builtWorker = null;       // worker that holds the current built model (for resim)
+let mslDone = false;          // true once the MSL worker has finished install+load
+let mslJobStarted = false;    // true once a real MSL job is requested → skip the throwaway warmup
+let copyName = null;          // top-level name of the current library copy (copyClass), else null
+let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
+let freshModel = true;        // true until a model's own experiment settings have been read back from a run
+let animView = null;          // the shared 3D animation panel (lazily created on first use)
 
 function overrideFlag() {
   const parts = [];
@@ -256,90 +417,243 @@ function overrideFlag() {
   return parts.length ? '-override=' + parts.join(',') : '';
 }
 
+const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"'))
+  ? s.slice(1, -1).replace(/\\(.)/g, (_, c) => c === 'n' ? '\n' : c === 't' ? '\t' : c) : s; };
+
+function seedFromOptions(o) {
+  if (!o) return;
+  if (o.stopTime != null) el('stop').value = o.stopTime;
+  if (o.tolerance != null) { tolValue = o.tolerance; renderTol(); }
+  if (o.intervals != null) el('intervals').value = Math.round(o.intervals);
+}
+
 async function run(kind) {                       // 'full' | 'resim'
-  if (running) { pendingKind = pendingKind === 'full' ? 'full' : kind; return; }
-  running = true; runBtn.disabled = true;
+  if (running) {
+    pendingKind = pendingKind === 'full' ? 'full' : kind;
+    // Cancel an in-flight resim so the latest values run now; a full build is left
+    // alone (its compiled model is needed, and it can't yield mid-build).
+    if (runningKind === 'resim' && jobWorker) jobWorker.postMessage({ cmd: 'cancelSim' });
+    return;
+  }
+  running = true; runningKind = kind; setRunUI(true);
+  const tRun = performance.now();
+  let runMs = 0;
+  log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
-  await new Promise((r) => setTimeout(r));
 
   try {
-    const intervals = Math.max(1, Math.round(num(el('intervals').value, 500)));
     const method = el('method').value, ov = overrideFlag();
-    if (kind === 'resim' && builtModel) {
-      await evalWithDownloads(`simulate(${builtModel}, simflags="${esc(ov)}", resimulateExecutable="${builtModel}")`);
+    // A freshly loaded model drives its own settings: omit stopTime/intervals/
+    // tolerance so simulate() uses the experiment annotation; we read back what it
+    // used and seed the dialog. Once seeded (or user-overridden), pass the values.
+    const settings = freshModel ? { method } : { method,
+      stopTime: num(el('stop').value, 1),
+      intervals: Math.max(1, Math.round(num(el('intervals').value, 500))),
+      tolerance: tolValue };
+
+    // Re-simulate the already-built model (fast, no recompile) when possible.
+    if (kind === 'resim' && builtModel && builtWorker) {
+      jobWorker = builtWorker;
+      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov });
+      runMs = performance.now() - tRun;
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
+      if (!r.ok) return fail(r.error);
+      snap = r;
     } else {
       const text = srcEl.value, textChanged = text !== lastText;
-      omc_eval('clear()');
-      if ((await evalWithDownloads(`loadString("${esc(text)}")`)).trim() !== 'true')
-        return fail(omc_eval('getErrorString()').trim() || 'Could not parse the model.');
-      const name = loadedClassName();
-      if (!name) return fail('No class found in the model text.');
-      if (textChanged) seedSettingsFromModel(name);
-      await evalWithDownloads(
-        `simulate(${name}, stopTime=${num(el('stop').value, 1)}, numberOfIntervals=${intervals},`
-        + ` method="${method}", tolerance=${tolValue}, simflags="${esc(ov)}")`);
-      builtModel = name; lastText = text;
-      modelFigures = getFiguresFor(name);       // annotation is static → fetch once per build
+      if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
+      if (needsMsl(text) && !mslDone) setStatus('Loading Modelica library…', 'busy');
+      const worker = await pickWorker(text);
+      if (!worker) throw new Error('compiler not ready');
+      jobWorker = worker;
+      const name = parseModelName(text);
+      let lm;
+      if (preloaded && preloaded === name && !textChanged) {
+        lm = { ok: true, name };            // copyClass already loaded it — skip the redundant loadString
+      } else {
+        lm = await call(worker, 'loadSource', { text, name });
+      }
+      preloaded = null;
+      if (!lm.ok) return fail(lm.error);
+      // figures/doc are annotations, not results — show docs now, before simulating.
+      if (lm.figures !== undefined) modelFigures = lm.figures || null;
+      if (lm.doc !== undefined) { modelDoc = lm.doc || ''; renderDoc(); }
+      const r = await call(worker, 'simulate', { name: lm.name, override: ov, ...settings });
+      runMs = performance.now() - tRun;
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
+      if (!r.ok) return fail(r.error);
+      builtModel = lm.name; builtWorker = worker; lastText = text; snap = r;
     }
-    const info = omc_sim_info();
-    if (!info || !info.rows) return fail(omc_eval('getErrorString()').trim() || 'Simulation produced no result.');
-    if (kind !== 'resim') buildInitialConditions();
+
+    // Reflect the settings the run actually used, then treat them as user-editable.
+    if (kind !== 'resim' && snap.options) { seedFromOptions(snap.options); freshModel = false; }
+    if (kind !== 'resim') buildInitialConditions();   // docs already rendered pre-simulation
     renderCharts();
+    await fetchAnim(builtWorker);      // 3D scene, if the model enabled -d=visxml
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
-    setStatus(`${info.model} — ${info.rows} points, t ∈ [${info.start}, ${info.stop}]${figNote}`);
-  } catch (e) { fail('' + e); }
-  finally { running = false; runBtn.disabled = false;
-    if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); } }
+    const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
+    const t = snap.timing;
+    const msNote = t
+      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${drv}`
+      : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
+    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
+    log('done', snap.info.model, snap.info.rows, 'points');
+  } catch (e) {
+    log('run failed', e); fail('' + e);
+  }
+  finally {
+    running = false; runningKind = null; setRunUI(false); jobWorker = null; retireW1();
+    if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
+  }
 }
 
-function seedSettingsFromModel(name) {
-  const m = omc_eval(`getSimulationOptions(${name})`).match(/-?[\d.eE+-]+/g);
-  if (m && m.length >= 4) { el('stop').value = +m[1]; tolValue = +m[2]; renderTol(); el('intervals').value = Math.round(+m[3]); }
+// Run ↔ Cancel: while a job is running the button turns into a red Cancel.
+function setRunUI(busy) {
+  runBtn.textContent = busy ? 'Cancel' : 'Run';
+  runBtn.classList.toggle('cancel', busy);
+  runBtn.disabled = false;
 }
 
-// getModelFigures() as JSON (via the interactiveDumpFormat config flag) so we can
-// JSON.parse it instead of scraping the textual value dump. The model is already
-// loaded, so no download loop is needed. Returns the figures array, or null.
-function getFiguresFor(model) {
-  try {
-    omc_eval('setCommandLineOptions("--interactiveDumpFormat=json")');
-    const raw = omc_eval(`getModelFigures(${model})`);
-    omc_eval('setCommandLineOptions("--interactiveDumpFormat=default")');
-    const figs = JSON.parse(raw);
-    return Array.isArray(figs) && figs.length ? figs : null;
-  } catch (_) {
-    omc_eval('setCommandLineOptions("--interactiveDumpFormat=default")');
-    return null;
+// Cooperative cancel: the worker yields to its message loop every ~150ms, so this
+// message lands and the in-flight simulate resolves {cancelled:true} — worker (MSL +
+// JIT) and the built model survive for a re-run.
+function cancelRun() {
+  if (!running || !jobWorker) return;
+  pendingKind = null;
+  log('cancel: requesting', jobWorker._tag);
+  setStatus('Cancelling…', 'busy');
+  jobWorker.postMessage({ cmd: 'cancelSim' });
+}
+
+// --- examples ---------------------------------------------------------------
+// Immediately blank the stale panels so a switch doesn't keep showing the old
+// model's initial conditions / plots / docs until the new run finishes.
+function showBuilding() {
+  icGrid.replaceChildren(); icValues.clear();
+  icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
+  charts.clear(chartsEmpty);
+  chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
+  docBody.className = 'doc-body empty'; docBody.textContent = '…';
+  if (animView) animView.hide();
+}
+
+async function selectExample(ex) {
+  currentExample = ex;
+  builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
+  showBuilding();
+  if (ex.library) {
+    // A genuine editable copy via copyClass: a self-contained top-level class with
+    // fully-qualified references. It never modifies the library and owns the copied
+    // figures/doc annotations. Runs on the MSL worker.
+    mode = 'librarycopy';
+    copyName = ex.library.split('.').pop();
+    mslJobStarted = true;
+    if (!mslDone) setStatus('Loading Modelica library…', 'busy');
+    let worker;
+    try { if (!mslDone) statusFocus = w2; worker = await mslReady; } catch (e) { return fail('' + e); } finally { statusFocus = null; }
+    let cc;
+    try { cc = await call(worker, 'copyClass', { from: ex.library, name: copyName, figures: ex.figures }); } catch (e) { return fail('' + e); }
+    if (!cc.ok) return fail(cc.error);
+    srcEl.value = unquote(cc.source);
+    modelFigures = cc.figures || null; modelDoc = cc.doc || ''; renderDoc();   // docs before simulating
+    preloaded = copyName; lastText = srcEl.value;   // copyClass already loaded it; skip the first loadSource
+    run('full');
+  } else {
+    mode = 'inline'; copyName = null;
+    if (ex.source == null && ex.sourceFile) {
+      try { ex.source = await fetchText(ex.sourceFile); } catch (e) { return fail('Could not load ' + ex.sourceFile + ': ' + e); }
+    }
+    srcEl.value = ex.source || '';
+    run('full');
+  }
+}
+
+// Fetch a text asset shipped with the page (example .mo files, config).
+async function fetchText(path) {
+  const r = await fetch(path, { cache: 'no-cache' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.text();
+}
+
+// Load ./config.json: title, example list, default example. Falls back to a
+// minimal built-in config so the page still works if it is missing.
+async function loadConfig() {
+  let cfg;
+  try { cfg = await (await fetch('./config.json', { cache: 'no-cache' })).json(); }
+  catch (e) { log('config.json load failed, using fallback', e); cfg = FALLBACK_CONFIG; }
+  if (cfg.title) { document.title = 'OpenModelica — ' + cfg.title; const t = document.querySelector('header .title'); if (t) t.textContent = cfg.title; }
+  EXAMPLES = Array.isArray(cfg.examples) && cfg.examples.length ? cfg.examples : FALLBACK_CONFIG.examples;
+  exSel.replaceChildren();
+  for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
+  currentExample = EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
+  exSel.value = currentExample.id;
+  // Pre-fill the editor with an inline default's source so it shows while the
+  // compiler boots; library examples fill in after copyClass.
+  if (!currentExample.library) {
+    try { if (currentExample.source == null && currentExample.sourceFile) currentExample.source = await fetchText(currentExample.sourceFile); }
+    catch (e) { log('default source load failed', e); }
+    if (currentExample.source) srcEl.value = currentExample.source;
   }
 }
 
 function fail(msg) {
-  setStatus(msg, 'err'); charts = []; modelFigures = null;
-  chartsEl.replaceChildren(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
+  log('FAIL', msg);
+  setStatus(msg, 'err'); modelFigures = null;
+  charts.clear(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
 }
 
 // --- editable initial conditions -------------------------------------------
 function buildInitialConditions() {
-  const params = omc_sim_parameters() || [];
+  const params = (snap && snap.parameters) || [];
   icGrid.replaceChildren(); icValues.clear();
   if (!params.length) { icEmpty.style.display = ''; icEmpty.textContent = 'This model has no editable parameters.'; return; }
   icEmpty.style.display = 'none';
   for (const p of params) {
-    icValues.set(p.name, String(p.value));
+    const item = document.createElement('div'); item.className = 'ic-item';
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name; nm.title = p.comment || p.name;
-    const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
-    inp.addEventListener('change', () => { icValues.set(p.name, inp.value); run('resim'); });
-    const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
-    icGrid.append(nm, inp, unit);
+    item.appendChild(nm);
+    if (p.enumNames && p.enumNames.length) {
+      // Enum: the overridden value is the 1-based index.
+      item.classList.add('enum');
+      const idx = Math.round(p.value) || 1;
+      icValues.set(p.name, String(idx));
+      const sel = document.createElement('select');
+      p.enumNames.forEach((n, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = n; sel.appendChild(o); });
+      sel.value = String(idx);
+      sel.addEventListener('change', () => onParamChange(p.name, sel.value));
+      item.appendChild(sel);
+    } else {
+      icValues.set(p.name, String(p.value));
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
+      inp.addEventListener('change', () => onParamChange(p.name, inp.value));
+      const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
+      item.append(inp, unit);
+    }
+    icGrid.appendChild(item);
   }
+}
+
+// -override=name=value re-simulates the built model without recompiling; no
+// write-back to the model text.
+function onParamChange(name, value) {
+  icValues.set(name, value);
+  run('resim');
+}
+
+// Render the model's documentation HTML in the (wide-screen) doc column. The
+// content is the model's own Documentation(info=...); strip <script> as a guard.
+function renderDoc() {
+  const html = (modelDoc || '').replace(/<script[\s\S]*?<\/script>/gi, '').trim();
+  if (!html) { docBody.className = 'doc-body empty'; docBody.textContent = 'This model has no documentation.'; return; }
+  docBody.className = 'doc-body'; docBody.innerHTML = html; docBody.scrollTop = 0;
 }
 
 // --- result column access ---------------------------------------------------
 function buildColMap() {
   colMap = new Map();
-  const series = omc_sim_series() || [];
-  series.forEach((m, i) => { const c = omc_sim_column(i); if (c) colMap.set(m.name, { values: c, unit: m.unit || '' }); });
-  const t = omc_sim_time(); if (t) colMap.set('time', { values: t, unit: 's' });
+  const series = (snap && snap.series) || [];
+  series.forEach((m) => { const c = snap.cols[m.name]; if (c) colMap.set(m.name, { values: c, unit: m.unit || '' }); });
+  if (snap && snap.time) colMap.set('time', { values: snap.time, unit: 's' });
 }
 function finalValue(name) { const c = colMap.get(name); if (!c) return null; const a = c.values; return a.length ? a[a.length - 1] : null; }
 // Expand the spec's variable-reference markup in titles/legends/captions using
@@ -363,29 +677,29 @@ function alignXY(xcol, ycol) {
 
 // --- chart rendering --------------------------------------------------------
 function renderCharts() {
-  chartsEl.replaceChildren(); charts = [];
+  charts.clear();
   buildColMap();
   const haveFigs = !!(modelFigures && modelFigures.length);
   toggleBtn.style.display = haveFigs ? '' : 'none';
   const useFigs = haveFigs && viewMode !== 'all';
   toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
   if (useFigs) renderFigures(); else renderAllVariables();
-  if (!charts.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
+  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
     chartsEmpty.textContent = 'No variables to plot.'; }
 }
 
 function renderAllVariables() {
-  const series = omc_sim_series() || [];
+  const series = (snap && snap.series) || [];
   const time = colMap.get('time');
   if (!time) return;
   const curves = [];
-  series.forEach((m, i) => {
+  series.forEach((m) => {
     if (m.constant || m.alias) return;
     const yc = colMap.get(m.name); if (!yc) return;
     const { xs, ys } = alignXY(time, yc);
     curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
   });
-  makeChart({ title: '', curves, xText: 'time', xUnit: 's', solo: true }, 'all');
+  charts.add({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
 }
 
 function renderFigures() {
@@ -407,6 +721,7 @@ function renderFigures() {
       const spec = {
         title: expandText(plot.title),
         curves,
+        xIsTime,
         xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
         xUnit: xAxis.unit || (xIsTime ? 's' : ''),
         yText: yAxis.label || '',
@@ -415,7 +730,7 @@ function renderFigures() {
         yLog: (yAxis.scale && yAxis.scale.scaleType === 'Log'),
         note: (plot.curves || []).length && !curves.length ? 'Referenced variables are not in the result.' : '',
       };
-      makeChart(spec, 'f' + fi + 'p' + pi);
+      charts.add(spec, 'f' + fi + 'p' + pi);
     });
     const cap = expandText(fig.caption);
     if (cap) { const c = document.createElement('div'); c.className = 'caption'; c.textContent = cap; chartsEl.appendChild(c); }
@@ -423,192 +738,177 @@ function renderFigures() {
 }
 function bound(arr) { return Array.isArray(arr) && arr.length ? arr[0] : null; }
 
-const SVGNS = 'http://www.w3.org/2000/svg';
-function svg(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-function niceStep(range, target) { const raw = range / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
-  return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * mag; }
-function fmt(v) { if (v === 0) return '0'; const a = Math.abs(v);
-  return (a >= 1e4 || a < 1e-3) ? v.toExponential(1) : (+v.toPrecision(4)).toString(); }
+// Click a time-based chart to jump the animation (and the shared cursor) to that time.
+chartsEl.addEventListener('click', (ev) => {
+  if (!animView || !animView.info) return;
+  const c = charts.at(ev.target);
+  if (!c || !c.state || !c.spec.xIsTime || !c.state.active.length) return;
+  const st = c.state, xs = st.active[0].xs;
+  const vbX = (ev.clientX - c.svgEl.getBoundingClientRect().left) / c.svgEl.clientWidth * st.geom.W;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < xs.length; i++) { const d = Math.abs(st.px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } }
+  animView.seek(xs[best]);
+});
 
-// --- Modelica unit rendering ------------------------------------------------
-function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-// Parse a Modelica unit ("m/s2", "kg.m/s2", "W/(m.K)", "s-1") into numerator and
-// denominator factors, each with a positive integer exponent. '.' multiplies,
-// '/' starts the denominator, a trailing (signed) integer is the exponent.
-function parseUnit(u) {
-  if (!u) return null;
-  const num = [], den = []; let denom = false;
-  for (const tok of u.split(/([./()])/)) {
-    if (tok === '/') { denom = true; continue; }
-    if (tok === '' || tok === '.' || tok === '(' || tok === ')') continue;
-    const m = tok.match(/^(.*?)([+-]?\d+)$/);
-    let sym = tok, exp = 1;
-    if (m && m[1]) { sym = m[1]; exp = parseInt(m[2], 10); }
-    if (sym === '1') continue;
-    const e = exp * (denom ? -1 : 1);
-    (e < 0 ? den : num).push({ s: sym, e: Math.abs(e) });
+// --- 3D animation (shown alongside the charts) ------------------------------
+// Ask the worker for the last run's scene; show the panel only if it has shapes.
+// Playback drives the shared time cursor on the charts (onTime).
+async function fetchAnim(worker) {
+  let info = null;
+  try {
+    const r = await call(worker, 'anim');
+    if (r && r.available) info = { shapes: r.shapes, times: r.times, data: r.data, stride: r.stride };
+  } catch (e) { log('anim fetch failed', e); }
+  if (info) {
+    if (!animView) { animView = new AnimView({ onTime: setChartsCursor }); rightEl.insertBefore(animView.el, chartsEl); }
+    animView.setData(info);
+  } else if (animView) {
+    animView.hide();
   }
-  return (num.length || den.length) ? { num, den } : null;
-}
-function factorsHTML(list) { return list.map((f) => escapeHtml(f.s) + (f.e !== 1 ? '<sup>' + f.e + '</sup>' : '')).join('·'); }
-// A unit as HTML: superscript exponents, and a stacked fraction when it divides.
-function unitHTML(u) {
-  const p = parseUnit(u); if (!p) return '';
-  if (!p.den.length) return factorsHTML(p.num);
-  return '<span class="frac"><span class="fn">' + (p.num.length ? factorsHTML(p.num) : '1') + '</span>'
-    + '<span class="fd">' + factorsHTML(p.den) + '</span></span>';
-}
-function labelHTML(text, unit) {
-  const u = unit ? unitHTML(unit) : '', t = text ? escapeHtml(text) : '';
-  return t && u ? t + ' ' + u : (t || u);
 }
 
-function makeChart(spec, key) {
-  const card = document.createElement('div'); card.className = 'chart-card' + (spec.solo ? ' solo' : '');
-  if (spec.title) { const h = document.createElement('div'); h.className = 'plot-head'; h.textContent = spec.title; card.appendChild(h); }
-  const wrap = document.createElement('div'); wrap.className = 'plot-wrap';
-  const s = svg('svg', { class: 'plot', preserveAspectRatio: 'none' });
-  const tip = document.createElement('div'); tip.className = 'tooltip';
-  const note = document.createElement('div'); note.className = 'plot-note'; note.style.display = 'none';
-  const xlab = document.createElement('div'); xlab.className = 'xlabel';
-  const ylab = document.createElement('div'); ylab.className = 'ylabel';
-  wrap.append(s, tip, note, xlab, ylab); card.appendChild(wrap);
-  const legend = document.createElement('div'); legend.className = 'legend'; card.appendChild(legend);
-  chartsEl.appendChild(card);
+// --- synchronized time cursor on the charts ---------------------------------
+function nearestByX(xs, xv) { let b = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(xs[i] - xv); if (d < bd) { bd = d; b = i; } } return b; }
 
-  const chart = { spec, key, svgEl: s, tip, wrap, note, xlabel: xlab, ylabel: ylab, state: null };
-  charts.push(chart);
-
-  legend.replaceChildren();
-  if (!spec.curves.length) { legend.innerHTML = '<span class="empty">—</span>'; }
-  for (const c of spec.curves) {
-    const item = document.createElement('div');
-    const k = key + '|' + c.label;
-    item.className = 'item' + (hidden.has(k) ? ' off' : ''); item.title = c.label;
-    item.innerHTML = '<span class="sw" style="background:' + c.color + '"></span>';
-    item.append(c.label + ' ');
-    if (c.unit) { const u = document.createElement('span'); u.className = 'u'; u.innerHTML = unitHTML(c.unit); item.append(u); }
-    item.onclick = () => { if (hidden.has(k)) hidden.delete(k); else hidden.add(k);
-      item.classList.toggle('off', hidden.has(k)); drawChart(chart); };
-    legend.appendChild(item);
-  }
-  drawChart(chart);
-}
-
-function drawChart(chart) {
-  const { spec, key, svgEl, tip, note } = chart;
-  svgEl.replaceChildren(); tip.style.display = 'none';
-  const active = spec.curves.filter((c) => !hidden.has(key + '|' + c.label));
-  if (!active.length) { note.style.display = 'grid'; note.textContent = spec.note || (spec.curves.length ? 'No variables selected.' : 'No variables to plot.');
-    chart.xlabel.innerHTML = ''; chart.ylabel.innerHTML = ''; chart.state = null; return; }
-  note.style.display = 'none';
-
-  const W = svgEl.clientWidth || 800, H = svgEl.clientHeight || 360;
-  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const m = { l: 64, r: 14, t: 12, b: 30 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
-  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-  for (const c of active) { for (const v of c.xs) { if (v < xMin) xMin = v; if (v > xMax) xMax = v; }
-    for (const v of c.ys) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }
-  if (!isFinite(xMin)) { xMin = 0; xMax = 1; } if (xMin === xMax) xMax = xMin + 1;
-  if (spec.yMin != null) yMin = spec.yMin; if (spec.yMax != null) yMax = spec.yMax;
-  if (!isFinite(yMin)) { yMin = 0; yMax = 1; } if (yMin === yMax) { yMin -= 1; yMax += 1; }
-  const yLog = spec.yLog && yMin > 0 && yMax > 0;
-  if (!yLog) { const pad = (yMax - yMin) * 0.05; yMin -= pad; yMax += pad; }
-  const tY = yLog ? Math.log10 : (y) => y;
-  const yLo = tY(yMin), yHi = tY(yMax);
-  const px = (x) => m.l + (x - xMin) / (xMax - xMin) * iw;
-  const py = (y) => m.t + (1 - (tY(y) - yLo) / (yHi - yLo)) * ih;
-
-  const grid = svg('g', {});
-  const gridline = (x1, y1, x2, y2, stroke) => grid.appendChild(svg('line', { x1, y1, x2, y2, stroke, 'stroke-width': 1 }));
-  const label = (x, y, anchor, txt) => { const t = svg('text', { x, y, fill: '#8a8a8a', 'font-size': 11, 'text-anchor': anchor }); t.textContent = txt; grid.appendChild(t); };
-  if (yLog) {
-    for (let p = Math.floor(Math.log10(yMin)); p <= Math.ceil(Math.log10(yMax)); p++) {
-      const v = Math.pow(10, p); if (v < yMin || v > yMax) continue; const y = py(v);
-      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v));
-    }
-  } else {
-    const yStep = niceStep(yMax - yMin, 5);
-    for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) { const y = py(v);
-      gridline(m.l, y, W - m.r, y, '#333'); label(m.l - 6, y + 4, 'end', fmt(v)); }
-  }
-  const xStep = niceStep(xMax - xMin, 6);
-  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) { const x = px(v);
-    gridline(x, m.t, x, H - m.b, '#2a2a2a'); label(x, H - m.b + 16, 'middle', fmt(v)); }
-  svgEl.appendChild(grid);
-  svgEl.appendChild(svg('line', { x1: m.l, y1: m.t, x2: m.l, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-  svgEl.appendChild(svg('line', { x1: m.l, y1: H - m.b, x2: W - m.r, y2: H - m.b, stroke: '#555', 'stroke-width': 1 }));
-
-  for (const c of active) {
-    let d = '';
-    for (let i = 0; i < c.xs.length && i < c.ys.length; i++) d += (i ? 'L' : 'M') + px(c.xs[i]).toFixed(1) + ' ' + py(c.ys[i]).toFixed(1);
-    svgEl.appendChild(svg('path', { d, fill: 'none', stroke: c.color, 'stroke-width': 1.6 }));
-  }
-  // Axis titles are HTML overlays (not SVG text) so units render as stacked fractions.
-  let yUnit = spec.yUnit;
-  if (!yUnit) { const us = [...new Set(active.map((c) => c.unit).filter(Boolean))]; if (us.length === 1) yUnit = us[0]; }
-  chart.xlabel.innerHTML = labelHTML(spec.xText || '', spec.xUnit || '');
-  const yl = labelHTML(spec.yText || '', yUnit || '');
-  chart.ylabel.innerHTML = yl ? '<span class="rot">' + yl + '</span>' : '';
-
-  const cursor = svg('g', { style: 'display:none' });
-  const vline = svg('line', { y1: m.t, y2: H - m.b, stroke: '#888', 'stroke-width': 1, 'stroke-dasharray': '3 3' });
-  cursor.appendChild(vline);
-  const dots = active.map((c) => svg('circle', { r: 3.5, fill: c.color, stroke: '#1e1e1e', 'stroke-width': 1 }));
-  dots.forEach((d) => cursor.appendChild(d));
-  svgEl.appendChild(cursor);
-  chart.state = { active, px, py, geom: { m, W, H }, cursor, vline, dots };
-}
-
-function onHover(ev, chart) {
+// Place a chart's hover-style cursor (vertical line, dots, tooltip) at sample i0.
+function placeCursor(chart, i0) {
   const st = chart.state; if (!st) return;
   const { active, px, py, geom, cursor, vline, dots } = st;
-  const rect = chart.svgEl.getBoundingClientRect();
-  const vbX = (ev.clientX - rect.left) / rect.width * geom.W;
-  if (vbX < geom.m.l || vbX > geom.W - geom.m.r) { cursor.setAttribute('style', 'display:none'); chart.tip.style.display = 'none'; return; }
-  const idxNearest = (xs) => { let best = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } } return best; };
-  const i0 = idxNearest(active[0].xs);
-  cursor.setAttribute('style', ''); vline.setAttribute('x1', px(active[0].xs[i0])); vline.setAttribute('x2', px(active[0].xs[i0]));
+  const cx = px(active[0].xs[i0]);
+  cursor.setAttribute('style', ''); vline.setAttribute('x1', cx); vline.setAttribute('x2', cx);
   let html = '';
-  active.forEach((c, k) => { const i = c.xs === active[0].xs ? i0 : idxNearest(c.xs);
+  active.forEach((c, k) => {
+    const i = c.xs === active[0].xs ? i0 : nearestByX(c.xs, active[0].xs[i0]);
     dots[k].setAttribute('cx', px(c.xs[i])); dots[k].setAttribute('cy', py(c.ys[i]));
     html += '<div class="row"><span class="sw" style="background:' + c.color + '"></span>'
-      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>'; });
-  const xLbl = (chart.spec.xLabel || 'x').replace(/\s*\[.*\]$/, '');
+      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>';
+  });
+  const xLbl = (chart.spec.xText || 't').replace(/\s*\[.*\]$/, '');
   chart.tip.innerHTML = '<div class="t">' + xLbl + ' = ' + (+active[0].xs[i0].toPrecision(6)) + '</div>' + html;
   chart.tip.style.display = 'block';
-  const wrap = chart.wrap.getBoundingClientRect();
-  let tx = ev.clientX - wrap.left + 14, ty = ev.clientY - wrap.top + 12;
-  if (tx + chart.tip.offsetWidth > wrap.width) tx = ev.clientX - wrap.left - chart.tip.offsetWidth - 14;
-  if (ty + chart.tip.offsetHeight > wrap.height) ty = wrap.height - chart.tip.offsetHeight - 4;
-  chart.tip.style.left = tx + 'px'; chart.tip.style.top = ty + 'px';
+  const sw = chart.svgEl.clientWidth || geom.W, ww = chart.wrap.clientWidth || sw;
+  let tx = cx / geom.W * sw + 12;
+  if (tx + chart.tip.offsetWidth > ww) tx = cx / geom.W * sw - chart.tip.offsetWidth - 12;
+  chart.tip.style.left = Math.max(2, tx) + 'px'; chart.tip.style.top = '6px';
 }
-chartsEl.addEventListener('mousemove', (ev) => { const c = charts.find((c) => c.svgEl === ev.target || c.svgEl.contains(ev.target)); if (c) onHover(ev, c); });
-chartsEl.addEventListener('mouseleave', () => { for (const c of charts) { if (c.state) c.state.cursor.setAttribute('style', 'display:none'); c.tip.style.display = 'none'; } }, true);
+
+// Move the cursor of every time-based chart to time t (driven by playback/scrub).
+function setChartsCursor(t) {
+  for (const chart of charts.list) {
+    if (!chart.spec.xIsTime || !chart.state || !chart.state.active.length) continue;
+    placeCursor(chart, nearestByX(chart.state.active[0].xs, t));
+  }
+}
+
+// --- settings dialog --------------------------------------------------------
+function openSettings() { settingsBackdrop.hidden = false; }
+function closeSettings() { settingsBackdrop.hidden = true; }
+settingsBtn.addEventListener('click', openSettings);
+settingsClose.addEventListener('click', closeSettings);
+settingsBackdrop.addEventListener('click', (e) => { if (e.target === settingsBackdrop) closeSettings(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsBackdrop.hidden) closeSettings(); });
 
 // --- wiring -----------------------------------------------------------------
 let debounce;
-srcEl.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => run('full'), 700); });
+srcEl.addEventListener('input', () => {   // manual edits are authoritative: re-read the model's settings
+  preloaded = null; freshModel = true;
+  clearTimeout(debounce); debounce = setTimeout(() => run('full'), 700);
+});
 for (const id of ['stop', 'intervals', 'method']) el(id).addEventListener('change', () => run('full'));
 function stepTol(factor) { tolValue = cleanTol(Math.min(1e-1, Math.max(1e-15, tolValue * factor))); renderTol(); run('full'); }
 el('tolUp').addEventListener('click', () => stepTol(10));
 el('tolDn').addEventListener('click', () => stepTol(0.1));
 tolEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); stepTol(10); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepTol(0.1); } });
 tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (isFinite(v) && v > 0) { tolValue = cleanTol(v); } renderTol(); run('full'); });
-runBtn.addEventListener('click', () => run('full'));
+runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('full'); });
+
+const exportBtn = el('exportFmu');
+function downloadBlob(name, bytes) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+let exporting = false;
+async function exportFmu({ fmuType, method }) {
+  if (running || exporting) return;
+  const text = srcEl.value;
+  if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
+  exporting = true;
+  exportBtn.textContent = 'Cancel';         // the button cancels the running export
+  setStatus('Exporting FMU…', 'busy');
+  try {
+    if (needsMsl(text) && !mslDone) setStatus('Loading Modelica library…', 'busy');
+    const worker = await pickWorker(text);
+    if (!worker) throw new Error('compiler not ready');
+    activeExportWorker = worker;   // so a Cancel targets this worker's control block
+    const name = parseModelName(text);
+    const lm = await call(worker, 'loadSource', { text, name });
+    if (!lm.ok) return fail(lm.error);
+    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method });
+    if (r.cancelled) { setStatus('Export cancelled.'); return; }
+    if (!r.ok) return fail(r.error);
+    downloadBlob(r.filename, r.bytes);
+    setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
+  } catch (e) { fail('' + e); }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; }
+}
+
+// FMU export dialog: pick interface(s) and (for CS) the embedded solver.
+const exportBackdrop = el('exportBackdrop'), fmiMe = el('fmiMe'), fmiCs = el('fmiCs'), csSolver = el('csSolver');
+function syncExportDialog() {
+  csSolver.disabled = !fmiCs.checked;
+  el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
+}
+function openExport() { if (!exportBtn.disabled) { syncExportDialog(); exportBackdrop.hidden = false; } }
+function closeExport() { exportBackdrop.hidden = true; }
+fmiCs.addEventListener('change', syncExportDialog);
+fmiMe.addEventListener('change', syncExportDialog);
+// While exporting the button cancels; otherwise it opens the dialog.
+exportBtn.addEventListener('click', () => { if (exporting) requestExportCancel(); else openExport(); });
+el('exportClose').addEventListener('click', closeExport);
+el('exportCancel').addEventListener('click', closeExport);
+exportBackdrop.addEventListener('click', (e) => { if (e.target === exportBackdrop) closeExport(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !exportBackdrop.hidden) closeExport(); });
+el('exportGo').addEventListener('click', () => {
+  const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
+  const method = fmiCs.checked ? csSolver.value : undefined;
+  closeExport();
+  exportFmu({ fmuType, method });
+});
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
-  const info = omc_sim_info(); if (info) setStatus(`${info.model} — ${info.rows} points, t ∈ [${info.start}, ${info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
-window.addEventListener('resize', () => { for (const c of charts) drawChart(c); });
+  if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
+window.addEventListener('resize', () => { autoDocs(); charts.redraw(); });
+autoDocs();
+
+exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
 
 (async () => {
   try {
-    await init();
-    omc_set_env('OPENMODELICAHOME', '/usr');
-    if (!omc_init()) return setStatus('omc_init() failed — see the devtools console.', 'err');
+    await loadConfig();                             // examples + title, before the first run
+
+    if (DRIVER_MODE !== null) log('sim driver forced to', DRIVER_MODE ? 'in-wasm' : 'host', '(?driver=)');
+    w1 = makeWorker('w1');
+    w2 = makeWorker('w2-msl');
+    primaryWorker = w1;
+
+    // Bring the MSL worker up in the background; it takes over once ready. Once
+    // loaded, if the user hasn't already asked for an MSL model, warm it with a
+    // throwaway simulate so its first real run isn't cold (see mslJobStarted).
+    mslReady = (async () => {
+      await call(w2, 'init'); await call(w2, 'installMSL'); mslDone = true; promote();
+      if (!mslJobStarted) call(w2, 'warmup').catch((e) => log('warmup failed', e));
+      return w2;
+    })();
+    mslReady.catch((e) => log('MSL worker failed to initialise', e));
+
+    const v = await call(w1, 'init');
+    if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     runBtn.disabled = false;
-    setStatus('Ready. ' + omc_eval('getVersion()'));
-    run('full');
-  } catch (e) { setStatus('Startup error: ' + e, 'err'); }
+    el('exportFmu').disabled = false;
+    setStatus('Ready. ' + v.version);
+    selectExample(currentExample);                  // run the configured default example
+  } catch (e) { log('startup error', e); setStatus('Startup error: ' + e, 'err'); }
 })();
 </script>
 </body>

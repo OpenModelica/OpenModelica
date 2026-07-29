@@ -47,7 +47,7 @@
 
 use std::io::Write;
 
-use anyhow::{bail, Context, Result};
+use metamodelica::Result;
 use arcstr::{literal, ArcStr};
 use metamodelica::{list, List};
 
@@ -66,7 +66,7 @@ pub fn serialize(code: SimCode::SimCode) -> Result<ArcStr> {
                         "SerializeSparsityPattern.serialize failed because no row coloring for the adjoint jacobian exists."
                     )],
                 )?;
-                bail!("fail");
+                return Err("fail");
             }
             (&jac.sparsityT, &jac.coloredRows)
         } else {
@@ -105,22 +105,22 @@ pub fn serialize(code: SimCode::SimCode) -> Result<ArcStr> {
 /// indices, each as a native-endian u32.
 fn serializeJacobian(name: &str, colPtrs: &[i32], rowInds: &[i32]) -> Result<()> {
     let file = std::fs::File::create(name)
-        .with_context(|| format!("Could not open sparsity pattern file {name}."))?;
+        .map_err(|_| "Could not open sparsity pattern file {name}.")?;
     let mut out = std::io::BufWriter::new(file);
     // Compute and write sparsePattern->leadindex.
     let mut j: u32 = 0;
     for &c in colPtrs {
         j = j.wrapping_add(c as u32);
         out.write_all(&j.to_ne_bytes())
-            .with_context(|| format!("Error while writing sparsePattern->leadindex to {name}."))?;
+            .map_err(|_| "Error while writing sparsePattern->leadindex to {name}.")?;
     }
     // Write sparsePattern->index.
     for &r in rowInds {
         out.write_all(&(r as u32).to_ne_bytes())
-            .with_context(|| format!("Error while writing sparsePattern->index to {name}."))?;
+            .map_err(|_| "Error while writing sparsePattern->index to {name}.")?;
     }
     out.flush()
-        .with_context(|| format!("Error while writing sparsity pattern file {name}."))?;
+        .map_err(|_| "Error while writing sparsity pattern file {name}.")?;
     Ok(())
 }
 
@@ -131,14 +131,14 @@ fn serializeColor(name: &str, columns: &[i32]) -> Result<()> {
         .create(true)
         .append(true)
         .open(name)
-        .with_context(|| format!("Could not open sparsity pattern file {name}."))?;
+        .map_err(|_| "Could not open sparsity pattern file {name}.")?;
     let mut out = std::io::BufWriter::new(file);
     // Write sparsePattern->colorCols.
     for &c in columns {
         out.write_all(&(c as u32).to_ne_bytes())
-            .with_context(|| format!("Error while writing sparsePattern->colorCols to {name}."))?;
+            .map_err(|_| "Error while writing sparsePattern->colorCols to {name}.")?;
     }
     out.flush()
-        .with_context(|| format!("Error while writing sparsity pattern file {name}."))?;
+        .map_err(|_| "Error while writing sparsity pattern file {name}.")?;
     Ok(())
 }

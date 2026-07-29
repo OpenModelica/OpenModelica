@@ -716,13 +716,15 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.ENTWINED_COMPONENT() algorithm
-          // create generic index list calls for entwined for-loop equations
+          // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
             (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
-            UnorderedMap.add(getGenericEquationName(slice), getGenericAssignIndex(single_call), entwined_index_map);
+            // position = current list length before prepend (0-based, stable after reversal below)
+            UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
           end for;
+          single_calls := listReverse(single_calls);
           for tpl in listReverse(comp.entwined_tpl_lst) loop
             (eqn_ptr, _) := tpl;
             call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
@@ -753,8 +755,7 @@ public
             end if;
           end for;
 
-          // TODO: reactivate this once nonlinear loops actually work
-          if false and isSome(strict.jac) then
+          if isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -860,6 +861,13 @@ public
           res_idx := res_idx + listLength(slice.indices);
         then tmp;
 
+        // WHEN equations can appear as residuals in event-iteration algebraic loops.
+        // They are evaluated (not minimized) during the iteration — create a WHEN block.
+        // res_idx is NOT incremented since this is not a numerical residual.
+        case (BEquation.WHEN_EQUATION(), _) algorithm
+          (tmp, simCodeIndices) := createWhenBody(eqn.body, eqn.source, eqn.attr, simCodeIndices);
+        then tmp;
+
         // ToDo: add all other cases!
 
         else algorithm
@@ -894,7 +902,9 @@ public
         then tmp;
 
         case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
-          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, eqn.rhs, eqn.source, eqn.attr);
+          // expand scalar rhs to array when lhs is array (implicit broadcast in Modelica)
+          rhs := if Type.isArray(Expression.typeOf(eqn.rhs)) then eqn.rhs else Expression.fillType(eqn.ty, eqn.rhs);
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -993,10 +1003,12 @@ public
       list<Block> blcks = {};
     algorithm
       comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in body.then_eqns);
+
       for comp in listReverse(comps) loop
         (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
         blcks := blck :: blcks;
       end for;
+
       branches := (body.condition, blcks) :: branches;
       if isSome(body.else_if) then
         (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, kind, simcode_map, equation_map);
@@ -1357,6 +1369,23 @@ public
         then fail();
       end match;
     end getGenericEquationName;
+
+    function getEntwinedEquationName
+      "Returns the equation name for any slice type that can appear in an ENTWINED_COMPONENT."
+      input StrongComponent comp;
+      output ComponentRef name;
+    algorithm
+      name := match comp
+        case StrongComponent.SINGLE_COMPONENT()    then Equation.getEqnName(comp.eqn);
+        case StrongComponent.MULTI_COMPONENT()     then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.SLICED_COMPONENT()    then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.GENERIC_COMPONENT()   then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.RESIZABLE_COMPONENT() then Equation.getEqnName(Slice.getT(comp.eqn));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getEntwinedEquationName;
   end Block;
 
   uniontype LinearSystem

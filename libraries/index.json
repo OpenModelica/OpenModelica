@@ -14,6 +14,25 @@
         }
       }
     },
+    "Buildings": {
+      "versions": {
+        "12.1.2-maint.12.x": {
+          "path": "Buildings",
+          "provides": [
+            "12.0.0",
+            "12.1.0",
+            "12.1.1"
+          ],
+          "sha": "f04caa0b1ad7c9fb60746762ad73a96b9e67904a",
+          "support": "noSupport",
+          "uses": {
+            "Modelica": "4.1.0"
+          },
+          "version": "12.1.2-maint.12.x",
+          "zipfile": "https://github.com/lbl-srg/modelica-buildings/archive/f04caa0b1ad7c9fb60746762ad73a96b9e67904a.zip"
+        }
+      }
+    },
     "Complex": {
       "versions": {
         "3.2.1+maint.om": {

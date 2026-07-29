@@ -65,6 +65,12 @@
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
+#if defined(__EMSCRIPTEN__)
+// Cooperative wasm-jit simulation cancel; defined as EM_JS in OMCProxy.cpp.
+int omedit_cancel_available();
+void omedit_cancel_sim();
+void omedit_clear_cancel();
+#endif
 }
 
 /*!
@@ -497,7 +503,23 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   // Echo the flags in the compilation output (always visible) so the run is
   // debuggable even if the simulation-messages path has a problem.
   writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), Qt::black);
+#if defined(__EMSCRIPTEN__)
+  // Cooperative cancel: enable the button (sendCommand spins a nested QEventLoop, so
+  // a click reaches cancelCompilationOrSimulation and sets the shared flag the omc
+  // driver polls). Only when the shared buffer exists (cross-origin isolated).
+  mWasmJitCancelled = false;
+  if (omedit_cancel_available()) {
+    omedit_clear_cancel();
+    mIsWasmJitSimulationRunning = true;
+    mpCancelButton->setText(tr("Cancel Simulation"));
+    mpCancelButton->setEnabled(true);
+  }
+#endif
   pOMCProxy->sendCommand(command);
+#if defined(__EMSCRIPTEN__)
+  mIsWasmJitSimulationRunning = false;
+  mpCancelButton->setEnabled(false);
+#endif
   const QString simulationResult = pOMCProxy->getResult();
   pOMCProxy->printMessagesStringInternal();
   // The SimulationResult record carries the run's messages; an empty resultFile
@@ -533,7 +555,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
 #endif
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setValue(100);
-  const QString progressStr = ok ? tr("Simulation of %1 finished.").arg(mSimulationOptions.getClassName())
+  const QString progressStr = mWasmJitCancelled ? tr("Simulation of %1 cancelled.").arg(mSimulationOptions.getClassName())
+                            : ok ? tr("Simulation of %1 finished.").arg(mSimulationOptions.getClassName())
                                  : tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName());
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
@@ -1326,6 +1349,16 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
 #endif // QT_CONFIG(process)
+#if defined(__EMSCRIPTEN__)
+  // wasm-jit run: no QProcess to kill — set the shared flag; the blocking simulate()
+  // aborts and runWasmJitSimulation reports it.
+  if (mIsWasmJitSimulationRunning) {
+    omedit_cancel_sim();
+    mWasmJitCancelled = true;
+    mpCancelButton->setEnabled(false);
+    mpProgressLabel->setText(tr("Cancelling simulation of %1…").arg(mSimulationOptions.getClassName()));
+  }
+#endif
 }
 
 /*!

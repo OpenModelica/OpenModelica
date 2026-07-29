@@ -143,7 +143,13 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // 0
 // ""
-// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// "info:    *** FMU Simulation Info ***
+//           - model:     BouncingBallFMI20 (co-simulation)
+//           - startTime: 0.000000
+//           - stopTime:  1.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
 // LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06

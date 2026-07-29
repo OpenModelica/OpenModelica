@@ -1,0 +1,42 @@
+# Model-agnostic FMI 3.0 Model-Exchange adapter, compiled ONCE to
+# wasm32-unknown-unknown and merged (wasm-merge) with a per-model kernel module
+# emitted by CodegenWasmJit, then componentized (wit-component) into an
+# fmi-ls-wasm component. It implements the `fmi:fmi3/model-exchange-fmu` world
+# and drives the model through the kernel functions imported from module `model`.
+#
+# It links `openmodelica_codegen_wasm_jit_runtime` (default-features off, so the
+# `rt_sim_*` session driver and its `env` table import are dropped) purely for the
+# shared dlmalloc allocator + `rt_*` primitives + linear memory: the merged module
+# then has ONE allocator/heap shared by the model's `rt_alloc` and wit-bindgen's
+# `cabi_realloc`. See openmodelica_codegen_wasm_jit/build.rs for how it is built
+# and embedded (same pattern as the linear-memory runtime).
+#
+# Standalone `[workspace]` so the host (native) workspace never builds this
+# wasm-only cdylib.
+[package]
+name = "openmodelica_fmi3_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
+openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+
+[profile.release]
+opt-level = "s"
+lto = true
+panic = "abort"
+strip = true
+
+[workspace]
+
+[features]
+# The FMI interfaces this build exports. `me` alone → Model Exchange, `cs` alone
+# → Co-Simulation, both → a single me_cs component exporting both.
+default = ["me"]
+me = []
+cs = []

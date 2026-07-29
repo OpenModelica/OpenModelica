@@ -35,7 +35,8 @@
 #![allow(non_snake_case)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::thread::ThreadId;
 
 use arcstr::ArcStr;
 use metamodelica::{List, SourceInfo, nil, cons};
@@ -219,6 +220,31 @@ thread_local! {
 
 fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> R {
     STATE.with(|s| f(&mut s.borrow_mut()))
+}
+
+// Parallel-parse message merge: workers drain their thread-local queue into
+// PARALLEL_STAGING (via moveMessagesToParentThread), the parent splices it back
+// in end_parallel_merge once the fan-out is done.
+static PARALLEL_PARENT: Mutex<Option<ThreadId>> = Mutex::new(None);
+static PARALLEL_STAGING: Mutex<Vec<QueuedMessage>> = Mutex::new(Vec::new());
+
+pub fn begin_parallel_merge() {
+    *PARALLEL_PARENT.lock().unwrap() = Some(std::thread::current().id());
+    PARALLEL_STAGING.lock().unwrap().clear();
+}
+
+pub fn end_parallel_merge() {
+    *PARALLEL_PARENT.lock().unwrap() = None;
+    let staged = std::mem::take(&mut *PARALLEL_STAGING.lock().unwrap());
+    if staged.is_empty() {
+        return;
+    }
+    with_state(|s| {
+        for qm in staged {
+            bump_counters(s, &qm.msg.severity, 1);
+            s.queue.push(qm);
+        }
+    });
 }
 
 fn bump_counters(state: &mut State, severity: &Severity, delta: i32) {
@@ -606,11 +632,26 @@ pub fn isTopCheckpoint(id: ArcStr) -> bool {
     with_state(|s| s.check_points.last().map(|(_, cid)| cid == &id).unwrap_or(false))
 }
 
-/// Hand off pending messages to the parent thread's queue when a worker
-/// thread terminates. The bootstrap is single-threaded with respect to
-/// the error buffer, so there is no parent to merge into.
+/// Drain a worker's pending messages into the parallel staging buffer. A no-op
+/// outside a parallel run, or on the parent thread itself (rayon may run a task
+/// inline — those messages are already where they belong).
 pub fn moveMessagesToParentThread() {
-    // Intentional no-op — see doc comment.
+    let Some(parent) = *PARALLEL_PARENT.lock().unwrap() else {
+        return;
+    };
+    if parent == std::thread::current().id() {
+        return;
+    }
+    let drained = with_state(|s| {
+        let q = std::mem::take(&mut s.queue);
+        s.num_errors = 0;
+        s.num_warnings = 0;
+        s.check_points.clear();
+        q
+    });
+    if !drained.is_empty() {
+        PARALLEL_STAGING.lock().unwrap().extend(drained);
+    }
 }
 
 /// Roll back the messages added since the most recent checkpoint and

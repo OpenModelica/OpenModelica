@@ -362,9 +362,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
         infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
         for(i=0; i<n; i++)
         {
-          buffer[0] = 0;
+          char *p = buffer;
           for(j=0; j<n; j++)
-            sprintf(buffer, "%s%20.12g ", buffer, fjac[i*hybrdData->n+j]);
+            p += sprintf(p, "%20.12g ", fjac[i*hybrdData->n+j]);
           infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
         }
         messageClose(OMC_LOG_NLS_JAC);
@@ -642,9 +642,9 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", (int)hybrdData->n, (int)hybrdData->n);
           for(i=0; i<hybrdData->n; i++)
           {
-            buffer[0] = 0;
+            char *p = buffer;
             for(j=0; j<hybrdData->n; j++)
-              sprintf(buffer, "%s%10g ", buffer, hybrdData->fjacobian[i*hybrdData->n+j]);
+              p += sprintf(p, "%10g ", hybrdData->fjacobian[i*hybrdData->n+j]);
             infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
           }
           messageClose(OMC_LOG_NLS_JAC);

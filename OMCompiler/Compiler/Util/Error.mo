@@ -1339,6 +1339,8 @@ public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE
   "File not Found: %s. Compile OpenModelica with Encryption support.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_NOT_SUPPORTED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag.");
+public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Operation cancelled by user.");
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
@@ -1418,6 +1420,15 @@ algorithm
       then str;
   end match;
 end getCurrentComponent;
+
+public function checkCancel "Fails with a USER_CANCELLED message if the user requested cancellation.
+  A coarse chokepoint for the frontend/backend driver loops."
+algorithm
+  if System.isCancelled() then
+    addMessage(USER_CANCELLED, {});
+    fail();
+  end if;
+end checkCancel;
 
 public function addMessage "Implementation of Relations
   function: addMessage

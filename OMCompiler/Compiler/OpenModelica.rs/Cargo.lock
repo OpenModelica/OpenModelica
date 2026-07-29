@@ -1920,6 +1920,7 @@ name = "daskr"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "libm",
 ]
 
 [[package]]
@@ -4287,6 +4288,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a2c462a4d927d512f5f882a033ddd62f33a05bb9f230d98f736ac3dc85938f"
 
 [[package]]
+name = "id-arena"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4778,6 +4785,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.49"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a45a52f43e1c16f667ccfe4dd8c85b7f7c204fd5e3bf46c5b0db9a5c3c0b8e9"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "libopenmodelica_compiler"
 version = "0.1.0"
 dependencies = [
@@ -4787,6 +4803,7 @@ dependencies = [
  "js-sys",
  "libc",
  "metamodelica",
+ "mimalloc",
  "openmodelica_backend_main",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
@@ -4795,6 +4812,7 @@ dependencies = [
  "openmodelica_scripting_qt",
  "openmodelica_util",
  "openmodelica_wasi",
+ "tikv-jemallocator",
  "wasm-bindgen",
  "web-sys",
  "zip",
@@ -5162,7 +5180,6 @@ dependencies = [
 name = "metamodelica"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "metamodelica_derive",
  "num-traits",
@@ -5177,6 +5194,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "mimalloc"
+version = "0.1.52"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d4139bb28d14ad1facf21d5eb8825051b326e172d216b39f6d31df53cc97862"
+dependencies = [
+ "libmimalloc-sys",
 ]
 
 [[package]]
@@ -5209,6 +5235,13 @@ checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
  "simd-adler32",
+]
+
+[[package]]
+name = "minpack"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]
@@ -6035,10 +6068,25 @@ name = "openmodelica"
 version = "0.1.0"
 
 [[package]]
+name = "openmodelica_animation"
+version = "0.1.0"
+dependencies = [
+ "roxmltree",
+]
+
+[[package]]
+name = "openmodelica_animation_wasm"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "openmodelica_animation",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "openmodelica_ast"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6052,7 +6100,6 @@ dependencies = [
 name = "openmodelica_ast_collections"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6067,7 +6114,6 @@ dependencies = [
 name = "openmodelica_backend"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6098,7 +6144,6 @@ dependencies = [
 name = "openmodelica_backend_main"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6114,6 +6159,7 @@ dependencies = [
  "openmodelica_codegen_cpp",
  "openmodelica_codegen_cpp_ext",
  "openmodelica_codegen_cpp_omsi_ext",
+ "openmodelica_codegen_fmu",
  "openmodelica_codegen_fmu_c",
  "openmodelica_codegen_fmu_omsi",
  "openmodelica_codegen_wasm_jit",
@@ -6141,7 +6187,6 @@ dependencies = [
 name = "openmodelica_backend_tools"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6166,7 +6211,6 @@ dependencies = [
 name = "openmodelica_backend_types"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6184,7 +6228,6 @@ dependencies = [
 name = "openmodelica_backend_util"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6197,7 +6240,6 @@ dependencies = [
 name = "openmodelica_codegen"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6219,7 +6261,6 @@ dependencies = [
 name = "openmodelica_codegen_c"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6244,7 +6285,6 @@ dependencies = [
 name = "openmodelica_codegen_cfunctions"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6268,7 +6308,6 @@ dependencies = [
 name = "openmodelica_codegen_cpp"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6293,7 +6332,6 @@ dependencies = [
 name = "openmodelica_codegen_cpp_common"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6317,7 +6355,6 @@ dependencies = [
 name = "openmodelica_codegen_cpp_ext"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6343,7 +6380,6 @@ dependencies = [
 name = "openmodelica_codegen_cpp_omsi"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6368,7 +6404,6 @@ dependencies = [
 name = "openmodelica_codegen_cpp_omsi_ext"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6394,7 +6429,6 @@ dependencies = [
 name = "openmodelica_codegen_fmu"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6418,7 +6452,6 @@ dependencies = [
 name = "openmodelica_codegen_fmu_c"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6443,7 +6476,6 @@ dependencies = [
 name = "openmodelica_codegen_fmu_omsi"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6468,7 +6500,6 @@ dependencies = [
 name = "openmodelica_codegen_graphml"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6483,33 +6514,36 @@ dependencies = [
 name = "openmodelica_codegen_wasm_jit"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
- "daskr",
- "libffi",
  "metamodelica",
  "openmodelica_ast",
+ "openmodelica_backend",
  "openmodelica_backend_types",
  "openmodelica_error",
+ "openmodelica_frontend_base",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
+ "openmodelica_tpl",
  "openmodelica_util",
  "openmodelica_wasi",
+ "openmodelica_wasi_libc",
+ "openmodelica_wasm_jit",
  "ordered-float",
  "wasm-encoder 0.252.0",
  "wasmer",
+ "wasmparser 0.252.0",
  "wasmtime",
+ "wit-component",
 ]
 
 [[package]]
 name = "openmodelica_codegen_xml"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6531,7 +6565,6 @@ dependencies = [
 name = "openmodelica_dump_extra"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6545,7 +6578,6 @@ dependencies = [
 name = "openmodelica_error"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6556,7 +6588,6 @@ dependencies = [
 name = "openmodelica_frontend"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6580,7 +6611,6 @@ dependencies = [
 name = "openmodelica_frontend_base"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6601,7 +6631,6 @@ dependencies = [
 name = "openmodelica_frontend_dump"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6618,7 +6647,6 @@ dependencies = [
 name = "openmodelica_frontend_inst"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6634,7 +6662,6 @@ dependencies = [
 name = "openmodelica_frontend_types"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6651,13 +6678,13 @@ name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "openmodelica_wasi",
 ]
 
 [[package]]
 name = "openmodelica_nbackend"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6681,7 +6708,6 @@ dependencies = [
 name = "openmodelica_nf_frontend"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "cc",
  "const-str 1.1.0",
@@ -6702,7 +6728,6 @@ dependencies = [
 name = "openmodelica_program_util"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6719,7 +6744,6 @@ dependencies = [
 name = "openmodelica_script_util"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "curl",
@@ -6758,12 +6782,15 @@ dependencies = [
 [[package]]
 name = "openmodelica_sim_meta"
 version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
+]
 
 [[package]]
 name = "openmodelica_simcode_types"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6781,7 +6808,6 @@ dependencies = [
 name = "openmodelica_simcode_util"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6803,7 +6829,6 @@ dependencies = [
 name = "openmodelica_susan"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6818,7 +6843,6 @@ dependencies = [
 name = "openmodelica_tpl"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6832,7 +6856,6 @@ dependencies = [
 name = "openmodelica_util"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "cc",
  "const-str 1.1.0",
@@ -6845,6 +6868,7 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
+ "rayon",
  "regex",
  "roxmltree",
  "zip",
@@ -6855,7 +6879,6 @@ dependencies = [
 name = "openmodelica_util_datatypes_basic"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arcstr",
  "const-str 1.1.0",
  "loop_unwrap",
@@ -6869,6 +6892,30 @@ version = "0.1.0"
 dependencies = [
  "getrandom 0.3.4",
  "web-time",
+]
+
+[[package]]
+name = "openmodelica_wasi_libc"
+version = "0.1.0"
+
+[[package]]
+name = "openmodelica_wasm_jit"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "daskr",
+ "libc",
+ "libffi",
+ "metamodelica",
+ "openmodelica_error",
+ "openmodelica_modelica_utilities",
+ "openmodelica_sim_meta",
+ "openmodelica_util",
+ "openmodelica_wasi",
+ "rsparse",
+ "wasm-encoder 0.252.0",
+ "wasmer",
+ "wasmtime",
 ]
 
 [[package]]
@@ -8246,6 +8293,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsparse"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d65dc8db760bdc8c94f4163c5d09be710f76fc92a4a1f698c441925db83c09e"
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9529,6 +9582,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tikv-jemalloc-sys"
+version = "0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd8aa5b2ab86a2cefa406d889139c162cbb230092f7d1d7cbc1716405d852a3b"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
+name = "tikv-jemallocator"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0359b4327f954e0567e69fb191cf1436617748813819c94b8cd4a431422d053a"
+dependencies = [
+ "libc",
+ "tikv-jemalloc-sys",
+]
+
+[[package]]
 name = "time"
 version = "0.3.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10354,6 +10427,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-metadata"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b7e08e02a3cd55bf778009d4cd6faae50da011f293644daf78a531a32d6d142"
+dependencies = [
+ "anyhow",
+ "indexmap",
+ "wasm-encoder 0.252.0",
+ "wasmparser 0.252.0",
+]
+
+[[package]]
 name = "wasm-streams"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10555,8 +10640,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3eb099dcadcde5be9eef55e3a337128efd4e44b4c93122487e4d2e4e1c6627c"
 dependencies = [
  "bitflags 2.13.0",
+ "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
@@ -12021,6 +12108,44 @@ name = "wit-bindgen"
 version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+
+[[package]]
+name = "wit-component"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76db0662b590f45d33d0e363fa13539a5a1eecd35d5a12fe208c335461c1053d"
+dependencies = [
+ "anyhow",
+ "bitflags 2.13.0",
+ "indexmap",
+ "log",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "wasm-encoder 0.252.0",
+ "wasm-metadata",
+ "wasmparser 0.252.0",
+ "wit-parser",
+]
+
+[[package]]
+name = "wit-parser"
+version = "0.252.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4266bea110371c620ccf3201c5023676046bc4556e5c7cfb5d500bda5ebc162d"
+dependencies = [
+ "anyhow",
+ "hashbrown 0.17.1",
+ "id-arena",
+ "indexmap",
+ "log",
+ "semver",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "unicode-ident",
+ "wasmparser 0.252.0",
+]
 
 [[package]]
 name = "writeable"

@@ -24,7 +24,7 @@
 
 use std::sync::Mutex;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use crate::Autoconf;
@@ -135,13 +135,13 @@ pub fn setInstallationDirectoryPath(inString: ArcStr) {
 /// and replaces it with a generic message that never mentions
 /// `OPENMODELICAHOME` — without the stderr line the actual cause is invisible.
 fn strip_bin_path(path: &str) -> Result<ArcStr> {
-    fn cannot_deduce(path: &str) -> anyhow::Error {
+    fn cannot_deduce(path: &str) -> &'static str {
         let msg = format!(
             "could not deduce the OpenModelica installation directory from \
              executable path: [{path}], please set OPENMODELICAHOME"
         );
         eprintln!("{msg}");
-        anyhow::anyhow!(msg)
+        "error"
     }
 
     if !path.contains("bin") && !path.contains("lib") {
@@ -197,7 +197,7 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     }
 
     let exe = std::env::current_exe()
-        .map_err(|e| anyhow::anyhow!("failed to determine executable path: {e}"))
+        .map_err(|e| "failed to determine executable path: {e}")
         .map(|p| convert_to_forward_slashes(&p.to_string_lossy()));
 
     if let Ok(exe) = &exe
@@ -262,7 +262,7 @@ pub fn getModelicaPath(runningTestsuite: bool) -> Result<ArcStr> {
         Ok(env) if !env.is_empty() => ArcStr::from(env),
         _ => {
             if runningTestsuite {
-                bail!("When using --running-testsuite, OPENMODELICALIBRARY must be set");
+                return Err("When using --running-testsuite, OPENMODELICALIBRARY must be set");
             }
             // `getHomeDir` locks `STATE` itself, so resolve it before re-locking.
             let home = getHomeDir(false);
