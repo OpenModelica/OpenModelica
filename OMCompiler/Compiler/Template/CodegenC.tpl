@@ -5939,6 +5939,10 @@ match sparsity
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
 
+      /* Canonicalize inner indices before conversion or construction of any
+       * position-based recovery mappings. */
+      sortSparseColumns(jacobian->sparsePattern, <%patternCols%>);
+
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
        * generated primal CSC structure to CSR before computing row colors. */
