@@ -5912,6 +5912,7 @@ match sparsity
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
+    let isRowEval = if isAdjoint then "1" else "0"
     let availability = if SimCodeUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -5925,6 +5926,7 @@ match sparsity
       <%auxFunction%>
 
       initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
+      jacobian->isRowEval = <%isRowEval%>;
 
       /* Phase 1: count non-zeros per column */
       memset(col_counts, 0, <%patternCols%> * sizeof(unsigned int));
