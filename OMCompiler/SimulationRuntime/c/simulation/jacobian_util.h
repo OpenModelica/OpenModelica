@@ -42,88 +42,22 @@ JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 void freeJacobianCopy(JACOBIAN* jac);
 
+#ifdef USE_PARJAC
+void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
+                                        JACOBIAN* jacColumns,
+                                        SPARSE_PATTERN* spp,
+                                        void* matrixA, setJacElementFunc setElement);
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns);
+void freeAnalyticalJacobian(JACOBIAN** jacColumns);
+#endif
+
 typedef void (*jacobianSetDenseElementFunc)(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value);
-
-/**
- * @brief Generic element setter for a Jacobian matrix.
- *
- * Jac(row, column) = value.
- *
- * @param row     Row index.
- * @param column  Column index.
- * @param nth     Sparsity pattern position (CSC index).
- * @param value   Value to set.
- * @param Jac     Opaque pointer to the matrix data structure.
- * @param nRows   Number of rows.
- */
 typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
-
-/**
- * @brief Cleanup callback invoked after each color during Jacobian evaluation.
- *
- * Used to reset result and tmp vars between colors when needed (e.g. row-wise eval).
- * Pass NULL or evalJacobianCleanupNoop when no cleanup is required.
- *
- * @param jac  Jacobian being evaluated.
- */
 typedef void (*jacobianCleanup_func_ptr)(JACOBIAN* jac);
-
-/** No-op cleanup: does nothing. Use for column-wise (forward) evaluation. */
-void evalJacobianCleanupNoop(JACOBIAN* jac);
-
-/**
- * @brief Row-eval cleanup: zeros resultVars and tmpVars after each color.
- *
- * Required for row-wise (adjoint) evaluation to prevent accumulation across colors.
- */
 void evalJacobianCleanupRowEval(JACOBIAN* jac);
-
-/**
- * @brief setJacElementFunc-compatible setter: writes jac[nth] = value (sparse CSC raw buffer).
- */
 void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows);
-
-/**
- * @brief setJacElementFunc-compatible setter: writes jac[col*nRows+row] = value (dense column-major raw buffer).
- */
 void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows);
-
-/**
- * @brief setJacElementFunc-compatible setter for row-eval dense column-major output.
- *
- * Used in row-wise (adjoint) evaluation where setElement is called as
- * setElement(currentIndex=col, j=row, nth, value, jac, nRows).
- * Writes jac[col * nRows + row] = value.  nth is unused.
- */
 void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows);
-
-/**
- * @brief Evaluate one color of a Jacobian using a generic element setter.
- *
- * This is the shared single-color kernel used by both the serial evalJacobianColored
- * and the parallel evalJacobianColoredParallel.  Callers pre-compute the derived
- * quantities (isRowEval, activeDim, nRows) to avoid redundant work inside the parallel
- * region.
- *
- * evalFunc is passed explicitly so that callers with thread-local Jacobians that do not
- * have evalColumn set (e.g. those allocated by allocateThreadLocalJacobians) can supply
- * the correct function pointer from data->callback directly.
- *
- * @param jacobian    Jacobian to evaluate (seedVars/resultVars must be thread-local).
- * @param parentJac   Parent Jacobian; pass NULL in the parallel path.
- * @param sp          Sparse pattern (CSC for column eval, CSR for row eval).
- * @param color       0-based color index to process.
- * @param activeDim   jacobian->sizeRows (row eval) or jacobian->sizeCols (column eval).
- * @param nRows       (int)jacobian->sizeRows, passed through to the setter.
- * @param matrixA     Opaque output matrix; forwarded to setElement.
- * @param setElement  Orientation-aware setter called as setElement(currentIndex, j, nth, value, matrixA, nRows),
- *                    where j is the active (seeded) index and currentIndex is the passive index.
- *                    For column eval pass setJacElementRawDenseColumnMajor (receives row, col).
- *                    For row eval pass setJacElementRawDenseColumnMajorRowEval (receives col, row).
- *                    For sparse either direction works with setJacElementRawSparse.
- * @param evalFunc    Function that evaluates the Jacobian for the current seed vector.
- * @param cleanupFunc Called after scatter to reset intermediate state; NULL is a no-op.
- */
 void evalJacobianOneColor(DATA* data, threadData_t* threadData,
                            JACOBIAN* jacobian, JACOBIAN* parentJac,
                            const SPARSE_PATTERN* sp, int color,
@@ -131,34 +65,9 @@ void evalJacobianOneColor(DATA* data, threadData_t* threadData,
                            void* matrixA, setJacElementFunc setElement,
                            jacobianColumn_func_ptr evalFunc,
                            jacobianCleanup_func_ptr cleanupFunc);
-
-/**
- * @brief Evaluate colored Jacobian, storing results via a generic setter.
- *
- * This is the unified core evaluation function.  All other evalJacobian* variants
- * are thin wrappers that select an appropriate setJacElementFunc and delegate here.
- *
- * Supports both column-wise (forward, jacobian->isRowEval == FALSE) and row-wise
- * (adjoint, jacobian->isRowEval == TRUE) evaluation based on the jacobian's isRowEval flag.
- * The sparsity pattern and seed/result indexing are chosen accordingly.
- *
- * @param matrixA     Opaque pointer to output matrix; passed through to setElement.
- * @param setElement  Setter called for each nonzero: (row, col, nz_index, value, matrixA, nRows).
- * @param cleanupFunc Called after each color to reset intermediate state.  Pass NULL or
- *                    evalJacobianCleanupNoop for column-wise eval; pass
- *                    evalJacobianCleanupRowEval for row-wise eval to avoid accumulation.
- */
 void evalJacobianColored(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,
                          void* matrixA, setJacElementFunc setElement,
                          jacobianCleanup_func_ptr cleanupFunc);
-
-/**
- * @brief Evaluate colored Jacobian into a raw modelica_real* buffer.
- *
- * Convenience wrapper over evalJacobianColored.
- * isDense=TRUE  → column-major dense output; buffer is zero-initialised first.
- * isDense=FALSE → sparse CSC output; values written at their CSC position (jac[nz]).
- */
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 void evalJacobianExtended(DATA* data, threadData_t* threadData,
                    JACOBIAN_METHOD method,
@@ -167,7 +76,10 @@ void evalJacobianExtended(DATA* data, threadData_t* threadData,
                    setJacElementFunc setFwd, setJacElementFunc setAdj);
 
 void initBidirectionalRecovery(JACOBIAN* fwd);
-void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
+                               JACOBIAN* fwd, JACOBIAN* parentJacobian,
+                               void* matrixA, setJacElementFunc setElement,
+                               jacobianCleanup_func_ptr cleanupFunc);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);
