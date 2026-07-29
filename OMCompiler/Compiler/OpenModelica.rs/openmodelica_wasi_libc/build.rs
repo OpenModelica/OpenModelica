@@ -1,10 +1,12 @@
 //! Builds the external-"C" artifacts a host-free wasm FMU links in, embedded by
 //! `src/lib.rs`: a `-fPIC` wasi-libc `libc.so`, ModelicaExternalC as a PIC dylink
-//! side module, and the vendored `wasi_snapshot_preview1` adapter. Debian's
-//! wasi-libc is non-PIC, so a `-fPIC` one (wasi-sdk-32, `BUILD_SHARED=ON`) is built
-//! here and ModelicaExternalC compiled against it. Best-effort: empty placeholders
-//! when the toolchain is unavailable, and the consumer then reports external "C"
-//! in wasm FMUs as unsupported.
+//! side module, and the vendored `wasi_snapshot_preview1` adapter.
+//!
+//! All inputs are provided by CMake via environment variables. This crate does
+//! not build wasi-libc or sundials itself — the CMake targets `rust_wasi_pic_sysroot`
+//! and `rust_sundials_wasm` handle that before cargo runs.
+//!
+//! Failure in any step (sysroot missing, external-C clang failure) is a hard error.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -18,143 +20,59 @@ fn main() {
     let mec_dest = out_dir.join("modelicaexternalc_dylink.wasm");
     let libc_dest = out_dir.join("libc_pic.wasm");
 
-    let Some(sysroot) = ensure_pic_wasi_sysroot(&out_dir) else {
-        placeholder(&mec_dest);
-        placeholder(&libc_dest);
-        return;
-    };
+    // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
+    let sysroot = ensure_pic_wasi_sysroot();
     let triple = "wasm32-wasip1";
     let libc_so = sysroot.join("lib").join(triple).join("libc.so");
     if !libc_so.exists() {
-        println!("cargo:warning=PIC wasi sysroot has no {}; external \"C\" in wasm FMUs disabled", libc_so.display());
-        placeholder(&mec_dest);
-        placeholder(&libc_dest);
-        return;
+        panic!("PIC wasi sysroot {} has no {}; external \"C\" in wasm FMUs requires libc.so",
+               sysroot.display(), libc_so.display());
     }
     copy(&libc_so, &libc_dest);
 
-    match build_external_c_dylink(&crate_dir, &out_dir, &sysroot, triple) {
-        Ok(m) => copy(&m, &mec_dest),
-        Err(e) => {
-            println!("cargo:warning=could not build the PIC ModelicaExternalC dylink module ({e}); \
-                      external \"C\" in wasm FMUs disabled");
-            placeholder(&mec_dest);
-            placeholder(&libc_dest);
-        }
-    }
+    // ModelicaExternalC dylink: mandatory for FMI wasm FMU export.
+    let module = build_external_c_dylink(&crate_dir, &out_dir, &sysroot, triple)
+        .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
+    copy(&module, &mec_dest);
 }
 
-const WASI_P1_ADAPTER_URL: &str =
-    "https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm";
-
-/// The preview1→preview2 reactor adapter: `OMC_WASI_P1_ADAPTER` (CMake downloads it),
-/// else a cached curl download for a raw cargo build, else a placeholder.
+/// The preview1→preview2 reactor adapter: `OMC_WASI_P1_ADAPTER` from CMake.
 fn provide_preview1_adapter(dest: &Path) {
     println!("cargo:rerun-if-env-changed=OMC_WASI_P1_ADAPTER");
     if let Ok(p) = std::env::var("OMC_WASI_P1_ADAPTER") {
-        if Path::new(&p).exists() {
-            copy(Path::new(&p), dest);
+        let path = Path::new(&p);
+        if path.exists() {
+            copy(path, dest);
             return;
         }
     }
-    let cached = dest.with_extension("dl");
-    if !cached.exists() {
-        let ok = Command::new("curl")
-            .args(["-sSfL", "-o"]).arg(&cached).arg(WASI_P1_ADAPTER_URL)
-            .status().map(|s| s.success()).unwrap_or(false);
-        if !ok {
-            std::fs::remove_file(&cached).ok();
-        }
-    }
-    if cached.exists() { copy(&cached, dest); } else { placeholder(dest); }
+    panic!("wasi_snapshot_preview1 adapter not found. Set OMC_WASI_P1_ADAPTER (CMake provides it).");
 }
 
-/// A `-fPIC` wasi-libc sysroot: `OMC_WASI_PIC_SYSROOT` if set, else built + cached.
-fn ensure_pic_wasi_sysroot(out_dir: &Path) -> Option<PathBuf> {
+/// PIC wasi sysroot: `OMC_WASI_PIC_SYSROOT` from CMake's rust_wasi_pic_sysroot target.
+fn ensure_pic_wasi_sysroot() -> PathBuf {
     println!("cargo:rerun-if-env-changed=OMC_WASI_PIC_SYSROOT");
-    if let Ok(p) = std::env::var("OMC_WASI_PIC_SYSROOT") {
-        let p = PathBuf::from(p);
-        if p.join("lib/wasm32-wasip1/libc.so").exists() {
-            return Some(p);
-        }
-        println!("cargo:warning=OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());
+    let p = std::env::var("OMC_WASI_PIC_SYSROOT")
+        .expect("OMC_WASI_PIC_SYSROOT not set — build via CMake which sets it");
+    let p = PathBuf::from(p);
+    let libc_so = p.join("lib/wasm32-wasip1/libc.so");
+    println!("cargo:rerun-if-changed={}", libc_so.display());
+    if libc_so.exists() {
+        return p;
     }
-    let sysroot = out_dir.join("wasi-pic-sysroot");
-    if sysroot.join("lib/wasm32-wasip1/libc.so").exists() {
-        return Some(sysroot);
-    }
-    match build_pic_wasi_libc(out_dir, &sysroot) {
-        Ok(()) => Some(sysroot),
-        Err(e) => {
-            println!("cargo:warning=could not build a PIC wasi-libc ({e}); set OMC_WASI_PIC_SYSROOT \
-                      to a prebuilt sysroot to enable external \"C\" in wasm FMUs");
-            None
-        }
-    }
+    panic!("OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());
 }
 
-/// Build a PIC wasi-libc sysroot from `OMC_WASI_LIBC_SRC` (CMake provides it; a raw
-/// `cargo build` falls back to a git clone). The non-obvious flags: `BUILD_SHARED=ON`
-/// for the PIC `libc.so`; `CMAKE_LINK_DEPENDS_USE_LINKER=OFF` (wasm-ld rejects the
-/// `--dependency-file` CMake would pass); `CMAKE_AR=llvm-ar` (GNU `ar` can't archive
-/// wasm).
-fn build_pic_wasi_libc(out_dir: &Path, sysroot_out: &Path) -> Result<(), String> {
-    println!("cargo:rerun-if-env-changed=OMC_WASI_LIBC_SRC");
-    let src = match std::env::var("OMC_WASI_LIBC_SRC") {
-        Ok(p) => PathBuf::from(p),
-        Err(_) => {
-            let src = out_dir.join("wasi-libc-src");
-            if !src.join("CMakeLists.txt").exists() {
-                std::fs::remove_dir_all(&src).ok();
-                run("git", &[
-                    "clone", "--depth", "1", "--branch", "wasi-sdk-32",
-                    "https://github.com/WebAssembly/wasi-libc.git",
-                    &src.to_string_lossy(),
-                ])?;
-            }
-            src
-        }
-    };
-    if !src.join("CMakeLists.txt").exists() {
-        return Err(format!("wasi-libc source at {} has no CMakeLists.txt", src.display()));
-    }
-    let build = out_dir.join("wasi-libc-build");
-    // Start from a clean build dir so a stale CMakeCache (e.g. a prior configure that
-    // picked GNU `ar`) can't defeat the flags below.
-    std::fs::remove_dir_all(&build).ok();
-    let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
-    let (llvm_ar, llvm_ranlib) = find_llvm_ar_ranlib().ok_or("no llvm-ar found (need LLVM binutils)")?;
-    run("cmake", &[
-        "-S", &src.to_string_lossy(), "-B", &build.to_string_lossy(),
-        "-DCMAKE_C_COMPILER=clang", "-DTARGET_TRIPLE=wasm32-wasip1",
-        "-DBUILD_SHARED=ON", "-DBUILD_TESTS=OFF",
-        "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF",
-        &format!("-DCMAKE_AR={}", llvm_ar.display()),
-        &format!("-DCMAKE_RANLIB={}", llvm_ranlib.display()),
-        &format!("-DBUILTINS_LIB={}", builtins.display()),
-    ])?;
-    run("cmake", &["--build", &build.to_string_lossy(), "-j", &num_jobs()])?;
-    let built = build.join("sysroot");
-    if !built.join("lib/wasm32-wasip1/libc.so").exists() {
-        return Err("wasi-libc build produced no libc.so".into());
-    }
-    std::fs::remove_dir_all(sysroot_out).ok();
-    copy_dir(&built, sysroot_out).map_err(|e| format!("copy sysroot: {e}"))?;
-    Ok(())
-}
-
-/// Compile ModelicaExternalC (+ `DummyUsertab`, `external_c_callbacks.c` for the
-/// `env.Modelica*` callbacks, `external_c_stubs.c` for libc gaps) to a PIC dylink
-/// side module, then strip its `_initialize` export: reactor mode emits both
-/// `_initialize` and `__wasm_call_ctors`, and `wit_component::Linker` rejects a
-/// library exporting both — keep the dylink-standard `__wasm_call_ctors`.
+/// Compile ModelicaExternalC (+ `DummyUsertab`, `external_c_callbacks.c`,
+/// `external_c_stubs.c`) to a PIC dylink side module, then strip its
+/// `_initialize` export: reactor mode emits both `_initialize` and
+/// `__wasm_call_ctors`, and `wit_component::Linker` rejects a library
+/// exporting both — keep the dylink-standard `__wasm_call_ctors`.
 fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
     println!("cargo:rerun-if-env-changed=OMC_EXTERNAL_C_SOURCES");
-    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from).or_else(|| {
-        // From OpenModelica.rs/openmodelica_wasi_libc up to OMCompiler, then down.
-        crate_dir.parent().and_then(Path::parent).and_then(Path::parent)
-            .map(|omc| omc.join("SimulationRuntime/ModelicaExternalC/C-Sources"))
-    }).ok_or("no ModelicaExternalC C-Sources dir")?;
+    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from).ok_or_else(|| {
+        "OMC_EXTERNAL_C_SOURCES not set".to_owned()
+    })?;
     let names = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
@@ -267,35 +185,6 @@ fn strip_wasm_export(module: &[u8], name: &str) -> Vec<u8> {
     out
 }
 
-/// Locate `llvm-ar` + `llvm-ranlib` — unversioned, else `-<N>` from clang's major
-/// (Ubuntu ships only `llvm-ar-<N>`).
-fn find_llvm_ar_ranlib() -> Option<(PathBuf, PathBuf)> {
-    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
-    let mut stems = vec![String::new()];
-    if let Ok(out) = Command::new(&clang).arg("-dumpversion").output() {
-        if let Ok(v) = String::from_utf8(out.stdout) {
-            if let Some(major) = v.trim().split('.').next() {
-                stems.push(format!("-{major}"));
-            }
-        }
-    }
-    for stem in &stems {
-        if let (Some(ar), Some(ranlib)) =
-            (which(&format!("llvm-ar{stem}")), which(&format!("llvm-ranlib{stem}")))
-        {
-            return Some((ar, ranlib));
-        }
-    }
-    None
-}
-
-/// First match for `name` on `PATH` (a minimal `which`, to avoid a dep).
-fn which(name: &str) -> Option<PathBuf> {
-    std::env::var_os("PATH").and_then(|paths| {
-        std::env::split_paths(&paths).map(|d| d.join(name)).find(|p| p.is_file())
-    })
-}
-
 fn find_wasm_builtins() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("OMC_WASM_BUILTINS") {
         let p = PathBuf::from(p);
@@ -313,38 +202,6 @@ fn collect_c_files(dir: &Path) -> Vec<PathBuf> {
     rd.flatten().map(|e| e.path())
         .filter(|p| p.extension().map(|x| x == "c").unwrap_or(false))
         .collect()
-}
-
-fn run(cmd: &str, args: &[&str]) -> Result<(), String> {
-    let status = Command::new(cmd).args(args).status()
-        .map_err(|e| format!("spawn {cmd}: {e}"))?;
-    if status.success() { Ok(()) } else { Err(format!("{cmd} exited with {status}")) }
-}
-
-fn num_jobs() -> String {
-    std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).to_string()
-}
-
-fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(to)?;
-    for e in std::fs::read_dir(from)? {
-        let e = e?;
-        let (src, dst) = (e.path(), to.join(e.file_name()));
-        if e.file_type()?.is_dir() {
-            copy_dir(&src, &dst)?;
-        } else {
-            std::fs::copy(&src, &dst)?;
-        }
-    }
-    Ok(())
-}
-
-/// Write an empty artifact so `include_bytes!` still compiles; the consumer treats
-/// a zero-length module as "external \"C\" in wasm FMUs unavailable".
-fn placeholder(dest: &Path) {
-    if !dest.exists() || std::fs::metadata(dest).map(|m| m.len() > 0).unwrap_or(true) {
-        std::fs::write(dest, []).ok();
-    }
 }
 
 fn copy(from: &Path, to: &Path) {

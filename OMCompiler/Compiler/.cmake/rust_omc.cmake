@@ -205,29 +205,64 @@ endif()
 # reads them via option_env! (with a cfg!-based fallback). Single source of truth
 # shared with the C runtime build (only platform booleans, so it's safe here).
 include(${CMAKE_CURRENT_SOURCE_DIR}/runtime/rt_ldflags_generated_code.cmake)
-list(APPEND CARGO_ENV
-     "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
-     "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
-     "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
-     "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
-     # ModelicaExternalC C-Sources dir, so openmodelica_codegen_wasm_jit's build.rs
-     # can compile the ModelicaExternalC WASI side module (modelicaexternalc.wasm) —
-     # the crate builds from a synced copy (rust-src) whose relative path can't reach it.
-     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
-     # Same reason for the vendored solver sources: build.rs cross-compiles SUNDIALS
-     # and SuiteSparse/KLU to wasm (their own CMake, a wasi toolchain file) for the
-     # wasip1 wasm-jit runtimes.
-     "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-     "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
 
-# wasi-libc source (pinned wasi-sdk-32) for build.rs to build a -fPIC libc.so
-# (Debian's is non-PIC), passed as OMC_WASI_LIBC_SRC. Download failure is a WARNING,
-# not FATAL: it only disables external "C" in wasm FMUs. Override the whole build
-# with a prebuilt sysroot via OMC_WASI_PIC_SYSROOT.
+# ---------------------------------------------------------------------------
+# WASI toolchain discovery (shared by wasi-libc PIC sysroot and sundials wasm).
+# ---------------------------------------------------------------------------
+find_program(LLVM_AR_EXECUTABLE llvm-ar)
+find_program(LLVM_RANLIB_EXECUTABLE llvm-ranlib)
+if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+  execute_process(COMMAND clang -dumpversion OUTPUT_VARIABLE _clang_ver
+                  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(_clang_ver MATCHES "^([0-9]+)")
+    set(_clang_major "${CMAKE_MATCH_1}")
+    find_program(LLVM_AR_EXECUTABLE llvm-ar-${_clang_major})
+    find_program(LLVM_RANLIB_EXECUTABLE llvm-ranlib-${_clang_major})
+  endif()
+endif()
+
+find_program(_omc_wasi_clang clang)
+if(_omc_wasi_clang)
+  execute_process(
+    COMMAND ${_omc_wasi_clang} -print-resource-dir
+    OUTPUT_VARIABLE _clang_res_dir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(_clang_res_dir)
+    set(_wasi_builtins ${_clang_res_dir}/lib/wasi/libclang_rt.builtins-wasm32.a)
+  endif()
+endif()
+
+# PIC wasi-libc sysroot (for external "C" in wasm FMUs).
+#
+# Built by CMake using wasi-libc's own CMakeLists.txt with BUILD_SHARED=ON
+# so it produces a -fPIC libc.so (Debian's is non-PIC).
+# ---------------------------------------------------------------------------
+if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+  message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; required to build the wasi-libc PIC sysroot.")
+endif()
+if(NOT _wasi_builtins OR NOT EXISTS ${_wasi_builtins})
+  message(FATAL_ERROR "libclang_rt.builtins-wasm32.a not found (install libclang-rt-*-dev-wasm32).")
+endif()
+
+set(RUST_WASI_PIC_SYSROOT ${CMAKE_BINARY_DIR}/rust-wasi-pic-sysroot
+    CACHE PATH "Output directory for the PIC wasi-libc sysroot.")
+
+# Write the wasm32-wasip1 toolchain file for CMake to use when cross-compiling.
+set(_wasi_toolchain ${CMAKE_CURRENT_BINARY_DIR}/wasi-toolchain.cmake)
+file(WRITE ${_wasi_toolchain}
+  "set(CMAKE_SYSTEM_NAME WASI)\n"
+  "set(CMAKE_SYSTEM_PROCESSOR wasm32)\n"
+  "set(CMAKE_C_COMPILER clang)\n"
+  "set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n"
+  "set(CMAKE_SYSROOT ${RUST_WASI_PIC_SYSROOT})\n"
+  "set(CMAKE_AR ${LLVM_AR_EXECUTABLE})\n"
+  "set(CMAKE_RANLIB ${LLVM_RANLIB_EXECUTABLE})\n"
+  "set(CMAKE_C_FLAGS_INIT \"-O2\")\n"
+  "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
+  "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
 set(_wasi_libc_src ${CMAKE_BINARY_DIR}/downloads/wasi-libc/wasi-libc-wasi-sdk-32)
 if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   set(_wasi_tgz ${CMAKE_BINARY_DIR}/downloads/wasi-libc-wasi-sdk-32.tar.gz)
-  message(STATUS "Downloading wasi-libc (wasi-sdk-32) source for the PIC libc…")
+  message(STATUS "Downloading wasi-libc (wasi-sdk-32) source…")
   file(DOWNLOAD
        https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
        ${_wasi_tgz}
@@ -236,24 +271,137 @@ if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   list(GET _wasi_dl 0 _wasi_dl_code)
   if(NOT _wasi_dl_code EQUAL 0)
     file(REMOVE ${_wasi_tgz})
-    message(WARNING "Failed to download wasi-libc source (${_wasi_dl}); external \"C\" in wasm FMUs will be unavailable")
+    message(FATAL_ERROR "Failed to download wasi-libc source (${_wasi_dl})")
   else()
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc)
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc
                     RESULT_VARIABLE _wasi_untar)
     if(NOT _wasi_untar EQUAL 0)
-      message(WARNING "Failed to unpack wasi-libc source; external \"C\" in wasm FMUs will be unavailable")
+      message(FATAL_ERROR "Failed to unpack wasi-libc source")
     endif()
   endif()
 endif()
-if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
-  list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
+
+# Build wasi-libc PIC sysroot via ExternalProject (honours jobserver, proper progress).
+include(ExternalProject)
+set(_wasi_libc_ep_build ${CMAKE_BINARY_DIR}/rust-wasi-libc-wasm-ep-build)
+ExternalProject_Add(rust_wasi_pic_sysroot
+  SOURCE_DIR ${_wasi_libc_src}
+  BINARY_DIR ${_wasi_libc_ep_build}
+  CMAKE_ARGS
+    -DCMAKE_TOOLCHAIN_FILE=${_wasi_toolchain}
+    -DBUILD_SHARED=ON -DBUILD_TESTS=OFF
+    -DCMAKE_LINK_DEPENDS_USE_LINKER=OFF
+    -DBUILTINS_LIB=${_wasi_builtins}
+  BUILD_ALWAYS ON
+  BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
+  EXCLUDE_FROM_ALL ON)
+
+# ---------------------------------------------------------------------------
+# SUNDIALS/KLU wasm cross-compile.
+#
+# Separate from the native C runtime build (3rdParty/CMakeLists.txt). Uses the
+# same sources but a wasm32-wasip1 toolchain and a distinct build directory.
+# Produces static archives linked into the wasm-jit runtimes (FMI/web).
+# ---------------------------------------------------------------------------
+option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse solver in wasm-jit runtime)." ON)
+
+if(RUST_OMC_ENABLE_SUNDIALS)
+  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
+  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1)
+
+  # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
+  # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
+  set(_sundials_cflags "-O2 -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
+  set(_sundials_toolchain ${CMAKE_CURRENT_BINARY_DIR}/sundials-wasi-toolchain.cmake)
+  file(WRITE ${_sundials_toolchain}
+    "set(CMAKE_SYSTEM_NAME WASI)\n"
+    "set(CMAKE_SYSTEM_PROCESSOR wasm32)\n"
+    "set(CMAKE_C_COMPILER clang)\n"
+    "set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n"
+    "set(CMAKE_SYSROOT ${RUST_WASI_PIC_SYSROOT})\n"
+    "set(CMAKE_AR ${LLVM_AR_EXECUTABLE})\n"
+    "set(CMAKE_RANLIB ${LLVM_RANLIB_EXECUTABLE})\n"
+    "set(CMAKE_C_FLAGS_INIT \"${_sundials_cflags}\")\n"
+    "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
+    "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
+
+  # SuiteSparse wasm via ExternalProject.
+  set(_suitesparse_ep_build ${CMAKE_BINARY_DIR}/rust-suitesparse-wasm-ep-build)
+  ExternalProject_Add(rust_suitesparse_wasm
+    SOURCE_DIR ${_suitesparse_sources}
+    BINARY_DIR ${_suitesparse_ep_build}
+    CMAKE_ARGS
+      -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DBUILD_SHARED_LIBS=OFF
+    BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
+      --target klu amd colamd btf suitesparseconfig
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS ON
+    EXCLUDE_FROM_ALL ON)
+  add_dependencies(rust_suitesparse_wasm rust_wasi_pic_sysroot)
+
+  # SUNDIALS wasm via ExternalProject.
+  set(_sundials_ep_build ${CMAKE_BINARY_DIR}/rust-sundials-wasm-ep-build)
+  set(RUST_SUNDIALS_WASM_DIR ${CMAKE_BINARY_DIR}/rust-sundials-wasm
+      CACHE PATH "Output directory for the SUNDIALS/KLU wasm32-wasip1 archives.")
+  ExternalProject_Add(rust_sundials_wasm
+    SOURCE_DIR ${_sundials_sources}
+    BINARY_DIR ${_sundials_ep_build}
+    CMAKE_ARGS
+      -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DSUNDIALS_BUILD_STATIC_LIBS=ON
+      -DSUNDIALS_BUILD_SHARED_LIBS=OFF
+      -DSUNDIALS_LAPACK_ENABLE=OFF
+      -DSUNDIALS_EXAMPLES_ENABLE_C=OFF
+      -DSUNDIALS_KLU_ENABLE=ON
+      -DSUNDIALS_INDEX_SIZE=32
+      -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
+      -DKLU_LIBRARY=${_suitesparse_ep_build}/libklu.a
+      -DAMD_LIBRARY=${_suitesparse_ep_build}/libamd.a
+      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/libcolamd.a
+      -DBTF_LIBRARY=${_suitesparse_ep_build}/libbtf.a
+      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/libsuitesparseconfig.a
+    BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
+      --target
+      sundials_kinsol_static sundials_ida_static sundials_cvode_static
+      sundials_nvecserial_static sundials_sunmatrixdense_static
+      sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
+      sundials_sunlinsolklu_static
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS ON
+    EXCLUDE_FROM_ALL ON)
+  add_dependencies(rust_sundials_wasm rust_suitesparse_wasm)
+
+  # Collect all .a into RUST_SUNDIALS_WASM_DIR/lib/.
+  add_custom_target(rust_sundials_collect
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${_suitesparse_ep_build}/libklu.a
+      ${_suitesparse_ep_build}/libamd.a
+      ${_suitesparse_ep_build}/libcolamd.a
+      ${_suitesparse_ep_build}/libbtf.a
+      ${_suitesparse_ep_build}/libsuitesparseconfig.a
+      ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
+      ${_sundials_ep_build}/src/ida/libsundials_ida.a
+      ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
+      ${_sundials_ep_build}/src/nvector/serial/libsundials_nvecserial.a
+      ${_sundials_ep_build}/src/sunmatrix/dense/libsundials_sunmatrixdense.a
+      ${_sundials_ep_build}/src/sunmatrix/sparse/libsundials_sunmatrixsparse.a
+      ${_sundials_ep_build}/src/sunlinsol/dense/libsundials_sunlinsoldense.a
+      ${_sundials_ep_build}/src/sunlinsol/klu/libsundials_sunlinsolklu.a
+      ${RUST_SUNDIALS_WASM_DIR}/lib/
+    COMMENT "Rust: collecting SUNDIALS/KLU wasm archives -> ${RUST_SUNDIALS_WASM_DIR}/lib/"
+    VERBATIM)
+  add_dependencies(rust_sundials_collect rust_sundials_wasm)
 endif()
 
-# The wasi_snapshot_preview1 reactor adapter (wasmtime release) build.rs bridges
-# into the FMU component. Downloaded + cached like the other wasm vendor artifacts,
-# passed as OMC_WASI_P1_ADAPTER; WARNING (not FATAL) on failure.
+# ---------------------------------------------------------------------------
+# Preview1→preview2 reactor adapter (mandatory for FMI wasm FMU export).
+# ---------------------------------------------------------------------------
 set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
 if(NOT EXISTS ${_wasi_p1_adapter})
   message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
@@ -265,11 +413,40 @@ if(NOT EXISTS ${_wasi_p1_adapter})
   list(GET _wasi_p1_dl 0 _wasi_p1_code)
   if(NOT _wasi_p1_code EQUAL 0)
     file(REMOVE ${_wasi_p1_adapter})
-    message(WARNING "Failed to download the wasi preview1 adapter (${_wasi_p1_dl}); external \"C\" in wasm FMUs will be unavailable")
+    message(FATAL_ERROR "Failed to download the wasi preview1 adapter (${_wasi_p1_dl})")
   endif()
 endif()
-if(EXISTS ${_wasi_p1_adapter})
-  list(APPEND CARGO_ENV "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
+
+# ---------------------------------------------------------------------------
+# CARGO_ENV: env vars forwarded to every cargo invocation.
+# Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
+# so the cargo build.rs uses them rather than rebuilding.
+# ---------------------------------------------------------------------------
+list(APPEND CARGO_ENV
+     "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
+     "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
+     "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
+     "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
+     # ModelicaExternalC C-Sources dir (the crate builds from a synced copy whose
+     # relative path can't reach the real location).
+     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
+     # Prebuilt PIC wasi-libc sysroot (with -fPIC libc.so) built by rust_wasi_pic_sysroot.
+     "OMC_WASI_PIC_SYSROOT=${RUST_WASI_PIC_SYSROOT}"
+     # Preview1 adapter for FMI wasm FMU export.
+     "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
+
+if(RUST_OMC_ENABLE_SUNDIALS)
+  list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
+endif()
+
+# Source paths (fallback for raw cargo builds without CMake).
+if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
+endif()
+if(RUST_OMC_ENABLE_SUNDIALS)
+  list(APPEND CARGO_ENV
+       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
@@ -590,6 +767,11 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_LAPACK_NALGEBRA)
     list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
   endif()
+  # --no-default-features makes sundials off by default; enable it only when
+  # the wasm cross-compile is enabled.
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    list(APPEND _rust_omc_features openmodelica_codegen_wasm_jit/sundials)
+  endif()
   list(JOIN _rust_omc_features "," _rust_omc_features_csv)
   set(RUST_OMC_CDYLIB_FEATURES --no-default-features --features ${_rust_omc_features_csv})
 
@@ -612,9 +794,12 @@ function(omc_rust_setup_codegen)
     # which tracks byproducts globally; the cross-directory build order for the
     # Unix Makefiles generator is the add_dependencies in omc_rust_setup_omedit.
     BYPRODUCTS ${RUST_TARGET_DIR}/${RUST_OMC_ARTIFACT_SUBDIR}/${RUST_OMC_CDYLIB_NAME}
-    DEPENDS rust_codegen
+    DEPENDS rust_codegen rust_wasi_pic_sysroot
     COMMENT "Rust: building ${RUST_OMC_CDYLIB_NAME} (${RUST_OMC_PROFILE})"
     VERBATIM)
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    add_dependencies(rust_libopenmodelica rust_sundials_collect)
+  endif()
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
@@ -1057,6 +1242,11 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_SCRIPTING_API)
     set(_wasm_scripting_feature ",libopenmodelica_compiler/scripting_api")
   endif()
+  # Forward the sundials feature for the wasm-jit runtime (KLU sparse solver).
+  set(_wasm_sundials_feature "")
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    set(_wasm_sundials_feature ",openmodelica_codegen_wasm_jit/sundials")
+  endif()
   # Standalone animation wasm for the browser pages, built in the same cargo pass
   # (features package-qualified so the extra -p stays unambiguous).
   set(_anim_pkg "")
@@ -1067,11 +1257,11 @@ function(omc_rust_setup_wasm)
     set(_wasm_common --target ${_wasm_target}
                      -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus ${_anim_pkg}
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature}${_wasm_sundials_feature})
   else()
     set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler ${_anim_pkg}
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature}${_wasm_sundials_feature})
   endif()
 
   if(_profile STREQUAL "release")
@@ -1256,10 +1446,13 @@ function(omc_rust_setup_wasm)
     JOB_SERVER_AWARE TRUE
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
     BYPRODUCTS ${_wasm_artifact}
-    DEPENDS rust_codegen
+    DEPENDS rust_codegen rust_wasi_pic_sysroot
     COMMENT "Rust: cargo build wasm/web (${RUST_OMC_WASM_MODE})"
     VERBATIM)
   add_dependencies(rust_wasm_cargo rust_src_sync)
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    add_dependencies(rust_wasm_cargo rust_sundials_collect)
+  endif()
   add_custom_command(
     OUTPUT ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${_web_dir}

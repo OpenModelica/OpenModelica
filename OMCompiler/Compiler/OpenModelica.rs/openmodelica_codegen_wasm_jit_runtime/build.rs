@@ -1,8 +1,12 @@
 //! Links the wasm SUNDIALS/KLU archives into the wasip1 runtimes when
-//! `openmodelica_codegen_wasm_jit`'s build script has cross-compiled them
-//! (`OMC_SUNDIALS_WASM_DIR`), and sets `cfg(sundials)` so `src/sundials.rs` and its
-//! callers compile in. Absent archives are not an error: the runtime then keeps
-//! using its pure-Rust solvers, and a raw `cargo build` of this crate still works.
+//! `OMC_SUNDIALS_WASM_DIR` is set by the parent build script
+//! (`openmodelica_codegen_wasm_jit`'s build.rs, forwarded from CMake's
+//! `rust_sundials_wasm` target). Sets `cfg(sundials)` so `src/sundials.rs`
+//! and its callers compile in.
+//!
+//! When `OMC_SUNDIALS_WASM_DIR` is not set, sundials is simply not linked
+//! (the pure-Rust fallback is used). When it is set, missing archives are a
+//! hard error — the parent build script only sets it when the archives exist.
 
 use std::path::Path;
 
@@ -39,9 +43,8 @@ fn main() {
         .filter(|l| !lib.join(format!("lib{l}.a")).exists())
         .collect();
     if !missing.is_empty() {
-        println!("cargo:warning=OMC_SUNDIALS_WASM_DIR={} is missing {missing:?}; building \
-                  without SUNDIALS", lib.display());
-        return;
+        panic!("OMC_SUNDIALS_WASM_DIR={} is missing {missing:?}; the sundials wasm \
+                cross-compile failed (check the rust_sundials_wasm CMake target)", lib.display());
     }
     println!("cargo:rustc-link-search=native={}", lib.display());
     for l in LIBS {
