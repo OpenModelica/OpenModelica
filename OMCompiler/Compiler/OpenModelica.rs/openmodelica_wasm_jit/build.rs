@@ -221,6 +221,22 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
     Ok(produced)
 }
 
+/// The `env` imports `sim_runtime_wasmer::define_external_imports` binds. Any other
+/// undefined symbol is a link error, see `build_external_c_wasm`.
+const HOST_PROVIDED: &[&str] = &[
+    "ModelicaError",
+    "ModelicaFormatError",
+    "ModelicaFormatMessage",
+    "ModelicaFormatWarning",
+    "ModelicaVFormatError",
+    "ModelicaVFormatWarning",
+    "ModelicaAllocateString",
+    "ModelicaAllocateStringWithErrorReturn",
+    "ModelicaInternal_getTime",
+    "ModelicaInternal_getpid",
+    "usertab",
+];
+
 /// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
 /// for the web (wasmer) simulation host. Provides `ext.Modelica*_*` external functions
 /// (native uses libffi + `.so` instead). Compiled with `clang --target=wasm32-wasip1
@@ -287,6 +303,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         }
         mix(clang.as_bytes());
         mix(sysroot.as_bytes());
+        for s in HOST_PROVIDED { mix(s.as_bytes()); }
         format!("{h:016x}")
     };
     if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
@@ -295,9 +312,14 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     }
 
     // `--export-all`: export every symbol so older MSL compatibility entry points
-    // are always present. `--allow-undefined`: unresolved `Modelica*` calls become
-    // `env` imports the host supplies. `-mexec-model=reactor`: exports `_initialize`
-    // (runs ctors), no `_start`.
+    // are always present. `-mexec-model=reactor`: exports `_initialize` (runs ctors),
+    // no `_start`. `-nodefaultlibs` means `-lc` has to be explicit.
+    //
+    // `--allow-undefined-file` rather than blanket `--allow-undefined`: a sysroot that
+    // fails to provide libc must be a link error, not a module whose `malloc`/`strlen`/
+    // `__wasi_init_tp` quietly turn into imports the host cannot satisfy.
+    let permit = out_dir.join("modelicaexternalc.imports");
+    std::fs::write(&permit, HOST_PROVIDED.join("\n")).expect("write import permit list");
     let builtins = find_wasm_builtins().ok_or_else(|| {
         "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
     }).unwrap_or_else(|e| panic!("{e}"));
@@ -309,8 +331,10 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
         .args(&all_srcs).arg(&stubs)
+        .arg("-lc")
         .arg(&builtins)
-        .args(["-Wl,--export-all", "-Wl,--allow-undefined"])
+        .arg("-Wl,--export-all")
+        .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
         .arg("-o").arg(&dest)
         .status()
         .map_err(|e| format!("spawn {clang}: {e}")).unwrap_or_else(|e| {

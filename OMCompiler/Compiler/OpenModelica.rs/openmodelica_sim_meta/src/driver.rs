@@ -246,11 +246,11 @@ pub trait SimEngine {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 10;
+pub const RT_STATS: usize = 12;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
-    "elem_ptr",
+    "elem_ptr", "nls_iter", "nls_newton_fail",
 ];
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
@@ -1763,6 +1763,8 @@ unsafe fn dassl_jac(
     let h = unsafe { *h };
     let sqrt_uround = sqrt(f64::EPSILON);
     ctx.jac_ders.resize(n * 8, 0);
+    // One assembly, however many colours it takes, as C's DASSL counts it.
+    ctx.nje += 1;
     let run = (|| -> Result<()> {
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         for color in &jac.colors {
@@ -1792,7 +1794,6 @@ unsafe fn dassl_jac(
                 let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
                 ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
             }
-            ctx.nje += 1;
             // Scatter the finite difference into the affected rows, restore y.
             for &col in color {
                 let ci = col as usize;
