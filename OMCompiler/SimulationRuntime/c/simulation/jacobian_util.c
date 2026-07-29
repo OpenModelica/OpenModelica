@@ -782,15 +782,74 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
 
 
 /**
+ * @brief Map compressed source positions to positions in its transpose.
+ *
+ * The source's inner indices become the transpose's outer indices. If
+ * targetLeadindex is non-NULL, it is filled with the transpose's outer
+ * pointers. The map preserves the canonical transpose ordering obtained by
+ * scanning source outer indices in ascending order.
+ */
+static unsigned int* sparsePatternTransposeMap(const SPARSE_PATTERN* source,
+                                                unsigned int sourceOuterCount,
+                                                unsigned int targetOuterCount,
+                                                unsigned int* targetLeadindex)
+{
+  unsigned int* targetHeads;
+  unsigned int* sourceToTargetMap;
+  unsigned int position = 0;
+
+  targetHeads = (unsigned int*) calloc((targetOuterCount ? targetOuterCount : 1), sizeof(unsigned int));
+  sourceToTargetMap = (unsigned int*) malloc((source->nnz ? source->nnz : 1) * sizeof(unsigned int));
+  if (targetHeads == NULL || sourceToTargetMap == NULL) {
+    free(targetHeads);
+    free(sourceToTargetMap);
+    return NULL;
+  }
+
+  /* Count entries in each target outer dimension. */
+  for (unsigned int nz = 0; nz < source->nnz; nz++) {
+    if (source->index[nz] >= targetOuterCount) {
+      free(targetHeads);
+      free(sourceToTargetMap);
+      return NULL;
+    }
+    targetHeads[source->index[nz]]++;
+  }
+
+  /* Turn counts into target offsets. targetHeads remains the running head. */
+  for (unsigned int target = 0; target < targetOuterCount; target++) {
+    const unsigned int count = targetHeads[target];
+    targetHeads[target] = position;
+    if (targetLeadindex != NULL) {
+      targetLeadindex[target] = position;
+    }
+    position += count;
+  }
+  if (targetLeadindex != NULL) {
+    targetLeadindex[targetOuterCount] = position;
+  }
+
+  /* Map every source position to its canonical position in the transpose. */
+  for (unsigned int sourceOuter = 0; sourceOuter < sourceOuterCount; sourceOuter++) {
+    const unsigned int start = source->leadindex[sourceOuter];
+    const unsigned int stop = source->leadindex[sourceOuter + 1];
+    if (stop < start || stop > source->nnz) {
+      free(targetHeads);
+      free(sourceToTargetMap);
+      return NULL;
+    }
+    for (unsigned int nz = start; nz < stop; nz++) {
+      const unsigned int target = source->index[nz];
+      sourceToTargetMap[nz] = targetHeads[target]++;
+    }
+  }
+
+  free(targetHeads);
+  return sourceToTargetMap;
+}
+
+/**
  * @brief Convert a CSC-format sparsity pattern to CSR-format.
- *
- * Input CSC (A):
- *   - Ap = csc->leadindex (size nCols+1), column pointers
- *   - Ai = csc->index     (size nnz),      row indices
- *
- * Output CSR (B):
- *   - Bp = csr->leadindex (size nRows+1), row pointers
- *   - Bj = csr->index     (size nnz),     column indices
  *
  * Complexity: O(nnz + max(nRows, nCols))
  */
@@ -798,74 +857,27 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
                            unsigned int nRows,
                            unsigned int nCols)
 {
+  unsigned int* cscToCsrMap;
+
   if (!csc) return NULL;
 
-  const unsigned int nnz = csc->nnz;
-
   /* Allocate CSR pattern: leadindex size = nRows+1, index size = nnz */
-  SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, /*maxColors*/ 0);
+  SPARSE_PATTERN* csr = allocSparsePattern(nRows, csc->nnz, /*maxColors*/ 0);
   if (!csr) return NULL;
 
-  /* Aliases for clarity */
-  const unsigned int* Ap = csc->leadindex; /* col pointer (CSC) */
-  const unsigned int* Ai = csc->index;     /* row indices (CSC) */
-  unsigned int* Bp = csr->leadindex;       /* row pointer (CSR) */
-  unsigned int* Bj = csr->index;           /* col indices (CSR) */
-
-  /* 1) Count nnz per row (Bp[0..nRows-1]) */
-  memset(Bp, 0, (nRows+1) * sizeof(unsigned int));
-  for (unsigned int k = 0; k < nnz; k++) {
-    const unsigned int row = Ai[k];
-    if (row >= nRows) {
-      /* Out of bounds. Clean up and abort. */
-      freeSparsePattern(csr);
-      return NULL;
-    }
-    Bp[row]++;
+  cscToCsrMap = sparsePatternTransposeMap(csc, nCols, nRows, csr->leadindex);
+  if (cscToCsrMap == NULL) {
+    freeSparsePattern(csr);
+    return NULL;
   }
 
-  /* 2) Exclusive prefix sum over Bp to get row pointers; set Bp[nRows] = nnz */
-  {
-    unsigned int cumsum = 0;
-    for (unsigned int r = 0; r < nRows; r++) {
-      const unsigned int tmp = Bp[r];
-      Bp[r] = cumsum;
-      cumsum += tmp;
-    }
-    Bp[nRows] = nnz;
-  }
-
-  /* 3) Fill CSR column indices Bj using running heads in Bp */
-  for (unsigned int col = 0; col < nCols; col++) {
-    const unsigned int start = Ap[col];
-    const unsigned int stop  = Ap[col + 1];
-    if (stop < start || stop > nnz) {
-      /* Corrupt CSC pointers. Clean up and abort. */
-      freeSparsePattern(csr);
-      return NULL;
-    }
-    for (unsigned int jj = start; jj < stop; jj++) {
-      const unsigned int row = Ai[jj];
-      const unsigned int dest = Bp[row]; /* next free slot in this row */
-      Bj[dest] = col;
-      Bp[row]++; /* advance head */
+  for (unsigned int column = 0; column < nCols; column++) {
+    for (unsigned int nz = csc->leadindex[column]; nz < csc->leadindex[column + 1]; nz++) {
+      csr->index[cscToCsrMap[nz]] = column;
     }
   }
 
-  /* 4) Restore Bp to row pointers by shifting heads back */
-  {
-    unsigned int last = 0;
-    for (unsigned int r = 0; r <= nRows; r++) {
-      const unsigned int tmp = Bp[r];
-      Bp[r] = last;
-      last = tmp;
-    }
-  }
-
-  /* We don't have row coloring here; keep defaults (zeros). */
-  csr->maxColors = 0;
-  /* nnz was set by allocSparsePattern */
-
+  free(cscToCsrMap);
   return csr;
 }
 
@@ -940,34 +952,13 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
 
 void initAdjointCSRtoCSCMap(JACOBIAN* jacobian)
 {
-  const SPARSE_PATTERN* sparsePattern;
-  unsigned int* columnHeads;
-  unsigned int position = 0;
-
   if (jacobian->csrToCscMap != NULL) {
     return;
   }
-
-  sparsePattern = jacobian->sparsePattern;
-  jacobian->csrToCscMap = (unsigned int*) calloc(sparsePattern->nnz, sizeof(unsigned int));
-  columnHeads = (unsigned int*) calloc(jacobian->sizeCols, sizeof(unsigned int));
-
-  for (unsigned int nz = 0; nz < sparsePattern->nnz; nz++) {
-    columnHeads[sparsePattern->index[nz]]++;
-  }
-  for (unsigned int column = 0; column < jacobian->sizeCols; column++) {
-    const unsigned int count = columnHeads[column];
-    columnHeads[column] = position;
-    position += count;
-  }
-  for (unsigned int row = 0; row < jacobian->sizeRows; row++) {
-    for (unsigned int nz = sparsePattern->leadindex[row]; nz < sparsePattern->leadindex[row + 1]; nz++) {
-      const unsigned int column = sparsePattern->index[nz];
-      jacobian->csrToCscMap[nz] = columnHeads[column]++;
-    }
-  }
-
-  free(columnHeads);
+  jacobian->csrToCscMap = sparsePatternTransposeMap(jacobian->sparsePattern,
+                                                     jacobian->sizeRows,
+                                                     jacobian->sizeCols,
+                                                     NULL);
 }
 
 /**

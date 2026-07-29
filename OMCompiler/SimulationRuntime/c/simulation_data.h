@@ -208,7 +208,7 @@ typedef struct JACOBIAN
   modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
   struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
-  unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
+  unsigned int* csrToCscMap;            /* Maps row-evaluation CSR nz positions to canonical CSC nz positions. Size nnz. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
