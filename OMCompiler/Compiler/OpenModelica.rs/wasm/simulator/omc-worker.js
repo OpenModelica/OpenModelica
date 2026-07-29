@@ -171,16 +171,30 @@ function simError(fallback) {
 // one chunk never yields. Returns the status: 1 done, 2 terminated, 3 cancelled, <0 error.
 async function runResumable(prefix, simflags, onStatus) {
   simCancel = false;   // discard a cancel that raced in after the previous run
+  const _t0 = performance.now();
   if (!omc_sim_start(prefix, prefix + '_res.mat', simflags)) return -1;
+  // Split off `omc_sim_start` (compile lookup, instantiate, init, row 0) and count
+  // the chunks: a run that suddenly costs more is either paying instantiation again
+  // or being yielded far more often than its budget should need.
+  lastPhases = { startMs: performance.now() - _t0, advanceMs: 0, chunks: 0 };
   onStatus && onStatus('Simulating…');
   const BUDGET_MS = 150;
-  for (;;) {
-    if (simCancel) { simCancel = false; omc_sim_free(); return 3; }
-    const st = omc_sim_advance(BUDGET_MS);
-    if (st !== 0) return st;
-    await new Promise((r) => setTimeout(r, 0));   // let cancelSim land
+  const _t1 = performance.now();
+  try {
+    for (;;) {
+      if (simCancel) { simCancel = false; omc_sim_free(); return 3; }
+      lastPhases.chunks++;
+      const st = omc_sim_advance(BUDGET_MS);
+      if (st !== 0) return st;
+      await new Promise((r) => setTimeout(r, 0));   // let cancelSim land
+    }
+  } finally {
+    lastPhases.advanceMs = performance.now() - _t1;
   }
 }
+
+// Phase breakdown of the last `runResumable`, reported back with the snapshot.
+let lastPhases = null;
 
 // The settings a run used, to seed the dialog: the explicit ones the page sent, or
 // getSimulationOptions → (startTime, stopTime, tolerance, numberOfIntervals) for a
@@ -308,7 +322,7 @@ self.onmessage = async (ev) => {
         const s = snapshot();
         if (!s) return reply(simError('Simulation produced no result.'));
         s.snap.options = simOptions(a.name, a);  // settings actually used → seed the dialog
-        s.snap.timing = { buildMs, simMs };
+        s.snap.timing = { buildMs, simMs, ...lastPhases };
         reply(s.snap, s.transfer);               // figures/doc come from loadSource/copyClass
         break;
       }
@@ -321,7 +335,7 @@ self.onmessage = async (ev) => {
         if (st < 0) return reply(simError('Re-simulation failed.'));
         const s = snapshot();
         if (!s) return reply(simError('Re-simulation produced no result.'));
-        s.snap.timing = { buildMs: 0, simMs };
+        s.snap.timing = { buildMs: 0, simMs, ...lastPhases };
         reply(s.snap, s.transfer);
         break;
       }

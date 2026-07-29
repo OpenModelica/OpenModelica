@@ -394,6 +394,7 @@ function parseModelName(text) {
 
 // --- state ------------------------------------------------------------------
 let icValues = new Map();     // param name -> input value (string)
+let icBaseline = new Map();   // the same, as the last run left it: unedited values
 let builtModel = null, lastText = null;
 let running = false, pendingKind = null, runningKind = null;
 let modelFigures = null;      // parsed figures for the current model, or null
@@ -411,9 +412,15 @@ let preloaded = null;         // a class already loaded by copyClass (skip the f
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animView = null;          // the shared 3D animation panel (lazily created on first use)
 
+// Only the parameters the user actually edited. Sending the whole grid back would
+// re-seed every start value from the last run's row 0, and the flag string is
+// parsed per run.
 function overrideFlag() {
   const parts = [];
-  for (const [name, val] of icValues) if (val !== '' && isFinite(parseFloat(val))) parts.push(name + '=' + parseFloat(val));
+  for (const [name, val] of icValues) {
+    if (val === icBaseline.get(name) || val === '' || !isFinite(parseFloat(val))) continue;
+    parts.push(name + '=' + parseFloat(val));
+  }
   return parts.length ? '-override=' + parts.join(',') : '';
 }
 
@@ -493,8 +500,15 @@ async function run(kind) {                       // 'full' | 'resim'
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
     const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
     const t = snap.timing;
+    const phases = (t && t.chunks)
+      ? ` (start ${Math.round(t.startMs)} + integrate ${Math.round(t.advanceMs)} ms, ${t.chunks} chunks)` : '';
+    // Solver counters alongside the time: the same work taking longer is a very
+    // different bug from more work being done.
+    const i = snap.info;
+    const work = (i && i.steps != null)
+      ? ` · ${i.steps} steps, ${i.resEvals} ODE, ${i.jacEvals} jac, ${i.stateEvents} events` : '';
     const msNote = t
-      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${drv}`
+      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${phases}${drv}${work}`
       : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
     setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
@@ -529,7 +543,7 @@ function cancelRun() {
 // Immediately blank the stale panels so a switch doesn't keep showing the old
 // model's initial conditions / plots / docs until the new run finishes.
 function showBuilding() {
-  icGrid.replaceChildren(); icValues.clear();
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
   charts.clear(chartsEmpty);
   chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
@@ -605,7 +619,7 @@ function fail(msg) {
 // --- editable initial conditions -------------------------------------------
 function buildInitialConditions() {
   const params = (snap && snap.parameters) || [];
-  icGrid.replaceChildren(); icValues.clear();
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   if (!params.length) { icEmpty.style.display = ''; icEmpty.textContent = 'This model has no editable parameters.'; return; }
   icEmpty.style.display = 'none';
   for (const p of params) {
@@ -617,6 +631,7 @@ function buildInitialConditions() {
       item.classList.add('enum');
       const idx = Math.round(p.value) || 1;
       icValues.set(p.name, String(idx));
+      icBaseline.set(p.name, String(idx));
       const sel = document.createElement('select');
       p.enumNames.forEach((n, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = n; sel.appendChild(o); });
       sel.value = String(idx);
@@ -624,6 +639,7 @@ function buildInitialConditions() {
       item.appendChild(sel);
     } else {
       icValues.set(p.name, String(p.value));
+      icBaseline.set(p.name, String(p.value));
       const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
       inp.addEventListener('change', () => onParamChange(p.name, inp.value));
       const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');

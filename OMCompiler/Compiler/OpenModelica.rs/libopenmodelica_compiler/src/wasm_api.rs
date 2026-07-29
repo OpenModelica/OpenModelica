@@ -351,6 +351,14 @@ pub fn omc_sim_info() -> JsValue {
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.time.len() as f64));
+        let st = &sim.stats;
+        for (k, v) in [
+            ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
+            ("errTestFails", st.err_test_fails), ("convTestFails", st.conv_test_fails),
+            ("stateEvents", st.state_events), ("timeEvents", st.time_events),
+        ] {
+            let _ = js_sys::Reflect::set(&o, &JsValue::from_str(k), &JsValue::from_f64(v as f64));
+        }
         o.into()
     })
     .unwrap_or(JsValue::NULL)

@@ -602,11 +602,12 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
-    // Which of `-ls`/`-lss`/`-nlsLS` want KLU: the host-driven runtime links no flag
-    // store of its own. The session sets the same bits from the argv it receives.
-    if let Ok(set_klu) = rt_inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_lin_set_klu") {
-        let (ls, lss, nls_ls) = openmodelica_sim_meta::simflags::flags().klu_selectors();
-        wts(set_klu.call(&mut store, (ls as i32, lss as i32, nls_ls as i32)))?;
+    // `-nls`/`-nlsLS`/`-ls`/`-lss`: the host-driven runtime links no flag store of
+    // its own, so hand it the selectors. The session sets the same ones from the
+    // argv it receives.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32, u32), ()>(&mut store, "rt_set_solvers") {
+        let codes = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
+        wts(set.call(&mut store, codes))?;
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -751,6 +752,13 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             }
         }
         out
+    }
+    fn context_addr(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_context_addr")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
     }
 }
 

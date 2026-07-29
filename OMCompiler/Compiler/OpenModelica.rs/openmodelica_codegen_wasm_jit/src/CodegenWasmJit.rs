@@ -177,6 +177,9 @@ pub struct CapturedSim {
     pub time: Vec<f64>,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
+    /// Solver counters, so a host with no stdout can tell a run that did more work
+    /// from one that did the same work slower.
+    pub stats: SolveStats,
 }
 
 fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
@@ -271,6 +274,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
         time,
         series,
         params,
+        stats: run.stats.clone(),
     });
 }
 
@@ -823,12 +827,14 @@ mod session {
                         }
                         Ok(done) => {
                             let rows = driver.take_rows();
+                            let mut stats = SolveStats::default();
+                            driver.fill_stats(&model.meta, &mut stats);
                             let params = sim_driver::finalize_run(&mut **engine, &model.meta, *sim_data)?;
                             let run = sim_driver::RunResult {
                                 rows,
                                 n_reals: model.layout.n_row_total(),
                                 params,
-                                stats: SolveStats::default(),
+                                stats,
                             };
                             finalize_and_capture(&model, &result_file, &run)?;
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {

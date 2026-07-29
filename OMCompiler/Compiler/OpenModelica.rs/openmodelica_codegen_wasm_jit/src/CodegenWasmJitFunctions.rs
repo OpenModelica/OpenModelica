@@ -1057,11 +1057,12 @@ pub(crate) struct NlsJob {
     pub(crate) pat_off: u32,
 }
 
-/// Bytes of extrapolation history a system with `n` unknowns needs: a count
-/// (`i32`, padded to 8), the two most-recent solve times (`f64` each), and the
-/// two most-recent solutions (`n` `f64` each). Matches `rt_solve_nls`'s layout.
+/// Per-system solver state for `n` unknowns: a count (padded to 8), the residual
+/// scaling carried between calls, and `HIST_DEPTH` stored solutions (time + `n`).
+/// Matches `rt_solve_nls`'s layout.
 pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
-    24 + 16 * n
+    const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
+    8 + 8 * n + DEPTH * (8 + 8 * n)
 }
 
 /// Model global holding the base address of the NLS extrapolation-history block

@@ -25,42 +25,48 @@ pub enum Solver {
     Euler,
 }
 
-/// `-nls`
+/// `-nls`. The discriminants are the wire codes [`SimFlags::solver_codes`] hands to
+/// the wasm-jit runtime's `rt_set_solvers`, which mirrors them; 0 means unset, so
+/// they start at 1 and must not be renumbered.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Nls {
-    Hybrid,
-    Kinsol,
-    Newton,
-    Mixed,
-    Homotopy,
+    Hybrid = 1,
+    Kinsol = 2,
+    Newton = 3,
+    Mixed = 4,
+    Homotopy = 5,
 }
 
 /// `-nlsLS`, the linear solver inside the nonlinear one. `Rsparse` is wasm-jit's
 /// own solver, not a C runtime value.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NlsLs {
-    Default,
-    TotalPivot,
-    Lapack,
-    Klu,
-    Rsparse,
+    Default = 1,
+    TotalPivot = 2,
+    Lapack = 3,
+    Klu = 4,
+    Rsparse = 5,
 }
 
 /// `-ls`
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Ls {
-    Default,
-    Lapack,
-    TotalPivot,
-    Klu,
+    Default = 1,
+    Lapack = 2,
+    TotalPivot = 3,
+    Klu = 4,
 }
 
 /// `-lss`. `Rsparse` is wasm-jit's own solver, not a C runtime value.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Lss {
-    Default,
-    Klu,
-    Rsparse,
+    Default = 1,
+    Klu = 2,
+    Rsparse = 3,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -88,14 +94,16 @@ impl SimFlags {
         self.log.iter().any(|s| s == stream || s == "LOG_ALL")
     }
 
-    /// Which of `-ls`, `-lss` and `-nlsLS` ask for KLU, with C's defaults: dense
-    /// systems go to LAPACK, sparse ones to KLU. The unimplemented `-nlsLS` values
-    /// (`totalpivot`, `lapack`) land on `rsparse`.
-    pub fn klu_selectors(&self) -> (bool, bool, bool) {
+    /// `(-nls, -nlsLS, -ls, -lss)` as the wire codes the wasm-jit runtime's
+    /// `rt_set_solvers` takes (0 = unset). Which solver each code selects is the
+    /// runtime's business — it matches on them — so no policy lives here.
+    pub fn solver_codes(&self) -> (u32, u32, u32, u32) {
+        let code = |v: Option<u32>| v.unwrap_or(0);
         (
-            self.ls == Some(Ls::Klu),
-            self.lss != Some(Lss::Rsparse),
-            !matches!(self.nls_ls, Some(NlsLs::Rsparse | NlsLs::TotalPivot | NlsLs::Lapack)),
+            code(self.nls.map(|v| v as u32)),
+            code(self.nls_ls.map(|v| v as u32)),
+            code(self.ls.map(|v| v as u32)),
+            code(self.lss.map(|v| v as u32)),
         )
     }
 
@@ -276,6 +284,9 @@ mod store {
         pub fn get() -> SimFlags {
             FLAGS.with(|c| c.borrow().clone())
         }
+        pub fn with<R>(g: impl FnOnce(&SimFlags) -> R) -> R {
+            FLAGS.with(|c| g(&c.borrow()))
+        }
     }
 
     #[cfg(not(feature = "std"))]
@@ -293,9 +304,15 @@ mod store {
         pub fn get() -> SimFlags {
             unsafe { (*STORE.0.get()).clone().unwrap_or_default() }
         }
+        pub fn with<R>(g: impl FnOnce(&SimFlags) -> R) -> R {
+            match unsafe { &*STORE.0.get() } {
+                Some(f) => g(f),
+                None => g(&SimFlags::default()),
+            }
+        }
     }
 
-    pub use imp::{get, set};
+    pub use imp::{get, set, with};
 }
 
 pub fn set_flags(f: SimFlags) {
@@ -304,6 +321,13 @@ pub fn set_flags(f: SimFlags) {
 
 pub fn flags() -> SimFlags {
     store::get()
+}
+
+/// Read the flags in place. [`flags`] clones, and `-override=` carries one `String`
+/// per parameter — hundreds on a re-simulation from the web simulator's initial
+/// conditions — so a solver hot path must read through this.
+pub fn with_flags<R>(f: impl FnOnce(&SimFlags) -> R) -> R {
+    store::with(f)
 }
 
 /// Split the WASI `args_get` byte layout — NUL-terminated strings back to back —
@@ -367,15 +391,14 @@ mod tests {
         }
     }
 
+    // The wire codes the wasm-jit runtime decodes: unset is 0, and the values are
+    // fixed. Renumbering here without renumbering `solvers.rs` picks a wrong solver.
     #[test]
-    fn klu_serves_the_sparse_paths_by_default() {
-        let f = parse(&argv(&[])).expect("parses");
-        assert_eq!(f.klu_selectors(), (false, true, true));
-        let f = parse(&argv(&["-ls=klu", "-lss=rsparse", "-nlsLS=rsparse"])).expect("parses");
-        assert_eq!(f.klu_selectors(), (true, false, false));
-        // The unimplemented C values land on rsparse too, not on KLU.
-        let f = parse(&argv(&["-nlsLS=totalpivot"])).expect("parses");
-        assert_eq!(f.klu_selectors().2, false);
+    fn solver_codes_are_stable() {
+        assert_eq!(parse(&argv(&[])).expect("parses").solver_codes(), (0, 0, 0, 0));
+        let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"]))
+            .expect("parses");
+        assert_eq!(f.solver_codes(), (2, 2, 4, 3));
     }
 
     #[test]

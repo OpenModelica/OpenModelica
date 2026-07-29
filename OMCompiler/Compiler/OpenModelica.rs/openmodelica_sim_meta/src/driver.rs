@@ -243,14 +243,33 @@ pub trait SimEngine {
     fn rt_stats(&mut self) -> [u64; RT_STATS] {
         [0; RT_STATS]
     }
+    /// Address of the runtime's evaluation context, or 0 when the backend has no
+    /// such export.
+    fn context_addr(&mut self) -> u32 {
+        0
+    }
+}
+
+/// C's `EVAL_CONTEXT`, mirrored from the runtime's `nls.rs`. `unsetContext` restores
+/// to `ALGEBRAIC`, not `UNKNOWN`.
+pub const CONTEXT_ODE: i32 = 1;
+pub const CONTEXT_ALGEBRAIC: i32 = 2;
+pub const CONTEXT_EVENTS: i32 = 3;
+pub const CONTEXT_JACOBIAN: i32 = 4;
+
+/// C's `setContext`; a no-op when the backend has no context slot.
+fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
+    if addr != 0 {
+        let _ = write_i32(e, addr, ctx);
+    }
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 12;
+pub const RT_STATS: usize = 15;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
-    "elem_ptr", "nls_iter", "nls_newton_fail",
+    "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
 ];
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
@@ -1343,7 +1362,7 @@ pub fn set_zc_tolerance(
 /// `gbode` never reach here — `simflags::check` rejects them at startup rather than
 /// let them silently run as DASSL.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
-    match crate::simflags::flags().solver {
+    match crate::simflags::with_flags(|f| f.solver) {
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         _ => method,
@@ -1617,6 +1636,8 @@ struct ResCtx {
     jac_ders: Vec<u8>,
     /// Jacobian evaluations (colors summed over all Jacobian assemblies).
     nje: u64,
+    /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
+    ctx_addr: u32,
 }
 
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
@@ -1649,8 +1670,10 @@ unsafe fn dassl_rt(
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
+        set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
         e.call1("functionODE", ctx.sim_data)?;
         e.call1("functionZeroCrossings", ctx.sim_data)?;
+        set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
         e.read_bytes(ctx.sim_data + ctx.zc_off, rval_bytes)?;
         Ok(())
@@ -1704,7 +1727,9 @@ unsafe fn dassl_res(
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
+        set_context(e, ctx.ctx_addr, CONTEXT_ODE);
         e.call1("functionODE", ctx.sim_data)?;
+        set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         // delta := yprime - f
         let delta_bytes = unsafe { core::slice::from_raw_parts_mut(delta as *mut u8, n * 8) };
         e.read_bytes(ctx.ders_base, delta_bytes)?;
@@ -1765,6 +1790,7 @@ unsafe fn dassl_jac(
     ctx.jac_ders.resize(n * 8, 0);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
+    set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
     let run = (|| -> Result<()> {
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         for color in &jac.colors {
@@ -1815,6 +1841,7 @@ unsafe fn dassl_jac(
         e.write_bytes(ctx.states_base, y_bytes)?;
         Ok(())
     })();
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     if let Err(err) = run {
         ctx.err = Some(err);
     }
@@ -2063,6 +2090,7 @@ impl Driver for DasslDriver {
             jac_del: vec![0.0; n_states],
             jac_ders: Vec::new(),
             nje: self.nje,
+            ctx_addr: e.context_addr(),
         };
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
@@ -2381,6 +2409,7 @@ impl DasslCore {
             jac_del: vec![0.0; self.n_states],
             jac_ders: Vec::new(),
             nje: self.nje,
+            ctx_addr: e.context_addr(),
         }
     }
 

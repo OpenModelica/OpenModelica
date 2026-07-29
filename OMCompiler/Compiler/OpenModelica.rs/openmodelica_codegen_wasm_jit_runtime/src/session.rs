@@ -118,6 +118,9 @@ impl SimEngine for InWasmEngine {
         }
         out
     }
+    fn context_addr(&mut self) -> u32 {
+        crate::nls::rt_context_addr()
+    }
 }
 
 /// One resumable in-wasm run: engine, driver, decoded model view, and the result
@@ -156,7 +159,7 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
         simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
     }) {
         Ok(f) => {
-            crate::sundials::apply_flags(&f);
+            crate::solvers::apply_flags(&f);
             simflags::set_flags(f);
             0
         }

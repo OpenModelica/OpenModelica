@@ -42,6 +42,9 @@ extern crate alloc;
 
 mod delay;
 mod nls;
+#[cfg(test)]
+mod nls_c_trace;
+mod solvers;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
@@ -142,7 +145,10 @@ pub const STAT_NLS_RETRY: u32 = 8;
 pub const STAT_ELEM_PTR: u32 = 9;
 pub const STAT_NLS_ITER: u32 = 10;
 pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
-pub const N_STATS: usize = 12;
+pub const STAT_NLS_GUESS_HIT: u32 = 12;
+pub const STAT_NLS_ACCEPT: u32 = 13;
+pub const STAT_NLS_STORE_BACK: u32 = 14;
+pub const N_STATS: usize = 15;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
@@ -2134,12 +2140,16 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if sundials::ls_is_klu() {
+    if solvers::ls() == solvers::Ls::Klu {
         return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-    if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+    // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
+    // `dgesv`, and the default) is partial-pivot LU with that as its singular
+    // fallback.
+    let lu_first = solvers::ls() != solvers::Ls::TotalPivot;
+    if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
         0
     } else {
         1
@@ -2203,7 +2213,7 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if sundials::lss_backend() == sundials::Sparse::Klu {
+    if solvers::lss() == solvers::Lss::Klu {
         return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
@@ -2278,7 +2288,11 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     nnz: u32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, sundials::lss_backend())
+    let backend = match solvers::lss() {
+        solvers::Lss::Klu => solvers::Sparse::Klu,
+        solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
+    };
+    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
 }
 
 /// [`rt_solve_lin_sparse_cached`] without the statistics counter — the sparse
@@ -2293,13 +2307,13 @@ pub(crate) fn lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
-    backend: sundials::Sparse,
+    backend: solvers::Sparse,
 ) -> i32 {
     let n = n as usize;
     let nnz = nnz as usize;
 
     #[cfg(sundials)]
-    if backend == sundials::Sparse::Klu {
+    if backend == solvers::Sparse::Klu {
         return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
     }
     #[cfg(not(sundials))]
