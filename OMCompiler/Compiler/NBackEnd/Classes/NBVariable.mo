@@ -2881,6 +2881,7 @@ function isJacobianResultVar
       input VarType varType;
     algorithm
       if listEmpty(var_lst) then return; end if;
+
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
