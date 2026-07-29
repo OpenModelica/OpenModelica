@@ -549,6 +549,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
   }
 
   /* CSR-to-CSC mapping: for each adjoint CSR position (nonzero), find forward CSC position */
+  // this could maybe be done with initAdjointCSRtoCSCMap
   // iterate over all rows
   for (i = 0; i < nRows; i++) {
     // iterate over all nonzeros in this row via adjoint CSR pattern
@@ -853,7 +854,7 @@ static unsigned int* sparsePatternTransposeMap(const SPARSE_PATTERN* source,
  *
  * Complexity: O(nnz + max(nRows, nCols))
  */
-SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
                            unsigned int nRows,
                            unsigned int nCols)
 {
@@ -871,6 +872,7 @@ SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
     return NULL;
   }
 
+  /* Fill CSR index array using the mapping from CSC to CSR. */
   for (unsigned int column = 0; column < nCols; column++) {
     for (unsigned int nz = csc->leadindex[column]; nz < csc->leadindex[column + 1]; nz++) {
       csr->index[cscToCsrMap[nz]] = column;
