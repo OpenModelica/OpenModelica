@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use metamodelica::Result;
 
+use openmodelica_backend_types::BackendDAE;
 use openmodelica_frontend_types::DAE;
 use wasm_encoder as we;
 
@@ -41,7 +42,7 @@ fn emit_residual_eval(
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
-        iterators: Vec<(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)>,
+        iterators: Vec<Arc<BackendDAE::SimIterator>>,
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
@@ -91,13 +92,13 @@ pub(crate) fn emit_nls_residual_body(
 /// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
-    iterators: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
+    iterators: &[Arc<BackendDAE::SimIterator>],
     exp: &Arc<DAE::Exp>,
     res_index: i32,
     outer: &[(u32, u32)],
 ) -> Result<()> {
     use we::Instruction as I;
-    let Some(((cref, range), rest)) = iterators.split_first() else {
+    let Some((sim_it, rest)) = iterators.split_first() else {
         // addr = r + (res_index + Σ(it - start)) * 8
         ctx.emit(I::LocalGet(2)); // r
         ctx.emit(I::I32Const(res_index));
@@ -115,7 +116,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let DAE::Exp::RANGE { start, step, stop, .. } = &**range else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = &**sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -128,12 +129,9 @@ fn emit_for_residual(
     coerce(ctx, sw, WTy::I32);
     ctx.emit(I::LocalTee(start_l));
     ctx.emit(I::LocalSet(it));
-    match step {
-        Some(e) => {
-            let w = compile_exp(ctx, e)?;
-            coerce(ctx, w, WTy::I32);
-        }
-        None => ctx.emit(I::I32Const(1)),
+    {
+        let w = compile_exp(ctx, step)?;
+        coerce(ctx, w, WTy::I32);
     }
     ctx.emit(I::LocalSet(step_l));
     let pw = compile_exp(ctx, stop)?;
