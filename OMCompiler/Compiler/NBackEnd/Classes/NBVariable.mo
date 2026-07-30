@@ -1474,7 +1474,6 @@ function isJacobianResultVar
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
-        Option<Pointer<Variable>> ovar;
         Variable var;
         VariableKind varKind;
         ComponentRef original_cref;
@@ -1486,9 +1485,8 @@ function isJacobianResultVar
         // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
         // so that each outer element gets its own scalar seed var instead of all elements
         // sharing the first element's seed via the array ptr cache.
-        ovar := if ComponentRef.hasSubscripts(original_cref) then NONE() else getVarSeed(old_var_ptr);
-        if isSome(ovar) then
-          var_ptr := Util.getOption(ovar);
+        if not ComponentRef.hasSubscripts(original_cref) then
+          var_ptr := Util.getOption(getVarSeed(old_var_ptr));
           cref := getVarName(var_ptr);
         else
           // prepend the seed str and the matrix name and create the new cref
