@@ -3559,7 +3559,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_context);
       then
-        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info), {});
 
     case SCode.Statement.ALG_PARFOR(info = info)
       algorithm
@@ -3568,7 +3568,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.parforBody, for_scope, next_context);
       then
-        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info), {});
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm

@@ -1477,11 +1477,16 @@ function isJacobianResultVar
         Option<Pointer<Variable>> ovar;
         Variable var;
         VariableKind varKind;
+        ComponentRef original_cref;
 
       case qual as InstNode.VAR_NODE() algorithm
+        original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        ovar := getVarSeed(old_var_ptr);
+        // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
+        // so that each outer element gets its own scalar seed var instead of all elements
+        // sharing the first element's seed via the array ptr cache.
+        ovar := if ComponentRef.hasSubscripts(original_cref) then NONE() else getVarSeed(old_var_ptr);
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
@@ -1503,7 +1508,12 @@ function isJacobianResultVar
 
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          // For subscripted element crefs (partial-slice NLS iter vars), skip linking back to
+          // the base array ptr so the shared cache is not populated, allowing each element to
+          // create its own independent seed on subsequent calls.
+          if not ComponentRef.hasSubscripts(original_cref) then
+            connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          end if;
         end if;
       then ();
 

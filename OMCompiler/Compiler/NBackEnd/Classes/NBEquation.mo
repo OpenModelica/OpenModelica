@@ -699,6 +699,7 @@ public
           Call call;
           list<Frame> frames = {};
           Iterator tmp;
+          Iterator tmp_inner;
           list<Dimension> full_dims;
 
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
@@ -714,6 +715,17 @@ public
           else
             iter := tmp;
           end if;
+
+          // createFrame creates a new "$i" iterator but leaves the body referencing the old "i"
+          // cref. add replacement rules here so applySimpleExp in extract() can update the body.
+          for frame in frames loop
+            _ := match Util.tuple33(frame)
+              case SOME(tmp_inner as SINGLE()) algorithm
+                UnorderedMap.add(tmp_inner.name, Expression.applySubscripts({Subscript.INDEX(Expression.fromCref(Util.tuple31(frame)))}, tmp_inner.range), replacements);
+              then ();
+              else ();
+            end match;
+          end for;
 
           // add the dimension -> iterator names to the dims map to apply the iterators correctly to the lhs
           full_dims := Type.arrayDims(Expression.typeOf(exp));
@@ -2971,8 +2983,12 @@ public
         local
           list<ComponentRef> iter_lst;
           list<Expression> range_lst;
-          ComponentRef iter, lhs_rec, rhs_rec;
+          list<Option<Iterator>> maps_lst;
+          Option<Iterator> map_opt;
+          list<tuple<ComponentRef, array<Expression>>> sub_iters_stmt;
+          ComponentRef iter, lhs_rec, rhs_rec, iter_name;
           Expression range, lhs_exp, rhs_exp;
+          array<Expression> iter_elems;
           list<Statement> body;
           Pointer<Variable> lhs, rhs;
           list<Pointer<Variable>> lhs_lst, rhs_lst;
@@ -3005,16 +3021,23 @@ public
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case FOR_EQUATION() algorithm
-          (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
+          (iter_lst, range_lst, maps_lst) := Equation.Iterator.getFrames(eqn.iter);
           body := List.flatten(list(toStatement(body_eqn) for body_eqn in eqn.body));
-          for tpl in listReverse(List.zip(iter_lst, range_lst)) loop
-            (iter, range) := tpl;
+          for tpl in listReverse(List.zip3(iter_lst, range_lst, maps_lst)) loop
+            (iter, range, map_opt) := tpl;
+            sub_iters_stmt := match map_opt
+              case SOME(Iterator.SINGLE(name = iter_name, range = Expression.ARRAY(elements = iter_elems), map = NONE()))
+                then {(iter_name, iter_elems)};
+              case SOME(_) then {};
+              else {};
+            end match;
             body := {Statement.FOR(
               iterator  = ComponentRef.node(iter),
               range     = SOME(range),
               body      = body,
               forType   = Statement.ForType.NORMAL(),
-              source    = eqn.source)};
+              source    = eqn.source,
+              sub_iters = sub_iters_stmt)};
           end for;
         then body;
 

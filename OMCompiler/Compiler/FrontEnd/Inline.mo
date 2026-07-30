@@ -491,6 +491,7 @@ algorithm
       DAE.ElementSource source;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       algorithm
         (e1_1,source,b1,_) := inlineExp(e1,fns,source);
@@ -520,13 +521,13 @@ algorithm
         true := b1 or b2 or b3;
       then
         (DAE.STMT_IF(e_1,stmts_1,a_else_1,source),true);
-    case(DAE.STMT_FOR(t,b,i,e,stmts,source),fns)
+    case(DAE.STMT_FOR(t,b,i,e,stmts,source,sub_iters),fns)
       algorithm
         (e_1,source,b1,_) := inlineExp(e,fns,source);
         (stmts_1,b2) := inlineStatements(stmts,fns,{},false);
         true := b1 or b2;
       then
-        (DAE.STMT_FOR(t,b,i,e_1,stmts_1,source),true);
+        (DAE.STMT_FOR(t,b,i,e_1,stmts_1,source,sub_iters),true);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       algorithm
         (e_1,source,b1,_) := inlineExp(e,fns,source);

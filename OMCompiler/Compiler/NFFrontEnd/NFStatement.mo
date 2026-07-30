@@ -77,6 +77,7 @@ public
     list<Statement> body "The body of the for loop.";
     ForType forType;
     DAE.ElementSource source;
+    list<tuple<ComponentRef, array<Expression>>> sub_iters "sub-iterators for ARRAY iterator case (NBackEnd only)";
   end FOR;
 
   record IF
