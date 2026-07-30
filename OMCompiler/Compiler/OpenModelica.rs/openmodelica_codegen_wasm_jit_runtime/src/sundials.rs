@@ -16,7 +16,7 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
         klu: cfg!(sundials),
         ida: false,
-        cvode: false,
+        cvode: openmodelica_sim_meta::CVODE,
         gbode: false,
     }
 }

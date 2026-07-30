@@ -397,6 +397,23 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     COMMENT "Rust: collecting SUNDIALS/KLU wasm archives -> ${RUST_SUNDIALS_WASM_DIR}/lib/"
     VERBATIM)
   add_dependencies(rust_sundials_collect rust_sundials_wasm)
+
+  # The host CVODE the host-driven wasm-jit driver links is the C runtime's own
+  # archive (3rdParty), not a second build: it is already position-independent
+  # (`libSimulationRuntimeC.so` links it), and reusing it leaves the two copies
+  # identical should both end up in one process. Collected into a fixed directory
+  # because the cargo env cannot carry a generator expression.
+  if(TARGET sundials_cvode_static)
+    set(RUST_SUNDIALS_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-sundials-native
+        CACHE PATH "Directory the host SUNDIALS archives are collected into.")
+    add_custom_target(rust_sundials_native_collect
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_NATIVE_DIR}/lib
+      COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:sundials_cvode_static> ${RUST_SUNDIALS_NATIVE_DIR}/lib/
+      DEPENDS sundials_cvode_static
+      COMMENT "Rust: collecting host SUNDIALS archives -> ${RUST_SUNDIALS_NATIVE_DIR}/lib/"
+      VERBATIM)
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -437,6 +454,13 @@ list(APPEND CARGO_ENV
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
+  if(TARGET sundials_cvode_static)
+    # The wasm archives are 32-bit-index builds and this one is whatever the C
+    # runtime uses, so the bindings' `sunindextype` follows the archive.
+    list(APPEND CARGO_ENV
+         "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
+         "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${SUNDIALS_INDEX_SIZE}")
+  endif()
 endif()
 
 # Source paths (fallback for raw cargo builds without CMake).
@@ -799,6 +823,9 @@ function(omc_rust_setup_codegen)
     VERBATIM)
   if(RUST_OMC_ENABLE_SUNDIALS)
     add_dependencies(rust_libopenmodelica rust_sundials_collect)
+    if(TARGET rust_sundials_native_collect)
+      add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
+    endif()
   endif()
 
   add_custom_target(rust_omc ALL
