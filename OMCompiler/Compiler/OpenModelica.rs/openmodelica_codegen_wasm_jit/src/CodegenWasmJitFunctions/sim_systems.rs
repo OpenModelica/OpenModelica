@@ -42,7 +42,7 @@ fn emit_residual_eval(
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
-        iterators: Vec<Arc<BackendDAE::SimIterator>>,
+        iterators: Vec<BackendDAE::SimIterator>,
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
@@ -92,7 +92,7 @@ pub(crate) fn emit_nls_residual_body(
 /// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
-    iterators: &[Arc<BackendDAE::SimIterator>],
+    iterators: &[BackendDAE::SimIterator],
     exp: &Arc<DAE::Exp>,
     res_index: i32,
     outer: &[(u32, u32)],
@@ -116,7 +116,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = &**sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
