@@ -42,7 +42,7 @@ fn emit_residual_eval(
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
-        iterators: Vec<BackendDAE::SimIterator>,
+        iterators: Vec<Arc<BackendDAE::SimIterator>>,
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
@@ -92,7 +92,7 @@ pub(crate) fn emit_nls_residual_body(
 /// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
-    iterators: &[BackendDAE::SimIterator],
+    iterators: &[Arc<BackendDAE::SimIterator>],
     exp: &Arc<DAE::Exp>,
     res_index: i32,
     outer: &[(u32, u32)],
@@ -116,7 +116,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = &**sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -1457,12 +1457,9 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
-    // nominal block address (x-scaling), and the matching min/max pairs.
+    // nominal block address (x-scaling).
     ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
     ctx.emit(I::I32Const(job.nominal_off as i32));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-    ctx.emit(I::I32Const(2 * job.nominal_off as i32));
     ctx.emit(I::I32Add);
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {
@@ -1493,7 +1490,6 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Const(job.nnz as i32));
     ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
-    ctx.emit(I::I32Const(job.eq_index as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())
