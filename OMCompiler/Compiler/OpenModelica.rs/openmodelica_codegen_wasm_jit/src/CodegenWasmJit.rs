@@ -2488,7 +2488,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // the type/import sections, which need to know whether the model has any
     // nonlinear systems) and consumed by the equation-function builders below. ---
     let param_eqs = flatten_eqs(&sim_code.parameterEquations);
-    let param_bindings = collect_param_bindings(vars, &assigned_cref_keys(&param_eqs));
+    let initial_eqs = flatten_eqs(&sim_code.initialEquations);
+    let mut computed_params = assigned_cref_keys(&param_eqs);
+    computed_params.extend(assigned_cref_keys(&initial_eqs));
+    let param_bindings = collect_param_bindings(vars, &computed_params);
     // When the model has `when`-equations, the discrete update (when-bodies with
     // edge detection) must run each step between the condition and output
     // equations. `allEquations` is the full solved list in that order, so it is
@@ -2506,7 +2509,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     } else {
         Vec::new()
     };
-    let initial_eqs = flatten_eqs(&sim_code.initialEquations);
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
@@ -3548,11 +3550,10 @@ fn collect_param_bindings(
         .chain(lst(&vars.boolParamVars))
         .chain(lst(&vars.stringParamVars))
     {
-        // A parameter computed by a parameterEquation (e.g. `u_max =
-        // getTable1DAbscissaUmax(tableID)`, scheduled after the table
-        // constructor) must not also be assigned from its binding here: the
-        // prelude runs before parameterEquations, so it would evaluate the
-        // binding against not-yet-initialized dependencies (a null handle).
+        // A parameter an equation computes must not also be assigned from its binding
+        // here: the prelude runs before both equation lists, so the binding would see
+        // dependencies that are still 0 (or a null handle). C leaves such a parameter
+        // at the 0 of a `_init.xml` entry with no `start`.
         if let Some(v) = &p.initialValue {
             if sim_cref_key(&p.name).map(|k| computed.contains(&k)).unwrap_or(false) {
                 continue;
@@ -4305,20 +4306,20 @@ fn collect_nls_jobs(
                 let n = lst(&nlSystem.crefs).count() as u32;
                 let has_jac = nls_jac_usable(nlSystem);
                 let mixed = nlSystem.mixedSystem;
-                // Sparse (kinsol+KLU in C) when the symbolic pattern is available
-                // and passes C's density/size rule; the pattern is emitted into the
-                // pattern block so `rt_solve_nls` can factorize it.
+                // The pattern goes in whenever it exists: C's density/size rule only
+                // picks the *default* solver (kinsol+KLU vs the dense ladder), while
+                // `-nls=kinsol` hands every patterned system to KINSOL.
                 let pat = has_jac
                     .then(|| nls_jac_pattern(nlSystem.jacobianMatrix.as_ref().unwrap(), n as usize))
-                    .flatten()
-                    .filter(|p| nls_use_sparse(n as usize, p.rowidx.len()));
+                    .flatten();
                 let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
+                let sparse_default = nnz != 0 && nls_use_sparse(n as usize, nnz as usize);
                 if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
                     eprintln!(
                         "wasm-jit nls {}: n={n} nnz={} jac={has_jac} mixed={mixed} sparse={} colors={}",
                         nlSystem.index,
                         nls_system_nnz(nlSystem),
-                        nnz != 0,
+                        sparse_default,
                         pat.as_ref().map_or(0, |p| p.colors.len()),
                     );
                 }
@@ -4326,7 +4327,7 @@ fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed, nnz, pat_off });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default });
                 if nnz != 0 {
                     pat_off += 4 * (n + 1 + nnz);
                 }

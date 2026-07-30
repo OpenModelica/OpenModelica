@@ -875,6 +875,13 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool, level: 
 }
 
 fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
+    // C's `assertCommonVar` (the math-domain guards, no source position): the warning
+    // names the time, a debug line carries the message.
+    if info.file.is_empty() {
+        log_line(&assert_block(info, cond, time, initial, "warning"));
+        log_line(&alloc::format!("{}{}\n", log_prefix("LOG_ASSERT", "debug"), info.msg));
+        return;
+    }
     log_line(&assert_block(info, cond, time, initial, "error"));
 }
 
