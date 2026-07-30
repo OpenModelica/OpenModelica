@@ -65,12 +65,15 @@ pub extern "C" fn rt_nls_note_assert() {
 }
 
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
+/// `gather` is the pattern block where `jac` fills a dense `n×n` rather than the CSC
+/// values — a system `-nls=kinsol` solves sparsely though the codegen chose dense.
 fn make_assemble(
     n: usize,
     x_ptr: u32,
     sim_data: u32,
     jac_idx: u32,
     val_ptr: u32,
+    gather: Option<alloc::vec::Vec<u32>>,
 ) -> impl FnMut(&[f64], &mut [f64]) {
     move |xs: &[f64], vals: &mut [f64]| {
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
@@ -81,10 +84,27 @@ fn make_assemble(
         jacf(sim_data, x_ptr, val_ptr);
         NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
         NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
-        for (k, v) in vals.iter_mut().enumerate() {
-            *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
+        match &gather {
+            Some(pat) => {
+                for c in 0..n {
+                    for k in pat[c] as usize..pat[c + 1] as usize {
+                        let row = pat[n + 1 + k] as usize;
+                        vals[k] = unsafe { load_f64(val_ptr + ((c * n + row) * 8) as u32) };
+                    }
+                }
+            }
+            None => {
+                for (k, v) in vals.iter_mut().enumerate() {
+                    *v = unsafe { load_f64(val_ptr + (k * 8) as u32) };
+                }
+            }
         }
     }
+}
+
+/// The `colptr[n+1] ++ rowidx[nnz]` pattern block, out of linear memory.
+fn read_pattern(pat_addr: u32, n: usize, nnz: usize) -> alloc::vec::Vec<u32> {
+    (0..n + 1 + nnz).map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) }).collect()
 }
 
 
@@ -1339,6 +1359,313 @@ fn newton_c(
     }
 }
 
+// `-nls=newton`: C's `solveNewton` (nonlinearSolverNewton.c) over `_omc_newton`
+// (newtonIteration.c). Not the `newton_c` above, which is `solveHomotopy`'s inner
+// damped Newton — the two converge to different roots.
+
+/// LAPACK's `dgetf2`: in-place partial-pivot LU of the column-major `n×n` `a`, the
+/// factors left packed in `a` for C's Newton to reuse. Singularity goes unreported, as
+/// in C: `solveLinearSystem` overwrites `dgetrf`'s `info` with `dgetrs`'s.
+fn dgetf2(n: usize, a: &mut [f64], piv: &mut [usize]) {
+    /// `DLAMCH('S')`: below it, divide rather than scale by the reciprocal.
+    const SFMIN: f64 = 2.2250738585072014e-308;
+    for j in 0..n {
+        let mut p = j;
+        for i in j + 1..n {
+            if libm::fabs(a[j * n + i]) > libm::fabs(a[j * n + p]) {
+                p = i;
+            }
+        }
+        piv[j] = p;
+        if a[j * n + p] != 0.0 {
+            if p != j {
+                for c in 0..n {
+                    let t = a[c * n + j];
+                    a[c * n + j] = a[c * n + p];
+                    a[c * n + p] = t;
+                }
+            }
+            let d = a[j * n + j];
+            if libm::fabs(d) >= SFMIN {
+                let r = 1.0 / d;
+                for i in j + 1..n {
+                    a[j * n + i] *= r;
+                }
+            } else {
+                for i in j + 1..n {
+                    a[j * n + i] /= d;
+                }
+            }
+        }
+        // `dger`: rank-1 update of the trailing submatrix.
+        for c in j + 1..n {
+            let t = a[c * n + j];
+            if t != 0.0 {
+                for i in j + 1..n {
+                    a[c * n + i] += a[j * n + i] * -t;
+                }
+            }
+        }
+    }
+}
+
+/// LAPACK's `dgetrs('N')`, one right-hand side: `b ← A⁻¹b`.
+fn dgetrs(n: usize, a: &[f64], piv: &[usize], b: &mut [f64]) {
+    for j in 0..n {
+        b.swap(j, piv[j]);
+    }
+    for k in 0..n {
+        if b[k] != 0.0 {
+            for i in k + 1..n {
+                b[i] -= b[k] * a[k * n + i];
+            }
+        }
+    }
+    for k in (0..n).rev() {
+        if b[k] != 0.0 {
+            b[k] /= a[k * n + k];
+            for i in 0..k {
+                b[i] -= b[k] * a[k * n + i];
+            }
+        }
+    }
+}
+
+/// C's `compute_scaling_vector`, over a buffer that holds LU factors by then.
+fn newton_res_scaling(n: usize, jac: &[f64], scaling: &mut [f64]) {
+    for i in 0..n {
+        let mut m = libm::fabs(jac[i * n]);
+        for k in 1..n {
+            m = libm::fmax(libm::fabs(jac[i * n + k]), m);
+        }
+        scaling[i] = if m <= 0.0 {
+            1.0e-16
+        } else if !m.is_finite() {
+            1.0
+        } else {
+            m
+        };
+    }
+}
+
+/// C's `wrapper_fvec_newton(fj = 0)`: the analytic Jacobian, else forward differences
+/// stepped by `sqrt(DBL_EPSILON)·max(|x_i|, |f_i|)`, signed by `f_i`.
+#[allow(clippy::too_many_arguments)]
+fn newton_jacobian(
+    n: usize,
+    x: &mut [f64],
+    fvec: &[f64],
+    jac: &mut [f64],
+    rwork: &mut [f64],
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
+    has_jac: bool,
+) {
+    if has_jac {
+        jaceval(x, jac);
+        return;
+    }
+    for i in 0..n {
+        let mut dhh = libm::fmax(
+            SQRT_EPS * libm::fmax(libm::fabs(x[i]), libm::fabs(fvec[i])),
+            SQRT_EPS,
+        );
+        if fvec[i] < 0.0 {
+            dhh = -dhh;
+        }
+        let saved = x[i];
+        dhh = saved + dhh - saved;
+        x[i] = saved + dhh;
+        let inv = 1.0 / dhh;
+        eval(x, rwork);
+        for j in 0..n {
+            jac[i * n + j] = (rwork[j] - fvec[j]) * inv;
+        }
+        x[i] = saved;
+    }
+}
+
+/// C's `damping_heuristic2` (the default `NEWTON_DAMPED2`): shrink by 3/4 until the
+/// residual improves; below `1e-4` take the full step, or the tiny one after five tries.
+#[allow(clippy::too_many_arguments)]
+fn damping_heuristic2(
+    n: usize,
+    x: &[f64],
+    x_incr: &[f64],
+    x_new: &mut [f64],
+    current: f64,
+    fvec: &mut [f64],
+    k: &mut i32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    const TRESHOLD: f64 = 1.0e-4;
+    let mut lambda = 1.0f64;
+    eval(x_new, fvec);
+    while minpack::enorm(fvec) >= current {
+        lambda *= 0.75;
+        for i in 0..n {
+            x_new[i] = x[i] - lambda * x_incr[i];
+        }
+        eval(x_new, fvec);
+        if lambda <= TRESHOLD {
+            if *k < 5 {
+                for i in 0..n {
+                    x_new[i] = x[i] - x_incr[i];
+                }
+            }
+            eval(x_new, fvec);
+            *k += 1;
+            return;
+        }
+    }
+}
+
+/// C's `_omc_newton` tolerance; `solveNewton` relaxes only its acceptance bound.
+const NEWTON_ITER_TOL: f64 = 1.0e-6;
+
+/// C's `_omc_newton`: damped Newton over a factorization reused while `every_jac` is
+/// false (C's `calculate_jacobian = 0`). Returns `(info > 0, ‖fvec‖, ‖fvec/resScaling‖)`.
+#[allow(clippy::too_many_arguments)]
+fn omc_newton(
+    n: usize,
+    x: &mut [f64],
+    fvec: &mut [f64],
+    res_scaling: &mut [f64],
+    every_jac: bool,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
+    has_jac: bool,
+) -> (bool, f64, f64) {
+    let eps = NEWTON_ITER_TOL;
+    let maxfev = n * 100;
+    let mut jac = vec![0.0f64; n * n];
+    let mut piv = vec![0usize; n];
+    let mut f_old = vec![0.0f64; n];
+    let mut x_new = vec![0.0f64; n];
+    let mut x_incr = vec![0.0f64; n];
+    let mut rwork = vec![0.0f64; n];
+    let mut fvec_scaled = vec![0.0f64; n];
+
+    let mut info = 1i32;
+    let mut calc_jac = true;
+    let mut factorized = false;
+    let mut k = 0i32;
+    let mut l = 0usize;
+
+    eval(x, fvec);
+    f_old.copy_from_slice(fvec);
+    let mut error_f = minpack::enorm(fvec);
+    let mut current = error_f;
+    fvec_scaled.copy_from_slice(fvec);
+    // Unknown before the first iteration, so start above `eps`.
+    let mut scaled_error_f = 1.0 + eps;
+    let mut delta_x = 1.0 + eps;
+    let mut delta_f = 1.0 + eps;
+    let mut delta_x_scaled = 1.0 + eps;
+
+    while error_f > eps && scaled_error_f > eps && delta_x > eps && delta_f > eps && delta_x_scaled > eps {
+        stat_inc(STAT_NLS_ITER);
+        if calc_jac {
+            newton_jacobian(n, x, fvec, &mut jac, &mut rwork, eval, jaceval, has_jac);
+            factorized = false;
+            calc_jac = every_jac;
+        }
+        if !factorized {
+            dgetf2(n, &mut jac, &mut piv);
+            factorized = true;
+        }
+        x_incr.copy_from_slice(fvec);
+        dgetrs(n, &jac, &piv, &mut x_incr);
+        for i in 0..n {
+            x_new[i] = x[i] - x_incr[i];
+        }
+        damping_heuristic2(n, x, &x_incr, &mut x_new, current, fvec, &mut k, eval);
+
+        // C's `calculatingErrors`.
+        for i in 0..n {
+            rwork[i] = x[i] - x_new[i];
+        }
+        delta_x = minpack::enorm(&rwork);
+        let scale = minpack::enorm(x);
+        delta_x_scaled = if scale > 1.0 { delta_x * (1.0 / scale) } else { delta_x };
+        for i in 0..n {
+            rwork[i] = f_old[i] - fvec[i];
+        }
+        delta_f = minpack::enorm(&rwork);
+        error_f = minpack::enorm(fvec);
+        newton_res_scaling(n, &jac, res_scaling);
+        for i in 0..n {
+            fvec_scaled[i] = fvec[i] / res_scaling[i];
+        }
+        scaled_error_f = minpack::enorm(&fvec_scaled);
+
+        x.copy_from_slice(&x_new);
+        f_old.copy_from_slice(fvec);
+        current = error_f;
+        l += 1;
+        if l > maxfev || k > 5 {
+            info = -1;
+            break;
+        }
+    }
+    (info > 0, error_f, scaled_error_f)
+}
+
+/// C's `solveNewton`: [`omc_newton`] under a retry ladder that varies the start point,
+/// refreshes the Jacobian every iteration, then relaxes the acceptance bound. `warm` is
+/// C's `nlsxOld`.
+#[allow(clippy::too_many_arguments)]
+fn solve_newton_c(
+    n: usize,
+    x: &mut [f64],
+    warm: &[f64],
+    nominal: &[f64],
+    res_scaling: &mut [f64],
+    discrete_call: bool,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
+    has_jac: bool,
+) -> bool {
+    let mut fvec = vec![0.0f64; n];
+    let mut local_tol = NEWTON_ITER_TOL;
+    let mut every_jac = false;
+    let mut retries = 0i32;
+    let mut retries2 = 0i32;
+    loop {
+        let (ok, xerror, xerror_scaled) =
+            omc_newton(n, x, &mut fvec, res_scaling, every_jac, eval, jaceval, has_jac);
+        if ok && (xerror <= local_tol || xerror_scaled <= local_tol) {
+            return true;
+        }
+        stat_inc(STAT_NLS_RETRY);
+        if retries < 1 {
+            x.copy_from_slice(warm);
+            every_jac = true;
+            retries += 1;
+        } else if retries < 2 {
+            for i in 0..n {
+                x[i] += nominal[i] * 0.01;
+            }
+            retries += 1;
+        } else if retries < 3 {
+            x.copy_from_slice(nominal);
+            retries += 1;
+        } else if retries < 4 && discrete_call {
+            // C also holds the relations at their `pre` values here — as
+            // `rt_solve_nls` does throughout.
+            x.copy_from_slice(warm);
+            retries += 1;
+        } else if retries2 < 4 {
+            x.copy_from_slice(warm);
+            local_tol *= 10.0;
+            retries = 0;
+            retries2 += 1;
+        } else {
+            return false;
+        }
+    }
+}
+
 /// KINSOL function-norm / scaled-step stopping tolerances (C's `newtonFTol` /
 /// `newtonXTol`, `model_help.c`) and the norm below which C accepts a less
 /// accurate solution rather than failing (`FTOL_WITH_LESS_ACCURACY`).
@@ -1379,6 +1706,7 @@ fn kinsol_sparse_solve(
     val_ptr: u32,
     pat_addr: u32,
     nnz: usize,
+    jac_csc: bool,
     handle: u32,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
@@ -1389,13 +1717,14 @@ fn kinsol_sparse_solve(
         let colptr = unsafe { core::slice::from_raw_parts(pat_addr as *const i32, n + 1) };
         let rowidx =
             unsafe { core::slice::from_raw_parts((pat_addr + ((n + 1) * 4) as u32) as *const i32, nnz) };
-        let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
+        let gather = (!jac_csc).then(|| read_pattern(pat_addr, n, nnz));
+        let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr, gather);
         return crate::sundials::kinsol_solve(
             handle, n, nnz, colptr, rowidx, nominal, guess, x, eval, &mut assemble,
         );
     }
     newton_sparse_solve(
-        n, x, guess, warm, nominal, sim_data, x_ptr, jac_idx, val_ptr, pat_addr, nnz, handle, eval,
+        n, x, guess, warm, nominal, sim_data, x_ptr, jac_idx, val_ptr, pat_addr, nnz, jac_csc, handle, eval,
     )
 }
 
@@ -1416,6 +1745,7 @@ fn newton_sparse_solve(
     val_ptr: u32,
     pat_addr: u32,
     nnz: usize,
+    jac_csc: bool,
     handle: u32,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
@@ -1428,7 +1758,8 @@ fn newton_sparse_solve(
     let b_ptr = rt_alloc((n * 8) as u32);
 
     let mut vals = vec![0.0f64; nnz];
-    let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr);
+    let gather = (!jac_csc).then(|| read_pattern(pat_addr, n, nnz));
+    let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr, gather);
 
     let mut f = vec![0.0f64; n];
     let mut xscale = vec![1.0f64; n];
@@ -1568,6 +1899,7 @@ pub extern "C" fn rt_solve_nls(
     mixed: u32,
     pat_addr: u32,
     nnz: u32,
+    sparse_default: u32,
     lss_handle: u32,
 ) -> i32 {
     let n = n as usize;
@@ -1626,23 +1958,25 @@ pub extern "C" fn rt_solve_nls(
     // `n×n` matrix, or the `nnz` CSC values when the system is solved sparsely.
     // `u32::MAX` means none, so numeric `hybrd` is used.
     let has_jac = jac_idx != u32::MAX;
-    let sparse = has_jac && nnz != 0;
-    let jac_len = if sparse { nnz as usize } else { n * n };
+    // `sparse_default` also says which buffer `jac` fills: CSC values where the codegen
+    // chose to solve sparsely, a dense column-major `n×n` for the rest.
+    let jac_csc = has_jac && sparse_default != 0;
+    let jac_len = if jac_csc { nnz as usize } else { n * n };
     let jac_ptr = if has_jac { rt_alloc((jac_len * 8) as u32) } else { 0 };
-    // `-nls=` overrides the codegen-time density choice; the dense solvers force
-    // the dense path.
+    // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
+    // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = crate::solvers::nls();
-    let sparse = match pick {
-        Nls::Default | Nls::Kinsol => sparse,
-        _ => false,
-    };
+    let sparse = has_jac
+        && nnz != 0
+        && match pick {
+            Nls::Default => sparse_default != 0,
+            Nls::Kinsol => true,
+            _ => false,
+        };
     // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
-    let scatter = !sparse && nnz != 0 && jac_len == nnz as usize;
-    let pat: alloc::vec::Vec<u32> = if scatter {
-        (0..n + 1 + nnz as usize).map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) }).collect()
-    } else {
-        alloc::vec::Vec::new()
-    };
+    let scatter = !sparse && jac_csc;
+    let pat: alloc::vec::Vec<u32> =
+        if scatter { read_pattern(pat_addr, n, nnz as usize) } else { alloc::vec::Vec::new() };
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
@@ -1719,18 +2053,13 @@ pub extern "C" fn rt_solve_nls(
     let converged = if sparse {
         kinsol_sparse_solve(
             n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-            pat_addr, nnz as usize, lss_handle, &mut eval,
+            pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
         )
     } else if pick == Nls::Newton {
-        let (mut ok, s) =
-            newton_c(n, &mut x, &nominal, None, &mut res_scaling, &mut eval, &mut jaceval, has_jac);
-        settled = s;
-        if !ok {
-            settled = false;
-            x.copy_from_slice(&warm);
-            ok = newton_solve(n, &mut x, &mut eval);
-        }
-        ok
+        solve_newton_c(
+            n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
+            has_jac,
+        )
     } else if pick == Nls::Homotopy {
         // Both start directions, as C's runHomotopy.
         let mut ok = false;
@@ -1860,7 +2189,7 @@ pub extern "C" fn rt_solve_nls(
                 let ok = if sparse {
                     kinsol_sparse_solve(
                         n, &mut x, &warm, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-                        pat_addr, nnz as usize, lss_handle, &mut eval,
+                        pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
                     )
                 } else if has_jac {
                     hybrj_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval, &mut jaceval)
@@ -2099,6 +2428,32 @@ mod tests {
     }
 
     // Singular Jacobian → reported as failure, not a panic.
+    // Brown's almost-linear function (`nlsTestPackage.problem7`): reaching a root at
+    // all exercises the frozen-Jacobian first attempt, the damping and the retry.
+    // *Which* root is `problem7_newton`'s job to pin — it follows from the torn system.
+    #[test]
+    fn solve_newton_solves_browns_almost_linear() {
+        let n = 10;
+        let mut eval = |x: &[f64], r: &mut [f64]| {
+            let sum: f64 = x.iter().sum();
+            for i in 0..n - 1 {
+                r[i] = x[i] + sum - (n as f64 + 1.0);
+            }
+            r[n - 1] = x.iter().product::<f64>() - 1.0;
+        };
+        let mut jaceval = |_: &[f64], _: &mut [f64]| unreachable!();
+        let mut x = vec![1.5f64; n];
+        let warm = x.clone();
+        let nominal = vec![1.0f64; n];
+        let mut res_scaling = vec![0.0f64; n];
+        assert!(solve_newton_c(
+            n, &mut x, &warm, &nominal, &mut res_scaling, false, &mut eval, &mut jaceval, false,
+        ));
+        let mut r = vec![0.0f64; n];
+        eval(&x, &mut r);
+        assert!(minpack::enorm(&r) < 1e-6, "{:?}", r);
+    }
+
     #[test]
     fn newton_reports_singular() {
         let mut x = [0.0, 0.0];

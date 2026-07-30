@@ -50,6 +50,7 @@ use arcstr::ArcStr;
 use metamodelica::List;
 
 use openmodelica_ast::Absyn;
+use openmodelica_frontend_base::Expression;
 use openmodelica_frontend_base::Types;
 use openmodelica_frontend_dump::AbsynUtil;
 use openmodelica_frontend_dump::ExpressionDumpTpl;
@@ -406,7 +407,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -1056,13 +1057,15 @@ pub(crate) struct NlsJob {
     pub(crate) has_jac: bool,
     /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
     pub(crate) mixed: bool,
-    /// Nonzero count of the Jacobian's CSC pattern when the system is solved
-    /// sparsely (C's kinsol+KLU choice), else 0: the `nls_jac` callback then fills
-    /// `nnz` CSC values instead of a dense `n×n` matrix.
+    /// Nonzero count of the Jacobian's CSC pattern, 0 where there is none.
     pub(crate) nnz: u32,
     /// Byte offset of this system's `colptr`/`rowidx` pattern into the pattern
     /// block (`NLS_PAT_GLOBAL`); only meaningful when `nnz != 0`.
     pub(crate) pat_off: u32,
+    /// C's per-system default `nlsMethod` by the density/size rule: `NLS_KINSOL`
+    /// (sparse) rather than the dense `NLS_MIXED` ladder. `-nls=` overrides it, and
+    /// it also picks the format `nls_jac` writes (CSC vs dense `n×n`).
+    pub(crate) sparse_default: bool,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), the residual
@@ -2887,16 +2890,11 @@ fn emit_noretcall(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     Ok(())
 }
 
-/// `if (!cond) { rt_assert(msg, file, line/col…); unreachable }`. The C target
-/// always emits `omc_assert` (an error that throws — the assertion level is not
-/// distinguished here), so a failed assert routes its message + source info to
-/// the error buffer (host import `rt_assert`, read back by `load_and_execute`)
-/// and then traps, matching the `[file:l:c-l:c:writable] Error: <msg>` output.
-/// A warning-level assert (`AssertionLevel.warning`, `level` enum index 1 — e.g.
-/// the min/max variable-attribute checks) instead calls `rt_assert_warning` and
-/// continues: the driver formats the recorded violation as a `LOG_ASSERT` warning
-/// after the step, matching C's `omc_assert_warning` (warn once, do not throw).
-/// Shared by `STMT_ASSERT` and the `when`-body `ASSERT` operator.
+/// C's `assertCommon`: `if (!cond) { rt_assert(msg, assert_cond, file, line/col…);
+/// unreachable }`, the host formatting the three as `omc_assert` does. A warning-level
+/// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
+/// checks) calls `rt_assert_warning` and continues instead, as C's
+/// `omc_assert_warning`. Shared by `STMT_ASSERT` and the `when`-body `ASSERT`.
 fn emit_assert(
     ctx: &mut FnCtx,
     cond: &Arc<DAE::Exp>,
@@ -2915,12 +2913,7 @@ fn emit_assert(
         // The dumped condition (C's `assert_cond`), then the message, then the
         // source position — all consumed by `rt_assert_warning`; execution
         // continues afterwards (no trap).
-        let cond_str = Tpl::textString(ExpressionDumpTpl::dumpExp(
-            Tpl::emptyTxt.clone(),
-            cond.clone(),
-            arcstr::literal!("\""),
-        )?)?;
-        emit_str_literal(ctx, cond_str.as_bytes())?; // dumped condition
+        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition
         let mw = compile_exp(ctx, msg)?; // owned message String handle
         if mw != WTy::I32 {
             return Err("CodegenWasmJit: assert message is not a String");
@@ -2935,18 +2928,8 @@ fn emit_assert(
         ctx.emit(we::Instruction::End);
         return Ok(());
     }
-    // In a nonlinear-solver residual, note the failed assert and return so the solver
-    // backs off (C's ERROR_NONLINEARSOLVER) instead of trapping. Only in a void
-    // function (residuals are void) — a bare `return` in a value-returning function is
-    // invalid wasm, and such a function is not an NLS residual anyway.
-    if ctx.outputs.is_empty() {
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-        ctx.emit(we::Instruction::If(we::BlockType::Empty));
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
-        ctx.emit(we::Instruction::Return);
-        ctx.emit(we::Instruction::End);
-    }
-    let mw = compile_exp(ctx, msg)?; // owned String handle
+    emit_nls_recoverable_return(ctx)?;
+    let mw = compile_exp(ctx, msg)?; // owned message String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
     }
@@ -2956,8 +2939,7 @@ fn emit_assert(
     ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-    let cond_str = dumped_exp(cond)?;
-    emit_str_literal(ctx, cond_str.as_bytes())?; // dumped condition, for the report
+    emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
@@ -2967,8 +2949,22 @@ fn emit_assert(
     Ok(())
 }
 
-/// Trap on a model error whose message String handle is already on the stack
-/// (dummy source position).
+/// A model error inside a nonlinear-solver residual is recoverable in C
+/// (`ERROR_NONLINEARSOLVER` longjmps out and the solver shortens the step): note it
+/// and return, leaving the outputs at their entry values.
+fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// Trap on a model error whose message String handle is already on the stack — C's
+/// `assertCommonVar`: no dumped condition, `omc_dummyFileInfo`.
 fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     emit_str_literal(ctx, b"")?; // file
     for _ in 0..5 {
@@ -2984,6 +2980,79 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
 /// The dumped source form of `e`, for embedding in an assertion message.
 fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
+}
+
+/// A math builtin's accepted interval and the message text around the `%g`.
+struct Domain {
+    low: f64,
+    low_strict: bool,
+    high: Option<f64>,
+    head: &'static str,
+    tail: &'static str,
+}
+
+/// The guard C's `daeExpCall` emits for `name`, `None` where the whole range is valid.
+fn math_domain(name: &str) -> Option<Domain> {
+    match name {
+        "asin" | "acos" => Some(Domain {
+            low: -1.0,
+            low_strict: false,
+            high: Some(1.0),
+            head: "outside the domain -1.0 <= ",
+            tail: " <= 1.0",
+        }),
+        "log" | "log10" => Some(Domain {
+            low: 0.0,
+            low_strict: true,
+            high: None,
+            head: "was ",
+            tail: " should be > 0",
+        }),
+        "sqrt" => Some(Domain {
+            low: 0.0,
+            low_strict: false,
+            high: None,
+            head: "was ",
+            tail: " should be >= 0",
+        }),
+        _ => None,
+    }
+}
+
+/// C's `daeExpCall` guard (`CodegenCFunctions.tpl`): evaluate `arg` into a temp,
+/// assert its domain, leave it on the stack for the caller's call.
+fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &Domain) -> Result<()> {
+    use we::Instruction as I;
+    let w = compile_exp(ctx, arg)?;
+    coerce(ctx, w, WTy::F64);
+    let t = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalTee(t));
+    ctx.emit(I::F64Const(d.low.into()));
+    ctx.emit(if d.low_strict { I::F64Gt } else { I::F64Ge });
+    if let Some(high) = d.high {
+        ctx.emit(I::LocalGet(t));
+        ctx.emit(I::F64Const(high.into()));
+        ctx.emit(I::F64Le);
+        ctx.emit(I::I32And);
+    }
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_nls_recoverable_return(ctx)?;
+    let call = format!("{name}({})", dumped_exp(arg)?);
+    emit_str_literal(ctx, format!("Model error: Argument of {call} {}", d.head).as_bytes())?;
+    ctx.emit(I::LocalGet(t));
+    ctx.emit(I::I32Const(6)); // significant digits (C's `%g`)
+    ctx.emit(I::I32Const(0)); // minimum length
+    ctx.emit(I::I32Const(0)); // left justified
+    ctx.emit(I::Call(rt_index("rt_real_format")?));
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_str_literal(ctx, d.tail.as_bytes())?;
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(I::End);
+
+    ctx.emit(I::LocalGet(t));
+    Ok(())
 }
 
 /// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
@@ -5523,9 +5592,14 @@ fn compile_math_builtin(
         if argv.len() != params.len() {
             return Err("CodegenWasmJit: builtin expects args");
         }
-        for (a, p) in argv.iter().zip(params.iter()) {
-            let w = compile_exp(ctx, a)?;
-            coerce(ctx, w, *p);
+        match math_domain(name) {
+            Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+            None => {
+                for (a, p) in argv.iter().zip(params.iter()) {
+                    let w = compile_exp(ctx, a)?;
+                    coerce(ctx, w, *p);
+                }
+            }
         }
         ctx.emit(we::Instruction::Call(bi));
         return Ok(SigTy::Real);
@@ -5533,10 +5607,47 @@ fn compile_math_builtin(
 
     match name {
         "sqrt" => {
-            unary_f64(ctx, &argv, we::Instruction::F64Sqrt)?;
+            need_args(&argv, 1, name)?;
+            // C skips the guard where the argument is provably non-negative.
+            let guarded = !Expression::isPositiveOrZero(argv[0].clone())?;
+            match math_domain(name).filter(|_| guarded) {
+                Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+                None => {
+                    let w = compile_exp(ctx, argv[0])?;
+                    coerce(ctx, w, WTy::F64);
+                }
+            }
+            ctx.emit(we::Instruction::F64Sqrt);
             Ok(SigTy::Real)
         }
         "nthRoot" => emit_nth_root(ctx, &argv, name),
+        // C's `(modelica_integer)round(r)`: half-*away*-from-zero, which wasm's
+        // `nearest` (half-to-even) is not. Left as a Real — C's cast only narrows an
+        // already integral value, and the surrounding expression wants the Real.
+        "$_round" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let v = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(v));
+            ctx.emit(we::Instruction::F64Trunc);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(t));
+            // + copysign(1, v) * (|v - trunc(v)| >= 0.5)
+            ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::F64Copysign);
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Const(0.5f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::F64ConvertI32S);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Add);
+            Ok(SigTy::Real)
+        }
         "floor" => {
             unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
             Ok(SigTy::Real)

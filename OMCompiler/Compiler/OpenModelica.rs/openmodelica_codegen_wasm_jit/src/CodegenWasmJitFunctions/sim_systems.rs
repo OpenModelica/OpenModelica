@@ -1478,9 +1478,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n_rel as i32));
     ctx.emit(I::I32Const(job.mixed as i32));
-    // Sparse systems: this system's `colptr`/`rowidx` in the pattern block, its
-    // nonzero count, and the cache key for the reused symbolic factorization.
-    // `nnz == 0` selects the dense solver ladder (`jac` fills an `n×n` matrix).
+    // A system with a symbolic pattern: its `colptr`/`rowidx` in the pattern block,
+    // the nonzero count, whether the pattern is also the default solver choice (else
+    // only `-nls=kinsol` uses it), and the symbolic-factorization cache key. With
+    // `nnz == 0` the dense ladder runs over an `n×n` `jac`.
     if job.nnz != 0 {
         ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
         ctx.emit(I::I32Const(job.pat_off as i32));
@@ -1489,6 +1490,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         ctx.emit(I::I32Const(0));
     }
     ctx.emit(I::I32Const(job.nnz as i32));
+    ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
