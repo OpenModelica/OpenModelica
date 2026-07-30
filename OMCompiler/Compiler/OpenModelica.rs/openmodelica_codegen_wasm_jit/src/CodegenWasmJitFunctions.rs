@@ -303,6 +303,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_total", &[WTy::I32], &[WTy::I32]),
     ("rt_array_dim", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_elem_ptr", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // The out-of-range arm of the inlined element-address computation.
+    ("rt_elem_ptr_oob", &[], &[WTy::I32]),
     ("rt_array_release", &[WTy::I32], &[]),
     // Value-semantics copy (for whole-array assignment from a variable source).
     ("rt_array_copy", &[WTy::I32], &[WTy::I32]),
@@ -351,7 +353,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // integer powers stay byte-identical instead of going through generic pow).
     ("rt_real_int_pow", &[WTy::F64, WTy::I32], &[WTy::F64]),
     // `base ^ exp` generic scalar power matching the C target's negative-base /
-    // odd-root / nan-inf handling (traps on an invalid root, surfacing fail()).
+    // odd-root / nan-inf handling (an invalid root is a model error).
     ("rt_real_pow", &[WTy::F64, WTy::F64], &[WTy::F64]),
     // Integer `mod(x,y)` — floored modulo (result takes the divisor's sign).
     ("rt_mod_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
@@ -6205,8 +6207,11 @@ fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
 /// same host import a failed `assert()` uses, so the simulation drivers surface it
 /// instead of a bare `unreachable` trap) then trap. For failures with no source
 /// location (a singular/non-converged solver system, an invalid `sqrt`, an
-/// out-of-range index) the source info is zeroed.
+/// out-of-range index) the source info is zeroed. C reports these with
+/// `throwStreamPrint`, which a nonlinear solver catches, so the recoverable
+/// escape comes first.
 fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
+    emit_nls_recoverable_return(ctx)?;
     emit_str_literal(ctx, msg.as_bytes())?; // message String handle
     for _ in 0..6 {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
@@ -6373,7 +6378,7 @@ fn emit_real_string(ctx: &mut FnCtx, arg: &DAE::Exp) -> Result<SigTy> {
 // -------------------------------------------------------------------------
 
 /// Inline what `rt_array_elem_ptr` computes: the byte address of the element at
-/// row-major linear position `index` (1-based), with the same out-of-range trap.
+/// row-major linear position `index` (1-based), with the same out-of-range arm.
 /// Stack is `[obj, index] -> [addr]`.
 ///
 /// Inlined rather than called because element access is the hottest operation in
@@ -6389,7 +6394,8 @@ fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
     };
     ctx.emit(I::LocalSet(it));
     ctx.emit(I::LocalSet(ot));
-    // index < 1 || index > total -> trap.
+    ctx.emit(I::Block(we::BlockType::Result(we::ValType::I32)));
+    // index < 1 || index > total -> the runtime's out-of-range arm.
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::I32Const(1));
     ctx.emit(I::I32LtS);
@@ -6399,7 +6405,8 @@ fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
     ctx.emit(I::I32GtS);
     ctx.emit(I::I32Or);
     ctx.emit(I::If(we::BlockType::Empty));
-    ctx.emit(I::Unreachable);
+    ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));
+    ctx.emit(I::Br(1));
     ctx.emit(I::End);
     // obj + align8(ARR_DIMS_OFF + ndims*4) + (index - 1) * stride
     ctx.emit(I::LocalGet(ot));
@@ -6418,6 +6425,7 @@ fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
     ctx.emit(I::I32Const(shift));
     ctx.emit(I::I32Shl);
     ctx.emit(I::I32Add);
+    ctx.emit(I::End);
     Ok(())
 }
 

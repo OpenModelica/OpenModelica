@@ -325,9 +325,15 @@ pub(crate) fn record_error(msg: String) {
 /// reported itself.
 fn with_engine_detail(e: &str) -> String {
     let detail = openmodelica_wasm_jit::take_engine_error_detail();
+    let e = match (sim_driver::init_failed_lambda(), sim_driver::failed_nls_system()) {
+        (Some(l), Some(k)) if e.ends_with("at lambda") => {
+            format!("{e} = {l} (nonlinear system {k})")
+        }
+        _ => e.to_string(),
+    };
     match detail {
         Some(d) if e != sim_driver::ASSERT_ERR => format!("{e}\n{d}"),
-        _ => e.to_string(),
+        _ => e,
     }
 }
 

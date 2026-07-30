@@ -549,14 +549,21 @@ fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> {
 /// equation call in a context that cannot back off (initialisation, an output
 /// point, the Euler loop). The DASSL residual handles this recoverably instead.
 fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    if read_i32(e, sim_data + layout.nls_fail_off)? != 0 {
+    let failed = read_i32(e, sim_data + layout.nls_fail_off)?;
+    if failed != 0 {
+        init_report::set_failed_system(failed - 1);
         return Err("CodegenWasmJit: nonlinear system did not converge");
     }
     Ok(())
 }
 
-/// Number of equidistant homotopy steps (C's `init_lambda_steps`).
+/// Number of equidistant homotopy steps: C's `init_lambda_steps`, which `-ils`
+/// overrides.
 const HOMOTOPY_STEPS: i32 = 3;
+
+fn homotopy_steps() -> i32 {
+    crate::simflags::with_flags(|f| f.init_lambda_steps).unwrap_or(HOMOTOPY_STEPS).max(1)
+}
 
 // Parameter / start `-override`s for the next run, resolved to `(SimData offset,
 // type, value)`. Params are applied right after `functionParameters` (so
@@ -692,11 +699,32 @@ mod chatter_store {
 mod init_report {
     use core::sync::atomic::{AtomicU32, Ordering};
     static HOMOTOPY_STEPS: AtomicU32 = AtomicU32::new(0);
+    /// The homotopy step a failed initialization gave up at, and the system that
+    /// did not converge there, both biased by one.
+    static FAILED_STEP: AtomicU32 = AtomicU32::new(0);
+    static FAILED_SYSTEM: AtomicU32 = AtomicU32::new(0);
+    pub fn reset() {
+        HOMOTOPY_STEPS.store(0, Ordering::Relaxed);
+        FAILED_STEP.store(0, Ordering::Relaxed);
+        FAILED_SYSTEM.store(0, Ordering::Relaxed);
+    }
+    pub fn set_failed_system(k: i32) {
+        FAILED_SYSTEM.store(k as u32 + 1, Ordering::Relaxed);
+    }
+    pub fn failed_system() -> Option<u32> {
+        FAILED_SYSTEM.load(Ordering::Relaxed).checked_sub(1)
+    }
     pub fn set_homotopy_steps(n: u32) {
         HOMOTOPY_STEPS.store(n, Ordering::Relaxed);
     }
     pub fn homotopy_steps() -> u32 {
         HOMOTOPY_STEPS.load(Ordering::Relaxed)
+    }
+    pub fn set_failed_step(step: i32) {
+        FAILED_STEP.store(step as u32 + 1, Ordering::Relaxed);
+    }
+    pub fn failed_step() -> Option<u32> {
+        FAILED_STEP.load(Ordering::Relaxed).checked_sub(1)
     }
 }
 
@@ -704,6 +732,17 @@ mod init_report {
 /// to format the initialization success message like the C runtime.
 pub fn init_homotopy_steps() -> u32 {
     init_report::homotopy_steps()
+}
+
+/// `lambda` of the homotopy step the last initialization failed at, for the host
+/// to name in the error the driver could only return as a `&'static str`.
+pub fn init_failed_lambda() -> Option<f64> {
+    init_report::failed_step().map(|s| s as f64 / homotopy_steps() as f64)
+}
+
+/// Index of the nonlinear system the last failed solve gave up on.
+pub fn failed_nls_system() -> Option<u32> {
+    init_report::failed_system()
 }
 
 /// The per-site keys already reported, so a warning-level violation warns only
@@ -1019,7 +1058,7 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
 }
 
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    init_report::set_homotopy_steps(0);
+    init_report::reset();
     assert_warn_store::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
     let _ = rethrow_store::take();
@@ -1046,7 +1085,7 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     // report. A model without homotopy is solved directly.
     if layout.has_homotopy {
         run_homotopy_continuation(e, sim_data, layout)?;
-        init_report::set_homotopy_steps(HOMOTOPY_STEPS as u32);
+        init_report::set_homotopy_steps(homotopy_steps() as u32);
         return Ok(());
     }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
@@ -1061,8 +1100,9 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
 /// `functionInitialEquations_lambda0`, each step seeded by the previous solution.
 /// Leaves lambda = 1.
 fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    for step in 0..=HOMOTOPY_STEPS {
-        let lambda = step as f64 / HOMOTOPY_STEPS as f64;
+    let steps = homotopy_steps();
+    for step in 0..=steps {
+        let lambda = step as f64 / steps as f64;
         write_f64(e, sim_data + layout.lambda_off, lambda)?;
         write_i32(e, sim_data + layout.nls_fail_off, 0)?;
         if step == 0 {
@@ -1071,7 +1111,8 @@ fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimL
             e.call1("functionInitialEquations", sim_data)?;
         }
         if check_nls(e, sim_data, layout).is_err() {
-            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda=");
+            init_report::set_failed_step(step);
+            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
         }
     }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;

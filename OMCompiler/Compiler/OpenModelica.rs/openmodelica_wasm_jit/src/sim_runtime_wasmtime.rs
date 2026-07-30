@@ -249,6 +249,7 @@ fn define_external_imports(
     memory: wasmtime::Memory,
     rt_str_new: wasmtime::TypedFunc<u32, u32>,
     rt_str_data: wasmtime::TypedFunc<u32, u32>,
+    nls: NlsHooks,
 ) -> Result<()> {
     registry_reset();
     openmodelica_util::dynload::install_modelica_message_interception(
@@ -268,9 +269,10 @@ fn define_external_imports(
         let sig = sig.clone();
         let rt_str_new = rt_str_new.clone();
         let rt_str_data = rt_str_data.clone();
+        let nls = nls.clone();
         wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
             // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-            unsafe { call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, args, rets) }
+            unsafe { call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &nls, args, rets) }
                 .map_err(|e| wasmtime::Error::msg(format!("{e}")))
         }))?;
     }
@@ -297,6 +299,46 @@ fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime:
     Ok(())
 }
 
+/// Checkpoint bracketing one external "C" call, so a `ModelicaError` the
+/// nonlinear solver recovers from leaves no message behind.
+const EXT_CHECKPOINT: arcstr::ArcStr = arcstr::literal!("wasm-jit external \"C\"");
+
+/// The runtime's recoverable-model-error state, reached from the host so an
+/// external "C" `ModelicaError` inside a residual backs the trial off.
+#[derive(Clone)]
+struct NlsHooks {
+    recovering: wasmtime::TypedFunc<(), i32>,
+    note: wasmtime::TypedFunc<(), ()>,
+}
+
+impl NlsHooks {
+    fn recovering(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<bool> {
+        Ok(wt(self.recovering.call(&mut *caller, ()))? != 0)
+    }
+    fn note(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<()> {
+        wt(self.note.call(&mut *caller, ()))
+    }
+}
+
+/// Zeroed results (an empty String for `char*`) after a recovered `ModelicaError`.
+/// The solver discards the residual they feed, but they must be valid handles.
+fn zero_results(
+    sig: &crate::sig::ExtCallSig,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
+    rets: &mut [wasmtime::Val],
+) -> Result<()> {
+    use crate::sig::SigTy;
+    for (slot, ty) in rets.iter_mut().zip(sig.wasm_results()) {
+        *slot = match ty {
+            SigTy::Real => wasmtime::Val::F64(0.0f64.to_bits()),
+            SigTy::Str => wasmtime::Val::I32(wt(rt_str_new.call(&mut *caller, 0))? as i32),
+            _ => wasmtime::Val::I32(0),
+        };
+    }
+    Ok(())
+}
+
 /// Call native external `addr` through libffi, marshalling by the C-call
 /// [`ExtCallSig`]. Input args (in `extArgs` order) come from the wasm parameters:
 /// scalars (Real→f64, Integer/Boolean→i64) by value; `Str` as a NUL-terminated
@@ -315,6 +357,7 @@ unsafe fn call_external(
     memory: wasmtime::Memory,
     rt_str_new: &wasmtime::TypedFunc<u32, u32>,
     rt_str_data: &wasmtime::TypedFunc<u32, u32>,
+    nls: &NlsHooks,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
 ) -> Result<()> {
@@ -430,6 +473,7 @@ unsafe fn call_external(
     // from our arena (never the C runtime); freed by `sim_external_end` once the
     // results below are copied into in-wasm strings.
     openmodelica_modelica_utilities::sim_external_begin();
+    openmodelica_error::ErrorExt::setCheckpoint(EXT_CHECKPOINT);
     let ok = openmodelica_error::ErrorExt::catch_runtime_error(|| unsafe {
         ffi_call(cif_ptr, Some(target), rvalue_ptr, avalue_ptr);
     });
@@ -437,9 +481,17 @@ unsafe fn call_external(
     if ok.is_err() {
         openmodelica_modelica_utilities::sim_external_end();
         // A `ModelicaError` recorded its message in the Error buffer and unwound
-        // here as a panic; surface a failure to the host.
+        // here as a panic. C's `throwStreamPrint` is caught by a nonlinear solver,
+        // so back the trial off first, dropping the message it will not fail on.
+        if nls.recovering(caller)? {
+            openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
+            nls.note(caller)?;
+            return zero_results(sig, caller, rt_str_new, rets);
+        }
+        openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
         return Err("CodegenWasmJit: external \"C\" raised a runtime error");
     }
+    openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
 
     // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
     // offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
@@ -597,7 +649,11 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     // outputs.
     let rt_str_new = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_new"))?;
     let rt_str_data = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data"))?;
-    define_external_imports(&mut linker, model, memory, rt_str_new, rt_str_data)?;
+    let nls = NlsHooks {
+        recovering: wts(rt_inst.get_typed_func::<(), i32>(&mut store, "rt_nls_recovering"))?,
+        note: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,
+    };
+    define_external_imports(&mut linker, model, memory, rt_str_new, rt_str_data, nls)?;
     define_print_import(&mut linker, memory)?;
     // `rt_row_asserts` is called by the model, which only imports `memory`.
     crate::host::set_sim_memory(memory);
