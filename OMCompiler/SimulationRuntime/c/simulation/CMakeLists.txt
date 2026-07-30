@@ -186,6 +186,7 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
 )
 
 if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PUBLIC OMC_HAVE_COLPACK)
   target_link_libraries(OpenModelicaRuntimeCSimulation PRIVATE omc::3rd::colpack)
 endif()
 
