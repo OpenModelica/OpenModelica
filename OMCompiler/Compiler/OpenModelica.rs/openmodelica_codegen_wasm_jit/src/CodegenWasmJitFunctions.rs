@@ -223,9 +223,11 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_*` indices are unaffected), just before the generated functions. The host
 /// closures live in `runtime::add_host_builtins`.
 ///
-/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly)` records a pending
-/// assertion failure (the message and source-info handles) for `load_and_execute`
-/// to route to the error buffer; the generated code then traps (`unreachable`).
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond) -> shouldTrap`
+/// records the failed assertion and answers whether the generated code must trap:
+/// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
+/// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
+/// suppressed; it comes last so callers that already pushed the message append.
 ///
 /// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
@@ -236,11 +238,16 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_print(str)` writes the String's bytes to the model's stdout (the `print`
 /// builtin). The host reads the handle's bytes from the shared memory during the
 /// call; the generated code releases the (owned) handle afterwards.
+///
+/// `rt_row_asserts(sim_data, warn) -> stop` formats the violations recorded at the
+/// output row the emitted `simulate` loop just stored — the driver's per-row
+/// `LOG_ASSERT` step, which that loop cannot reach from wasm. `warn` selects the
+/// level; a nonzero result means a suppressed `assert()` ends the run.
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
-        &[],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
     ),
     (
         "rt_assert_warning",
@@ -248,11 +255,12 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
         &[],
     ),
     ("rt_print", &[WTy::I32], &[]),
+    ("rt_row_asserts", &[WTy::I32, WTy::I32], &[WTy::I32]),
 ];
 
 /// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
 /// and `RT_BUILTINS`).
-fn env_extra_index(name: &str) -> Result<u32> {
+pub(crate) fn env_extra_index(name: &str) -> Result<u32> {
     let pos = ENV_EXTRA
         .iter()
         .position(|(n, _, _)| *n == name)
@@ -2948,8 +2956,13 @@ fn emit_assert(
     ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+    let cond_str = dumped_exp(cond)?;
+    emit_str_literal(ctx, cond_str.as_bytes())?; // dumped condition, for the report
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    // Trap unless the driver took it (suppressed during the event search).
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
     ctx.emit(we::Instruction::Unreachable);
+    ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
 }
@@ -2961,7 +2974,9 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     for _ in 0..5 {
         ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
     }
+    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
 }
@@ -6085,7 +6100,9 @@ fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
     for _ in 0..6 {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
     }
+    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
 }

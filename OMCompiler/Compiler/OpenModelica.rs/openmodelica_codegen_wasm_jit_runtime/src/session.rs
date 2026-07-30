@@ -28,6 +28,32 @@ use openmodelica_sim_meta::{SimMeta, SolveStats};
 unsafe extern "C" {
     fn rt_host_now_ms() -> f64;
     fn rt_host_cancel() -> i32;
+    /// Copy up to `max` of the violations the model left with the host's
+    /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
+    fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
+    /// Open/close C's `noThrowAsserts` phase, on the host: that is where
+    /// `rt_assert` lives, whichever driver runs.
+    fn rt_host_set_no_throw(v: i32);
+    /// Initialization is over; the host splits its output capture there.
+    fn rt_host_init_done();
+}
+
+/// The driver's log lines go to stdout, the channel the model's own `print`
+/// output travels and the host captures.
+#[cfg(target_os = "wasi")]
+fn log_line(s: &str) {
+    use std::io::Write;
+    let mut out = std::io::stdout();
+    let _ = out.write_all(s.as_bytes());
+    let _ = out.flush();
+}
+
+/// The no_std fallback runtime has no stdout to write them to.
+#[cfg(not(target_os = "wasi"))]
+fn log_line(_s: &str) {}
+
+fn init_done_hook() {
+    unsafe { rt_host_init_done() };
 }
 
 fn now_ms_hook() -> f64 {
@@ -105,7 +131,18 @@ impl SimEngine for InWasmEngine {
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+        let mut out = Vec::new();
+        loop {
+            let mut buf = [[0i32; 9]; 8];
+            let n = unsafe { rt_host_take_warnings(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
+            out.extend_from_slice(&buf[..n.min(buf.len())]);
+            if n < buf.len() {
+                return out;
+            }
+        }
+    }
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // The model imports `rt_assert` from the host; a failed assert traps and
         // unwinds out of `rt_sim_advance` to the host, which reports it. Nothing
         // to take in-wasm.
@@ -222,6 +259,9 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
 
     driver::set_clock(now_ms_hook);
     driver::set_cancel_hook(cancel_hook);
+    driver::set_init_done_hook(init_done_hook);
+    driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
+    driver::set_log_sink(log_line);
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_alloc(model.layout.total);

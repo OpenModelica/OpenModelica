@@ -9,7 +9,7 @@
 import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
   omc_enable_cancel_poll,
-  omc_sim_start, omc_sim_advance, omc_sim_free,
+  omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
@@ -33,7 +33,13 @@ let driverMode = null;
 let inited = false;
 
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
-const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s; };
+// omc prints a String result as a Modelica literal, so undo that: an empty result
+// is `""`, and a multi-line one (`getErrorString`) carries `\n` as two characters.
+const unquote = (s) => {
+  s = (s || '').trim();
+  return (s.startsWith('"') && s.endsWith('"'))
+    ? s.slice(1, -1).replace(/\\(.)/g, (_, c) => (c === 'n' ? '\n' : c === 't' ? '\t' : c)) : s;
+};
 
 // --- profiling -------------------------------------------------------------
 // Per-op/per-stage timings for diagnosing where the wall time goes. Off by
@@ -162,7 +168,15 @@ function snapshot() {
 }
 
 function simError(fallback) {
-  return { ok: false, error: omc_eval('getErrorString()').trim() || fallback };
+  return { ok: false, error: unquote(omc_eval('getErrorString()')) || fallback };
+}
+
+// What omc had to say about a step that nonetheless succeeded. Only a failure
+// reports the buffer to the page, so otherwise these are dropped by the next
+// `getErrorString` — or shown as part of an unrelated later error.
+function logCompilerMessages(what) {
+  const msg = unquote(omc_eval('getErrorString()'));
+  if (msg) console.warn('[omc ' + what + ']\n' + msg);
 }
 
 // Chunked, cancellable integration of a prepared model. Each `omc_sim_advance`
@@ -172,7 +186,7 @@ function simError(fallback) {
 async function runResumable(prefix, simflags, onStatus) {
   simCancel = false;   // discard a cancel that raced in after the previous run
   const _t0 = performance.now();
-  if (!omc_sim_start(prefix, prefix + '_res.mat', simflags)) return -1;
+  if (!omc_sim_start(prefix, prefix + '_res.mat', simflags)) { logModelOutput(prefix); return -1; }
   // Split off `omc_sim_start` (compile lookup, instantiate, init, row 0) and count
   // the chunks: a run that suddenly costs more is either paying instantiation again
   // or being yielded far more often than its budget should need.
@@ -190,11 +204,45 @@ async function runResumable(prefix, simflags, onStatus) {
     }
   } finally {
     lastPhases.advanceMs = performance.now() - _t1;
+    logModelOutput(prefix);
+  }
+}
+
+// The model's own output, which the run captures instead of the console.
+// Runtime log lines are `<stream><pad>| <level><pad>| text`, continued on lines
+// whose two columns are `|`; split on that so each record logs as one entry.
+const LOG_HEAD = /^(\S[^|\n]*?)\s*\|\s*(\S+)\s*\| ?/;
+const LOG_CONT = /^\|\s*\|\s*\| ?/;
+function logModelOutput(prefix) {
+  const out = omc_sim_log();
+  if (!out.trim()) return;
+  const records = [];
+  for (const line of out.replace(/\n$/, '').split('\n')) {
+    const head = LOG_HEAD.exec(line);
+    if (head && !LOG_CONT.test(line)) records.push({ stream: head[1], level: head[2], lines: [line] });
+    else if (records.length && (LOG_CONT.test(line) || head)) records[records.length - 1].lines.push(line);
+    else records.push({ stream: '', level: 'info', lines: [line] });
+  }
+  for (const r of records) {
+    // A violated assertion belongs in the console's warning list whatever the
+    // runtime's own severity — C prints one as `info` under `noThrowAsserts`.
+    const warn = r.level === 'warning' || r.level === 'error' || r.stream === 'LOG_ASSERT';
+    (warn ? console.warn : console.log)('[model ' + prefix + ']\n' + r.lines.join('\n'));
   }
 }
 
 // Phase breakdown of the last `runResumable`, reported back with the snapshot.
 let lastPhases = null;
+
+// The run's simflags: `-override=` plus the solver selectors the page picked.
+// They are read at `omc_sim_start`, not baked into the build, so a re-simulate
+// honours a change without recompiling; an empty selection is left out.
+function simflagsFor(a) {
+  const sel = a.solvers || {};
+  const flags = Object.keys(sel).filter((k) => sel[k]).map((k) => `-${k}=${sel[k]}`);
+  if (a.override) flags.push(a.override);
+  return flags.join(' ');
+}
 
 // The settings a run used, to seed the dialog: the explicit ones the page sent, or
 // getSimulationOptions → (startTime, stopTime, tolerance, numberOfIntervals) for a
@@ -241,7 +289,7 @@ self.onmessage = async (ev) => {
         // so this API call is how the option gets set (models may still opt in via
         // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
         omc_eval('setCommandLineOptions("-d=visxml")');
-        reply({ ok: true, version: omc_eval('getVersion()') });
+        reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options() });
         break;
       }
       case 'warmup': {
@@ -268,6 +316,7 @@ self.onmessage = async (ev) => {
         const loaded = (await evalWithDownloads(`loadString("${esc(a.text)}")`, status)).trim();
         if (PROF) wlog('loadString -> ' + loaded);
         if (loaded !== 'true') return reply(simError('Could not parse the model.'));
+        logCompilerMessages('loadString');
         const name = a.name || lastClassName();
         if (!name) return reply({ ok: false, error: 'No class found in the model text.' });
         if (PROF) wlog('model name = ' + name);
@@ -314,8 +363,9 @@ self.onmessage = async (ev) => {
         const buildMs = performance.now() - _tb;
         // buildModel → {"<prefix>","<initfile>"}; an empty first element means it failed.
         if (!/^\{\s*"[^"]/.test(built)) return reply(simError('Build failed.'));
+        logCompilerMessages('buildModel ' + a.name);
         const _ts = performance.now();
-        const st = await runResumable(a.name, a.override || '', status);
+        const st = await runResumable(a.name, simflagsFor(a), status);
         const simMs = performance.now() - _ts;
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Simulation failed.'));
@@ -329,7 +379,7 @@ self.onmessage = async (ev) => {
       case 'resimulate': {
         // Re-run the already-built model (no rebuild) — same cancellable chunked path.
         const _ts = performance.now();
-        const st = await runResumable(a.name, a.override || '', status);
+        const st = await runResumable(a.name, simflagsFor(a), status);
         const simMs = performance.now() - _ts;
         if (st === 3) return reply({ ok: false, cancelled: true });
         if (st < 0) return reply(simError('Re-simulation failed.'));

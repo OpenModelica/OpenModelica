@@ -65,7 +65,8 @@ pub extern "C" fn rt_assert(
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
-) {
+    _cond: i32,
+) -> i32 {
     core::arch::wasm32::unreachable()
 }
 
@@ -87,6 +88,13 @@ pub extern "C" fn rt_assert_warning(
 /// The `print` builtin. No host stdout here, so the output is discarded.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(_str: i32) {}
+
+/// Per-row assert formatting: no logger, and the FMI master steps the model
+/// instead of the emitted `simulate` loop that calls this.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_row_asserts(_sim_data: i32, _warn: i32) -> i32 {
+    0
+}
 
 // ── SimEngine over the merged module's shared linear memory ──────────────────
 struct Engine;
@@ -127,7 +135,7 @@ impl SimEngine for Engine {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         None
     }
 }

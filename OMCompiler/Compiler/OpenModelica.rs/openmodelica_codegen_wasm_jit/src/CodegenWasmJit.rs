@@ -15,8 +15,9 @@
 //     approach.
 //   * The forward-Euler integrator loop runs *in wasm* (the precompiled runtime
 //     primitives `rt_euler_step` / `rt_sim_store_row` plus an emitted `simulate`
-//     loop), so a whole run is a single host->wasm call with no per-step
-//     boundary crossing. A second, host-driven driver (the Euler loop in native
+//     loop), so the whole integration is a single host->wasm call with no
+//     per-step boundary crossing (initialization stays with the shared driver).
+//     A second, host-driven driver (the Euler loop in native
 //     Rust, one wasm call per step) is provided for benchmarking — selected with
 //     `OMC_WASM_SIM_DRIVER=host`.
 //
@@ -374,21 +375,24 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
     // process console.
     let init_line = init_success_line();
-    // `LOG_ASSERT` warnings (min/max attribute violations, …) recorded during the run.
-    let warns: String = sim_driver::take_assert_warnings().concat();
+    // A failed run keeps the init line too, as C does.
+    let init_done = init_output.is_some();
     let init_out = init_output.unwrap_or_default();
-    let combined = format!("{init_out}{sim_output}");
+    let init_seg = if init_done { format!("{init_out}{init_line}\n") } else { init_out };
     let log = match &res {
         // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
-            "{init_out}{init_line}\n{warns}{sim_output}\
+            "{init_seg}{sim_output}\
              LOG_SUCCESS       | info    | The simulation finished successfully.\n"
         ),
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
-        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_line}\n{warns}{combined}"),
+        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_seg}{sim_output}"),
+        // A failed assertion has already logged C's `LOG_ASSERT` block; any other
+        // failure needs its reason spelled out.
+        Err(e) if *e == sim_driver::ASSERT_ERR => format!("{init_seg}{sim_output}"),
         Err(e) => format!(
-            "{combined}{warns}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
+            "{init_seg}{sim_output}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
             with_engine_detail(e)
         ),
     };
@@ -528,6 +532,12 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     gbode: false,
 };
 
+/// The solver values a caller may offer for this build, so a menu built from it
+/// cannot disagree with [`install_sim_flags`]'s check.
+pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
+    simflags::supported(CAPABILITIES)
+}
+
 /// Parse `simflags` as an argv and install the result for this run. omc hands the
 /// flags over as one whitespace-separated string; `argv[0]` stands in for the
 /// program name a WASI command would see, so the same parser serves this path and a
@@ -567,15 +577,13 @@ thread_local! {
     static SPLIT_ARMED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-/// Init-done hook: take the init-phase stdout and `LOG_ASSERT` warnings, then
-/// restart the capture. A no-op unless [`run_simulation_inner`] armed it.
+/// Init-done hook: take the initialization phase's output, then restart the
+/// capture. A no-op unless [`run_simulation_inner`] armed it.
 fn on_init_done() {
     if !SPLIT_ARMED.with(|a| a.replace(false)) {
         return;
     }
-    let init = openmodelica_wasi::wasi::take_stdout_capture();
-    let warns: String = sim_driver::take_assert_warnings().concat();
-    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(format!("{init}{warns}")));
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(openmodelica_wasi::wasi::take_stdout_capture()));
     openmodelica_wasi::wasi::start_stdout_capture();
 }
 
@@ -625,12 +633,6 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         }
         Ok(())
     })();
-    // The driver reports chattering out-of-band (it can only return a `&'static str`);
-    // fold its log lines in whether the run finished or aborted.
-    for line in sim_driver::take_chatter_log() {
-        extra.push_str(&line);
-        extra.push('\n');
-    }
     // Disarm in case init failed before the hook fired.
     SPLIT_ARMED.with(|a| a.set(false));
     // Everything captured after the split is the simulation phase (plus `extra`:
@@ -704,6 +706,34 @@ mod session {
         /// Wall-clock inside `advance`, summed over chunks: excludes the yields
         /// between them, so it stays comparable to the one-shot `run()` timing.
         integrate_ms: f64,
+        /// The model's output so far. `take_stdout_capture` ends the capture, so
+        /// each chunk drains it here and re-arms.
+        log: String,
+        /// `-lv=LOG_STATS` was requested.
+        log_stats: bool,
+    }
+
+    thread_local! {
+        /// The last run's model output, for [`last_sim_log`]: `sim_advance` returns
+        /// a status code and has no other channel for it.
+        static LAST_SIM_LOG: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    }
+
+    /// The last session run's model output, including a failed run's.
+    pub fn last_sim_log() -> String {
+        LAST_SIM_LOG.with(|c| c.borrow().clone())
+    }
+
+    /// Drain the capture into `dst` and re-arm it for the next chunk.
+    fn drain_capture(dst: &mut String) {
+        dst.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+        openmodelica_wasi::wasi::start_stdout_capture();
+    }
+
+    /// End the capture, fold everything the run produced into `log`, and publish it.
+    fn publish_log(mut log: String) {
+        log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+        LAST_SIM_LOG.with(|c| *c.borrow_mut() = log);
     }
 
     /// Either the host driver (Rust driver calling the model through the wasm
@@ -753,6 +783,12 @@ mod session {
         let (param_ov, start_ov) = resolve_overrides(&model, &flags);
         sim_driver::set_param_overrides(param_ov, start_ov);
         sim_driver::clear_cancel();
+        // Split init from simulation output as `run_simulation_inner` does; the
+        // hook fires while the backend below is built, which is what initializes.
+        LAST_SIM_LOG.with(|c| c.borrow_mut().clear());
+        INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
+        sim_driver::set_init_done_hook(on_init_done);
+        SPLIT_ARMED.with(|a| a.set(true));
         openmodelica_wasi::wasi::start_stdout_capture();
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
@@ -764,7 +800,7 @@ mod session {
                 let (mut engine, sim_data) = sim_runtime::build_engine(&model)?;
                 let made =
                     sim_driver::make_driver(&mut *engine, &model.meta, sim_data, model.method.as_str())
-                        .map_err(|err| sim_driver::enrich_trap(&mut *engine, err));
+                        .map_err(|err| sim_driver::enrich_trap_init(&mut *engine, err, model.start_time));
                 let (driver, _label) = match made {
                     Ok(v) => v,
                     Err(e) => {
@@ -774,10 +810,17 @@ mod session {
                 Ok(SessionBackend::Host { engine, driver, sim_data })
             }
         })();
+        // Disarm in case init failed before the hook fired.
+        SPLIT_ARMED.with(|a| a.set(false));
+        let init_log = format!(
+            "{}{}",
+            model.sparse_solver_log,
+            INIT_OUTPUT.with(|c| c.borrow_mut().take()).unwrap_or_default()
+        );
         let backend = match built {
             Ok(v) => v,
             Err(e) => {
-                let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                publish_log(init_log);
                 record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(&e)));
                 return Err("CodegenWasmJit: wasm-jit simulation failed");
             }
@@ -788,6 +831,8 @@ mod session {
                 result_file: result_file.to_string(),
                 backend,
                 integrate_ms: 0.0,
+                log: init_log,
+                log_stats: flags.has_log("LOG_STATS"),
             })
         });
         Ok(())
@@ -806,8 +851,11 @@ mod session {
             // touch `guard` again (to clear it on completion/error).
             let model = sess.model.clone();
             let result_file = sess.result_file.clone();
+            let log_stats = sess.log_stats;
             // Stopped before the finalize/`.mat` work in each arm below.
             let mut adv_ms = 0.0f64;
+            // Filled by whichever arm finishes the run, appended to the log below.
+            let mut stats_block = String::new();
 
             // Advance one chunk. All `sess` borrows end when this block returns its
             // status value.
@@ -836,6 +884,9 @@ mod session {
                                 params,
                                 stats,
                             };
+                            if log_stats {
+                                stats_block = log_stats_block(&run.stats);
+                            }
                             finalize_and_capture(&model, &result_file, &run)?;
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
@@ -856,6 +907,9 @@ mod session {
                         Ok(rc) => {
                             // 1 done, 2 terminated
                             let run = inwasm.take_result()?;
+                            if log_stats {
+                                stats_block = log_stats_block(&run.stats);
+                            }
                             finalize_and_capture(&model, &result_file, &run)?;
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
@@ -865,6 +919,13 @@ mod session {
             };
             sess.integrate_ms += adv_ms;
             let integrate_ms = sess.integrate_ms;
+            drain_capture(&mut sess.log);
+            sess.log.push_str(&stats_block);
+            // The run is over unless it asked for another chunk, so hand the log on.
+            let run_log = match outcome {
+                Ok(SimStatus::Running) => None,
+                _ => Some(core::mem::take(&mut sess.log)),
+            };
 
             match outcome {
                 Ok(SimStatus::Running) => Ok(SimStatus::Running),
@@ -876,12 +937,12 @@ mod session {
                             model.n_intervals,
                         );
                     }
-                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    publish_log(run_log.unwrap_or_default());
                     *guard = None;
                     Ok(st)
                 }
                 Err(e) => {
-                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    publish_log(run_log.unwrap_or_default());
                     record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(e)));
                     *guard = None;
                     Err(e)
@@ -895,6 +956,8 @@ mod session {
     pub fn sim_free() {
         SIM_SESSION.with(|s| {
             if let Some(mut sess) = s.borrow_mut().take() {
+                // Cancel path: end the capture, keeping what was printed.
+                publish_log(core::mem::take(&mut sess.log));
                 // The in-wasm session frees itself on `Drop` (`rt_sim_free`).
                 let SimSession { model, backend, .. } = &mut sess;
                 if let SessionBackend::Host { engine, sim_data, .. } = backend {
@@ -906,7 +969,7 @@ mod session {
 }
 
 #[cfg(feature = "jit")]
-pub use session::{sim_advance, sim_free, sim_start};
+pub use session::{last_sim_log, sim_advance, sim_free, sim_start};
 
 #[cfg(not(feature = "jit"))]
 pub fn sim_start(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
@@ -918,6 +981,10 @@ pub fn sim_advance(_budget_ms: f64) -> Result<SimStatus> {
 }
 #[cfg(not(feature = "jit"))]
 pub fn sim_free() {}
+#[cfg(not(feature = "jit"))]
+pub fn last_sim_log() -> String {
+    String::new()
+}
 
 // ===========================================================================
 // Standalone WASI command-module export (native only)
@@ -2578,8 +2645,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let real_algs: Vec<&SimCodeVar::SimVar> =
         lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
     bodies.push(build_init_start_values_fn(&states, &real_algs, &layout, &var_map, &by_name, &mut literals)?);
-    // The integrator loop.
-    bodies.push(build_simulate(&layout, &eqfn)?);
+    // The integrator loop calls `functionCheckAsserts`, whose index is only known
+    // once the nonlinear systems below have taken theirs; keep its fixed slot
+    // (`simulate_idx`) and fill it in there.
+    let simulate_slot = bodies.len();
+    bodies.push(empty_eqfn());
 
     // --- Standalone-export metadata: encode the SimData layout, the run settings
     // and the result variables into a blob the standalone wasip1 runtime decodes
@@ -2739,15 +2809,17 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Min/max variable-attribute (and equation) assertion checks: C's
     // `checkForAsserts`, evaluated at each accepted output point. Warning-level
     // asserts record a `LOG_ASSERT` via `rt_assert_warning` and continue.
+    let has_asserts = !assert_eqs.is_empty();
     let check_asserts_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(if assert_eqs.is_empty() {
-            empty_eqfn()
-        } else {
+        bodies.push(if has_asserts {
             build_eq_fn("functionCheckAsserts", assert_eqs, &var_map, &eq_index, &by_name, &mut literals)?
+        } else {
+            empty_eqfn()
         });
         idx
     };
+    bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
     let update_relations_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.push(if relations.iter().all(Option::is_none) {
@@ -4995,8 +5067,10 @@ fn empty_eqfn() -> we::Function {
 }
 
 /// Emit the in-wasm forward-Euler integrator loop:
-/// `simulate(sim_data, start, stop, n_steps) -> result_buffer`.
-fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
+/// `simulate(sim_data, start, stop, n_steps) -> result_buffer`. The caller
+/// (`driver::run_wasm`) has initialized the model, so this starts at row 0.
+/// `check_asserts` is `functionCheckAsserts` when the model has any min/max check.
+fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>) -> Result<we::Function> {
     // Params: 0 sim_data(i32), 1 start(f64), 2 stop(f64), 3 n_steps(i32).
     // Locals: 4 buf(i32), 5 h(f64), 6 row(i32).
     const SIM_DATA: u32 = 0;
@@ -5014,20 +5088,6 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     // locals: BUF(i32), H(f64), ROW(i32), DEST(i32)
     let mut f = we::Function::new([(1, we::ValType::I32), (1, we::ValType::F64), (2, we::ValType::I32)]);
     use we::Instruction as I;
-
-    // lambda = 1.0 so homotopy(a, s) evaluates to the actual expression (this
-    // in-wasm Euler path does no homotopy continuation).
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::F64Const(1.0f64.into()));
-    f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(layout.lambda_off, 3)));
-
-    // functionParameters; functionInitStartValues; functionInitialEquations.
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.parameters));
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.init_start_values));
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.initial));
 
     // buf = rt_alloc((n_steps + 1) * n_total * 8)
     f.instruction(&I::LocalGet(N_STEPS));
@@ -5065,6 +5125,12 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     f.instruction(&I::F64Add);
     f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(TIME_OFF, 3)));
 
+    // Row 0 is the initialized point: capture it without re-evaluating, as C does
+    // after `initializeModel` (a second pass would repeat the equations' side
+    // effects). Every later row is evaluated at its time.
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::If(we::BlockType::Empty));
+
     // terminal = (row == n_steps): C's `finishSimulation` evaluates the last
     // point with `terminal()` true. This path has no events, so raising the flag
     // is the whole discrete update.
@@ -5079,6 +5145,8 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     f.instruction(&I::Call(eqfn.ode));
     f.instruction(&I::LocalGet(SIM_DATA));
     f.instruction(&I::Call(eqfn.algebraics));
+
+    f.instruction(&I::End); // if row != 0
 
     // Store the row at dest = buf + row * n_total * 8:
     //   - copy the real part [time | realVars] (contiguous from sim_data[0])
@@ -5107,6 +5175,23 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     for j in 0..layout.n_bool_alg() {
         store_islot(&mut f, layout.bool_off + j * 4, n_reals + layout.n_int_alg() + j);
     }
+
+    // The driver's per-row `check_asserts`: evaluate the min/max checks, then let
+    // the host format what they recorded while `time` still holds this row's.
+    // Level `warning` for the first and the terminal row, `info` in between.
+    if let Some(idx) = check_asserts {
+        f.instruction(&I::LocalGet(SIM_DATA));
+        f.instruction(&I::Call(idx));
+    }
+    f.instruction(&I::LocalGet(SIM_DATA));
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::I32Eqz);
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::LocalGet(N_STEPS));
+    f.instruction(&I::I32Eq);
+    f.instruction(&I::I32Or);
+    f.instruction(&I::Call(crate::CodegenWasmJitFunctions::env_extra_index("rt_row_asserts")?));
+    f.instruction(&I::BrIf(1)); // a suppressed assert ends the run; `run_wasm` throws
 
     // if terminate() fired this step (functionAlgebraics raised the flag): break,
     // keeping the row just stored as the last one.

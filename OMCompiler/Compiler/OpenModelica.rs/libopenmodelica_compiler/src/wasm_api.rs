@@ -435,6 +435,28 @@ pub fn omc_simulate(
 // draining a cancel between chunks; results reach the page via the `omc_sim_*`
 // getters. See HANDOFF-sim-cancel.md.
 
+/// The last resumable run's model output (prints, `LOG_ASSERT` blocks, chattering,
+/// `-lv=LOG_STATS`). Valid until the next `omc_sim_start`; set even on failure.
+#[wasm_bindgen]
+pub fn omc_sim_log() -> String {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::last_sim_log()
+}
+
+/// `{ s, nls, nlsLS, ls, lss }`: the values each solver flag accepts in this
+/// build. KLU only appears where SUNDIALS is linked.
+#[wasm_bindgen]
+pub fn omc_sim_solver_options() -> JsValue {
+    let o = js_sys::Object::new();
+    for (flag, values) in openmodelica_codegen_wasm_jit::CodegenWasmJit::solver_options() {
+        let arr = js_sys::Array::new();
+        for v in values {
+            arr.push(&JsValue::from_str(v));
+        }
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str(flag), &arr);
+    }
+    o.into()
+}
+
 /// Start a resumable run of a model already built by `buildModel` (keyed by its
 /// `prefix`; `result_file` is where the `.mat` goes). `false` on failure — read
 /// `getErrorString()`.
