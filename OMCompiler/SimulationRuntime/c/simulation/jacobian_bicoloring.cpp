@@ -10,7 +10,7 @@
 
 #include "jacobian_util.h"
 
-#ifdef OMC_RUNTIME_USE_COLPACK
+#ifdef OMC_HAVE_COLPACK
 #ifdef TRUE
 #undef TRUE
 #endif
@@ -33,7 +33,7 @@ extern "C" int computeColPackStarBicoloring(
     unsigned int* colColors,
     unsigned int* nColColors)
 {
-#ifdef OMC_RUNTIME_USE_COLPACK
+#ifdef OMC_HAVE_COLPACK
   if (!rowPtr || !rowColors || !nRowColors || !colColors || !nColColors) return 0;
   if (rowPtr[nRows] > 0 && !colIdx) return 0;
 

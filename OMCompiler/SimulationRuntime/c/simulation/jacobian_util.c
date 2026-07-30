@@ -473,8 +473,7 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
 {
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   const int isRowEval = (jacobian->isRowEval == TRUE);
-  const unsigned int activeDim = jacobian->sizeCols; // (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows)
-  const int nRows = (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows); // jacobian->sizeCols
+  const unsigned int activeDim = (int)(isRowEval ? jacobian->sizeRows : jacobian->sizeCols);
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
@@ -482,7 +481,7 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
 
   for (int color = 0; color < (int)sp->maxColors; color++) {
     evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
-                         activeDim, nRows, matrixA, setElement,
+                         activeDim, jacobian->sizeRows, matrixA, setElement,
                          jacobian->evalColumn, cleanupFunc);
   }
 }
@@ -530,7 +529,7 @@ int initBidirectionalRecovery(JACOBIAN* fwd)
   adj->sparsePattern = adjsp;
   computeColumnColoring(adjsp, nCols, nRows);
 
-#ifdef OMC_RUNTIME_USE_COLPACK
+#ifdef OMC_HAVE_COLPACK
   /* The adjoint pattern is CSR(J), which is the format expected by ColPack.
    * Replace the independent distance-1 colorings with one joint star
    * bicoloring. If ColPack fails, retain the valid independent colorings. */

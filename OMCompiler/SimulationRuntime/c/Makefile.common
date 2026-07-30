@@ -31,10 +31,6 @@ ifeq (MINGW,$(findstring MINGW,$(shell uname)))
 	CPPFLAGS += -DOMC_HAVE_COLPACK
 endif
 
-ifneq ($(COLPACK_TARGET),)
-	CPPFLAGS += -DOMC_RUNTIME_USE_COLPACK
-endif
-
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
