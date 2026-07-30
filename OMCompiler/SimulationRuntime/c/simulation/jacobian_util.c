@@ -473,15 +473,14 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
 {
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   const int isRowEval = (jacobian->isRowEval == TRUE);
-  const unsigned int activeDim = jacobian->sizeCols;
-  const int nRows = (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows);
-  int color;
+  const unsigned int activeDim = jacobian->sizeCols; // (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows)
+  const int nRows = (int)(isRowEval ? jacobian->sizeCols : jacobian->sizeRows); // jacobian->sizeCols
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  for (color = 0; color < (int)sp->maxColors; color++) {
+  for (int color = 0; color < (int)sp->maxColors; color++) {
     evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
                          activeDim, nRows, matrixA, setElement,
                          jacobian->evalColumn, cleanupFunc);
@@ -500,10 +499,10 @@ void evalJacobianColored(DATA* data, threadData_t *threadData,
  *
  * @param fwd   Forward jacobian with CSC pattern + column coloring.
  */
-void initBidirectionalRecovery(JACOBIAN* fwd)
+int initBidirectionalRecovery(JACOBIAN* fwd)
 {
   JACOBIAN* adj = fwd ? fwd->adjointJacobian : NULL;
-  if (!adj || !fwd->sparsePattern || !adj->sparsePattern) return;
+  if (!adj || !fwd->sparsePattern || !adj->sparsePattern) return 1;
 
   SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
   SPARSE_PATTERN* adjsp = adj->sparsePattern;
@@ -512,7 +511,24 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
-  if (adj->sizeCols != nRows || adj->sizeRows != nCols || adjsp->nnz != nnz) return;
+  if (adj->sizeCols != nRows || adj->sizeRows != nCols) {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+        "Bidirectional Jacobians have incompatible dimensions.");
+    return 1;
+  }
+
+  /* Bidirectional recovery requires exact CSR(J). The independently emitted
+   * adjoint pattern can under-approximate resizable array equations, while the
+   * forward CSC pattern already contains their expanded runtime structure. */
+  adjsp = cscToCsr(fwdsp, nRows, nCols);
+  if (!adjsp) {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+        "Failed to construct the bidirectional adjoint sparse pattern.");
+    return 1;
+  }
+  freeSparsePattern(adj->sparsePattern);
+  adj->sparsePattern = adjsp;
+  computeColumnColoring(adjsp, nCols, nRows);
 
 #ifdef OMC_RUNTIME_USE_COLPACK
   /* The adjoint pattern is CSR(J), which is the format expected by ColPack.
@@ -538,7 +554,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     free(fwd->recoverMask); fwd->recoverMask = NULL;
     free(adj->recoverMask); adj->recoverMask = NULL;
     free(adj->csrToCscMap); adj->csrToCscMap = NULL;
-    return;
+    return 1;
   }
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
@@ -592,7 +608,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     // iterate over all nonzeros in this row via adjoint CSR pattern
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz]; // get column index of current nonzero
-      adj->csrToCscMap[nz] = 0;
+      adj->csrToCscMap[nz] = nnz;
       // iterate over all nonzeros in this column via forward CSC pattern, so the nonzero rows
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         // if row index matches, we found the same nonzero in forward pattern
@@ -602,8 +618,17 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
           break;
         }
       }
+      if (adj->csrToCscMap[nz] == nnz) {
+        free(fwd->recoverMask); fwd->recoverMask = NULL;
+        free(adj->recoverMask); adj->recoverMask = NULL;
+        free(adj->csrToCscMap); adj->csrToCscMap = NULL;
+        warningStreamPrint(OMC_LOG_JAC, 0,
+            "Failed to map bidirectional entry (%u,%u) from CSR to CSC.", i, j);
+        return 1;
+      }
     }
   }
+  return 0;
 }
 
 /**
@@ -803,7 +828,6 @@ void vjp(DATA* data, threadData_t *threadData,
     out[col] += jacobian->resultVars[col];
   }
 
-  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
   evalJacobianCleanupRowEval(jacobian);
 }
 
@@ -1138,14 +1162,11 @@ void initAdjointCSRtoCSCMap(JACOBIAN* jacobian)
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN** jacobian)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
-  JACOBIAN_AVAILABILITY availability;
-
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (omc_flag[FLAG_JACOBIAN]) {
     for (int method=1; method < JAC_MAX; method++) {
       if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
         jacobianMethod = (JACOBIAN_METHOD) method;
-        infoStreamPrint(OMC_LOG_STDOUT, 1, "Jacobian method in if: %s", JACOBIAN_METHOD_NAME[jacobianMethod]);
         break;
       }
     }
@@ -1184,7 +1205,7 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN
     }
   }
 
-  availability = (*jacobian)->availability;
+  JACOBIAN_AVAILABILITY availability = (*jacobian)->availability;
   assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
   /* Check if method is available */

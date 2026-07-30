@@ -478,6 +478,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   if (!gbData->isExplicit) {
     jacobian = NULL;
     JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, data, &jacobian);
+    gbData->jacobianMethod = jacobianMethod;
     gbData->useAdjJacobian = jacobianMethod == COLOREDSYMJACADJ;
     if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
       infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
@@ -513,6 +514,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     }
   } else {
     gbData->symJacAvailable = FALSE;
+    gbData->jacobianMethod = JAC_UNKNOWN;
     gbData->nlsSolverMethod = GB_NLS_UNKNOWN;
     gbData->nlsData = NULL;
     gbData->jacobian = NULL;

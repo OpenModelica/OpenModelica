@@ -476,7 +476,11 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   }
   else if (!nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
-    if (jacobian_ODE->isRowEval) {
+    if (gbData->jacobianMethod == BICOLOREDSYMJAC) {
+      evalJacobianExtended(data, threadData, BICOLOREDSYMJAC,
+               jacobian_ODE, NULL, /*t_jac=*/NULL, nls->jacobian_callback,
+               JAC_OUTPUT_SPARSE_RAW, NULL, NULL);
+    } else if (jacobian_ODE->isRowEval) {
       GB_ADJOINT_SPARSE_CONTEXT ctx = {nls->jacobian_callback, jacobian_ODE->csrToCscMap};
       evalJacobianExtended(data, threadData, COLOREDSYMJACADJ,
                jacobian_ODE, NULL, /*t_jac=*/NULL, &ctx,

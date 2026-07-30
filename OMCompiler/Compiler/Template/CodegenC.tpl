@@ -5969,9 +5969,12 @@ match sparsity
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
         if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
-        jacobian->isBidirectional = 1;
         jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
+        if (initBidirectionalRecovery(jacobian)) {
+          jacobian->adjointJacobian = NULL;
+          return 1;
+        }
+        jacobian->isBidirectional = 1;
       }
       >> %>
 
@@ -6452,10 +6455,13 @@ match sparsepattern
       /* Initialize adjoint Jacobian and set up bidirectional evaluation */
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
-        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->isBidirectional = 1;
+        if (<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
         jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
+        if (initBidirectionalRecovery(jacobian)) {
+          jacobian->adjointJacobian = NULL;
+          return 1;
+        }
+        jacobian->isBidirectional = 1;
       }
       >> %>
 
