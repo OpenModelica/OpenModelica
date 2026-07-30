@@ -599,6 +599,8 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let rt_str_data = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data"))?;
     define_external_imports(&mut linker, model, memory, rt_str_new, rt_str_data)?;
     define_print_import(&mut linker, memory)?;
+    // `rt_row_asserts` is called by the model, which only imports `memory`.
+    crate::host::set_sim_memory(memory);
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
@@ -732,10 +734,10 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         let f = wt(self.instance.get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate"))?;
         wt(f.call(&mut self.store, (sim_data, start, stop, n_steps)))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
     fn lin_solves(&mut self) -> u64 {
@@ -828,13 +830,11 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
     }
 
     let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u32), i32>(&mut store, "rt_sim_start"))?;
-    let rc = wts(start.call(&mut store, (meta_ptr, blob.len() as u32, fn_base as u32, present_mask)))?;
-    if rc < 0 {
-        return Err("CodegenWasmJit: rt_sim_start failed".to_string());
-    }
-
     let gf = |store: &mut Store, name: &'static str| wts(rt_inst.get_typed_func::<(), u32>(store, name));
-    Ok(InWasmSession {
+    // Assembled before the run starts so that an initialization `assert()`, which
+    // traps out of `rt_sim_start`, is decoded through the same `SimEngine` as one
+    // that trips later instead of surfacing as a bare wasm trap.
+    let mut sess = InWasmSession {
         advance: wts(rt_inst.get_typed_func::<f64, i32>(&mut store, "rt_sim_advance"))?,
         rows_ptr: gf(&mut store, "rt_sim_rows_ptr")?,
         rows_len: gf(&mut store, "rt_sim_rows_len")?,
@@ -845,7 +845,18 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         free_f: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_sim_free"))?,
         store,
         memory,
-    })
+    };
+    let started = start.call(&mut sess.store, (meta_ptr, blob.len() as u32, fn_base as u32, present_mask));
+    match started {
+        Ok(rc) if rc >= 0 => Ok(sess),
+        Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
+        Err(_) => Err(sim_driver::enrich_trap_init(
+            &mut sess,
+            "CodegenWasmJit: in-wasm initialization failed",
+            model.start_time,
+        )
+        .to_string()),
+    }
 }
 
 // Memory access + pending-assert only; the model-call methods are never reached
@@ -867,10 +878,10 @@ impl sim_driver::SimEngine for InWasmSession {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
 }

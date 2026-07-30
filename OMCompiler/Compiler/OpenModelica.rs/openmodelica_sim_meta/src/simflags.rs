@@ -152,6 +152,33 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     ))
 }
 
+/// The values each solver flag accepts on this build, in menu order. A UI offering
+/// only these never builds a command line [`check`] rejects. `default` is left out:
+/// omitting a flag selects it.
+pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
+    let mut solver = alloc::vec!["dassl", "euler"];
+    for (name, have) in [("ida", cap.ida), ("cvode", cap.cvode), ("gbode", cap.gbode)] {
+        if have {
+            solver.push(name);
+        }
+    }
+    let mut nls_ls = alloc::vec!["totalpivot", "lapack", "rsparse"];
+    let mut ls = alloc::vec!["lapack", "totalpivot"];
+    let mut lss = alloc::vec!["rsparse"];
+    if cap.klu {
+        nls_ls.push("klu");
+        ls.push("klu");
+        lss.push("klu");
+    }
+    alloc::vec![
+        ("s", solver),
+        ("nls", alloc::vec!["hybrid", "kinsol", "newton", "mixed", "homotopy"]),
+        ("nlsLS", nls_ls),
+        ("ls", ls),
+        ("lss", lss),
+    ]
+}
+
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
 /// `-flag=value` and `-flag value` are both accepted, as in the C runtime.
 /// An unrecognized *value* for a recognized flag is an error listing what is
@@ -389,6 +416,22 @@ mod tests {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");
         }
+    }
+
+    // `supported` feeds the web UI's solver menus, so an offered value must survive
+    // both the parser and the capability check of the build that offered it.
+    #[test]
+    fn everything_supported_parses_and_checks() {
+        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true }] {
+            for (flag, values) in supported(cap) {
+                for v in values {
+                    let f = parse(&argv(&[&format!("-{flag}={v}")])).expect(&format!("-{flag}={v}"));
+                    assert!(check(&f, cap).is_ok(), "-{flag}={v}");
+                }
+            }
+        }
+        // KLU is offered only where it is linked, so it never shows up above.
+        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"klu")));
     }
 
     // The wire codes the wasm-jit runtime decodes: unset is 0, and the values are

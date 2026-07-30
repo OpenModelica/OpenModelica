@@ -776,7 +776,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     let t_inst = Instant::now();
     let mut store = wasmer::Store::new(engine.clone());
     let mut imports = wasmer::Imports::new();
-    add_host_builtins(&mut store, &mut imports)?;
+    let host_mem = add_host_builtins(&mut store, &mut imports)?;
     // The interactive (std wasip1) runtime imports `wasi_snapshot_preview1`; serve it
     // from the same shim the ext-C side module uses, bound to the runtime's memory
     // (set after instantiation, once the export exists). No-op for the no_std fallback.
@@ -788,6 +788,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
 
     let memory = wts(rt_inst.exports.get_memory("memory"))?.clone();
     rt_wasi_env.as_mut(&mut store).set_memory(memory.clone());
+    host_mem.set(&mut store, &memory);
 
     // External "C" functions (`ext.*`): resolved by the ModelicaExternalC WASI side
     // module (table blocks / external objects / string scanning). Must be wired
@@ -871,10 +872,10 @@ impl sim_driver::SimEngine for WasmerEngine {
             wt(self.instance.exports.get_typed_function(&self.store, "simulate"))?;
         wt(f.call(&mut self.store, sim_data, start, stop, n_steps))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
     fn lin_solves(&mut self) -> u64 {
@@ -958,15 +959,13 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
 
     let start: wasmer::TypedFunction<(u32, u32, u32, u32), i32> =
         wts(rt_inst.exports.get_typed_function(&store, "rt_sim_start"))?;
-    let rc = wts(start.call(&mut store, meta_ptr, blob.len() as u32, fn_base, present_mask))?;
-    if rc < 0 {
-        return Err("CodegenWasmJit: rt_sim_start failed".to_string());
-    }
-
     let gf = |store: &Store, name: &'static str| -> std::result::Result<wasmer::TypedFunction<(), u32>, String> {
         wts(rt_inst.exports.get_typed_function(store, name))
     };
-    Ok(InWasmSession {
+    // Assembled before the run starts so that an initialization `assert()`, which
+    // traps out of `rt_sim_start`, is decoded through the same `SimEngine` as one
+    // that trips later instead of surfacing as a bare wasm trap.
+    let mut sess = InWasmSession {
         advance: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_advance"))?,
         rows_ptr: gf(&store, "rt_sim_rows_ptr")?,
         rows_len: gf(&store, "rt_sim_rows_len")?,
@@ -977,7 +976,18 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         free_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_free"))?,
         store,
         memory,
-    })
+    };
+    let started = start.call(&mut sess.store, meta_ptr, blob.len() as u32, fn_base, present_mask);
+    match started {
+        Ok(rc) if rc >= 0 => Ok(sess),
+        Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
+        Err(_) => Err(sim_driver::enrich_trap_init(
+            &mut sess,
+            "CodegenWasmJit: in-wasm initialization failed",
+            model.start_time,
+        )
+        .to_string()),
+    }
 }
 
 // Memory access + pending-assert only; the model-call methods are never reached
@@ -999,10 +1009,10 @@ impl sim_driver::SimEngine for InWasmSession {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
 }

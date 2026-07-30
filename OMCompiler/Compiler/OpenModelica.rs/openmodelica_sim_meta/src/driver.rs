@@ -222,16 +222,14 @@ pub trait SimEngine {
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
     /// If the last wasm call trapped on a failed `assert()`, take the recorded
-    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only]` (handles
+    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond]` (handles
     /// into shared memory), else `None`. Backed by the engine's `rt_assert` host
     /// import; lets [`drive`] report a model assertion instead of a bare trap.
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]>;
-    /// Take the warning-level assertion violations (`AssertionLevel.warning`)
-    /// recorded by the `rt_assert_warning` host import since the last call, each as
-    /// `[cond, msg, file, sline, scol, eline, ecol, read_only]` (string handles +
-    /// source position). Drained by the drivers after `functionCheckAsserts` to
-    /// emit C's `LOG_ASSERT` warnings. Default: none (backends without the import).
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]>;
+    /// Take the violations that did not throw, each as `[kind, cond, msg, file,
+    /// sline, scol, eline, ecol, read_only]` (`kind` per `ASSERT_*`). Drained by
+    /// the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         Vec::new()
     }
     /// Linear-system solves the runtime performed in-wasm, which the host driver
@@ -312,7 +310,18 @@ pub fn set_assert_reporter(f: fn(&AssertInfo)) {
 /// Decode it, hand it to the reporter hook if any, and return the enriched error;
 /// otherwise return the original trap error.
 pub fn enrich_trap(e: &mut dyn SimEngine, err: &'static str) -> &'static str {
+    enrich_trap_impl(e, err, None)
+}
+
+/// The same for a trap out of initialization, where C logs the violation itself
+/// (`errorStreamPrint` before the longjmp). `start_time` is the time it reports.
+pub fn enrich_trap_init(e: &mut dyn SimEngine, err: &'static str, start_time: f64) -> &'static str {
+    enrich_trap_impl(e, err, Some(start_time))
+}
+
+fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
     let Some(pa) = e.take_pending_assert() else { return err };
+    let cond = read_rt_string(e, pa[7]).unwrap_or_default();
     let info = AssertInfo {
         msg: read_rt_string(e, pa[0]).unwrap_or_default(),
         file: read_rt_string(e, pa[1]).unwrap_or_default(),
@@ -322,6 +331,13 @@ pub fn enrich_trap(e: &mut dyn SimEngine, err: &'static str) -> &'static str {
         line_end: pa[4],
         col_end: pa[5],
     };
+    if let Some(t) = init_time {
+        log_assert_block(&info, &cond, t, true);
+        log_line(&alloc::format!(
+            "{}simulation terminated by an assertion at initialization\n",
+            log_prefix("LOG_ASSERT", "info")
+        ));
+    }
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn(&AssertInfo) = unsafe { core::mem::transmute(p) };
@@ -463,13 +479,47 @@ static INIT_DONE_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_init_done_hook(f: fn()) {
     INIT_DONE_HOOK.store(f as usize, Ordering::Relaxed);
 }
-fn signal_init_done() {
+/// Public because the in-wasm driver's hook cannot reach the host's capture: it
+/// relays the boundary over `env.rt_host_init_done`, which calls this.
+pub fn signal_init_done() {
     let p = INIT_DONE_HOOK.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn() = unsafe { core::mem::transmute(p) };
         f();
     }
 }
+
+// C's `noThrowAsserts`. The flag lives with the `rt_assert` import — on the host —
+// so the in-wasm driver relays it over `env.rt_host_set_no_throw`.
+static NO_THROW_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_no_throw_hook(f: fn(bool)) {
+    NO_THROW_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn set_no_throw(v: bool) {
+    let p = NO_THROW_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(bool) = unsafe { core::mem::transmute(p) };
+        f(v);
+    }
+}
+
+// Where the driver's own log lines go. The model's `print` output shares the
+// channel, so the two interleave in the order C prints them.
+static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_log_sink(f: fn(&str)) {
+    LOG_SINK.store(f as usize, Ordering::Relaxed);
+}
+fn log_line(s: &str) {
+    let p = LOG_SINK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&str) = unsafe { core::mem::transmute(p) };
+        f(s);
+    }
+}
+
+/// [`SimEngine::take_pending_warnings`] kinds.
+pub const ASSERT_WARNING: i32 = 0;
+pub const ASSERT_SUPPRESSED: i32 = 1;
 
 /// Read one little-endian i32 from linear memory at byte address `addr`.
 pub fn read_i32(e: &dyn SimEngine, addr: u32) -> Result<i32> {
@@ -604,17 +654,11 @@ fn log_prefix(stream: &str, level: &str) -> String {
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
 /// before a run (the driver can only return a `&'static str`).
 mod chatter_store {
-    use alloc::string::String;
-    use alloc::vec::Vec;
-
     #[cfg(feature = "std")]
     mod imp {
-        use alloc::string::String;
-        use alloc::vec::Vec;
-        use core::cell::{Cell, RefCell};
+        use core::cell::Cell;
         std::thread_local! {
             static ABORT: Cell<bool> = const { Cell::new(false) };
-            static LOG: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
         }
         pub fn set_abort(v: bool) {
             ABORT.with(|a| a.set(v));
@@ -622,38 +666,24 @@ mod chatter_store {
         pub fn abort() -> bool {
             ABORT.with(|a| a.get())
         }
-        pub fn push(s: String) {
-            LOG.with(|l| l.borrow_mut().push(s));
-        }
-        pub fn take() -> Vec<String> {
-            LOG.with(|l| core::mem::take(&mut *l.borrow_mut()))
-        }
     }
 
     #[cfg(not(feature = "std"))]
     mod imp {
-        use alloc::string::String;
-        use alloc::vec::Vec;
         use core::cell::UnsafeCell;
         // The in-wasm runtime is single-threaded, so a plain cell is sound.
-        struct Store(UnsafeCell<(bool, Vec<String>)>);
+        struct Store(UnsafeCell<bool>);
         unsafe impl Sync for Store {}
-        static STORE: Store = Store(UnsafeCell::new((false, Vec::new())));
+        static ABORT: Store = Store(UnsafeCell::new(false));
         pub fn set_abort(v: bool) {
-            unsafe { (*STORE.0.get()).0 = v };
+            unsafe { *ABORT.0.get() = v };
         }
         pub fn abort() -> bool {
-            unsafe { (*STORE.0.get()).0 }
-        }
-        pub fn push(s: String) {
-            unsafe { (*STORE.0.get()).1.push(s) };
-        }
-        pub fn take() -> Vec<String> {
-            unsafe { core::mem::take(&mut (*STORE.0.get()).1) }
+            unsafe { *ABORT.0.get() }
         }
     }
 
-    pub use imp::{abort, push, set_abort, take};
+    pub use imp::{abort, set_abort};
 }
 
 /// Homotopy-step count of the last initialization, so the host can print C's
@@ -676,10 +706,8 @@ pub fn init_homotopy_steps() -> u32 {
     init_report::homotopy_steps()
 }
 
-/// The formatted `LOG_ASSERT` warning lines (min/max variable-attribute checks and
-/// other `AssertionLevel.warning` asserts) collected during the last run, plus the
-/// per-site keys already reported so each warns only once (C's static
-/// `warningTriggered`). Cleared at run start; folded into the log by the host.
+/// The per-site keys already reported, so a warning-level violation warns only
+/// once (C's static `warningTriggered`). Cleared at run start.
 mod assert_warn_store {
     #[cfg(feature = "std")]
     mod imp {
@@ -687,25 +715,20 @@ mod assert_warn_store {
         use alloc::vec::Vec;
         use core::cell::RefCell;
         std::thread_local! {
-            static LINES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
             static SEEN: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
         }
         pub fn reset() {
-            LINES.with(|l| l.borrow_mut().clear());
             SEEN.with(|s| s.borrow_mut().clear());
         }
-        pub fn push_once(key: String, line: String) {
+        pub fn first_time(key: String) -> bool {
             SEEN.with(|s| {
                 let mut s = s.borrow_mut();
                 if s.iter().any(|k| *k == key) {
-                    return;
+                    return false;
                 }
                 s.push(key);
-                LINES.with(|l| l.borrow_mut().push(line));
-            });
-        }
-        pub fn take() -> Vec<String> {
-            LINES.with(|l| core::mem::take(&mut *l.borrow_mut()))
+                true
+            })
         }
     }
     #[cfg(not(feature = "std"))]
@@ -713,35 +736,24 @@ mod assert_warn_store {
         use alloc::string::String;
         use alloc::vec::Vec;
         use core::cell::UnsafeCell;
-        struct Store(UnsafeCell<(Vec<String>, Vec<String>)>);
+        struct Store(UnsafeCell<Vec<String>>);
         unsafe impl Sync for Store {}
-        static STORE: Store = Store(UnsafeCell::new((Vec::new(), Vec::new())));
+        static SEEN: Store = Store(UnsafeCell::new(Vec::new()));
         pub fn reset() {
-            unsafe {
-                (*STORE.0.get()).0.clear();
-                (*STORE.0.get()).1.clear();
-            }
+            unsafe { (*SEEN.0.get()).clear() };
         }
-        pub fn push_once(key: String, line: String) {
+        pub fn first_time(key: String) -> bool {
             unsafe {
-                let st = &mut *STORE.0.get();
-                if st.1.iter().any(|k| *k == key) {
-                    return;
+                let seen = &mut *SEEN.0.get();
+                if seen.iter().any(|k| *k == key) {
+                    return false;
                 }
-                st.1.push(key);
-                st.0.push(line);
+                seen.push(key);
+                true
             }
-        }
-        pub fn take() -> Vec<String> {
-            unsafe { core::mem::take(&mut (*STORE.0.get()).0) }
         }
     }
-    pub use imp::{push_once, reset, take};
-}
-
-/// Drain the formatted `LOG_ASSERT` warning lines emitted during the last run.
-pub fn take_assert_warnings() -> Vec<String> {
-    assert_warn_store::take()
+    pub use imp::{first_time, reset};
 }
 
 /// Reported-once latch for the fired `terminate(...)`.
@@ -787,47 +799,177 @@ fn format_f(v: f64) -> String {
 /// `level`: C reports a violation met while the integrator updates the system
 /// (`simulationUpdate`, which sets `noThrowAsserts`) as `info`, one met anywhere
 /// else — initialization, the terminal step — as `warning`.
-fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, level: &str) -> Result<()> {
+fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, level: &str) -> Result<()> {
     e.call1_if_present("functionCheckAsserts", sim_data)?;
-    let pending = e.take_pending_warnings();
-    if pending.is_empty() {
-        return Ok(());
-    }
-    let time = read_f64(e, sim_data + TIME_OFF)?;
-    for w in pending {
-        let cond = read_rt_string(e, w[0])?;
-        let msg = read_rt_string(e, w[1])?;
-        let file = read_rt_string(e, w[2])?;
-        let (sl, sc, el, ec, ro) = (w[3], w[4], w[5], w[6], w[7] != 0);
-        let ro_str = if ro { "readonly" } else { "writable" };
-        // C (`omc_error.c` messageText + printInfo): a header line with the source
-        // position, then the message split on '\n' onto continuation lines whose
-        // stream/type columns are "|".
-        let head = log_prefix("LOG_ASSERT", level);
-        let cont = log_prefix("|", "|");
-        // C wraps the already-parenthesised `assert_cond` = "(<dumped>)" once more
-        // in the `(%s)` format, so the displayed condition is double-parenthesised.
-        let line = alloc::format!(
-            "{head}[{file}:{sl}:{sc}-{el}:{ec}:{ro_str}]\n\
-             {cont}The following assertion has been violated at time {t}\n\
-             {cont}(({cond})) --> \"{msg}\"\n",
-            t = format_f(time),
-        );
-        let key = alloc::format!("{file}:{sl}:{sc}-{el}:{ec}|{cond}");
-        assert_warn_store::push_once(key, line);
-    }
+    drain_asserts(e, sim_data, level)?;
     Ok(())
 }
 
-/// Arm `-abortSlowSimulation` for the next run and clear any stale chattering log.
-pub fn set_abort_slow(v: bool) {
-    chatter_store::set_abort(v);
-    let _ = chatter_store::take();
+/// Log the violations recorded since the last call. A warning goes once per site;
+/// a suppressed error goes every time (as in C) and arms the re-throw, which the
+/// `true` return reports.
+fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: &str) -> Result<bool> {
+    let pending = e.take_pending_warnings();
+    if pending.is_empty() {
+        return Ok(false);
+    }
+    let mut armed = false;
+    let time = read_f64(e, sim_data + TIME_OFF)?;
+    for w in pending {
+        let suppressed = w[0] == ASSERT_SUPPRESSED;
+        let cond = read_rt_string(e, w[1])?;
+        let msg = read_rt_string(e, w[2])?;
+        let file = read_rt_string(e, w[3])?;
+        let (sl, sc, el, ec, ro) = (w[4], w[5], w[6], w[7], w[8] != 0);
+        let info = AssertInfo {
+            msg,
+            file,
+            read_only: ro,
+            line_start: sl,
+            col_start: sc,
+            line_end: el,
+            col_end: ec,
+        };
+        let line = assert_block(&info, &cond, time, false, if suppressed { "info" } else { level });
+        if suppressed {
+            log_line(&line);
+            rethrow_store::arm(info);
+            armed = true;
+        } else {
+            let key = alloc::format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
+            if assert_warn_store::first_time(key) {
+                log_line(&line);
+            }
+        }
+    }
+    Ok(armed)
 }
 
-/// Drain the chattering log lines the last run emitted.
-pub fn take_chatter_log() -> Vec<String> {
-    chatter_store::take()
+/// [`check_asserts`] for the in-wasm Euler loop (`rt_row_asserts`), which calls
+/// `functionCheckAsserts` itself and needs only the formatting. `warn` picks the
+/// level as [`emit_row`] does. Nonzero means a suppressed `assert()` ends the run,
+/// which [`run_wasm`] settles once the loop is out.
+pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
+    let level = if warn != 0 { "warning" } else { "info" };
+    drain_asserts(e, sim_data, level).unwrap_or(true) as i32
+}
+
+/// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). C wraps the
+/// already-parenthesised `assert_cond` in its own `(%s)`, hence the doubled
+/// parentheses; without a source position only the message is printed.
+fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool, level: &str) -> String {
+    let head = log_prefix("LOG_ASSERT", level);
+    let cont = log_prefix("|", "|");
+    let during = if initial { "during initialization " } else { "" };
+    let t = format_f(time);
+    if info.file.is_empty() {
+        return alloc::format!("{head}The following assertion has been violated {during}at time {t}\n");
+    }
+    let ro_str = if info.read_only { "readonly" } else { "writable" };
+    alloc::format!(
+        "{head}[{}:{}:{}-{}:{}:{ro_str}]\n\
+         {cont}The following assertion has been violated {during}at time {t}\n\
+         {cont}(({cond})) --> \"{}\"\n",
+        info.file, info.line_start, info.col_start, info.line_end, info.col_end, info.msg,
+    )
+}
+
+fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
+    log_line(&assert_block(info, cond, time, initial, "error"));
+}
+
+/// What the open window has seen: the first assertion suppressed in it, and
+/// whether an event was handled — which is what decides its fate.
+mod rethrow_store {
+    use super::AssertInfo;
+    #[cfg(feature = "std")]
+    mod imp {
+        use super::AssertInfo;
+        use core::cell::{Cell, RefCell};
+        std::thread_local! {
+            static PENDING: RefCell<Option<AssertInfo>> = const { RefCell::new(None) };
+            static EVENT: Cell<bool> = const { Cell::new(false) };
+        }
+        pub fn arm(info: AssertInfo) {
+            PENDING.with(|p| {
+                let mut p = p.borrow_mut();
+                if p.is_none() {
+                    *p = Some(info);
+                }
+            });
+        }
+        pub fn note_event() {
+            EVENT.with(|ev| ev.set(true));
+        }
+        pub fn take() -> (Option<AssertInfo>, bool) {
+            (PENDING.with(|p| p.borrow_mut().take()), EVENT.with(|ev| ev.replace(false)))
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use super::AssertInfo;
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<(Option<AssertInfo>, bool)>);
+        unsafe impl Sync for Store {}
+        static PENDING: Store = Store(UnsafeCell::new((None, false)));
+        pub fn arm(info: AssertInfo) {
+            unsafe {
+                let st = &mut *PENDING.0.get();
+                if st.0.is_none() {
+                    st.0 = Some(info);
+                }
+            }
+        }
+        pub fn note_event() {
+            unsafe { (*PENDING.0.get()).1 = true };
+        }
+        pub fn take() -> (Option<AssertInfo>, bool) {
+            unsafe {
+                let st = &mut *PENDING.0.get();
+                (st.0.take(), core::mem::replace(&mut st.1, false))
+            }
+        }
+    }
+    pub use imp::{arm, note_event, take};
+}
+
+/// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
+/// Idempotent, so a chunk that yields mid-step just re-enters it.
+fn open_assert_window() {
+    set_no_throw(true);
+}
+
+/// Leave it and settle what was recorded (C's `simulationUpdate` tail): an event
+/// makes the point they were raised at obsolete, otherwise the run fails now.
+fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+    set_no_throw(false);
+    drain_asserts(e, sim_data, "info")?;
+    let (info, found_event) = rethrow_store::take();
+    let Some(info) = info else {
+        return Ok(());
+    };
+    if found_event {
+        log_line(&alloc::format!(
+            "{}Found event, previous asserts are ignored.\n",
+            log_prefix("LOG_ASSERT", "info")
+        ));
+        return Ok(());
+    }
+    log_line(&alloc::format!(
+        "{}No event found, but assert was triggered. Throwing now!\n",
+        log_prefix("LOG_ASSERT", "error")
+    ));
+    let p = ASSERT_REPORTER.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&AssertInfo) = unsafe { core::mem::transmute(p) };
+        f(&info);
+    }
+    Err(ASSERT_ERR)
+}
+
+/// Arm `-abortSlowSimulation` for the next run.
+pub fn set_abort_slow(v: bool) {
+    chatter_store::set_abort(v);
 }
 
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
@@ -872,6 +1014,9 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     init_report::set_homotopy_steps(0);
     assert_warn_store::reset();
+    // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
+    let _ = rethrow_store::take();
+    set_no_throw(false);
     term_report::reset();
     e.call1("functionParameters", sim_data)?;
     // Params first (a start expression may read one), then fill start slots, then
@@ -965,7 +1110,8 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
             format_f(read_f64(e, sim_data + TIME_OFF)?),
             log_prefix("|", "|"),
         ));
-        chatter_store::push(line);
+        line.push('\n');
+        log_line(&line);
     }
     Ok(true)
 }
@@ -1250,6 +1396,7 @@ impl Samples {
     /// flags and advance the fired samples by their interval. `t` is written as
     /// the current simulation time first.
     pub fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+        rethrow_store::note_event();
         let eps = t.abs().max(1.0) * 1e-10;
         let mut fired = vec![false; self.next.len()];
         for k in 0..self.next.len() {
@@ -1296,6 +1443,7 @@ pub fn event_update(
     samples: Option<&mut Samples>,
     time: f64,
 ) -> Result<EventUpdate> {
+    rethrow_store::note_event();
     let n_states = layout.n_states as usize;
     let states_base = sim_data + REAL_OFF;
     let mut before = vec![0.0f64; n_states];
@@ -1434,12 +1582,11 @@ pub fn drive(
     let (rows, label) = if !use_events && method == "euler" && !host_driven {
         // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
         set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
-        let rows = run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)
-            .map_err(|err| enrich_trap(e, err))?;
-        (rows, "euler-wasm")
+        (run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)?, "euler-wasm")
     } else {
         // enrich_trap: a trap in init/integration is usually a failed model assert().
-        let (mut driver, label) = make_driver(e, model, sim_data, method).map_err(|err| enrich_trap(e, err))?;
+        let (mut driver, label) =
+            make_driver(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
         // Infinite budget runs to completion; the per-step cancel poll still lets a
         // native embedder interrupt. `OMC_WASM_SIM_YIELD_MS` forces a finite budget to
         // self-test yield/resume (must be `.mat`-identical to the un-yielded run).
@@ -1476,7 +1623,11 @@ pub fn drive(
     Ok((RunResult { rows, n_reals, params, stats }, label))
 }
 
-/// In-wasm driver: one call to `simulate`, then read the result buffer.
+/// In-wasm driver: initialize here (so the run initializes like every other
+/// driver, and the host sees the init/simulation boundary), then one call to
+/// `simulate` for the integration loop, then read the result buffer. C's
+/// `noThrowAsserts` phase stays open across the loop — Euler locates no event that
+/// could excuse a violation before the settle below.
 fn run_wasm(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -1488,7 +1639,14 @@ fn run_wasm(
     stats: &mut SolveStats,
 ) -> Result<Vec<f64>> {
     stats.steps = (n_rows - 1) as u64;
-    let buf = e.call_simulate(sim_data, start, stop, n_rows - 1)?;
+    run_initialization(e, sim_data, layout, start).map_err(|err| enrich_trap_init(e, err, start))?;
+    open_assert_window();
+    let called = e.call_simulate(sim_data, start, stop, n_rows - 1);
+    let settled = close_assert_window(e, sim_data);
+    // A trap says what went wrong; the settle only fails on a suppressed assert.
+    let buf = called.map_err(|err| enrich_trap(e, err))?;
+    settled?;
+    terminated(e, sim_data, layout)?; // C's `checkSimulationTerminated` notice
     // The Euler loop cannot back off, so a non-converging NLS is fatal here.
     check_nls(e, sim_data, layout)?;
     // The loop records how many rows it wrote (< n_rows if terminate() fired).
@@ -1551,11 +1709,15 @@ impl Driver for EulerDriver {
             did_step = true;
             // The last row lands exactly on `stop`: the terminal step.
             let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
-            if self.row == 0 {
-                emit_initial_row(e, &mut self.rows, sim_data, layout, time)?;
+            // Euler locates no events, so a suppressed assert always throws; the
+            // window is what gets it reported like C's.
+            open_assert_window();
+            let emitted = if self.row == 0 {
+                emit_initial_row(e, &mut self.rows, sim_data, layout, time)
             } else {
-                emit_row(e, &mut self.rows, sim_data, layout, time, stop)?;
-            }
+                emit_row(e, &mut self.rows, sim_data, layout, time, stop)
+            };
+            close_assert_window(e, sim_data).and(emitted)?;
             check_nls(e, sim_data, layout)?; // Euler cannot back off — non-convergence is fatal
             // terminate() fired in functionAlgebraics: keep this row, stop the run.
             if terminated(e, sim_data, layout)? {
@@ -2048,7 +2210,9 @@ impl Driver for DasslDriver {
                 }
                 did_step = true;
                 let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
-                emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time)?;
+                open_assert_window();
+                let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
+                close_assert_window(e, sim_data).and(emitted)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -2157,7 +2321,9 @@ impl Driver for DasslDriver {
             for i in 0..n_states {
                 write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
             }
-            emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+            open_assert_window();
+            let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+            close_assert_window(e, sim_data).and(emitted)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated; // terminate() fired: keep this row, stop
             }
@@ -2526,17 +2692,17 @@ impl DasslCore {
                     if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
                         let zc = self.jroot.iter().position(|&r| r != 0).unwrap_or(0);
                         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
-                        chatter_store::push(format!(
+                        log_line(&format!(
                             "{}Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state \
                              events in a row with a total time delta less than the step size \
                              {step_size}). This can be a performance bottleneck. Use -lv LOG_EVENTS \
-                             for more information. The zero-crossing was: {desc}",
+                             for more information. The zero-crossing was: {desc}\n",
                             log_prefix("LOG_STDOUT", "info"),
                         ));
                         if chatter_store::abort() {
-                            chatter_store::push(format!(
+                            log_line(&format!(
                                 "{}Aborting simulation due to chattering being detected and the \
-                                 simulation flags requesting we do not continue further.",
+                                 simulation flags requesting we do not continue further.\n",
                                 log_prefix("LOG_ASSERT", "debug"),
                             ));
                             return Err(CHATTER_ABORT_ERR);
@@ -2995,6 +3161,7 @@ impl Driver for DasslEventsDriver {
                 let tout = tout_of(self.row);
                 let eps = tout.abs().max(1.0) * 1e-10;
                 let mut grid_covered = false;
+                open_assert_window();
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
                     let te = self.samp.next_time();
@@ -3056,7 +3223,8 @@ impl Driver for DasslEventsDriver {
                 }
                 if !grid_covered {
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-                    emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                    let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+                    close_assert_window(e, sim_data).and(emitted)?;
                     if terminated(e, sim_data, layout)? {
                         self.finished = true;
                         return Ok(Advance::Terminated);
@@ -3066,6 +3234,8 @@ impl Driver for DasslEventsDriver {
                         eval_zero_crossings(e, sim_data, layout, tout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
                     }
+                } else {
+                    close_assert_window(e, sim_data)?;
                 }
                 self.core.t = tout;
                 self.row += 1;
@@ -3093,6 +3263,9 @@ impl Driver for DasslEventsDriver {
             if !self.mid_row {
                 self.grid_covered = false;
             }
+            // C's `simulationUpdate` window: until this row's events are handled,
+            // the state the model is evaluated at may still be discarded.
+            open_assert_window();
             match self.core.integrate_to(
                 e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step, false,
             )? {
@@ -3112,10 +3285,13 @@ impl Driver for DasslEventsDriver {
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
-                emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+                close_assert_window(e, sim_data).and(emitted)?;
                 if terminated(e, sim_data, layout)? {
                     break Advance::Terminated;
                 }
+            } else {
+                close_assert_window(e, sim_data)?;
             }
             // Re-select states at the accepted output point (see `DasslDriver`).
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {

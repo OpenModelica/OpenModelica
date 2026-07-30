@@ -116,7 +116,7 @@ impl SimEngine for StandaloneEngine {
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
@@ -198,7 +198,7 @@ pub extern "C" fn _start() {
 /// assertion, so print the message (`msg` is an `rt` String handle:
 /// `[refcount:u32][len:u32][utf8…]`) and trap, which aborts the command.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32) {
+pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32) -> i32 {
     if msg != 0 {
         let h = msg as u32;
         let len = unsafe { crate::load_u32(h + 4) } as usize;
@@ -223,6 +223,13 @@ pub extern "C" fn rt_print(handle: i32) {
         let _ = out.write_all(bytes);
         let _ = out.flush();
     }
+}
+
+/// In-wasm `rt_row_asserts`: nothing to format — `rt_assert_warning` below has
+/// already printed the message.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_row_asserts(_sim_data: i32, _warn: i32) -> i32 {
+    0
 }
 
 /// In-wasm `rt_assert_warning`: a non-fatal (AssertionLevel.warning) violation.
