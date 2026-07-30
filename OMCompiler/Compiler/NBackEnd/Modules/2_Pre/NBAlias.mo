@@ -118,17 +118,15 @@ public
   // ==========================================================================
   constant Real NOMINAL_THRESHOLD = 1000.0;
 
-  function main
+  function pre
     "Wrapper function for any alias removal function. This will be
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
     input Partition.Kind kind;
   protected
-    Module.aliasInterface func;
+    Module.aliasPreInterface func = getPreModule();
   algorithm
-    func := getModule();
-
     bdae := match bdae
       local
         VarData varData         "Data containing variable pointers";
@@ -143,31 +141,62 @@ public
           bdae.eqData := eqData;
       then bdae;
 
-      case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end pre;
+
+  function post
+    extends Module.wrapper;
+  protected
+    Module.aliasPostInterface func = getPostModule();
+  algorithm
+    bdae := match bdae
+      local
+        VarData varData         "Data containing variable pointers";
+        EqData eqData           "Data containing equation pointers";
+        list<Partition.Partition> ode;
+
+      case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData, kind);
-          bdae.varData := varData;
-          bdae.eqData := eqData;
+          (ode, varData, eqData)  := List.mapFold2(bdae.ode, func, varData, eqData);
+          bdae.ode                := ode;
+          bdae.varData            := varData;
+          bdae.eqData             := eqData;
       then bdae;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
-  end main;
+  end post;
 
-  function getModule
+  function getPreModule
     "Returns the module function that was chosen by the user."
-    output Module.aliasInterface func;
+    output Module.aliasPreInterface func;
   protected
     String flag = "default"; //Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS)
   algorithm
     func := match flag
-      case "default" then aliasDefault;
+      case "default" then aliasPreDefault;
       /* ... New alias modules have to be added here */
       else fail();
     end match;
-  end getModule;
+  end getPreModule;
+
+  function getPostModule
+    "Returns the module function that was chosen by the user."
+    output Module.aliasPostInterface func;
+  protected
+    String flag = "default"; //Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS)
+  algorithm
+    func := match flag
+      case "default" then aliasPostDefault;
+      /* ... New alias modules have to be added here */
+      else fail();
+    end match;
+  end getPostModule;
 
 protected
   uniontype AliasSet "gets accumulated to find sets of alias equations and solve them"
@@ -215,7 +244,7 @@ protected
   constant CrefTpl EMPTY_CREF_TPL = CREF_TPL(true, 0, 0, {});
   constant CrefTpl FAILED_CREF_TPL = CREF_TPL(false, 0, 0, {});
 
-  function aliasDefault
+  function aliasPreDefault
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
@@ -223,24 +252,122 @@ protected
       4. apply replacements
       5. save replacements in bindings of alias variables
     "
-    extends Module.aliasInterface;
+    extends Module.aliasPreInterface;
   algorithm
     (varData, eqData) := match (varData, eqData)
       local
         UnorderedMap<ComponentRef, Expression> replacements;
-        UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
         EquationPointers newEquations;
-        list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
-        list<Pointer<Equation>> non_trivial_eqs, auxEquations;
+        Pointer<list<Pointer<Equation>>> auxEquations = Pointer.create({});
 
-      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
-        algorithm
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
-          (replacements, auxEquations) := checkReplacements(replacements, eqData);
+          (replacements, newEquations) := aliasCausalizePre(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
+          replacements := checkReplacements(replacements, eqData, function updateAuxEquationPre(auxEquations = auxEquations));
+          eqData.simulation := newEquations;
+          // -----------------------------------
+          //            4. 5.
+          // -----------------------------------
+          (eqData, varData) := aliasDefaultUpdateData(eqData, varData, replacements, Pointer.access(auxEquations));
+      then (varData, eqData);
 
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end aliasPreDefault;
+
+  function aliasPostDefault
+    " collecting from sorted strong components.
+    ToDo: do not causalize again. only call aliasDefaultUpdataData once and not for every partition.
+    Note: Apply after causalization and inline after index reduction but before the initialization system is split off.
+    STEPS:
+      1. collect alias sets (variables, equations, optional constant binding)
+      2. balance sets - choose variable to keep if necessary
+      3. match/sort set (linear w.r.t. unknowns since all equations contain two crefs at max and are simple/linear)
+      4. apply replacements
+      5. save replacements in bindings of alias variables
+    "
+    extends Module.aliasPostInterface;
+  protected
+    array<StrongComponent> comps;
+    array<Boolean> comps_to_remove;
+    UnorderedMap<ComponentRef, Expression> replacements;
+    UnorderedMap<ComponentRef, Integer> solved_map;
+    Pointer<list<Pointer<Equation>>> auxEquations = Pointer.create({});
+  algorithm
+    (varData, eqData) := match partition.strongComponents
+      local
+        list<Pointer<Variable>> alias_vars;
+
+      case SOME(comps) algorithm
+        // -----------------------------------
+        //            1. 2. 3.
+        // -----------------------------------
+        (replacements, comps_to_remove, solved_map) := aliasCausalizePost(comps, Partition.Partition.getKind(partition), EqData.getUniqueIndex(eqData));
+        replacements := checkReplacements(replacements, eqData, function updateAuxEquationPost(comps = comps, comps_to_remove = comps_to_remove, solved_map = solved_map, auxEquations = auxEquations));
+
+        // resolve comps to remove
+        comps := removeStrongComponents(comps, comps_to_remove);
+
+        // update local structures
+        partition.equations := EquationPointers.addList(Pointer.access(auxEquations), partition.equations);   
+        partition.equations := EquationPointers.compress(partition.equations);
+        alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
+        partition.unknowns  := VariablePointers.removeList(alias_vars, partition.unknowns);
+
+        // -----------------------------------
+        //            4. 5.
+        // -----------------------------------
+        (eqData, varData) := aliasDefaultUpdateData(eqData, varData, replacements, Pointer.access(auxEquations));
+      then (varData, eqData);
+      else (varData, eqData);
+    end match;
+  end aliasPostDefault;
+
+  function removeStrongComponents
+    input output array<StrongComponent> comps;
+    input array<Boolean> comps_to_remove;
+  protected
+    list<StrongComponent> new_comps = {};
+  algorithm
+    for i in 1:arrayLength(comps_to_remove) loop
+      if comps_to_remove[i] then
+        // if the comp needs to be removed, delete its equation
+        () := match comps[i]
+          local
+            Pointer<Equation> eqn;
+          case StrongComponent.SINGLE_COMPONENT(eqn = eqn) algorithm
+            Pointer.update(eqn, Equation.DUMMY_EQUATION());
+          then ();
+          else ();
+        end match;
+      else
+        // fill the new list if its not removed
+        new_comps := comps[i] :: new_comps;
+      end if;
+    end for;
+    // reverse list as we built it in reverse
+    comps := listArray(listReverse(new_comps));
+  end removeStrongComponents;
+
+  function aliasDefaultUpdateData
+    input output EqData eqData;
+    input output VarData varData;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input list<Pointer<Equation>> auxEquations;
+  algorithm
+    (varData, eqData) := match (varData, eqData)
+      local
+        
+        UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+        EquationPointers newEquations;
+        list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
+        list<Pointer<Equation>> non_trivial_eqs;
+
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
           // -----------------------------------
           // 4. apply replacements
           // 5. save replacements in bindings of alias variables
@@ -255,7 +382,7 @@ protected
           alias_vars := List.flatten(list(BVariable.getRecordChildrenOrSelf(var) for var in alias_vars));
 
           // save new equations and compress affected arrays(some might have been removed)
-          eqData.simulation := EquationPointers.compress(newEquations);
+          eqData.simulation := EquationPointers.compress(eqData.simulation);
           eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
@@ -299,39 +426,88 @@ protected
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
-  end aliasDefault;
+  end aliasDefaultUpdateData;
 
   function checkReplacements
     "Checks validity of all replacements, returns all valid replacements and auxiliary equations"
     input UnorderedMap<ComponentRef, Expression> replacements;
     input EqData eqData;
+    input updateAuxEquation updateFunc;
     output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    output list<Pointer<Equation>> auxEquations = {};
   protected
     UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef cref;
+    Pointer<Variable> var;
     Expression exp;
-    Pointer<Equation> eqPtr;
+    Pointer<Equation> aux_eqn;
     EquationAttributes attr;
+    list<Pointer<Equation>> dump_eqns = {};
   algorithm
     EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
+      var := BVariable.getVarPointer(cref, sourceInfo());
       if isValidReplacement(cref, exp, exceptionMap) then
         // replacement is valid - add to newReplacements
         UnorderedMap.add(cref, exp, newReplacements);
       else
-        // add auxiliary equation
-        attr := BackendDAE.lowerEquationAttributes(ComponentRef.getSubscriptedType(cref), false);
-        eqPtr := Equation.makeAssignment(Expression.fromCref(cref), exp, EqData.getUniqueIndex(eqData), "SIM", Iterator.EMPTY(), attr);
-        auxEquations := eqPtr :: auxEquations;
+        // add auxiliary equation as the cref cannot be replaced
+        attr      := BackendDAE.lowerEquationAttributes(ComponentRef.getSubscriptedType(cref), false);
+        aux_eqn   := Equation.makeAssignment(Expression.fromCref(cref), exp, EqData.getUniqueIndex(eqData), "SIM", Iterator.EMPTY(), attr);
+        dump_eqns := aux_eqn :: dump_eqns;
+        updateFunc(aux_eqn, cref);
       end if;
     end for;
 
     if Flags.isSet(Flags.DUMP_REPL)  then
-      dumpReplacements(newReplacements, auxEquations);
+      dumpReplacements(newReplacements, dump_eqns);
     end if;
   end checkReplacements;
+
+  partial function updateAuxEquation
+    input Pointer<Equation> aux_eqn;
+    input ComponentRef solved_cref;
+  end updateAuxEquation;
+
+  function updateAuxEquationPre extends updateAuxEquation;
+    input Pointer<list<Pointer<Equation>>> auxEquations;
+  algorithm
+    Pointer.update(auxEquations, aux_eqn :: Pointer.access(auxEquations));
+  end updateAuxEquationPre;
+
+  function updateAuxEquationPost extends updateAuxEquation;
+    input array<StrongComponent> comps;
+    input array<Boolean> comps_to_remove;
+    input UnorderedMap<ComponentRef, Integer> solved_map;
+    input Pointer<list<Pointer<Equation>>> auxEquations;
+  protected
+    Integer index = UnorderedMap.getSafe(solved_cref, solved_map, sourceInfo());
+  algorithm
+    Pointer.update(auxEquations, aux_eqn :: Pointer.access(auxEquations));
+    () := match comps[index]
+      local
+        StrongComponent comp;
+      
+      // replace the component's equation
+      case comp as StrongComponent.SINGLE_COMPONENT() algorithm
+        comp.eqn := aux_eqn;
+        arrayUpdate(comps, index, comp);
+        arrayUpdate(comps_to_remove, index, false);
+      then ();
+
+      // cannot replace -> throw error
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed. Supposed to update equation but can't for component:\n"
+          + StrongComponent.toString(comps[index])});
+      then fail();
+    end match;
+  end updateAuxEquationPost;
+
+  function removeEquation
+    input Pointer<Equation> eqn;
+    input UnorderedSet<ComponentRef> eqns_to_remove;
+    output Boolean delete = UnorderedSet.contains(Equation.getEqnName(eqn), eqns_to_remove);
+  end removeEquation;
 
   function isValidReplacement
     "Checks if a replacement (cref, exp) is valid"
@@ -379,10 +555,25 @@ protected
         Call call;
         ComponentRef cref;
 
-      // all variables in pre() call shall not be replaced
+      // [PRE] all variables in pre() call shall not be replaced
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
-      guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
+      guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre" or AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "previous") algorithm
         UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
+      then ();
+
+      // [POST] the same goes for pre() and previous() variables after causalization
+      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+        UnorderedMap.add(exp.cref, ExceptionKind.NO_ALIAS, acc);
+      then ();
+
+      // [POST] cannot replace state derivatives
+      case Expression.CREF() guard(BVariable.isStateDerivative(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+        UnorderedMap.add(exp.cref, ExceptionKind.NO_ALIAS, acc);
+      then ();
+
+      // [ALL] cannot replace toplevel inputs
+      case Expression.CREF() guard(Variable.isTopLevelInput(BVariable.getVar(exp.cref, sourceInfo()))) algorithm
+        UnorderedMap.add(exp.cref, ExceptionKind.NO_ALIAS, acc);
       then ();
 
       case Expression.CREF() algorithm
@@ -428,22 +619,22 @@ protected
       4. apply replacements
       5. save replacements in bindings of alias variables
     "
-      extends Module.aliasInterface;
+      extends Module.aliasPreInterface;
   algorithm
     (varData, eqData) := match (varData, eqData)
       local
         UnorderedMap<ComponentRef, Expression> replacements;
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars;
-        list<Pointer<Equation>> auxEquations;
+        Pointer<list<Pointer<Equation>>> auxEquations = Pointer.create({});
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
-          (replacements, auxEquations) := checkReplacements(replacements, eqData);
+          (replacements, newEquations) := aliasCausalizePre(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex,  "Clocked");
+          replacements := checkReplacements(replacements, eqData, function updateAuxEquationPre(auxEquations = auxEquations));
 
           // -----------------------------------
           // 4. apply replacements
@@ -458,7 +649,7 @@ protected
           // remove alias variables from clocks and add to alias
           varData.clocks    := VariablePointers.removeList(alias_vars, varData.clocks);
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
-      then (varData, EqData.addUntypedList(eqData, auxEquations, false));
+      then (varData, EqData.addUntypedList(eqData, Pointer.access(auxEquations), false));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
@@ -466,7 +657,7 @@ protected
     end match;
   end aliasClocks;
 
-  function aliasCausalize
+  function aliasCausalizePre
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
@@ -480,19 +671,48 @@ protected
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
   protected
-    Integer size, setIdx = 1;
-    UnorderedMap<ComponentRef, SetPtr> map;
-    list<AliasSet> sets;
+    UnorderedMap<ComponentRef, SetPtr> map = UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     // ------------------------------------------------------------------------------
     // 1. collect alias sets (variables, equations, optional constant binding)
     // ------------------------------------------------------------------------------
-    // collect (cref) -> (simpleSet) hashtable
-    size := VariablePointers.size(variables);
-    map := UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual, size);
-    (newEquations, map) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, map);
+    // collect (cref) -> (simpleSet) map
+    (newEquations, map) := EquationPointers.foldRemovePtr(equations, function findSimpleEquation(isPost = false), map);
+    replacements        := aliasReplacements(map, kind, index, context);
+  end aliasCausalizePre;
 
-    sets := getSimpleSets(map, size);
+  function aliasCausalizePost
+    "alias module after causalization"
+    input array<StrongComponent> comps;
+    input Partition.Kind kind;
+    input Pointer<Integer> index;
+    output UnorderedMap<ComponentRef, Expression> replacements;
+    output array<Boolean> comps_to_remove = arrayCreate(arrayLength(comps), false);
+    output UnorderedMap<ComponentRef, Integer> solved_map = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+  protected
+    UnorderedMap<ComponentRef, SetPtr> map = UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    // ------------------------------------------------------------------------------
+    // 1. collect alias sets (variables, equations, optional constant binding)
+    // ------------------------------------------------------------------------------
+    // collect (cref) -> (simpleSet) map
+    for i in 1:arrayLength(comps) loop
+      comps_to_remove[i] := findSimpleComponent(comps[i], i, map, solved_map);
+    end for;
+    replacements  := aliasReplacements(map, kind, index, "Post Causalization");
+  end aliasCausalizePost;
+
+  function aliasReplacements
+    input UnorderedMap<ComponentRef, SetPtr> map;
+    input Partition.Kind kind;
+    input Pointer<Integer> index;
+    input String context;
+    output UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    Integer setIdx = 1;
+    list<AliasSet> sets;
+  algorithm
+    sets := getSimpleSets(map);
     if Flags.isSet(Flags.DUMP_REPL) then
       print(StringUtil.headline_2("[dumprepl] " + context + " Alias Sets:") + "\n");
       if listEmpty(sets) then
@@ -509,17 +729,35 @@ protected
     // 2. balance sets - choose variable to keep if necessary
     // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
     // --------------------------------------------------------------------------------------------------------
-    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     for set in sets loop
       replacements := createReplacementRules(set, index, replacements, kind);
     end for;
+  end aliasReplacements;
 
-  end aliasCausalize;
+  function findSimpleComponent
+    input StrongComponent comp;
+    input Integer index;
+    input UnorderedMap<ComponentRef, SetPtr> map;
+    input UnorderedMap<ComponentRef, Integer> solved_map;
+    output Boolean delete;
+  algorithm
+    delete := match comp
+      case StrongComponent.SINGLE_COMPONENT() algorithm
+        (_, delete) := findSimpleEquation(comp.eqn, map, true);
+        if delete then
+          UnorderedMap.add(BVariable.getVarName(comp.var), index, solved_map);
+        end if;
+      then delete;
+      else false;
+    end match;
+  end findSimpleComponent;
 
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
     input Pointer<Equation> eq_ptr;
     input output UnorderedMap<ComponentRef, SetPtr> map;
+    input Boolean isPost;
     output Boolean delete = false;
   protected
     Equation eq;
@@ -528,18 +766,18 @@ protected
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
       case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
-        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
-        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.rhs, function findCrefs(isPost = isPost), crefTpl);
+        crefTpl := Expression.fold(eq.lhs, function findCrefs(isPost = isPost), crefTpl);
       then crefTpl;
 
       case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
-        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
-        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.rhs, function findCrefs(isPost = isPost), crefTpl);
+        crefTpl := Expression.fold(eq.lhs, function findCrefs(isPost = isPost), crefTpl);
       then crefTpl;
 
       case BEquation.RECORD_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
-        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
-        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.rhs, function findCrefs(isPost = isPost), crefTpl);
+        crefTpl := Expression.fold(eq.lhs, function findCrefs(isPost = isPost), crefTpl);
       then crefTpl;
 
       else crefTpl;
@@ -679,6 +917,7 @@ protected
   "
     input Expression exp;
     input output CrefTpl tpl;
+    input Boolean isPost;
   algorithm
     tpl := match exp
 
@@ -694,9 +933,9 @@ protected
         guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
-      // fail for top level inputs
+      // do not handle state and previous alias in post causalization
       case Expression.CREF()
-        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+        guard(isPost and (BVariable.isState(BVariable.getVarPointer(exp.cref, sourceInfo())) or BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -824,10 +1063,9 @@ protected
   function getSimpleSets
     "extracts all simple sets from the hashTable and avoids duplicates by marking variables"
     input UnorderedMap<ComponentRef, SetPtr> map;
-    input Integer size;
     output list<AliasSet> sets = {};
   protected
-    UnorderedSet<ComponentRef> cref_marks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, size);
+    UnorderedSet<ComponentRef> cref_marks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     list<tuple<ComponentRef, SetPtr>> entry_lst;
     ComponentRef simple_cref;
     SetPtr set_ptr;

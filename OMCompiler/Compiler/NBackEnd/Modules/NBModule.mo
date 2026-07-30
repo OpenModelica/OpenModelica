@@ -246,7 +246,7 @@ public
   end functionAliasInterface;
 
 
-  partial function aliasInterface
+  partial function aliasPreInterface
     "Alias
      This module is allowed to read and remove equations and move variables from
      unknowns to knowns. Since this can also affect all other pointer arrays, the
@@ -255,7 +255,18 @@ public
     input output VarData varData         "Data containing variable pointers";
     input output EqData eqData           "Data containing equation pointers";
     input Partition.Kind kind;
-  end aliasInterface;
+  end aliasPreInterface;
+
+  partial function aliasPostInterface
+    "Alias
+     This module is allowed to read and remove equations and move variables from
+     unknowns to knowns. Since this can also affect all other pointer arrays, the
+     full variable data is needed. All things that are allowed to be changed
+     are pointers, so no return value."
+    input output Partition.Partition partition;
+    input output VarData varData         "Data containing variable pointers";
+    input output EqData eqData           "Data containing equation pointers";
+  end aliasPostInterface;
 
 //                                 INLINE
 // *************************************************************************
