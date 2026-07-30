@@ -528,7 +528,9 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
     ida: false,
-    cvode: false,
+    // The driver runs here (host-driven) or in-wasm (web); both get CVODE from the
+    // same CMake option, so one const covers both.
+    cvode: openmodelica_sim_meta::CVODE,
     gbode: false,
 };
 

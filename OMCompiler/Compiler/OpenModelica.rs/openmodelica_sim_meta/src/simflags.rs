@@ -147,9 +147,12 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
         Some(Solver::Gbode) if !cap.gbode => "gbode",
         _ => return Ok(()),
     };
-    Err(format!(
-        "-s={unsupported}: this runtime supports `dassl` and `euler` only"
-    ))
+    let have: Vec<String> = supported(cap)
+        .into_iter()
+        .find(|(n, _)| *n == "s")
+        .map(|(_, v)| v.iter().map(|n| alloc::format!("`{n}`")).collect())
+        .unwrap_or_default();
+    Err(format!("-s={unsupported}: this runtime supports {} only", have.join(", ")))
 }
 
 /// The values each solver flag accepts on this build, in menu order. A UI offering
@@ -405,9 +408,13 @@ mod tests {
             let e = check(&f, NOTHING).expect_err("must reject");
             assert!(e.contains(needle), "{arg}: {e}");
         }
-        // With the capability present the same request is fine.
+        // With the capability present the same request is fine, and the rejection
+        // of another solver then offers it.
         let f = parse(&argv(&["-lss=klu"])).expect("parses");
         assert!(check(&f, Capabilities { klu: true, ..NOTHING }).is_ok());
+        let f = parse(&argv(&["-s=ida"])).expect("parses");
+        let e = check(&f, Capabilities { cvode: true, ..NOTHING }).expect_err("must reject");
+        assert!(e.contains("`cvode`"), "{e}");
     }
 
     #[test]

@@ -26,6 +26,12 @@ use alloc::vec::Vec;
 
 pub mod driver;
 pub mod simflags;
+#[cfg(sundials)]
+pub mod sundials;
+
+/// Whether this build's driver has the real CVODE linked in (`build.rs`), so a
+/// `-s=cvode` / `method="cvode"` run can be served.
+pub const CVODE: bool = cfg!(sundials);
 
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
