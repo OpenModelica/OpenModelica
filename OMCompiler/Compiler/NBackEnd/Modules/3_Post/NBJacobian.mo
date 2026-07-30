@@ -87,6 +87,9 @@ protected
   // Sparsity-pattern graph coloring, shared with the old backend.
   import Coloring;
 
+  // NF scalarize (for partial-slice seed expansion)
+  import Scalarize = NFScalarize;
+
   // Util imports
   import StringUtil;
   import UnorderedMap;
@@ -513,9 +516,20 @@ protected
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
-        // Use the whole-array base pointer for every iteration var slice so that
-        // for-loop column equations can access the seed as an array (e.g. $SEED.x[$i1]).
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        // Expand partial slices to scalar outer-element ptrs so that only the outer
+        // iteration variable elements become seed vars (not the inner LS elements
+        // that share the same base array but appear at different slice indices).
+        seed_candidates := {};
+        for slc in strict.iteration_vars loop
+          if Slice.isFull(slc) then
+            seed_candidates := Slice.getT(slc) :: seed_candidates;
+          else
+            for sv in Scalarize.scalarizeBackendVariable(Pointer.access(Slice.getT(slc)), slc.indices) loop
+              seed_candidates := Pointer.create(sv) :: seed_candidates;
+            end for;
+          end if;
+        end for;
+        seed_candidates := listReverse(seed_candidates);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
@@ -555,6 +569,10 @@ protected
     Adjacency.Matrix fullLocal, sparsity;
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> adj_base_seen;
+    list<Pointer<Variable>> adj_seed_list;
+    ComponentRef adj_base_cref;
+
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if isSome(strongComponents) then
@@ -644,7 +662,21 @@ protected
     // Using part.adjacencyMatrix (the `full` param) would fail because residual
     // equations created by finalize() during tearing get new names and don't
     // appear in the partition's pre-tearing adjacency matrix.
-    adjacencyVars := VariablePointers.clone(seedCandidates);
+    // Build adjacencyVars from unique base variable ptrs derived from seedCandidates.
+    // When seedCandidates contains scalar element ptrs for partial-slice NLS iter vars,
+    // all elements of the same array share the same base ptr. Using base ptrs here
+    // preserves pseudo=true subscript-stripped lookup in getDependentCref, which matches
+    // any element expression (e.g. module[i].T for iterator i) to the base column.
+    adj_base_seen := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    adj_seed_list := {};
+    for v in VariablePointers.toList(seedCandidates) loop
+      adj_base_cref := ComponentRef.stripSubscriptsAll(BVariable.getVarName(v));
+      if not UnorderedSet.contains(adj_base_cref, adj_base_seen) then
+        UnorderedSet.add(adj_base_cref, adj_base_seen);
+        adj_seed_list := BVariable.getVarPointer(BVariable.getVarName(v), sourceInfo()) :: adj_seed_list;
+      end if;
+    end for;
+    adjacencyVars := VariablePointers.fromList(listReverse(adj_seed_list));
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
     // For ODE Jacobians, also include state derivatives as adjacency variables.
     // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).
