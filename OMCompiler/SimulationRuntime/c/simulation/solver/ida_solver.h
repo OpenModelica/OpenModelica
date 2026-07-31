@@ -39,6 +39,7 @@
 
 #ifdef WITH_SUNDIALS
 
+#include <sundials/sundials_context.h>       /* SUNContext */
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -95,6 +96,11 @@ typedef struct IDA_SOLVER
                                   /* See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation */
   IDA_USERDATA* userData;         /* */
 
+  SUNContext sunctx;        /* SUNDIALS simulation context. Since SUNDIALS 6 every
+                               SUNDIALS object has to be created with one. Owned by
+                               this struct, one per solver instance so that solvers
+                               running in different threads stay independent. */
+
   /* linear solver data */
   SUNLinearSolver linSol;   /* Linear solver object */
   N_Vector y_linSol;        /* Template for cloning vectors needed inside linear solver */
@@ -102,7 +108,7 @@ typedef struct IDA_SOLVER
                                linear solver */
 
   /* ### daeMode ### */
-  booleantype daeMode;      /* If TRUE then solve dae more with a reals residual function */
+  sunbooleantype daeMode;      /* If TRUE then solve dae more with a reals residual function */
   long int N;               /* Number of unknowns */
   long int NNZ;             /* Number of non-zero elemetes of ... */
   double *states;           /* Array of states. Only used in DAE mode, NULL otherwise */

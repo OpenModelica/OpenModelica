@@ -40,6 +40,7 @@
 
 #ifdef WITH_SUNDIALS
 
+#include <sundials/sundials_context.h>  /* SUNContext */
 #include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 #include <sunlinsol/sunlinsol_dense.h>              /* Default dense linear solver */
@@ -76,7 +77,7 @@ typedef struct CVODE_CONFIG
                                 * CV_ITER_FIXED_POINT = 1 for fixed-point-iteration
                                 * CV_ITER_NEWTON = 2 for Newton iterations */
 
-  booleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
+  sunbooleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
   JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
 
   /* Optional configurations */
@@ -92,17 +93,22 @@ typedef struct CVODE_CONFIG
                                 * For CV_BDF defaults to BDF_Q_MAX=5. */
   int maxConvFailPerStep;      /* Maximum number of nonlinear solver convergence failures permitted during one step.
                                 * Default value is 10. */
-  booleantype BDFStabDetect;   /* BDF stability limit detection.
+  sunbooleantype BDFStabDetect;   /* BDF stability limit detection.
                                 * Only usable for lmm=CV_BDF. */
-  booleantype solverRootFinding;  /* True if internal root finding should be used, false otherwiese.
+  sunbooleantype solverRootFinding;  /* True if internal root finding should be used, false otherwiese.
                                    * Disable for FMI */
 } CVODE_CONFIG;
 
 typedef struct CVODE_SOLVER
 {
   CVODE_CONFIG config;        /* CVODE configuration */
-  booleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
+  sunbooleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
   long int N;                 /* Number of unknowns / states */
+
+  SUNContext sunctx;          /* SUNDIALS simulation context. Since SUNDIALS 6 every
+                                 SUNDIALS object has to be created with one. Owned by
+                                 this struct, one per solver instance so that solvers
+                                 running in different threads stay independent. */
 
   /* work arrays */
   N_Vector y;                 /* dependent variable vector of ODE */

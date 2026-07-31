@@ -75,8 +75,8 @@ const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
 };
 
 /* Internal function prototypes */
-int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData);
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI);
+int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, void *userData);
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI);
 
 /**
  * @brief Computes the ODE right-hand side for a given value of the independent variable t and state vector y
@@ -87,7 +87,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  * @param userData    user data containing CVODE_SOLVER
  * @return int
  */
-int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData)
+int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, void *userData)
 {
   /* Variables */
   CVODE_SOLVER *cvodeData;
@@ -350,7 +350,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
  * @param cvodeData       CVODE solver data struckt
  * @param threadData      Thread data for error handling
  */
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI)
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleantype isFMI)
 {
   /* Variables */
   int i;
@@ -571,13 +571,22 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Get CVODE settings from user flags */
   cvodeGetConfig(&(cvodeData->config), threadData, isFMI);
 
+  /* Create the SUNDIALS context every other SUNDIALS object is created with */
+  flag = SUNContext_Create(SUN_COMM_NULL, &cvodeData->sunctx);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_Create failed.");
+  sundialsSilenceLogger(cvodeData->sunctx);
+
+  /* Set error handler. Replaces CVodeSetErrHandlerFn, which is gone since SUNDIALS 7. */
+  flag = SUNContext_PushErrHandler(cvodeData->sunctx, cvodeErrorHandlerFunction, cvodeData);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
+
   /* Initialize states */
   cvodeData->N = (long int)data->modelData->nStates;
-  cvodeData->y = N_VMake_Serial(cvodeData->N, (realtype *)data->localData[0]->realVars);
+  cvodeData->y = N_VMake_Serial(cvodeData->N, (sunrealtype *)data->localData[0]->realVars, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->y, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
 
   /* Allocate CVODE memory block */
-  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm);
+  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->cvode_mem, "CVODE_ERROR: CVodeCreate failed - returned NULL pointer.");
 
   if (measure_time_flag)
@@ -595,7 +604,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Set CVODE relative and absolute error tolerances */
   abstol_tmp = (double *)calloc(cvodeData->N, sizeof(double)); /* Is freed with `free(NV_DATA_S(cvodeData->absoluteTolerance));` */
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
-  cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
+  cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp, cvodeData->sunctx);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
   cvode_solver_setNominals(data, threadData, cvodeData);
   infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
@@ -604,18 +613,14 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetUserData");
 
-  /* Set error handler */
-  flag = CVodeSetErrHandlerFn(cvodeData->cvode_mem, cvodeErrorHandlerFunction, cvodeData);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetErrHandlerFn");
-
   /* Set linear solver used by CVODE */
-  cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
+  cvodeData->y_linSol = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
   switch (cvodeData->config.jacobianMethod)
   {
   case INTERNALNUMJAC:
   case COLOREDNUMJAC:
-    cvodeData->J = SUNDenseMatrix(cvodeData->N, cvodeData->N);
-    cvodeData->linSol = SUNLinSol_Dense(cvodeData->y_linSol, cvodeData->J);
+    cvodeData->J = SUNDenseMatrix(cvodeData->N, cvodeData->N, cvodeData->sunctx);
+    cvodeData->linSol = SUNLinSol_Dense(cvodeData->y_linSol, cvodeData->J, cvodeData->sunctx);
     assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_Dense failed.");
     break;
   default:
@@ -657,8 +662,8 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   switch (cvodeData->config.iter)
   {
     case CV_ITER_FIXED_POINT:
-      cvodeData->y_nonLinSol = N_VNew_Serial(cvodeData->N);
-      cvodeData->nonLinSol = SUNNonlinSol_FixedPoint(cvodeData->y_nonLinSol, cvodeData->N /* Num acceleration vectors for Anderson's method, m <= dimension*/);
+      cvodeData->y_nonLinSol = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
+      cvodeData->nonLinSol = SUNNonlinSol_FixedPoint(cvodeData->y_nonLinSol, cvodeData->N /* Num acceleration vectors for Anderson's method, m <= dimension*/, cvodeData->sunctx);
       assertStreamPrint(threadData, NULL != cvodeData->nonLinSol, "##CVODE## SUNNonlinSol_FixedPoint failed.");
       flag = CVodeSetNonlinearSolver(cvodeData->cvode_mem, cvodeData->nonLinSol);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetNonlinearSolver");
@@ -794,6 +799,8 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
 
   /* Free CVODE internal data */
   CVodeFree(&cvodeData->cvode_mem);
+
+  SUNContext_Free(&cvodeData->sunctx);
   free(cvodeData->simData);
 
 #ifdef OMC_FMI_RUNTIME
