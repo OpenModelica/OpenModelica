@@ -23,13 +23,15 @@ dependencies needed to compile OpenModelica.
 - [build-deps-almalinux-10][el-10-dev]: Enterprise Linux Almalinux 10.
 - [build-deps-fedora-43][fedora-43-dev]: Fedora 43.
 - [build-deps-fedora-44][fedora-44-dev]: Fedora 44.
+- [build-deps-ubuntu-26-rust][ubuntu-resolute-rust-dev]: Ubuntu 26.04 with the
+  Rust/clang/wasm toolchain, reproducing the `cmake-rust-clang` CI stage.
 
 There are two flavors:
 
 - `alpine-3.22`, `debian-12`, `debian-13`, `ubuntu-22`, `almalinux-10`,
-  `fedora-43` and `fedora-44` build a small wrapper `Dockerfile` that creates a
-  non-root user matching your local user name and UID so files created in the
-  container are owned by you.
+  `fedora-43`, `fedora-44` and `ubuntu-26-rust` build a small wrapper
+  `Dockerfile` that creates a non-root user matching your local user name and
+  UID so files created in the container are owned by you.
 - `ubuntu-24` and `ubuntu-26` use the base image directly and connect as the
   pre-existing `ubuntu` user.
 
@@ -42,6 +44,33 @@ and running.
 Open command pallet (`Strg+Shift+P`) and run
 `>Dev Containers: Open Folder in Container...`, select the OpenModelica
 directory. Then select a devcontainer.json file to start.
+
+## Reproducing the cmake-rust-clang CI stage
+
+`build-deps-ubuntu-26-rust` pins the same image the `cmake-rust-clang` stage in
+[../Jenkinsfile][jenkinsfile] uses and mounts the same cargo/sccache/omlibrary
+cache volumes. Inside the container run:
+
+```bash
+.devcontainer/build-deps-ubuntu-26-rust/build-rust-clang.sh
+```
+
+which performs the same configure and the same `install`, `rust_wasm_runtime`
+and `testsuite-depends` builds as `common.buildRustOMC()` in
+[../.CI/common.groovy][common-groovy]. Pass `--clean` to also run the
+`git clean -ffdx` that the CI agent does first — that deletes every untracked
+and ignored file in the worktree and all submodules, so it is opt-in.
+
+Two deliberate differences from CI:
+
+- **sccache backend.** CI shares an S3 bucket behind a Jenkins credential. The
+  container keeps the same compiler-launcher wiring but caches to disk in the
+  mounted volume instead.
+- **`CARGO_HOME`.** The image ships `CARGO_HOME=/opt/rust/cargo`, which is
+  root-owned, and cargo has to write it. The `Dockerfile` moves `CARGO_HOME` to
+  `~/.cargo` instead of taking ownership of `/opt/rust`, which would copy the
+  whole Rust toolchain into another image layer. `RUSTUP_HOME` is untouched;
+  running `rustc`/`cargo` only reads it.
 
 ## New Dev Container
 
@@ -78,9 +107,12 @@ The following only applies to the `Dockerfile`-based containers
 [ubuntu-jammy-dev]: ./build-deps-ubuntu-22/devcontainer.json
 [ubuntu-noble-dev]: ./build-deps-ubuntu-24/devcontainer.json
 [ubuntu-resolute-dev]: ./build-deps-ubuntu-26/devcontainer.json
+[ubuntu-resolute-rust-dev]: ./build-deps-ubuntu-26-rust/devcontainer.json
 [el-10-dev]: ./build-deps-almalinux-10/devcontainer.json
 [fedora-43-dev]: ./build-deps-fedora-43/devcontainer.json
 [fedora-44-dev]: ./build-deps-fedora-44/devcontainer.json
 [remote-containers-url]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
 [ci-dir]: ./../.CI/
+[jenkinsfile]: ./../Jenkinsfile
+[common-groovy]: ./../.CI/common.groovy
 [dev-json-ref-url]: https://containers.dev/implementors/json_reference/
