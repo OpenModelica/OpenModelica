@@ -229,14 +229,14 @@ colpack-clean:
 	rm -rf $(OMC_COLPACK_ROOT)/build
 
 suitesparse:
-	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
-	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
+	mkdir -p 3rdParty/SuiteSparse/build
+	cd 3rdParty/SuiteSparse/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \
 		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
-	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
+	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib               "$(builddir_lib_omc)/libamd.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib               "$(builddir_lib_omc)/libbtf.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib            "$(builddir_lib_omc)/libcolamd.dylib"
@@ -251,8 +251,8 @@ suitesparse:
 
 
 suitesparse-clean:
-	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1 distclean
-	rm -rf 3rdParty/SuiteSparse-5.8.1/build 3rdParty/SuiteSparse-5.8.1/build_msvc
+	$(MAKE) -C 3rdParty/SuiteSparse distclean
+	rm -rf 3rdParty/SuiteSparse/build 3rdParty/SuiteSparse/build_msvc
 
 $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" FCFLAGS="$(FCFLAGS)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)

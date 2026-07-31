@@ -398,34 +398,34 @@ $(OMBUILDDIR)/lib/omc/msvc/cminpack.lib: getMSVCversion
 	(cp -puf 3rdParty/CMinpack/install_msvc/lib/cminpack.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
 suitesparse_msvc: $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
-$(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.1/CMakeLists.txt
+$(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse/CMakeLists.txt
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib $(OMBUILDDIR)/lib/omc/msvc/klu.lib $(OMBUILDDIR)/lib/omc/msvc/btf.lib $(OMBUILDDIR)/lib/omc/msvc/colamd.lib $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib $(OMBUILDDIR)/lib/omc/msvc/suitesparseconfig.lib
 	rm -rf $(OMBUILDDIR)/include/omc/msvc/suitesparse
-	rm -rf 3rdParty/SuiteSparse-5.8.1/build_msvc
-	rm -rf 3rdParty/SuiteSparse-5.8.1/install_msvc
+	rm -rf 3rdParty/SuiteSparse/build_msvc
+	rm -rf 3rdParty/SuiteSparse/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
 	# Goto build msvc directory
-	test -d 3rdParty/SuiteSparse-5.8.1
-	mkdir -p 3rdParty/SuiteSparse-5.8.1/build_msvc
+	test -d 3rdParty/SuiteSparse
+	mkdir -p 3rdParty/SuiteSparse/build_msvc
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building SuiteSparse with MSVC'
-	echo @echo on > 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo echo Calling CMake >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo @echo on >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo set MAKE= >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo set MAKEFLAGS= >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo @echo on > 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo @echo on >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/SuiteSparse/build_msvc/build.bat
 
 	# Change into directory and run batch file
-	cd ./3rdParty/SuiteSparse-5.8.1/build_msvc; echo "change to 3rdParty/SuiteSparse-5.8.1/build_msvc";\
+	cd ./3rdParty/SuiteSparse/build_msvc; echo "change to 3rdParty/SuiteSparse/build_msvc";\
 	cmd "/c build.bat"
 
 # build sundials

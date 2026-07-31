@@ -311,7 +311,7 @@ option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse so
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
-  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1)
+  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
@@ -470,7 +470,7 @@ endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
