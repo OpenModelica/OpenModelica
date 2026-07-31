@@ -346,7 +346,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUITESPARSE_USE_STRICT=OFF
       -DKLU_USE_CHOLMOD=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target klu amd colamd btf suitesparseconfig
+      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -368,11 +368,14 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUNDIALS_KLU_ENABLE=ON
       -DSUNDIALS_INDEX_SIZE=32
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
-      -DKLU_LIBRARY=${_suitesparse_ep_build}/libklu.a
-      -DAMD_LIBRARY=${_suitesparse_ep_build}/libamd.a
-      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/libcolamd.a
-      -DBTF_LIBRARY=${_suitesparse_ep_build}/libbtf.a
-      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/libsuitesparseconfig.a
+      # v7 builds each project in its own subdirectory of the build tree, so the
+      # archives are not at the top of ${_suitesparse_ep_build} the way the
+      # 5.8.1 wrapper left them.
+      -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
+      -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
+      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      -DBTF_LIBRARY=${_suitesparse_ep_build}/BTF/libbtf.a
+      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
       sundials_kinsol_static sundials_ida_static sundials_cvode_static
@@ -388,11 +391,11 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   add_custom_target(rust_sundials_collect
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy
-      ${_suitesparse_ep_build}/libklu.a
-      ${_suitesparse_ep_build}/libamd.a
-      ${_suitesparse_ep_build}/libcolamd.a
-      ${_suitesparse_ep_build}/libbtf.a
-      ${_suitesparse_ep_build}/libsuitesparseconfig.a
+      ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/AMD/libamd.a
+      ${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      ${_suitesparse_ep_build}/BTF/libbtf.a
+      ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
       ${_sundials_ep_build}/src/ida/libsundials_ida.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
