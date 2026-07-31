@@ -334,9 +334,17 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   ExternalProject_Add(rust_suitesparse_wasm
     SOURCE_DIR ${_suitesparse_sources}
     BINARY_DIR ${_suitesparse_ep_build}
+    LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
       -DBUILD_SHARED_LIBS=OFF
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_USE_FORTRAN=OFF
+      -DSUITESPARSE_USE_OPENMP=OFF
+      -DSUITESPARSE_USE_CUDA=OFF
+      -DSUITESPARSE_DEMOS=OFF
+      -DSUITESPARSE_USE_STRICT=OFF
+      -DKLU_USE_CHOLMOD=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
       --target klu amd colamd btf suitesparseconfig
     INSTALL_COMMAND ""
