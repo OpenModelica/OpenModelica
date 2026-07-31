@@ -311,7 +311,7 @@ option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse so
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
-  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1)
+  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
@@ -334,11 +334,19 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   ExternalProject_Add(rust_suitesparse_wasm
     SOURCE_DIR ${_suitesparse_sources}
     BINARY_DIR ${_suitesparse_ep_build}
+    LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
       -DBUILD_SHARED_LIBS=OFF
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_USE_FORTRAN=OFF
+      -DSUITESPARSE_USE_OPENMP=OFF
+      -DSUITESPARSE_USE_CUDA=OFF
+      -DSUITESPARSE_DEMOS=OFF
+      -DSUITESPARSE_USE_STRICT=OFF
+      -DKLU_USE_CHOLMOD=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target klu amd colamd btf suitesparseconfig
+      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -360,11 +368,11 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUNDIALS_KLU_ENABLE=ON
       -DSUNDIALS_INDEX_SIZE=32
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
-      -DKLU_LIBRARY=${_suitesparse_ep_build}/libklu.a
-      -DAMD_LIBRARY=${_suitesparse_ep_build}/libamd.a
-      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/libcolamd.a
-      -DBTF_LIBRARY=${_suitesparse_ep_build}/libbtf.a
-      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/libsuitesparseconfig.a
+      -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
+      -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
+      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      -DBTF_LIBRARY=${_suitesparse_ep_build}/BTF/libbtf.a
+      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
       sundials_kinsol_static sundials_ida_static sundials_cvode_static
@@ -380,11 +388,11 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   add_custom_target(rust_sundials_collect
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy
-      ${_suitesparse_ep_build}/libklu.a
-      ${_suitesparse_ep_build}/libamd.a
-      ${_suitesparse_ep_build}/libcolamd.a
-      ${_suitesparse_ep_build}/libbtf.a
-      ${_suitesparse_ep_build}/libsuitesparseconfig.a
+      ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/AMD/libamd.a
+      ${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      ${_suitesparse_ep_build}/BTF/libbtf.a
+      ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
       ${_sundials_ep_build}/src/ida/libsundials_ida.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
@@ -470,7 +478,7 @@ endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
