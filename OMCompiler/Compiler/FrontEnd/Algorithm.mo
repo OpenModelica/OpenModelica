@@ -683,17 +683,17 @@ algorithm
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts)
       algorithm
         isArray := Types.isNonscalarArray(t, dims);
-      then DAE.STMT_FOR(t, isArray, i, e, stmts, source);
+      then DAE.STMT_FOR(t, isArray, i, e, stmts, source, {});
 
     case (i, e, DAE.PROP(type_ = DAE.T_METALIST(ty = t)), stmts)
       algorithm
         t := Types.simplifyType(t);
-      then DAE.STMT_FOR(t, false, i, e, stmts, source);
+      then DAE.STMT_FOR(t, false, i, e, stmts, source, {});
 
     case (i, e, DAE.PROP(type_ = DAE.T_METAARRAY(ty = t)), stmts)
       algorithm
         t := Types.simplifyType(t);
-      then DAE.STMT_FOR(t, false, i, e, stmts, source);
+      then DAE.STMT_FOR(t, false, i, e, stmts, source, {});
 
     case (_, e, DAE.PROP(type_ = t), _)
       algorithm

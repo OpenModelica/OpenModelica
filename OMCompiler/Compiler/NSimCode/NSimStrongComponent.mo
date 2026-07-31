@@ -123,7 +123,7 @@ public
       end for;"
       Integer index;
       Integer res_index;
-      list<tuple<ComponentRef, Expression>> iterators;
+      list<SimIterator> iterators;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -134,7 +134,7 @@ public
       Integer index;
       Integer res_index;
       list<Integer> scal_indices;
-      list<tuple<ComponentRef, Expression>> iterators;
+      list<SimIterator> iterators;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -284,14 +284,8 @@ public
     end toString;
 
     function forTplStr
-      input tuple<ComponentRef, Expression> tpl;
-      output String str;
-    protected
-      ComponentRef name;
-      Expression range;
-    algorithm
-      (name, range) := tpl;
-      str := ComponentRef.toString(name) + " in " + Expression.toString(range);
+      input SimIterator iter;
+      output String str = SimIterator.toString(iter);
     end forTplStr;
 
     function ifTplStr
@@ -807,8 +801,6 @@ public
           Block tmp;
           Integer i;
           list<Subscript> subs;
-          list<ComponentRef> names;
-          list<Expression> ranges;
 
         case (BEquation.SCALAR_EQUATION(), {}) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
@@ -847,16 +839,14 @@ public
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
-          (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, SimIterator.fromIterator(eqn.iter), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
-          (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, SimIterator.fromIterator(eqn.iter), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
         then tmp;
@@ -1115,27 +1105,15 @@ public
     algorithm
       oldBlck := match blck
         local
-          ComponentRef iter;
-          Expression range, exp;
-          list<tuple<DAE.ComponentRef, DAE.Exp>> old_iterators = {};
+          Expression exp;
           list<Block> blcks;
           list<tuple<DAE.Exp, list<OldSimCode.SimEqSystem>>> oldBranches = {};
           list<OldSimCode.SimEqSystem> else_branch = {};
 
         case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case FOR_RESIDUAL() algorithm
-          for iterator in listReverse(blck.iterators) loop
-            (iter, range) := iterator;
-            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
-          end for;
-        then OldSimCode.SES_FOR_RESIDUAL(blck.index, blck.res_index, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case GENERIC_RESIDUAL() algorithm
-          for iterator in listReverse(blck.iterators) loop
-            (iter, range) := iterator;
-            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
-          end for;
-        then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case FOR_RESIDUAL() then OldSimCode.SES_FOR_RESIDUAL(blck.index, blck.res_index, list(SimIterator.convert(it) for it in blck.iterators), Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case GENERIC_RESIDUAL() then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, list(SimIterator.convert(it) for it in blck.iterators), Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case RESIZABLE_ASSIGN() then OldSimCode.SES_RESIZABLE_ASSIGN(blck.index, blck.call_index, list(SimIterator.convert(it) for it in blck.iters), blck.source, EquationAttributes.convert(blck.attr));

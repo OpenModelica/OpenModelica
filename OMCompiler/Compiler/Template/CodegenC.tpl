@@ -3175,18 +3175,23 @@ match system
           case SES_RESIDUAL(__) then equationResidual(exp, varDecls, innerEqns, index, res_index)
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
+            let &auxFunction = buffer ""
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-            let forPart = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
-                  let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
-                  <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
+            let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
+                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                  let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                  let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                  let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+                  <<for(int <%iter_%>=<%start_%>; <%iter_%><=<%stop_%>; <%iter_%>+=<%step_%>){
+                  <%sub_iter_%>
+                  >>
                 ;separator="\n")
             let endForPart = (iterators |> iterator => "}")
-            let indexShift = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
-                  let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                  '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
+            let indexShift = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
+                  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+                  let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                  '<%iter_%>-<%start_%>'
                 ;separator="+")
             let assignment = (if isArrayType(typeof(exp))
               then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
@@ -3200,18 +3205,21 @@ match system
             >>
           case SES_GENERIC_RESIDUAL(__) then
             let &preExp = buffer ""
+            let &auxFunction = buffer ""
             let idx_len = listLength(scal_indices)
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-            let iter_ = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
-                let iter = daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let stop = daeExp(range.stop, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
-                let step = match range.step case SOME(step) then daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns) else "1"
+            let iter_ = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
+                let iter = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+                let start_ = daeExp(start, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                let stop_ = daeExp(stop, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+                let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
                 <<
-                const int <%iter%>_size = <%stop%> - <%start%> / <%step%> + 1;
+                const int <%iter%>_size = <%stop_%> - <%start_%> / <%step_%> + 1;
                 int <%iter%>_loc = tmp % <%iter%>_size;
-                int <%iter%> = <%step%> * <%iter%>_loc + <%start%>;
+                int <%iter%> = <%step_%> * <%iter%>_loc + <%start_%>;
                 tmp /= <%iter%>_size;
+                <%sub_iter_%>
                 >>;separator="\n")
             let assignment = (if isArrayType(typeof(exp))
               then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
@@ -3296,7 +3304,7 @@ template generateResizableEmptySparseData(String indexName, String systemType)
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   <<
-  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+  void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
   {
     /* no sparsity pattern available */
     inSysData->sparsePattern = NULL;
@@ -3312,7 +3320,7 @@ match sparsity
   case EMPTY() then
     <<
 
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
     {
       inSysData->sparsePattern = NULL;
     }
@@ -3327,7 +3335,7 @@ match sparsity
     <<
 
     OMC_DISABLE_OPT
-    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData)
+    void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData)
     {
       unsigned int i, nnz;
       unsigned int col_counts[<%nCols%>];
@@ -3507,7 +3515,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
 
   ;separator="\n")
   let sparsityInitCall = if useResizableSparsity
-    then 'initializeResizableSparsityPattern<%indexName%>(sysData);'
+    then 'initializeResizableSparsityPattern<%indexName%>(sysData, threadData);'
     else 'initializeSparsePattern<%indexName%>(sysData);'
   <<
 
@@ -6012,6 +6020,27 @@ match row
           else depsCodeReduced
         else
           match listReverse(crefSubs(sc))
+          case WHOLEDIM() :: {WHOLEDIM()} then
+            // 2D array sc, both dims whole: must match the fill template which generates two nested loops.
+            match context
+            case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+              match simVarFromHT(crefStripSubs(sc), jacHT)
+              case SIMVAR() then
+                let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+                <<
+                {
+                  unsigned int _wo<%k%>;
+                  for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                    unsigned int _wr<%k%>;
+                    for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                      <%depsCodeReduced%>
+                    }
+                  }
+                }
+                >>
+              else depsCodeReduced
+            else depsCodeReduced
           case WHOLEDIM() :: _ then
             match context
             case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
@@ -6097,26 +6126,118 @@ template resizableColCount(ComponentRef seed, Context context, Text &preExp, Tex
             }
           }
           >>
+        case SLICE(exp=outerSliceExp) :: {WHOLEDIM()} then
+          // outer SLICE (e.g. module[1:9]) + inner WHOLEDIM (fillSubscripts added [:] for array field)
+          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          <%seedComment%>
+          {
+            unsigned int _so<%v.index%>;
+            for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
+              unsigned int _wo<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
+                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++;
+              }
+            }
+          }
+          >>
+        case WHOLEDIM() :: {WHOLEDIM()} then
+          // 2D array, both dims whole (e.g. module[:].T[:])
+          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          <%seedComment%>
+          {
+            unsigned int _wo2<%v.index%>;
+            for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
+                col_counts[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++;
+              }
+            }
+          }
+          >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
             let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
             <<
             <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                <%outerPreExp%>
                 col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++;
               }
             }
             >>
-          else
-            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+          case SLICE(exp=sliceExp) :: outer_rev_subs then
+            // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &outerPreExp = buffer ""
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
             <<
             <%seedComment%>
+            {
+              unsigned int _sc<%v.index%>;
+              for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+                <%outerPreExp%>
+                col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+              }
+            }
+            >>
+          case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
+            // reversed [INDEX, WHOLEDIM] = original [WHOLEDIM, INDEX]: outer WHOLE, inner fixed INDEX
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &innerPreExp = buffer ""
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wo<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
+                <%innerPreExp%>
+                col_counts[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+              }
+            }
+            >>
+          case INDEX(exp=innerIndexExp) :: {SLICE(exp=outerSliceExp)} then
+            // reversed [INDEX, SLICE] = original [SLICE, INDEX]: outer SLICE range, inner fixed INDEX
+            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &innerPreExp = buffer ""
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _so<%v.index%>;
+              for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
+                <%innerPreExp%>
+                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+              }
+            }
+            >>
+          else
+            let &offsetPreExp = buffer ""
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            <%offsetPreExp%>
             col_counts[<%v.index%> + (<%offset%>)]++;
             >>
     else '/* resizableColCount: seed not found in jacHT */'
@@ -6217,21 +6338,91 @@ match row
         else ''
       else
         match listReverse(crefSubs(sc))
+        case WHOLEDIM() :: {WHOLEDIM()} then
+          // 2D array sc, both dims whole (e.g. module[:].T[:])
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _wo<%k%>;
+                for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                  unsigned int _wr<%k%>;
+                  for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%szInner%>); _wr<%k%>++) {
+                    unsigned int row_<%k%> = <%v.index%> + _wo<%k%> * (unsigned int)(<%szInner%>) + _wr<%k%>;
+                    <%depsWholeReduced%>
+                  }
+                }
+              }
+              >>
+            else ''
+          else ''
         case WHOLEDIM() :: outer_rev_subs then
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case v as SIMVAR() then
               let sz = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let &outerPreExp = buffer ""
               let outer_off = match outer_rev_subs
                 case {} then '0'
-                else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+                else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(sc)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
               <<
               {
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
+                  <%outerPreExp%>
                   unsigned int row_<%k%> = <%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wr<%k%>;
                   <%depsWholeDep%>
+                }
+              }
+              >>
+            else ''
+          else ''
+        case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
+          // reversed [INDEX, WHOLEDIM] = original [WHOLEDIM, INDEX]: outer WHOLE, inner fixed INDEX
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let szOuter = dimension(listHead(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let &innerPreExp = buffer ""
+              let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _wo<%k%>;
+                for (_wo<%k%> = 0; _wo<%k%> < (unsigned int)(<%szOuter%>); _wo<%k%>++) {
+                  <%innerPreExp%>
+                  unsigned int row_<%k%> = <%v.index%> + _wo<%k%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1);
+                  <%depsWholeReduced%>
+                }
+              }
+              >>
+            else ''
+          else ''
+        case INDEX(exp=innerIndexExp) :: {SLICE(exp=outerSliceExp)} then
+          // reversed [INDEX, SLICE] = original [SLICE, INDEX]: outer SLICE range, inner fixed INDEX
+          match context
+          case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+            match simVarFromHT(crefStripSubs(sc), jacHT)
+            case v as SIMVAR() then
+              let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
+              let nSlice = tempDecl("modelica_integer", &varDecls)
+              let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+              let szInner = dimension(List.last(crefDims(sc)), context, &preExp, &varDecls, &auxFunction)
+              let &innerPreExp = buffer ""
+              let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+              <<
+              {
+                unsigned int _so<%k%>;
+                for (_so<%k%> = 0; _so<%k%> < (unsigned int)(<%nSlice%>); _so<%k%>++) {
+                  <%innerPreExp%>
+                  unsigned int row_<%k%> = <%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%k%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1);
+                  <%depsWholeReduced%>
                 }
               }
               >>
@@ -6242,8 +6433,13 @@ match row
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
             case v as SIMVAR() then
-              let off_sc = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &preExp, &varDecls, &auxFunction)
-              (deps |> (seed, _, _) => resizableColFill(seed, '<%v.index%> + (<%off_sc%>)', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+              let &offPreExp = buffer ""
+              let off_sc = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offPreExp, &varDecls, &auxFunction)
+              let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, '<%v.index%> + (<%off_sc%>)', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+              <<
+              <%offPreExp%>
+              <%fillCode%>
+              >>
             else ''
           else ''
 end resizableFillDepsForRow;
@@ -6305,26 +6501,118 @@ template resizableColFill(ComponentRef seed, String rowExpr, Context context, Te
             }
           }
           >>
+        case SLICE(exp=outerSliceExp) :: {WHOLEDIM()} then
+          // outer SLICE (e.g. module[1:9]) + inner WHOLEDIM (fillSubscripts added [:] for array field)
+          let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
+          let nSlice = tempDecl("modelica_integer", &varDecls)
+          let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+          let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          <%seedComment%>
+          {
+            unsigned int _so<%v.index%>;
+            for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
+              unsigned int _wo<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+          }
+          >>
+        case WHOLEDIM() :: {WHOLEDIM()} then
+          // 2D array, both dims whole (e.g. module[:].T[:])
+          let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+          <<
+          <%seedComment%>
+          {
+            unsigned int _wo2<%v.index%>;
+            for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
+              unsigned int _wc<%v.index%>;
+              for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+          }
+          >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
             let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &outerPreExp = buffer ""
             let outer_off = match outer_rev_subs
               case {} then '0'
-              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &preExp, &varDecls, &auxFunction)
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
             <<
             <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
+                <%outerPreExp%>
                 <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++] = <%rowExpr%>;
               }
             }
             >>
-          else
-            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &preExp, &varDecls, &auxFunction)
+          case SLICE(exp=sliceExp) :: outer_rev_subs then
+            // inner SLICE (e.g. module[i].T[1:9]) - outer dims are INDEX subs
+            let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let sz = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &outerPreExp = buffer ""
+            let outer_off = match outer_rev_subs
+              case {} then '0'
+              else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
             <<
             <%seedComment%>
+            {
+              unsigned int _sc<%v.index%>;
+              for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
+                <%outerPreExp%>
+                <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
+              }
+            }
+            >>
+          case INDEX(exp=innerIndexExp) :: {WHOLEDIM()} then
+            // reversed [INDEX, WHOLEDIM] = original [WHOLEDIM, INDEX]: outer WHOLE, inner fixed INDEX
+            let szOuter = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &innerPreExp = buffer ""
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wo<%v.index%>;
+              for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
+                <%innerPreExp%>
+                <%spPattern%>->index[col_fill[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+              }
+            }
+            >>
+          case INDEX(exp=innerIndexExp) :: {SLICE(exp=outerSliceExp)} then
+            // reversed [INDEX, SLICE] = original [SLICE, INDEX]: outer SLICE range, inner fixed INDEX
+            let sliceArr = daeExp(outerSliceExp, context, &preExp, &varDecls, &auxFunction)
+            let nSlice = tempDecl("modelica_integer", &varDecls)
+            let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
+            let szInner = dimension(List.last(crefDims(seed)), context, &preExp, &varDecls, &auxFunction)
+            let &innerPreExp = buffer ""
+            let innerIdx = daeSubscriptExp(innerIndexExp, context, &innerPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _so<%v.index%>;
+              for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
+                <%innerPreExp%>
+                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+              }
+            }
+            >>
+          else
+            let &offsetPreExp = buffer ""
+            let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+            <<
+            <%seedComment%>
+            <%offsetPreExp%>
             <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>;
             >>
     else '/* resizableColFill: seed not found in jacHT */'
@@ -8385,16 +8673,24 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     let start_ = daeExp(start, context, &preExp, &varDecls, &auxFunction)
     let step_ = daeExp(step, context, &preExp, &varDecls, &auxFunction)
     let stop_ = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
+    // sub_iter: dependent iterators whose values are selected by the outer range iterator.
+    // Emit them inside the loop body so expressions referencing them compile correctly.
+    let subIterDecls = (sub_iter |> si => subIterator(si, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
     for(modelica_integer <%iter_%>=<%start_%>; in_range_integer(<%iter_%>, <%start_%>, <%stop_%>); <%iter_%>+=<%step_%>){
+    <%if subIterDecls then subIterDecls%>
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let arr = (lst |> elem => '<%elem%>'; separator=", ")
+    // Pass the 0-based loop counter (iter__=0..N-1) as '<%iter_%>_+1' so subIterator's
+    // name_arr[parent_iter-1] resolves to name_arr[iter__], selecting the right element.
+    let subIterDecls = (sub_iter |> si => subIterator(si, '<%iter_%>_+1', context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
     static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
       modelica_integer <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+    <%if subIterDecls then subIterDecls%>
     >>
 end forIterator;
 
@@ -8421,18 +8717,6 @@ template forIteratorName(SimIterator iter, Context context, Text &preExp, Text &
   case SIM_ITERATOR_LIST() then contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
 end forIteratorName;
 
-template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
-::= match iter
-  case (name, range) then
-    let type_ = 'modelica_<%crefShortType(name)%>'
-    let name_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
-    let size_ = arrayLength(range)
-    <<
-    static const <%type_%> <%name_%>_arr[<%size_%>] = {<%range_%>};
-    <%type_%> <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
-    >>
-end subIterator;
 
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."

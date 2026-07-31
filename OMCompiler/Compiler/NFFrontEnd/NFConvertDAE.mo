@@ -1001,15 +1001,21 @@ protected
   DAE.ElementSource source;
   Statement.ForType for_type;
   list<tuple<DAE.ComponentRef, SourceInfo>> loop_vars;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters_dae;
+  list<tuple<ComponentRef, array<Expression>>> sub_iters;
 algorithm
-  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source, sub_iters = sub_iters) := forStmt;
   dbody := convertStatements(body);
   ty := InstNode.getType(iterator);
+  sub_iters_dae := list(
+    (ComponentRef.toDAE(Util.tuple21(si)),
+     listArray(list(Expression.toDAE(e) for e in arrayList(Util.tuple22(si)))))
+    for si in sub_iters);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()
       then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-        InstNode.name(iterator), Expression.toDAE(range), dbody, source);
+        InstNode.name(iterator), Expression.toDAE(range), dbody, source, sub_iters_dae);
 
     case Statement.ForType.PARALLEL()
       algorithm

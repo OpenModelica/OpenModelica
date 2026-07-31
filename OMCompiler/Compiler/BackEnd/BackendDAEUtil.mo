@@ -2014,6 +2014,7 @@ algorithm
 
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case ({},_) then ({});
 
@@ -2049,11 +2050,11 @@ algorithm
         xs := removeDiscreteAssignments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source)::xs;
 
-    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source))::rest),vars)
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters))::rest),vars)
       algorithm
         stmts := removeDiscreteAssignments(stmts,vars);
         xs := removeDiscreteAssignments(rest,vars);
-      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source)::xs;
+      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source,sub_iters)::xs;
 
     case (((DAE.STMT_WHILE(exp=e,statementLst=stmts, source = source))::rest),vars)
       algorithm

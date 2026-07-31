@@ -525,6 +525,7 @@ algorithm
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,iterIsArray;
       DAE.Else el,el_1;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case {} then ({},false);
     case DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs
@@ -571,7 +572,7 @@ algorithm
         (xs_1,_) := replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=iterIsArray,iter=id1,range=e,statementLst=stmts,source = source)) :: xs
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=iterIsArray,iter=id1,range=e,statementLst=stmts,source = source,sub_iters=sub_iters)) :: xs
       algorithm
         (stmts2,b1) := replaceEquationsStmts(stmts,repl,condExpFunc);
         (e_1,b2) := replaceExp(e, repl, condExpFunc);
@@ -579,7 +580,7 @@ algorithm
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) := replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,iterIsArray,id1,e_1,stmts2,source) :: xs_1,true);
+        (DAE.STMT_FOR(tp,iterIsArray,id1,e_1,stmts2,source,sub_iters) :: xs_1,true);
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs
       algorithm
         (stmts2,b1) := replaceEquationsStmts(stmts,repl,condExpFunc);

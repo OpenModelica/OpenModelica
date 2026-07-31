@@ -4839,6 +4839,7 @@ public
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
       case CALL() then Call.isNonPositive(exp.call);
+      case ARRAY() then Array.all(exp.elements, isNonPositive);
       else false;
     end match;
   end isNonPositive;

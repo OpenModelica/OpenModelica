@@ -661,7 +661,7 @@ end SparsityRow;
     record SES_FOR_RESIDUAL
       Integer index;
       Integer res_index;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -671,7 +671,7 @@ end SparsityRow;
       Integer index;
       Integer res_index;
       list<Integer> scal_indices;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -2722,6 +2722,7 @@ package DAE
       Exp range;
       list<Statement> statementLst;
       ElementSource source;
+      list<tuple<ComponentRef, array<Exp>>> sub_iters;
     end STMT_FOR;
     record STMT_PARFOR
       Type type_;

@@ -1420,7 +1420,7 @@ algorithm
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
+          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source, {})};
         end while;
       then
         Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, NONE(), alg.scope, alg.source); // ToDo: update inputs, outputs?

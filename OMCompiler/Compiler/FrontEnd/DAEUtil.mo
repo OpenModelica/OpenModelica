@@ -4130,6 +4130,7 @@ algorithm
       list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,b;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case (DAE.STMT_ASSIGN(type_ = tp,exp1 = e,exp = e2, source = source), extraArg)
       algorithm
@@ -4164,11 +4165,11 @@ algorithm
         stmts1 := if not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1) then (inStmt::{}) else stmts1;
       then (stmts1,extraArg);
 
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source), extraArg)
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters), extraArg)
       algorithm
         (stmts2, extraArg) := traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) := func(e, extraArg);
-        x := if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source);
+        x := if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source,sub_iters);
       then (x::{},extraArg);
 
     case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source), extraArg)
@@ -4323,6 +4324,7 @@ protected
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
   list<DAE.ComponentRef> conditions;
   Boolean initialCall;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 algorithm
   for stmt in inStmts loop
     outStmts := matchcontinue stmt
@@ -4361,12 +4363,12 @@ algorithm
         then
           List.append_reverse(stmts1, outStmts);
 
-      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)
+      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source, sub_iters=sub_iters)
         algorithm
           (stmts2, extraArg) := traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) := func(e, stmt, extraArg);
         then
-          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source)::outStmts;
+          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source,sub_iters)::outStmts;
 
       case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
         algorithm
