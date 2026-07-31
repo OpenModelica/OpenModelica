@@ -1,0 +1,51 @@
+// name: asymmetric2x2
+// keywords: NewBackend, adjoint Jacobian, bidirectional Jacobian
+// status: correct
+// teardown_command: rm -f asymmetric2x2 asymmetric2x2_* asymmetric2x2.*.c asymmetric2x2.makefile *.log *.mat *.csv
+// cflags: --newBackend --generateDynamicJacobian=bidirectional
+
+loadString("
+model asymmetric2x2
+  Real x(start = 1.0, fixed = true);
+  Real y(start = 1.0, fixed = true);
+equation
+  der(x) = -10.0*x + 1000.0*y;
+  der(y) = -x;
+end asymmetric2x2;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+buildModel(asymmetric2x2); getErrorString();
+
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=dassl -jacobian=coloredSymbolical -r=asymmetric2x2_ref.mat", "reference.log");
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=dassl -jacobian=coloredSymbolicalAdjoint -r=asymmetric2x2_dassl_adj.mat", "dassl_adj.log");
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=ida -idaLS=klu -jacobian=coloredSymbolicalAdjoint -r=asymmetric2x2_ida_adj.mat", "ida_adj.log");
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=dassl -jacobian=bicoloredSymbolical -r=asymmetric2x2_dassl_bi.mat", "dassl_bi.log");
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=ida -idaLS=klu -jacobian=bicoloredSymbolical -r=asymmetric2x2_ida_bi.mat", "ida_bi.log");
+system(realpath(".") + "/asymmetric2x2 -stopTime=0.01 -stepSize=0.001 -tolerance=1e-8 -s=gbode -gbm=esdirk4 -gbnls=internal -jacobian=bicoloredSymbolical -r=asymmetric2x2_gbode_bi.mat", "gbode_bi.log");
+
+diffSimulationResults("asymmetric2x2_dassl_adj.mat", "asymmetric2x2_ref.mat", "dassl_adj.csv", 1e-5);
+diffSimulationResults("asymmetric2x2_ida_adj.mat", "asymmetric2x2_ref.mat", "ida_adj.csv", 1e-5);
+diffSimulationResults("asymmetric2x2_dassl_bi.mat", "asymmetric2x2_ref.mat", "dassl_bi.csv", 1e-5);
+diffSimulationResults("asymmetric2x2_ida_bi.mat", "asymmetric2x2_ref.mat", "ida_bi.csv", 1e-5);
+diffSimulationResults("asymmetric2x2_gbode_bi.mat", "asymmetric2x2_ref.mat", "gbode_bi.csv", 1e-5);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"asymmetric2x2", "asymmetric2x2_init.xml"}
+// ""
+// 0
+// 0
+// 0
+// 0
+// 0
+// 0
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// endResult

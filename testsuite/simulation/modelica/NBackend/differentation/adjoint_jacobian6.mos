@@ -1,0 +1,44 @@
+// name: AdjointJacobian6
+// keywords: NewBackend, adjoint Jacobian
+// status: correct
+// teardown_command: rm -f AdjointJacobian6 AdjointJacobian6_* AdjointJacobian6.*.c AdjointJacobian6.makefile *.log *.mat *.csv
+// cflags: --newBackend --generateDynamicJacobian=bidirectional
+
+loadString("
+model AdjointJacobian6
+  parameter Real Vb = 24;
+  parameter Real L = 1;
+  parameter Real R = 100;
+  parameter Real C = 1e-3;
+  Real V, i_L, i_R, i_C;
+equation
+  V = i_R * R;
+  C * der(V) = i_C;
+  L * der(i_L) = Vb - V;
+  i_L = i_R + i_C;
+end AdjointJacobian6;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+buildModel(AdjointJacobian6); getErrorString();
+
+system(realpath(".") + "/AdjointJacobian6 -stopTime=1e-5 -stepSize=1e-6 -s=dassl -jacobian=coloredSymbolical -r=AdjointJacobian6_ref.mat", "reference.log");
+system(realpath(".") + "/AdjointJacobian6 -stopTime=1e-5 -stepSize=1e-6 -s=dassl -jacobian=coloredSymbolicalAdjoint -r=AdjointJacobian6_dassl_adj.mat", "dassl_adj.log");
+system(realpath(".") + "/AdjointJacobian6 -stopTime=1e-5 -stepSize=1e-6 -s=ida -idaLS=klu -jacobian=coloredSymbolicalAdjoint -r=AdjointJacobian6_ida_adj.mat", "ida_adj.log");
+
+diffSimulationResults("AdjointJacobian6_dassl_adj.mat", "AdjointJacobian6_ref.mat", "dassl_adj.csv", 1e-6);
+diffSimulationResults("AdjointJacobian6_ida_adj.mat", "AdjointJacobian6_ref.mat", "ida_adj.csv", 1e-6);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"AdjointJacobian6", "AdjointJacobian6_init.xml"}
+// ""
+// 0
+// 0
+// 0
+// (true, {})
+// (true, {})
+// endResult
