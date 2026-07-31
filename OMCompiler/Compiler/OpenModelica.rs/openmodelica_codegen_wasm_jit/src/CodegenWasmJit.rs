@@ -188,6 +188,51 @@ fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
     LAST.get_or_init(|| Mutex::new(None))
 }
 
+/// C's `writeOutputVars` (`solver_main.c`): `time=<t>` then `,<name>=<value>` at the
+/// last row, Reals as `%.20g`. An unknown name contributes nothing, as in C.
+fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[String]) -> String {
+    let n_reals = run.n_reals as usize;
+    if n_reals == 0 || run.rows.is_empty() {
+        return String::new();
+    }
+    let last = run.rows.len() - n_reals;
+    let n_real_cols = model.layout.n_reals_row();
+    let g20 = |v: f64| sim_driver::format_g(v, 20);
+    let mut out = format!("time={}", g20(run.rows[last]));
+    for name in names {
+        let mut param_idx = 0usize;
+        for v in &model.result_vars {
+            let hit = v.name == *name;
+            match &v.kind {
+                ResultKind::Column { col, negate } if hit => {
+                    let raw = run.rows[last + *col as usize];
+                    let raw = if *negate { -raw } else { raw };
+                    if *col < n_real_cols {
+                        out.push_str(&format!(",{name}={}", g20(raw)));
+                    } else {
+                        out.push_str(&format!(",{name}={}", raw as i64));
+                    }
+                }
+                ResultKind::Param { off: _, wty, negate } => {
+                    let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
+                    param_idx += 1;
+                    if hit {
+                        let raw = if *negate { -raw } else { raw };
+                        match wty {
+                            WTy::F64 => out.push_str(&format!(",{name}={}", g20(raw))),
+                            _ => out.push_str(&format!(",{name}={}", raw as i64)),
+                        }
+                    }
+                }
+                ResultKind::Const { value } if hit => out.push_str(&format!(",{name}={}", g20(*value))),
+                _ => {}
+            }
+        }
+    }
+    out.push('\n');
+    out
+}
+
 /// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
 /// (reusing the result-var metadata the `.mat` writer uses) and stash it for the
 /// host to read directly.
@@ -375,8 +420,15 @@ fn init_success_line() -> String {
     }
 }
 
+/// A run reports itself through `<prefix>.log` alone, which `simulate` returns as
+/// `messages` — as C's separate simulation executable does. Whatever it left in the
+/// Error buffer would also surface from `getErrorString()`, where C returns "".
+const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
+
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
+    openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
     let (res, init_output, sim_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
+    openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
     // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
     // process console.
@@ -636,6 +688,10 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
             return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)".to_string());
         }
         let run = sim_runtime::run(&model)?;
+        // C's `finishSimulation` prints these ahead of the LOG_STATS block.
+        if !flags.output_vars.is_empty() {
+            extra.push_str(&write_output_vars(&model, &run, &flags.output_vars));
+        }
         if log_stats {
             extra.push_str(&log_stats_block(&run.stats));
         }
@@ -4339,7 +4395,7 @@ fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default });
                 if nnz != 0 {
                     pat_off += 4 * (n + 1 + nnz);
                 }

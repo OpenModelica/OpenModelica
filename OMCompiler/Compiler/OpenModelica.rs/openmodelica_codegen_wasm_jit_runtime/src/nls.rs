@@ -11,7 +11,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use crate::{
     load_f64, load_u32, rt_alloc, rt_free, stat_inc, store_f64, store_u32, STAT_NLS_FAIL,
     STAT_NLS_ACCEPT, STAT_NLS_GUESS_HIT, STAT_NLS_ITER, STAT_NLS_JAC, STAT_NLS_NEWTON_FAIL,
-    STAT_NLS_RES, STAT_NLS_RETRY, STAT_NLS_SOLVE, STAT_NLS_STORE_BACK,
+    STAT_NLS_RES, STAT_NLS_RETRY, STAT_NLS_SOLVE, STAT_NLS_STORE_BACK, STAT_NLS_VARY_START,
 };
 
 /// C's `EVAL_CONTEXT` (`util/context.h`), set by the driver. `updateInitialGuessDB`
@@ -1218,16 +1218,16 @@ fn scaled_sq(n: usize, v: &[f64], res_scaling: &[f64]) -> f64 {
     s
 }
 
-/// C's `newtonAlgorithm` (`nonlinearSolverHomotopy.c`): damped Newton with a
+/// C's `solveHomotopy` entry phase and its `newtonAlgorithm`
+/// (`nonlinearSolverHomotopy.c`): a start point already at tolerance is taken
+/// outright, else the Jacobian formed there feeds a damped Newton with a
 /// Numerical-Recipes cubic line search and two-tier residual-gated convergence.
 /// Analytic Jacobian when `has_jac`, else FD; `x` = guess in / last iterate out.
-/// Returns `(root found, last residual eval was at the returned `x`)`. `f0` is the
-/// residual at the incoming `x` when the caller already has it.
+/// Returns `(root found, last residual eval was at the returned `x`)`.
 fn newton_c(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
-    f0: Option<&[f64]>,
     res_scaling: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -1242,6 +1242,8 @@ fn newton_c(
         e * e
     };
 
+    // C's `xStart`: the retries below vary off this, not off the last varied point.
+    let x_start = x.to_vec();
     let mut xscaling = vec![1.0f64; n];
     for i in 0..n {
         xscaling[i] = nominal[i].abs().max(x[i].abs());
@@ -1255,12 +1257,6 @@ fn newton_c(
     let mut rp = vec![0.0f64; n];
     let mut step = vec![0.0f64; n]; // C's dy0 (the full Newton step −J⁻¹f)
     let mut jac = vec![0.0f64; n * n];
-
-    match f0 {
-        Some(f) => fvec.copy_from_slice(f),
-        None => eval(x, &mut fvec),
-    }
-    let mut error_f_sqrd = nsq(&fvec);
 
     // The Jacobian is w.r.t. *scaled* unknowns: both of C's paths scale column `j` by
     // `xScaling[j]`, and the step is unscaled after the solve. `resScaling` is a row
@@ -1299,10 +1295,42 @@ fn newton_c(
         }
         !attempt_aborted()
     };
-    if !form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
+
+    // C's `tries <= 2` loop: the point is regular only if the residual, the Jacobian
+    // *and* the first linear solve all come through. Otherwise C breaks the symmetry
+    // of the guess by `xScaling[i]·i/n` of 1%, then 10%, before giving up.
+    let mut regular = false;
+    for tries in 0..3 {
+        arm_attempt();
+        eval(x, &mut fvec);
+        if !attempt_aborted() {
+            // A start point already at tolerance is the solution; C forms no Jacobian.
+            // ~40% of calls, nearly all of them an exact time hit whose residual is 0.
+            if nsq(&fvec) < ftol_sq * 1e-4 || scaled_sq(n, &fvec, res_scaling) < ftol_sq * 1e-4 {
+                stat_inc(STAT_NLS_ACCEPT);
+                return (true, true);
+            }
+            if form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
+                row_scaling(n, &jac, res_scaling);
+                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step);
+                if regular {
+                    break;
+                }
+            }
+        }
+        if tries == 2 {
+            break;
+        }
+        stat_inc(STAT_NLS_VARY_START);
+        let vary = if tries == 0 { 0.01 } else { 0.1 };
+        for i in 0..n {
+            x[i] = x_start[i] + xscaling[i] * (i as f64) / (n as f64) * vary;
+        }
+    }
+    if !regular {
         return (false, false);
     }
-    row_scaling(n, &jac, res_scaling);
+    let mut error_f_sqrd = nsq(&fvec);
     let mut error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
 
     let mut iter = 0i32;
@@ -1310,16 +1338,6 @@ fn newton_c(
     let mut small_steps = 0i32;
     loop {
         stat_inc(STAT_NLS_ITER);
-        // Newton step: solve J·d = f in scaled unknowns, unscale (C's
-        // `vecMultScaling`), then step = −d (so x1 = x + step).
-        step.copy_from_slice(&fvec);
-        if !lu_solve(&jac, &mut step, n) {
-            return (false, false);
-        }
-        for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
-            *s = -*s * sc;
-        }
-
         let grad_f = -2.0 * error_f_sqrd;
         let grad_f_scaled = -2.0 * error_f_sqrd_scaled;
 
@@ -1429,7 +1447,44 @@ fn newton_c(
             return (false, false);
         }
         row_scaling(n, &jac, res_scaling);
+        // C's `linearSolverWrapper` at the head of the next iteration: solve J·d = f
+        // in scaled unknowns, unscale, negate so `x1 = x + step`.
+        step.copy_from_slice(&fvec);
+        if !lu_solve(&jac, &mut step, n) {
+            return (false, false);
+        }
+        for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
+            *s = -*s * sc;
+        }
     }
+}
+
+/// The Newton step at the start point; failing it is what makes the point
+/// "irregular". C always runs `solveSystemWithTotalPivotSearch`, but an LU decides
+/// the same way wherever it succeeds (a nonsingular system has one solution) and
+/// skips the O(n²)-per-column pivot search, so the total pivot is kept only for the
+/// rank-deficient-but-consistent case it exists for. Step comes back unscaled.
+fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64]) -> bool {
+    step.copy_from_slice(fvec);
+    if lu_solve(jac, step, n) {
+        for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
+            *s = -*s * sc;
+        }
+        return true;
+    }
+    let mut aug = vec![0.0f64; n * (n + 1)];
+    aug[..n * n].copy_from_slice(jac);
+    aug[n * n..].copy_from_slice(fvec);
+    scale_matrix_rows_aug(n, &mut aug);
+    let mut sol = vec![0.0f64; n + 1];
+    let mut pos = n as i32;
+    if total_pivot_augmented(n, &mut sol, &mut aug, &mut pos) != 0 {
+        return false;
+    }
+    for i in 0..n {
+        step[i] = sol[i] * xscaling[i];
+    }
+    true
 }
 
 // `-nls=newton`: C's `solveNewton` (nonlinearSolverNewton.c) over `_omc_newton`
@@ -1975,6 +2030,7 @@ pub extern "C" fn rt_solve_nls(
     nnz: u32,
     sparse_default: u32,
     lss_handle: u32,
+    eq_index: u32,
 ) -> i32 {
     let n = n as usize;
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -2169,27 +2225,11 @@ pub extern "C" fn rt_solve_nls(
         let start = x.clone();
         let mut converged = false;
         if matches!(pick, Nls::Default | Nls::Mixed) {
-            // `solveHomotopy`'s pre-phase: a start point whose residual is already
-            // tiny is taken outright, forming no Jacobian. ~40% of calls, nearly all
-            // of them an exact time hit whose residual is therefore 0.
-            eval(&x, &mut fvec);
-            let e = enorm(&fvec);
-            let ftol_accept = NEWTON_FTOL * NEWTON_FTOL * 1e-4;
-            converged = e * e < ftol_accept || scaled_sq(n, &fvec, &res_scaling) < ftol_accept;
-            settled = converged;
-            if converged {
-                stat_inc(STAT_NLS_ACCEPT);
-            }
+            (converged, settled) =
+                newton_c(n, &mut x, &nominal, &mut res_scaling, &mut eval, &mut jaceval, has_jac);
             if !converged {
-                let f0 = fvec.clone();
-                (converged, settled) = newton_c(
-                    n, &mut x, &nominal, Some(&f0), &mut res_scaling, &mut eval, &mut jaceval,
-                    has_jac,
-                );
-                if !converged {
-                    stat_inc(STAT_NLS_NEWTON_FAIL);
-                    x.copy_from_slice(&start);
-                }
+                stat_inc(STAT_NLS_NEWTON_FAIL);
+                x.copy_from_slice(&start);
             }
         }
         settled &= converged;
@@ -2218,7 +2258,7 @@ pub extern "C" fn rt_solve_nls(
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
             converged =
-                newton_c(n, &mut x, &nominal, None, &mut res_scaling, &mut eval, &mut jaceval, has_jac).0;
+                newton_c(n, &mut x, &nominal, &mut res_scaling, &mut eval, &mut jaceval, has_jac).0;
         }
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
@@ -2315,9 +2355,14 @@ pub extern "C" fn rt_solve_nls(
             unsafe { store_u32(rel_fresh_addr, 0) };
         }
         eval(&warm, &mut scratch);
-        // The flag names the system (index + 1) so the driver can report which one
-        // failed; `lss_handle` is that index with a tag bit (`nls_lss_handle`).
-        unsafe { store_u32(nls_fail_addr, (lss_handle & 0x7fff_ffff) + 1) };
+        // C's equation index, +1 so nonzero still means "failed". First-writer-wins:
+        // C throws out of the equation list at the first failure, never reporting a
+        // later one.
+        unsafe {
+            if load_u32(nls_fail_addr) == 0 {
+                store_u32(nls_fail_addr, eq_index + 1);
+            }
+        }
         stat_inc(STAT_NLS_FAIL);
         1
     };

@@ -88,6 +88,9 @@ pub struct SimFlags {
     /// `-override=name=value,…` unresolved: mapping a name to its `SimData` slot
     /// needs the model, which only the caller has.
     pub overrides: Vec<(String, f64)>,
+    /// `-output=a,b,c`: variables printed at the stop time (C's
+    /// `outputVariablesAtEnd` / `writeOutputVars`).
+    pub output_vars: Vec<String>,
     /// Flags this runtime does not model, kept so a caller can report them.
     pub unknown: Vec<String>,
     /// The argv this was parsed from, so a host forwards the same bytes rather than
@@ -244,6 +247,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                     }
                 }
             }
+            "output" => f.output_vars = split_top_level(&value(name)?),
             "abortSlowSimulation" => f.abort_slow = true,
             "alarm" => {
                 let secs = value(name)?
@@ -259,6 +263,28 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
         }
     }
     Ok(f)
+}
+
+/// C's `parseVariableStr`: split on commas outside `[...]`, so `x[1,2]` stays one name.
+fn split_top_level(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0i32;
+    let mut cur = String::new();
+    for c in s.chars() {
+        match c {
+            '[' => depth += 1,
+            ']' => depth -= 1,
+            ',' if depth == 0 => {
+                out.push(core::mem::take(&mut cur));
+                continue;
+            }
+            _ => {}
+        }
+        cur.push(c);
+    }
+    out.push(cur);
+    out.retain(|v| !v.is_empty());
+    out
 }
 
 fn bad(flag: &str, got: &str, accepted: &str) -> String {

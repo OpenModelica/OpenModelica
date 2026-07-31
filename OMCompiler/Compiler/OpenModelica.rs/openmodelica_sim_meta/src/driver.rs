@@ -263,11 +263,12 @@ fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 15;
+pub const RT_STATS: usize = 16;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
+    "nls_vary_start",
 ];
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
@@ -603,9 +604,32 @@ fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()>
     let failed = read_i32(e, sim_data + layout.nls_fail_off)?;
     if failed != 0 {
         init_report::set_failed_system(failed - 1);
+        report_nls_failure(e, sim_data, layout);
         return Err("CodegenWasmJit: nonlinear system did not converge");
     }
     Ok(())
+}
+
+/// C's `equationNonlinear` (`CodegenC.tpl`) after a non-converged
+/// `solve_nonlinear_system`. The flag carries `equationIndex + 1`; C's `longjmp` is
+/// the caller's `Err` (or, in an integrator residual, `IRES = -1`).
+fn report_nls_failure(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) {
+    report_nls_failure_at(e, sim_data, layout.nls_fail_off);
+}
+
+fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
+    let failed = read_i32(e, sim_data + nls_fail_off).unwrap_or(0);
+    if failed == 0 {
+        return;
+    }
+    let time = read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
+    log_line(&alloc::format!(
+        "{}Solving non-linear system {} failed at time={}.\n{}For more information please use -lv LOG_NLS.\n",
+        log_prefix("LOG_ASSERT", "debug"),
+        failed - 1,
+        format_g15(time),
+        log_prefix("|", "|"),
+    ));
 }
 
 /// Number of equidistant homotopy steps: C's `init_lambda_steps`, which `-ils`
@@ -884,6 +908,30 @@ fn format_f(v: f64) -> String {
     alloc::format!("{v:.6}")
 }
 
+fn format_g15(v: f64) -> String {
+    format_g(v, 15)
+}
+
+/// C's `%.<p>g`: `p` significant digits, `%e` outside `[1e-4, 10^p)`, trailing
+/// zeros and a bare decimal point trimmed.
+pub fn format_g(v: f64, p: i32) -> String {
+    if !v.is_finite() || v == 0.0 {
+        return alloc::format!("{v}");
+    }
+    let exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
+    let trim = |s: String| -> String {
+        if !s.contains('.') {
+            return s;
+        }
+        s.trim_end_matches('0').trim_end_matches('.').to_string()
+    };
+    if exp < -4 || exp >= p {
+        let m = trim(alloc::format!("{:.*}", (p - 1) as usize, v / libm::pow(10.0, exp as f64)));
+        return alloc::format!("{m}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs());
+    }
+    trim(alloc::format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
+}
+
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
 /// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
 /// block, once per site. Called by the drivers after each accepted output step.
@@ -1154,21 +1202,23 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
 /// Leaves lambda = 1.
 fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     let steps = homotopy_steps();
+    // C runs every step unconditionally and checks the systems once at the end
+    // (`check_nonlinear_solutions`), so a system that misses at lambda = 1/3 and
+    // lands at lambda = 1 is not a failure. A model assert still aborts.
     for step in 0..=steps {
-        let lambda = step as f64 / steps as f64;
-        write_f64(e, sim_data + layout.lambda_off, lambda)?;
+        write_f64(e, sim_data + layout.lambda_off, (step as f64 / steps as f64).min(1.0))?;
         write_i32(e, sim_data + layout.nls_fail_off, 0)?;
         if step == 0 {
             e.call1("functionInitialEquations_lambda0", sim_data)?;
         } else {
             e.call1("functionInitialEquations", sim_data)?;
         }
-        if check_nls(e, sim_data, layout).is_err() {
-            init_report::set_failed_step(step);
-            return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
-        }
     }
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
+    if check_nls(e, sim_data, layout).is_err() {
+        init_report::set_failed_step(steps);
+        return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
+    }
     Ok(())
 }
 
@@ -1698,14 +1748,18 @@ pub fn drive(
     let use_events = layout.n_samples > 0 || layout.n_zc > 0;
     let method = effective_method(method);
 
-    let (rows, label) = if !use_events && method == "euler" && !host_driven {
-        // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
-        set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
-        (run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)?, "euler-wasm")
-    } else {
+    let mut label = "";
+    let outcome = (|| -> Result<Vec<f64>> {
+        if !use_events && method == "euler" && !host_driven {
+            // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
+            label = "euler-wasm";
+            set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
+            return run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats);
+        }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
-        let (mut driver, label) =
+        let (mut driver, l) =
             make_driver(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
+        label = l;
         // Infinite budget runs to completion; the per-step cancel poll still lets a
         // native embedder interrupt. `OMC_WASM_SIM_YIELD_MS` forces a finite budget to
         // self-test yield/resume (must be `.mat`-identical to the un-yielded run).
@@ -1720,10 +1774,10 @@ pub fn drive(
             }
         }
         driver.fill_stats(model, &mut stats);
-        (driver.take_rows(), label)
-    };
-    stats.method = label;
+        Ok(driver.take_rows())
+    })();
     let _ = bench;
+    // Before `outcome?`: a failed run is when the counters matter most.
     #[cfg(feature = "std")]
     if bench {
         eprintln!(
@@ -1737,6 +1791,8 @@ pub fn drive(
             eprintln!("wasm-jit sim [{label}]: {}", line.join(" "));
         }
     }
+    let rows = outcome?;
+    stats.method = label;
 
     let params = finalize_run(e, model, sim_data)?;
     Ok((RunResult { rows, n_reals, params, stats }, label))
@@ -2030,6 +2086,7 @@ unsafe fn dassl_res(
             // A nonlinear system did not converge: recoverable — ask DASKR to
             // retry at a smaller step (the guess was restored by the codegen).
             if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
+                report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
                 unsafe { *ires = -1 };
             }
         }
@@ -3697,7 +3754,13 @@ unsafe extern "C" fn cvode_rhs(
             ctx.err = Some(err);
             -1
         }
-        Ok(()) => i32::from(read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0),
+        Ok(()) => {
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) == 0 {
+                return 0;
+            }
+            report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+            1
+        }
     }
 }
 
