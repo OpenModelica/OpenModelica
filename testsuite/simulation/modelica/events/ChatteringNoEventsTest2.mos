@@ -1,7 +1,7 @@
 // name:     ChatteringNoEvents2
 // keywords: EventHandling, Chattering
 // status: correct
-// teardown_command: rm -rf ChatteringNoEventsTest2* output.log
+// teardown_command: rm -rf Chattering.ChatteringNoEvents2* output.log
 // cflags: -d=-newInst
 // 
 //  Simulate model containing EventIterations

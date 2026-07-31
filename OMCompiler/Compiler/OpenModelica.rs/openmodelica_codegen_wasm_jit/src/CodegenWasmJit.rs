@@ -2527,7 +2527,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_patterns) =
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) =
         collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs], &nls_nominal_map);
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
@@ -2919,7 +2919,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
         if let Some((fn_indices, _)) = &nls_wiring {
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_patterns);
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_bounds, &nls_patterns);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -3027,9 +3027,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     if start_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
         // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
-        // NLS_NOMINAL_GLOBAL (nominal block base) and NLS_PAT_GLOBAL (sparse-pattern
-        // block base) when the model has nonlinear systems, then the closure-thunk
-        // table base; all set by `start`.
+        // NLS_NOMINAL_GLOBAL (nominal block base), NLS_PAT_GLOBAL (sparse-pattern
+        // block base) and NLS_BOUNDS_GLOBAL (min/max block base) when the model has
+        // nonlinear systems, then the closure-thunk table base; all set by `start`.
         let n_globals = if thunk_indices.is_empty() { closure_global } else { closure_global + 1 };
         for _ in 0..n_globals {
             globals.global(
@@ -4293,8 +4293,8 @@ fn nls_parts(
 /// threaded to the equation lowering via `SimVarMap`/`SimCtx`.
 fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
-    nominal_of: &HashMap<String, f64>,
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<i32>) {
+    nominal_of: &HashMap<String, (f64, f64, f64)>,
+) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
@@ -4307,6 +4307,8 @@ fn collect_nls_jobs(
     // Concatenated nominal values, in system order; the module `start` writes them
     // into the nominal block, and each job's `nominal_off` indexes into it.
     let mut nominals: Vec<f64> = Vec::new();
+    // `min`/`max` pairs alongside them, in the same order.
+    let mut bounds: Vec<f64> = Vec::new();
     for list in eq_lists {
         for e in *list {
             if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
@@ -4344,19 +4346,24 @@ fn collect_nls_jobs(
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
-                    let nom = sim_cref_key(cr).ok().and_then(|k| nominal_of.get(&k).copied()).unwrap_or(1.0);
+                    let (nom, lo, hi) = sim_cref_key(cr)
+                        .ok()
+                        .and_then(|k| nominal_of.get(&k).copied())
+                        .unwrap_or((1.0, f64::NEG_INFINITY, f64::INFINITY));
                     nominals.push(nom);
+                    bounds.push(lo);
+                    bounds.push(hi);
                 }
                 systems.push(nlSystem.clone());
             }
         }
     }
-    (systems, jobs, hist_off, nominals, patterns)
+    (systems, jobs, hist_off, nominals, bounds, patterns)
 }
 
-/// Map each scalar real variable's cref key to its nominal attribute, defaulting to
-/// 1.0 when unset or non-constant. Feeds the NLS x-scaling nominal block.
-fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, f64> {
+/// Map each scalar real variable's cref key to its `(nominal, min, max)` attributes,
+/// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
+fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
     let mut map = HashMap::new();
     let all = lst(&vars.stateVars)
         .chain(lst(&vars.algVars))
@@ -4366,7 +4373,9 @@ fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, f64> {
     for sv in all {
         if let Ok(key) = sim_cref_key(&sv.name) {
             let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
-            map.entry(key).or_insert(nom);
+            let lo = const_value(&sv.minValue).unwrap_or(f64::NEG_INFINITY);
+            let hi = const_value(&sv.maxValue).unwrap_or(f64::INFINITY);
+            map.entry(key).or_insert((nom, lo, hi));
         }
     }
     map
@@ -4898,10 +4907,11 @@ fn emit_nls_start(
     fn_indices: &[(u32, u32, Option<u32>)],
     hist_bytes: u32,
     nominals: &[f64],
+    bounds: &[f64],
     patterns: &[i32],
 ) {
     use we::Instruction as I;
-    use crate::CodegenWasmJitFunctions::{NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
+    use crate::CodegenWasmJitFunctions::{NLS_BOUNDS_GLOBAL, NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
         f.instruction(&I::I32Const(hist_bytes as i32));
@@ -4917,6 +4927,17 @@ fn emit_nls_start(
         for (i, nom) in nominals.iter().enumerate() {
             f.instruction(&I::GlobalGet(NLS_NOMINAL_GLOBAL));
             f.instruction(&I::F64Const((*nom).into()));
+            f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
+        }
+    }
+    // bounds block: the `min`/`max` pair per iteration variable, same order.
+    if !bounds.is_empty() {
+        f.instruction(&I::I32Const((bounds.len() * 8) as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
+        f.instruction(&I::GlobalSet(NLS_BOUNDS_GLOBAL));
+        for (i, v) in bounds.iter().enumerate() {
+            f.instruction(&I::GlobalGet(NLS_BOUNDS_GLOBAL));
+            f.instruction(&I::F64Const((*v).into()));
             f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
         }
     }

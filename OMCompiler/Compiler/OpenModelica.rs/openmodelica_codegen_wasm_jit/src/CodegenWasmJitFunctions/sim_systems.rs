@@ -1459,9 +1459,12 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
-    // nominal block address (x-scaling).
+    // nominal block address (x-scaling), and the matching min/max pairs.
     ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
     ctx.emit(I::I32Const(job.nominal_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
+    ctx.emit(I::I32Const(2 * job.nominal_off as i32));
     ctx.emit(I::I32Add);
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {

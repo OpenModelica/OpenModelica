@@ -44,10 +44,50 @@ fn context_stores_guess() -> bool {
 /// trapping; `eval` then turns that trial into a huge residual so the solver backs off.
 static NLS_DEPTH: AtomicU32 = AtomicU32::new(0);
 static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
+/// Outcome of the last *completed* evaluation, read after `eval` returns.
+static NLS_EVAL_HIT: AtomicU32 = AtomicU32::new(0);
+/// C's `assertCalled`, sticky over one solver attempt.
+static NLS_ASSERT_SEEN: AtomicU32 = AtomicU32::new(0);
+
+/// The residual a rejected trial reports; [`newton_c`] damps its step on it.
+const ASSERT_RESIDUAL: f64 = 1e60;
 
 /// Whether the last residual evaluation hit a recoverable model assert.
 pub(crate) fn assert_hit() -> bool {
-    NLS_ASSERT_HIT.load(Ordering::Relaxed) != 0
+    NLS_EVAL_HIT.load(Ordering::Relaxed) != 0
+}
+
+/// Take over the hit flag: a residual routinely runs a nested `rt_solve_nls`, whose
+/// evaluations must not consume the enclosing one's.
+fn enter_eval() -> u32 {
+    NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+    NLS_ASSERT_HIT.swap(0, Ordering::Relaxed)
+}
+
+/// Restore the enclosing evaluation's flag; reports this one's hit.
+fn leave_eval(saved: u32) -> bool {
+    NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
+    let hit = NLS_ASSERT_HIT.swap(saved, Ordering::Relaxed) != 0;
+    note_eval_hit(hit);
+    hit
+}
+
+fn note_eval_hit(hit: bool) {
+    NLS_EVAL_HIT.store(hit as u32, Ordering::Relaxed);
+    if hit {
+        NLS_ASSERT_SEEN.store(1, Ordering::Relaxed);
+    }
+}
+
+/// Open C's `MMC_TRY_INTERNAL` around one solver attempt.
+fn arm_attempt() {
+    NLS_ASSERT_SEEN.store(0, Ordering::Relaxed);
+}
+
+/// The `abort` MINPACK polls. Without it the dogleg grinds against
+/// [`ASSERT_RESIDUAL`] to `maxfev`, where C's `longjmp` leaves at once.
+fn attempt_aborted() -> bool {
+    NLS_ASSERT_SEEN.load(Ordering::Relaxed) != 0
 }
 
 /// Model side (emitted by `emit_assert`): is a failed assert currently recoverable
@@ -92,10 +132,9 @@ fn make_assemble(
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
         }
-        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+        let saved = enter_eval();
         jacf(sim_data, x_ptr, val_ptr);
-        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+        leave_eval(saved);
         match &gather {
             Some(pat) => {
                 for c in 0..n {
@@ -847,7 +886,9 @@ fn hybrd_scaled(
         }
         eval(&real, r);
     };
-    let status = minpack::hybrd(&mut seval, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
+    arm_attempt();
+    let mut hooks = minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None };
+    let status = minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
     drop(seval);
     for i in 0..n {
         x[i] *= scale[i];
@@ -862,32 +903,17 @@ fn nls_accept(status: minpack::Status, fvec: &[f64]) -> bool {
     status == minpack::Status::Converged || enorm(fvec) <= 1.0e-12
 }
 
-/// Residual-scaled norm (C's `xerror_scaled`): divide each residual by the row max
-/// of an FD Jacobian at `x`, then take the 2-norm. Lets a solver accept a stalled
-/// iterate whose residual is negligible relative to the system's own magnitudes.
-fn scaled_res_norm(
-    n: usize,
-    x: &[f64],
-    fvec: &[f64],
-    eval: &mut dyn FnMut(&[f64], &mut [f64]),
-) -> f64 {
-    let mut xw = x.to_vec();
-    let mut rp = vec![0.0f64; n];
+/// C's `xerror_scaled`: `‖fvec / resScaling‖` over the Jacobian `hybrd` last formed.
+/// C reads `fjacobian[i*n + j]` for the whole slice `j`, so `resScaling[i]` is the max
+/// of *column* `i`, not of residual `i`'s row.
+fn scaled_res_norm(n: usize, fvec: &[f64], fjac: &[f64]) -> f64 {
     let mut scaled = vec![0.0f64; n];
     for i in 0..n {
-        let mut row = 1e-16f64;
-        for j in 0..n {
-            let h = SQRT_EPS * (x[j].abs() + 1.0);
-            let saved = xw[j];
-            xw[j] = saved + h;
-            eval(&xw, &mut rp);
-            xw[j] = saved;
-            let d = ((rp[i] - fvec[i]) / h).abs();
-            if d > row {
-                row = d;
-            }
+        let mut m = 1e-16f64;
+        for v in &fjac[i * n..(i + 1) * n] {
+            m = m.max(libm::fabs(*v));
         }
-        scaled[i] = fvec[i] / row;
+        scaled[i] = fvec[i] / m;
     }
     enorm(&scaled)
 }
@@ -901,6 +927,7 @@ fn hybrd_c(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
+    bounds: &[f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     const LOCAL_TOL: f64 = 1e-12;
@@ -909,13 +936,17 @@ fn hybrd_c(
     let mut factor = initial_factor;
     let guess = x.to_vec(); // C's nlsxExtrapolation (=start values at init)
     let mut xscale = vec![1.0f64; n];
-    for i in 0..n {
-        xscale[i] = x[i].abs().max(nominal[i]).max(1e-16);
-    }
     let mut use_xscaling = true;
     let mut fvec = vec![0.0f64; n];
+    let mut fjac = vec![0.0f64; n * n];
     let mut retries = 0i32;
+    let mut assert_retries = 0usize;
     loop {
+        // C's "constrain x": no attempt starts outside the declared range.
+        for i in 0..n {
+            x[i] = x[i].max(bounds[2 * i]).min(bounds[2 * i + 1]);
+            xscale[i] = x[i].abs().max(nominal[i]).max(1e-16);
+        }
         let mut xw = vec![0.0f64; n];
         for i in 0..n {
             xw[i] = if use_xscaling { x[i] / xscale[i] } else { x[i] };
@@ -927,20 +958,39 @@ fn hybrd_c(
             }
             eval(&real, r);
         };
-        let status = minpack::hybrd(&mut seval, n, &mut xw, &mut fvec, 1e-12, maxfev, 1e-12, factor);
+        arm_attempt();
+        let mut hooks =
+            minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: Some(&mut fjac) };
+        let status = minpack::hybrd_hooked(
+            &mut seval, &mut hooks, n, &mut xw, &mut fvec, 1e-12, maxfev, 1e-12, factor,
+        );
         drop(seval);
         for i in 0..n {
             x[i] = if use_xscaling { xw[i] * xscale[i] } else { xw[i] };
         }
         let xerror = enorm(&fvec);
-        let xerror_scaled = scaled_res_norm(n, x, &fvec, eval);
+        let xerror_scaled = scaled_res_norm(n, &fvec, &fjac);
         if status == minpack::Status::Converged || xerror <= LOCAL_TOL || xerror_scaled <= LOCAL_TOL {
             return true;
         }
         // C retries on info 4/5 (stall); we also escalate on the trust-region /
         // step-bound terminations, which are the same "no progress" condition here.
         let no_progress = status != minpack::Status::Converged;
-        if no_progress && retries < 3 {
+        // C's `assertRetries` ladder, ahead of the step-bound retries: collapsed
+        // unknowns lifted to nominal, then one variable at a time by 1% of it.
+        if status == minpack::Status::Aborted && assert_retries <= n {
+            x.copy_from_slice(&guess);
+            if assert_retries == 0 {
+                for i in 0..n {
+                    if x[i] == 0.0 {
+                        x[i] = nominal[i];
+                    }
+                }
+            } else {
+                x[assert_retries - 1] += 0.01 * nominal[assert_retries - 1];
+            }
+            assert_retries += 1;
+        } else if no_progress && retries < 3 {
             x.copy_from_slice(&guess);
             factor /= 10.0;
             retries += 1;
@@ -951,10 +1001,9 @@ fn hybrd_c(
             factor = initial_factor;
             retries += 1;
         } else if no_progress && retries < 5 {
+            // C's "try old values as x-Scaling factors"; the constrain-x block above
+            // overwrites them again, in C too, so this is a plain restart.
             x.copy_from_slice(&guess);
-            for i in 0..n {
-                xscale[i] = guess[i].abs().max(nominal[i]).max(1e-16);
-            }
             retries += 1;
         } else if no_progress && retries < 6 {
             x.copy_from_slice(&guess);
@@ -1006,7 +1055,10 @@ fn hybrj_scaled(
             }
         }
     };
-    let status = minpack::hybrj(&mut seval, &mut sjac, n, x, fvec, 1e-12, maxfev, 100.0);
+    arm_attempt();
+    let mut hooks = minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None };
+    let status =
+        minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
     drop(seval);
     drop(sjac);
     for i in 0..n {
@@ -1217,10 +1269,14 @@ fn newton_c(
     //
     // The first one comes from C's `solveHomotopy` pre-phase and the loop re-forms it
     // at its *bottom*, so the iteration that converges never pays for a Jacobian.
+    //
+    // False when an assert fired while forming it: C ends the solve there rather
+    // than stepping on a poisoned matrix.
     let form_jac = |x: &mut [f64], fvec: &[f64], jac: &mut [f64], rp: &mut [f64],
                     xscaling: &[f64],
                     eval: &mut dyn FnMut(&[f64], &mut [f64]),
                     jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
+        arm_attempt();
         if has_jac {
             jaceval(x, jac);
             for col in 0..n {
@@ -1241,8 +1297,11 @@ fn newton_c(
                 x[col] = saved;
             }
         }
+        !attempt_aborted()
     };
-    form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval);
+    if !form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
+        return (false, false);
+    }
     row_scaling(n, &jac, res_scaling);
     let mut error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
 
@@ -1366,7 +1425,9 @@ fn newton_c(
         }
 
         x.copy_from_slice(&x1);
-        form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval);
+        if !form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
+            return (false, false);
+        }
         row_scaling(n, &jac, res_scaling);
     }
 }
@@ -1905,6 +1966,7 @@ pub extern "C" fn rt_solve_nls(
     time: f64,
     rel_fresh_addr: u32,
     nominal_addr: u32,
+    bounds_addr: u32,
     jac_idx: u32,
     rel_addr: u32,
     n_rel: u32,
@@ -1919,6 +1981,9 @@ pub extern "C" fn rt_solve_nls(
     // is smooth; mode 2 (init) is fresh throughout; mode 1 (event) re-solves with
     // fresh relations until the discrete state stabilizes (mixed-system iteration).
     let saved_rel_fresh = unsafe { load_u32(rel_fresh_addr) };
+    // A nested solve (a medium inversion inside a flow residual) must not end the
+    // enclosing attempt.
+    let saved_assert_seen = NLS_ASSERT_SEEN.swap(0, Ordering::Relaxed);
     // Scratch buffers in the shared linear memory so the model callbacks (which
     // take wasm pointers) can read `x` / write `r`.
     let x_ptr = rt_alloc((n * 8) as u32);
@@ -1936,10 +2001,15 @@ pub extern "C" fn rt_solve_nls(
         warm[i] = unsafe { load_f64(x_ptr + (i * 8) as u32) };
     }
 
-    // Per-variable nominal values for x-scaling.
+    // Per-variable nominal values for x-scaling, and the min/max the solver holds
+    // its restart points inside (C's `solveHybrd` "constrain x").
     let mut nominal = vec![0.0f64; n];
     for i in 0..n {
         nominal[i] = unsafe { load_f64(nominal_addr + (i * 8) as u32) };
+    }
+    let mut bounds = vec![0.0f64; 2 * n];
+    for i in 0..2 * n {
+        bounds[i] = unsafe { load_f64(bounds_addr + (i * 8) as u32) };
     }
 
     stat_inc(STAT_NLS_SOLVE);
@@ -1949,9 +2019,9 @@ pub extern "C" fn rt_solve_nls(
         // evaluation instead of reaching the model. Feed kinsol the nan residual
         // and its line search takes a nan step length, which no exit test catches.
         if xs.iter().any(|v| !v.is_finite()) {
-            NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
-            for v in r.iter_mut() {
-                *v = 1e60;
+            note_eval_hit(true);
+            for i in 0..n {
+                r[i] = ASSERT_RESIDUAL;
             }
             return;
         }
@@ -1959,15 +2029,13 @@ pub extern "C" fn rt_solve_nls(
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
         }
         // Asserts are recoverable while the residual runs (C's ERROR_NONLINEARSOLVER).
-        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
-        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+        let saved = enter_eval();
         residual(sim_data, x_ptr, r_ptr);
-        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-        if NLS_ASSERT_HIT.load(Ordering::Relaxed) != 0 {
+        if leave_eval(saved) {
             // A model assert failed at this trial (e.g. length < s_small): reject the
             // step with a huge residual so the solver backtracks (C caught the longjmp).
             for i in 0..n {
-                r[i] = 1e60;
+                r[i] = ASSERT_RESIDUAL;
             }
         } else {
             for i in 0..n {
@@ -2005,12 +2073,11 @@ pub extern "C" fn rt_solve_nls(
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
         }
-        // The Jacobian is evaluated at accepted iterates; keep asserts recoverable
-        // here too so a probe never traps, and drop any hit (the residual guards `r`).
-        NLS_DEPTH.fetch_add(1, Ordering::Relaxed);
+        // Keep asserts recoverable here too so a probe never traps. C's
+        // `MMC_TRY_INTERNAL` spans `hybrj_`, so one here ends the attempt.
+        let saved = enter_eval();
         jacf(sim_data, x_ptr, jac_ptr);
-        NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
-        NLS_ASSERT_HIT.store(0, Ordering::Relaxed);
+        leave_eval(saved);
         if scatter {
             fj.fill(0.0);
             for c in 0..n {
@@ -2155,7 +2222,7 @@ pub extern "C" fn rt_solve_nls(
         }
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
-            converged = hybrd_c(n, &mut x, &nominal, &mut eval);
+            converged = hybrd_c(n, &mut x, &nominal, &bounds, &mut eval);
         }
         // Seed collapsed zero unknowns (e.g. the spring-loop s_rel) to nominal, off the
         // degenerate residual plateau, then re-solve — C's "zero start values to nominal".
@@ -2166,7 +2233,7 @@ pub extern "C" fn rt_solve_nls(
                     x[i] = nominal[i];
                 }
             }
-            converged = hybrd_c(n, &mut x, &nominal, &mut eval);
+            converged = hybrd_c(n, &mut x, &nominal, &bounds, &mut eval);
         }
         // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
         if !converged {
@@ -2258,6 +2325,7 @@ pub extern "C" fn rt_solve_nls(
     if saved_rel_fresh != 2 {
         unsafe { store_u32(rel_fresh_addr, saved_rel_fresh) };
     }
+    NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
 
     rt_free(x_ptr);
     rt_free(r_ptr);
