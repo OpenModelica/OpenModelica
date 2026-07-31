@@ -1487,8 +1487,13 @@ function isJacobianResultVar
         // base-ptr cache so each outer element gets its own scalar seed var instead
         // of all elements sharing the first element's seed via the array ptr cache.
         // For non-subscripted crefs, use the cache normally (check first, create if absent).
-        ovar := getVarSeed(old_var_ptr);
-        () := match if ComponentRef.hasSubscripts(original_cref) then NONE() else ovar
+        if ComponentRef.hasSubscripts(original_cref) then
+          ovar := NONE();
+        else
+          ovar := getVarSeed(old_var_ptr);
+        end if;
+
+        () := match ovar
           case SOME(var_ptr) algorithm
             // Cache hit (non-subscripted case only): reuse existing seed
             cref := getVarName(var_ptr);
