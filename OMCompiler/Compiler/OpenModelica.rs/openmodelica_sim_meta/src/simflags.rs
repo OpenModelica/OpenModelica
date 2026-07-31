@@ -79,6 +79,9 @@ pub struct SimFlags {
     /// `-lv` streams, uppercased.
     pub log: Vec<String>,
     pub abort_slow: bool,
+    /// `-ils`: equidistant homotopy steps of the initial solve (C's
+    /// `init_lambda_steps`, default 3).
+    pub init_lambda_steps: Option<i32>,
     /// `-override=name=value,…` unresolved: mapping a name to its `SimData` slot
     /// needs the model, which only the caller has.
     pub overrides: Vec<(String, f64)>,
@@ -234,6 +237,10 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "abortSlowSimulation" => f.abort_slow = true,
+            "ils" => {
+                f.init_lambda_steps =
+                    Some(value(name)?.parse::<i32>().map_err(|_| "-ils needs an integer".to_string())?)
+            }
             _ => f.unknown.push(arg.to_string()),
         }
     }

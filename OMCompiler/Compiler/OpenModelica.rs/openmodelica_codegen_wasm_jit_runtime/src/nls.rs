@@ -64,6 +64,18 @@ pub extern "C" fn rt_nls_note_assert() {
     NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
 }
 
+/// A model error where C's generated code calls `throwStreamPrint` — an invalid
+/// root, a zero divisor, an index out of range. C's `longjmp` lands in the solver's
+/// `MMC_TRY_INTERNAL`, so inside a residual note the trial and let the caller return
+/// a dummy `eval` discards. Outside one the error is fatal.
+pub(crate) fn model_error() {
+    if NLS_DEPTH.load(Ordering::Relaxed) > 0 {
+        rt_nls_note_assert();
+        return;
+    }
+    crate::trap()
+}
+
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
 /// `gather` is the pattern block where `jac` fills a dense `n×n` rather than the CSC
 /// values — a system `-nls=kinsol` solves sparsely though the codegen chose dense.
@@ -2226,7 +2238,9 @@ pub extern "C" fn rt_solve_nls(
             unsafe { store_u32(rel_fresh_addr, 0) };
         }
         eval(&warm, &mut scratch);
-        unsafe { store_u32(nls_fail_addr, 1) };
+        // The flag names the system (index + 1) so the driver can report which one
+        // failed; `lss_handle` is that index with a tag bit (`nls_lss_handle`).
+        unsafe { store_u32(nls_fail_addr, (lss_handle & 0x7fff_ffff) + 1) };
         stat_inc(STAT_NLS_FAIL);
         1
     };

@@ -404,10 +404,17 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        trap();
+        nls::model_error();
+        return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
 }
+
+/// Storage handed out in place of an out-of-range element address, so the
+/// caller's load/store lands somewhere harmless.
+#[repr(align(8))]
+struct ElemDiscard([u8; 8]);
+static mut ELEM_DISCARD: ElemDiscard = ElemDiscard([0; 8]);
 
 /// Byte address of the element at row-major linear position `index` (1-based).
 /// Traps on an out-of-range index (→ META_FAIL), matching the bounds check the
@@ -419,10 +426,18 @@ pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
     stat_inc(STAT_ELEM_PTR);
     let total = rt_array_total(obj) as i32;
     if index < 1 || index > total {
-        trap();
+        return rt_elem_ptr_oob();
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
+}
+
+/// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
+/// address computation the codegen emits.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_elem_ptr_oob() -> u32 {
+    nls::model_error();
+    &raw const ELEM_DISCARD as usize as u32
 }
 
 /// Copy every element of `src` into `dst` starting at the 0-based element
@@ -988,7 +1003,8 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     let neg = n < 0;
     if neg {
         if base == 0.0 {
-            trap();
+            nls::model_error();
+            return 0.0;
         }
         n = -n;
     }
@@ -1051,8 +1067,8 @@ rt_math2!(fmod);
 /// byte-identical. A negative base with an (effectively) integer exponent or an
 /// odd-root fractional exponent gives a real value; any other negative-base
 /// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
-/// All the error cases trap, surfacing as `fail()` (META_FAIL) exactly as the C
-/// `throwStreamPrint` path does in the function-evaluation context.
+/// The error cases go through [`nls::model_error`], as C's `throwStreamPrint`
+/// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
     let result;
@@ -1087,14 +1103,16 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
             if libm::fabs(ifrac) < 1e-10 && ((iint as i64 as u64) & 1) != 0 {
                 result = -libm::pow(-base, frac) * libm::pow(base, int);
             } else {
-                trap();
+                nls::model_error();
+                return 0.0;
             }
         }
     } else {
         result = libm::pow(base, exp);
     }
     if result.is_nan() || result.is_infinite() {
-        trap();
+        nls::model_error();
+        return 0.0;
     }
     result
 }
@@ -1105,7 +1123,8 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_mod_int(x: i32, y: i32) -> i32 {
     if y == 0 {
-        trap();
+        nls::model_error();
+        return 0;
     }
     let r = x.wrapping_rem(y);
     if r != 0 && (r < 0) != (y < 0) { r + y } else { r }
@@ -1340,7 +1359,8 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
         OP_OR => x | y,
         _ => {
             if y == 0 {
-                trap();
+                nls::model_error();
+                return 0;
             }
             x.wrapping_div(y)
         }
