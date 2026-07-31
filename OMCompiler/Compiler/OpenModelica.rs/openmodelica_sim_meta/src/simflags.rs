@@ -79,6 +79,9 @@ pub struct SimFlags {
     /// `-lv` streams, uppercased.
     pub log: Vec<String>,
     pub abort_slow: bool,
+    /// `-alarm`: seconds after which the run is aborted (C's `FLAG_ALARM`, where
+    /// it is a `SIGALRM` on the simulation executable). 0 disables it, as in C.
+    pub alarm: Option<u32>,
     /// `-ils`: equidistant homotopy steps of the initial solve (C's
     /// `init_lambda_steps`, default 3).
     pub init_lambda_steps: Option<i32>,
@@ -129,6 +132,8 @@ pub struct Capabilities {
     pub ida: bool,
     pub cvode: bool,
     pub gbode: bool,
+    /// This runtime has a wall clock, so `-alarm` can be honoured.
+    pub alarm: bool,
 }
 
 /// Reject flag values this runtime cannot honour.
@@ -143,6 +148,9 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
                 return Err(format!("-{flag}=klu: this runtime has no KLU linear solver"));
             }
         }
+    }
+    if f.alarm.is_some() && !cap.alarm {
+        return Err("-alarm: this runtime has no wall clock".to_string());
     }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
@@ -237,6 +245,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "abortSlowSimulation" => f.abort_slow = true,
+            "alarm" => {
+                let secs = value(name)?
+                    .parse::<u32>()
+                    .map_err(|_| "-alarm takes an integer argument".to_string())?;
+                f.alarm = (secs > 0).then_some(secs);
+            }
             "ils" => {
                 f.init_lambda_steps =
                     Some(value(name)?.parse::<i32>().map_err(|_| "-ils needs an integer".to_string())?)
@@ -389,7 +403,7 @@ mod tests {
     }
 
     const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, gbode: false };
+        Capabilities { klu: false, ida: false, cvode: false, gbode: false, alarm: false };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -436,7 +450,7 @@ mod tests {
     // both the parser and the capability check of the build that offered it.
     #[test]
     fn everything_supported_parses_and_checks() {
-        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true }] {
+        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true, alarm: true }] {
             for (flag, values) in supported(cap) {
                 for v in values {
                     let f = parse(&argv(&[&format!("-{flag}={v}")])).expect(&format!("-{flag}={v}"));
@@ -504,6 +518,14 @@ mod tests {
     #[test]
     fn missing_value_is_an_error() {
         assert!(parse(&argv(&["-nls"])).is_err());
+    }
+
+    // C's `-alarm=0` disables the alarm rather than setting a zero-second one.
+    #[test]
+    fn alarm_zero_disables() {
+        assert_eq!(parse(&argv(&["-alarm=30"])).expect("parses").alarm, Some(30));
+        assert_eq!(parse(&argv(&["-alarm=0"])).expect("parses").alarm, None);
+        assert!(parse(&argv(&["-alarm=soon"])).is_err());
     }
 
     #[test]

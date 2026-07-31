@@ -49,33 +49,91 @@ fn runtime_blob() -> &'static [u8] {
 /// it backend-agnostically as `sim_runtime::Module`.
 pub(crate) type Module = wasmtime::Module;
 
+/// Seconds before wasm is interrupted, 0 = no hard alarm. `-alarm` is normally
+/// served by the driver's per-step deadline; this is the bound C gets from
+/// `SIGALRM`, for a run wedged inside one call into wasm. The epoch checks
+/// Cranelift then emits cost ~20% of the integration, hence the env var.
+static ALARM_SECS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+/// Install the run's `-alarm`, before the modules are instantiated: a hard alarm
+/// selects the other engine.
+pub fn set_alarm(seconds: Option<u32>) {
+    let hard = seconds.filter(|_| std::env::var("OMC_WASM_HARD_ALARM").is_ok());
+    ALARM_SECS.store(hard.unwrap_or(0), std::sync::atomic::Ordering::Relaxed);
+}
+
+fn alarm_secs() -> u32 {
+    ALARM_SECS.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Report an expired alarm as the driver's own deadline does; the trap it unwinds
+/// as no longer says. The engine detail stays: its backtrace is where it stuck.
+fn map_alarm(e: String) -> String {
+    match ALARM_FIRED.with(|f| f.replace(false)) {
+        true => sim_driver::ALARM_ABORT_ERR.to_string(),
+        false => e,
+    }
+}
+
+std::thread_local! {
+    /// Set by the epoch-deadline callback, for [`map_alarm`].
+    static ALARM_FIRED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Bump the alarm engine's epoch once a second, so a deadline is a second count.
+fn start_epoch_ticker(engine: wasmtime::Engine) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        engine.increment_epoch();
+    });
+}
+
 /// One process-wide wasmtime `Engine`, so the (model-independent) runtime module
 /// can be JIT-compiled once and reused, and so model modules built on background
 /// threads share the same engine the run instantiates them on.
+/// Two of them: see [`ALARM_SECS`].
 pub fn sim_engine() -> &'static wasmtime::Engine {
+    if alarm_secs() != 0 { alarm_engine() } else { plain_engine() }
+}
+
+fn alarm_engine() -> &'static wasmtime::Engine {
     static ENGINE: OnceLock<wasmtime::Engine> = OnceLock::new();
     ENGINE.get_or_init(|| {
-        let mut cfg = wasmtime::Config::new();
-        crate::tune_memory(&mut cfg);
-        // Compile module functions across threads (off by default with
-        // default-features=false) — ~4x faster module compilation here.
-        cfg.parallel_compilation(true);
-        // Experimental opt-level override; default is wasmtime's `Speed`.
-        match std::env::var("OMC_WASM_OPT_LEVEL").as_deref() {
-            Ok("none") => { cfg.cranelift_opt_level(wasmtime::OptLevel::None); }
-            Ok("speed_and_size") => { cfg.cranelift_opt_level(wasmtime::OptLevel::SpeedAndSize); }
-            _ => {}
-        }
-        // Inline across the model/runtime boundary. Generated code reaches the
-        // `rt_*` helpers as *imported* functions, and wasmtime's default is no
-        // inlining at all, so a handful of instructions cost a call; `Yes` also
-        // covers inter-module. Costs module compilation time, which the on-disk
-        // AOT cache pays once for the runtime.
-        if std::env::var("OMC_WASM_NO_INLINE").is_err() {
-            cfg.compiler_inlining(wasmtime::Inlining::Yes);
-        }
-        wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine")
+        let engine = build_engine_cfg(|cfg| {
+            cfg.epoch_interruption(true);
+        });
+        start_epoch_ticker(engine.clone());
+        engine
     })
+}
+
+fn plain_engine() -> &'static wasmtime::Engine {
+    static ENGINE: OnceLock<wasmtime::Engine> = OnceLock::new();
+    ENGINE.get_or_init(|| build_engine_cfg(|_| {}))
+}
+
+fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engine {
+    let mut cfg = wasmtime::Config::new();
+    crate::tune_memory(&mut cfg);
+    // Compile module functions across threads (off by default with
+    // default-features=false) — ~4x faster module compilation here.
+    cfg.parallel_compilation(true);
+    // Experimental opt-level override; default is wasmtime's `Speed`.
+    match std::env::var("OMC_WASM_OPT_LEVEL").as_deref() {
+        Ok("none") => { cfg.cranelift_opt_level(wasmtime::OptLevel::None); }
+        Ok("speed_and_size") => { cfg.cranelift_opt_level(wasmtime::OptLevel::SpeedAndSize); }
+        _ => {}
+    }
+    // Inline across the model/runtime boundary. Generated code reaches the
+    // `rt_*` helpers as *imported* functions, and wasmtime's default is no
+    // inlining at all, so a handful of instructions cost a call; `Yes` also
+    // covers inter-module. Costs module compilation time, which the on-disk
+    // AOT cache pays once for the runtime.
+    if std::env::var("OMC_WASM_NO_INLINE").is_err() {
+        cfg.compiler_inlining(wasmtime::Inlining::Yes);
+    }
+    extra(&mut cfg);
+    wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine")
 }
 
 /// The compiled runtime module, obtained once per process and shared across all
@@ -85,10 +143,13 @@ pub fn sim_engine() -> &'static wasmtime::Engine {
 /// microseconds. `deserialize` validates the artifact against the current
 /// wasmtime version / engine config / target, so a stale or incompatible cache
 /// is rejected and we transparently fall back to JIT (then refresh the cache).
+/// One cache per engine: a module belongs to the engine that compiled it.
 pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String> {
-    static MODULE: OnceLock<std::result::Result<wasmtime::Module, String>> = OnceLock::new();
-    MODULE
-        .get_or_init(|| load_or_compile_runtime())
+    static PLAIN: OnceLock<std::result::Result<wasmtime::Module, String>> = OnceLock::new();
+    static ALARM: OnceLock<std::result::Result<wasmtime::Module, String>> = OnceLock::new();
+    let armed = alarm_secs() != 0;
+    if armed { &ALARM } else { &PLAIN }
+        .get_or_init(|| load_or_compile_runtime(armed))
         .as_ref()
         .map_err(|e| format!("obtaining runtime module: {e}"))
 }
@@ -102,13 +163,14 @@ pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String
 /// reboots and not shared between users (unlike a world-writable temp dir, where
 /// the sticky bit would stop other users refreshing it). Falls back to the
 /// system temp dir if `$HOME` is unset or the cache dir can't be created.
-fn runtime_cache_path() -> std::path::PathBuf {
+fn runtime_cache_path(epoch: bool) -> std::path::PathBuf {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
     runtime_blob().len().hash(&mut h);
     runtime_blob().hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
     std::env::var("OMC_WASM_NO_INLINE").is_ok().hash(&mut h);
+    epoch.hash(&mut h);
     let key = h.finish();
 
     let home = openmodelica_util::Settings::getHomeDir(false);
@@ -122,9 +184,9 @@ fn runtime_cache_path() -> std::path::PathBuf {
     dir.join(format!("wasmjit-runtime-{key:016x}.cwasm"))
 }
 
-fn load_or_compile_runtime() -> std::result::Result<wasmtime::Module, String> {
-    let engine = sim_engine();
-    let path = runtime_cache_path();
+fn load_or_compile_runtime(epoch: bool) -> std::result::Result<wasmtime::Module, String> {
+    let engine = if epoch { alarm_engine() } else { plain_engine() };
+    let path = runtime_cache_path(epoch);
     // Try the AOT artifact first (microseconds). `deserialize_file` is unsafe
     // because it trusts the artifact; it is one we produced under temp_dir, and
     // wasmtime validates version/config compatibility (erroring otherwise).
@@ -544,7 +606,7 @@ pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, Strin
         match sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench) {
             Ok(v) => v,
             Err(e) => {
-                return Err(e.to_string());
+                return Err(map_alarm(e.to_string()));
             }
         };
     // The solves ran host-side (`rt_host_lin_solve`) or in-wasm (KLU/rsparse);
@@ -566,7 +628,7 @@ fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::
     let t0 = Instant::now();
     let mut sess = build_inwasm_session(model)?;
     loop {
-        match sess.advance(f64::INFINITY)? {
+        match sess.advance(f64::INFINITY).map_err(|e| map_alarm(e.to_string()))? {
             0 => continue,
             3 => return Err("CodegenWasmJit: in-wasm simulation cancelled".to_string()),
             _ => break, // 1 done, 2 terminated
@@ -625,6 +687,12 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         Some(m) => m,
         None => take_compiled_model(model)?,
     };
+    // A hard alarm armed after the compile switches engines under the module.
+    let model_module = if wasmtime::Engine::same(model_module.engine(), engine) {
+        model_module
+    } else {
+        wts(wasmtime::Module::new(engine, &model.wasm))?
+    };
     let model_compile = t_model.elapsed();
     let compile_time = t_compile.elapsed();
     if bench {
@@ -637,6 +705,14 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
     let mut store = wasmtime::Store::new(engine, WasiCtx::new(".", Vec::new()));
+    if let secs @ 1.. = alarm_secs() {
+        ALARM_FIRED.with(|f| f.set(false));
+        store.set_epoch_deadline(secs as u64);
+        store.epoch_deadline_callback(move |_| {
+            ALARM_FIRED.with(|f| f.set(true));
+            Err(wasmtime::Error::msg(sim_driver::ALARM_ABORT_ERR))
+        });
+    }
     let rt_inst = wts(linker.instantiate(&mut store, runtime_module))?;
     // The generated module imports the runtime's exports under module name "rt".
     wts(linker.instance(&mut store, "rt", rt_inst))?;

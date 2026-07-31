@@ -453,6 +453,57 @@ fn past_deadline(deadline: f64) -> bool {
     deadline.is_finite() && now_ms() >= deadline
 }
 
+/// `-alarm=N` as an absolute `now_ms` deadline (`+inf` = no alarm). C's `SIGALRM`
+/// stops the executable wherever it is; the drivers poll this once per step,
+/// where they already poll for cancellation. A run wedged *inside* one call into
+/// wasm never gets back here — `OMC_WASM_HARD_ALARM` is for that.
+mod alarm_store {
+    #[cfg(feature = "std")]
+    mod imp {
+        use core::cell::Cell;
+        std::thread_local! {
+            static DEADLINE: Cell<f64> = const { Cell::new(f64::INFINITY) };
+        }
+        pub fn set(v: f64) {
+            DEADLINE.with(|d| d.set(v));
+        }
+        pub fn get() -> f64 {
+            DEADLINE.with(|d| d.get())
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use core::cell::UnsafeCell;
+        // The in-wasm runtime is single-threaded, so a plain cell is sound.
+        struct Store(UnsafeCell<f64>);
+        unsafe impl Sync for Store {}
+        static DEADLINE: Store = Store(UnsafeCell::new(f64::INFINITY));
+        pub fn set(v: f64) {
+            unsafe { *DEADLINE.0.get() = v };
+        }
+        pub fn get() -> f64 {
+            unsafe { *DEADLINE.0.get() }
+        }
+    }
+
+    pub use imp::{get, set};
+}
+
+fn arm_alarm() {
+    alarm_store::set(match crate::simflags::with_flags(|f| f.alarm) {
+        Some(secs) => now_ms() + secs as f64 * 1000.0,
+        None => f64::INFINITY,
+    });
+}
+
+fn check_alarm() -> Result<()> {
+    match past_deadline(alarm_store::get()) {
+        true => Err(ALARM_ABORT_ERR),
+        false => Ok(()),
+    }
+}
+
 // Cancellation is a host concern (the native atomic flag, the wasm
 // SharedArrayBuffer poll, or the in-wasm session's own cancel flag). The driver
 // only polls it, so a host installs a hook; unset means "never cancelled". The
@@ -650,6 +701,8 @@ fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
 
 /// Returned to abort a run on detected chattering (`-abortSlowSimulation`).
 pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to chattering";
+/// Returned when the `-alarm` deadline expires.
+pub const ALARM_ABORT_ERR: &str = "CodegenWasmJit: simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
 
@@ -1572,6 +1625,8 @@ pub fn make_driver(
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
     let method = effective_method(method);
+    // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
+    arm_alarm();
     let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
     // A model compiled with `method="cvode"` reaches here without passing through
@@ -1767,6 +1822,7 @@ impl Driver for EulerDriver {
             if did_step && past_deadline(deadline) {
                 return Ok(Advance::Running);
             }
+            check_alarm()?;
             if cancel_requested() {
                 return Ok(Advance::Cancelled);
             }
@@ -2269,6 +2325,7 @@ impl Driver for DasslDriver {
                 if did_step && past_deadline(deadline) {
                     return Ok(Advance::Running);
                 }
+                check_alarm()?;
                 if cancel_requested() {
                     return Ok(Advance::Cancelled);
                 }
@@ -2334,6 +2391,7 @@ impl Driver for DasslDriver {
             if did_step && past_deadline(deadline) {
                 break Advance::Running;
             }
+            check_alarm()?;
             if cancel_requested() {
                 break Advance::Cancelled;
             }
@@ -2818,6 +2876,7 @@ impl SolverCore {
             if *did_step && past_deadline(deadline) {
                 return Ok(Solved::Yielded);
             }
+            check_alarm()?;
             if cancel_requested() {
                 return Ok(Solved::Cancelled);
             }
@@ -2924,6 +2983,7 @@ impl SolverCore {
                 self.nfe = ctx.nfe;
                 return Ok(Step::Yielded);
             }
+            check_alarm()?;
             if cancel_requested() {
                 self.nfe = ctx.nfe;
                 return Ok(Step::Cancelled);
@@ -3425,6 +3485,7 @@ impl Driver for EventsDriver {
                 if did_step && past_deadline(deadline) {
                     return Ok(Advance::Running);
                 }
+                check_alarm()?;
                 if cancel_requested() {
                     return Ok(Advance::Cancelled);
                 }
@@ -3527,6 +3588,7 @@ impl Driver for EventsDriver {
             if did_step && past_deadline(deadline) {
                 break Advance::Running;
             }
+            check_alarm()?;
             if cancel_requested() {
                 break Advance::Cancelled;
             }
@@ -3779,6 +3841,7 @@ impl Driver for CvodeDriver {
                 if did_step && past_deadline(deadline) {
                     return Ok(Advance::Running);
                 }
+                check_alarm()?;
                 if cancel_requested() {
                     return Ok(Advance::Cancelled);
                 }
@@ -3830,6 +3893,7 @@ impl Driver for CvodeDriver {
             if did_step && past_deadline(deadline) {
                 break Advance::Running;
             }
+            check_alarm()?;
             if cancel_requested() {
                 break Advance::Cancelled;
             }

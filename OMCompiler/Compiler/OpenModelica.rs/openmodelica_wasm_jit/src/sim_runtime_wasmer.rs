@@ -187,6 +187,9 @@ fn load_or_compile_runtime() -> std::result::Result<wasmer::Module, String> {
 /// JIT-compile a generated model module on the shared engine. Called either on a
 /// background thread from `translateModel` (overlapping the rest of the OMC
 /// pipeline) or inline from `run` as a fallback.
+/// wasmer has no epoch interruption, so there is no hard `-alarm` to install.
+pub fn set_alarm(_seconds: Option<u32>) {}
+
 pub fn compile_model_module(wasm: &[u8]) -> std::result::Result<wasmer::Module, String> {
     wts(wasmer::Module::from_binary(sim_engine(), wasm))
 }

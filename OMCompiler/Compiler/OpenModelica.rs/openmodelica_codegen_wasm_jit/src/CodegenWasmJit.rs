@@ -538,6 +538,8 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     // same CMake option, so one const covers both.
     cvode: openmodelica_sim_meta::CVODE,
     gbode: false,
+    // Served by the driver's per-step deadline, so every engine has it.
+    alarm: true,
 };
 
 /// The solver values a caller may offer for this build, so a menu built from it
@@ -619,6 +621,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
+    // The hard `-alarm`, if asked for: set before the modules are instantiated.
+    sim_runtime::set_alarm(flags.alarm);
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
     SPLIT_ARMED.with(|a| a.set(true));
