@@ -1,6 +1,6 @@
 // name: WrongInitialSolutionSelected
 // status: correct
-// teardown_command: rm -f WrongInitialSolutionSelected* output.log
+// teardown_command: rm -f SolverFailure.WrongInitialSolutionSelected* output.log
 // cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"});

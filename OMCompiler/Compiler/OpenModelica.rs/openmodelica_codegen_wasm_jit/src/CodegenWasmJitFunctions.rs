@@ -409,7 +409,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -426,10 +426,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
 pub(crate) const NLS_BASE_GLOBAL: u32 = 0;
 
 /// Module global holding the base index this module's closure thunks were
-/// appended to the shared table at (set by `start`): after the four
+/// appended to the shared table at (set by `start`): after the five
 /// nonlinear-solver globals, or the only global when there are none.
 pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
-    if has_nls { NLS_PAT_GLOBAL + 1 } else { 0 }
+    if has_nls { NLS_BOUNDS_GLOBAL + 1 } else { 0 }
 }
 
 /// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
@@ -1089,6 +1089,10 @@ pub(crate) const NLS_NOMINAL_GLOBAL: u32 = 2;
 /// Model global holding the base address of the sparse-NLS pattern block
 /// (`colptr[n+1]` then `rowidx[nnz]`, `i32`, per sparsely-solved system).
 pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
+
+/// Model global holding the base address of the NLS bounds block: the `min`/`max`
+/// pair per iteration variable, which the solver constrains its restarts to.
+pub(crate) const NLS_BOUNDS_GLOBAL: u32 = 4;
 
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
