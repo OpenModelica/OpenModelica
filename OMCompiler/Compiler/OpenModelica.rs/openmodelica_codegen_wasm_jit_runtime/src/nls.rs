@@ -887,7 +887,8 @@ fn hybrd_scaled(
         eval(&real, r);
     };
     arm_attempt();
-    let mut hooks = minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None };
+    let mut hooks =
+        minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
     let status = minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
     drop(seval);
     for i in 0..n {
@@ -903,113 +904,243 @@ fn nls_accept(status: minpack::Status, fvec: &[f64]) -> bool {
     status == minpack::Status::Converged || enorm(fvec) <= 1.0e-12
 }
 
-/// C's `xerror_scaled`: `‖fvec / resScaling‖` over the Jacobian `hybrd` last formed.
-/// C reads `fjacobian[i*n + j]` for the whole slice `j`, so `resScaling[i]` is the max
-/// of *column* `i`, not of residual `i`'s row.
-fn scaled_res_norm(n: usize, fvec: &[f64], fjac: &[f64]) -> f64 {
-    let mut scaled = vec![0.0f64; n];
+/// C's `resScaling` over the Jacobian `hybrd` last formed. C reads
+/// `fjacobian[i*n + j]` for the whole slice `j`, so entry `i` is the max of *column*
+/// `i`, not of residual `i`'s row.
+fn hybrd_res_scaling(n: usize, fjac: &[f64], res_scaling: &mut [f64]) {
     for i in 0..n {
         let mut m = 1e-16f64;
         for v in &fjac[i * n..(i + 1) * n] {
             m = m.max(libm::fabs(*v));
         }
-        scaled[i] = fvec[i] / m;
+        res_scaling[i] = m;
     }
-    enorm(&scaled)
 }
 
-/// C's `solveHybrd` (nonlinearSolverHybrd.c): numeric `hybrd` in a retry ladder. On a
-/// stall it restarts from the guess with the trust-region `factor` cut tenfold
-/// (100→10→1→0.1), then varies the start, rescales, then drops x-scaling. Accepts on
-/// convergence or a raw/residual-scaled norm at tolerance. The small-`factor` restart
-/// is what reaches the ThreeSprings physical root, where `factor=100` stalls near x0.
+/// C's `solveHybrd` (nonlinearSolverHybrd.c): MINPACK `hybrd` over C's
+/// forward-difference Jacobian, wrapped in the retry ladder C grinds through before
+/// giving a system up. Every rung restarts the whole solve — the trust-region
+/// `factor` cut tenfold three times, start-point variations, x-scaling dropped, the
+/// solver's internal variable scaling replaced then disabled, and finally five
+/// tenfold relaxations of the acceptance tolerance, each of which replays all the
+/// earlier rungs. It is the last thing C tries, and reaching the far end of it is
+/// what solves BranchingDynamicPipes' 79-unknown medium system at lambda = 1.
+///
+/// `x_start` and `warm` are C's `nlsx` (the point `solveHomotopy` settled on) and
+/// `nlsxOld`; `x` holds the solution, or the last iterate when every rung fails.
+#[allow(clippy::too_many_arguments)]
 fn hybrd_c(
     n: usize,
     x: &mut [f64],
+    x_start: &[f64],
+    warm: &[f64],
     nominal: &[f64],
     bounds: &[f64],
+    discrete_call: bool,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    set_continuous: &mut dyn FnMut(bool),
 ) -> bool {
-    const LOCAL_TOL: f64 = 1e-12;
+    const XTOL: f64 = 1.0e-12;
+    /// C's `hybrdData->epsfcn`; `fdjac1` derives its step from it as C does.
+    const EPSFCN: f64 = 1.0e-12;
     let maxfev = n * 10000;
     let initial_factor = 100.0f64;
+
+    let mut local_tol = 1.0e-12f64;
     let mut factor = initial_factor;
-    let guess = x.to_vec(); // C's nlsxExtrapolation (=start values at init)
-    let mut xscale = vec![1.0f64; n];
     let mut use_xscaling = true;
-    let mut fvec = vec![0.0f64; n];
-    let mut fjac = vec![0.0f64; n * n];
-    let mut retries = 0i32;
+    let mut continuous = true;
+    let mut non_continuous = false;
+    // C's `mode == 2`: the solver's own variable scaling replaced by ours.
+    let mut diag: Option<alloc::vec::Vec<f64>> = None;
+    let (mut retries, mut retries2, mut retries3) = (0i32, 0i32, 0i32);
     let mut assert_retries = 0usize;
+    let mut assert_called;
+
+    // C's `nlsx`, which the assert rung lifts off zero and success overwrites.
+    let mut nlsx = x_start.to_vec();
+    let mut xv = nlsx.clone();
+    let mut xscale = vec![1.0f64; n];
+    let mut fvec = vec![0.0f64; n];
+    let mut fjacobian = vec![0.0f64; n * n];
+    let mut res_scaling = vec![1.0f64; n];
+    let mut unscaled = vec![0.0f64; n];
+
     loop {
         // C's "constrain x": no attempt starts outside the declared range.
         for i in 0..n {
-            x[i] = x[i].max(bounds[2 * i]).min(bounds[2 * i + 1]);
-            xscale[i] = x[i].abs().max(nominal[i]).max(1e-16);
+            xv[i] = xv[i].max(bounds[2 * i]).min(bounds[2 * i + 1]);
+            xscale[i] = xv[i].abs().max(nominal[i]).max(1e-16);
         }
-        let mut xw = vec![0.0f64; n];
-        for i in 0..n {
-            xw[i] = if use_xscaling { x[i] / xscale[i] } else { x[i] };
-        }
-        let mut real = vec![0.0f64; n];
-        let mut seval = |sx: &[f64], r: &mut [f64]| {
+        if use_xscaling {
             for i in 0..n {
-                real[i] = if use_xscaling { sx[i] * xscale[i] } else { sx[i] };
+                xv[i] /= xscale[i];
             }
-            eval(&real, r);
-        };
+        }
+        set_continuous(continuous);
         arm_attempt();
-        let mut hooks =
-            minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: Some(&mut fjac) };
-        let status = minpack::hybrd_hooked(
-            &mut seval, &mut hooks, n, &mut xw, &mut fvec, 1e-12, maxfev, 1e-12, factor,
-        );
-        drop(seval);
-        for i in 0..n {
-            x[i] = if use_xscaling { xw[i] * xscale[i] } else { xw[i] };
+        let status = {
+            let mut seval = |sx: &[f64], r: &mut [f64]| {
+                for i in 0..n {
+                    unscaled[i] = if use_xscaling { sx[i] * xscale[i] } else { sx[i] };
+                }
+                eval(&unscaled, r);
+            };
+            let mut hooks = minpack::Hooks {
+                abort: Some(&attempt_aborted),
+                fjacobian: Some(&mut fjacobian),
+                diag: diag.as_deref(),
+            };
+            minpack::hybrd_hooked(
+                &mut seval, &mut hooks, n, &mut xv, &mut fvec, XTOL, maxfev, EPSFCN, factor,
+            )
+        };
+        if use_xscaling {
+            for i in 0..n {
+                xv[i] *= xscale[i];
+            }
         }
-        let xerror = enorm(&fvec);
-        let xerror_scaled = scaled_res_norm(n, &fvec, &fjac);
-        if status == minpack::Status::Converged || xerror <= LOCAL_TOL || xerror_scaled <= LOCAL_TOL {
-            return true;
+
+        // An assert voids the attempt: C's `longjmp` lands here with both error
+        // measures at 1, so no rung can mistake it for progress.
+        let mut void_run = status == minpack::Status::Aborted;
+        if void_run {
+            assert_called = true;
+        } else {
+            assert_retries = 0;
+            assert_called = false;
+            if discrete_call {
+                // Judge the point with the relations live, not held.
+                set_continuous(false);
+                arm_attempt();
+                eval(&xv, &mut fvec);
+                if attempt_aborted() {
+                    void_run = true;
+                    assert_called = true;
+                }
+            }
         }
-        // C retries on info 4/5 (stall); we also escalate on the trust-region /
-        // step-bound terminations, which are the same "no progress" condition here.
-        let no_progress = status != minpack::Status::Converged;
-        // C's `assertRetries` ladder, ahead of the step-bound retries: collapsed
-        // unknowns lifted to nominal, then one variable at a time by 1% of it.
-        if status == minpack::Status::Aborted && assert_retries <= n {
-            x.copy_from_slice(&guess);
+        let (xerror, xerror_scaled) = if void_run {
+            (1.0, 1.0)
+        } else {
+            hybrd_res_scaling(n, &fjacobian, &mut res_scaling);
+            let mut scaled = vec![0.0f64; n];
+            for i in 0..n {
+                scaled[i] = fvec[i] / res_scaling[i];
+            }
+            (enorm(&fvec), enorm(&scaled))
+        };
+        let accurate = xerror <= local_tol || xerror_scaled <= local_tol;
+        if non_continuous && !accurate {
+            non_continuous = false;
+        }
+
+        if status == minpack::Status::Converged || accurate {
+            nlsx.copy_from_slice(&xv);
+            x.copy_from_slice(&xv);
+            // C confirms the solution by evaluating there once more; an assert at it
+            // rejects the point and retries from it without advancing a rung.
+            arm_attempt();
+            eval(&xv, &mut fvec);
+            if !attempt_aborted() {
+                set_continuous(true);
+                return true;
+            }
+            assert_called = true;
+            continue;
+        }
+
+        // C's `set x vector` for a restarting rung.
+        let restart = |xv: &mut [f64], nlsx: &[f64]| {
+            xv.copy_from_slice(if discrete_call { nlsx } else { x_start })
+        };
+        if assert_called && assert_retries < 1 + n {
+            // The model asserted: lift collapsed unknowns to nominal, then nudge one
+            // variable at a time by 1% of it.
+            xv.copy_from_slice(warm);
             if assert_retries == 0 {
                 for i in 0..n {
-                    if x[i] == 0.0 {
-                        x[i] = nominal[i];
+                    if nlsx[i] == 0.0 {
+                        nlsx[i] = nominal[i];
+                        xv[i] = nominal[i];
                     }
                 }
             } else {
-                x[assert_retries - 1] += 0.01 * nominal[assert_retries - 1];
+                xv[assert_retries - 1] += 0.01 * nominal[assert_retries - 1];
             }
             assert_retries += 1;
-        } else if no_progress && retries < 3 {
-            x.copy_from_slice(&guess);
+        } else if retries < 3 {
+            restart(&mut xv, &nlsx);
             factor /= 10.0;
             retries += 1;
-        } else if no_progress && retries < 4 {
+        } else if retries < 4 {
             for i in 0..n {
-                x[i] += nominal[i] * 0.1;
+                xv[i] += nominal[i] * 0.1;
             }
             factor = initial_factor;
             retries += 1;
-        } else if no_progress && retries < 5 {
-            // C's "try old values as x-Scaling factors"; the constrain-x block above
+        } else if retries < 5 {
+            // C's "try old values as x-scaling factors"; the constrain-x block above
             // overwrites them again, in C too, so this is a plain restart.
-            x.copy_from_slice(&guess);
+            restart(&mut xv, &nlsx);
             retries += 1;
-        } else if no_progress && retries < 6 {
-            x.copy_from_slice(&guess);
+        } else if retries < 6 {
+            restart(&mut xv, &nlsx);
             use_xscaling = false;
             retries += 1;
+        } else if retries < 7 && discrete_call {
+            xv.copy_from_slice(warm);
+            continuous = false;
+            non_continuous = true;
+            retries += 1;
+        } else if retries2 < 1 {
+            xv.copy_from_slice(warm);
+            use_xscaling = true;
+            continuous = true;
+            factor = initial_factor;
+            retries = 0;
+            retries2 += 1;
+        } else if retries2 < 2 {
+            restart(&mut xv, &nlsx);
+            for v in xv.iter_mut() {
+                *v *= 1.01;
+            }
+            retries = 0;
+            retries2 += 1;
+        } else if retries2 < 3 {
+            restart(&mut xv, &nlsx);
+            for v in xv.iter_mut() {
+                *v *= 0.99;
+            }
+            retries = 0;
+            retries2 += 1;
+        } else if retries2 < 4 {
+            xv.copy_from_slice(nominal);
+            retries = 0;
+            retries2 += 1;
+        } else if retries2 < 5 && !assert_called {
+            restart(&mut xv, &nlsx);
+            diag = Some(res_scaling.iter().map(|v| libm::fabs(*v).max(1e-16)).collect());
+            retries = 0;
+            retries2 += 1;
+        } else if retries3 < 1 {
+            restart(&mut xv, &nlsx);
+            diag = Some(vec![1.0f64; n]);
+            use_xscaling = true;
+            retries = 0;
+            retries2 = 0;
+            retries3 += 1;
+        } else if retries3 < 6 {
+            restart(&mut xv, &nlsx);
+            local_tol *= 10.0;
+            factor = initial_factor;
+            diag = None;
+            retries = 0;
+            retries2 = 0;
+            retries3 += 1;
         } else {
+            x.copy_from_slice(&xv);
+            set_continuous(true);
             return false;
         }
     }
@@ -1056,7 +1187,8 @@ fn hybrj_scaled(
         }
     };
     arm_attempt();
-    let mut hooks = minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None };
+    let mut hooks =
+        minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
     let status =
         minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
     drop(seval);
@@ -1224,11 +1356,13 @@ fn scaled_sq(n: usize, v: &[f64], res_scaling: &[f64]) -> f64 {
 /// Numerical-Recipes cubic line search and two-tier residual-gated convergence.
 /// Analytic Jacobian when `has_jac`, else FD; `x` = guess in / last iterate out.
 /// Returns `(root found, last residual eval was at the returned `x`)`.
+#[allow(clippy::too_many_arguments)]
 fn newton_c(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
     res_scaling: &mut [f64],
+    x0: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
     has_jac: bool,
@@ -1327,6 +1461,9 @@ fn newton_c(
             x[i] = x_start[i] + xscaling[i] * (i as f64) / (n as f64) * vary;
         }
     }
+    // C's `x0`, which `solveHomotopy` publishes as `nlsx`: every later rung, up to
+    // and including `solveHybrd`, restarts from the varied point, not from `xStart`.
+    x0.copy_from_slice(x);
     if !regular {
         return (false, false);
     }
@@ -2223,10 +2360,14 @@ pub extern "C" fn rt_solve_nls(
         // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
         // Both share the retry/homotopy tail below.
         let start = x.clone();
+        // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
+        // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
+        let mut nlsx = start.clone();
         let mut converged = false;
         if matches!(pick, Nls::Default | Nls::Mixed) {
-            (converged, settled) =
-                newton_c(n, &mut x, &nominal, &mut res_scaling, &mut eval, &mut jaceval, has_jac);
+            (converged, settled) = newton_c(
+                n, &mut x, &nominal, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval, has_jac,
+            );
             if !converged {
                 stat_inc(STAT_NLS_NEWTON_FAIL);
                 x.copy_from_slice(&start);
@@ -2257,23 +2398,10 @@ pub extern "C" fn rt_solve_nls(
         // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
-            converged =
-                newton_c(n, &mut x, &nominal, &mut res_scaling, &mut eval, &mut jaceval, has_jac).0;
-        }
-        if !converged && saved_rel_fresh == 2 {
-            x.copy_from_slice(&guess);
-            converged = hybrd_c(n, &mut x, &nominal, &bounds, &mut eval);
-        }
-        // Seed collapsed zero unknowns (e.g. the spring-loop s_rel) to nominal, off the
-        // degenerate residual plateau, then re-solve — C's "zero start values to nominal".
-        if !converged && saved_rel_fresh == 2 {
-            x.copy_from_slice(&guess);
-            for i in 0..n {
-                if x[i] == 0.0 {
-                    x[i] = nominal[i];
-                }
-            }
-            converged = hybrd_c(n, &mut x, &nominal, &bounds, &mut eval);
+            converged = newton_c(
+                n, &mut x, &nominal, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval, has_jac,
+            )
+            .0;
         }
         // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
         if !converged {
@@ -2303,6 +2431,22 @@ pub extern "C" fn rt_solve_nls(
                     break;
                 }
             }
+        }
+        // C's `NLS_MIXED`: whatever `solveHomotopy` leaves unsolved goes to the full
+        // `solveHybrd` ladder, which is where the hardest systems are actually solved.
+        if !converged {
+            stat_inc(STAT_NLS_RETRY);
+            // C's `discreteCall` is set for an initial system too; only an event call
+            // has relations to hold, so only there does the continuity flag move.
+            let mut set_cont = |c: bool| {
+                if saved_rel_fresh == 1 {
+                    unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+                }
+            };
+            converged = hybrd_c(
+                n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
+                &mut set_cont,
+            );
         }
         converged
     };
@@ -2480,6 +2624,39 @@ mod tests {
         assert_eq!((pick.old, pick.old2, pick.exact), (Some(0), Some(1), false));
         history_guess(&h, &pick, 4.0, &mut guess);
         assert_eq!(guess, [40.0, 5.0]);
+    }
+
+    /// `initializationTests.singularJacobian_05`: five monomial equations whose
+    /// Jacobian vanishes at the all-zero start values. C solves it on `solveHybrd`'s
+    /// "try with own scaling factors" rung, from the point `solveHomotopy`'s entry
+    /// phase varied to (`xScaling[i]*i/n*0.1`) after finding zero irregular.
+    #[test]
+    fn hybrd_c_solves_from_a_singular_start() {
+        let n = 5;
+        let mut x = vec![0.0f64; n];
+        let x_start: alloc::vec::Vec<f64> = (0..n).map(|i| i as f64 / n as f64 * 0.1).collect();
+        let warm = vec![0.0f64; n];
+        let nominal = vec![1.0f64; n];
+        let mut bounds = vec![0.0f64; 2 * n];
+        for i in 0..n {
+            bounds[2 * i] = 0.0;
+            bounds[2 * i + 1] = 1e60;
+        }
+        // Residual signs as the code generator emits them: `c - x^i*x_{i+1}`. They
+        // matter — C's forward-difference step is signed by the residual.
+        let mut eval = |xs: &[f64], r: &mut [f64]| {
+            for i in 0..n - 1 {
+                let k = (i + 1) as f64;
+                r[i] = libm::pow(k, k) * (k + 1.0) - libm::pow(xs[i], k) * xs[i + 1];
+            }
+            let k = n as f64;
+            r[n - 1] = libm::pow(k, k) - libm::pow(xs[n - 1], k) * xs[0];
+        };
+        let mut cont = |_: bool| {};
+        assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, true, &mut eval, &mut cont));
+        for i in 0..n {
+            assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
+        }
     }
 
     // 2×2 linear system solved as if nonlinear: r = A x - b, A=[[2,0],[0,3]], b=[4,9] → x=[2,3].

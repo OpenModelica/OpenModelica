@@ -454,11 +454,13 @@ pub enum Status {
 
 /// `abort` is MINPACK's negative-`iflag` early exit, polled after every residual
 /// batch. `fjacobian` receives each Jacobian before [`qrfac`] destroys it (C's
-/// `hybrdData->fjacobian`).
+/// `hybrdData->fjacobian`). `diag` is MINPACK's `mode = 2`: the given variable
+/// scale factors are used as-is instead of the internally rescaled ones.
 #[derive(Default)]
 pub struct Hooks<'a> {
     pub abort: Option<&'a dyn Fn() -> bool>,
     pub fjacobian: Option<&'a mut [f64]>,
+    pub diag: Option<&'a [f64]>,
 }
 
 /// Solve `f(x) = 0` for `n` equations in `n` unknowns with MINPACK's `hybrd`
@@ -598,8 +600,12 @@ fn hybrd_common(
         qrfac(n, n, &mut fjac, &mut wa1, &mut wa2, &mut wa3);
 
         if iter == 1 {
-            for j in 0..n {
-                diag[j] = if wa2[j] == 0.0 { 1.0 } else { wa2[j] };
+            if let Some(d) = hooks.diag {
+                diag.copy_from_slice(&d[..n]);
+            } else {
+                for j in 0..n {
+                    diag[j] = if wa2[j] == 0.0 { 1.0 } else { wa2[j] };
+                }
             }
             for j in 0..n {
                 wa3[j] = diag[j] * x[j];
@@ -641,8 +647,10 @@ fn hybrd_common(
 
         qform(n, n, &mut fjac, &mut wa1);
 
-        for j in 0..n {
-            diag[j] = fmax(diag[j], wa2[j]);
+        if hooks.diag.is_none() {
+            for j in 0..n {
+                diag[j] = fmax(diag[j], wa2[j]);
+            }
         }
 
         loop {
