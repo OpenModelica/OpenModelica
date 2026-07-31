@@ -80,8 +80,29 @@ solver_status solver_kinsol_allocate_data(solver_data* general_solver_data)
         return solver_error;
     }
 
+    /* Create the SUNDIALS context every other SUNDIALS object is created with */
+    if (SUNContext_Create(SUN_COMM_NULL, &kinsol_data->sunctx) != SUN_SUCCESS) {
+        solver_logger(log_solver_error, "In function allocate_kinsol_data: Could not create SUNDIALS context.");
+        solver_freeMemory(kinsol_data);
+        general_solver_data->specific_data = NULL;
+        general_solver_data->state = solver_error_state;
+        return solver_error;
+    }
+
+    /* Mute SUNDIALS' own logger: since SUNDIALS 7 package level messages go to
+     * stderr/stdout by default, and we report solver failures ourselves. */
+    {
+        SUNLogger logger = NULL;
+        if (SUNContext_GetLogger(kinsol_data->sunctx, &logger) == SUN_SUCCESS && logger != NULL) {
+            SUNLogger_SetErrorFilename(logger, "");
+            SUNLogger_SetWarningFilename(logger, "");
+            SUNLogger_SetInfoFilename(logger, "");
+            SUNLogger_SetDebugFilename(logger, "");
+        }
+    }
+
     /* Create Kinsol solver object */
-    kinsol_data->kinsol_solver_object = KINCreate();
+    kinsol_data->kinsol_solver_object = KINCreate(kinsol_data->sunctx);
     if (kinsol_data->kinsol_solver_object == NULL) {
         solver_logger(log_solver_error, "In function allocate_kinsol_data: Could not create KINSOL solver object.");
         solver_freeMemory(kinsol_data);
@@ -92,13 +113,13 @@ solver_status solver_kinsol_allocate_data(solver_data* general_solver_data)
 
     kinsol_data->f_function_eval = NULL;
 
-    kinsol_data->initial_guess = N_VNewEmpty_Serial(general_solver_data->dim_n);
+    kinsol_data->initial_guess = N_VNewEmpty_Serial(general_solver_data->dim_n, kinsol_data->sunctx);
 
     u_scale = (solver_real*) solver_allocateMemory(general_solver_data->dim_n, sizeof(solver_real));
-    kinsol_data->u_scale = N_VMake_Serial(general_solver_data->dim_n, u_scale);
+    kinsol_data->u_scale = N_VMake_Serial(general_solver_data->dim_n, u_scale, kinsol_data->sunctx);
 
     f_scale = (solver_real*) solver_allocateMemory(general_solver_data->dim_n, sizeof(solver_real));
-    kinsol_data->f_scale = N_VMake_Serial(general_solver_data->dim_n, f_scale);
+    kinsol_data->f_scale = N_VMake_Serial(general_solver_data->dim_n, f_scale, kinsol_data->sunctx);
 
     general_solver_data->specific_data = kinsol_data;
     general_solver_data->state = solver_instantiated;
@@ -180,13 +201,8 @@ solver_status solver_kinsol_init_data(solver_data*              general_solver_d
         return solver_error;
     }
 
-    /* Set Kinsol print level */
-    flag = KINSetPrintLevel(kinsol_data->kinsol_solver_object, 0);
-    if (flag != KIN_SUCCESS) {
-        return solver_kinsol_error_handler(general_solver_data, flag,
-                "kinsol_init_data",
-                "Could not set print level.");
-    }
+    /* KINSetPrintLevel is gone since SUNDIALS 7. KINSOL's progress output goes
+     * through the SUNLogger now and is off at our logging level anyway. */
 
     /* Set KINSOL user data */
     kinsol_data->kin_user_data = (kinsol_user_data*) solver_allocateMemory(1, sizeof(kinsol_user_data));
@@ -216,11 +232,11 @@ solver_status solver_kinsol_init_data(solver_data*              general_solver_d
     kinsol_data->strategy = KIN_LINESEARCH;
 
     /* Create Jacobian matrix object */
-    kinsol_data->y = N_VNew_Serial(general_solver_data->dim_n);
-    kinsol_data->J = SUNDenseMatrix(general_solver_data->dim_n, general_solver_data->dim_n);
+    kinsol_data->y = N_VNew_Serial(general_solver_data->dim_n, kinsol_data->sunctx);
+    kinsol_data->J = SUNDenseMatrix(general_solver_data->dim_n, general_solver_data->dim_n, kinsol_data->sunctx);
 
     /* Create linear solver object */
-    kinsol_data->linSol = SUNLinSol_Dense(kinsol_data->y, kinsol_data->J);
+    kinsol_data->linSol = SUNLinSol_Dense(kinsol_data->y, kinsol_data->J, kinsol_data->sunctx);
     if (kinsol_data->linSol == NULL) {
         solver_logger(log_solver_error, "In function kinsol_init_data: SUNLinSol_Dense failed.");
         general_solver_data->state = solver_error_state;
@@ -264,7 +280,7 @@ solver_status solver_kinsol_free_data(solver_data* general_solver_data)
     kinsol_data = general_solver_data->specific_data;
 
     /* Free data */
-    KINFree((void*)kinsol_data);
+    KINFree((void*)&kinsol_data->kinsol_solver_object);
     solver_freeMemory(kinsol_data->kin_user_data);
 
     solver_freeMemory(NV_DATA_S(kinsol_data->initial_guess));       /* ToDo: Is it smart to free a user supplied aray???
@@ -282,6 +298,8 @@ solver_status solver_kinsol_free_data(solver_data* general_solver_data)
     SUNMatDestroy(kinsol_data->J);
     N_VDestroy(kinsol_data->y);
     SUNLinSolFree(kinsol_data->linSol);
+
+    SUNContext_Free(&kinsol_data->sunctx);
 
     solver_freeMemory(kinsol_data);
 
@@ -340,7 +358,9 @@ solver_int solver_kinsol_residual_wrapper(N_Vector  x,
  * Computes dense Jacobian `J(u)` using `omsi_function`
  * `algebraic_system_t->jacobian`.
  *
- * @param N
+ * Signature of a SUNDIALS KINJacFn. The pre-SUNDIALS-3 DlsMat this used to take is
+ * gone; a KINJacFn gets a SUNMatrix and no leading dimension argument.
+ *
  * @param u
  * @param fu
  * @param J
@@ -349,17 +369,15 @@ solver_int solver_kinsol_residual_wrapper(N_Vector  x,
  * @param tmp2
  * @return
  */
-solver_int solver_kinsol_jacobian_wrapper(long int N,
-                                          N_Vector u,
+solver_int solver_kinsol_jacobian_wrapper(N_Vector u,
                                           N_Vector fu,
-                                          DlsMat J,
+                                          SUNMatrix J,
                                           void* user_data,
                                           N_Vector tmp1,
                                           N_Vector tmp2)
 {
 
     /* ToDo: Insert smart stuff here */
-    UNUSED(N);
     UNUSED(u);
     UNUSED(fu);
     UNUSED(J);

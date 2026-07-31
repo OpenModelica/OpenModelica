@@ -980,7 +980,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
 
   sunindextype *colPointers = SM_INDEXPTRS_S(J);
   sunindextype *rowIndices = SM_INDEXVALS_S(J);
-  realtype *values = SM_DATA_S(J);
+  sunrealtype *values = SM_DATA_S(J);
 
   modelica_real *rowSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
   modelica_real *colSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));

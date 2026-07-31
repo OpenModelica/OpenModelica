@@ -36,8 +36,9 @@
 
 #include "simulation_data.h"
 
+/* SuiteSparse 7 folded the per-function headers (umfpack_get_numeric.h and
+ * friends) into umfpack.h. */
 #include "umfpack.h"
-#include "umfpack_get_numeric.h"
 
 typedef struct DATA_UMFPACK
 {

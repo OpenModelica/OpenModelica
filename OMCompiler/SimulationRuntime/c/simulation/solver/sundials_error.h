@@ -48,6 +48,8 @@ extern "C" {
 
 #ifdef WITH_SUNDIALS
 
+#include <sundials/sundials_context.h>   /* SUNContext */
+#include <sundials/sundials_logger.h>    /* SUNLogger */
 #include <cvode/cvode.h>
 #include "cvode_solver.h"
 #ifndef OMC_FMI_RUNTIME
@@ -80,16 +82,23 @@ typedef enum sundialsFlagType {
 /* Function prototypes */
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
-void cvodeErrorHandlerFunction(int errorCode, const char *module,
-                               const char *function, char *msg, void *userData);
+void sundialsSilenceLogger(SUNContext sunctx);
+
+/* Error handlers. Since SUNDIALS 7 there is no per-package error handler
+ * (CVodeSetErrHandlerFn and friends are gone); a SUNErrHandlerFn is registered on
+ * the SUNContext with SUNContext_PushErrHandler instead. The SUNDIALS module and
+ * error string are no longer passed in - we get the source location and a
+ * SUNErrCode. */
+void cvodeErrorHandlerFunction(int line, const char *func, const char *file,
+                               const char *msg, SUNErrCode err_code,
+                               void *err_user_data, SUNContext sunctx);
 #ifndef OMC_FMI_RUNTIME
-void idaErrorHandlerFunction(int errorCode, const char *module,
-                             const char *function, char *msg, void *userData);
-void kinsolErrorHandlerFunction(int errorCode, const char *module,
-                                const char *function, char *msg,
-                                void *userData);
-void kinsolInfoHandlerFunction(const char *module, const char *function,
-                               char *msg, void *user_data);
+void idaErrorHandlerFunction(int line, const char *func, const char *file,
+                             const char *msg, SUNErrCode err_code,
+                             void *err_user_data, SUNContext sunctx);
+void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
+                                const char *msg, SUNErrCode err_code,
+                                void *err_user_data, SUNContext sunctx);
 void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
 #endif /* OMC_FMI_RUNTIME */
 #endif /* WITH_SUNDIALS */

@@ -35,6 +35,8 @@
 
 #include <Core/Solver/SolverDefaultImplementation.h>
 
+#include <sundials/sundials_context.h>
+#include <sundials/sundials_logger.h>
 #include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -129,10 +131,10 @@ private:
     static int CV_ZerofCallback(double t, N_Vector y, double* zeroval, void* user_data);
 
     // Functions for Coloured Jacobian
-    static int CV_JCallback(long int N, realtype t, N_Vector y, N_Vector fy, DlsMat Jac, void* user_data, N_Vector tmp1,
+    static int CV_JCallback(long int N, sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix Jac, void* user_data, N_Vector tmp1,
                             N_Vector tmp2, N_Vector tmp3);
     int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y,
-                     N_Vector fy, DlsMat Jac);
+                     N_Vector fy, SUNMatrix Jac);
     void initializeColoredJac();
 
 
@@ -194,6 +196,10 @@ private:
 
     SUNMatrix
         _CV_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
+
+  /* SUNDIALS simulation context. Since SUNDIALS 6 every SUNDIALS object has to be
+     created with one. Owned by this solver instance. */
+  SUNContext _sunctx;
 
     // Variables for Coloured Jacobians
     int* _colorOfColumn;
