@@ -368,9 +368,6 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUNDIALS_KLU_ENABLE=ON
       -DSUNDIALS_INDEX_SIZE=32
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
-      # v7 builds each project in its own subdirectory of the build tree, so the
-      # archives are not at the top of ${_suitesparse_ep_build} the way the
-      # 5.8.1 wrapper left them.
       -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
       -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
       -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/COLAMD/libcolamd.a

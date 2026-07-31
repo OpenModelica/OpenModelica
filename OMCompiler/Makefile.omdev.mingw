@@ -417,6 +417,14 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse/CMak
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	# Build only the projects the OMC runtime needs; "all" pulls in SPEX
+	# (needs GMP/MPFR), SPQR, GraphBLAS, ... Keep in sync with the suitesparse
+	# target in Makefile.common and with 3rdParty/CMakeLists.txt.
+	echo '-DSUITESPARSE_ENABLE_PROJECTS="suitesparse_config;amd;colamd;btf;klu;umfpack" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DSUITESPARSE_USE_OPENMP:Bool=OFF -DSUITESPARSE_USE_CUDA:Bool=OFF -DSUITESPARSE_USE_FORTRAN:Bool=OFF ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DSUITESPARSE_DEMOS:Bool=OFF -DSUITESPARSE_USE_STRICT:Bool=OFF ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DKLU_USE_CHOLMOD:Bool=OFF -DUMFPACK_USE_CHOLMOD:Bool=OFF ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '-DSUITESPARSE_C_TO_FORTRAN="(name,NAME) name##_" ^' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo @echo on >> 3rdParty/SuiteSparse/build_msvc/build.bat
