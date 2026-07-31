@@ -1482,37 +1482,40 @@ function isJacobianResultVar
         original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
-        // so that each outer element gets its own scalar seed var instead of all elements
-        // sharing the first element's seed via the array ptr cache.
-        if not ComponentRef.hasSubscripts(original_cref) then
-          var_ptr := Util.getOption(getVarSeed(old_var_ptr));
-          cref := getVarName(var_ptr);
-        else
-          // prepend the seed str and the matrix name and create the new cref
-          qual.name := SEED_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
+        // For subscripted element crefs (partial-slice NLS iter vars), skip the
+        // base-ptr cache so each outer element gets its own scalar seed var instead
+        // of all elements sharing the first element's seed via the array ptr cache.
+        // For non-subscripted crefs, use the cache normally (check first, create if absent).
+        () := match if ComponentRef.hasSubscripts(original_cref) then NONE() else getVarSeed(old_var_ptr)
+          case SOME(var_ptr) algorithm
+            // Cache hit (non-subscripted case only): reuse existing seed
+            cref := getVarName(var_ptr);
+          then ();
+          else algorithm
+            // Cache miss OR subscripted element: create a new seed variable
+            qual.name := SEED_STR + "_" + name;
+            cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+            var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
 
-          // update the variable to be a seed and pass the pointer to the original variable
-          // if it is a record, clear the children instead
-          varKind := match getVarKind(old_var_ptr)
-            case varKind as VariableKind.RECORD() algorithm
-              varKind.children := {};
-            then varKind;
-            else VariableKind.SEED_VAR();
-          end match;
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+            // update the variable to be a seed and pass the pointer to the original variable
+            // if it is a record, clear the children instead
+            varKind := match getVarKind(old_var_ptr)
+              case varKind as VariableKind.RECORD() algorithm
+                varKind.children := {};
+              then varKind;
+              else VariableKind.SEED_VAR();
+            end match;
+            var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
 
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          // For subscripted element crefs (partial-slice NLS iter vars), skip linking back to
-          // the base array ptr so the shared cache is not populated, allowing each element to
-          // create its own independent seed on subsequent calls.
-          if not ComponentRef.hasSubscripts(original_cref) then
-            connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
-          end if;
-        end if;
+            // create the new variable pointer and save it to the component reference
+            (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+            // For non-subscripted crefs, connect partners to populate the cache.
+            // For subscripted element crefs, skip so the cache stays clean for other elements.
+            if not ComponentRef.hasSubscripts(original_cref) then
+              connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+            end if;
+          then ();
+        end match;
       then ();
 
       else algorithm
