@@ -1495,6 +1495,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Const(job.nnz as i32));
     ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
+    ctx.emit(I::I32Const(job.eq_index as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

@@ -148,7 +148,8 @@ pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
 pub const STAT_NLS_GUESS_HIT: u32 = 12;
 pub const STAT_NLS_ACCEPT: u32 = 13;
 pub const STAT_NLS_STORE_BACK: u32 = 14;
-pub const N_STATS: usize = 15;
+pub const STAT_NLS_VARY_START: u32 = 15;
+pub const N_STATS: usize = 16;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];

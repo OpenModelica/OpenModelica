@@ -409,7 +409,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -1050,6 +1050,8 @@ pub(crate) struct SimCtx {
 pub(crate) struct NlsJob {
     pub(crate) k: u32,
     pub(crate) n: u32,
+    /// C's `NONLINEAR_SYSTEM_DATA::equationIndex`: the number its messages quote.
+    pub(crate) eq_index: u32,
     pub(crate) hist_off: u32,
     /// Byte offset of this system's `n` nominal values into the nominal block
     /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
