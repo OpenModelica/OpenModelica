@@ -1945,6 +1945,16 @@ pub extern "C" fn rt_solve_nls(
     stat_inc(STAT_NLS_SOLVE);
     let mut eval = |xs: &[f64], r: &mut [f64]| {
         stat_inc(STAT_NLS_RES);
+        // C's generated `residualFunc`: an inf/nan iteration variable fails the
+        // evaluation instead of reaching the model. Feed kinsol the nan residual
+        // and its line search takes a nan step length, which no exit test catches.
+        if xs.iter().any(|v| !v.is_finite()) {
+            NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
+            for v in r.iter_mut() {
+                *v = 1e60;
+            }
+            return;
+        }
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
         }

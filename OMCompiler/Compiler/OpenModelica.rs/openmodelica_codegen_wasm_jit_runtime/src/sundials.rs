@@ -18,6 +18,8 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         ida: false,
         cvode: openmodelica_sim_meta::CVODE,
         gbode: false,
+        // Served by the driver's per-step deadline; both runtimes install a clock.
+        alarm: true,
     }
 }
 

@@ -132,8 +132,9 @@ fn run() {
     let sim_data = crate::rt_alloc(m.layout.total);
     let mut engine = StandaloneEngine;
 
-    // `+inf` budget = run to completion; no clock/cancel hooks needed (the driver
-    // short-circuits the deadline and polls no cancel flag here).
+    // wasip1 has a monotonic clock, so `-alarm` works; nothing cancels a command.
+    driver::set_clock(now_ms);
+    // `+inf` budget = run to completion; the driver short-circuits that deadline.
     let (result, _label) = match driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false) {
         Ok(v) => v,
         Err(e) => {
@@ -170,6 +171,13 @@ fn run() {
         &result.params,
     );
     std::fs::write(format!("{}_res.mat", m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+}
+
+/// Wall clock for the driver, in ms since the first reading.
+fn now_ms() -> f64 {
+    use std::time::Instant;
+    static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_secs_f64() * 1000.0
 }
 
 /// The command entry point. Runs wasi-libc ctors (preopen/stdio init), takes the
