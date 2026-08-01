@@ -2994,7 +2994,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             f.instruction(&we::Instruction::Call(i));
         }
         if let Some((fn_indices, _)) = &nls_wiring {
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_bounds, &nls_patterns);
+            let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -4984,6 +4985,7 @@ fn emit_nls_start(
     f: &mut we::Function,
     fn_indices: &[(u32, u32, Option<u32>)],
     hist_bytes: u32,
+    sizes: &[u32],
     nominals: &[f64],
     bounds: &[f64],
     patterns: &[i32],
@@ -4995,6 +4997,17 @@ fn emit_nls_start(
         f.instruction(&I::I32Const(hist_bytes as i32));
         f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
         f.instruction(&I::GlobalSet(NLS_HIST_GLOBAL));
+    }
+    // Hand each system's slice of it to the runtime's roster.
+    let mut hist_off = 0u32;
+    for (k, n) in sizes.iter().enumerate() {
+        f.instruction(&I::I32Const(k as i32));
+        f.instruction(&I::GlobalGet(NLS_HIST_GLOBAL));
+        f.instruction(&I::I32Const(hist_off as i32));
+        f.instruction(&I::I32Add);
+        f.instruction(&I::I32Const(*n as i32));
+        f.instruction(&I::Call(rt_index("rt_nls_register").expect("rt_nls_register is a runtime builtin")));
+        hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(*n);
     }
     // nominal block: rt_alloc, then store each system's iteration-variable nominal
     // constants (concatenated in system order) for `rt_solve_nls`'s x-scaling.

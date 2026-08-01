@@ -6,6 +6,7 @@
 use alloc::vec;
 
 use crate::solvers::Nls;
+use core::cell::UnsafeCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
 use crate::{
@@ -1242,6 +1243,7 @@ pub(crate) trait History {
     fn shift(&mut self, from: usize, to: usize);
     /// Overwrite entry `k` and set the count to `len`.
     fn put(&mut self, k: usize, len: usize, time: f64, x: &[f64]);
+    fn set_len(&mut self, len: usize);
 }
 
 /// Count at `count_addr`, then `HIST_DEPTH` × (time, `n` values) from `base`.
@@ -1279,6 +1281,9 @@ impl History for MemHistory {
         for (i, v) in x.iter().enumerate() {
             unsafe { store_f64(at + 8 + (i * 8) as u32, *v) };
         }
+        unsafe { store_u32(self.count_addr, len as u32) };
+    }
+    fn set_len(&mut self, len: usize) {
         unsafe { store_u32(self.count_addr, len as u32) };
     }
 }
@@ -1350,6 +1355,43 @@ pub(crate) fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
         h.shift(k, k + 1);
     }
     h.put(0, (count + 1).min(HIST_DEPTH), time, x);
+}
+
+/// `cleanValueListbyTime`: keep only the newest entry at or before `time`.
+pub(crate) fn history_clean(h: &mut dyn History, time: f64) {
+    for k in 0..h.len() {
+        if h.time(k) <= time {
+            if k > 0 {
+                h.shift(k, 0);
+            }
+            return h.set_len(1);
+        }
+    }
+    h.set_len(0);
+}
+
+/// C's `simulationInfo->nonlinearSystemData`: each system's (state address, size),
+/// filled by the module `start`.
+struct RosterCell(UnsafeCell<alloc::vec::Vec<(u32, usize)>>);
+// Single-threaded wasm: no concurrent access.
+unsafe impl Sync for RosterCell {}
+static ROSTER: RosterCell = RosterCell(UnsafeCell::new(alloc::vec::Vec::new()));
+
+/// `k == 0` starts a fresh roster, so a second model replaces the first.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
+    let roster = unsafe { &mut *ROSTER.0.get() };
+    roster.truncate(k as usize);
+    roster.push((hist_addr, n as usize));
+}
+
+/// C's `cleanUpOldValueListAfterEvent`, called once per event.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_clean_history(time: f64) {
+    for &(addr, n) in unsafe { &*ROSTER.0.get() } {
+        let mut hist = MemHistory { count_addr: addr, base: addr + 16 + (n * 8) as u32, n };
+        history_clean(&mut hist, time);
+    }
 }
 
 /// Row abs-sum of `J` (`matVecMultAbsBB` + `vecMakeFinite`). A zero row stays 0,
@@ -2614,6 +2656,9 @@ mod tests {
             self.entries.truncate(len);
             assert_eq!(self.entries.len(), len);
         }
+        fn set_len(&mut self, len: usize) {
+            self.entries.truncate(len);
+        }
     }
 
     // Replay the C runtime's own `oldValueList` trace (`nls_c_trace`): for every
@@ -2677,6 +2722,19 @@ mod tests {
         assert_eq!((pick.old, pick.old2, pick.exact), (Some(0), Some(1), false));
         history_guess(&h, &pick, 4.0, &mut guess);
         assert_eq!(guess, [40.0, 5.0]);
+    }
+
+    // An event before every stored entry empties the list.
+    #[test]
+    fn history_clean_keeps_one_entry() {
+        let mut h = VecHistory::default();
+        for (t, v) in [(1.0, 10.0), (2.0, 20.0), (3.0, 30.0)] {
+            history_store(&mut h, t, &[v]);
+        }
+        history_clean(&mut h, 2.5);
+        assert_eq!((h.len(), h.time(0), h.value(0, 0)), (1, 2.0, 20.0));
+        history_clean(&mut h, 0.5);
+        assert_eq!(h.len(), 0);
     }
 
     /// `initializationTests.singularJacobian_05`: five monomial equations whose

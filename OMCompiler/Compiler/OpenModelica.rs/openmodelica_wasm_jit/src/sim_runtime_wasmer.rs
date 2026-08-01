@@ -896,6 +896,11 @@ impl sim_driver::SimEngine for WasmerEngine {
             Err(_) => 0,
         }
     }
+    fn clean_nls_history(&mut self, time: f64) {
+        if let Ok(f) = self.rt_inst.exports.get_typed_function::<f64, ()>(&self.store, "rt_nls_clean_history") {
+            let _ = f.call(&mut self.store, time);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

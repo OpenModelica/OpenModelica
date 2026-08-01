@@ -158,6 +158,9 @@ impl SimEngine for InWasmEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn clean_nls_history(&mut self, time: f64) {
+        crate::nls::rt_nls_clean_history(time);
+    }
 }
 
 /// One resumable in-wasm run: engine, driver, decoded model view, and the result

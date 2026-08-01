@@ -418,6 +418,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
+    ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
