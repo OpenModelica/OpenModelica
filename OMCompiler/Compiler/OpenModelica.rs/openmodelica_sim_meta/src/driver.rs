@@ -1710,9 +1710,11 @@ pub fn make_driver(
     arm_alarm();
     let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
-    // A model compiled with `method="cvode"` reaches here without passing through
-    // `simflags::check`, so this build's lack of CVODE is caught here too.
-    if method == "cvode" && !cfg!(sundials) {
+    // Ahead of the events path below, which returns before the match.
+    // `dassljac` is dassl with a symbolic Jacobian, which C also falls back from.
+    let supported = matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "")
+        || (method == "cvode" && cfg!(sundials));
+    if !supported {
         return Err(UNSUPPORTED_METHOD);
     }
 
@@ -1721,7 +1723,7 @@ pub fn make_driver(
         return Ok((Box::new(EventsDriver::new(e, model, sim_data, method)?), label));
     }
     match method {
-        "dassl" | "dasslrt" | "ida" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
+        "dassl" | "dasslrt" | "dassljac" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
         // Uniform host-driven Euler so it is resumable/cancellable like DASSL.
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
         #[cfg(sundials)]
