@@ -403,7 +403,6 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  /* check rows (or cols?) */
   for(i=1; i < nlsSize; i++)
   {
     if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
