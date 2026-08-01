@@ -1,0 +1,27 @@
+// name: translateAcausalDAE1
+// keywords: acausal DAE separate compilation
+// status: correct
+//
+// Generates separately-compilable DAE residual code for each top-level
+// component of a flowsheet and stitches them together with the connection
+// equations extracted from the model instance (translateAcausalDAE uses
+// getModelInstance + translateResidualsDAE + combine_components.py).
+//
+
+loadFile("Example1Total.mo"); getErrorString();
+translateAcausalDAE(Example1_total); getErrorString();
+readFile("_connect_Example1_total.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// "connect(mov.port_b, res.port_a);
+// connect(sou.ports[1], mov.port_a);
+// connect(res.port_b, sin.ports[1]);
+// connect(const.y, mov.m_flow_in);
+// "
+// ""
+// endResult

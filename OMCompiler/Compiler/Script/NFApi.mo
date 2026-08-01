@@ -3095,12 +3095,25 @@ function translateResidualsDAE
   output Boolean success = true;
 protected
   Boolean disable_single_flow_eq;
+  Boolean nls_analytic_jac;
+  Boolean dae_mode;
   list<String> non_std_flags;
   FlatModel flat_model;
   Flatten.FunctionTree funcs;
   Option<SimCode.SimulationSettings> simSettings;
 algorithm
   disable_single_flow_eq := FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, true);
+  // This API generates DAE-mode residual code; set the DAE_MODE config flag so
+  // the backend treats it as DAE mode (e.g. keeps homotopy() in the residual for
+  // the runtime homotopy ramp, see Initialization.removeInitializationStuff2).
+  dae_mode := Flags.getConfigBool(Flags.DAE_MODE);
+  FlagsUtil.setConfigBool(Flags.DAE_MODE, true);
+  // Components with bidirectional stream connectors keep unevaluated inStream()
+  // calls (the connector inflow, resolved when the component is coupled). These
+  // form small nonlinear systems whose symbolic Jacobian cannot be computed
+  // (inStream is not differentiable here); the consumer builds its own Jacobian,
+  // so disable analytic NLS Jacobians to avoid spurious internal errors.
+  nls_analytic_jac := FlagsUtil.set(Flags.NLS_ANALYTIC_JACOBIAN, false);
   non_std_flags := FlagsUtil.appendConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute");
 
   try
@@ -3115,6 +3128,8 @@ algorithm
   end try;
 
   FlagsUtil.setConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, non_std_flags);
+  FlagsUtil.setConfigBool(Flags.DAE_MODE, dae_mode);
+  FlagsUtil.set(Flags.NLS_ANALYTIC_JACOBIAN, nls_analytic_jac);
   FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
 end translateResidualsDAE;
 

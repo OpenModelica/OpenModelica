@@ -1041,8 +1041,15 @@ algorithm
   exp := match reducedStreams
     // Unconnected stream connector:
     //   inStream(c) = c;
+    // For separate compilation (translateResidualsDAE, -d=disableSingleFlowEq) we
+    // keep inStream(c) unevaluated instead of collapsing it to c, so a component
+    // that models both stream directions (allow flow reversal) does not end up
+    // with a redundant equation pair (c1 = c2; c2 = c1). The deferred inStream is
+    // resolved later when the component is coupled through its connectors.
     case {Connector.CONNECTOR(face = Face.INSIDE)}
-      then Expression.fromCref(streamCref);
+      then if Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ)
+           then makeInStreamCall(Expression.fromCref(streamCref))
+           else Expression.fromCref(streamCref);
 
     // Two inside connected stream connectors:
     //   inStream(c1) = c2;
