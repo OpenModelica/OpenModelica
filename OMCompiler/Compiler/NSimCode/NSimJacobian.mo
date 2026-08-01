@@ -42,6 +42,7 @@ encapsulated package NSimJacobian
 public
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -351,6 +352,35 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
+
+          // For per-element seed groups that start above index [1] (partial-slice
+          // NLS iter vars), add a virtual SimVar keyed on the base cref (no
+          // subscripts).  Templates look up $SEED.x when they see $SEED.x[$i1]
+          // with an iterator subscript; the virtual SimVar's index encodes the
+          // offset so (&seedVars[index])[$i1-1] reaches the correct element.
+          for sv in seedVars loop
+            if ComponentRef.hasSubscripts(sv.name) then
+              () := match ComponentRef.getSubscripts(sv.name)
+                local
+                  ComponentRef base_cref;
+                  Integer sub_val;
+                  SimVar virtual_sv;
+                case {Subscript.INDEX(index = Expression.INTEGER(sub_val))}
+                  guard sub_val > 1
+                  algorithm
+                    base_cref := ComponentRef.stripSubscriptsAll(sv.name);
+                    if not UnorderedMap.contains(base_cref, jac_map) then
+                      virtual_sv := sv;
+                      virtual_sv.name := base_cref;
+                      virtual_sv.index := sv.index - (sub_val - 1);
+                      virtual_sv.arrayCref := NONE();
+                      UnorderedMap.add(base_cref, virtual_sv, jac_map);
+                    end if;
+                  then ();
+                else ();
+              end match;
+            end if;
+          end for;
 
           jac := SIM_JAC(
             name                = jacobian.name,
