@@ -33,6 +33,7 @@
 
 #include "../options.h"
 #include "../arrayIndex.h"
+#include "../../openmodelica_types.h"
 
 // TODO: Calibrate safety factor for internal tolerances
 
@@ -127,9 +128,8 @@ typedef struct GB_INTERNAL_NLS_DATA
   modelica_boolean multirate;         // multirate or singlerate system?
   modelica_boolean new_fast_states;   // if the selection changed and we need to update sparse pattern and symbolic factorization - set from NLS routine
   SPARSE_PATTERN *odePatternMR;         // pattern of the ODE / fast states ODE
-  modelica_boolean ownsODEPatternMR; // true if sparse pattern was created or false if taken from the NLS
-  unsigned int* colorCols_stub;       // contains the coloring for evalJacobian
-  unsigned int maxColors_stub;        // Number of colors
+  modelica_boolean *workColorRows;    // row collision memory for greedy coloring
+  modelica_boolean *workColorCols;    // colored columns memory for greedy coloring
 } GB_INTERNAL_NLS_DATA;
 
 /**
@@ -225,7 +225,7 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base
     // if we have a blueprint, then simply override the entries of the blueprint, we sure that it is allocated with sufficient size though!
     acc_pat = blueprint;
     acc_pat->nnz = total_nnz;
-    acc_pat->maxColors = size;
+    acc_pat->nColors = size;
   }
   else
   {
@@ -278,46 +278,36 @@ static void gbInternal_evalJacobianMR(DATA* data,
                                       GB_INTERNAL_NLS_DATA *nls,
                                       double* smallJac)
 {
-  const SPARSE_PATTERN* fullSp  = fullJac->sparsePattern;
-  const SPARSE_PATTERN* smallSp = nls->odePatternMR;
+  const SPARSE_PATTERN* sp = nls->odePatternMR;
 
   int* fast_idx = gbData->fastStatesIdx;
   unsigned int  size_fast = gbData->nFastStates;
 
   fullJac->evalSelection = NULL; // TODO: set evalSelection for Jacobian gbData->gbfData->jacobian->evalSelection;
 
-  int color, col, nz;
+  size_t color, ci, col, big_col, nz, small_row, full_row;
 
-  for (color = 0; color < nls->maxColors_stub; color++)
-  {
-    for (col = 0; col < size_fast; col++)
-    {
-      unsigned int big_col = fast_idx[col];
-
-      if (nls->colorCols_stub[big_col] - 1 == color)
-      {
-        fullJac->seedVars[big_col] = 1.0;
-      }
+  for (color = 0; color < sp->nColors; color++) {
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color + 1]; ci++) {
+      col = sp->color_index[ci];
+      big_col = fast_idx[col];
+      fullJac->seedVars[big_col] = 1.0;
     }
 
     fullJac->evalColumn(data, threadData, fullJac, NULL);
 
-    for (col = 0; col < size_fast; col++)
-    {
-      unsigned int big_col = fast_idx[col];
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color + 1]; ci++) {
+      col = sp->color_index[ci];
+      big_col = fast_idx[col];
 
-      if (nls->colorCols_stub[big_col] - 1 == color)
-      {
-        for (nz = smallSp->leadindex[col]; nz < smallSp->leadindex[col + 1]; nz++)
-        {
-          unsigned int small_row = smallSp->index[nz];
-          unsigned int full_row = fast_idx[small_row];
+      for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+        small_row = sp->index[nz];
+        full_row = fast_idx[small_row];
 
-          smallJac[nz] = fullJac->resultVars[full_row];
-        }
-
-        fullJac->seedVars[big_col] = 0.0;
+        smallJac[nz] = fullJac->resultVars[full_row];
       }
+
+      fullJac->seedVars[big_col] = 0.0;
     }
   }
 
@@ -337,8 +327,9 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
   int *state_map = NULL;
 
   int size;
-  unsigned int max_colors;
-  unsigned int *color_cols;
+  unsigned int nColors;
+  unsigned int *color_leadindex;
+  unsigned int *color_index;
   int full_size = gbData->nStates;
 
   if (nls->multirate)
@@ -347,16 +338,15 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
     state_map = gbData->fastStatesIdx;
     size = gbData->nFastStates;
     selection = gbData->gbfData->evalSelectionFast;
-    max_colors = nls->maxColors_stub;
-    color_cols = nls->colorCols_stub;
   }
   else
   {
     sparsity = jacobian_ODE->sparsePattern;
     size = gbData->nStates;
-    max_colors = sparsity->maxColors;
-    color_cols = sparsity->colorCols;
   }
+  nColors = sparsity->nColors;
+  color_leadindex = sparsity->color_leadindex;
+  color_index = sparsity->color_index;
 
   double *x = data->localData[0]->realVars;
   double *der_x = &data->localData[0]->realVars[full_size];
@@ -371,58 +361,49 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
 
   memcpy(der_x_ref, der_x, full_size * sizeof(double));
 
-  for (unsigned int color = 0; color < max_colors; color++)
-  {
+  for (unsigned int color = 0; color < nColors; color++) {
     // careful perturbation of the variables (a la DASSL interface)
-    for (unsigned int col = 0; col < size; col++)
-    {
+    for (unsigned int ci = color_leadindex[color]; ci < color_leadindex[color+1]; ci++) {
+      unsigned int col = color_index[ci];
       unsigned int big_col = state_map ? state_map[col] : col;
 
-      if (color_cols[big_col] - 1 == color)
-      {
-        // we follow the procedure of the DASSL interface for the selection of perturbation h_i
+      // we follow the procedure of the DASSL interface for the selection of perturbation h_i
 
-        // h * f(x)_i
-        double delta_hhh = delta_h * der_x_ref[big_col];
+      // h * f(x)_i
+      double delta_hhh = delta_h * der_x_ref[big_col];
 
-        // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-        double raw_weight = nls->integrator_tol * nominals[big_col] + nls->integrator_tol * fabs(x[big_col]);
+      // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
+      double raw_weight = nls->integrator_tol * nominals[big_col] + nls->integrator_tol * fabs(x[big_col]);
 
-        // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
-        delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
-        delta_hh[big_col] = x[big_col] + delta_hh[big_col] - x[big_col];
+      // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
+      delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
+      delta_hh[big_col] = x[big_col] + delta_hh[big_col] - x[big_col];
 
-        if (x[big_col] + delta_hh[big_col] >= maxs[big_col])
-        {
-          delta_hh[big_col] *= -1;
-        }
-
-        x_save[big_col] = x[big_col];
-        x[big_col] += delta_hh[big_col];
-        delta_hh[big_col] = 1.0 / delta_hh[big_col];
+      if (x[big_col] + delta_hh[big_col] >= maxs[big_col]) {
+        delta_hh[big_col] *= -1;
       }
+
+      x_save[big_col] = x[big_col];
+      x[big_col] += delta_hh[big_col];
+      delta_hh[big_col] = 1.0 / delta_hh[big_col];
     }
 
     // eval f(x + h)
     gbode_fODE(data, threadData, NULL, selection);
 
     // do forward finite differencing (f(x + h) - f(x)) / h and reset states
-    for (unsigned int col = 0; col < size; col++)
-    {
+    for (unsigned int ci = color_leadindex[color]; ci < color_leadindex[color+1]; ci++) {
+      unsigned int col = color_index[ci];
       unsigned int big_col = state_map ? state_map[col] : col;
 
-      if (color_cols[big_col] - 1 == color)
-      {
-        for (unsigned int nz = sparsity->leadindex[col]; nz < sparsity->leadindex[col + 1]; nz++)
-        {
-          unsigned int small_row = sparsity->index[nz];
-          unsigned int big_row   = state_map ? state_map[small_row] : small_row;
+      for (unsigned int nz = sparsity->leadindex[col]; nz < sparsity->leadindex[col + 1]; nz++) {
+        unsigned int small_row = sparsity->index[nz];
+        unsigned int big_row   = state_map ? state_map[small_row] : small_row;
 
-          nls->jacobian_callback[nz] = (der_x[big_row] - der_x_ref[big_row]) * delta_hh[big_col];
-        }
-
-        x[big_col] = x_save[big_col];
+        nls->jacobian_callback[nz] = (der_x[big_row] - der_x_ref[big_row]) * delta_hh[big_col];
       }
+
+      x[big_col] = x_save[big_col];
     }
   }
 }
@@ -1522,11 +1503,10 @@ void *gbInternalNlsAllocate(int size,
     nls->ownsNlsPattern = TRUE;
 
     nls->odePatternMR = allocSparsePattern(jacobian_ODE->sizeRows, nls_nnz_estimate, jacobian_ODE->sizeRows);
-    nls->ownsODEPatternMR = TRUE;
 
     // we also need to allocate the stub data
-    nls->colorCols_stub = (unsigned int *) malloc(jacobian_ODE->sizeRows * sizeof(unsigned int));
-    nls->maxColors_stub = 0;
+    nls->workColorRows = (modelica_boolean *) malloc(jacobian_ODE->sizeRows * sizeof(modelica_boolean));
+    nls->workColorCols = (modelica_boolean *) malloc(jacobian_ODE->sizeCols * sizeof(modelica_boolean));
   }
   else if (nls->use_t_transform)
   {
@@ -1547,7 +1527,6 @@ void *gbInternalNlsAllocate(int size,
     updateSparsePatternMappings(nls->nlsPattern, jacobian_ODE->sparsePattern, nls, jacobian_ODE->sizeRows);
 
     nls->odePatternMR = NULL;
-    nls->ownsODEPatternMR = FALSE;
 
     // set exact value
     nls_nnz_estimate = nls->nlsPattern->nnz;
@@ -1615,7 +1594,7 @@ void *gbInternalNlsAllocate(int size,
     // heuristic that takes sparsity into account
     if (nls->size > 8)
     {
-      nls->theta_keep = pow(10.0, -3.0 + 1.75 * log(1.0 + (double)jacobian_ODE->sparsePattern->maxColors) / log(1.0 + (double)nls->size));
+      nls->theta_keep = pow(10.0, -3.0 + 1.75 * log(1.0 + (double)jacobian_ODE->sparsePattern->nColors) / log(1.0 + (double)nls->size));
     }
     else
     {
@@ -1695,6 +1674,8 @@ void *gbInternalNlsAllocate(int size,
 void gbInternalNlsFree(void *nls_ptr)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) nls_ptr;
+  if (!nls) return;
+
   free(nls->jacobian_callback);
   free(nls->ode_to_nls);
   free(nls->nls_diag_indices);
@@ -1706,11 +1687,7 @@ void gbInternalNlsFree(void *nls_ptr)
   {
     freeSparsePattern(nls->nlsPattern);
   }
-
-  if (nls->ownsODEPatternMR)
-  {
-    freeSparsePattern(nls->odePatternMR);
-  }
+  freeSparsePattern(nls->odePatternMR);
 
   if (!nls->tabl->t_transform)
   {
@@ -1749,11 +1726,6 @@ void gbInternalNlsFree(void *nls_ptr)
     free(nls->W);
   }
 
-  if (nls->multirate)
-  {
-    free(nls->colorCols_stub);
-  }
-
   freeNlsUserData(nls->nls_user_data);
   free(nls);
 }
@@ -1768,13 +1740,13 @@ static void transferFastColoring(GB_INTERNAL_NLS_DATA *nls,
                                  DATA_GBODE *gbData,
                                  SPARSE_PATTERN *fast_ode_pattern)
 {
-  nls->maxColors_stub = fast_ode_pattern->maxColors;
-  memset(nls->colorCols_stub, 0, gbData->nStates * sizeof(unsigned int));
+  nls->odePatternMR->nColors = fast_ode_pattern->nColors;
+  memcpy(nls->odePatternMR->color_leadindex, fast_ode_pattern->color_leadindex, fast_ode_pattern->nColors + 1);
 
-  for (unsigned int i = 0; i < nls->size; i++)
-  {
-    unsigned int fast_idx = gbData->fastStatesIdx[i];
-    nls->colorCols_stub[fast_idx] = fast_ode_pattern->colorCols[i];
+  for (size_t ci = 0; ci < nls->size; ci++) {
+    size_t col = fast_ode_pattern->color_index[ci];
+    size_t big_col = gbData->fastStatesIdx[col];
+    nls->odePatternMR->color_index[ci] = big_col;
   }
 }
 
@@ -1835,53 +1807,48 @@ static void reduceFullToFastPattern(const SPARSE_PATTERN *full,
 }
 
 static void createGreedyColoring(SPARSE_PATTERN *pattern,
-                                 unsigned int size,
-                                 unsigned int *work)
+                                 size_t nRows,
+                                 size_t nCols,
+                                 modelica_boolean *rowUsed,
+                                 modelica_boolean *columnColored)
 {
-  unsigned int *rowUsed = work;
-  unsigned int remaining = size;
-  unsigned int color = 1;
+  size_t nc = 0; // count of already colored columns
 
-  for (unsigned int i = 0; i < size; i++)
-    pattern->colorCols[i] = 0;
+  // no columns colored yet
+  memset(columnColored, FALSE, nCols * sizeof(modelica_boolean));
+  pattern->nColors = 0;
+  pattern->color_leadindex[0] = 0;
 
-  while (remaining > 0)
-  {
-    memset(rowUsed, 0, size * sizeof(unsigned int));
+  while (nc < nCols) {
+    memset(rowUsed, 0, nRows * sizeof(modelica_boolean));
 
-    for (unsigned int col = 0; col < size; col++)
-    {
-      if (pattern->colorCols[col] != 0) continue;
+    for (size_t col = 0; col < nCols; col++) {
+      if (columnColored[col]) continue;
 
-      int conflict = 0;
+      modelica_boolean conflict = FALSE;
 
-      for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++)
-      {
-        unsigned int row = pattern->index[nz];
-        if (rowUsed[row])
-        {
-          conflict = 1;
+      for (size_t nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++) {
+        size_t row = pattern->index[nz];
+        if (rowUsed[row]) {
+          conflict = TRUE;
           break;
         }
       }
 
-      if (!conflict)
-      {
-        pattern->colorCols[col] = color;
-        remaining--;
+      if (!conflict) {
+        // add column to current color
+        pattern->color_index[nc++] = col;
 
-        for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++)
-        {
-          unsigned int row = pattern->index[nz];
-          rowUsed[row] = 1;
+        // add row constraints from column
+        for (size_t nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++) {
+          size_t row = pattern->index[nz];
+          rowUsed[row] = TRUE;
         }
       }
     }
-
-    color++;
+    pattern->nColors++;
+    pattern->color_leadindex[pattern->nColors] = nc;
   }
-
-  pattern->maxColors = color - 1;
 }
 
 modelica_boolean updateFastStates(DATA *data,
@@ -1906,7 +1873,7 @@ modelica_boolean updateFastStates(DATA *data,
   reduceFullToFastPattern(full_ode_pattern, gbData->nStates, nls->odePatternMR, gbData->fastStatesIdx, gbData->nFastStates, (unsigned int *) nls->work);
 
   // create the coloring for struct(J)_fast
-  createGreedyColoring(nls->odePatternMR, gbData->nFastStates, (unsigned int *) nls->work);
+  createGreedyColoring(nls->odePatternMR, gbData->nFastStates, gbData->nFastStates, nls->workColorRows, nls->workColorCols);
 
   // transfer the coloring of struct(J)_fast -> struct(J)_fast embedded into J itself for selective evaluation
   transferFastColoring(nls, gbData, nls->odePatternMR);

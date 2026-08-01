@@ -32,6 +32,7 @@
 #include "gbode_util.h"
 
 #include "model_help.h"
+#include "../../util/omc_error.h"
 #include "simulation_data.h"
 #include "solver_main.h"
 
@@ -90,12 +91,12 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
 void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
 {
   SPARSE_PATTERN* sparsePatternT;
-  int row, col, nCols, leadIdx;
-  int i, j, maxColors = 0;
+  int row, col;
+  int i, j, nColors = 0;
 
   // initialize array to zeros
-  int* tabu;
-  tabu = (int*) calloc(sizeCols*sizeCols, sizeof(int));
+  int* tabu = (int*) calloc(sizeCols*sizeCols, sizeof(int));
+  size_t* colorCols = malloc(sizeCols* sizeof(size_t));
 
   // Allocate memory for new sparsity pattern
   sparsePatternT = allocSparsePattern(sizeCols, sparsePattern->nnz, sizeCols);
@@ -114,8 +115,8 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
     {
       if (tabu[col*sizeCols + i] == 0)
       {
-        sparsePattern->colorCols[col] = i+1;
-        maxColors = fmax(maxColors, i+1);
+        colorCols[col] = i;
+        nColors = fmax(nColors, i+1);
 
         // set tabu for columns that have entries in the same row!
         for (row=sparsePattern->leadindex[col]; row<sparsePattern->leadindex[col+1]; row++)
@@ -139,10 +140,24 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
       }
     }
   }
-  sparsePattern->maxColors = maxColors;
+  sparsePattern->nColors = nColors;
+
+  // Convert to coloring storage
+  i = 0;
+  for (size_t color = 0; color < nColors; ++color) {
+    sparsePattern->color_leadindex[color] = i;
+    for (col = 0; col < sizeCols; ++col) {
+      if (colorCols[col] == color) {
+        sparsePattern->color_index[i++] = col;
+      }
+    }
+  }
+  assertStreamPrint(NULL, i == sizeCols, "not all columns were colored");
+  sparsePattern->color_leadindex[nColors] = sizeCols;
 
   // free memory allocation for the transposed sprasity pattern
   freeSparsePattern(sparsePatternT);
+  free(colorCols);
   free(tabu);
 }
 
@@ -224,8 +239,9 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
 
   if (missingDiags == 0) {
     // If missingDiags=0 we can re-use coloring (and everything else)
-    sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
-    memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
+    sparsePattern_DIRK->nColors = sparsePattern_ODE->nColors;
+    memcpy(sparsePattern_DIRK->color_leadindex, sparsePattern_ODE->color_leadindex, (sparsePattern_ODE->nColors+1)*sizeof(unsigned int));
+    memcpy(sparsePattern_DIRK->color_index, sparsePattern_ODE->color_index, jacobian->sizeCols*sizeof(unsigned int));
   } else {
     // Calculate new coloring, because of additional nonZeroDiagonals
     ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols, 1);
@@ -431,9 +447,6 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   free(coo_row);
 
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
-
-  // for (int k=0; k<nStages; k++)
-  //   printIntVector_gb("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
 
   return sparsePattern_IRK;
 }
