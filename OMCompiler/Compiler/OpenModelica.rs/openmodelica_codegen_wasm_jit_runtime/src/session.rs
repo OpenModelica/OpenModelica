@@ -257,6 +257,8 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         Err(_) => return -1,
     };
 
+    crate::nls::rt_set_step_size(model.step_size());
+
     driver::set_clock(now_ms_hook);
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);

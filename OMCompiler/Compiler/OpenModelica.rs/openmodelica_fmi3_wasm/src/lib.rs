@@ -298,6 +298,8 @@ fn new_state() -> Option<MeState> {
     if layout.total == 0 {
         return None;
     }
+    // From the model's own DefaultExperiment, as in C's FMU.
+    openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(meta.step_size());
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(layout.total);
     // rt_alloc leaves the block uninitialised; zero it so unset slots read 0.
     unsafe {

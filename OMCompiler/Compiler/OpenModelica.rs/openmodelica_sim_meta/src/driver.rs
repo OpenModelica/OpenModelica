@@ -263,12 +263,13 @@ fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 16;
+pub const RT_STATS: usize = 24;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
-    "nls_vary_start",
+    "nls_vary_start", "nls_stale", "newton_irregular", "newton_lambda", "newton_negstep",
+    "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular",
 ];
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
@@ -1120,13 +1121,10 @@ pub fn set_abort_slow(v: bool) {
 }
 
 /// Solve the initial system: `functionParameters`, then `functionInitialEquations`
-/// with the relations fresh (init mode). Tries directly first (lambda = 1, so
-/// `homotopy(a, s)` = a); if that leaves a non-converged nonlinear system and the
-/// model uses `homotopy()`, fall back to the global equidistant homotopy
-/// continuation (C's `solveWithGlobalHomotopy`): lambda 0 -> 1 in `HOMOTOPY_STEPS`
-/// steps, step 0 solving the simplified `functionInitialEquations_lambda0`, each
-/// step seeded by the previous one's solution. Leaves lambda = 1, then seeds
-/// `relationsPre` for the continuous phase's held relations.
+/// with the relations fresh (init mode) — directly, or through the global
+/// equidistant homotopy continuation (C's `solveWithGlobalHomotopy`), see
+/// `run_initialization_impl`. Leaves lambda = 1, then seeds `relationsPre` for the
+/// continuous phase's held relations.
 pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
@@ -1165,6 +1163,40 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     let _ = rethrow_store::take();
     set_no_throw(false);
     term_report::reset();
+    seed_start_values(e, sim_data, layout)?;
+
+    // C's `symbolic_initialization`: a model with `homotopy()` goes straight to the
+    // global equidistant continuation, unless `-noHomotopyOnFirstTry` asks for the
+    // direct solve first with the continuation as the fallback.
+    if !layout.has_homotopy {
+        return direct_initial_solve(e, sim_data, layout);
+    }
+    if homotopy_on_first_try() {
+        run_homotopy_continuation(e, sim_data, layout)?;
+        init_report::set_homotopy_steps(homotopy_steps() as u32);
+        return Ok(());
+    }
+    if direct_initial_solve(e, sim_data, layout).is_ok() {
+        return Ok(());
+    }
+    log_line(&alloc::format!(
+        "{}Failed to solve the initialization problem without homotopy method. \
+         If homotopy is available the homotopy method is used now.\n",
+        log_prefix("LOG_ASSERT", "warning")
+    ));
+    // C's catch arm resets everything to start before the continuation runs.
+    init_report::reset();
+    let _ = rethrow_store::take();
+    seed_start_values(e, sim_data, layout)?;
+    run_homotopy_continuation(e, sim_data, layout)?;
+    init_report::set_homotopy_steps(homotopy_steps() as u32);
+    Ok(())
+}
+
+/// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
+/// `updateBoundVariableAttributes`: every variable back at its start value with
+/// the bound parameters recomputed. Run before each attempt at the initial system.
+fn seed_start_values(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     e.call1("functionParameters", sim_data)?;
     // Params first (a start expression may read one), then fill start slots, then
     // start overrides (replacing the just-computed start).
@@ -1178,22 +1210,21 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;
     }
+    Ok(())
+}
 
-    // A model whose initial system contains `homotopy()` (`has_homotopy`) is solved
-    // with the global equidistant homotopy continuation on the first try — C's
-    // default `-homotopyOnFirstTry` for homotopy-support models — not tried directly
-    // first. This matches C's initialization path and its "with N homotopy steps"
-    // report. A model without homotopy is solved directly.
-    if layout.has_homotopy {
-        run_homotopy_continuation(e, sim_data, layout)?;
-        init_report::set_homotopy_steps(homotopy_steps() as u32);
-        return Ok(());
-    }
+/// Solve the initial system at lambda = 1, where `homotopy(a, s)` is `a`.
+fn direct_initial_solve(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     e.call1("functionInitialEquations", sim_data)?;
-    check_nls(e, sim_data, layout)?;
-    Ok(())
+    check_nls(e, sim_data, layout)
+}
+
+/// C's `FLAG_HOMOTOPY_ON_FIRST_TRY`, which it sets itself for a model with
+/// homotopy support unless `-noHomotopyOnFirstTry` was given.
+fn homotopy_on_first_try() -> bool {
+    crate::simflags::with_flags(|f| f.homotopy_on_first_try).unwrap_or(true)
 }
 
 /// Global equidistant homotopy continuation (C's `solveWithGlobalHomotopy`):
@@ -1678,7 +1709,7 @@ pub fn make_driver(
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
     let layout = &model.layout;
-    set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
+    set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
     // A model compiled with `method="cvode"` reaches here without passing through
     // `simflags::check`, so this build's lack of CVODE is caught here too.
     if method == "cvode" && !cfg!(sundials) {
@@ -1753,7 +1784,7 @@ pub fn drive(
         if !use_events && method == "euler" && !host_driven {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
-            set_zc_tolerance(e, sim_data, layout, model.tolerance)?;
+            set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
             return run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats);
         }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
@@ -3077,11 +3108,7 @@ impl SolverCore {
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
-                    let step_size = if model.n_intervals > 0 {
-                        (model.stop_time - model.start_time) / model.n_intervals as f64
-                    } else {
-                        0.0
-                    };
+                    let step_size = model.step_size();
                     if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
                         let zc = self.root_index();
                         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");

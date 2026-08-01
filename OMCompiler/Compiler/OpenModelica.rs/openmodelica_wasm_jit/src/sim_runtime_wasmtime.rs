@@ -743,6 +743,10 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         let codes = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, codes))?;
     }
+    // The driver that owns the `SimMeta` stays on the host in this build.
+    if let Ok(set) = rt_inst.get_typed_func::<f64, ()>(&mut store, "rt_set_step_size") {
+        wts(set.call(&mut store, model.meta.step_size()))?;
+    }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
     }

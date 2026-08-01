@@ -380,6 +380,17 @@ impl SimMeta {
             2
         }
     }
+
+    /// C's `simulationInfo->stepSize`: the output interval `SimCodeMain` writes into
+    /// the init XML, or the `-stepSize` override. Solver policy reads it too (the NLS
+    /// initial-guess window, the chattering limit), so it is not only the grid.
+    pub fn step_size(&self) -> f64 {
+        if let Some(h) = crate::simflags::with_flags(|f| f.step_size) {
+            return h;
+        }
+        let n = if self.n_intervals > 0 { self.n_intervals } else { 500 };
+        (self.stop_time - self.start_time) / n as f64
+    }
 }
 
 // ─────────────────────────────── wire format ─────────────────────────────────

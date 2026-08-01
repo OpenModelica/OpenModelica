@@ -812,6 +812,9 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         let (nls, nls_ls, ls, lss) = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, nls, nls_ls, ls, lss))?;
     }
+    if let Ok(set) = rt_inst.exports.get_typed_function::<f64, ()>(&store, "rt_set_step_size") {
+        wts(set.call(&mut store, model.meta.step_size()))?;
+    }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
     }
