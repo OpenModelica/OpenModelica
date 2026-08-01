@@ -42,6 +42,7 @@ extern crate alloc;
 
 mod delay;
 mod nls;
+pub use nls::rt_set_step_size;
 #[cfg(test)]
 mod nls_c_trace;
 mod solvers;
@@ -149,7 +150,17 @@ pub const STAT_NLS_GUESS_HIT: u32 = 12;
 pub const STAT_NLS_ACCEPT: u32 = 13;
 pub const STAT_NLS_STORE_BACK: u32 = 14;
 pub const STAT_NLS_VARY_START: u32 = 15;
-pub const N_STATS: usize = 16;
+pub const STAT_NLS_STALE: u32 = 16;
+/// Why `newton_c` (C's `newtonAlgorithm`) gave up, so a run can be compared against
+/// C's own fallback count without a rebuild.
+pub const STAT_NEWTON_IRREGULAR: u32 = 17;
+pub const STAT_NEWTON_LAMBDA: u32 = 18;
+pub const STAT_NEWTON_NEGSTEP: u32 = 19;
+pub const STAT_NEWTON_MAXITER: u32 = 20;
+pub const STAT_NEWTON_STUCK: u32 = 21;
+pub const STAT_NEWTON_JAC: u32 = 22;
+pub const STAT_NEWTON_SINGULAR: u32 = 23;
+pub const N_STATS: usize = 24;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];

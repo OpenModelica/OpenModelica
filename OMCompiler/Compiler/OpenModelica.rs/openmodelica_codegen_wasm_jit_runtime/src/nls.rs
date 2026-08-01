@@ -11,7 +11,9 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use crate::{
     load_f64, load_u32, rt_alloc, rt_free, stat_inc, store_f64, store_u32, STAT_NLS_FAIL,
     STAT_NLS_ACCEPT, STAT_NLS_GUESS_HIT, STAT_NLS_ITER, STAT_NLS_JAC, STAT_NLS_NEWTON_FAIL,
-    STAT_NLS_RES, STAT_NLS_RETRY, STAT_NLS_SOLVE, STAT_NLS_STORE_BACK, STAT_NLS_VARY_START,
+    STAT_NEWTON_IRREGULAR, STAT_NEWTON_JAC, STAT_NEWTON_LAMBDA, STAT_NEWTON_MAXITER,
+    STAT_NEWTON_NEGSTEP, STAT_NEWTON_SINGULAR, STAT_NEWTON_STUCK, STAT_NLS_RES, STAT_NLS_RETRY,
+    STAT_NLS_SOLVE, STAT_NLS_STALE, STAT_NLS_STORE_BACK, STAT_NLS_VARY_START,
 };
 
 /// C's `EVAL_CONTEXT` (`util/context.h`), set by the driver. `updateInitialGuessDB`
@@ -37,6 +39,20 @@ fn context_stores_guess() -> bool {
         EVAL_CONTEXT.load(Ordering::Relaxed),
         CONTEXT_ODE | CONTEXT_ALGEBRAIC | CONTEXT_EVENTS
     )
+}
+
+/// C's `simulationInfo->stepSize`, which bounds how far back [`rt_solve_nls`] looks
+/// in a system's solution history. Pushed in: a host-driven run's driver, which has
+/// the `SimMeta` it comes from, is outside this module. 0 leaves the window empty.
+static STEP_SIZE: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_step_size(h: f64) {
+    STEP_SIZE.store(h.to_bits(), Ordering::Relaxed);
+}
+
+fn step_size() -> f64 {
+    f64::from_bits(STEP_SIZE.load(Ordering::Relaxed))
 }
 
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
@@ -1293,6 +1309,15 @@ pub(crate) fn history_pick(h: &dyn History, time: f64) -> Pick {
     Pick { old: h.len().checked_sub(1), old2: None, exact: false }
 }
 
+/// `getValues`' `oldOutput` (C's `nlsxOld`): the `old` entry verbatim.
+pub(crate) fn history_old(h: &dyn History, pick: &Pick, out: &mut [f64]) {
+    if let Some(a) = pick.old {
+        for (i, v) in out.iter_mut().enumerate() {
+            *v = h.value(a, i);
+        }
+    }
+}
+
 /// `extrapolateValues`; leaves `guess` alone when the list is empty.
 pub(crate) fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64]) {
     match (pick.old, pick.old2) {
@@ -1361,6 +1386,7 @@ fn newton_c(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
+    bounds: &[f64],
     res_scaling: &mut [f64],
     x0: &mut [f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -1416,8 +1442,11 @@ fn newton_c(
             }
         } else {
             for col in 0..n {
-                let h = FD_DELTA * (x[col].abs() + 1.0);
+                let mut h = FD_DELTA * (x[col].abs() + 1.0);
                 let saved = x[col];
+                if saved + h >= bounds[2 * col + 1] {
+                    h = -h; // difference away from the variable's max attribute
+                }
                 x[col] = saved + h;
                 eval(x, rp);
                 let inv = xscaling[col] / h;
@@ -1465,6 +1494,7 @@ fn newton_c(
     // and including `solveHybrd`, restarts from the varied point, not from `xStart`.
     x0.copy_from_slice(x);
     if !regular {
+        stat_inc(STAT_NEWTON_IRREGULAR);
         return (false, false);
     }
     let mut error_f_sqrd = nsq(&fvec);
@@ -1494,6 +1524,7 @@ fn newton_c(
             }
         }
         if lambda1 < LAMBDA_MIN_C {
+            stat_inc(STAT_NEWTON_LAMBDA);
             return (false, false);
         }
         let error_f1_sqrd = nsq(&fvec);
@@ -1556,6 +1587,7 @@ fn newton_c(
         error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
         if neg_steps > 20 {
+            stat_inc(STAT_NEWTON_NEGSTEP);
             return (false, false);
         }
         // C's issue #6419: on success keep the previous `x` when the new residual is no
@@ -1571,16 +1603,23 @@ fn newton_c(
             return (true, !last_was_good);
         }
         iter += 1;
-        if iter > MAX_ITER {
+        // C's `maxNumberOfIterations = size*100`.
+        if iter > 100 * n as i32 {
+            stat_inc(STAT_NEWTON_MAXITER);
             return (false, false);
         }
         small_steps += (delta_x_sqrd < xtol_sq * 1e4 || delta_x_sqrd_scaled < xtol_sq * 1e4) as i32;
         if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 {
-            return (error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6, false);
+            let less_accurate = error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
+            if !less_accurate {
+                stat_inc(STAT_NEWTON_STUCK);
+            }
+            return (less_accurate, false);
         }
 
         x.copy_from_slice(&x1);
         if !form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
+            stat_inc(STAT_NEWTON_JAC);
             return (false, false);
         }
         row_scaling(n, &jac, res_scaling);
@@ -1588,6 +1627,7 @@ fn newton_c(
         // in scaled unknowns, unscale, negate so `x1 = x + step`.
         step.copy_from_slice(&fvec);
         if !lu_solve(&jac, &mut step, n) {
+            stat_inc(STAT_NEWTON_SINGULAR);
             return (false, false);
         }
         for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
@@ -2139,14 +2179,9 @@ fn newton_sparse_solve(
 /// variables) are left at the solution; on failure the entry guess is restored
 /// and the flag is raised so the integrator can retry at a smaller step.
 ///
-/// `hist_addr` points at this system's extrapolation history (see [`nls_hist`
-/// layout in the codegen]): `count: u32 | time1: f64 | time2: f64 | x1[n] |
-/// x2[n]`. The initial guess is a linear extrapolation of the last two solutions
-/// to `time`, mirroring the C runtime's `getInitialGuess`/`extrapolateValues`;
-/// this is what lets a system converge at a fast transition (e.g. friction
-/// stuck↔slip) where the previous solution is a poor guess. If the extrapolated
-/// guess fails, the warm start is retried (a second start value, like the C
-/// solver), so no model regresses.
+/// `hist_addr` points at this system's persistent solver state (`nls_hist_bytes`
+/// in the codegen): `count: u32 (padded to 8) | lastTimeSolved: f64 |
+/// resScaling[n] | HIST_DEPTH × (time: f64, x[n])`.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_nls(
     sim_data: u32,
@@ -2286,41 +2321,53 @@ pub extern "C" fn rt_solve_nls(
         }
     };
 
-    // Per-system state: count | resScaling[n] | HIST_DEPTH × (time, x[n]).
+    // Per-system state: count | lastTimeSolved | resScaling[n] | DEPTH × (time, x[n]).
     // `resScaling` is C's `homotopyData->resScaling`, which lives in the per-system
     // solver data and survives between calls, starting zeroed (= unscaled).
     // The entries are C's `oldValueList`. Depth is what makes the exact-time hit
     // below common: DASSL revisits an already-solved time on about half of all
     // calls, and only a deep list still holds it.
-    let scale_addr = hist_addr + 8;
+    let last_solved_addr = hist_addr + 8;
+    let scale_addr = hist_addr + 16;
     let mut hist = MemHistory { count_addr: hist_addr, base: scale_addr + (n * 8) as u32, n };
     let mut res_scaling: alloc::vec::Vec<f64> =
         (0..n).map(|i| unsafe { load_f64(scale_addr + (i * 8) as u32) }).collect();
 
+    // C's `getInitialGuess`: the extrapolation to `time`, and `nlsxOld` = the newest
+    // stored solution at or before it.
     let mut guess = warm.clone();
-    let hpick = history_pick(&hist, time);
-    if hpick.exact {
-        stat_inc(STAT_NLS_GUESS_HIT);
+    let mut nlsx_old = warm.clone();
+    // C's "if last solving is too long ago use just old values": past five output
+    // intervals neither is consulted and the current variable values stand in. C also
+    // always consults them for a casual tearing set, which this target does not emit.
+    if libm::fabs(time - unsafe { load_f64(last_solved_addr) }) < 5.0 * step_size() {
+        let hpick = history_pick(&hist, time);
+        if hpick.exact {
+            stat_inc(STAT_NLS_GUESS_HIT);
+        }
+        history_guess(&hist, &hpick, time, &mut guess);
+        history_old(&hist, &hpick, &mut nlsx_old);
+    } else {
+        stat_inc(STAT_NLS_STALE);
     }
-    history_guess(&hist, &hpick, time, &mut guess);
 
     let mut scratch = vec![0.0f64; n];
-    let mut x = guess.clone();
-    // C's `solve_nonlinear_system`: Newton holds relations (`solveContinuous`); at an
-    // event, prime once live then hold, priming and solving from `nlsxOld` (=`warm`).
-    // Extrapolating past a just-switched branch re-flips the relation the event set.
+    // C's start-point rule, shared by `solveHomotopy` and `solveHybrd`:
+    // `discreteCall ? nlsx : nlsxExtrapolation`. Extrapolating past a just-switched
+    // branch would re-flip the relation the event set. Newton holds relations
+    // (`solveContinuous`); an event primes once live, then holds.
     let discrete_call = saved_rel_fresh == 1;
     let mixed = mixed != 0 && discrete_call;
-    // C's `solveHomotopy` `relationsPreBackup`.
+    let mut x = if discrete_call { nlsx_old.clone() } else { guess.clone() };
+    // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`.
     let mut rel_backup = alloc::vec::Vec::new();
     if discrete_call {
         unsafe { store_u32(rel_fresh_addr, 1) };
-        eval(&warm, &mut scratch);
+        eval(&nlsx_old, &mut scratch);
         if mixed {
             rel_backup = (0..n_rel).map(|i| unsafe { load_u32(rel_addr + i * 4) }).collect();
         }
         unsafe { store_u32(rel_fresh_addr, 0) };
-        x.copy_from_slice(&warm);
     } else if saved_rel_fresh == 0 {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
@@ -2366,7 +2413,8 @@ pub extern "C" fn rt_solve_nls(
         let mut converged = false;
         if matches!(pick, Nls::Default | Nls::Mixed) {
             (converged, settled) = newton_c(
-                n, &mut x, &nominal, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval, has_jac,
+                n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                has_jac,
             );
             if !converged {
                 stat_inc(STAT_NLS_NEWTON_FAIL);
@@ -2382,6 +2430,9 @@ pub extern "C" fn rt_solve_nls(
             }
         };
         if !converged {
+            // `solveHybrd` reads whichever vector `solveHomotopy` overwrote with the
+            // point its entry phase settled on, so it restarts from that either way.
+            x.copy_from_slice(&nlsx);
             converged = solve(&mut x, &mut fvec);
         }
         if !converged {
@@ -2399,7 +2450,8 @@ pub extern "C" fn rt_solve_nls(
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
             converged = newton_c(
-                n, &mut x, &nominal, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval, has_jac,
+                n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                has_jac,
             )
             .0;
         }
@@ -2492,6 +2544,7 @@ pub extern "C" fn rt_solve_nls(
             }
             history_store(&mut hist, time, &x);
         }
+        unsafe { store_f64(last_solved_addr, time) };
         0
     } else {
         // Restore the entry guess (held) and flag a recoverable failure.

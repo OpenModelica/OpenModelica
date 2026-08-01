@@ -2654,6 +2654,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // pool; this global holds their shared-table base.
     let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
     crate::CodegenWasmJitFunctions::closures::begin(types.len(), closure_global);
+    let lit_global = crate::CodegenWasmJitFunctions::lit_base_global(nls_types.is_some());
+    crate::CodegenWasmJitFunctions::shared_lits::begin(lit_global);
 
     // --- Import section. ---
     let mut imports = we::ImportSection::new();
@@ -2957,8 +2959,16 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
 
-    // --- Closure thunks and the module `start`. The thunks come after every
-    // other body — their `ref.func` indices are only known here. ---
+    // --- Shared literals, closure thunks and the module `start`. Both come after
+    // every other body — their indices are only known here. ---
+    let lits = crate::CodegenWasmJitFunctions::shared_lits::take();
+    let lit_init = (!lits.is_empty())
+        .then(|| {
+            crate::CodegenWasmJitFunctions::shared_lits::build_init_fn(
+                &lits, lit_global, &by_name, &mut literals,
+            )
+        })
+        .transpose()?;
     let closure_wiring = crate::CodegenWasmJitFunctions::closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -2969,11 +2979,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() {
-        let start_type = types.len();
+    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || lit_init.is_some() {
+        let void_type = types.len();
         types.ty().function([], []);
+        let lit_init_idx = lit_init.map(|f| {
+            let idx = import_base + bodies.len() as u32;
+            functions.function(void_type);
+            bodies.push(f);
+            idx
+        });
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
+        if let Some(i) = lit_init_idx {
+            f.instruction(&we::Instruction::Call(i));
+        }
         if let Some((fn_indices, _)) = &nls_wiring {
             emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_bounds, &nls_patterns);
         }
@@ -2981,7 +3000,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
         }
         f.instruction(&we::Instruction::End);
-        functions.function(start_type);
+        functions.function(void_type);
         bodies.push(f);
         let mut declared: Vec<u32> =
             nls_wiring.as_ref().map(|(_, cbs)| cbs.clone()).unwrap_or_default();
@@ -2990,7 +3009,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     } else {
         None
     };
-    if start_wiring.is_some() {
+    if nls_wiring.is_some() || !thunk_indices.is_empty() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
             table64: false,
@@ -3079,15 +3098,16 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     module.section(&imports);
     module.section(&functions);
     // Global + Start + Element sections (in the canonical order) carry the
-    // shared-table wiring: NLS callbacks and/or closure thunks.
+    // shared-table wiring (NLS callbacks and/or closure thunks) and the
+    // shared-literal objects.
     if start_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
         // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
         // NLS_NOMINAL_GLOBAL (nominal block base), NLS_PAT_GLOBAL (sparse-pattern
         // block base) and NLS_BOUNDS_GLOBAL (min/max block base) when the model has
-        // nonlinear systems, then the closure-thunk table base; all set by `start`.
-        let n_globals = if thunk_indices.is_empty() { closure_global } else { closure_global + 1 };
-        for _ in 0..n_globals {
+        // nonlinear systems, then the closure-thunk table base and one per shared
+        // literal; all set by `start`.
+        for _ in 0..lit_global as usize + lits.len() {
             globals.global(
                 we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
                 &we::ConstExpr::i32_const(0),
@@ -3098,9 +3118,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     module.section(&exports);
     if let Some((start_idx, declared)) = &start_wiring {
         module.section(&we::StartSection { function_index: *start_idx });
-        let mut elements = we::ElementSection::new();
-        elements.declared(we::Elements::Functions(declared.as_slice().into()));
-        module.section(&elements);
+        if !declared.is_empty() {
+            let mut elements = we::ElementSection::new();
+            elements.declared(we::Elements::Functions(declared.as_slice().into()));
+            module.section(&elements);
+        }
     }
     if !literals.is_empty() {
         module.section(&we::DataCountSection { count: literals.len() as u32 });

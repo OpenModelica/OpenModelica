@@ -131,6 +131,7 @@ fn run() {
     let m = read_meta();
     let sim_data = crate::rt_alloc(m.layout.total);
     let mut engine = StandaloneEngine;
+    crate::nls::rt_set_step_size(m.step_size());
 
     // wasip1 has a monotonic clock, so `-alarm` works; nothing cancels a command.
     driver::set_clock(now_ms);

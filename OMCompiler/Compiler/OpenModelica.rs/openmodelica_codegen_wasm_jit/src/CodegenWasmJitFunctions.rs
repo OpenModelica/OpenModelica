@@ -432,6 +432,13 @@ pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
     if has_nls { NLS_BOUNDS_GLOBAL + 1 } else { 0 }
 }
 
+/// First of the module's shared-literal globals (see `shared_lits`). The closure
+/// global is reserved whether or not the module has thunks, so this base is known
+/// before the bodies are lowered.
+pub(crate) fn lit_base_global(has_nls: bool) -> u32 {
+    closure_base_global(has_nls) + 1
+}
+
 /// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
 pub(crate) fn rt_index(name: &str) -> Result<u32> {
     let pos = RT_BUILTINS
@@ -540,6 +547,7 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     // section is emitted. Function references met on the way add thunks to the
     // closure pool; the module's only global holds their table base.
     closures::begin(types.len(), closure_base_global(false));
+    shared_lits::begin(lit_base_global(false));
     let mut functions = we::FunctionSection::new();
     let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
     let mut literals: Vec<Vec<u8>> = Vec::new();
@@ -547,7 +555,12 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
         functions.function(base + id as u32); // type index = base + id
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
-    // Closure thunks, then the `start` that appends them to the shared table.
+    let lits = shared_lits::take();
+    let lit_init = (!lits.is_empty())
+        .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
+        .transpose()?;
+    // Closure thunks, then the `start` that builds the literals and appends the
+    // thunks to the shared table.
     let closure_wiring = closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -558,20 +571,31 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_idx = if thunk_indices.is_empty() {
+    let start_idx = if thunk_indices.is_empty() && lit_init.is_none() {
         None
     } else {
-        let start_type = types.len();
+        let void_type = types.len();
         types.ty().function([], []);
+        let lit_init_idx = lit_init.map(|f| {
+            let idx = base + bodies.len() as u32;
+            functions.function(void_type);
+            bodies.push(f);
+            idx
+        });
         let idx = base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        if let Some(i) = lit_init_idx {
+            f.instruction(&we::Instruction::Call(i));
+        }
+        if !thunk_indices.is_empty() {
+            closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        }
         f.instruction(&we::Instruction::End);
-        functions.function(start_type);
+        functions.function(void_type);
         bodies.push(f);
         Some(idx)
     };
-    if start_idx.is_some() {
+    if !thunk_indices.is_empty() {
         // The thunks are reached by `call_indirect` through the runtime's table.
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
@@ -595,19 +619,24 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     module.section(&imports);
     module.section(&functions);
     if start_idx.is_some() {
+        // The closure-thunk table base, then one global per shared literal.
         let mut globals = we::GlobalSection::new();
-        globals.global(
-            we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
-            &we::ConstExpr::i32_const(0),
-        );
+        for _ in 0..lit_base_global(false) as usize + lits.len() {
+            globals.global(
+                we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
+                &we::ConstExpr::i32_const(0),
+            );
+        }
         module.section(&globals);
     }
     module.section(&exports);
     if let Some(start_idx) = start_idx {
         module.section(&we::StartSection { function_index: start_idx });
-        let mut elements = we::ElementSection::new();
-        elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
-        module.section(&elements);
+        if !thunk_indices.is_empty() {
+            let mut elements = we::ElementSection::new();
+            elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
+            module.section(&elements);
+        }
     }
     // String literals become passive data segments materialized at runtime with
     // `memory.init` (see SCONST in `compile_exp`). The DataCount section must
@@ -1072,12 +1101,12 @@ pub(crate) struct NlsJob {
     pub(crate) sparse_default: bool,
 }
 
-/// Per-system solver state for `n` unknowns: a count (padded to 8), the residual
-/// scaling carried between calls, and `HIST_DEPTH` stored solutions (time + `n`).
-/// Matches `rt_solve_nls`'s layout.
+/// Per-system solver state for `n` unknowns: a count (padded to 8), C's
+/// `lastTimeSolved`, the residual scaling carried between calls, and `HIST_DEPTH`
+/// stored solutions (time + `n`). Matches `rt_solve_nls`'s layout.
 pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
     const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
-    8 + 8 * n + DEPTH * (8 + 8 * n)
+    16 + 8 * n + DEPTH * (8 + 8 * n)
 }
 
 /// Model global holding the base address of the NLS extrapolation-history block
@@ -2229,6 +2258,9 @@ fn value_copy_fns(ty: &SigTy) -> Option<(&'static str, &'static str)> {
 /// aliases an existing object.
 fn value_rhs_is_fresh(e: &DAE::Exp) -> bool {
     use DAE::Exp as E;
+    if shared_lits::is_shared(e) {
+        return false;
+    }
     match e {
         E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::CALL { .. } | E::RECORD { .. } => true,
         E::SHARED_LITERAL { exp, .. } | E::CAST { exp, .. } => value_rhs_is_fresh(exp),
@@ -4537,6 +4569,9 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 #[path = "CodegenWasmJitFunctions/closures.rs"]
 pub(crate) mod closures;
 
+#[path = "CodegenWasmJitFunctions/shared_lits.rs"]
+pub(crate) mod shared_lits;
+
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
@@ -4548,6 +4583,10 @@ pub(crate) use sim_systems::{
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
     use DAE::Exp as E;
+    // A heap-valued constant is one module-wide object (C's `_OMC_LIT`).
+    if let Some(w) = shared_lits::compile(ctx, exp)? {
+        return Ok(w);
+    }
     match exp {
         E::ICONST { integer } => {
             ctx.emit(we::Instruction::I32Const(*integer));
