@@ -48,6 +48,11 @@ unsafe extern "C" {
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
+    fn functionCheckAsserts(sim_data: u32);
+    fn functionStoreDelayed(sim_data: u32);
+    fn functionInitDelay(sim_data: u32);
+    fn functionUpdateBoundParameters(sim_data: u32);
+    fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn om_meta_ptr() -> u32;
@@ -122,6 +127,11 @@ impl SimEngine for Engine {
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
+                "functionCheckAsserts" => functionCheckAsserts(arg),
+                "functionStoreDelayed" => functionStoreDelayed(arg),
+                "functionInitDelay" => functionInitDelay(arg),
+                "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
+                "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 _ => return Err("fmi3-me: unknown model function"),

@@ -137,6 +137,9 @@ pub struct Layout {
     pub zctol_off: u32,
     /// Base of the overridable start-value region (one f64 per state).
     pub start_off: u32,
+    /// Base of the per-state `nominal` attribute (one f64 per state), written by
+    /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
+    pub state_nom_off: u32,
     /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
     /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
     /// as a result row's last columns.
@@ -204,14 +207,15 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let sens_off = start_off + n_states * 8;
+        let state_nom_off = start_off + n_states * 8;
+        let sens_off = state_nom_off + n_states * 8;
         let total = sens_off + n_sens * 8;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, n_sens, sens_off, total,
+            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off, total,
         }
     }
 
@@ -370,9 +374,6 @@ pub struct SimMeta {
     pub jac_a: Option<JacAInfo>,
     /// Dynamic state selection metadata (one per `$STATESET`); empty otherwise.
     pub state_sets: Vec<StateSetInfo>,
-    /// Per-state nominal magnitude `max(|nominal|, 1e-32)` for per-state atol;
-    /// `1.0` if absent. Empty ⇒ all-ones.
-    pub state_nominals: Vec<f64>,
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
@@ -429,7 +430,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 7;
+const VERSION: u32 = 8;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -460,7 +461,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.n_sens, l.sens_off, l.total,
+        l.state_nom_off, l.n_sens, l.sens_off, l.total,
     ] {
         put_u32(o, v);
     }
@@ -527,10 +528,6 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32s(&mut o, &s.a_offs);
         put_u32s(&mut o, &s.seed_offs);
         put_u32s(&mut o, &s.result_offs);
-    }
-    put_u32(&mut o, m.state_nominals.len() as u32);
-    for &v in &m.state_nominals {
-        put_f64(&mut o, v);
     }
     put_u32(&mut o, m.fmi_vrs.len() as u32);
     for v in &m.fmi_vrs {
@@ -636,6 +633,7 @@ impl<'a> Reader<'a> {
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
             start_off: self.u32()?,
+            state_nom_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
             total: self.u32()?,
@@ -703,11 +701,6 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             result_offs: r.u32s()?,
         });
     }
-    let nnom = r.u32()? as usize;
-    let mut state_nominals = Vec::with_capacity(nnom);
-    for _ in 0..nnom {
-        state_nominals.push(r.f64()?);
-    }
     let nvr = r.u32()? as usize;
     let mut fmi_vrs = Vec::with_capacity(nvr);
     for _ in 0..nvr {
@@ -738,7 +731,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc, sens_params,
+        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
         nls_vars,
     })
 }
@@ -783,7 +776,6 @@ mod tests {
                 seed_offs: vec![200, 208, 216],
                 result_offs: vec![224],
             }],
-            state_nominals: vec![1.0, 2.5],
             fmi_vrs: vec![
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },

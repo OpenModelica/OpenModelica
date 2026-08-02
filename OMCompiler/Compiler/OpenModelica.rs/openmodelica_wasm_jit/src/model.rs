@@ -40,8 +40,6 @@ pub struct SimModel {
     pub state_sets: Vec<StateSetInfo>,
     /// ODE state Jacobian ∂f/∂x sparsity + coloring; `None` ⇒ daskr's numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
-    /// Per-state nominal magnitude for the per-state atol; `1.0` if absent.
-    pub state_nominals: Vec<f64>,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
     /// Result-variable display name -> unit, for a host to label plotted signals.

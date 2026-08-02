@@ -204,6 +204,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionStoreDelayed",
     "functionInitDelay",
     "functionUpdateBoundParameters",
+    "functionUpdateBoundVariableAttributes",
 ];
 
 /// The per-run capabilities a backend must expose: read/write the instance's
@@ -1184,6 +1185,7 @@ fn seed_start_values(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     // Params first (a start expression may read one), then fill start slots, then
     // start overrides (replacing the just-computed start).
     apply_param_overrides(e, sim_data)?;
+    e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
     apply_start_overrides(e, sim_data)?;
     // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
@@ -2420,21 +2422,22 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`
-/// (`state_nominals` is already floored). Length ≥ 1 so daskr never sees an empty array.
-fn dassl_tolerances(tol: f64, state_nominals: &[f64], n_states: usize) -> (Vec<f64>, Vec<f64>) {
-    let n = n_states.max(1);
-    let rtol = vec![tol; n];
-    let atol = (0..n).map(|i| tol * state_nominals.get(i).copied().unwrap_or(1.0)).collect();
-    (rtol, atol)
+/// C's `realVarsData[i].attribute.nominal` for the states, floored at 1e-32 by
+/// `functionUpdateBoundVariableAttributes` and so only readable after
+/// initialization. Length ≥ 1 so daskr never sees an empty array.
+fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
+    (0..layout.n_states.max(1))
+        .map(|i| if i < layout.n_states { read_f64(e, sim_data + layout.state_nom_off + i * 8) } else { Ok(1.0) })
+        .collect()
+}
+
+/// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`.
+fn dassl_tolerances(tol: f64, nominals: &[f64]) -> (Vec<f64>, Vec<f64>) {
+    (vec![tol; nominals.len()], nominals.iter().map(|n| tol * n).collect())
 }
 
 fn nominal_factor() -> f64 {
     crate::simflags::with_flags(|f| f.jacobian_nominal_factor).unwrap_or(1.0)
-}
-
-fn state_nominals(state_nominals: &[f64], n_states: usize) -> Vec<f64> {
-    (0..n_states.max(1)).map(|i| state_nominals.get(i).copied().unwrap_or(1.0)).collect()
 }
 
 /// Resumable DASSL (daskr) driver, event-free path. Owns the DASKR work arrays
@@ -2556,7 +2559,8 @@ impl DasslDriver {
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
         // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
-        let (rtol, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        let nominals = read_state_nominals(e, sim_data, layout)?;
+        let (rtol, atol) = dassl_tolerances(tol, &nominals);
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
@@ -2580,7 +2584,7 @@ impl DasslDriver {
             info,
             rtol,
             atol,
-            nominals: state_nominals(&model.state_nominals, n_states),
+            nominals,
             rwork,
             iwork,
             rpar: [0.0f64],
@@ -3179,7 +3183,7 @@ impl SolverCore {
     /// (`run_initialization`).
     ///
     /// [`read_states`]: SolverCore::read_states
-    fn new(model: &SimModel, sim_data: u32, t: f64, method: &str) -> Result<Self> {
+    fn new(e: &dyn SimEngine, model: &SimModel, sim_data: u32, t: f64, method: &str) -> Result<Self> {
         let layout = &model.layout;
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -3188,7 +3192,8 @@ impl SolverCore {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         // Per-state nominal-scaled tolerances (see `dassl_tolerances`); CVODE and
         // IDA take the same ones, as `cvode_solver_initial`/`ida_solver_initial` do.
-        let (rtol, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        let nominals = read_state_nominals(e, sim_data, layout)?;
+        let (rtol, atol) = dassl_tolerances(tol, &nominals);
         let _ = method;
         #[cfg(sundials)]
         let solver = match method {
@@ -3220,7 +3225,7 @@ impl SolverCore {
             nje: 0,
             state_events: 0,
             time_events: 0,
-            nominals: state_nominals(&model.state_nominals, n_states),
+            nominals,
             chatter_times: [0.0; CHATTER_LIMIT],
             chatter_idx: 0,
             chatter_consec: 0,
@@ -3692,7 +3697,7 @@ impl CsDriver {
         let layout = &model.layout;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
-        let mut core = SolverCore::new(model, sim_data, t, "dassl")?;
+        let mut core = SolverCore::new(&*e, model, sim_data, t, "dassl")?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -3946,7 +3951,7 @@ impl EventsDriver {
 
         let mut samp = Samples::load(e, sim_data, layout)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut core = SolverCore::new(model, sim_data, start, method)?;
+        let mut core = SolverCore::new(&*e, model, sim_data, start, method)?;
         // A sample scheduled exactly at the start time fires before row 0.
         if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
             samp.fire(e, sim_data, start)?;
@@ -4351,7 +4356,8 @@ impl CvodeDriver {
         }
 
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let (_, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        let nominals = read_state_nominals(e, sim_data, layout)?;
+        let (_, atol) = dassl_tolerances(tol, &nominals);
         let cv = if y.is_empty() {
             None
         } else {
@@ -4364,7 +4370,7 @@ impl CvodeDriver {
         Ok(CvodeDriver {
             sim_data,
             n_states,
-            nominals: state_nominals(&model.state_nominals, n_states),
+            nominals,
             states_base,
             ders_base: states_base + layout.n_states * 8,
             row: 1,
@@ -4979,7 +4985,8 @@ impl IdaDriver {
         }
 
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        let (_, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        let nominals = read_state_nominals(e, sim_data, layout)?;
+        let (_, atol) = dassl_tolerances(tol, &nominals);
         let ida = if y.is_empty() {
             None
         } else {
@@ -4989,7 +4996,7 @@ impl IdaDriver {
         Ok(IdaDriver {
             sim_data,
             n_states,
-            nominals: state_nominals(&model.state_nominals, n_states),
+            nominals,
             states_base,
             ders_base,
             row: 1,

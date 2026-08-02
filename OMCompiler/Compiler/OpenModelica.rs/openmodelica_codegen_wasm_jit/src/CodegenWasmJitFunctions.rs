@@ -1127,6 +1127,23 @@ pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
 /// pair per iteration variable, which the solver constrains its restarts to.
 pub(crate) const NLS_BOUNDS_GLOBAL: u32 = 4;
 
+/// A variable attribute the solvers read back at run time.
+#[derive(Clone, Copy)]
+pub(crate) enum Attr {
+    Nominal,
+    Min,
+    Max,
+}
+
+/// Where one variable's attribute lands: its entry in each nonlinear system that
+/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice
+/// that in the bounds block), and its state slot.
+#[derive(Clone, Default)]
+pub(crate) struct AttrTargets {
+    pub(crate) nls: Vec<u32>,
+    pub(crate) state: Option<u32>,
+}
+
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
 /// row-major order; this records the start offset and shape so a whole-array
@@ -1311,6 +1328,70 @@ impl<'a> FnCtx<'a> {
                 let w = compile_exp(self, exp)?;
                 coerce(self, w, WTy::F64);
                 self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionUpdateBoundVariableAttributes`: the constant per-state
+    /// `nominal`, then each attribute equation, into the slots the solvers read
+    /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
+    pub(crate) fn emit_update_bound_attrs(
+        &mut self,
+        state_nominals: &[f64],
+        state_nom_off: u32,
+        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (i, nom) in state_nominals.iter().enumerate() {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::F64Const((*nom).into()));
+            self.emit(we::Instruction::F64Store(mem_arg(state_nom_off + i as u32 * 8, 3)));
+        }
+        if attrs.is_empty() {
+            return Ok(());
+        }
+        let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
+        for (attr, exp, targets) in attrs {
+            let w = compile_exp(self, exp)?;
+            coerce(self, w, WTy::F64);
+            self.emit(we::Instruction::LocalSet(raw));
+            if let (Attr::Nominal, Some(i)) = (attr, targets.state) {
+                // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(raw));
+                self.emit(we::Instruction::F64Abs);
+                self.emit(we::Instruction::F64Const(1e-32f64.into()));
+                self.emit(we::Instruction::F64Max);
+                self.emit(we::Instruction::F64Store(mem_arg(state_nom_off + i * 8, 3)));
+            }
+            if targets.nls.is_empty() {
+                continue;
+            }
+            self.emit(we::Instruction::LocalGet(raw));
+            match attr {
+                // A nonpositive nominal would collapse the x-scaling; 1 stands in.
+                Attr::Nominal => {
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::LocalTee(val));
+                    self.emit(we::Instruction::F64Const(1.0f64.into()));
+                    self.emit(we::Instruction::LocalGet(val));
+                    self.emit(we::Instruction::F64Const(0.0f64.into()));
+                    self.emit(we::Instruction::F64Gt);
+                    self.emit(we::Instruction::Select);
+                }
+                Attr::Min | Attr::Max => {}
+            }
+            self.emit(we::Instruction::LocalSet(val));
+            let (global, stride, slot) = match attr {
+                Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
+                Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
+                Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+            };
+            for idx in &targets.nls {
+                self.emit(we::Instruction::GlobalGet(global));
+                self.emit(we::Instruction::LocalGet(val));
+                self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
             }
         }
         Ok(())
