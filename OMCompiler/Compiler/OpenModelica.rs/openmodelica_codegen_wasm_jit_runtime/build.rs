@@ -14,7 +14,9 @@ use std::path::Path;
 /// resolves archives in the order given, so a wrong order is an undefined symbol.
 const LIBS: &[&str] = &[
     "sundials_kinsol",
-    "sundials_ida",
+    // IDAS, not IDA: same entry points plus the forward-sensitivity ones, as the
+    // C runtime links it.
+    "sundials_idas",
     "sundials_cvode",
     "sundials_sunlinsolklu",
     "sundials_sunlinsoldense",

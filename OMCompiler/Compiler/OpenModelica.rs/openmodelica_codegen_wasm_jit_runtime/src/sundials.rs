@@ -15,7 +15,7 @@ pub extern "C" fn rt_sundials_available() -> i32 {
 pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
         klu: cfg!(sundials),
-        ida: false,
+        ida: openmodelica_sim_meta::IDA,
         cvode: openmodelica_sim_meta::CVODE,
         gbode: false,
         // Served by the driver's per-step deadline; both runtimes install a clock.

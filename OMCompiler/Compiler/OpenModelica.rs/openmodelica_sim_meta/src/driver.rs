@@ -202,6 +202,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionCheckAsserts",
     "functionStoreDelayed",
     "functionInitDelay",
+    "functionUpdateBoundParameters",
 ];
 
 /// The per-run capabilities a backend must expose: read/write the instance's
@@ -1257,6 +1258,10 @@ fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &S
     for j in 0..layout.n_bool_alg() {
         rows.push(read_i32(e, sim_data + layout.bool_off + j * 4)? as f64);
     }
+    // Zero for every solver but IDA, which refreshes it from `IDAGetSens`.
+    for k in 0..layout.n_sens {
+        rows.push(read_f64(e, sim_data + layout.sens_off + k * 8)?);
+    }
     Ok(())
 }
 
@@ -1678,14 +1683,15 @@ pub fn set_zc_tolerance(
 
 /// Build the resumable driver (init + row 0 + the zero-crossing band); shared by
 /// [`drive`] and the session. `method` empty = DASSL.
-/// `-s=` wins over the method compiled into the model's metadata. `ida`/`gbode`
-/// never reach here — `simflags::check` rejects them at startup rather than let
-/// them silently run as DASSL, and so does `cvode` without `cfg(sundials)`.
+/// `-s=` wins over the method compiled into the model's metadata. `gbode` never
+/// reaches here — `simflags::check` rejects it at startup rather than let it
+/// silently run as DASSL, and so do `cvode`/`ida` without `cfg(sundials)`.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     match crate::simflags::with_flags(|f| f.solver) {
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         Some(crate::simflags::Solver::Cvode) => "cvode",
+        Some(crate::simflags::Solver::Ida) => "ida",
         _ => method,
     }
 }
@@ -1701,16 +1707,23 @@ pub fn make_driver(
     arm_alarm();
     let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
+    for k in 0..layout.n_sens {
+        write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
+    }
     // Ahead of the events path below, which returns before the match.
     // `dassljac` is dassl with a symbolic Jacobian, which C also falls back from.
     let supported = matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "")
-        || (method == "cvode" && cfg!(sundials));
+        || (matches!(method, "cvode" | "ida") && cfg!(sundials));
     if !supported {
         return Err(UNSUPPORTED_METHOD);
     }
 
     if layout.n_samples > 0 || layout.n_zc > 0 {
-        let label = if method == "cvode" { "cvode-events" } else { "dassl-events" };
+        let label = match method {
+            "cvode" => "cvode-events",
+            "ida" => "ida-events",
+            _ => "dassl-events",
+        };
         return Ok((Box::new(EventsDriver::new(e, model, sim_data, method)?), label));
     }
     match method {
@@ -1719,6 +1732,8 @@ pub fn make_driver(
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
         #[cfg(sundials)]
         "cvode" => Ok((Box::new(CvodeDriver::new(e, model, sim_data)?), "cvode")),
+        #[cfg(sundials)]
+        "ida" => Ok((Box::new(IdaDriver::new(e, model, sim_data)?), "ida")),
         _ => Err(UNSUPPORTED_METHOD),
     }
 }
@@ -1726,7 +1741,7 @@ pub fn make_driver(
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
-    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `euler`)"
+    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`)"
 } else {
     "CodegenWasmJit: unsupported integration method (supported: `dassl`, `euler`)"
 };
@@ -2003,6 +2018,46 @@ struct ResCtx {
     /// The FD step's floor: `n_states` nominals owned by the driver, scaled.
     nominals: *const f64,
     nominal_factor: f64,
+    /// What IDA's Jacobian callback needs on top of the above; all-null otherwise.
+    #[cfg(sundials)]
+    ida: IdaCtx,
+}
+
+/// `-idaSensitivity`: the parameters IDAS perturbs to difference `dF/dp`. The
+/// residual pushes `values` into `offs` and re-evaluates the dependent
+/// parameters, which is the only way a perturbation reaches the model (C's
+/// `updateBoundParameters` call in `residualFunctionIDA`).
+#[cfg(sundials)]
+#[derive(Clone, Copy)]
+struct SensPush {
+    offs: *const u32,
+    values: *const f64,
+    n: usize,
+}
+
+#[cfg(sundials)]
+impl Default for SensPush {
+    fn default() -> Self {
+        SensPush { offs: core::ptr::null(), values: core::ptr::null(), n: 0 }
+    }
+}
+
+/// The IDA memory block (for the step size the difference quotient scales by)
+/// and the CSC layout its sparse Jacobian is filled in, both owned by the driver
+/// and outliving the `ResCtx` that points at them.
+#[cfg(sundials)]
+#[derive(Clone, Copy)]
+struct IdaCtx {
+    mem: *mut core::ffi::c_void,
+    pattern: *const IdaPattern,
+    sens: SensPush,
+}
+
+#[cfg(sundials)]
+impl Default for IdaCtx {
+    fn default() -> Self {
+        IdaCtx { mem: core::ptr::null_mut(), pattern: core::ptr::null(), sens: SensPush::default() }
+    }
 }
 
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
@@ -2513,6 +2568,8 @@ impl Driver for DasslDriver {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            #[cfg(sundials)]
+            ida: IdaCtx::default(),
         };
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
@@ -2654,6 +2711,9 @@ enum Solver {
     /// core exists, and a model with no states never integrates at all.
     #[cfg(sundials)]
     Cvode(CvodeState),
+    /// Built on first use, as [`Solver::Cvode`].
+    #[cfg(sundials)]
+    Ida(IdaState),
 }
 
 /// DASKR's work arrays and options.
@@ -2804,6 +2864,67 @@ impl CvodeState {
     }
 }
 
+#[cfg(sundials)]
+struct IdaState {
+    ida: Option<crate::sundials::Ida>,
+    rtol: f64,
+    atol: Vec<f64>,
+    n_roots: usize,
+    work_retries: u32,
+    setup: IdaSetup,
+}
+
+#[cfg(sundials)]
+impl IdaState {
+    /// The IDA block is built on the first step, when `y`/`yp` first hold the
+    /// state to start from. `ctx` is the callbacks' `user_data`, which lives on
+    /// one `advance`'s stack, so it is rebound per call rather than stored.
+    #[allow(clippy::too_many_arguments)]
+    fn step(
+        &mut self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        t: &mut f64,
+        y: &mut [f64],
+        yp: &mut [f64],
+        target: f64,
+        ctx: *mut ResCtx,
+    ) -> Result<Progress> {
+        let ida = match self.ida.as_mut() {
+            Some(ida) => ida,
+            None => self.ida.insert(self.setup.build(
+                e, sim_data, *t, y, yp, self.rtol, &self.atol, self.n_roots,
+            )?),
+        };
+        unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
+        if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
+            return Err("CodegenWasmJit: IDA setup failed");
+        }
+        let stop = ida.step(t, target);
+        y.copy_from_slice(ida.y());
+        yp.copy_from_slice(ida.yp());
+        if !matches!(stop, crate::sundials::Stop::Failed(_)) {
+            self.setup.store_sens(e, sim_data, ida)?;
+        }
+        Ok(match stop {
+            crate::sundials::Stop::Failed(flag)
+                if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
+            {
+                self.work_retries += 1;
+                Progress::WorkQuota
+            }
+            crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: IDA failed"),
+            other => {
+                self.work_retries = 0;
+                match other {
+                    crate::sundials::Stop::Root => Progress::Root,
+                    _ => Progress::Reached,
+                }
+            }
+        })
+    }
+}
+
 /// The integrator state and the one integration path over it: [`integrate_to`]
 /// runs the solver to a time, handling the state events it roots out and the
 /// samples due on the way. `EventsDriver` drives it to each output row and
@@ -2885,26 +3006,35 @@ impl SolverCore {
     /// (`run_initialization`).
     ///
     /// [`read_states`]: SolverCore::read_states
-    fn new(model: &SimModel, sim_data: u32, t: f64, method: &str) -> Self {
+    fn new(model: &SimModel, sim_data: u32, t: f64, method: &str) -> Result<Self> {
         let layout = &model.layout;
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
         let ders_base = states_base + layout.n_states * 8;
         let nrt = layout.n_zc as i32;
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        // Per-state nominal-scaled tolerances (see `dassl_tolerances`); CVODE takes
-        // the same ones, as `cvode_solver_initial` does.
+        // Per-state nominal-scaled tolerances (see `dassl_tolerances`); CVODE and
+        // IDA take the same ones, as `cvode_solver_initial`/`ida_solver_initial` do.
         let (rtol, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
         let _ = method;
         #[cfg(sundials)]
-        let solver = if method == "cvode" {
-            Solver::Cvode(CvodeState { cv: None, rtol: tol, atol, n_roots: nrt as usize, work_retries: 0 })
-        } else {
-            Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol))
+        let solver = match method {
+            "cvode" => {
+                Solver::Cvode(CvodeState { cv: None, rtol: tol, atol, n_roots: nrt as usize, work_retries: 0 })
+            }
+            "ida" => Solver::Ida(IdaState {
+                ida: None,
+                rtol: tol,
+                atol,
+                n_roots: nrt as usize,
+                work_retries: 0,
+                setup: IdaSetup::new(model)?,
+            }),
+            _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
         };
         #[cfg(not(sundials))]
         let solver = Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol));
-        SolverCore {
+        Ok(SolverCore {
             sim_data,
             n_states,
             states_base,
@@ -2922,6 +3052,16 @@ impl SolverCore {
             chatter_idx: 0,
             chatter_consec: 0,
             chatter_emitted: false,
+        })
+    }
+
+    /// The IDA memory and sparse layout the Jacobian callback reads through;
+    /// all-null unless this core runs IDA.
+    #[cfg(sundials)]
+    fn ida_ctx(&self) -> IdaCtx {
+        match &self.solver {
+            Solver::Ida(s) => s.setup.ctx(s.ida.as_ref()),
+            _ => IdaCtx::default(),
         }
     }
 
@@ -2966,6 +3106,16 @@ impl SolverCore {
                     }
                 }
             }
+            #[cfg(sundials)]
+            Solver::Ida(s) => {
+                if let Some(ida) = s.ida.as_mut() {
+                    ida.y_mut().copy_from_slice(&self.y);
+                    ida.yp_mut().copy_from_slice(&self.yp);
+                    if !ida.reinit(self.t) {
+                        return Err("CodegenWasmJit: IDA re-initialization failed");
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -3001,6 +3151,8 @@ impl SolverCore {
                 Solver::Daskr(d) => d.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
                 #[cfg(sundials)]
                 Solver::Cvode(_) => core::ptr::null(),
+                #[cfg(sundials)]
+                Solver::Ida(s) => s.setup.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
             },
             jac_gp: vec![0.0; self.n_states],
             jac_ysave: vec![0.0; self.n_states],
@@ -3010,6 +3162,8 @@ impl SolverCore {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            #[cfg(sundials)]
+            ida: self.ida_ctx(),
         }
     }
 
@@ -3025,6 +3179,7 @@ impl SolverCore {
         deadline: f64,
         did_step: &mut bool,
     ) -> Result<Solved> {
+        let sim_data = self.sim_data;
         loop {
             // Yield inside the work-quota loop too, so a stuck stiff interval is
             // interruptible; resume re-enters with the same target.
@@ -3039,6 +3194,12 @@ impl SolverCore {
                 Solver::Daskr(d) => d.step(&mut self.t, &mut self.y, &mut self.yp, target),
                 #[cfg(sundials)]
                 Solver::Cvode(c) => c.step(&mut self.t, &mut self.y, target, ctx as *mut ResCtx)?,
+                #[cfg(sundials)]
+                Solver::Ida(s) => {
+                    let e = unsafe { &mut *ctx.engine };
+                    let ctx_ptr = ctx as *mut ResCtx;
+                    s.step(e, sim_data, &mut self.t, &mut self.y, &mut self.yp, target, ctx_ptr)?
+                }
             };
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
@@ -3080,12 +3241,13 @@ impl SolverCore {
             #[cfg(sundials)]
             Solver::Cvode(c) => {
                 if let Some(cv) = c.cv.as_ref() {
-                    let n = cv.counters();
-                    stats.steps = n.steps;
-                    stats.res_evals = n.rhs_evals;
-                    stats.jac_evals = n.jac_evals;
-                    stats.err_test_fails = n.err_test_fails;
-                    stats.conv_test_fails = n.conv_test_fails;
+                    fill_sundials_stats(stats, cv.counters());
+                }
+            }
+            #[cfg(sundials)]
+            Solver::Ida(s) => {
+                if let Some(ida) = s.ida.as_ref() {
+                    fill_sundials_stats(stats, ida.counters());
                 }
             }
         }
@@ -3103,6 +3265,10 @@ impl SolverCore {
                 .as_ref()
                 .and_then(|cv| cv.roots().iter().position(|&r| r != 0))
                 .unwrap_or(0),
+            #[cfg(sundials)]
+            Solver::Ida(s) => {
+                s.ida.as_ref().and_then(|ida| ida.roots().iter().position(|&r| r != 0)).unwrap_or(0)
+            }
         }
     }
 
@@ -3312,7 +3478,7 @@ impl CsDriver {
         let layout = &model.layout;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
-        let mut core = SolverCore::new(model, sim_data, t, "dassl");
+        let mut core = SolverCore::new(model, sim_data, t, "dassl")?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -3566,7 +3732,7 @@ impl EventsDriver {
 
         let mut samp = Samples::load(e, sim_data, layout)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut core = SolverCore::new(model, sim_data, start, method);
+        let mut core = SolverCore::new(model, sim_data, start, method)?;
         // A sample scheduled exactly at the start time fires before row 0.
         if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
             samp.fire(e, sim_data, start)?;
@@ -3860,8 +4026,24 @@ unsafe extern "C" fn cvode_rhs(
     }
 }
 
-/// `CVRootFn`: `gout[i] := g_i(t, y)`, the zero-crossing values whose sign
-/// changes are state events. Mirrors [`dassl_rt`].
+/// `gout[i] := g_i(t, y)`, the zero-crossing values whose sign changes are state
+/// events. The body of [`dassl_rt`], shared by the CVODE and IDA root callbacks.
+#[cfg(sundials)]
+unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, gout: *mut f64) -> Result<()> {
+    let e = unsafe { &mut *ctx.engine };
+    write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+    write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+    let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
+    e.write_bytes(ctx.states_base, y_bytes)?;
+    set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
+    e.call1("functionODE", ctx.sim_data)?;
+    e.call1("functionZeroCrossings", ctx.sim_data)?;
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
+    e.read_bytes(ctx.sim_data + ctx.zc_off, out)
+}
+
+/// `CVRootFn`.
 #[cfg(sundials)]
 unsafe extern "C" fn cvode_root(
     t: f64,
@@ -3870,25 +4052,13 @@ unsafe extern "C" fn cvode_root(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
-    let e = unsafe { &mut *ctx.engine };
-    let run = (|| -> Result<()> {
-        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
-        write_f64(e, ctx.sim_data + TIME_OFF, t)?;
-        let y_bytes =
-            unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(y) as *const u8, ctx.n_states * 8) };
-        e.write_bytes(ctx.states_base, y_bytes)?;
-        set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-        e.call1("functionODE", ctx.sim_data)?;
-        e.call1("functionZeroCrossings", ctx.sim_data)?;
-        set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
-        let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
-        e.read_bytes(ctx.sim_data + ctx.zc_off, out)
-    })();
-    if let Err(err) = run {
-        ctx.err = Some(err);
-        return -1;
+    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(y), gout) } {
+        Err(err) => {
+            ctx.err = Some(err);
+            -1
+        }
+        Ok(()) => 0,
     }
-    0
 }
 
 /// How many times one interval may be resumed after `CV_TOO_MUCH_WORK` (1000
@@ -4043,6 +4213,8 @@ impl Driver for CvodeDriver {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            #[cfg(sundials)]
+            ida: IdaCtx::default(),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: CVODE setup failed");
@@ -4119,12 +4291,629 @@ impl Driver for CvodeDriver {
     }
 
     fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
-        let Some(cv) = self.cv.as_ref() else { return };
-        let c = cv.counters();
-        stats.steps = c.steps;
-        stats.res_evals = c.rhs_evals;
-        stats.jac_evals = c.jac_evals;
-        stats.err_test_fails = c.err_test_fails;
-        stats.conv_test_fails = c.conv_test_fails;
+        if let Some(cv) = self.cv.as_ref() {
+            fill_sundials_stats(stats, cv.counters());
+        }
+    }
+}
+
+/// The five run totals every SUNDIALS integrator reports the same way.
+#[cfg(sundials)]
+fn fill_sundials_stats(stats: &mut SolveStats, c: crate::sundials::Counters) {
+    stats.steps = c.steps;
+    stats.res_evals = c.rhs_evals;
+    stats.jac_evals = c.jac_evals;
+    stats.err_test_fails = c.err_test_fails;
+    stats.conv_test_fails = c.conv_test_fails;
+}
+
+// ===========================================================================
+// IDA driver
+// ===========================================================================
+//
+// The real SUNDIALS IDA, configured as `ida_solver.c` does for a model compiled
+// without `--daeMode`: the explicit ODE goes to IDA as the residual
+// `F(t, y, y') = f(t, y) - y'`, differentiated by a colored numerical FD into
+// KLU's sparse iteration matrix (C's default `-idaLS=klu`), with per-state
+// nominal-scaled tolerances and IDA's root finding on the zero-crossings. The
+// callbacks reach wasm through the same `ResCtx` the DASSL ones use, received as
+// IDA's `user_data`.
+
+/// The CSC layout IDA's sparse Jacobian is filled in: the model's `A` sparsity
+/// widened by the diagonal, which `J = ∂F/∂y - cj·I` needs whether or not the
+/// pattern carries it (C allocates `nnz + N` and lets `SUNMatScaleIAdd_Sparse`
+/// insert what is missing).
+#[cfg(sundials)]
+struct IdaPattern {
+    colptr: Vec<crate::sundials::SunIndex>,
+    rowidx: Vec<crate::sundials::SunIndex>,
+    /// Value index of each column's diagonal entry.
+    diag: Vec<usize>,
+    /// `slots[col][k]` is where `rows_by_col[col][k]`'s difference quotient goes.
+    slots: Vec<Vec<usize>>,
+}
+
+#[cfg(sundials)]
+impl IdaPattern {
+    fn new(jac: &JacAInfo) -> IdaPattern {
+        let n = jac.n as usize;
+        let mut p = IdaPattern {
+            colptr: Vec::with_capacity(n + 1),
+            rowidx: Vec::new(),
+            diag: Vec::with_capacity(n),
+            slots: Vec::with_capacity(n),
+        };
+        p.colptr.push(0);
+        for col in 0..n {
+            let base = p.rowidx.len();
+            let mut rows = jac.rows_by_col[col].clone();
+            rows.push(col as u32);
+            rows.sort_unstable();
+            rows.dedup();
+            let at = |r: u32| base + rows.binary_search(&r).expect("row is in the widened column");
+            p.diag.push(at(col as u32));
+            p.slots.push(jac.rows_by_col[col].iter().map(|&r| at(r)).collect());
+            p.rowidx.extend(rows.iter().map(|&r| r as crate::sundials::SunIndex));
+            p.colptr.push(p.rowidx.len() as crate::sundials::SunIndex);
+        }
+        p
+    }
+
+    fn nnz(&self) -> usize {
+        self.rowidx.len()
+    }
+}
+
+/// What `-idaLS` and the model's Jacobian availability settled on, shared by the
+/// event-free [`IdaDriver`] and the [`SolverCore`] one.
+#[cfg(sundials)]
+struct IdaSetup {
+    ls: crate::sundials::IdaLs,
+    /// Sparsity + coloring for the FD Jacobian; `None` ⇒ IDA's own dense
+    /// difference-quotient Jacobian (C's `INTERNALNUMJAC`).
+    jac_a: Option<JacAInfo>,
+    /// Present exactly when `ls` is KLU.
+    pattern: Option<IdaPattern>,
+    opts: crate::sundials::IdaOptions,
+    /// `SimData` offsets of the differentiated parameters; empty unless
+    /// `-idaSensitivity` was given and the model carries them.
+    sens_offs: Vec<u32>,
+    /// Where `IDAGetSens` deposits `n_sens` values for the next row to capture.
+    sens_off: u32,
+    sens_scratch: Vec<f64>,
+}
+
+#[cfg(sundials)]
+impl IdaSetup {
+    fn new(model: &SimModel) -> Result<IdaSetup> {
+        use crate::sundials::IdaLs;
+        let ls = match crate::simflags::with_flags(|f| f.ida_ls) {
+            Some(crate::simflags::IdaLs::Dense) => IdaLs::Dense,
+            Some(crate::simflags::IdaLs::Spgmr) => IdaLs::Spgmr,
+            Some(crate::simflags::IdaLs::Spbcg) => IdaLs::Spbcg,
+            Some(crate::simflags::IdaLs::Sptfqmr) => IdaLs::Sptfqmr,
+            _ => IdaLs::Klu,
+        };
+        // Nothing to factorize without states, so KLU's demand for a pattern does
+        // not apply — the driver never steps such a model anyway.
+        let ls = if model.layout.n_states == 0 && ls == IdaLs::Klu { IdaLs::Dense } else { ls };
+        // The Krylov solvers assemble no matrix (C pins them to INTERNALNUMJAC).
+        let jac_a = match () {
+            _ if ls.matrix_free() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() => None,
+            _ => model.jac_a.clone(),
+        };
+        let pattern = match (&jac_a, ls) {
+            // C throws here rather than fall back: KLU has nothing to factorize.
+            (None, IdaLs::Klu) => return Err(IDA_NO_SPARSE_PATTERN),
+            (Some(j), IdaLs::Klu) => Some(IdaPattern::new(j)),
+            _ => None,
+        };
+        let opts = crate::simflags::with_flags(|f| crate::sundials::IdaOptions {
+            max_order: f.max_order,
+            max_err_test_fails: f.ida_max_err_test_fails,
+            max_nonlin_iters: f.ida_max_nonlin_iters,
+            max_conv_fails: f.ida_max_conv_fails,
+            nonlin_conv_coef: f.ida_nonlin_conv_coef,
+            init_step: f.initial_step_size,
+        });
+        let sens_offs = match crate::simflags::with_flags(|f| f.ida_sensitivity) {
+            true => model.sens_params.clone(),
+            false => Vec::new(),
+        };
+        let n_sens = if sens_offs.is_empty() { 0 } else { model.layout.n_sens as usize };
+        Ok(IdaSetup {
+            ls,
+            jac_a,
+            pattern,
+            opts,
+            sens_offs,
+            sens_off: model.layout.sens_off,
+            sens_scratch: vec![0.0; n_sens],
+        })
+    }
+
+    /// The sensitivities at the point IDA last returned, into the layout's
+    /// block for [`capture_row`] to append to the next result row.
+    fn store_sens(&mut self, e: &mut dyn SimEngine, sim_data: u32, ida: &mut crate::sundials::Ida) -> Result<()> {
+        if self.sens_scratch.is_empty() {
+            return Ok(());
+        }
+        if !ida.sens_values(&mut self.sens_scratch) {
+            return Err("CodegenWasmJit: IDAGetSens failed");
+        }
+        for (i, x) in self.sens_scratch.iter().enumerate() {
+            write_f64(e, sim_data + self.sens_off + (i as u32) * 8, *x)?;
+        }
+        Ok(())
+    }
+
+    /// Build the IDA block for `n_roots` zero-crossings, starting from `(t, y, yp)`.
+    #[allow(clippy::too_many_arguments)]
+    fn build(
+        &self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        t: f64,
+        y: &[f64],
+        yp: &[f64],
+        rtol: f64,
+        atol: &[f64],
+        n_roots: usize,
+    ) -> Result<crate::sundials::Ida> {
+        let mut ida = crate::sundials::Ida::new(
+            t,
+            y,
+            yp,
+            rtol,
+            atol,
+            n_roots,
+            ida_res,
+            (n_roots > 0).then_some(ida_root as crate::sundials::IdaRootFn),
+            self.ls,
+            self.pattern.as_ref().map_or(0, |p| p.nnz()),
+            self.jac_a.as_ref().map(|_| ida_jac as crate::sundials::IdaJacFn),
+            &self.opts,
+        )
+        .ok_or("CodegenWasmJit: IDA initialization failed")?;
+        if !self.sens_offs.is_empty() {
+            let p0: Vec<f64> =
+                self.sens_offs.iter().map(|&off| read_f64(e, sim_data + off)).collect::<Result<_>>()?;
+            if !ida.init_sensitivities(&p0) {
+                return Err("CodegenWasmJit: IDA sensitivity initialization failed");
+            }
+        }
+        Ok(ida)
+    }
+
+    fn ctx(&self, ida: Option<&crate::sundials::Ida>) -> IdaCtx {
+        IdaCtx {
+            mem: ida.map_or(core::ptr::null_mut(), |i| i.mem()),
+            pattern: self.pattern.as_ref().map_or(core::ptr::null(), |p| p as *const IdaPattern),
+            sens: match ida.and_then(|i| i.sens_params()) {
+                Some(p) => SensPush { offs: self.sens_offs.as_ptr(), values: p.as_ptr(), n: p.len() },
+                None => SensPush::default(),
+            },
+        }
+    }
+}
+
+#[cfg(sundials)]
+const IDA_NO_SPARSE_PATTERN: &str = "CodegenWasmJit: -s=ida with the KLU linear solver needs the model's \
+     Jacobian sparsity pattern, which this model has none of (use -idaLS=dense)";
+
+/// `F(t, y, y') := f(t, y) - y'`, the residual `residualFunctionIDA` builds
+/// outside DAE mode: `t` and the candidate states into `SimData`, the wasm
+/// `functionODE`, the derivative slots back out.
+#[cfg(sundials)]
+unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, out: *mut f64) -> Result<()> {
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    let sens = ctx.ida.sens;
+    for i in 0..sens.n {
+        write_f64(e, ctx.sim_data + unsafe { *sens.offs.add(i) }, unsafe { *sens.values.add(i) })?;
+    }
+    if sens.n > 0 {
+        e.call1("functionUpdateBoundParameters", ctx.sim_data)?;
+    }
+    write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+    let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+    e.write_bytes(ctx.states_base, y_bytes)?;
+    e.call1("functionODE", ctx.sim_data)?;
+    let out_bytes = unsafe { core::slice::from_raw_parts_mut(out as *mut u8, n * 8) };
+    e.read_bytes(ctx.ders_base, out_bytes)?;
+    for i in 0..n {
+        unsafe { *out.add(i) -= *yp.add(i) };
+    }
+    Ok(())
+}
+
+/// `IDAResFn`. A wasm trap is unrecoverable (-1); a non-converging nonlinear
+/// system is recoverable (+1), which makes IDA retry from a smaller step.
+#[cfg(sundials)]
+unsafe extern "C" fn ida_res(
+    t: f64,
+    yy: crate::sundials::NVector,
+    yp: crate::sundials::NVector,
+    rr: crate::sundials::NVector,
+    user_data: *mut core::ffi::c_void,
+) -> core::ffi::c_int {
+    let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    let e = unsafe { &mut *ctx.engine };
+    let run = (|| -> Result<()> {
+        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+        set_context(e, ctx.ctx_addr, CONTEXT_ODE);
+        let r = unsafe {
+            ida_residual(ctx, t, crate::sundials::nv_data(yy), crate::sundials::nv_data(yp), crate::sundials::nv_data(rr))
+        };
+        set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+        r
+    })();
+    ctx.nfe += 1;
+    match run {
+        Err(err) => {
+            ctx.err = Some(err);
+            -1
+        }
+        Ok(()) => {
+            if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) == 0 {
+                return 0;
+            }
+            report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+            1
+        }
+    }
+}
+
+/// `IDARootFn`: `gout[i] := g_i(t, y)`. `y'` is unused, as in `rootsFunctionIDA`
+/// outside DAE mode.
+#[cfg(sundials)]
+unsafe extern "C" fn ida_root(
+    t: f64,
+    yy: crate::sundials::NVector,
+    _yp: crate::sundials::NVector,
+    gout: *mut f64,
+    user_data: *mut core::ffi::c_void,
+) -> core::ffi::c_int {
+    let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(yy), gout) } {
+        Err(err) => {
+            ctx.err = Some(err);
+            -1
+        }
+        Ok(()) => 0,
+    }
+}
+
+/// `IDALsJacFn`: fill `J = ∂F/∂y - cj·I` by a colored numerical FD, one
+/// `functionODE` per color — `ida_solver.c`'s `jacoColoredNumericalSparse` and
+/// `jacColoredNumericalDense`, which differ only in where an entry lands.
+#[cfg(sundials)]
+#[allow(clippy::too_many_arguments)]
+unsafe extern "C" fn ida_jac(
+    t: f64,
+    cj: f64,
+    yy: crate::sundials::NVector,
+    yp: crate::sundials::NVector,
+    rr: crate::sundials::NVector,
+    j: crate::sundials::SunMatrix,
+    user_data: *mut core::ffi::c_void,
+    _t1: crate::sundials::NVector,
+    _t2: crate::sundials::NVector,
+    _t3: crate::sundials::NVector,
+) -> core::ffi::c_int {
+    let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
+    if ctx.jac.is_null() {
+        return -1;
+    }
+    let jac = unsafe { &*ctx.jac };
+    let e = unsafe { &mut *ctx.engine };
+    let n = ctx.n_states;
+    let y = crate::sundials::nv_data(yy);
+    let ypv = crate::sundials::nv_data(yp);
+    let base = crate::sundials::nv_data(rr);
+    let h = crate::sundials::ida_current_step(ctx.ida.mem);
+    let pattern = unsafe { ctx.ida.pattern.as_ref() };
+    let vals = match pattern {
+        Some(p) => unsafe {
+            let (data, colptr, rowidx) = crate::sundials::sparse_arrays(j);
+            core::ptr::copy_nonoverlapping(p.colptr.as_ptr(), colptr, n + 1);
+            core::ptr::copy_nonoverlapping(p.rowidx.as_ptr(), rowidx, p.nnz());
+            core::slice::from_raw_parts_mut(data, p.nnz())
+        },
+        None => unsafe { core::slice::from_raw_parts_mut(crate::sundials::dense_data(j), n * n) },
+    };
+    ctx.jac_gp.resize(n, 0.0);
+    ctx.nje += 1;
+    set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    let run = (|| -> Result<()> {
+        for color in &jac.colors {
+            for &col in color {
+                let ci = col as usize;
+                let yi = unsafe { *y.add(ci) };
+                let d6 = h * unsafe { *ypv.add(ci) };
+                let mag = DELTA_X_SOLVER
+                    * yi.abs().max(d6.abs()).max(ctx.nominal_factor * unsafe { *ctx.nominals.add(ci) });
+                let mut del = if d6 >= 0.0 { mag } else { -mag };
+                del = yi + del - yi; // floating-point rounding, as in the C runtime
+                ctx.jac_ysave[ci] = yi;
+                ctx.jac_del[ci] = 1.0 / del;
+                unsafe { *y.add(ci) = yi + del };
+            }
+            write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+            // Detached so the residual can borrow `ctx`; same buffer.
+            let mut gp = core::mem::take(&mut ctx.jac_gp);
+            let r = unsafe { ida_residual(ctx, t, y, ypv, gp.as_mut_ptr()) };
+            ctx.jac_gp = gp;
+            r?;
+            for &col in color {
+                let ci = col as usize;
+                let inv_del = ctx.jac_del[ci];
+                for (k, &row) in jac.rows_by_col[ci].iter().enumerate() {
+                    let ri = row as usize;
+                    let d = (ctx.jac_gp[ri] - unsafe { *base.add(ri) }) * inv_del;
+                    vals[match pattern {
+                        Some(p) => p.slots[ci][k],
+                        None => ci * n + ri,
+                    }] = d;
+                }
+                unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+            }
+        }
+        // -cj·∂F/∂y' = -cj·I, the diagonal the ∂F/∂y difference does not carry.
+        for col in 0..n {
+            vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+        }
+        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+        e.write_bytes(ctx.states_base, y_bytes)?;
+        Ok(())
+    })();
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    match run {
+        Err(err) => {
+            ctx.err = Some(err);
+            -1
+        }
+        Ok(()) => 0,
+    }
+}
+
+/// How many times one interval may be resumed after `IDA_TOO_MUCH_WORK` (IDA's
+/// 500 internal steps per call). C warns and calls `IDASolve` again with no
+/// limit; resuming continues the same trajectory, this only bounds it.
+#[cfg(sundials)]
+const IDA_WORK_RETRIES: u32 = 10_000;
+
+/// Resumable IDA driver, event-free path. [`CvodeDriver`] with `y'` carried
+/// alongside `y`, IDA needing a consistent derivative at every restart.
+#[cfg(sundials)]
+struct IdaDriver {
+    sim_data: u32,
+    n_states: usize,
+    nominals: Vec<f64>,
+    states_base: u32,
+    ders_base: u32,
+    /// Next output row to produce (row 0 was emitted in `new`).
+    row: u32,
+    /// `None` when the model has no states (nothing to integrate).
+    ida: Option<crate::sundials::Ida>,
+    setup: IdaSetup,
+    t: f64,
+    pivots: Vec<StateSetPivot>,
+    rows: Vec<f64>,
+    /// Resumes an output interval left unfinished by a work-quota return or a yield.
+    work_retries: u32,
+    pending_terminate: bool,
+    finished: bool,
+}
+
+#[cfg(sundials)]
+impl IdaDriver {
+    fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
+        let layout = &model.layout;
+        let setup = IdaSetup::new(model)?;
+        run_initialization(e, sim_data, layout, model.start_time)?;
+
+        let n_states = layout.n_states as usize;
+        let states_base = sim_data + REAL_OFF;
+        let ders_base = states_base + layout.n_states * 8;
+        let n_rows = model.n_output_rows();
+        let n_reals = layout.n_row_total();
+        let start = model.start_time;
+
+        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        emit_initial_row(e, &mut rows, sim_data, layout, start)?;
+        let pending_terminate = terminated(e, sim_data, layout)?;
+
+        // Dynamic state selection at the initial point, as in `DasslDriver::new`.
+        // For an explicit ODE the consistent `y'` is f(t0, y0), which the row above
+        // has already left in the derivative slots.
+        let mut pivots = init_state_pivots(&model.state_sets);
+        let (mut y, mut yp) = (Vec::new(), Vec::new());
+        if n_states > 0 && !pending_terminate {
+            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
+                e.call1("functionODE", sim_data)?;
+            }
+            y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
+            yp = (0..n_states).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
+        }
+
+        let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+        let (_, atol) = dassl_tolerances(tol, &model.state_nominals, n_states);
+        let ida = if y.is_empty() {
+            None
+        } else {
+            Some(setup.build(e, sim_data, start, &y, &yp, tol, &atol, 0)?)
+        };
+
+        Ok(IdaDriver {
+            sim_data,
+            n_states,
+            nominals: state_nominals(&model.state_nominals, n_states),
+            states_base,
+            ders_base,
+            row: 1,
+            ida,
+            setup,
+            t: start,
+            pivots,
+            rows,
+            work_retries: 0,
+            pending_terminate,
+            finished: false,
+        })
+    }
+}
+
+#[cfg(sundials)]
+impl Driver for IdaDriver {
+    fn advance(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel, budget_ms: f64) -> Result<Advance> {
+        if self.finished {
+            return Ok(Advance::Done);
+        }
+        let layout = &model.layout;
+        let sim_data = self.sim_data;
+        if self.pending_terminate {
+            self.pending_terminate = false;
+            self.finished = true;
+            return Ok(Advance::Terminated);
+        }
+        let n_rows = model.n_output_rows();
+        let n_steps = n_rows - 1;
+        let start = model.start_time;
+        let stop = model.stop_time;
+        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let deadline = deadline_from(budget_ms);
+
+        // No integration — evaluate outputs on the grid — with no states or an
+        // empty time span.
+        let Some(ida) = self.ida.as_mut().filter(|_| stop > start) else {
+            let mut did_step = false;
+            while self.row < n_rows {
+                if did_step && past_deadline(deadline) {
+                    return Ok(Advance::Running);
+                }
+                check_alarm()?;
+                if cancel_requested() {
+                    return Ok(Advance::Cancelled);
+                }
+                did_step = true;
+                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                open_assert_window();
+                let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
+                close_assert_window(e, sim_data).and(emitted)?;
+                if terminated(e, sim_data, layout)? {
+                    self.finished = true;
+                    return Ok(Advance::Terminated);
+                }
+                self.row += 1;
+            }
+            self.finished = true;
+            return Ok(Advance::Done);
+        };
+
+        let n_states = self.n_states;
+        let states_base = self.states_base;
+        let mut ctx = ResCtx {
+            engine: &mut *e as *mut dyn SimEngine,
+            sim_data,
+            states_base,
+            ders_base: self.ders_base,
+            n_states,
+            nls_fail_off: layout.nls_fail_off,
+            nfe: 0,
+            zc_off: 0,
+            n_zc: 0,
+            err: None,
+            jac: self.setup.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+            jac_gp: Vec::new(),
+            jac_ysave: vec![0.0; n_states],
+            jac_del: vec![0.0; n_states],
+            jac_ders: Vec::new(),
+            nje: 0,
+            ctx_addr: e.context_addr(),
+            nominals: self.nominals.as_ptr(),
+            nominal_factor: nominal_factor(),
+            ida: self.setup.ctx(Some(ida)),
+        };
+        if !ida.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
+            return Err("CodegenWasmJit: IDA setup failed");
+        }
+
+        let mut did_step = false;
+        let outcome = loop {
+            if self.row >= n_rows {
+                break Advance::Done;
+            }
+            if did_step && past_deadline(deadline) {
+                break Advance::Running;
+            }
+            check_alarm()?;
+            if cancel_requested() {
+                break Advance::Cancelled;
+            }
+            did_step = true;
+            let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            // Zero-length final interval: emit the held state rather than step.
+            if tout <= self.t {
+                for (i, v) in ida.y().iter().enumerate() {
+                    write_f64(e, states_base + (i as u32) * 8, *v)?;
+                }
+                emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                self.row += 1;
+                continue;
+            }
+            let stop_reason = ida.step(&mut self.t, tout);
+            if let Some(err) = ctx.err.take() {
+                return Err(err);
+            }
+            match stop_reason {
+                crate::sundials::Stop::Reached | crate::sundials::Stop::Root => {}
+                crate::sundials::Stop::Failed(flag)
+                    if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
+                {
+                    self.work_retries += 1;
+                    continue;
+                }
+                crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: IDA failed"),
+            }
+            self.work_retries = 0;
+            self.setup.store_sens(e, sim_data, ida)?;
+            for (i, v) in ida.y().iter().enumerate() {
+                write_f64(e, states_base + (i as u32) * 8, *v)?;
+            }
+            open_assert_window();
+            let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+            close_assert_window(e, sim_data).and(emitted)?;
+            if terminated(e, sim_data, layout)? {
+                break Advance::Terminated;
+            }
+            // A state-set switch changes the meaning of the state vector, so
+            // re-read it and restart IDA (see `DasslDriver`).
+            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+                e.call1("functionODE", sim_data)?;
+                for i in 0..n_states {
+                    ida.y_mut()[i] = read_f64(e, states_base + (i as u32) * 8)?;
+                    ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
+                }
+                if !ida.reinit(self.t) {
+                    return Err("CodegenWasmJit: IDA re-initialization failed");
+                }
+            }
+            self.row += 1;
+        };
+        if matches!(outcome, Advance::Done | Advance::Terminated) {
+            self.finished = true;
+        }
+        Ok(outcome)
+    }
+
+    fn take_rows(&mut self) -> Vec<f64> {
+        core::mem::take(&mut self.rows)
+    }
+
+    fn fill_stats(&mut self, _model: &SimModel, stats: &mut SolveStats) {
+        if let Some(ida) = self.ida.as_ref() {
+            fill_sundials_stats(stats, ida.counters());
+        }
     }
 }

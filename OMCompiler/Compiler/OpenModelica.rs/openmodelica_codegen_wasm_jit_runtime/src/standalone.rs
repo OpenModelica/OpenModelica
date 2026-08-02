@@ -47,6 +47,7 @@ unsafe extern "C" {
     fn functionCheckAsserts(sim_data: u32);
     fn functionStoreDelayed(sim_data: u32);
     fn functionInitDelay(sim_data: u32);
+    fn functionUpdateBoundParameters(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
@@ -101,6 +102,7 @@ impl SimEngine for StandaloneEngine {
                 "functionCheckAsserts" => functionCheckAsserts(arg),
                 "functionStoreDelayed" => functionStoreDelayed(arg),
                 "functionInitDelay" => functionInitDelay(arg),
+                "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 _ => return Err("wasm-jit standalone: unknown model function"),
