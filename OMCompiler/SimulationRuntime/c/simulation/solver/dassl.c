@@ -210,6 +210,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   assertStreamPrint(threadData, 0 != dasslData->ipar,"out of memory");
   dasslData->atol = (double*) malloc(N*sizeof(double));
   dasslData->rtol = (double*) malloc(N*sizeof(double));
+  dasslData->nominal = (double*) malloc(N*sizeof(double));
   dasslData->info = (int*) calloc(infoLength, sizeof(int));
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
 
@@ -229,14 +230,18 @@ int dassl_initial(DATA* data, threadData_t *threadData,
 
 
 
+  dasslData->jacNominalFactor = omc_flag[FLAG_JACOBIAN_NOMINAL_FACTOR]
+      ? atof(omc_flagValue[FLAG_JACOBIAN_NOMINAL_FACTOR]) : 1.0;
+
   /* set nominal values of the states for absolute tolerances */
   dasslData->info[1] = 1;
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
   {
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
-    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(nominal), 1e-32);
+    dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(OMC_LOG_SOLVER);
@@ -482,6 +487,7 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
   free(dasslData->ipar);
   free(dasslData->atol);
   free(dasslData->rtol);
+  free(dasslData->nominal);
   free(dasslData->info);
   free(dasslData->ysave);
   free(dasslData->delta_hh);
@@ -1265,7 +1271,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   for(col=dasslData->N-1; col >= 0; col--)
   {
     delta_hhh = *h * yprime[col];
-    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)), fabs(1. / wt[col]));  // TODO: Can wt[col] be negative?
+    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)), dasslData->jacNominalFactor*dasslData->nominal[col]);
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
     deltaInv = 1. / delta_hh;
@@ -1338,7 +1344,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)), fabs(1./wt[ii]));    // TODO: Can wt[ii] be negative?
+        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)), dasslData->jacNominalFactor*dasslData->nominal[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 
