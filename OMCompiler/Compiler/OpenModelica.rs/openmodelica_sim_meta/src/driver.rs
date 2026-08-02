@@ -246,6 +246,9 @@ pub trait SimEngine {
     fn context_addr(&mut self) -> u32 {
         0
     }
+    /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
+    /// integrates).
+    fn clean_nls_history(&mut self, _time: f64) {}
 }
 
 /// C's `EVAL_CONTEXT`, mirrored from the runtime's `nls.rs`. `unsetContext` restores
@@ -418,20 +421,6 @@ fn now_ms() -> f64 {
     }
     #[cfg(not(all(feature = "std", not(target_arch = "wasm32"))))]
     0.0
-}
-
-/// `f64::sqrt` (the one transcendental the driver uses); `core` has no inherent
-/// `sqrt`, so no_std routes through `libm`.
-#[inline]
-fn sqrt(x: f64) -> f64 {
-    #[cfg(feature = "std")]
-    {
-        x.sqrt()
-    }
-    #[cfg(not(feature = "std"))]
-    {
-        libm::sqrt(x)
-    }
 }
 
 /// Read an env var (host/std only; the in-wasm runtime has no environment, so the
@@ -1668,6 +1657,8 @@ pub fn event_update(
         }
     }
 
+    e.clean_nls_history(time);
+
     let next = samples.as_ref().map(|s| s.next_time()).filter(|t| t.is_finite());
     Ok(EventUpdate { states_changed, terminate: terminated(e, sim_data, layout)?, next_event_time: next })
 }
@@ -2007,6 +1998,9 @@ struct ResCtx {
     nje: u64,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
     ctx_addr: u32,
+    /// The FD step's floor: `n_states` nominals owned by the driver, scaled.
+    nominals: *const f64,
+    nominal_factor: f64,
 }
 
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
@@ -2139,7 +2133,7 @@ unsafe fn dassl_jac(
     pd: *mut f64,
     cj: *mut f64,
     h: *mut f64,
-    wt: *mut f64,
+    _wt: *mut f64,
     _rpar: *mut f64,
     _ipar: *mut i32,
 ) {
@@ -2156,7 +2150,6 @@ unsafe fn dassl_jac(
     let n = ctx.n_states;
     let cj = unsafe { *cj };
     let h = unsafe { *h };
-    let sqrt_uround = sqrt(f64::EPSILON);
     ctx.jac_ders.resize(n * 8, 0);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
@@ -2169,12 +2162,13 @@ unsafe fn dassl_jac(
                 let ci = col as usize;
                 let yi = unsafe { *y.add(ci) };
                 let ypi = unsafe { *yprime.add(ci) };
-                let d6 = (h * ypi).abs();
-                let mag = (sqrt_uround * yi.abs().max(d6)).max(1.0 / unsafe { *wt.add(ci) });
-                let mut del = if h * ypi >= 0.0 { mag } else { -mag };
+                let d6 = h * ypi;
+                let mag = DELTA_X_SOLVER
+                    * yi.abs().max(d6.abs()).max(ctx.nominal_factor * unsafe { *ctx.nominals.add(ci) });
+                let mut del = if d6 >= 0.0 { mag } else { -mag };
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 if del == 0.0 {
-                    del = sqrt_uround;
+                    del = DELTA_X_SOLVER;
                 }
                 ctx.jac_ysave[ci] = yi;
                 ctx.jac_del[ci] = 1.0 / del;
@@ -2217,6 +2211,47 @@ unsafe fn dassl_jac(
     }
 }
 
+/// C's `numericalDifferentiationDeltaXsolver` (`model_help.c`).
+const DELTA_X_SOLVER: f64 = 1e-8;
+
+/// C's `-lv=LOG_DASSL`, printed by `dassl.c` around every `DDASKR` call.
+fn log_dassl() -> bool {
+    crate::simflags::with_flags(|f| f.has_log("LOG_DASSL"))
+}
+
+fn log_dassl_step(t: f64) {
+    log_line(&alloc::format!("{}new step at time = {}\n", log_prefix("LOG_DASSL", "info"), format_g(t, 15)));
+}
+
+/// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
+/// A restart zeroes the counters, as in C.
+fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
+    let cont = alloc::format!("{}| ", log_prefix("|", "|"));
+    let g = |v: f64| format_g(v, 4);
+    let r = |k: usize| rwork.get(k).copied().unwrap_or(0.0);
+    let i = |k: usize| iwork.get(k).copied().unwrap_or(0);
+    log_line(&alloc::format!(
+        "{}dassl call statistics: \n\
+         {cont}value of idid: {idid}\n\
+         {cont}current time value: {}\n\
+         {cont}current integration time value: {}\n\
+         {cont}step size H to be attempted on next step: {}\n\
+         {cont}step size used on last successful step: {}\n\
+         {cont}the order of the method used on the last step: {}\n\
+         {cont}the order of the method to be attempted on the next step: {}\n\
+         {cont}number of steps taken so far: {}\n\
+         {cont}number of calls of functionODE() : {}\n\
+         {cont}number of calculation of jacobian : {}\n\
+         {cont}total number of convergence test failures: {}\n\
+         {cont}total number of error test failures: {}\n\
+         {}Finished DASSL step.\n",
+        log_prefix("LOG_DASSL", "info"),
+        g(t), g(r(3)), g(r(2)), g(r(6)),
+        i(7), i(8), i(10), i(11), i(12), i(14), i(13),
+        log_prefix("LOG_DASSL", "info"),
+    ));
+}
+
 /// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`
 /// (`state_nominals` is already floored). Length ≥ 1 so daskr never sees an empty array.
 fn dassl_tolerances(tol: f64, state_nominals: &[f64], n_states: usize) -> (Vec<f64>, Vec<f64>) {
@@ -2224,6 +2259,14 @@ fn dassl_tolerances(tol: f64, state_nominals: &[f64], n_states: usize) -> (Vec<f
     let rtol = vec![tol; n];
     let atol = (0..n).map(|i| tol * state_nominals.get(i).copied().unwrap_or(1.0)).collect();
     (rtol, atol)
+}
+
+fn nominal_factor() -> f64 {
+    crate::simflags::with_flags(|f| f.jacobian_nominal_factor).unwrap_or(1.0)
+}
+
+fn state_nominals(state_nominals: &[f64], n_states: usize) -> Vec<f64> {
+    (0..n_states.max(1)).map(|i| state_nominals.get(i).copied().unwrap_or(1.0)).collect()
 }
 
 /// Resumable DASSL (daskr) driver, event-free path. Owns the DASKR work arrays
@@ -2241,6 +2284,7 @@ struct DasslDriver {
     info: [i32; 24],
     rtol: Vec<f64>,
     atol: Vec<f64>,
+    nominals: Vec<f64>,
     rwork: Vec<f64>,
     iwork: Vec<i32>,
     rpar: [f64; 1],
@@ -2358,6 +2402,7 @@ impl DasslDriver {
             info,
             rtol,
             atol,
+            nominals: state_nominals(&model.state_nominals, n_states),
             rwork: vec![0.0f64; lrw],
             iwork: vec![0i32; liw],
             rpar: [0.0f64],
@@ -2464,6 +2509,8 @@ impl Driver for DasslDriver {
             jac_ders: Vec::new(),
             nje: self.nje,
             ctx_addr: e.context_addr(),
+            nominals: self.nominals.as_ptr(),
+            nominal_factor: nominal_factor(),
         };
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
@@ -2499,6 +2546,10 @@ impl Driver for DasslDriver {
                 self.row += 1;
                 continue;
             }
+            let logging = log_dassl();
+            if logging {
+                log_dassl_step(self.t);
+            }
             unsafe {
                 solver::ddaskr(
                     dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(),
@@ -2507,6 +2558,9 @@ impl Driver for DasslDriver {
                     self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn, solver::dummy_jack,
                     solver::dummy_psol, solver::dummy_rt, nrt, self.jroot.as_mut_ptr(),
                 );
+            }
+            if logging && self.idid != -1 {
+                log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
             }
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
@@ -2666,6 +2720,10 @@ impl DaskrState {
         let rt_fn: solver::RtFn = if self.nrt > 0 { dassl_rt } else { solver::dummy_rt };
         let jacfn: solver::JacFn = if self.jac_a.is_none() { solver::dummy_jacd } else { dassl_jac };
         let mut tt = target;
+        let logging = log_dassl();
+        if logging {
+            log_dassl_step(*t);
+        }
         unsafe {
             solver::ddaskr(
                 dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
@@ -2675,6 +2733,9 @@ impl DaskrState {
                 solver::dummy_jack, solver::dummy_psol, rt_fn, self.nrt,
                 self.jroot.as_mut_ptr(),
             );
+        }
+        if logging && self.idid != -1 {
+            log_dassl_stats(self.idid, *t, &self.rwork, &self.iwork);
         }
         // IDID=-1: the work quota expended before TOUT — resume with INFO(1)=1.
         if self.idid == -1 && self.ev_retries < 10_000 {
@@ -2764,6 +2825,7 @@ struct SolverCore {
     nje: u64,
     state_events: u64,
     time_events: u64,
+    nominals: Vec<f64>,
     /// Chattering detector: a ring of the last [`CHATTER_LIMIT`] state-event times
     /// + a consecutive-event counter. Fires once.
     chatter_times: [f64; CHATTER_LIMIT],
@@ -2853,6 +2915,7 @@ impl SolverCore {
             nje: 0,
             state_events: 0,
             time_events: 0,
+            nominals: state_nominals(&model.state_nominals, n_states),
             chatter_times: [0.0; CHATTER_LIMIT],
             chatter_idx: 0,
             chatter_consec: 0,
@@ -2943,6 +3006,8 @@ impl SolverCore {
             jac_ders: Vec::new(),
             nje: self.nje,
             ctx_addr: e.context_addr(),
+            nominals: self.nominals.as_ptr(),
+            nominal_factor: nominal_factor(),
         }
     }
 
@@ -3174,6 +3239,7 @@ impl SolverCore {
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
                 refresh_relations(e, sim_data, layout)?;
+                e.clean_nls_history(te);
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut() {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
@@ -3618,6 +3684,7 @@ impl Driver for EventsDriver {
                         write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
                         self.samp.fire(e, sim_data, te)?;
                         refresh_relations(e, sim_data, layout)?;
+                        e.clean_nls_history(te);
                         self.core.time_events += 1;
                         emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?; // post-event row
                         if terminated(e, sim_data, layout)? {
@@ -3834,6 +3901,7 @@ const CVODE_WORK_RETRIES: u32 = 10_000;
 struct CvodeDriver {
     sim_data: u32,
     n_states: usize,
+    nominals: Vec<f64>,
     states_base: u32,
     ders_base: u32,
     /// Next output row to produce (row 0 was emitted in `new`).
@@ -3889,6 +3957,7 @@ impl CvodeDriver {
         Ok(CvodeDriver {
             sim_data,
             n_states,
+            nominals: state_nominals(&model.state_nominals, n_states),
             states_base,
             ders_base: states_base + layout.n_states * 8,
             row: 1,
@@ -3970,6 +4039,8 @@ impl Driver for CvodeDriver {
             jac_ders: Vec::new(),
             nje: 0,
             ctx_addr: e.context_addr(),
+            nominals: self.nominals.as_ptr(),
+            nominal_factor: nominal_factor(),
         };
         if !cv.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: CVODE setup failed");

@@ -123,6 +123,9 @@ impl SimEngine for StandaloneEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn clean_nls_history(&mut self, time: f64) {
+        crate::nls::rt_nls_clean_history(time);
+    }
 }
 
 /// Run the prepared model with the shared driver and write its result file.

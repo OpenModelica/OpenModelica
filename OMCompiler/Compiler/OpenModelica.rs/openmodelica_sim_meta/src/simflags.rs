@@ -87,6 +87,8 @@ pub struct SimFlags {
     pub init_lambda_steps: Option<i32>,
     /// `-stepSize`: overrides what `SimMeta::step_size` derives from the model.
     pub step_size: Option<f64>,
+    /// `-jacobianNominalFactor`: scales the ODE Jacobian's FD step floor.
+    pub jacobian_nominal_factor: Option<f64>,
     /// `-homotopyOnFirstTry` / `-noHomotopyOnFirstTry`. `None` is C's default,
     /// which sets `FLAG_HOMOTOPY_ON_FIRST_TRY` whenever the model supports
     /// homotopy.
@@ -268,6 +270,13 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "stepSize" => {
                 f.step_size = Some(
                     value(name)?.parse::<f64>().map_err(|_| "-stepSize needs a number".to_string())?,
+                )
+            }
+            "jacobianNominalFactor" => {
+                f.jacobian_nominal_factor = Some(
+                    value(name)?
+                        .parse::<f64>()
+                        .map_err(|_| "-jacobianNominalFactor needs a number".to_string())?,
                 )
             }
             "homotopyOnFirstTry" => f.homotopy_on_first_try = Some(true),
