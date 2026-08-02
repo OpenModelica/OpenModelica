@@ -12,6 +12,9 @@ openmodelica_wasm_jit.workspace = true
 # External-"C" wasm-FMU artifacts, consumed by the FMU linker.
 openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
+# `-iif=<file>`: C's `importStartValues` reads the initialization file with the
+# MATLAB v4 reader, which lives with the other result readers.
+openmodelica_script_util.workspace = true
 openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true

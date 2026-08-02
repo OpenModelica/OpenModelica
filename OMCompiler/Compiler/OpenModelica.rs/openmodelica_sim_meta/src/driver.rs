@@ -16,6 +16,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 
+use crate::omclog;
 use crate::{
     JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo, TIME_OFF,
     WTy,
@@ -339,10 +340,7 @@ fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<
     };
     if let Some(t) = init_time {
         log_assert_block(&info, &cond, t, true);
-        log_line(&alloc::format!(
-            "{}simulation terminated by an assertion at initialization\n",
-            log_prefix("LOG_ASSERT", "info")
-        ));
+        omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
     }
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
     if p != 0 {
@@ -552,7 +550,7 @@ static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_log_sink(f: fn(&str)) {
     LOG_SINK.store(f as usize, Ordering::Relaxed);
 }
-fn log_line(s: &str) {
+pub(crate) fn log_line(s: &str) {
     let p = LOG_SINK.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn(&str) = unsafe { core::mem::transmute(p) };
@@ -614,13 +612,16 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
         return;
     }
     let time = read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
-    log_line(&alloc::format!(
-        "{}Solving non-linear system {} failed at time={}.\n{}For more information please use -lv LOG_NLS.\n",
-        log_prefix("LOG_ASSERT", "debug"),
-        failed - 1,
-        format_g15(time),
-        log_prefix("|", "|"),
-    ));
+    omclog::message_text(
+        omclog::DEBUG_TYPE,
+        omclog::ASSERT,
+        false,
+        &alloc::format!(
+            "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
+            failed - 1,
+            format_g15(time),
+        ),
+    );
 }
 
 /// Number of equidistant homotopy steps: C's `init_lambda_steps`, which `-ils`
@@ -720,11 +721,6 @@ pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to 
 pub const ALARM_ABORT_ERR: &str = "CodegenWasmJit: simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
-
-/// Log-line prefix `<stream>| <level>| ` at the runtime's column widths.
-fn log_prefix(stream: &str, level: &str) -> String {
-    format!("{stream:<18}| {level:<8}| ")
-}
 
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
 /// before a run (the driver can only return a `&'static str`).
@@ -930,7 +926,7 @@ pub fn format_g(v: f64, p: i32) -> String {
 /// `level`: C reports a violation met while the integrator updates the system
 /// (`simulationUpdate`, which sets `noThrowAsserts`) as `info`, one met anywhere
 /// else — initialization, the terminal step — as `warning`.
-fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, level: &str) -> Result<()> {
+fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, level: omclog::LogType) -> Result<()> {
     e.call1_if_present("functionCheckAsserts", sim_data)?;
     drain_asserts(e, sim_data, level)?;
     Ok(())
@@ -939,7 +935,7 @@ fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, leve
 /// Log the violations recorded since the last call. A warning goes once per site;
 /// a suppressed error goes every time (as in C) and arms the re-throw, which the
 /// `true` return reports.
-fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: &str) -> Result<bool> {
+fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -> Result<bool> {
     let pending = e.take_pending_warnings();
     if pending.is_empty() {
         return Ok(false);
@@ -961,15 +957,16 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: &str) -> Result<bo
             line_end: el,
             col_end: ec,
         };
-        let line = assert_block(&info, &cond, time, false, if suppressed { "info" } else { level });
+        let line = assert_block(&info, &cond, time, false);
+        let ty = if suppressed { omclog::INFO } else { level };
         if suppressed {
-            log_line(&line);
+            omclog::message_text(ty, omclog::ASSERT, false, &line);
             rethrow_store::arm(info);
             armed = true;
         } else {
             let key = alloc::format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
             if assert_warn_store::first_time(key) {
-                log_line(&line);
+                omclog::message_text(ty, omclog::ASSERT, false, &line);
             }
         }
     }
@@ -981,26 +978,24 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: &str) -> Result<bo
 /// level as [`emit_row`] does. Nonzero means a suppressed `assert()` ends the run,
 /// which [`run_wasm`] settles once the loop is out.
 pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
-    let level = if warn != 0 { "warning" } else { "info" };
+    let level = if warn != 0 { omclog::WARNING } else { omclog::INFO };
     drain_asserts(e, sim_data, level).unwrap_or(true) as i32
 }
 
 /// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). C wraps the
 /// already-parenthesised `assert_cond` in its own `(%s)`, hence the doubled
 /// parentheses; without a source position only the message is printed.
-fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool, level: &str) -> String {
-    let head = log_prefix("LOG_ASSERT", level);
-    let cont = log_prefix("|", "|");
+fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
     let during = if initial { "during initialization " } else { "" };
     let t = format_f(time);
     if info.file.is_empty() {
-        return alloc::format!("{head}The following assertion has been violated {during}at time {t}\n");
+        return alloc::format!("The following assertion has been violated {during}at time {t}");
     }
     let ro_str = if info.read_only { "readonly" } else { "writable" };
     alloc::format!(
-        "{head}[{}:{}:{}-{}:{}:{ro_str}]\n\
-         {cont}The following assertion has been violated {during}at time {t}\n\
-         {cont}(({cond})) --> \"{}\"\n",
+        "[{}:{}:{}-{}:{}:{ro_str}]\n\
+         The following assertion has been violated {during}at time {t}\n\
+         (({cond})) --> \"{}\"",
         info.file, info.line_start, info.col_start, info.line_end, info.col_end, info.msg,
     )
 }
@@ -1009,11 +1004,11 @@ fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
     // C's `assertCommonVar` (the math-domain guards, no source position): the warning
     // names the time, a debug line carries the message.
     if info.file.is_empty() {
-        log_line(&assert_block(info, cond, time, initial, "warning"));
-        log_line(&alloc::format!("{}{}\n", log_prefix("LOG_ASSERT", "debug"), info.msg));
+        omclog::warning(omclog::ASSERT, false, &assert_block(info, cond, time, initial));
+        omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, &info.msg);
         return;
     }
-    log_line(&assert_block(info, cond, time, initial, "error"));
+    omclog::error(omclog::ASSERT, false, &assert_block(info, cond, time, initial));
 }
 
 /// What the open window has seen: the first assertion suppressed in it, and
@@ -1081,22 +1076,16 @@ fn open_assert_window() {
 /// makes the point they were raised at obsolete, otherwise the run fails now.
 fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_no_throw(false);
-    drain_asserts(e, sim_data, "info")?;
+    drain_asserts(e, sim_data, omclog::INFO)?;
     let (info, found_event) = rethrow_store::take();
     let Some(info) = info else {
         return Ok(());
     };
     if found_event {
-        log_line(&alloc::format!(
-            "{}Found event, previous asserts are ignored.\n",
-            log_prefix("LOG_ASSERT", "info")
-        ));
+        omclog::info(omclog::ASSERT, false, "Found event, previous asserts are ignored.");
         return Ok(());
     }
-    log_line(&alloc::format!(
-        "{}No event found, but assert was triggered. Throwing now!\n",
-        log_prefix("LOG_ASSERT", "error")
-    ));
+    omclog::error(omclog::ASSERT, false, "No event found, but assert was triggered. Throwing now!");
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn(&AssertInfo) = unsafe { core::mem::transmute(p) };
@@ -1139,7 +1128,7 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     }
     // C's `initializeModel` ends with `checkForAsserts` — before the
     // initialization-success line.
-    check_asserts(e, sim_data, layout, "warning")?;
+    check_asserts(e, sim_data, layout, omclog::WARNING)?;
     // Initialization output is complete; the next model output is the simulation
     // phase. Let the host close the init segment of the capture.
     signal_init_done();
@@ -1147,6 +1136,9 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
 }
 
 fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    // C's `updateStaticDataOfNonlinearSystems`.
+    omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
+    omclog::close(omclog::NLS);
     init_report::reset();
     assert_warn_store::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
@@ -1169,11 +1161,12 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     if direct_initial_solve(e, sim_data, layout).is_ok() {
         return Ok(());
     }
-    log_line(&alloc::format!(
-        "{}Failed to solve the initialization problem without homotopy method. \
-         If homotopy is available the homotopy method is used now.\n",
-        log_prefix("LOG_ASSERT", "warning")
-    ));
+    omclog::warning(
+        omclog::ASSERT,
+        false,
+        "Failed to solve the initialization problem without homotopy method. \
+         If homotopy is available the homotopy method is used now.",
+    );
     // C's catch arm resets everything to start before the continuation runs.
     init_report::reset();
     let _ = rethrow_store::take();
@@ -1275,19 +1268,19 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
         let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
         let msg = read_rt_string(e, w(0)?)?;
         let file = read_rt_string(e, w(1)?)?;
-        let mut line = String::new();
+        // C prints the source position raw (`printInfo`), outside the message system.
         if !file.is_empty() {
             let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-            line = alloc::format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?);
+            log_line(&alloc::format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
         }
-        line.push_str(&alloc::format!(
-            "{}Simulation call terminate() at time {}\n{}Message : {msg}",
-            log_prefix("LOG_STDOUT", "info"),
-            format_f(read_f64(e, sim_data + TIME_OFF)?),
-            log_prefix("|", "|"),
-        ));
-        line.push('\n');
-        log_line(&line);
+        omclog::info(
+            omclog::STDOUT,
+            false,
+            &alloc::format!(
+                "Simulation call terminate() at time {}\nMessage : {msg}",
+                format_f(read_f64(e, sim_data + TIME_OFF)?),
+            ),
+        );
     }
     Ok(true)
 }
@@ -1306,21 +1299,37 @@ fn emit_row(
 ) -> Result<()> {
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
-    if time >= stop {
-        // C's `finishSimulation`: the row at the stop time is the terminal step,
-        // a *discrete* update with `terminal()` true, so a `when terminal()`
-        // body fires and reaches the result file. (C emits the stop time twice,
-        // before and after; we keep one row per output point, the updated one.)
-        write_i32(e, sim_data + layout.terminal_off, 1)?;
-        iterate_discrete(e, sim_data, layout)?;
-        write_i32(e, sim_data + layout.terminal_off, 0)?;
-    } else {
-        e.call1("functionODE", sim_data)?;
-        e.call1("functionAlgebraics", sim_data)?;
-    }
+    e.call1("functionODE", sim_data)?;
+    e.call1("functionAlgebraics", sim_data)?;
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
-    check_asserts(e, sim_data, layout, if time >= stop { "warning" } else { "info" })
+    check_asserts(e, sim_data, layout, if time >= stop { omclog::WARNING } else { omclog::INFO })
+}
+
+/// C's `finishSimulation`: a discrete update with `terminal()` true and one more
+/// row at the same time, so a `when terminal()` body reaches the result file.
+pub fn emit_terminal_row(
+    e: &mut dyn SimEngine,
+    rows: &mut Vec<f64>,
+    sim_data: u32,
+    layout: &SimLayout,
+    n_reals: u32,
+) -> Result<()> {
+    let Some(time) = rows.len().checked_sub(n_reals as usize).map(|i| rows[i]) else {
+        return Ok(());
+    };
+    if no_event_emit() {
+        return Ok(());
+    }
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_i32(e, sim_data + layout.terminal_off, 1)?;
+    let updated = iterate_discrete(e, sim_data, layout);
+    write_i32(e, sim_data + layout.terminal_off, 0)?;
+    updated?;
+    check_nls(e, sim_data, layout)?;
+    capture_row(e, rows, sim_data, layout)?;
+    check_asserts(e, sim_data, layout, omclog::WARNING)
 }
 
 /// The initial result row. C emits it straight after `initializeModel` with no
@@ -1335,7 +1344,7 @@ fn emit_initial_row(
 ) -> Result<()> {
     write_f64(e, sim_data + TIME_OFF, time)?;
     capture_row(e, rows, sim_data, layout)?;
-    check_asserts(e, sim_data, layout, "warning")
+    check_asserts(e, sim_data, layout, omclog::WARNING)
 }
 
 /// Pre-event snapshot row (state just before a discrete update). Skips
@@ -1705,6 +1714,25 @@ pub fn make_driver(
     let method = effective_method(method);
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
+    // `dassl_initial`'s flag warnings, before initialization as in C.
+    let (freq, out_time) =
+        crate::simflags::with_flags(|f| (f.no_equidistant_freq, f.no_equidistant_time));
+    if freq.is_some() && out_time.is_some() && no_equidistant_grid() {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            "The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" \
+             are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.",
+        );
+    }
+    // C's `initializeNonlinearSystems`.
+    omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
+    omclog::info(
+        omclog::NLS,
+        false,
+        &alloc::format!("{} non-linear systems", model.nls_vars.len()),
+    );
+    omclog::close(omclog::NLS);
     let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
     for k in 0..layout.n_sens {
@@ -1793,7 +1821,9 @@ pub fn drive(
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
-            return run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats);
+            let mut rows = run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)?;
+            emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+            return Ok(rows);
         }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
         let (mut driver, l) =
@@ -1813,7 +1843,9 @@ pub fn drive(
             }
         }
         driver.fill_stats(model, &mut stats);
-        Ok(driver.take_rows())
+        let mut rows = driver.take_rows();
+        emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+        Ok(rows)
     })();
     let _ = bench;
     // Before `outcome?`: a failed run is when the counters matter most.
@@ -2271,42 +2303,121 @@ unsafe fn dassl_jac(
 /// C's `numericalDifferentiationDeltaXsolver` (`model_help.c`).
 const DELTA_X_SOLVER: f64 = 1e-8;
 
+/// C's `-noEquidistantTimeGrid` (`dassl.c`'s `dasslSteps`): DASKR's own steps are
+/// the output points, not an interpolated equidistant grid.
+fn no_equidistant_grid() -> bool {
+    crate::simflags::with_flags(|f| f.no_equidistant_grid)
+}
+
+/// C's `-noEventEmit`: the rows a step that handled an event produces are dropped.
+fn no_event_emit() -> bool {
+    crate::simflags::with_flags(|f| f.no_event_emit)
+}
+
+/// C's `do_emit`: under `-noEventEmit` a post-event row survives only if the
+/// equidistant grid puts an output point on `time`. The left-limit row never does.
+fn emit_post_event_row(model: &SimModel, time: f64) -> bool {
+    if !no_event_emit() {
+        return true;
+    }
+    if no_equidistant_grid() || model.n_intervals == 0 {
+        return false;
+    }
+    let (start, stop, n) = (model.start_time, model.stop_time, model.n_intervals as f64);
+    let step_no = libm::round(n * (time - start) / (stop - start));
+    let grid = step_no * (stop - start) / n + start;
+    grid == time || libm::fabs(grid - time) / (libm::fabs(grid) + libm::fabs(time)) < 1e-15
+}
+
+/// `-maxIntegrationOrder` (INFO(9)/IWORK(3)) and the step-size cap
+/// (INFO(7)/RWORK(2)), which `-noEquidistantOutputTime` also sets, as `dassl.c` does.
+fn daskr_limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
+    let (order, h_max, out_time) = crate::simflags::with_flags(|f| {
+        (f.max_order, f.max_step_size, f.no_equidistant_time)
+    });
+    if let Some(n) = order {
+        info[8] = 1;
+        iwork[2] = n;
+    }
+    if let Some(h) = h_max.or(out_time) {
+        info[6] = 1;
+        rwork[1] = h;
+    }
+}
+
+/// `dassl.c`'s `dasslStepsFreq` / `dasslStepsTime`: every n-th step, or the first
+/// step past each multiple of `t`. Neither set = every step.
+#[derive(Default)]
+struct StepEmit {
+    freq: Option<u32>,
+    time: Option<f64>,
+    counter: u32,
+}
+
+impl StepEmit {
+    fn new() -> Self {
+        let (freq, time) =
+            crate::simflags::with_flags(|f| (f.no_equidistant_freq, f.no_equidistant_time));
+        // C: the frequency wins when both are given; `make_driver` warns.
+        StepEmit { freq, time: if freq.is_some() { None } else { time }, counter: 1 }
+    }
+
+    fn take(&mut self, t: f64) -> bool {
+        match (self.freq, self.time) {
+            (Some(n), _) => {
+                if self.counter >= n.max(1) {
+                    self.counter = 1;
+                    return true;
+                }
+                self.counter += 1;
+                false
+            }
+            (None, Some(dt)) => {
+                if t > self.counter as f64 * dt {
+                    self.counter += 1;
+                    return true;
+                }
+                false
+            }
+            _ => true,
+        }
+    }
+}
+
 /// C's `-lv=LOG_DASSL`, printed by `dassl.c` around every `DDASKR` call.
 fn log_dassl() -> bool {
-    crate::simflags::with_flags(|f| f.has_log("LOG_DASSL"))
+    omclog::active(omclog::DASSL)
 }
 
 fn log_dassl_step(t: f64) {
-    log_line(&alloc::format!("{}new step at time = {}\n", log_prefix("LOG_DASSL", "info"), format_g(t, 15)));
+    omclog::info(omclog::DASSL, false, &alloc::format!("new step at time = {}", format_g(t, 15)));
 }
 
 /// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
 /// A restart zeroes the counters, as in C.
 fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
-    let cont = alloc::format!("{}| ", log_prefix("|", "|"));
     let g = |v: f64| format_g(v, 4);
     let r = |k: usize| rwork.get(k).copied().unwrap_or(0.0);
     let i = |k: usize| iwork.get(k).copied().unwrap_or(0);
-    log_line(&alloc::format!(
-        "{}dassl call statistics: \n\
-         {cont}value of idid: {idid}\n\
-         {cont}current time value: {}\n\
-         {cont}current integration time value: {}\n\
-         {cont}step size H to be attempted on next step: {}\n\
-         {cont}step size used on last successful step: {}\n\
-         {cont}the order of the method used on the last step: {}\n\
-         {cont}the order of the method to be attempted on the next step: {}\n\
-         {cont}number of steps taken so far: {}\n\
-         {cont}number of calls of functionODE() : {}\n\
-         {cont}number of calculation of jacobian : {}\n\
-         {cont}total number of convergence test failures: {}\n\
-         {cont}total number of error test failures: {}\n\
-         {}Finished DASSL step.\n",
-        log_prefix("LOG_DASSL", "info"),
-        g(t), g(r(3)), g(r(2)), g(r(6)),
-        i(7), i(8), i(10), i(11), i(12), i(14), i(13),
-        log_prefix("LOG_DASSL", "info"),
-    ));
+    omclog::info(omclog::DASSL, true, "dassl call statistics: ");
+    for l in [
+        alloc::format!("value of idid: {idid}"),
+        alloc::format!("current time value: {}", g(t)),
+        alloc::format!("current integration time value: {}", g(r(3))),
+        alloc::format!("step size H to be attempted on next step: {}", g(r(2))),
+        alloc::format!("step size used on last successful step: {}", g(r(6))),
+        alloc::format!("the order of the method used on the last step: {}", i(7)),
+        alloc::format!("the order of the method to be attempted on the next step: {}", i(8)),
+        alloc::format!("number of steps taken so far: {}", i(10)),
+        alloc::format!("number of calls of functionODE() : {}", i(11)),
+        alloc::format!("number of calculation of jacobian : {}", i(12)),
+        alloc::format!("total number of convergence test failures: {}", i(14)),
+        alloc::format!("total number of error test failures: {}", i(13)),
+    ] {
+        omclog::info(omclog::DASSL, false, &l);
+    }
+    omclog::close(omclog::DASSL);
+    omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
 /// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`
@@ -2359,6 +2470,10 @@ struct DasslDriver {
     /// DASKR continuations spent on the in-progress interval (persisted so the
     /// runaway cap bounds one interval across yields).
     work_retries: i32,
+    /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
+    step_emit: StepEmit,
+    /// C's degenerate first `-noEquidistantTimeGrid` iteration has been emitted.
+    no_grid_primed: bool,
     /// `terminate()` fired at the initial point; the first `advance` reports it.
     pending_terminate: bool,
     finished: bool,
@@ -2445,6 +2560,12 @@ impl DasslDriver {
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
+        if no_equidistant_grid() && n_states > 0 {
+            info[2] = 1; // INFO(3)=1: return after every internal step
+        }
+        let mut rwork = vec![0.0f64; lrw];
+        let mut iwork = vec![0i32; liw];
+        daskr_limits(&mut info, &mut rwork, &mut iwork);
         Ok(DasslDriver {
             sim_data,
             n_states,
@@ -2460,8 +2581,8 @@ impl DasslDriver {
             rtol,
             atol,
             nominals: state_nominals(&model.state_nominals, n_states),
-            rwork: vec![0.0f64; lrw],
-            iwork: vec![0i32; liw],
+            rwork,
+            iwork,
             rpar: [0.0f64],
             ipar: [0i32],
             jroot: [0i32],
@@ -2471,6 +2592,8 @@ impl DasslDriver {
             pivots,
             rows,
             pending_tout: None,
+            step_emit: StepEmit::new(),
+            no_grid_primed: false,
             work_retries: 0,
             pending_terminate,
             finished: false,
@@ -2506,6 +2629,16 @@ impl Driver for DasslDriver {
         let stop = model.stop_time;
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
+        // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
+        // IDID=1 returns below.
+        let no_grid = no_equidistant_grid() && self.n_states > 0 && stop > start;
+        let n_rows = if no_grid { 2 } else { n_rows };
+        // C's first iteration here is a zero-length step (`lastdesiredStep` starts an
+        // output interval ahead) and emits a second row at the start time.
+        if no_grid && !self.no_grid_primed {
+            self.no_grid_primed = true;
+            emit_row(e, &mut self.rows, sim_data, layout, self.t, stop)?;
+        }
 
         // No integration — just evaluate outputs on the grid — with no states or an
         // empty time span (`stopTime <= startTime`; a zero-width `ddaskr` step errors).
@@ -2593,8 +2726,11 @@ impl Driver for DasslDriver {
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
             // INFO(1)=1 (a stiff interval hits this repeatedly), up to a cap.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
-            let mut tout =
-                self.pending_tout.unwrap_or(if self.row == n_steps { stop } else { start + self.row as f64 * h });
+            let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
+                stop
+            } else {
+                start + self.row as f64 * h
+            });
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
             // so emit the held state directly instead of stepping.
             if tout <= self.t {
@@ -2636,6 +2772,24 @@ impl Driver for DasslDriver {
             }
             if self.idid < 0 {
                 return Err("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
+            }
+            // IDID=1 (INFO(3)=1): one internal step, TOUT still ahead.
+            if self.idid == 1 {
+                self.pending_tout = Some(tout);
+                self.work_retries = 0;
+                if self.step_emit.take(self.t) {
+                    for i in 0..n_states {
+                        write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                    }
+                    open_assert_window();
+                    let emitted =
+                        emit_row(e, &mut self.rows, sim_data, layout, self.t, model.stop_time);
+                    close_assert_window(e, sim_data).and(emitted)?;
+                    if terminated(e, sim_data, layout)? {
+                        break Advance::Terminated;
+                    }
+                }
+                continue;
             }
             // Interval complete: reset the resume state, write the interpolated state
             // back, and emit the row.
@@ -2739,6 +2893,8 @@ struct DaskrState {
 /// What one call into the integrator did.
 enum Progress {
     Reached,
+    /// INFO(3)=1 only: one internal step taken, the target not yet reached.
+    Stepped,
     Root,
     /// The per-call work quota ran out before the target; call again to continue.
     WorkQuota,
@@ -2758,12 +2914,18 @@ impl DaskrState {
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
+        if no_equidistant_grid() {
+            info[2] = 1; // INFO(3)=1: return after every internal step
+        }
+        let mut rwork = vec![0.0f64; lrw];
+        let mut iwork = vec![0i32; liw];
+        daskr_limits(&mut info, &mut rwork, &mut iwork);
         DaskrState {
             info,
             rtol,
             atol,
-            rwork: vec![0.0f64; lrw],
-            iwork: vec![0i32; liw],
+            rwork,
+            iwork,
             rpar: [0.0f64],
             ipar: [0i32],
             jroot: vec![0i32; (nrt as usize).max(1)],
@@ -2809,8 +2971,12 @@ impl DaskrState {
         if self.idid < 0 {
             return Progress::Failed("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
         }
-        // IDID=5: stopped at a zero-crossing root.
-        if self.idid == 5 { Progress::Root } else { Progress::Reached }
+        // IDID=5: stopped at a zero-crossing root; IDID=1: intermediate-output step.
+        match self.idid {
+            5 => Progress::Root,
+            1 => Progress::Stepped,
+            _ => Progress::Reached,
+        }
     }
 }
 
@@ -2857,6 +3023,7 @@ impl CvodeState {
                 self.work_retries = 0;
                 match other {
                     crate::sundials::Stop::Root => Progress::Root,
+                    crate::sundials::Stop::Stepped => Progress::Stepped,
                     _ => Progress::Reached,
                 }
             }
@@ -2900,7 +3067,7 @@ impl IdaState {
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: IDA setup failed");
         }
-        let stop = ida.step(t, target);
+        let stop = ida.step(t, target, no_equidistant_grid());
         y.copy_from_slice(ida.y());
         yp.copy_from_slice(ida.yp());
         if !matches!(stop, crate::sundials::Stop::Failed(_)) {
@@ -2955,6 +3122,8 @@ struct SolverCore {
     chatter_idx: usize,
     chatter_consec: u32,
     chatter_emitted: bool,
+    /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
+    step_emit: StepEmit,
 }
 
 /// Consecutive state events within one output step that count as chattering.
@@ -2963,6 +3132,8 @@ const CHATTER_LIMIT: usize = 100;
 /// How far one [`SolverCore::solve_toward`] got.
 enum Solved {
     Reached,
+    /// `-noEquidistantTimeGrid`: one integrator step ended at `SolverCore::t`.
+    Stepped,
     /// A root function changed sign; `SolverCore::t` is where.
     Root,
     Yielded,
@@ -2996,6 +3167,8 @@ struct EventsDriver {
     /// Resume state for a yield mid output row, so `grid_covered` is not reset.
     mid_row: bool,
     grid_covered: bool,
+    /// C's degenerate first iteration under `-noEquidistantTimeGrid` is emitted.
+    no_grid_primed: bool,
     pending_terminate: bool,
     finished: bool,
 }
@@ -3052,6 +3225,7 @@ impl SolverCore {
             chatter_idx: 0,
             chatter_consec: 0,
             chatter_emitted: false,
+            step_emit: StepEmit::new(),
         })
     }
 
@@ -3212,6 +3386,7 @@ impl SolverCore {
                 Progress::WorkQuota => continue,
                 Progress::Failed(err) => return Err(err),
                 Progress::Reached => return Ok(Solved::Reached),
+                Progress::Stepped => return Ok(Solved::Stepped),
                 Progress::Root => return Ok(Solved::Root),
             }
         }
@@ -3253,6 +3428,18 @@ impl SolverCore {
         }
         stats.state_events = self.state_events;
         stats.time_events = self.time_events;
+    }
+
+    /// Whether the solver returns after each internal step, which
+    /// `-noEquidistantTimeGrid` needs. CVODE here does not.
+    fn reports_steps(&self) -> bool {
+        match &self.solver {
+            Solver::Daskr(_) => true,
+            #[cfg(sundials)]
+            Solver::Cvode(_) => false,
+            #[cfg(sundials)]
+            Solver::Ida(_) => true,
+        }
     }
 
     /// The first root function that fired, for the chattering message.
@@ -3317,7 +3504,8 @@ impl SolverCore {
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
             if target - self.t > eps {
-                let rooted = match self.solve_toward(target, ctx, deadline, did_step)? {
+                let solved = self.solve_toward(target, ctx, deadline, did_step)?;
+                let rooted = match solved {
                     Solved::Yielded => {
                         self.nfe = ctx.nfe;
                         return Ok(Step::Yielded);
@@ -3326,11 +3514,24 @@ impl SolverCore {
                         self.nfe = ctx.nfe;
                         return Ok(Step::Cancelled);
                     }
-                    Solved::Reached => false,
+                    Solved::Reached | Solved::Stepped => false,
                     Solved::Root => true,
                 };
                 for i in 0..n_states {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
+                // C emits from `perform_simulation` once `solver_step` returns.
+                if let Solved::Stepped = solved {
+                    if let Some(r) = rows.as_deref_mut()
+                        && self.step_emit.take(self.t)
+                    {
+                        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                        emit_row(e, r, sim_data, layout, self.t, model.stop_time)?;
+                        if terminated(e, sim_data, layout)? {
+                            return Ok(Step::Terminated);
+                        }
+                    }
+                    continue;
                 }
                 // A zero-crossing root at `t` (< target). Handle the state event
                 // here, then restart the integrator and keep going.
@@ -3345,31 +3546,40 @@ impl SolverCore {
                     if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
                         let zc = self.root_index();
                         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
-                        log_line(&format!(
-                            "{}Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state \
-                             events in a row with a total time delta less than the step size \
-                             {step_size}). This can be a performance bottleneck. Use -lv LOG_EVENTS \
-                             for more information. The zero-crossing was: {desc}\n",
-                            log_prefix("LOG_STDOUT", "info"),
-                        ));
+                        omclog::info(
+                            omclog::STDOUT,
+                            false,
+                            &format!(
+                                "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state \
+                                 events in a row with a total time delta less than the step size \
+                                 {step_size}). This can be a performance bottleneck. Use -lv LOG_EVENTS \
+                                 for more information. The zero-crossing was: {desc}"
+                            ),
+                        );
                         if chatter_store::abort() {
-                            log_line(&format!(
-                                "{}Aborting simulation due to chattering being detected and the \
-                                 simulation flags requesting we do not continue further.\n",
-                                log_prefix("LOG_ASSERT", "debug"),
-                            ));
+                            omclog::message_text(
+                                omclog::DEBUG_TYPE,
+                                omclog::ASSERT,
+                                false,
+                                "Aborting simulation due to chattering being detected and the \
+                                 simulation flags requesting we do not continue further.",
+                            );
                             return Err(CHATTER_ABORT_ERR);
                         }
                     }
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
-                    if let Some(r) = rows.as_deref_mut() {
+                    if let Some(r) = rows.as_deref_mut()
+                        && !no_event_emit()
+                    {
                         capture_pre(e, r, sim_data, layout, troot)?;
                     }
                     event_update(e, sim_data, layout, None, troot)?;
                     if let Some(r) = rows.as_deref_mut() {
-                        capture_row(e, r, sim_data, layout)?;
-                        check_asserts(e, sim_data, layout, "info")?;
+                        if emit_post_event_row(model, troot) {
+                            capture_row(e, r, sim_data, layout)?;
+                        }
+                        check_asserts(e, sim_data, layout, omclog::INFO)?;
                     }
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
@@ -3401,7 +3611,9 @@ impl SolverCore {
                     write_f64(e, sim_data + TIME_OFF, te)?;
                     return Ok(Step::Event { time: te });
                 }
-                if let Some(r) = rows.as_deref_mut() {
+                if let Some(r) = rows.as_deref_mut()
+                    && !no_event_emit()
+                {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?; // pre-event row (held)
                 }
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
@@ -3409,7 +3621,9 @@ impl SolverCore {
                 refresh_relations(e, sim_data, layout)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
-                if let Some(r) = rows.as_deref_mut() {
+                if let Some(r) = rows.as_deref_mut()
+                    && emit_post_event_row(model, te)
+                {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
                 if terminated(e, sim_data, layout)? {
@@ -3760,6 +3974,7 @@ impl EventsDriver {
             rows,
             mid_row: false,
             grid_covered: false,
+            no_grid_primed: false,
             pending_terminate,
             finished: false,
         })
@@ -3785,7 +4000,19 @@ impl Driver for EventsDriver {
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
         let n_states = self.core.n_states;
-        let tout_of = |row: u32| if row == n_steps { stop } else { start + row as f64 * h };
+        // `-noEquidistantTimeGrid`: the rows come from `integrate_to`, so one "row"
+        // spans the run; `Samples` still bounds each solve.
+        let no_grid =
+            no_equidistant_grid() && n_states > 0 && stop > start && self.core.reports_steps();
+        let n_rows = if no_grid { 2 } else { n_rows };
+        // See `DasslDriver`: C's degenerate first iteration in this mode.
+        if no_grid && !self.no_grid_primed {
+            self.no_grid_primed = true;
+            emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
+        }
+        let tout_of = |row: u32| {
+            if no_grid || row == n_steps { stop } else { start + row as f64 * h }
+        };
 
         // No continuous states: nothing to integrate, but zero-crossings on `time`
         // (e.g. a timer `time >= t_start + waitTime`) are still continuous events
@@ -3827,11 +4054,15 @@ impl Driver for EventsDriver {
                         }
                     }
                     if let Some(tr) = troot {
-                        capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
+                        if !no_event_emit() {
+                            capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
+                        }
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
-                        capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
-                        check_asserts(e, sim_data, layout, "info")?;
+                        if emit_post_event_row(model, tr) {
+                            capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
+                        }
+                        check_asserts(e, sim_data, layout, omclog::INFO)?;
                         if terminated(e, sim_data, layout)? {
                             self.finished = true;
                             return Ok(Advance::Terminated);
@@ -3848,13 +4079,17 @@ impl Driver for EventsDriver {
                     if te <= tout + eps {
                         let te = if (te - tout).abs() <= eps { tout } else { te };
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
-                        emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?; // pre-event row
+                        if !no_event_emit() {
+                            emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
+                        }
                         write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
                         self.samp.fire(e, sim_data, te)?;
                         refresh_relations(e, sim_data, layout)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
-                        emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?; // post-event row
+                        if emit_post_event_row(model, te) {
+                            emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
+                        }
                         if terminated(e, sim_data, layout)? {
                             self.finished = true;
                             return Ok(Advance::Terminated);
@@ -4248,7 +4483,9 @@ impl Driver for CvodeDriver {
                 return Err(err);
             }
             match stop_reason {
-                crate::sundials::Stop::Reached | crate::sundials::Stop::Root => {}
+                crate::sundials::Stop::Reached
+                | crate::sundials::Stop::Stepped
+                | crate::sundials::Stop::Root => {}
                 crate::sundials::Stop::Failed(flag)
                     if flag == crate::sundials::CV_TOO_MUCH_WORK && self.work_retries < CVODE_WORK_RETRIES =>
                 {
@@ -4702,6 +4939,10 @@ struct IdaDriver {
     rows: Vec<f64>,
     /// Resumes an output interval left unfinished by a work-quota return or a yield.
     work_retries: u32,
+    /// `-noEquidistantOutput{Frequency,Time}` over IDA's own steps.
+    step_emit: StepEmit,
+    /// C's degenerate first `-noEquidistantTimeGrid` iteration has been emitted.
+    no_grid_primed: bool,
     pending_terminate: bool,
     finished: bool,
 }
@@ -4758,6 +4999,8 @@ impl IdaDriver {
             pivots,
             rows,
             work_retries: 0,
+            step_emit: StepEmit::new(),
+            no_grid_primed: false,
             pending_terminate,
             finished: false,
         })
@@ -4783,6 +5026,14 @@ impl Driver for IdaDriver {
         let stop = model.stop_time;
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
+        // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
+        // one-step returns below (`ida_solver.c`'s `idaSmode`).
+        let no_grid = no_equidistant_grid() && self.n_states > 0 && stop > start;
+        let n_rows = if no_grid { 2 } else { n_rows };
+        if no_grid && !self.no_grid_primed {
+            self.no_grid_primed = true;
+            emit_row(e, &mut self.rows, sim_data, layout, self.t, stop)?;
+        }
 
         // No integration — evaluate outputs on the grid — with no states or an
         // empty time span.
@@ -4852,7 +5103,7 @@ impl Driver for IdaDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let tout = if no_grid || self.row == n_steps { stop } else { start + self.row as f64 * h };
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {
@@ -4862,12 +5113,15 @@ impl Driver for IdaDriver {
                 self.row += 1;
                 continue;
             }
-            let stop_reason = ida.step(&mut self.t, tout);
+            let stop_reason = ida.step(&mut self.t, tout, no_grid);
             if let Some(err) = ctx.err.take() {
                 return Err(err);
             }
+            let stepped = matches!(stop_reason, crate::sundials::Stop::Stepped);
             match stop_reason {
-                crate::sundials::Stop::Reached | crate::sundials::Stop::Root => {}
+                crate::sundials::Stop::Reached
+                | crate::sundials::Stop::Stepped
+                | crate::sundials::Stop::Root => {}
                 crate::sundials::Stop::Failed(flag)
                     if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
                 {
@@ -4877,6 +5131,24 @@ impl Driver for IdaDriver {
                 crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: IDA failed"),
             }
             self.work_retries = 0;
+            // One-step mode: the step that just ended is an output point of its own
+            // and `tout` is still ahead.
+            if stepped {
+                if self.step_emit.take(self.t) {
+                    self.setup.store_sens(e, sim_data, ida)?;
+                    for (i, v) in ida.y().iter().enumerate() {
+                        write_f64(e, states_base + (i as u32) * 8, *v)?;
+                    }
+                    open_assert_window();
+                    let emitted =
+                        emit_row(e, &mut self.rows, sim_data, layout, self.t, model.stop_time);
+                    close_assert_window(e, sim_data).and(emitted)?;
+                    if terminated(e, sim_data, layout)? {
+                        break Advance::Terminated;
+                    }
+                }
+                continue;
+            }
             self.setup.store_sens(e, sim_data, ida)?;
             for (i, v) in ida.y().iter().enumerate() {
                 write_f64(e, states_base + (i as u32) * 8, *v)?;

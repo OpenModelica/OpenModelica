@@ -87,6 +87,8 @@ unsafe extern "C" {
 pub enum Stop {
     /// `tout` reached.
     Reached,
+    /// One-step mode only: an internal step ended before `tout`.
+    Stepped,
     /// A root function changed sign at the returned `t` (< `tout`).
     Root,
     Failed(c_int),
@@ -310,6 +312,7 @@ pub type IdaJacFn = unsafe extern "C" fn(
 pub const IDA_TOO_MUCH_WORK: c_int = -1;
 
 const IDA_NORMAL: c_int = 1;
+const IDA_ONE_STEP: c_int = 2;
 const IDA_SUCCESS: c_int = 0;
 const IDA_TSTOP_RETURN: c_int = 1;
 const IDA_ROOT_RETURN: c_int = 2;
@@ -610,10 +613,13 @@ impl Ida {
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the
     /// integration actually stopped and `y()`/`yp()` hold the state there. No
     /// `IDASetStopTime`, as in `ida_solver.c`: IDA may step past `tout` internally
-    /// and interpolate back to it.
-    pub fn step(&mut self, t: &mut f64, tout: f64) -> Stop {
+    /// and interpolate back to it. `one_step` is `ida_solver.c`'s `idaSmode` under
+    /// `-noEquidistantTimeGrid`: return after each internal step.
+    pub fn step(&mut self, t: &mut f64, tout: f64, one_step: bool) -> Stop {
+        let mode = if one_step { IDA_ONE_STEP } else { IDA_NORMAL };
         unsafe {
-            match IDASolve(self.mem, tout, t, self.y, self.yp, IDA_NORMAL) {
+            match IDASolve(self.mem, tout, t, self.y, self.yp, mode) {
+                IDA_SUCCESS if one_step && *t < tout => Stop::Stepped,
                 IDA_SUCCESS | IDA_TSTOP_RETURN => Stop::Reached,
                 IDA_ROOT_RETURN => {
                     IDAGetRootInfo(self.mem, self.roots.as_mut_ptr());

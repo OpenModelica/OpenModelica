@@ -48,10 +48,13 @@ pub struct SimModel {
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
     pub meta: SimMeta,
-    /// Pre-rendered `LOG_STDOUT` lines announcing which linear and nonlinear systems
-    /// use a sparse solver (C's `initializeLinearSystems` / `initializeNonlinearSystems`
-    /// messages), prepended to the sim log. Empty when no system is sparse.
+    /// Pre-rendered `LOG_STDOUT` lines announcing which *linear* systems use a
+    /// sparse solver (C's `initializeLinearSystems`), prepended to the sim log.
     pub sparse_solver_log: String,
+    /// `(sysNum, equationIndex, size, nnz)` per nonlinear system, in C's array
+    /// order. The nonlinear half of that announcement is rendered per run instead,
+    /// because `-nlssMinSize`/`-nlssMaxDensity` move the threshold it reports.
+    pub nls_systems: Vec<(i32, i32, u32, u32)>,
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,

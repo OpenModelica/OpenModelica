@@ -38,20 +38,6 @@ unsafe extern "C" {
     fn rt_host_init_done();
 }
 
-/// The driver's log lines go to stdout, the channel the model's own `print`
-/// output travels and the host captures.
-#[cfg(target_os = "wasi")]
-fn log_line(s: &str) {
-    use std::io::Write;
-    let mut out = std::io::stdout();
-    let _ = out.write_all(s.as_bytes());
-    let _ = out.flush();
-}
-
-/// The no_std fallback runtime has no stdout to write them to.
-#[cfg(not(target_os = "wasi"))]
-fn log_line(_s: &str) {}
-
 fn init_done_hook() {
     unsafe { rt_host_init_done() };
 }
@@ -261,12 +247,18 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     };
 
     crate::nls::rt_set_step_size(model.step_size());
+    // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
+    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
+        model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
+    } else {
+        Vec::new()
+    });
 
     driver::set_clock(now_ms_hook);
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
-    driver::set_log_sink(log_line);
+    driver::set_log_sink(crate::omclog::sink);
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_alloc(model.layout.total);
@@ -325,6 +317,13 @@ fn finish(s: &mut Session) {
     s.stats = SolveStats::default();
     s.driver.fill_stats(&s.model, &mut s.stats);
     s.rows = s.driver.take_rows();
+    let _ = driver::emit_terminal_row(
+        &mut s.engine,
+        &mut s.rows,
+        s.sim_data,
+        &s.model.layout,
+        s.n_reals,
+    );
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     s.finished = true;
 }
