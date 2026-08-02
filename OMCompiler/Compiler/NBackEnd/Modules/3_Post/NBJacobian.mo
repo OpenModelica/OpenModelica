@@ -1424,7 +1424,8 @@ protected
     );
 
     adjacencyVars := VariablePointers.clone(seedCandidates);
-    adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
+    //adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
+    adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
     end if;
