@@ -59,6 +59,11 @@ static NLS: AtomicU32 = AtomicU32::new(0);
 static NLS_LS: AtomicU32 = AtomicU32::new(0);
 static LS: AtomicU32 = AtomicU32::new(0);
 static LSS: AtomicU32 = AtomicU32::new(0);
+/// `-nlssMinSize` / `-nlssMaxDensity`, C's `nonlinearSparseSolverMinSize` /
+/// `nonlinearSparseSolverMaxDensity`, at their defaults until a run sets them.
+static NLSS_MIN_SIZE: AtomicU32 = AtomicU32::new(1000);
+static NLSS_MAX_DENSITY: core::sync::atomic::AtomicU64 =
+    core::sync::atomic::AtomicU64::new(0x3FB999999999999A); // 0.1
 
 /// Set the four selectors for the next run. Host-driven builds call this through
 /// the export; the in-wasm session calls [`apply_flags`] instead.
@@ -70,10 +75,26 @@ pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
     LSS.store(lss, Ordering::Relaxed);
 }
 
+/// C's `initializeNonlinearSystemData` rule: kinsol+KLU when the density is under
+/// `nlssMaxDensity` or the size over `nlssMinSize`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_nlss_thresholds(min_size: u32, max_density: f64) {
+    NLSS_MIN_SIZE.store(min_size, Ordering::Relaxed);
+    NLSS_MAX_DENSITY.store(max_density.to_bits(), Ordering::Relaxed);
+}
+
+pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
+    let density = nnz as f64 / (size * size) as f64;
+    density < f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed))
+        || size > NLSS_MIN_SIZE.load(Ordering::Relaxed) as usize
+}
+
 #[cfg(any(feature = "session", feature = "standalone"))]
 pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
     let (nls, nls_ls, ls, lss) = f.solver_codes();
     rt_set_solvers(nls, nls_ls, ls, lss);
+    let (min_size, max_density) = openmodelica_sim_meta::simflags::nlss_thresholds(f);
+    rt_set_nlss_thresholds(min_size, max_density);
 }
 
 pub(crate) fn nls() -> Nls {

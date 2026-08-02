@@ -454,6 +454,12 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
             with_engine_detail(e)
         ),
     };
+    // C's `freeNonlinearSystems`, the last thing a simulation executable logs.
+    let log = if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
+        format!("{log}LOG_NLS           | info    | free non-linear system solvers\n")
+    } else {
+        log
+    };
     let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
     // Error is in `<prefix>.log` (hence the result `messages`); no stderr.
     match res {
@@ -618,15 +624,53 @@ fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, 
 /// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
 /// values, applied at different points of initialization (see `run_initialization`).
+///
+/// `-iif=<file>` contributes first, so an explicit `-override` of the same quantity
+/// wins — C skips whatever `isQuantityOverridden` reports (ticket #15807).
 fn resolve_overrides(model: &SimModel, flags: &simflags::SimFlags) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
     let mut params = Vec::new();
     let mut starts = Vec::new();
+    let mut push = |p: &EditableParam, v: f64, params: &mut Vec<_>, starts: &mut Vec<_>| {
+        if p.is_start { starts } else { params }.push((p.off, p.wty, v));
+    };
+    if let Some(file) = &flags.init_file {
+        for (p, v) in import_start_values(model, file, &flags.overrides) {
+            push(p, v, &mut params, &mut starts);
+        }
+    }
     for (name, val) in &flags.overrides {
         if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
-            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, *val));
+            push(p, *val, &mut params, &mut starts);
         }
     }
     (params, starts)
+}
+
+/// C's `importStartValues`: every quantity the file names, at the start time,
+/// except the overridden ones. C sets the `start` attribute of every variable;
+/// reachable here are the editable parameters and state start values.
+fn import_start_values<'a>(
+    model: &'a SimModel,
+    file: &str,
+    overrides: &[(String, f64)],
+) -> Vec<(&'a EditableParam, f64)> {
+    let mut reader = match openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file) {
+        Ok(r) => r,
+        Err(e) => {
+            record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
+            return Vec::new();
+        }
+    };
+    let t0 = model.meta.start_time;
+    model
+        .editable_params
+        .iter()
+        .filter(|p| !overrides.iter().any(|(n, _)| *n == p.name))
+        .filter_map(|p| {
+            let idx = reader.find_var(&p.name)?;
+            Some((p, reader.val(idx, t0)?))
+        })
+        .collect()
 }
 
 thread_local! {
@@ -667,8 +711,21 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = flags.has_log("LOG_STATS");
-    // `-override=name=value,...`: resolve each editable parameter to its SimData
-    // slot and hand the list to the driver (applied after `functionParameters`).
+    // C refuses to seed a run from the file it is about to overwrite.
+    if let Some(init) = &flags.init_file
+        && init == flags.result_file.as_deref().unwrap_or(result_file)
+    {
+        return (
+            Err(format!(
+                "Cannot import a result file for initialization that is also the current output \
+                 file <{init}>.\nConsider redirecting the output result file (-r=<new_res.mat>) or \
+                 renaming the result file that is used for initialization import."
+            )
+            ),
+            None,
+            String::new(),
+        );
+    }
     let (param_ov, start_ov) = resolve_overrides(&model, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
@@ -697,7 +754,9 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         }
         capture_last_sim(&model, &run);
         if fmt == "mat" {
-            write_mat4(&model, result_file, &run.rows, run.n_reals, &run.params)?;
+            // C's `-r=<file>` overrides the name the caller derived from the model.
+            let out = flags.result_file.as_deref().unwrap_or(result_file);
+            write_mat4(&model, out, &run.rows, run.n_reals, &run.params)?;
         }
         Ok(())
     })();
@@ -709,10 +768,11 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
-    let init_output = if model.sparse_solver_log.is_empty() {
+    let head = format!("{}{}", flag_change_log(&flags), sparse_solver_log(&model, &flags));
+    let init_output = if head.is_empty() {
         init_output
     } else {
-        Some(format!("{}{}", model.sparse_solver_log, init_output.unwrap_or_default()))
+        Some(format!("{head}{}", init_output.unwrap_or_default()))
     };
     (res, init_output, sim_output)
 }
@@ -880,9 +940,11 @@ mod session {
         })();
         // Disarm in case init failed before the hook fired.
         SPLIT_ARMED.with(|a| a.set(false));
+        let flags = simflags::flags();
         let init_log = format!(
-            "{}{}",
-            model.sparse_solver_log,
+            "{}{}{}",
+            flag_change_log(&flags),
+            sparse_solver_log(&model, &flags),
             INIT_OUTPUT.with(|c| c.borrow_mut().take()).unwrap_or_default()
         );
         let backend = match built {
@@ -2793,9 +2855,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Only the FMU export needs the vr table; a plain simulation would just carry
     // it around unused.
     let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
+    // C labels its `-lv=LOG_NLS` unknowns from the `_info.json` `defines` array,
+    // which `SerializeModelInfo` writes from these same `crefs`.
+    let nls_vars = nls_systems
+        .iter()
+        .map(|sys| {
+            Ok(openmodelica_sim_meta::NlsVars {
+                eq_index: sys.index as u32,
+                names: lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
-        fmi_vrs, zc_descriptions(&zero_crossings), sens_params,
+        fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -3235,7 +3308,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         editable_params,
         var_units,
         meta,
-        sparse_solver_log: format!("{}{}", build_sparse_lss_log(sim_code), build_sparse_nls_log(sim_code)),
+        sparse_solver_log: build_sparse_lss_log(sim_code),
+        nls_systems: collect_nls_systems(sim_code),
     })
 }
 
@@ -3321,11 +3395,10 @@ fn build_sparse_lss_log(sim_code: &SimCode::SimCode) -> String {
 /// (`nonlinearSystem.c`): one message per system handed to kinsol+KLU, keyed on
 /// why (density and/or size), then one aggregate flag-hint. Systems are in
 /// `indexNonLinearSystem` order (C's array order), matching the `sysNum` printed.
-fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
-    use crate::CodegenWasmJitFunctions::{nls_use_sparse, NLSS_MAX_DENSITY, NLSS_MIN_SIZE};
+fn collect_nls_systems(sim_code: &SimCode::SimCode) -> Vec<(i32, i32, u32, u32)> {
     let mut seen: HashSet<i32> = HashSet::new();
     // (sysNum, equationIndex, size, nnz), deduped, in system-number order.
-    let mut systems: Vec<(i32, i32, usize, usize)> = Vec::new();
+    let mut systems: Vec<(i32, i32, u32, u32)> = Vec::new();
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
         for e in &eqs {
             if let SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } = &**e {
@@ -3334,8 +3407,8 @@ fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
                     systems.push((
                         nlSystem.indexNonLinearSystem,
                         nlSystem.index,
-                        size,
-                        nls_system_nnz(nlSystem),
+                        size as u32,
+                        nls_system_nnz(nlSystem) as u32,
                     ));
                 }
             }
@@ -3346,31 +3419,60 @@ fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     systems.sort_by_key(|&(idx, _, _, _)| idx);
+    systems
+}
 
+/// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
+fn flag_change_log(flags: &simflags::SimFlags) -> String {
+    let mut out = String::new();
+    if let Some(d) = flags.nlss_max_density {
+        out.push_str(&format_log_stdout(&format!(
+            "Maximum density for using non-linear sparse solver changed to {d:.6}"
+        )));
+    }
+    if let Some(n) = flags.nlss_min_size {
+        out.push_str(&format_log_stdout(&format!(
+            "Minimum system size for using non-linear sparse solver changed to {n}"
+        )));
+    }
+    out
+}
+
+/// The linear half is fixed at codegen; the nonlinear half moves with the flags.
+fn sparse_solver_log(model: &SimModel, flags: &simflags::SimFlags) -> String {
+    let (min_size, max_density) = simflags::nlss_thresholds(flags);
+    format!("{}{}", model.sparse_solver_log, sparse_nls_log(&model.nls_systems, min_size, max_density))
+}
+
+/// C's `initializeNonlinearSystems` announcement: `-nlssMinSize`/`-nlssMaxDensity`
+/// move both the choice and the numbers it quotes, so it is rendered per run.
+fn sparse_nls_log(systems: &[(i32, i32, u32, u32)], min_size: u32, max_density: f64) -> String {
     let mut out = String::new();
     let mut some_small_density = false;
     let mut some_big_size = false;
-    for &(idx, eq_index, size, nnz) in &systems {
-        if size == 0 || nnz == 0 || !nls_use_sparse(size, nnz) {
+    for &(idx, eq_index, size, nnz) in systems {
+        let (size, nnz) = (size as usize, nnz as usize);
+        let density = nnz as f64 / (size * size) as f64;
+        let big_size = size > min_size as usize;
+        if size == 0 || nnz == 0 || !(density < max_density || big_size) {
             continue;
         }
-        let density = nnz as f64 / (size * size) as f64;
-        let big_size = size > NLSS_MIN_SIZE;
-        let body = if density < NLSS_MAX_DENSITY {
+        let (nlss_max_density, nlss_min_size) = (max_density, min_size);
+        let body = if density < nlss_max_density {
             some_small_density = true;
             if big_size {
                 some_big_size = true;
                 format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}\nand size of {size} exceeds threshold of {NLSS_MIN_SIZE}."
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}\nand size of {size} exceeds threshold of {nlss_min_size}."
                 )
             } else {
                 format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}."
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}."
                 )
             }
         } else {
             some_big_size = true;
-            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {NLSS_MIN_SIZE}.")
+            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {nlss_min_size}.")
         };
         out.push_str(&format_log_stdout(&body));
     }
@@ -3606,6 +3708,7 @@ fn build_sim_meta(
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
     sens_params: Vec<u32>,
+    nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -3624,6 +3727,7 @@ fn build_sim_meta(
         fmi_vrs,
         zc_desc,
         sens_params,
+        nls_vars,
     }
 }
 
@@ -5317,14 +5421,8 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
     f.instruction(&I::LocalGet(ROW));
     f.instruction(&I::If(we::BlockType::Empty));
 
-    // terminal = (row == n_steps): C's `finishSimulation` evaluates the last
-    // point with `terminal()` true. This path has no events, so raising the flag
-    // is the whole discrete update.
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::LocalGet(ROW));
-    f.instruction(&I::LocalGet(N_STEPS));
-    f.instruction(&I::I32Eq);
-    f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg(layout.terminal_off, 2)));
+    // C's terminal step is a row of its own (`emit_terminal_row`), so no row here
+    // raises the flag.
 
     // functionODE(sim_data); functionAlgebraics(sim_data)
     f.instruction(&I::LocalGet(SIM_DATA));

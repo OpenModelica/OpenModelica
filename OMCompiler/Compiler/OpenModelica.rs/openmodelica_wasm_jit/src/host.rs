@@ -284,6 +284,19 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
             )
         },
     ))?;
+    // The runtime module's `-lv` log lines (the nonlinear solver's), onto the same
+    // stdout the model's `print` and the host driver's own lines use.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_log",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return };
+            let off = ptr as usize;
+            if let Some(b) = mem.data(&caller).get(off..off + len as usize) {
+                openmodelica_wasi::wasi::stdout_write(b);
+            }
+        },
+    ))?;
     wt(linker.func_wrap("env", "rt_host_now_ms", || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
@@ -363,6 +376,22 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                 let Some(memory) = env.data().clone() else { return 1 };
                 let view = memory.view(&env);
                 row_asserts(&|addr: u32, buf: &mut [u8]| view.read(addr as u64, buf).is_ok(), sim_data, warn)
+            },
+        ),
+    );
+    // See the wasmtime counterpart.
+    imports.define(
+        "env",
+        "rt_host_log",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, len: u32| {
+                let Some(memory) = env.data().clone() else { return };
+                let mut buf = vec![0u8; len as usize];
+                if memory.view(&env).read(ptr as u64, &mut buf).is_ok() {
+                    openmodelica_wasi::wasi::stdout_write(&buf);
+                }
             },
         ),
     );

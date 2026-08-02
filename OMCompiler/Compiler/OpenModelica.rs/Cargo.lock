@@ -6525,6 +6525,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
+ "openmodelica_script_util",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",

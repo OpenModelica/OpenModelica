@@ -42,6 +42,7 @@ extern crate alloc;
 
 mod delay;
 mod nls;
+mod omclog;
 pub use nls::{rt_nls_clean_history, rt_set_step_size};
 #[cfg(test)]
 mod nls_c_trace;

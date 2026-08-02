@@ -1385,6 +1385,135 @@ pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     roster.push((hist_addr, n as usize));
 }
 
+/// C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,JEval}`: per system,
+/// cumulative over the run, keyed by equation index.
+struct CountersCell(UnsafeCell<alloc::vec::Vec<(u32, [u64; 3])>>);
+unsafe impl Sync for CountersCell {}
+static COUNTERS: CountersCell = CountersCell(UnsafeCell::new(alloc::vec::Vec::new()));
+
+/// Nonzero while a Jacobian is being formed: C counts `numberOfFEval` in
+/// `wrapper_fvec`, which the FD Jacobian does not go through.
+static JAC_DEPTH: AtomicU32 = AtomicU32::new(0);
+
+/// C's `numberOfJEval`: `wrapper_fvec_der` counts an analytic and an FD Jacobian
+/// alike. `rt_solve_nls` takes the difference over its own call.
+static JAC_EVALS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
+fn note_jac_eval() {
+    JAC_EVALS.fetch_add(1, Ordering::Relaxed);
+}
+
+fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
+    let v = unsafe { &mut *COUNTERS.0.get() };
+    let pos = match v.iter().position(|(i, _)| *i == eq_index) {
+        Some(p) => p,
+        None => {
+            v.push((eq_index, [0; 3]));
+            v.len() - 1
+        }
+    };
+    &mut v[pos].1
+}
+
+/// C's `modelInfoGetEquation(...).vars[i]`, keyed by `equationIndex`. Pushed in
+/// from the decoded `SimMeta`, and only when the stream is on.
+struct NamesCell(UnsafeCell<alloc::vec::Vec<(u32, alloc::vec::Vec<alloc::string::String>)>>);
+unsafe impl Sync for NamesCell {}
+static NAMES: NamesCell = NamesCell(UnsafeCell::new(alloc::vec::Vec::new()));
+
+/// `eq_index`'s iteration-variable names, or `[]` when they were not pushed in.
+fn var_names(eq_index: u32) -> &'static [alloc::string::String] {
+    match unsafe { &*NAMES.0.get() }.iter().find(|(i, _)| *i == eq_index) {
+        Some((_, v)) => v.as_slice(),
+        None => &[],
+    }
+}
+
+/// C's `[%2ld] %30s  = ` prefix; the name column is empty for a system the blob
+/// does not cover.
+fn var_label(names: &[alloc::string::String], i: usize) -> alloc::string::String {
+    let name = names.get(i).map(|s| s.as_str()).unwrap_or("");
+    alloc::format!("[{:2}] {name:>30}  = ", i + 1)
+}
+
+/// Replace the name roster. `set` is `(eq_index, names)` in any order.
+pub fn set_var_names(set: alloc::vec::Vec<(u32, alloc::vec::Vec<alloc::string::String>)>) {
+    *unsafe { &mut *NAMES.0.get() } = set;
+}
+
+/// [`set_var_names`] across the module boundary: `ptr`/`len` are a NUL-separated
+/// UTF-8 list. `eq_index == u32::MAX` clears the roster.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_set_names(eq_index: u32, ptr: u32, len: u32) {
+    let names = unsafe { &mut *NAMES.0.get() };
+    if eq_index == u32::MAX {
+        names.clear();
+        unsafe { &mut *COUNTERS.0.get() }.clear();
+        return;
+    }
+    let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
+    let list = bytes
+        .split(|b| *b == 0)
+        .filter(|s| !s.is_empty())
+        .map(|s| alloc::string::String::from_utf8_lossy(s).into_owned())
+        .collect();
+    names.push((eq_index, list));
+}
+
+/// C's `printNonLinearInitialInfo`, under the `solve_nonlinear_system` header.
+fn log_nls_enter(eq_index: u32, time: f64, x: &[f64], nominal: &[f64]) {
+    use crate::omclog;
+    omclog::info(
+        omclog::NLS,
+        true,
+        &alloc::format!(
+            "############ Solve nonlinear system {eq_index} at time {} ############",
+            openmodelica_sim_meta::driver::format_g(time, 6)
+        ),
+    );
+    omclog::info(omclog::NLS, true, "initial variable values:");
+    let names = var_names(eq_index);
+    for i in 0..x.len() {
+        omclog::info(
+            omclog::NLS,
+            false,
+            &alloc::format!(
+                "{}{}\t\t nom = {}",
+                var_label(names, i),
+                omclog::g(x[i], 16, 8),
+                omclog::g(nominal[i], 16, 8)
+            ),
+        );
+    }
+    omclog::close(omclog::NLS);
+}
+
+/// C's `printNonLinearFinishInfo` plus the `messageClose` that ends the block
+/// `log_nls_enter` opened.
+fn log_nls_leave(eq_index: u32, solved: bool, x: &[f64]) {
+    use crate::omclog;
+    let c = counters_of(eq_index);
+    omclog::info(
+        omclog::NLS,
+        true,
+        if solved { "Solution status: SOLVED" } else { "Solution status: FAILED" },
+    );
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of iterations           : {}", c[0]));
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of function evaluations : {}", c[1]));
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of jacobian evaluations : {}", c[2]));
+    omclog::info(omclog::NLS, false, "solution values:");
+    let names = var_names(eq_index);
+    for i in 0..x.len() {
+        omclog::info(
+            omclog::NLS,
+            false,
+            &alloc::format!("{}{}", var_label(names, i), omclog::g(x[i], 16, 8)),
+        );
+    }
+    omclog::close(omclog::NLS);
+    omclog::close(omclog::NLS);
+}
+
 /// C's `cleanUpOldValueListAfterEvent`, called once per event.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
@@ -1475,6 +1604,10 @@ fn newton_c(
                     eval: &mut dyn FnMut(&[f64], &mut [f64]),
                     jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
         arm_attempt();
+        JAC_DEPTH.fetch_add(1, Ordering::Relaxed);
+        if !has_jac {
+            note_jac_eval();
+        }
         if has_jac {
             jaceval(x, jac);
             for col in 0..n {
@@ -1498,6 +1631,7 @@ fn newton_c(
                 x[col] = saved;
             }
         }
+        JAC_DEPTH.fetch_sub(1, Ordering::Relaxed);
         !attempt_aborted()
     };
 
@@ -2283,8 +2417,14 @@ pub extern "C" fn rt_solve_nls(
     }
 
     stat_inc(STAT_NLS_SOLVE);
+    let n_feval = core::cell::Cell::new(0u64);
+    let iter0 = crate::rt_stat(STAT_NLS_ITER);
+    let jac0 = JAC_EVALS.load(Ordering::Relaxed);
     let mut eval = |xs: &[f64], r: &mut [f64]| {
         stat_inc(STAT_NLS_RES);
+        if JAC_DEPTH.load(Ordering::Relaxed) == 0 {
+            n_feval.set(n_feval.get() + 1);
+        }
         // C's generated `residualFunc`: an inf/nan iteration variable fails the
         // evaluation instead of reaching the model. Feed kinsol the nan residual
         // and its line search takes a nan step length, which no exit test catches.
@@ -2329,7 +2469,8 @@ pub extern "C" fn rt_solve_nls(
     let sparse = has_jac
         && nnz != 0
         && match pick {
-            Nls::Default => sparse_default != 0,
+            // With neither `-nlss*` flag this is the codegen's own answer.
+            Nls::Default => crate::solvers::nls_use_sparse(n, nnz as usize),
             Nls::Kinsol => true,
             _ => false,
         };
@@ -2339,6 +2480,7 @@ pub extern "C" fn rt_solve_nls(
         if scatter { read_pattern(pat_addr, n, nnz as usize) } else { alloc::vec::Vec::new() };
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
+        note_jac_eval();
         let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
         for i in 0..n {
             unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
@@ -2412,6 +2554,12 @@ pub extern "C" fn rt_solve_nls(
         unsafe { store_u32(rel_fresh_addr, 0) };
     } else if saved_rel_fresh == 0 {
         unsafe { store_u32(rel_fresh_addr, 0) };
+    }
+    // C prints over `nlsx` (the stored solution), not the extrapolation the solver
+    // starts from.
+    let log_nls = crate::omclog::active(crate::omclog::NLS);
+    if log_nls {
+        log_nls_enter(eq_index, time, &nlsx_old, &nominal);
     }
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
@@ -2605,6 +2753,14 @@ pub extern "C" fn rt_solve_nls(
         stat_inc(STAT_NLS_FAIL);
         1
     };
+
+    if log_nls {
+        let c = counters_of(eq_index);
+        c[0] += crate::rt_stat(STAT_NLS_ITER) - iter0;
+        c[1] += n_feval.get();
+        c[2] += JAC_EVALS.load(Ordering::Relaxed) - jac0;
+        log_nls_leave(eq_index, converged, &x);
+    }
 
     if saved_rel_fresh != 2 {
         unsafe { store_u32(rel_fresh_addr, saved_rel_fresh) };

@@ -25,6 +25,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod omclog;
 pub mod simflags;
 #[cfg(sundials)]
 pub mod sundials;
@@ -382,17 +383,29 @@ pub struct SimMeta {
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
+    /// Per nonlinear system, its equation index and the iteration variables in
+    /// solver order — C reads the same list out of the `_info.json` `defines` array
+    /// to name the unknowns in its `-lv=LOG_NLS` blocks.
+    pub nls_vars: Vec<NlsVars>,
+}
+
+/// [`SimMeta::nls_vars`] entry.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct NlsVars {
+    pub eq_index: u32,
+    pub names: Vec<String>,
 }
 
 impl SimMeta {
-    /// Number of equidistant output rows the run writes. `n_intervals + 1` for a
-    /// real interval; a zero-length run (`stop <= start`) writes the start and stop
-    /// points only — 2 rows, regardless of `numberOfIntervals`.
+    /// Number of equidistant output rows the run writes, before C's terminal step
+    /// adds its own. `n_intervals + 1` for a real interval; a zero-length run
+    /// (`stop <= start`) writes the start point only, regardless of
+    /// `numberOfIntervals`.
     pub fn n_output_rows(&self) -> u32 {
         if self.stop_time > self.start_time {
             self.n_intervals + 1
         } else {
-            2
+            1
         }
     }
 
@@ -416,7 +429,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 6;
+const VERSION: u32 = 7;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -533,6 +546,14 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, d);
     }
     put_u32s(&mut o, &m.sens_params);
+    put_u32(&mut o, m.nls_vars.len() as u32);
+    for v in &m.nls_vars {
+        put_u32(&mut o, v.eq_index);
+        put_u32(&mut o, v.names.len() as u32);
+        for n in &v.names {
+            put_str(&mut o, n);
+        }
+    }
     o
 }
 
@@ -704,9 +725,21 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         zc_desc.push(r.string()?);
     }
     let sens_params = r.u32s()?;
+    let nsys = r.u32()? as usize;
+    let mut nls_vars = Vec::with_capacity(nsys);
+    for _ in 0..nsys {
+        let eq_index = r.u32()?;
+        let nn = r.u32()? as usize;
+        let mut names = Vec::with_capacity(nn);
+        for _ in 0..nn {
+            names.push(r.string()?);
+        }
+        nls_vars.push(NlsVars { eq_index, names });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc, sens_params,
+        nls_vars,
     })
 }
 
@@ -757,6 +790,10 @@ mod tests {
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             sens_params: vec![88],
+            nls_vars: vec![NlsVars {
+                eq_index: 1074,
+                names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
+            }],
         }
     }
 

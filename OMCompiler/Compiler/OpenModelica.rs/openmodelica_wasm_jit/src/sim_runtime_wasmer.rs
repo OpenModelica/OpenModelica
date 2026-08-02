@@ -812,6 +812,36 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         let (nls, nls_ls, ls, lss) = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, nls, nls_ls, ls, lss))?;
     }
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, f64), ()>(&store, "rt_set_nlss_thresholds") {
+        let (min_size, max_density) = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::nlss_thresholds(f)
+        });
+        wts(set.call(&mut store, min_size, max_density))?;
+    }
+    let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_log_streams") {
+        wts(set.call(&mut store, log_mask as u32, (log_mask >> 32) as u32))?;
+    }
+    // See the wasmtime counterpart.
+    if openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS)
+        && let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32), ()>(&store, "rt_nls_set_names")
+    {
+        let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
+        wts(set.call(&mut store, u32::MAX, 0, 0))?;
+        for sys in &model.meta.nls_vars {
+            let mut blob = Vec::new();
+            for n in &sys.names {
+                blob.extend_from_slice(n.as_bytes());
+                blob.push(0);
+            }
+            let ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
+            wts(memory.view(&store).write(ptr as u64, &blob))?;
+            wts(set.call(&mut store, sys.eq_index, ptr, blob.len() as u32))?;
+            if let Some(f) = &free {
+                wts(f.call(&mut store, ptr))?;
+            }
+        }
+    }
     if let Ok(set) = rt_inst.exports.get_typed_function::<f64, ()>(&store, "rt_set_step_size") {
         wts(set.call(&mut store, model.meta.step_size()))?;
     }

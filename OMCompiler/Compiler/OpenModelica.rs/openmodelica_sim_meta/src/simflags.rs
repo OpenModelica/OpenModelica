@@ -89,6 +89,10 @@ pub struct SimFlags {
     pub lss: Option<Lss>,
     /// `-lv` streams, uppercased.
     pub log: Vec<String>,
+    /// [`log`](Self::log) through C's `setGlobalVerboseLevel`, so an unrecognized
+    /// name fails at parse time as in C and no reader re-derives the implications.
+    /// [`parse`] fills it; a default-constructed `SimFlags` has no stream on.
+    pub log_mask: crate::omclog::Mask,
     pub abort_slow: bool,
     /// `-alarm`: seconds after which the run is aborted (C's `FLAG_ALARM`, where
     /// it is a `SIGALRM` on the simulation executable). 0 disables it, as in C.
@@ -125,6 +129,28 @@ pub struct SimFlags {
     /// `-output=a,b,c`: variables printed at the stop time (C's
     /// `outputVariablesAtEnd` / `writeOutputVars`).
     pub output_vars: Vec<String>,
+    /// `-r=<file>`: where the result is written, overriding the name derived from
+    /// the model.
+    pub result_file: Option<String>,
+    /// `-iif=<file>`: a result file whose values at the start time seed the start
+    /// attributes and parameters (C's `importStartValues`).
+    pub init_file: Option<String>,
+    /// `-noEquidistantTimeGrid`: emit the integrator's own steps instead of
+    /// interpolating onto the output grid.
+    pub no_equidistant_grid: bool,
+    /// `-noEquidistantOutputFrequency=n`: with the above, emit every n-th step.
+    pub no_equidistant_freq: Option<u32>,
+    /// `-noEquidistantOutputTime=t`: with the above, emit once `time > k*t`. C's
+    /// dassl also caps its step at `t` (`RWORK(2)`, `INFO(7)`).
+    pub no_equidistant_time: Option<f64>,
+    /// `-maxStepSize=h`: DASKR's `INFO(7)` / `RWORK(2)`.
+    pub max_step_size: Option<f64>,
+    /// `-noEventEmit`: drop the result rows a step that handled an event produces.
+    pub no_event_emit: bool,
+    /// `-nlssMinSize=n` / `-nlssMaxDensity=d`: C's `nonlinearSparseSolverMinSize` /
+    /// `nonlinearSparseSolverMaxDensity`, the rule that hands a system to kinsol+KLU.
+    pub nlss_min_size: Option<u32>,
+    pub nlss_max_density: Option<f64>,
     /// Flags this runtime does not model, kept so a caller can report them.
     pub unknown: Vec<String>,
     /// The argv this was parsed from, so a host forwards the same bytes rather than
@@ -134,7 +160,10 @@ pub struct SimFlags {
 
 impl SimFlags {
     pub fn has_log(&self, stream: &str) -> bool {
-        self.log.iter().any(|s| s == stream || s == "LOG_ALL")
+        crate::omclog::STREAM_NAME
+            .iter()
+            .position(|n| *n == stream)
+            .is_some_and(|i| crate::omclog::mask_has(self.log_mask, i as crate::omclog::Stream))
     }
 
     /// `(-nls, -nlsLS, -ls, -lss)` as the wire codes the wasm-jit runtime's
@@ -234,10 +263,190 @@ pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
     menu
 }
 
+
+/// C's `FLAG_NAME` / `FLAG_TYPE` (`util/simulation_options.c`): every flag the C
+/// runtime knows, and whether it takes a value. A name outside it is C's
+/// `invalid command line option`; one inside it that [`parse`] does not handle is a
+/// flag this runtime cannot honour. Both are errors — ignoring either runs
+/// something the caller did not ask for.
+const C_FLAGS: &[(&str, bool)] = &[
+    ("abortSlowSimulation", false),
+    ("alarm", true),
+    ("clock", true),
+    ("cpu", false),
+    ("csvOstep", true),
+    ("cvodeNonlinearSolverIteration", true),
+    ("cvodeLinearMultistepMethod", true),
+    ("cx", true),
+    ("daeMode", false),
+    ("deltaXLinearize", true),
+    ("deltaXSolver", true),
+    ("embeddedServer", true),
+    ("embeddedServerPort", true),
+    ("mat_sync", true),
+    ("emit_protected", false),
+    ("eps", true),
+    ("f", true),
+    ("help", true),
+    ("homAdaptBend", true),
+    ("homBacktraceStrategy", true),
+    ("homHEps", true),
+    ("homMaxLambdaSteps", true),
+    ("homMaxNewtonSteps", true),
+    ("homMaxTries", true),
+    ("homNegStartDir", false),
+    ("homotopyOnFirstTry", false),
+    ("noHomotopyOnFirstTry", false),
+    ("homTauDecFac", true),
+    ("homTauDecFacPredictor", true),
+    ("homTauIncFac", true),
+    ("homTauIncThreshold", true),
+    ("homTauMax", true),
+    ("homTauMin", true),
+    ("homTauStart", true),
+    ("idaMaxErrorTestFails", true),
+    ("idaMaxNonLinIters", true),
+    ("idaMaxConvFails", true),
+    ("idaNonLinConvCoef", true),
+    ("idaLS", true),
+    ("idaScaling", false),
+    ("idaSensitivity", false),
+    ("ignoreHideResult", false),
+    ("iif", true),
+    ("iim", true),
+    ("iit", true),
+    ("ils", true),
+    ("initialStepSize", true),
+    ("csvInput", true),
+    ("stateFile", true),
+    ("inputPath", true),
+    ("ipopt_hesse", true),
+    ("ipopt_init", true),
+    ("ipopt_jac", true),
+    ("ipopt_max_iter", true),
+    ("ipopt_warm_start", true),
+    ("jacobian", true),
+    ("jacobianNominalFactor", true),
+    ("jacobianThreads", true),
+    ("l", true),
+    ("l_datarec", false),
+    ("logFormat", true),
+    ("ls", true),
+    ("ls_ipopt", true),
+    ("lss", true),
+    ("lssMaxDensity", true),
+    ("lssMinSize", true),
+    ("lv", true),
+    ("lvMaxWarn", true),
+    ("lv_time", true),
+    ("lv_system", true),
+    ("mbi", true),
+    ("mei", true),
+    ("maxIntegrationOrder", true),
+    ("maxStepSize", true),
+    ("measureTimePlotFormat", true),
+    ("moo", false),
+    ("moo_l2bn_p1_it", true),
+    ("moo_l2bn_p2_it", true),
+    ("moo_l2bn_p2_lvl", true),
+    ("newtonFTol", true),
+    ("newtonMaxSteps", true),
+    ("newtonMaxStepFactor", true),
+    ("newtonXTol", true),
+    ("newtonJacUpdates", true),
+    ("newton", true),
+    ("nls", true),
+    ("nlsInfo", false),
+    ("nlsLS", true),
+    ("nlssMaxDensity", true),
+    ("nlssMinSize", true),
+    ("nlsJacTestATol", true),
+    ("nlsJacTestRTol", true),
+    ("noemit", false),
+    ("noEquidistantTimeGrid", false),
+    ("noEquidistantOutputFrequency", true),
+    ("noEquidistantOutputTime", true),
+    ("noEventEmit", false),
+    ("noRestart", false),
+    ("noRootFinding", false),
+    ("noScaling", false),
+    ("noSuppressAlg", false),
+    ("optDebugJac", true),
+    ("optimizerNP", true),
+    ("optimizerTimeGrid", true),
+    ("output", true),
+    ("outputFormat", true),
+    ("outputPath", true),
+    ("override", true),
+    ("overrideFile", true),
+    ("port", true),
+    ("r", true),
+    ("reconcile", false),
+    ("reconcileBoundaryConditions", false),
+    ("reconcileState", false),
+    ("gbm", true),
+    ("gbctrl", true),
+    ("gbctrl_evnt_reinit", false),
+    ("gbctrl_filter", true),
+    ("gbctrl_fhr", false),
+    ("gberr", true),
+    ("gbint", true),
+    ("gbnls", true),
+    ("gbnls_internal_damping", true),
+    ("gbnls_internal_jackeep", true),
+    ("gbfm", true),
+    ("gbfctrl", true),
+    ("gbferr", true),
+    ("gbfint", true),
+    ("gbfnls", true),
+    ("gbratio", true),
+    ("rt", true),
+    ("s", true),
+    ("saveInitialGuess_system", true),
+    ("single", false),
+    ("steps", false),
+    ("startTime", true),
+    ("steadyState", false),
+    ("steadyStateTol", true),
+    ("stepSize", true),
+    ("stopAtSystem", true),
+    ("stopTime", true),
+    ("svdCount", true),
+    ("svdSigma", true),
+    ("sx", true),
+    ("tolerance", true),
+    ("keepHessian", true),
+    ("variableFilter", true),
+    ("w", false),
+    ("parmodNumThreads", true),
+    ("parmodScheduler", true),
+    ("parmodClustering", true),
+    ("parmodClustersPerLevel", true),
+    ("parmodExportTaskGraph", true),
+    ("parmodImportClustering", true),
+    ("parmodDumpStages", true),
+];
+
+/// C's `JACOBIAN_METHOD_NAME` (`simulation_options.c`).
+const JACOBIAN_METHODS: &[&str] = &[
+    "coloredNumerical",
+    "internalNumerical",
+    "coloredSymbolical",
+    "coloredSymbolicalAdjoint",
+    "numerical",
+    "symbolical",
+    "bicoloredSymbolical",
+];
+
+/// C flags deliberately let through. The wasm-jit codegen drops protected variables
+/// when it generates the module, so `emit_protected` has nothing to switch on — a
+/// real gap, but every library test passes it and erroring would say nothing new.
+const IGNORED_FLAGS: &[&str] = &["emit_protected"];
+
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
 /// `-flag=value` and `-flag value` are both accepted, as in the C runtime.
 /// An unrecognized *value* for a recognized flag is an error listing what is
-/// accepted; an unrecognized *flag* is collected into [`SimFlags::unknown`].
+/// accepted; so is a flag this runtime does not implement (see [`C_FLAGS`]).
 pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
     let mut f = SimFlags {
         argv: argv.iter().map(|a| a.as_ref().to_string()).collect(),
@@ -286,6 +495,43 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "output" => f.output_vars = split_top_level(&value(name)?),
+            "r" => f.result_file = Some(value(name)?),
+            "iif" => f.init_file = Some(value(name)?),
+            "noEquidistantTimeGrid" => f.no_equidistant_grid = true,
+            "noEquidistantOutputFrequency" => {
+                f.no_equidistant_freq = Some(
+                    value(name)?
+                        .parse::<u32>()
+                        .map_err(|_| "-noEquidistantOutputFrequency needs an integer".to_string())?,
+                )
+            }
+            "noEventEmit" => f.no_event_emit = true,
+            // Every value this runtime can serve is the colored numerical one, which
+            // is also C's `setJacobianMethod` fallback where only the sparsity
+            // pattern is available -- which is all the wasm-jit backend emits.
+            "jacobian" => {
+                let v = value(name)?;
+                if !JACOBIAN_METHODS.contains(&v.as_str()) {
+                    return Err(format!("Unknown value `{v}` for flag `-jacobian`"));
+                }
+            }
+            "nlssMinSize" => f.nlss_min_size = Some(int(name, &value(name)?)?.max(0) as u32),
+            "nlssMaxDensity" => f.nlss_max_density = Some(real(name, &value(name)?)?),
+            "maxStepSize" => f.max_step_size = Some(real(name, &value(name)?)?),
+            "noEquidistantOutputTime" => {
+                f.no_equidistant_time = Some(
+                    value(name)?
+                        .parse::<f64>()
+                        .map_err(|_| "-noEquidistantOutputTime needs a number".to_string())?,
+                )
+            }
+            // The only method this runtime has is C's default.
+            "iim" => {
+                let v = value(name)?;
+                if v != "symbolic" {
+                    return Err(format!("-iim={v}: this runtime only has the symbolic method"));
+                }
+            }
             "abortSlowSimulation" => f.abort_slow = true,
             "alarm" => {
                 let secs = value(name)?
@@ -319,10 +565,34 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "initialStepSize" => f.initial_step_size = Some(real(name, &value(name)?)?),
             "homotopyOnFirstTry" => f.homotopy_on_first_try = Some(true),
             "noHomotopyOnFirstTry" => f.homotopy_on_first_try = Some(false),
-            _ => f.unknown.push(arg.to_string()),
+            _ => {
+                let known = C_FLAGS.iter().find(|(n, _)| *n == name);
+                if known.is_some_and(|(_, takes_value)| *takes_value) && inline.is_none() {
+                    // Consume the separate value, so it is not read as a flag itself.
+                    i += 1;
+                }
+                match known {
+                    None => return Err(format!("invalid command line option: {arg}")),
+                    Some((n, _)) if !IGNORED_FLAGS.contains(n) => {
+                        f.unknown.push(arg.to_string());
+                        return Err(format!(
+                            "-{n}: this runtime does not implement the flag, so the run would \
+                             silently ignore it"
+                        ));
+                    }
+                    Some(_) => {}
+                }
+            }
         }
     }
+    f.log_mask = crate::omclog::mask_from_streams(&f.log)?;
     Ok(f)
+}
+
+/// C's `nonlinearSparseSolverMinSize` / `nonlinearSparseSolverMaxDensity`, with
+/// C's defaults (`simulation_options.h`) where the flags are absent.
+pub fn nlss_thresholds(f: &SimFlags) -> (u32, f64) {
+    (f.nlss_min_size.unwrap_or(1000), f.nlss_max_density.unwrap_or(0.1))
 }
 
 /// C's `parseVariableStr`: split on commas outside `[...]`, so `x[1,2]` stays one name.
@@ -472,6 +742,7 @@ mod store {
 }
 
 pub fn set_flags(f: SimFlags) {
+    crate::omclog::set_mask(f.log_mask);
     store::set(f);
 }
 
@@ -602,10 +873,29 @@ mod tests {
     }
 
     #[test]
-    fn unknown_flags_are_collected_not_rejected() {
-        let f = parse(&argv(&["-noEquidistantTimeGrid", "-lv=LOG_STATS"])).expect("parses");
-        assert_eq!(f.unknown, ["-noEquidistantTimeGrid"]);
+    fn unimplemented_and_invalid_flags_are_rejected() {
+        let e = parse(&argv(&["-noSuchFlag"])).expect_err("must reject");
+        assert!(e.contains("invalid command line option"), "{e}");
+        // `emit_protected` is the one C flag deliberately let through.
+        let f = parse(&argv(&["-emit_protected", "-lv=LOG_STATS"])).expect("parses");
         assert!(f.has_log("LOG_STATS"));
+    }
+
+    // The value of a rejected option must not be read as a flag of its own.
+    #[test]
+    fn the_no_equidistant_grid_family_parses() {
+        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputFrequency=5"]))
+            .expect("parses");
+        assert!(f.no_equidistant_grid && f.no_equidistant_freq == Some(5));
+        let f = parse(&argv(&["-noEquidistantTimeGrid", "-noEquidistantOutputTime=0.5"]))
+            .expect("parses");
+        assert_eq!(f.no_equidistant_time, Some(0.5));
+    }
+
+    #[test]
+    fn a_rejected_options_value_is_not_read_as_a_flag() {
+        let e = parse(&argv(&["-csvInput", "in.csv"])).expect_err("must reject");
+        assert!(e.contains("csvInput"), "{e}");
     }
 
     #[test]
