@@ -92,6 +92,7 @@ public
       String comment;
       String unit;
       String displayUnit;
+      String quantity;
       Integer index;
       Option<Expression> min;
       Option<Expression> max;
@@ -157,7 +158,7 @@ public
       simVar := match var
         local
           VariableKind varKind;
-          String comment, unit, displayUnit;
+          String comment, unit, displayUnit, quantity;
           Option<Expression> min;
           Option<Expression> max;
           Option<Expression> start;
@@ -168,7 +169,7 @@ public
 
         case Variable.VARIABLE() algorithm
           comment := parseComment(var.comment);
-          (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected)
+          (varKind, unit, displayUnit, quantity, min, max, start, nominal, isFixed, isDiscrete, isProtected)
           := parseAttributes(var.backendinfo);
           // for parameters the binding supersedes the start value if it exists and is constant
           // ToDo: also for other cases? (constant, struct param ...)
@@ -179,6 +180,7 @@ public
             comment             = comment,
             unit                = unit,
             displayUnit         = displayUnit,
+            quantity            = quantity,
             index               = typeIndex,
             min                 = min,
             max                 = max,
@@ -324,6 +326,7 @@ public
         comment             = simVar.comment,
         unit                = simVar.unit,
         displayUnit         = simVar.displayUnit,
+        quantity            = simVar.quantity,
         index               = simVar.index,
         minValue            = Util.applyOption(simVar.min, function Expression.toDAE(allowEmpty = false)),
         maxValue            = Util.applyOption(simVar.max, function Expression.toDAE(allowEmpty = false)),
@@ -435,6 +438,7 @@ public
       output VariableKind varKind;
       output String unit = "";
       output String displayUnit = "";
+      output String quantity = "";
       output Option<Expression> min = NONE();
       output Option<Expression> max = NONE();
       output Option<Expression> start = NONE();
@@ -451,6 +455,7 @@ public
           algorithm
             unit        := Util.applyOptionOrDefault(Util.applyOption(varAttr.unit,        Binding.getTypedExp), Expression.stringValue, "");
             displayUnit := Util.applyOptionOrDefault(Util.applyOption(varAttr.displayUnit, Binding.getTypedExp), Expression.stringValue, "");
+            quantity    := Util.applyOptionOrDefault(Util.applyOption(varAttr.quantity,    Binding.getTypedExp), Expression.stringValue, "");
             min         := Util.applyOption(varAttr.min,     Binding.getTypedExp);
             max         := Util.applyOption(varAttr.max,     Binding.getTypedExp);
             start       := Util.applyOption(varAttr.start,   Binding.getTypedExp);
@@ -471,6 +476,7 @@ public
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_INT())
           algorithm
+            quantity := Util.applyOptionOrDefault(Util.applyOption(varAttr.quantity, Binding.getTypedExp), Expression.stringValue, "");
             min     := Util.applyOption(varAttr.min,   Binding.getTypedExp);
             max     := Util.applyOption(varAttr.max,   Binding.getTypedExp);
             start   := Util.applyOption(varAttr.start, Binding.getTypedExp);

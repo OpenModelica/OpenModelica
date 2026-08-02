@@ -2986,9 +2986,9 @@ algorithm
     case DAE.CREF(cr, ty)::rest algorithm
       slst := List.map(dims, intString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       end if;
       tempvars := createTempVarsforCrefs(rest, {var});
     then List.append_reverse(tempvars, itempvars);
@@ -3026,9 +3026,9 @@ algorithm
       inst_dims := ComponentReferenceBasics.crefDims(cr);
       numArrayElement := List.map(inst_dims, ExpressionBasics.dimensionString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       end if;
     then createTempVarsforCrefs(rest, var::itempvars);
   end match;
@@ -3074,9 +3074,9 @@ algorithm
         numArrayElement := List.map(ComponentReferenceBasics.crefDims(cr), ExpressionBasics.dimensionString);
         ty := ComponentReference.crefTypeFull(cr);
         if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
         else
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
         end if;
 
         /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
@@ -3084,9 +3084,9 @@ algorithm
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
           if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
           else
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
           end if;
           ttmpvars := var::ttmpvars;
         end for;
@@ -5417,12 +5417,12 @@ protected function makeTmpRealSimCodeVar
   output SimCodeVar.SimVar outSimVar;
 algorithm
   if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-    outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
+    outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
         SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
   else
-    outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
+    outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
         SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
@@ -8810,6 +8810,8 @@ algorithm
     deriv.unit := "";
   end try;
   deriv.displayUnit := "";
+  // the quantity of the state does not describe its derivative
+  deriv.quantity := "";
   deriv.minValue := NONE();
   deriv.maxValue := NONE();
 
@@ -9961,7 +9963,7 @@ algorithm
       Option<DAE.Exp> hideResultExp;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
-      String  commentStr, unit, displayUnit;
+      String  commentStr, unit, displayUnit, quantity;
       Option<DAE.Exp> minValue, maxValue;
       Option<DAE.Exp> initVal;
       Option<DAE.Exp> nomVal;
@@ -9993,7 +9995,7 @@ algorithm
       encrypted = encrypted)), vars)
       algorithm
         commentStr := unparseCommentOptionNoAnnotationNoQuote(comment);
-        (unit, displayUnit) := extractVarUnit(dae_var_attr);
+        (unit, displayUnit, quantity) := extractVarUnit(dae_var_attr);
         isProtected := BackendVariable.isProtected(dlowVar);
         hideResult := getHideResult(hideResultExp, cr, source);
         initVal := dlowVar.bindExp;
@@ -10015,7 +10017,7 @@ algorithm
           relativeQuantity := false;
         end if;
       then
-        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, quantity, -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), initVal, NONE(), isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), NONE(), relativeQuantity,
         match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
@@ -10030,7 +10032,7 @@ algorithm
       encrypted = encrypted)), vars)
       algorithm
         commentStr := unparseCommentOptionNoAnnotationNoQuote(comment);
-        (unit, displayUnit) := extractVarUnit(dae_var_attr);
+        (unit, displayUnit, quantity) := extractVarUnit(dae_var_attr);
         isProtected := BackendVariable.isProtected(dlowVar);
         hideResult := getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) := getMinMaxValues(dlowVar);
@@ -10054,7 +10056,7 @@ algorithm
           relativeQuantity := false;
         end if;
       then
-        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, quantity, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
         match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
@@ -10078,7 +10080,7 @@ algorithm
           else ();
         end match;
         commentStr := unparseCommentOptionNoAnnotationNoQuote(comment);
-        (unit, displayUnit) := extractVarUnit(dae_var_attr);
+        (unit, displayUnit, quantity) := extractVarUnit(dae_var_attr);
         isProtected := BackendVariable.isProtected(dlowVar);
         hideResult := getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) := getMinMaxValues(dlowVar);
@@ -10102,7 +10104,7 @@ algorithm
           relativeQuantity := false;
         end if;
       then
-        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, quantity, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
         match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
@@ -10126,7 +10128,7 @@ algorithm
           else ();
         end match;
         commentStr := unparseCommentOptionNoAnnotationNoQuote(comment);
-        (unit, displayUnit) := extractVarUnit(dae_var_attr);
+        (unit, displayUnit, quantity) := extractVarUnit(dae_var_attr);
         isProtected := BackendVariable.isProtected(dlowVar);
         hideResult := getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) := getMinMaxValues(dlowVar);
@@ -10150,7 +10152,7 @@ algorithm
           relativeQuantity := false;
         end if;
       then
-        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, quantity, -1 /* use -1 to get an error in simulation if something failed */,
           minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
           match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
   end match;
@@ -10401,21 +10403,28 @@ algorithm
 end getMatchingExpsList;
 
 protected function extractVarUnit "author: asodja, 2010-03-11
-  Extract variable's unit and displayUnit as strings from
-  DAE.VariablesAttributes structures."
+  Extract variable's unit, displayUnit and quantity as strings from
+  DAE.VariablesAttributes structures. Integer and enumeration variables have no
+  unit but do have a quantity, which FMI 3.0 exports for them as well."
   input Option<DAE.VariableAttributes> var_attr;
   output String unitStr;
   output String displayUnitStr;
+  output String quantityStr;
 algorithm
-  (unitStr, displayUnitStr) := matchcontinue var_attr
+  (unitStr, displayUnitStr, quantityStr) := matchcontinue var_attr
     local
-      Option<DAE.Exp> uexp, duexp;
-    case SOME(DAE.VAR_ATTR_REAL(unit = uexp, displayUnit=duexp))
+      Option<DAE.Exp> uexp, duexp, qexp;
+    case SOME(DAE.VAR_ATTR_REAL(unit = uexp, displayUnit = duexp, quantity = qexp))
       algorithm
         unitStr := extractVarUnitStr(uexp);
         displayUnitStr := extractVarUnitStr(duexp);
-      then (unitStr, displayUnitStr);
-    else ("", "");
+        quantityStr := extractVarUnitStr(qexp);
+      then (unitStr, displayUnitStr, quantityStr);
+    case SOME(DAE.VAR_ATTR_INT(quantity = qexp))
+      then ("", "", extractVarUnitStr(qexp));
+    case SOME(DAE.VAR_ATTR_ENUMERATION(quantity = qexp))
+      then ("", "", extractVarUnitStr(qexp));
+    else ("", "", "");
   end matchcontinue;
 end extractVarUnit;
 
@@ -12402,6 +12411,76 @@ algorithm
   (simVarIdx,simVar) := iSimVarIdxTpl;
   outMapping := arrayUpdate(iMapping,simVarIdx,SOME(simVar));
 end createAllSCVarMapping1;
+
+public function getFmiFloat64DeclaredType
+  "The name of the FMI 3.0 <Float64Type> a Real variable belongs to, and the
+   empty string when it belongs to none. One predicate for both the collection of
+   the type definitions and the declaredType attribute on the variables, so that
+   a variable can never reference a type that was not declared.
+
+   The name is the Modelica quantity of the variable (Pressure,
+   ThermodynamicTemperature, ...) rather than the class its type is declared in
+   (Modelica.Units.SI.Pressure). That path is only recorded in the element source
+   under -d=infoXmlOperations or -d=visualXml, so it is not available in an
+   ordinary export, whereas the quantity always is.
+
+   State derivatives are excluded: they inherit the source and the quantity of
+   their state, but their unit is the state's divided by seconds, so they are not
+   of the state's type."
+  input SimCodeVar.SimVar var;
+  output String name = "";
+protected
+  Boolean isDer;
+algorithm
+  isDer := match var.varKind case BackendDAE.STATE_DER() then true; else false; end match;
+  if isSome(var.exportVar) and not isDer and not stringEq(var.quantity, "")
+     and Types.isReal(Types.arrayElementType(var.type_)) then
+    name := var.quantity;
+  end if;
+end getFmiFloat64DeclaredType;
+
+public function getFmiFloat64Types
+  "One representative variable per FMI 3.0 <Float64Type>. Variables carry their
+   own unit, displayUnit and quantity as well, and per the FMI specification
+   those take precedence over the declared type, so a variable that shares a
+   quantity but differs in unit is not a conflict -- the type definition only
+   supplies defaults."
+  input SimCodeVar.SimVars inVars;
+  output list<SimCodeVar.SimVar> outVars = {};
+algorithm
+  outVars := match inVars
+    case SimCodeVar.SIMVARS()
+      algorithm
+        outVars := getFmiFloat64TypesHelper(inVars.stateVars, outVars);
+        outVars := getFmiFloat64TypesHelper(inVars.algVars, outVars);
+        outVars := getFmiFloat64TypesHelper(inVars.discreteAlgVars, outVars);
+        outVars := getFmiFloat64TypesHelper(inVars.paramVars, outVars);
+        outVars := getFmiFloat64TypesHelper(inVars.aliasVars, outVars);
+      then listReverse(outVars);
+    else {};
+  end match;
+end getFmiFloat64Types;
+
+protected function getFmiFloat64TypesHelper
+  input list<SimCodeVar.SimVar> inVars;
+  input list<SimCodeVar.SimVar> inAccumVars;
+  output list<SimCodeVar.SimVar> outVars = inAccumVars;
+protected
+  String declaredType;
+algorithm
+  for var in inVars loop
+    declaredType := getFmiFloat64DeclaredType(var);
+    if not stringEq(declaredType, "") and not List.exist1(outVars, fmiFloat64TypeExists, declaredType) then
+      outVars := var :: outVars;
+    end if;
+  end for;
+end getFmiFloat64TypesHelper;
+
+protected function fmiFloat64TypeExists
+  input SimCodeVar.SimVar var;
+  input String declaredType;
+  output Boolean exists = stringEq(getFmiFloat64DeclaredType(var), declaredType);
+end fmiFloat64TypeExists;
 
 public function getEnumerationTypes
   input SimCodeVar.SimVars inVars;
@@ -15329,7 +15408,7 @@ algorithm
   else
     // print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
+    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end try;
 end cref2simvar;
 
@@ -15380,7 +15459,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
+    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end try;
   outSimVar := sv;
 end simVarFromHT;
@@ -15414,7 +15493,7 @@ algorithm
     case (_,_)
       algorithm
         badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
+        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end matchcontinue;
 end localCref2SimVar;
 

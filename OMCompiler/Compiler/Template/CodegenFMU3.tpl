@@ -433,13 +433,30 @@ case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   let types = (SimCodeUtil.getEnumerationTypes(vars) |> var => TypeDefinition3(var) ;separator="\n")
-  if boolNot(stringEq(types, "")) then
+  let floatTypes = (SimCodeUtil.getFmiFloat64Types(vars) |> var => Float64Type3(var, simCode) ;separator="\n")
+  if boolNot(stringEq(types + floatTypes, "")) then
   <<
   <TypeDefinitions>
     <%types%>
+    <%floatTypes%>
   </TypeDefinitions>
   >>
 end TypeDefinitions3;
+
+template Float64Type3(SimVar simVar, SimCode simCode)
+ "Generates a Float64Type for a declared Real type, e.g.
+  Modelica.Units.SI.Temperature, so that its unit and quantity are stated once
+  instead of on every variable of that type. Variables refer to it through their
+  declaredType attribute."
+::=
+match simVar
+case SIMVAR(__) then
+  let name = SimCodeUtil.getFmiFloat64DeclaredType(simVar)
+  let quantityAttr = if quantity then ' quantity="<%Util.escapeModelicaStringToXmlString(quantity)%>"'
+  <<
+  <Float64Type name="<%Util.escapeModelicaStringToXmlString(name)%>"<%quantityAttr%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%>/>
+  >>
+end Float64Type3;
 
 template TypeDefinition3(SimVar simVar)
 ::=
@@ -551,9 +568,9 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%DeclaredTypeString3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%><%QuantityString3(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%QuantityString3(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
       '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
     case T_STRING(__) then
@@ -760,6 +777,24 @@ else
   </ModelStructure>
   >>
 end modelStructure3;
+
+template QuantityString3(SimVar simVar)
+ "Generates the quantity attribute, the physical quantity the variable measures
+  (Temperature, Pressure, ...). FMI 3.0 has it on the numeric types."
+::=
+match simVar
+case SIMVAR(quantity = quantity) then
+  if quantity then ' quantity="<%Util.escapeModelicaStringToXmlString(quantity)%>"'
+end QuantityString3;
+
+template DeclaredTypeString3(SimVar simVar, SimCode simCode)
+ "Generates the declaredType attribute. The same predicate decides which
+  <Float64Type> definitions exist, so a variable can never reference a type that
+  is not declared."
+::=
+  let name = SimCodeUtil.getFmiFloat64DeclaredType(simVar)
+  if name then ' declaredType="<%Util.escapeModelicaStringToXmlString(name)%>"'
+end DeclaredTypeString3;
 
 template DisplayUnitString3(SimVar simVar, SimCode simCode)
  "Generates the displayUnit attribute of a Float64 variable, but only when that

@@ -327,6 +327,7 @@ package SimCodeVar
       String comment;
       String unit;
       String displayUnit;
+      String quantity;
       Integer index;
       Option<DAE.Exp> minValue;
       Option<DAE.Exp> maxValue;
@@ -1509,6 +1510,16 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiClock> clocks;
   end getFMI3Clocks;
+
+  function getFmiFloat64DeclaredType
+    input SimCodeVar.SimVar var;
+    output String name;
+  end getFmiFloat64DeclaredType;
+
+  function getFmiFloat64Types
+    input SimCodeVar.SimVars inVars;
+    output list<SimCodeVar.SimVar> outVars;
+  end getFmiFloat64Types;
 
   function getFMI3TimeValueReference
     input SimCode.SimCode inSimCode;
