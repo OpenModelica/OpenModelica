@@ -108,7 +108,7 @@ case SIMCODE(__) then
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
     <%fmiModelVariables3(simCode, FMUType)%>
-    <%modelStructure3(simCode, modelStructure)%>
+    <%modelStructure3(simCode, modelStructure, FMUType)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
@@ -736,7 +736,7 @@ case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then
 else ''
 end StringStartChild3;
 
-template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStructure)
+template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStructure, String FMUType)
  "Generates the FMI 3.0 ModelStructure. Unknowns are referenced by valueReference."
 ::=
 match fmiModelStructure
@@ -744,18 +744,42 @@ case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <<
   <ModelStructure>
     <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
+    <%ClockUnknowns3(simCode, FMUType, "Output")%>
     <%ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)%>
     <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
+    <%ClockUnknowns3(simCode, FMUType, "InitialUnknown")%>
     <%EventIndicators3(simCode)%>
   </ModelStructure>
   >>
 else
   <<
   <ModelStructure>
+    <%ClockUnknowns3(simCode, FMUType, "Output")%>
+    <%ClockUnknowns3(simCode, FMUType, "InitialUnknown")%>
     <%EventIndicators3(simCode)%>
   </ModelStructure>
   >>
 end modelStructure3;
+
+template ClockUnknowns3(SimCode simCode, String FMUType, String element)
+ "Model clocks are exported as <Clock> variables with causality output, so they
+  belong in the ModelStructure Output list, and — having no start value — in the
+  InitialUnknown list as well. For Scheduled Execution the clocks are input
+  clocks activated by the importer, so they are neither."
+::=
+  if isFMISEType(FMUType) then ''
+  else (SimCodeUtil.getFMI3Clocks(simCode) |> clk => ClockUnknown3(clk, element) ;separator="\n")
+end ClockUnknowns3;
+
+template ClockUnknown3(FmiClock clock, String element)
+ "A single ModelStructure entry for a clock variable. No dependencies are
+  emitted, which per the FMI specification means the importer must assume a
+  dependency on all knowns."
+::=
+match clock
+case FMI_CLOCK(__) then
+  '<<%element%> valueReference="<%valueReference%>"/>'
+end ClockUnknown3;
 
 template ModelStructureOutputs3(SimCode simCode, FmiOutputs fmiOutputs)
 ::=
