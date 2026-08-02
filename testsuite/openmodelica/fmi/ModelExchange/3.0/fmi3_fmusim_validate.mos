@@ -1,0 +1,63 @@
+// name: fmi3_fmusim_validate.mos
+// keywords: FMI 3.0 export validation fmusim ModelStructure
+// status: correct
+// teardown_command: rm -rf FmusimClk.fmu FmusimClk.fmutmp/ FmusimClk.log FmusimClk_info.json FmusimClk_fmusim.log FmusimOut.fmu FmusimOut.fmutmp/ FmusimOut.log FmusimOut_info.json FmusimOut_fmusim.log index.html
+//
+// Validates exported FMI 3.0 FMUs with the Reference-FMUs `fmusim` CLI. Unlike
+// the fmpy tests, which check that an FMU *simulates* like OpenModelica's own
+// run, this checks the consistency rules of the FMI specification that the XML
+// schema cannot express: above all that <ModelStructure> lists exactly the
+// right Output and InitialUnknown variables. Importers rely on those rules, so
+// a schema-valid FMU can still be rejected in practice.
+//
+// FmusimClk covers a model clock, which is exported as a <Clock> variable with
+// causality output and therefore has to appear in the Output and InitialUnknown
+// lists; FmusimOut covers an ordinary output and a calculated parameter.
+//
+// fmusim is an external tool (https://github.com/modelica/fmusim), not bundled
+// with OpenModelica. The helper skips when it is not installed, so this test
+// only ever fails on a real validation problem.
+
+loadString("
+model FmusimClk
+  Real x(start = 0.0);
+  Real xd;
+equation
+  xd = sample(x, Clock(0.1));
+  der(x) = 1.0 - x;
+end FmusimClk;
+"); getErrorString();
+
+buildModelFMU(FmusimClk, version="3.0", fmuType="me"); getErrorString();
+system("python3 ../../validate_fmu_fmusim.py FmusimClk.fmu --skip-if-missing > FmusimClk_fmusim.log 2>&1"); getErrorString();
+
+loadString("
+model FmusimOut
+  parameter Real a = 2.0;
+  parameter Real b = 2*a;
+  Real x(start = 1.0, fixed = true);
+  output Real y;
+equation
+  der(x) = -a*x;
+  y = b*x;
+end FmusimOut;
+"); getErrorString();
+
+buildModelFMU(FmusimOut, version="3.0", fmuType="me"); getErrorString();
+system("python3 ../../validate_fmu_fmusim.py FmusimOut.fmu --skip-if-missing > FmusimOut_fmusim.log 2>&1"); getErrorString();
+
+// Result:
+// true
+// ""
+// "FmusimClk.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// true
+// ""
+// "FmusimOut.fmu"
+// ""
+// 0
+// ""
+// endResult

@@ -14,6 +14,7 @@ fmi3_clocks.mos \
 fmi3_directional_derivatives.mos \
 fmi3_enumeration.mos \
 fmi3_fmustate.mos \
+fmi3_fmusim_validate.mos \
 fmi3_graphics.mos \
 fmi3_msl_adder4.mos \
 fmi3_msl_engine1a.mos \
