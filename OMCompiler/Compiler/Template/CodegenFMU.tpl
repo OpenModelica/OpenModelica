@@ -3501,8 +3501,58 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%vars.stringParamVars |> var => ScalarVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
   }
+
+  void <%symbolName(modelNamePrefix(simCode),"set_input_fmu_dimensions")%>(MODEL_DATA* modelData)
+  {
+    /* Sets only the non-scalarized array dimensions, a subset of read_input_fmu.
+       The FMI runtime has to know the dimensions before it sizes the value
+       vectors, but read_input_fmu cannot be moved that early because it also
+       writes start values that have to come after the index maps (#15686).
+       The variable order and the tmp-tick consumption mirror read_input_fmu
+       exactly, so the running index ci refers to the same variable. */
+    <%System.tmpTickReset(1000)%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stateVars       |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.derivativeVars  |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.algVars         |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.discreteAlgVars |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeConstraintsVars
+                           |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeFinalConstraintsVars
+                           |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.paramVars       |> var => DimensionVariableFMU(var,"realParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intAlgVars      |> var => DimensionVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intParamVars    |> var => DimensionVariableFMU(var,"integerParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolAlgVars     |> var => DimensionVariableFMU(var,"booleanVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolParamVars   |> var => DimensionVariableFMU(var,"booleanParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringAlgVars   |> var => DimensionVariableFMU(var,"stringVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringParamVars |> var => DimensionVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+  }
   >>
 end simulationInitFunction;
+
+template DimensionVariableFMU(SimVar simVar, String classType)
+ "Emits only the array dimension setup of a variable, the subset of
+  ScalarVariableFMU that has to run before the value vectors are sized. The
+  match pattern and the tmp-tick consumption mirror ScalarVariableFMU exactly so
+  that the running index ci refers to the same variable: a variable that
+  ScalarVariableFMU skips (no SOURCE) has to be skipped here too, otherwise ci
+  desynchronizes and the dimensions land on the wrong variables."
+::=
+  match simVar
+    case SIMVAR(source = SOURCE(info = info)) then
+      let valueReference = System.tmpTick()
+      let ci = System.tmpTickIndex(2)
+      DimensionsFMU(simVar, classType, ci)
+end DimensionVariableFMU;
 
 template getInfoArgsFMU(String str, builtin.SourceInfo info)
 ::=
@@ -3545,17 +3595,22 @@ template DimensionsFMU(SimVar simVar, String classType, String ci)
   array variables (type_ = T_ARRAY) are dimensioned: a scalarized array element
   still carries the parent numArrayElement but is a scalar and must keep
   numberOfDimensions 0, otherwise the start/min/max/nominal bound-attribute
-  update treats it as an array."
+  update treats it as an array. The allocation is guarded so that it happens
+  only once: set_input_fmu_dimensions runs this before the value vectors are
+  sized and read_input_fmu runs it again afterwards, and allocating twice would
+  leak the first block."
 ::=
 match simVar
 case SIMVAR(type_ = T_ARRAY(), numArrayElement = dims) then
   if listEmpty(dims) then '' else
   <<
-  modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
-  modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
-  <%dims |> d hasindex k0 =>
-    'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
-   ;separator="\n"%>
+  if (modelData-><%classType%>[<%ci%>].dimension.dimensions == NULL) {
+    modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
+    modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
+    <%dims |> d hasindex k0 =>
+      'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>    modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>    modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
+     ;separator="\n"%>
+  }
   >>
 end DimensionsFMU;
 

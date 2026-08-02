@@ -6,6 +6,10 @@
 // #15926, FMI 3.0, new backend, non-scalarized arrays (--simCodeScalarize=false),
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
 // <Dimension> and IS dimensioned in the FMU init (numberOfDimensions = 1).
+//
+// x and der(x) are dimensioned in both generated init functions -- once in
+// set_input_fmu_dimensions, which runs before the value vectors are sized, and
+// once in read_input_fmu, which also writes the start values -- hence 4.
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
@@ -39,7 +43,7 @@ readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 // ""
 // 0
 // ""
-// "2
+// "4
 // "
 // ""
 // 0

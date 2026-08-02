@@ -739,6 +739,15 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
+  /* The dimensions of the non-scalarized array variables have to be known
+     before calculateAllScalarLength and computeVarIndices size the value
+     vectors, otherwise an array is sized as a scalar and the storage is
+     under-allocated. read_input_fmu also sets them, but it runs later because
+     it writes start values that have to come after the index maps (#15686), so
+     the dimensions alone are set here. */
+  if (comp->fmuData->callback->set_input_fmu_dimensions) {
+    comp->fmuData->callback->set_input_fmu_dimensions(comp->fmuData->modelData);
+  }
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */

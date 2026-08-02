@@ -7,6 +7,11 @@
 // runtime. Here the array variable IS a runtime array and must be dimensioned
 // in the exported FMU init (numberOfDimensions = 1). Confirms the native-array
 // FMU export still dimensions genuine arrays.
+//
+// x and der(x) are dimensioned in both generated init functions -- once in
+// set_input_fmu_dimensions and once in read_input_fmu -- hence 4. Only the FMI
+// 3.0 runtime calls set_input_fmu_dimensions, but it is generated for every
+// Model Exchange FMU so that the callback struct stays uniform.
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
@@ -35,7 +40,7 @@ readFile("fmi2_array_nonscalarized.dims"); getErrorString();
 // ""
 // 0
 // ""
-// "2
+// "4
 // "
 // ""
 // endResult
