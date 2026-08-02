@@ -14789,29 +14789,65 @@ public function getFMI3TypeOffset
   input SimCode.ModelInfo inModelInfo;
   output Integer outOffset;
 protected
-  // Per-scalar counts from varInfo (O(1)). Re-counting the variable lists here on
-  // every call is O(n) and this runs once per variable, i.e. O(n^2) overall.
-  SimCode.VarInfo vi = inModelInfo.varInfo;
-  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
-  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
-  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
-  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
+  SimCodeVar.SimVars vars = inModelInfo.vars;
 algorithm
+  // The block sizes are per-scalar sums, so that a non-scalarized array occupies
+  // as many value references as it has elements. They have to agree with the
+  // NUMBER_OF_* / FMI3_*_VR_OFFSET defines of the generated code and with the
+  // element-cumulative map behind lookupVR; taking them from varInfo instead
+  // counts an array as one variable and shifts every non-Real variable.
+  // The sums are computed per branch rather than up front: they are O(n) each,
+  // and this runs once per variable, so a Real variable (the common case, offset
+  // zero) must not pay for them.
   outOffset := match inType
     local DAE.Type aty;
     case DAE.T_REAL() then 0;
     // enumerations are stored in the integer arrays of the OM runtime
-    case DAE.T_INTEGER() then numReal;
-    case DAE.T_ENUMERATION() then numReal;
-    case DAE.T_BOOL() then numReal + numInteger;
-    case DAE.T_STRING() then numReal + numInteger + numBoolean;
+    case DAE.T_INTEGER() then numRealScalars(vars);
+    case DAE.T_ENUMERATION() then numRealScalars(vars);
+    case DAE.T_BOOL() then numRealScalars(vars) + numIntegerScalars(vars);
+    case DAE.T_STRING() then numRealScalars(vars) + numIntegerScalars(vars) + numBooleanScalars(vars);
     // external objects are exported as FMI 3.0 Binary, after the string block
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) then numReal + numInteger + numBoolean + numString;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())
+      then numRealScalars(vars) + numIntegerScalars(vars) + numBooleanScalars(vars) + numStringScalars(vars);
     // non-scalarized array variable: the offset is determined by the element type
     case DAE.T_ARRAY(ty = aty) then getFMI3TypeOffset(aty, inModelInfo);
     else 0;
   end match;
 end getFMI3TypeOffset;
+
+protected function numRealScalars
+  "Size of the Real value-reference block, in scalar elements."
+  input SimCodeVar.SimVars vars;
+  output Integer n;
+algorithm
+  n := 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars)
+       + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
+end numRealScalars;
+
+protected function numIntegerScalars
+  "Size of the Integer value-reference block, in scalar elements."
+  input SimCodeVar.SimVars vars;
+  output Integer n;
+algorithm
+  n := numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
+end numIntegerScalars;
+
+protected function numBooleanScalars
+  "Size of the Boolean value-reference block, in scalar elements."
+  input SimCodeVar.SimVars vars;
+  output Integer n;
+algorithm
+  n := numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
+end numBooleanScalars;
+
+protected function numStringScalars
+  "Size of the String value-reference block, in scalar elements."
+  input SimCodeVar.SimVars vars;
+  output Integer n;
+algorithm
+  n := numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
+end numStringScalars;
 
 public function getFMI3ValueReference
   "Returns the globally unique value reference of a variable for the FMI 3.0
