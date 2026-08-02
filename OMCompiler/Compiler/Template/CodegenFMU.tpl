@@ -994,10 +994,13 @@ template getIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
-  let ixFirstParam = numAlgVars
-  let ixFirstAlias = intAdd(numParams, numAlgVars)
-  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars)) then
+  // per-scalar block boundaries (sum getNumElems), so non-scalarized array
+  // variables index the correct contiguous integerVars range. (numScalarElems is
+  // inlined because a Susan `let` binds a Text, not an Integer.)
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.intAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars)))
   <<
   <% if numAliasVars then
   <<
@@ -1032,10 +1035,11 @@ template setIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
-  let ixFirstParam = numAlgVars
-  let ixFirstAlias = intAdd(numParams, numAlgVars)
-  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars)) then
+  // per-scalar block boundaries, matching getInteger above
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.intAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars)))
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
     // set start value attribute for all variable that has start value, till initialization mode
@@ -1067,16 +1071,41 @@ template getBooleanFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setBoolean function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numBoolAliasVars=numAliasVars)) then
+  // Blocks are addressed by range rather than by a switch with one case per
+  // variable: a non-scalarized Boolean array is a single variable but occupies
+  // a contiguous block of value references, so a per-variable switch reaches
+  // only its first element and every other element falls through to the
+  // default. The boundaries are per-scalar sums (numScalarElems is inlined
+  // because a Susan `let` binds a Text, not an Integer).
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.boolAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars)))
   <<
+  <% if numAliasVars then
+  <<
+  static const int boolAliasIndexes[<%numAliasVars%>] = {
+    <%vars.boolAliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
+  };
+
+  >>
+  %>
   fmi2Boolean getBoolean(ModelInstance* comp, const fmi2ValueReference vr) {
-    switch (vr) {
-      <%vars.boolAlgVars |> var => SwitchVars(simCode, var, "booleanVars") ;separator="\n"%>
-      <%vars.boolParamVars |> var => SwitchParameters(simCode, var, "booleanParameter") ;separator="\n"%>
-      <%vars.boolAliasVars |> var => SwitchAliasVars(simCode, var, "Boolean", "!") ;separator="\n"%>
-      default:
-        return fmi2False;
+    if (vr < <%ixFirstParam%>) {
+      return comp->fmuData->localData[0]->booleanVars[vr];
     }
+    if (vr < <%ixFirstAlias%>) {
+      return comp->fmuData->simulationInfo->booleanParameter[vr-<%ixFirstParam%>];
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = boolAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix>=0 ? getBoolean(comp, ix) : !getBoolean(comp, -(ix+1));
+    }
+    >>
+    %>
+    return fmi2False;
   }
 
   >>
@@ -1086,17 +1115,30 @@ template setBooleanFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getBoolean function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numBoolAliasVars=numAliasVars)) then
+  // per-scalar block boundaries, matching getBoolean above
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.boolAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars)))
   <<
   fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value) {
-    switch (vr) {
-      <%vars.boolAlgVars |> var => SwitchVarsSet(simCode, var, "booleanVars") ;separator="\n"%>
-      <%vars.boolParamVars |> var => SwitchParametersSet(simCode, var, "booleanParameter") ;separator="\n"%>
-      <%vars.boolAliasVars |> var => SwitchAliasVarsSet(simCode, var, "Boolean", "!") ;separator="\n"%>
-      default:
-        return fmi2Error;
+    if (vr < <%ixFirstParam%>) {
+      comp->fmuData->localData[0]->booleanVars[vr] = value;
+      return fmi2OK;
     }
-    return fmi2OK;
+    if (vr < <%ixFirstAlias%>) {
+      comp->fmuData->simulationInfo->booleanParameter[vr-<%ixFirstParam%>] = value;
+      return fmi2OK;
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = boolAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix >= 0 ? setBoolean(comp, ix, value) : setBoolean(comp, -(ix+1), !value);
+    }
+    >>
+    %>
+    return fmi2Error;
   }
 
   >>

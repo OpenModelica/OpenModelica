@@ -17,6 +17,7 @@ fmi3_fmustate.mos \
 fmi3_fmusim_validate.mos \
 fmi3_graphics.mos \
 fmi3_msl_adder4.mos \
+fmi3_native_arrays.mos \
 fmi3_msl_engine1a.mos \
 fmi3_terminals_alias_nb.mos \
 fmi3_terminals_alias.mos \
