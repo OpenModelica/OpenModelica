@@ -748,13 +748,26 @@ template UnitDefinitionsHelper1(UnitDefinition unitDefinition)
  "helper function to generates code for UnitDefinition for FMU target."
 ::=
 match unitDefinition
-case UNITDEFINITION(name=name, baseUnit=baseUnit) then
+case UNITDEFINITION(name=name, baseUnit=baseUnit, displayUnits=displayUnits) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
     <%baseUnitAttributes(baseUnit)%>
+    <%displayUnits |> displayUnit => displayUnitAttributes(displayUnit) ;separator="\n"%>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
+
+template displayUnitAttributes(DisplayUnit displayUnit)
+ "Generates a DisplayUnit of a Unit. A variable may only name a display unit that
+  is declared here, so this is what makes the displayUnit attribute exportable."
+::=
+match displayUnit
+case DISPLAYUNIT(__) then
+  let offsetValue = if not realAlmostEq(offset, 0.0, 1e-12) then ' offset="<%offset%>"'
+  <<
+  <DisplayUnit name="<%Util.escapeModelicaStringToXmlString(name)%>" factor="<%factor%>"<%offsetValue%>/>
+  >>
+end displayUnitAttributes;
 
 template unitDefinitionAttribute(String unitName)
  "Generates code for UnitDefinition Attribute for FMU target."

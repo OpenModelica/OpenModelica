@@ -1,0 +1,79 @@
+// name: fmi3_display_units.mos
+// keywords: FMI 3.0 export units displayUnit UnitDefinitions
+// status: correct
+// teardown_command: rm -rf fmi3_display_units.fmu fmi3_display_units.fmutmp/ fmi3_display_units.xml fmi3_display_units_tmp.xml fmi3_display_units.log fmi3_display_units_info.json index.html
+//
+// FMI 3.0 <DisplayUnit>: a variable may only name a display unit that is
+// declared inside its own <Unit>, which is why the displayUnit attribute used
+// to be dropped from the export altogether. Both are emitted now, for the
+// display units whose conversion is known:
+//
+//   bar      a plain factor derived from the SI factors of Pa and bar
+//   degC     needs an offset, which Modelica's unit system cannot express, so
+//            the conversion is given explicitly -- deriving it would produce
+//            factor 1 and no offset, i.e. Kelvin displayed as Celsius
+//   deg      not in NFUnit's table at all, also given explicitly
+//   furlong  unknown, so neither the <DisplayUnit> nor the attribute on the
+//            variable is emitted, rather than exporting a wrong conversion
+
+loadString("
+model fmi3_display_units
+  parameter Real p(unit = \"Pa\", displayUnit = \"bar\") = 1e5;
+  Real T(unit = \"K\", displayUnit = \"degC\", start = 300, fixed = true);
+  Real a(unit = \"rad\", displayUnit = \"deg\");
+  Real d(unit = \"m\", displayUnit = \"furlong\");
+equation
+  der(T) = 0;
+  a = 1.0;
+  d = time;
+end fmi3_display_units;
+"); getErrorString();
+
+buildModelFMU(fmi3_display_units, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_display_units.fmu modelDescription.xml > fmi3_display_units_tmp.xml"); getErrorString();
+system("sed -n \"/<UnitDefinitions>/,/<\\/UnitDefinitions>/p\" fmi3_display_units_tmp.xml > fmi3_display_units.xml"); getErrorString();
+readFile("fmi3_display_units.xml"); getErrorString();
+
+system("grep -oE \"name=\\\"[Tapd]\\\"[^/]*displayUnit=\\\"[^\\\"]*\\\"\" fmi3_display_units_tmp.xml | grep -oE \"displayUnit=\\\"[^\\\"]*\\\"\" > fmi3_display_units.xml"); getErrorString();
+readFile("fmi3_display_units.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_display_units.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <UnitDefinitions>
+//     <Unit name=\"Pa\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" />
+//       <DisplayUnit name=\"bar\" factor=\"1e-5\"/>
+//     </Unit>
+//     <Unit name=\"m\">
+//       <BaseUnit m=\"1\" />
+//     </Unit>
+//     <Unit name=\"rad\">
+//       <BaseUnit />
+//       <DisplayUnit name=\"deg\" factor=\"57.29577951308232\"/>
+//     </Unit>
+//     <Unit name=\"s-1.K\">
+//       <BaseUnit s=\"-1\" K=\"1\" />
+//     </Unit>
+//     <Unit name=\"K\">
+//       <BaseUnit K=\"1\" />
+//       <DisplayUnit name=\"degC\" factor=\"1.0\" offset=\"-273.15\"/>
+//     </Unit>
+//   </UnitDefinitions>
+// "
+// ""
+// 0
+// ""
+// "displayUnit=\"degC\"
+// displayUnit=\"deg\"
+// displayUnit=\"bar\"
+// "
+// ""
+// endResult

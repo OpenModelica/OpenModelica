@@ -9778,6 +9778,7 @@ algorithm
   for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
     (unitDefinitions, unitNameKeys) := SimCodeUtilShared.getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
   end for;
+  unitDefinitions := SimCodeUtilShared.addFmiDisplayUnits(unitDefinitions, arrayList(simVars));
   //print("\n Final Units List :" + anyString(unitDefinitions));
 end getFmiUnitDefinitions;
 

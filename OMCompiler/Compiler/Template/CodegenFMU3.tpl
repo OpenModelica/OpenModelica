@@ -551,7 +551,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
@@ -760,6 +760,18 @@ else
   </ModelStructure>
   >>
 end modelStructure3;
+
+template DisplayUnitString3(SimVar simVar, SimCode simCode)
+ "Generates the displayUnit attribute of a Float64 variable, but only when that
+  display unit is declared as a <DisplayUnit> of the variable's <Unit>. Naming an
+  undeclared display unit makes the modelDescription.xml invalid, which is why
+  the attribute is dropped rather than guessed at."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(unitDefinitions = unitDefinitions)) then
+  let displayUnit = SimCodeUtilShared.getFmiDisplayUnit(simVar, unitDefinitions)
+  if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
+end DisplayUnitString3;
 
 template ClockUnknowns3(SimCode simCode, String FMUType, String element)
  "Model clocks are exported as <Clock> variables with causality output, so they

@@ -66,6 +66,7 @@ import ComponentReference;
 import ComponentReferenceBasics;
 import DAEUtil;
 import Error;
+import FMI;
 import HashSetString;
 import List;
 import Unit = NFUnit;
@@ -391,6 +392,8 @@ algorithm
   (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.paramVars, unitDefinitions, unitNameKeys);
   (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(vars.aliasVars, unitDefinitions, unitNameKeys);
   unitDefinitions := listReverse(unitDefinitions);
+  unitDefinitions := addFmiDisplayUnits(unitDefinitions,
+    {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars, vars.paramVars, vars.aliasVars});
 end getFmiUnitDefinitionsFromSimVars;
 
 public function getFmiUnitDefinitionsHelper
@@ -408,15 +411,141 @@ algorithm
         unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
         try
           unit := Unit.parseUnitString(var.unit); // get the SI- units information
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit), {}) :: unitDefinitions;
         else
           // catch the units which are not calculated
-          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT(), {}) :: unitDefinitions;
         end try;
       end if;
     end if;
   end for;
 end getFmiUnitDefinitionsHelper;
+
+public function addFmiDisplayUnits
+  "Adds a <DisplayUnit> to every unit definition for which some exported variable
+   declares a display unit, so that the variables can reference one. A variable
+   whose displayUnit attribute names an undeclared display unit makes the
+   modelDescription.xml invalid, which is why the attribute used to be dropped
+   altogether.
+
+   A display unit is only declared when the conversion to it is actually known;
+   see fmiDisplayUnitConversion. Getting that wrong is worse than not exporting
+   it, because the importer would silently display wrong numbers.
+
+   Only FMI 3.0 exports the displayUnit attribute, so only its unit definitions
+   need the declarations; adding them to an FMI 2.0 modelDescription.xml would
+   just be unreferenced noise."
+  input output list<SimCode.UnitDefinition> unitDefinitions;
+  input list<list<SimCodeVar.SimVar>> varLists;
+protected
+  list<SimCode.DisplayUnit> displayUnits;
+  Option<tuple<Real, Real>> conversion;
+  Real factor, offset;
+algorithm
+  if not FMI.isFMIVersion30() then
+    return;
+  end if;
+
+  unitDefinitions := list(
+    match ud
+      case SimCode.UNITDEFINITION() algorithm
+        displayUnits := {};
+        for vars in varLists loop
+          for var in vars loop
+            if isSome(var.exportVar) and stringEq(var.unit, ud.name)
+               and not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, ud.name)
+               and not listMember(var.displayUnit, list(du.name for du in displayUnits)) then
+              conversion := fmiDisplayUnitConversion(ud.name, var.displayUnit);
+              if isSome(conversion) then
+                SOME((factor, offset)) := conversion;
+                displayUnits := SimCode.DISPLAYUNIT(var.displayUnit, factor, offset) :: displayUnits;
+              end if;
+            end if;
+          end for;
+        end for;
+        ud.displayUnits := listReverse(displayUnits);
+      then ud;
+    end match
+    for ud in unitDefinitions);
+end addFmiDisplayUnits;
+
+public function fmiDisplayUnitConversion
+  "The (factor, offset) that converts a value given in unitName to displayUnitName,
+   as the FMI specification defines it: the displayed value is
+   factor * value + offset. NONE() when the conversion is not known, in which case
+   the display unit must not be exported.
+
+   Modelica's unit system has no notion of an offset, so the units that need one
+   are listed explicitly; they have to be checked before the generic path, which
+   would derive a factor of 1 and no offset for degC against K. The generic path
+   divides the SI factors of the two units, which is only meaningful when their
+   base-unit exponents agree."
+  input String unitName;
+  input String displayUnitName;
+  output Option<tuple<Real, Real>> factorOffset;
+protected
+  Unit.Unit u, du;
+algorithm
+  // conversions Modelica's unit system cannot express: an offset, or a unit that
+  // NFUnit does not know (deg is deliberately absent from its table)
+  factorOffset := match (unitName, displayUnitName)
+    case ("K", "degC")     then SOME((1.0, -273.15));
+    case ("K", "degF")     then SOME((1.8, -459.67));
+    case ("K", "degRk")    then SOME((1.8, 0.0));
+    case ("rad", "deg")    then SOME((57.29577951308232, 0.0));
+    case ("rad/s", "rpm")  then SOME((9.549296585513721, 0.0));
+    case ("rad/s", "rev/min") then SOME((9.549296585513721, 0.0));
+    else NONE();
+  end match;
+
+  if isSome(factorOffset) then
+    return;
+  end if;
+
+  try
+    u := Unit.parseUnitString(unitName);
+    du := Unit.parseUnitString(displayUnitName);
+    factorOffset := match (u, du)
+      local Integer s1, m1, g1, A1, K1, mol1, cd1, s2, m2, g2, A2, K2, mol2, cd2;
+            Real f1, f2;
+      case (Unit.UNIT(s = s1, m = m1, g = g1, A = A1, K = K1, mol = mol1, cd = cd1, factor = f1),
+            Unit.UNIT(s = s2, m = m2, g = g2, A = A2, K = K2, mol = mol2, cd = cd2, factor = f2))
+        // the same base-unit exponents, otherwise the two are not the same
+        // physical quantity and their factors are not comparable
+        guard intEq(s1, s2) and intEq(m1, m2) and intEq(g1, g2) and intEq(A1, A2)
+              and intEq(K1, K2) and intEq(mol1, mol2) and intEq(cd1, cd2)
+              and not realEq(f2, 0.0)
+        then SOME((f1 / f2, 0.0));
+      else NONE();
+    end match;
+  else
+    factorOffset := NONE();
+  end try;
+end fmiDisplayUnitConversion;
+
+public function getFmiDisplayUnit
+  "The display unit of a variable, but only when it has actually been declared as
+   a <DisplayUnit> of the variable's <Unit>. Empty otherwise, so that the exported
+   variable never references a display unit that is not there."
+  input SimCodeVar.SimVar var;
+  input list<SimCode.UnitDefinition> unitDefinitions;
+  output String displayUnit = "";
+algorithm
+  if stringEq(var.unit, "") or stringEq(var.displayUnit, "") then
+    return;
+  end if;
+  for ud in unitDefinitions loop
+    if stringEq(ud.name, var.unit) then
+      for du in ud.displayUnits loop
+        if stringEq(du.name, var.displayUnit) then
+          displayUnit := var.displayUnit;
+          return;
+        end if;
+      end for;
+      return;
+    end if;
+  end for;
+end getFmiDisplayUnit;
 
 public function transformUnitToBaseUnit
   "translate Unit.UNIT to SimCode.BASEUNIT"

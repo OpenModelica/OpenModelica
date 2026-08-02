@@ -911,9 +911,17 @@ end SparsityRow;
     record UNITDEFINITION
       String name;
       BaseUnit baseUnit;
-      //TODO DisplayUnit
+      list<DisplayUnit> displayUnits;
     end UNITDEFINITION;
   end UnitDefinition;
+
+  uniontype DisplayUnit "a <DisplayUnit> of a <Unit> in modelDescription.xml"
+    record DISPLAYUNIT
+      String name;
+      Real factor;
+      Real offset;
+    end DISPLAYUNIT;
+  end DisplayUnit;
 
   uniontype BaseUnit
     record BASEUNIT
@@ -1708,6 +1716,16 @@ package SimCodeUtil
     output String str;
   end simGenericCallString;
 end SimCodeUtil;
+
+package SimCodeUtilShared
+
+  function getFmiDisplayUnit
+    input SimCodeVar.SimVar var;
+    input list<SimCode.UnitDefinition> unitDefinitions;
+    output String displayUnit;
+  end getFmiDisplayUnit;
+
+end SimCodeUtilShared;
 
 package SimCodeFunctionUtil
   function varName
