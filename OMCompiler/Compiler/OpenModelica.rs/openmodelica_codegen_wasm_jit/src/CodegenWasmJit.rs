@@ -585,9 +585,9 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 /// parse, where a rejection still has a message channel to report on.
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
-    ida: false,
-    // The driver runs here (host-driven) or in-wasm (web); both get CVODE from the
-    // same CMake option, so one const covers both.
+    // The driver runs here (host-driven) or in-wasm (web); both get CVODE and IDA
+    // from the same CMake option, so one const covers both.
+    ida: openmodelica_sim_meta::IDA,
     cvode: openmodelica_sim_meta::CVODE,
     gbode: false,
     // Served by the driver's per-step deadline, so every engine has it.
@@ -1699,8 +1699,10 @@ fn col_to_off(col: u32, layout: &SimLayout) -> u32 {
         REAL_OFF + (col - 1) * 8
     } else if col < nr + layout.n_int_alg() {
         layout.int_off + (col - nr) * 4
-    } else {
+    } else if col < layout.sens_col0() {
         layout.bool_off + (col - nr - layout.n_int_alg()) * 4
+    } else {
+        layout.sens_off + (col - layout.sens_col0()) * 8
     }
 }
 
@@ -1857,6 +1859,43 @@ fn reindex_aliasvar(av: &SimCodeVar::AliasVariable, idx: &[i32]) -> SimCodeVar::
         A::NEGATEDALIAS { varName } => A::NEGATEDALIAS { varName: cref_with_indices(varName, idx) },
         A::NOALIAS => A::NOALIAS,
     }
+}
+
+/// Append the `$Sensitivities.<par>.<state>` result variables — the layout's
+/// sensitivity block, in its order — and return the `SimData` offsets of the
+/// parameters they differentiate against (C's `sensitivityParList`, resolved
+/// through the `paramVars` order the real-parameter region follows). The names
+/// bypass [`result_name`], which filters `$`-prefixed ones; C keeps them.
+fn push_sensitivity_vars(
+    sens_vars: &[&SimCodeVar::SimVar],
+    n_sens_par: usize,
+    vars: &SimCodeVar::SimVars,
+    layout: &SimLayout,
+    result_vars: &mut Vec<ResultVar>,
+) -> Result<Vec<u32>> {
+    if sens_vars.is_empty() {
+        return Ok(Vec::new());
+    }
+    let params: HashMap<String, u32> = lst(&vars.paramVars)
+        .enumerate()
+        .map(|(k, sv)| Ok((cref_display(&sv.name)?, layout.rparam_off + (k as u32) * 8)))
+        .collect::<Result<_>>()?;
+    let mut offs = Vec::with_capacity(n_sens_par);
+    for sv in &sens_vars[..n_sens_par] {
+        let name = cref_display(&sv.name)?;
+        let off = *params
+            .get(&name)
+            .ok_or("CodegenWasmJit: a sensitivity parameter is not a real parameter of the model")?;
+        offs.push(off);
+    }
+    for (i, sv) in sens_vars[n_sens_par..].iter().enumerate() {
+        result_vars.push(ResultVar {
+            name: cref_display(&sv.name)?,
+            comment: sv.comment.to_string(),
+            kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: false },
+        });
+    }
+    Ok(offs)
 }
 
 /// Build the cref->slot map and the result-variable list from the model's
@@ -2439,6 +2478,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // The backend only emits a lambda-0 initial system when the model uses
     // `homotopy()`; its presence is the signal to wire up the continuation.
     let has_homotopy = (&*sim_code.initialEquations_lambda0).into_iter().next().is_some();
+    // `--calculateSensitivities`: `sensitivityVars` is the `Ns` differentiated
+    // parameters followed by the `Ns * nStates` `$Sensitivities.<par>.<state>`
+    // signals (C's `rSen` init-XML category, split by `numSensitivityParameters`).
+    let n_sens_par = vi.numSensitivityParameters.max(0) as usize;
+    let sens_vars: Vec<&SimCodeVar::SimVar> = lst(&mi.vars.sensitivityVars).collect();
+    let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -2456,11 +2501,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         stateset_scratch_f64,
         nls_jac_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
+        n_sens,
         has_when,
         has_homotopy,
     );
 
-    let (mut var_map, result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
     let var_units = collect_var_units(vars)?;
     // Sample event index -> its slot `k` (position in `samples`), for the
     // `sample(index,…)` builtin and the driver's per-sample state.
@@ -2702,6 +2749,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // `parameterEquations` for any computed parameters.
     // Equation functions.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
+    let param_eqs_dep = param_eqs.clone();
     bodies.push(build_eq_fn_with_prelude("parameterEquations", &param_bindings, param_eqs, &var_map, &eq_index, &by_name, &mut literals, &[], &stateset_diag)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
@@ -2747,7 +2795,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
-        fmi_vrs, zc_descriptions(&zero_crossings),
+        fmi_vrs, zc_descriptions(&zero_crossings), sens_params,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -2921,6 +2969,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         });
         idx
     };
+    // C's `updateBoundParameters`: `parameterEquations` *without* the constant
+    // bindings, so re-evaluating the dependent parameters does not undo a
+    // perturbation IDAS made to a sensitivity parameter.
+    let update_bound_params_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(build_eq_fn("updateBoundParameters", param_eqs_dep, &var_map, &eq_index, &by_name, &mut literals)?);
+        idx
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -2958,6 +3014,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
+    functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
 
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
@@ -3046,6 +3103,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
+    exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -3083,6 +3141,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionUpdateRelations", update_relations_idx),
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
+        ("functionUpdateBoundParameters", update_bound_params_idx),
     ] {
         names.push((idx, name.to_string()));
     }
@@ -3546,6 +3605,7 @@ fn build_sim_meta(
     state_nominals: &[f64],
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
+    sens_params: Vec<u32>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -3563,6 +3623,7 @@ fn build_sim_meta(
         state_nominals: state_nominals.to_vec(),
         fmi_vrs,
         zc_desc,
+        sens_params,
     }
 }
 
@@ -5300,6 +5361,15 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
     for j in 0..layout.n_bool_alg() {
         store_islot(&mut f, layout.bool_off + j * 4, n_reals + layout.n_int_alg() + j);
     }
+    // Only IDA fills the sensitivity block, and this loop is Euler's.
+    if layout.n_sens > 0 {
+        f.instruction(&I::LocalGet(DEST));
+        f.instruction(&I::I32Const((layout.sens_col0() * 8) as i32));
+        f.instruction(&I::I32Add);
+        f.instruction(&I::I32Const(0));
+        f.instruction(&I::I32Const((layout.n_sens * 8) as i32));
+        f.instruction(&I::MemoryFill(0));
+    }
 
     // The driver's per-row `check_asserts`: evaluate the min/max checks, then let
     // the host format what they recorded while `time` still holds this row's.
@@ -5452,6 +5522,7 @@ mod standalone_tests {
             "functionCheckAsserts",
             "functionStoreDelayed",
             "functionInitDelay",
+            "functionUpdateBoundParameters",
         ];
 
         let mut funcs = we::FunctionSection::new();

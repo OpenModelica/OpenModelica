@@ -29,9 +29,10 @@ pub mod simflags;
 #[cfg(sundials)]
 pub mod sundials;
 
-/// Whether this build's driver has the real CVODE linked in (`build.rs`), so a
-/// `-s=cvode` / `method="cvode"` run can be served.
+/// Whether this build's driver has the real CVODE and IDA linked in (`build.rs`),
+/// so a `-s=cvode`/`-s=ida` (or `method=`) run can be served.
 pub const CVODE: bool = cfg!(sundials);
+pub const IDA: bool = cfg!(sundials);
 
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
@@ -135,6 +136,11 @@ pub struct Layout {
     pub zctol_off: u32,
     /// Base of the overridable start-value region (one f64 per state).
     pub start_off: u32,
+    /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
+    /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
+    /// as a result row's last columns.
+    pub n_sens: u32,
+    pub sens_off: u32,
     pub total: u32,
 }
 
@@ -160,6 +166,7 @@ impl Layout {
         n_stateset_f64: u32,
         n_nlsjac_f64: u32,
         n_math: u32,
+        n_sens: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -196,13 +203,14 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let total = start_off + n_states * 8;
+        let sens_off = start_off + n_states * 8;
+        let total = sens_off + n_sens * 8;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, total,
+            mathevents_off, zctol_off, start_off, n_sens, sens_off, total,
         }
     }
 
@@ -238,9 +246,13 @@ impl Layout {
     pub fn n_bool_alg(&self) -> u32 {
         (self.bparam_off - self.bool_off) / 4
     }
-    /// Total f64 columns in a result row: the real part plus the integer and
-    /// boolean algebraics (captured per row as f64).
+    /// Total f64 columns in a result row: the real part, the integer and boolean
+    /// algebraics (captured per row as f64), then the sensitivities.
     pub fn n_row_total(&self) -> u32 {
+        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens
+    }
+    /// First result-row column of the sensitivity block.
+    pub fn sens_col0(&self) -> u32 {
         self.n_reals_row() + self.n_int_alg() + self.n_bool_alg()
     }
 }
@@ -367,6 +379,9 @@ pub struct SimMeta {
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
     pub zc_desc: Vec<String>,
+    /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
+    /// parameters `--calculateSensitivities` selected, in block order.
+    pub sens_params: Vec<u32>,
 }
 
 impl SimMeta {
@@ -401,7 +416,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 5;
+const VERSION: u32 = 6;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -431,7 +446,8 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
         l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
-        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
+        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
+        l.n_sens, l.sens_off, l.total,
     ] {
         put_u32(o, v);
     }
@@ -516,6 +532,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.zc_desc {
         put_str(&mut o, d);
     }
+    put_u32s(&mut o, &m.sens_params);
     o
 }
 
@@ -598,6 +615,8 @@ impl<'a> Reader<'a> {
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
             start_off: self.u32()?,
+            n_sens: self.u32()?,
+            sens_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -684,9 +703,10 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..ndesc {
         zc_desc.push(r.string()?);
     }
+    let sens_params = r.u32s()?;
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc,
+        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc, sens_params,
     })
 }
 
@@ -698,7 +718,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -736,6 +756,7 @@ mod tests {
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            sens_params: vec![88],
         }
     }
 
@@ -755,7 +776,9 @@ mod tests {
         assert_eq!(l.n_reals_row(), 1 + 2 * 2 + 1); // time + 2 states + 2 ders + 1 alg
         assert_eq!(l.n_int_alg(), 1);
         assert_eq!(l.n_bool_alg(), 1);
-        assert_eq!(l.n_row_total(), 6 + 1 + 1);
+        assert_eq!(l.n_sens, 2);
+        assert_eq!(l.n_row_total(), 6 + 1 + 1 + 2);
+        assert_eq!(l.sens_col0(), 6 + 1 + 1);
     }
 
     #[test]

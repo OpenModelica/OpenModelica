@@ -69,6 +69,17 @@ pub enum Lss {
     Rsparse = 3,
 }
 
+/// `-idaLS`, the linear solver IDA's Newton iteration uses.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IdaLs {
+    Dense,
+    /// C's default.
+    Klu,
+    Spgmr,
+    Spbcg,
+    Sptfqmr,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SimFlags {
     pub solver: Option<Solver>,
@@ -89,6 +100,21 @@ pub struct SimFlags {
     pub step_size: Option<f64>,
     /// `-jacobianNominalFactor`: scales the ODE Jacobian's FD step floor.
     pub jacobian_nominal_factor: Option<f64>,
+    /// `-idaLS`
+    pub ida_ls: Option<IdaLs>,
+    /// `-idaSensitivity`: IDAS forward sensitivities w.r.t. the parameters
+    /// `--calculateSensitivities` selected.
+    pub ida_sensitivity: bool,
+    /// The `IDASet*` tunables (`-idaMaxErrorTestFails`, `-idaMaxNonLinIters`,
+    /// `-idaMaxConvFails`, `-idaNonLinConvCoef`).
+    pub ida_max_err_test_fails: Option<i32>,
+    pub ida_max_nonlin_iters: Option<i32>,
+    pub ida_max_conv_fails: Option<i32>,
+    pub ida_nonlin_conv_coef: Option<f64>,
+    /// `-maxIntegrationOrder`: caps the BDF order (5 by default).
+    pub max_order: Option<i32>,
+    /// `-initialStepSize`
+    pub initial_step_size: Option<f64>,
     /// `-homotopyOnFirstTry` / `-noHomotopyOnFirstTry`. `None` is C's default,
     /// which sets `FLAG_HOMOTOPY_ON_FIRST_TRY` whenever the model supports
     /// homotopy.
@@ -195,13 +221,17 @@ pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
         ls.push("klu");
         lss.push("klu");
     }
-    alloc::vec![
+    let mut menu = alloc::vec![
         ("s", solver),
         ("nls", alloc::vec!["hybrid", "kinsol", "newton", "mixed", "homotopy"]),
         ("nlsLS", nls_ls),
         ("ls", ls),
         ("lss", lss),
-    ]
+    ];
+    if cap.ida {
+        menu.push(("idaLS", alloc::vec!["klu", "dense", "spgmr", "spbcg", "sptfqmr"]));
+    }
+    menu
 }
 
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
@@ -279,6 +309,14 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                         .map_err(|_| "-jacobianNominalFactor needs a number".to_string())?,
                 )
             }
+            "idaLS" => f.ida_ls = Some(ida_ls(&value(name)?)?),
+            "idaSensitivity" => f.ida_sensitivity = true,
+            "idaMaxErrorTestFails" => f.ida_max_err_test_fails = Some(int(name, &value(name)?)?),
+            "idaMaxNonLinIters" => f.ida_max_nonlin_iters = Some(int(name, &value(name)?)?),
+            "idaMaxConvFails" => f.ida_max_conv_fails = Some(int(name, &value(name)?)?),
+            "idaNonLinConvCoef" => f.ida_nonlin_conv_coef = Some(real(name, &value(name)?)?),
+            "maxIntegrationOrder" => f.max_order = Some(int(name, &value(name)?)?),
+            "initialStepSize" => f.initial_step_size = Some(real(name, &value(name)?)?),
             "homotopyOnFirstTry" => f.homotopy_on_first_try = Some(true),
             "noHomotopyOnFirstTry" => f.homotopy_on_first_try = Some(false),
             _ => f.unknown.push(arg.to_string()),
@@ -311,6 +349,14 @@ fn split_top_level(s: &str) -> Vec<String> {
 
 fn bad(flag: &str, got: &str, accepted: &str) -> String {
     format!("unrecognized value `{got}` for -{flag} (accepted: {accepted})")
+}
+
+fn int(flag: &str, v: &str) -> Result<i32, String> {
+    v.parse().map_err(|_| format!("-{flag} needs an integer"))
+}
+
+fn real(flag: &str, v: &str) -> Result<f64, String> {
+    v.parse().map_err(|_| format!("-{flag} needs a number"))
 }
 
 fn solver(v: &str) -> Result<Solver, String> {
@@ -353,6 +399,17 @@ fn ls(v: &str) -> Result<Ls, String> {
         "totalpivot" => Ls::TotalPivot,
         "klu" => Ls::Klu,
         _ => return Err(bad("ls", v, "default, lapack, totalpivot, klu")),
+    })
+}
+
+fn ida_ls(v: &str) -> Result<IdaLs, String> {
+    Ok(match v {
+        "dense" => IdaLs::Dense,
+        "klu" => IdaLs::Klu,
+        "spgmr" => IdaLs::Spgmr,
+        "spbcg" => IdaLs::Spbcg,
+        "sptfqmr" => IdaLs::Sptfqmr,
+        _ => return Err(bad("idaLS", v, "dense, klu, spgmr, spbcg, sptfqmr")),
     })
 }
 

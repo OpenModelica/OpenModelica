@@ -1,4 +1,4 @@
-//! Decides whether the driver gets the real CVODE (`cfg(sundials)`).
+//! Decides whether the driver gets the real CVODE and IDA (`cfg(sundials)`).
 //!
 //! Two sources, both prepared by `.cmake/rust_omc.cmake`:
 //!   * wasip1 — `OMC_SUNDIALS_WASM_DIR`. The archives are linked by the runtime
@@ -6,12 +6,28 @@
 //!     the variable only selects the cfg.
 //!   * host — `OMC_SUNDIALS_NATIVE_DIR`, linked here: the host-driven driver
 //!     lives in `libOpenModelicaCompiler`, which nothing else links SUNDIALS into.
-//!     This is the C runtime's own archive, so its index size is whatever that
-//!     build chose (64) rather than the wasm archives' 32 — hence `sundials_i64`.
+//!     These are the C runtime's own archives, so their index size is whatever
+//!     that build chose (64) rather than the wasm archives' 32 — hence
+//!     `sundials_i64`.
 //!
-//! Unset means no CVODE; `simflags::check` then rejects `-s=cvode` up front.
+//! Unset means no CVODE/IDA; `simflags::check` then rejects `-s=cvode`/`-s=ida`
+//! up front.
 
 use std::path::Path;
+
+/// Archives in link order: each entry may only depend on later ones. Every
+/// SUNDIALS solver archive bundles the shared N_Vector/SUNMatrix/SUNLinearSolver
+/// sources, so the first one listed satisfies them for the rest.
+const NATIVE_LIBS: &[&str] = &[
+    "sundials_cvode",
+    "sundials_idas",
+    "sundials_sunlinsolklu",
+    "klu",
+    "amd",
+    "colamd",
+    "btf",
+    "suitesparseconfig",
+];
 
 fn main() {
     println!("cargo::rustc-check-cfg=cfg(sundials)");
@@ -32,12 +48,18 @@ fn main() {
     }
     let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else { return };
     let lib = Path::new(&dir).join("lib");
-    if !["libsundials_cvode.a", "sundials_cvode.lib"].iter().any(|n| lib.join(n).exists()) {
-        panic!("OMC_SUNDIALS_NATIVE_DIR={} has no sundials_cvode archive; the host \
-                SUNDIALS build failed (check the rust_sundials_native CMake target)", lib.display());
+    let missing: Vec<_> = NATIVE_LIBS
+        .iter()
+        .filter(|l| ![format!("lib{l}.a"), format!("{l}.lib")].iter().any(|n| lib.join(n).exists()))
+        .collect();
+    if !missing.is_empty() {
+        panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
+                build failed (check the rust_sundials_native_collect CMake target)", lib.display());
     }
     println!("cargo:rustc-link-search=native={}", lib.display());
-    println!("cargo:rustc-link-lib=static=sundials_cvode");
+    for l in NATIVE_LIBS {
+        println!("cargo:rustc-link-lib=static={l}");
+    }
     println!("cargo:rustc-cfg=sundials");
     match std::env::var("OMC_SUNDIALS_NATIVE_INDEX_SIZE").as_deref() {
         Ok("64") => println!("cargo:rustc-cfg=sundials_i64"),

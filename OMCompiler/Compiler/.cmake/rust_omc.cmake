@@ -375,7 +375,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
-      sundials_kinsol_static sundials_ida_static sundials_cvode_static
+      sundials_kinsol_static sundials_idas_static sundials_cvode_static
       sundials_nvecserial_static sundials_sunmatrixdense_static
       sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
       sundials_sunlinsolklu_static
@@ -394,7 +394,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       ${_suitesparse_ep_build}/BTF/libbtf.a
       ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
-      ${_sundials_ep_build}/src/ida/libsundials_ida.a
+      ${_sundials_ep_build}/src/idas/libsundials_idas.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
       ${_sundials_ep_build}/src/nvector/serial/libsundials_nvecserial.a
       ${_sundials_ep_build}/src/sunmatrix/dense/libsundials_sunmatrixdense.a
@@ -406,19 +406,27 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     VERBATIM)
   add_dependencies(rust_sundials_collect rust_sundials_wasm)
 
-  # The host CVODE the host-driven wasm-jit driver links is the C runtime's own
-  # archive (3rdParty), not a second build: it is already position-independent
-  # (`libSimulationRuntimeC.so` links it), and reusing it leaves the two copies
-  # identical should both end up in one process. Collected into a fixed directory
-  # because the cargo env cannot carry a generator expression.
+  # The host CVODE/IDAS the host-driven wasm-jit driver links are the C runtime's
+  # own archives (3rdParty), not a second build: they are already
+  # position-independent (`libSimulationRuntimeC.so` links them), and reusing them
+  # leaves the two copies identical should both end up in one process. Collected
+  # into a fixed directory because the cargo env cannot carry a generator
+  # expression. IDA's default linear solver is KLU, so SuiteSparse comes too.
   if(TARGET sundials_cvode_static)
     set(RUST_SUNDIALS_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-sundials-native
         CACHE PATH "Directory the host SUNDIALS archives are collected into.")
+    set(_native_sundials_libs
+      sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
+      KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static)
+    set(_native_sundials_files "")
+    foreach(_lib IN LISTS _native_sundials_libs)
+      list(APPEND _native_sundials_files $<TARGET_FILE:${_lib}>)
+    endforeach()
     add_custom_target(rust_sundials_native_collect
       COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_NATIVE_DIR}/lib
       COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_FILE:sundials_cvode_static> ${RUST_SUNDIALS_NATIVE_DIR}/lib/
-      DEPENDS sundials_cvode_static
+        ${_native_sundials_files} ${RUST_SUNDIALS_NATIVE_DIR}/lib/
+      DEPENDS ${_native_sundials_libs}
       COMMENT "Rust: collecting host SUNDIALS archives -> ${RUST_SUNDIALS_NATIVE_DIR}/lib/"
       VERBATIM)
   endif()
