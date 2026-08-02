@@ -58,6 +58,8 @@ typedef struct DASSL_DATA{
   double *rwork;
   double *rtol;
   double *atol;
+  double *nominal;              /* |nominal| per state, floored at 1e-32; atol is tolerance times it */
+  double jacNominalFactor;      /* -jacobianNominalFactor */
 
   int ng;
   int *jroot;

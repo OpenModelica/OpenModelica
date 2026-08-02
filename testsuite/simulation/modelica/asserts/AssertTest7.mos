@@ -130,7 +130,6 @@ getErrorString();
 // Value of x(=0.5)
 // Value of x(=0.5)
 // Value of x(=0.5)
-// Value of x(=0.5)
 // DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
 //       In above,  R1 =   5.0000000000000E-01   R2 =   3.5157427188218E-16
 // DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE
