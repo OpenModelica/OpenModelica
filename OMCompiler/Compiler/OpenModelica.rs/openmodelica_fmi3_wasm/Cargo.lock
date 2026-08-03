@@ -264,6 +264,7 @@ dependencies = [
  "libm",
  "minpack",
  "nalgebra",
+ "openmodelica_sim_meta",
 ]
 
 [[package]]
