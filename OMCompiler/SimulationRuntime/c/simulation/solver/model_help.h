@@ -27,6 +27,8 @@
 #ifndef MODEL_HELP_H
 #define MODEL_HELP_H
 
+#include <math.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,6 +64,28 @@ extern double homTauMax;
 extern double homTauMin;
 extern double homTauStart;
 extern int homBacktraceStrategy;
+
+/**
+ * @brief Unsigned finite-difference step for one column of a numerical Jacobian.
+ *
+ * DASKR's DMATD and IDA's ida_ls difference over `delta_h*max(|y|,|h*y'|)`,
+ * floored at the unknown's error weight `1/wt = rtol*|y| + atol`. The floor is
+ * a tolerance, not a differencing step: an unknown below it is zero as far as
+ * the error control is concerned and its magnitude is no scale to difference
+ * over, but `1/wt` is `tolerance` times the nominal where the step wants
+ * `delta_h` times it. So take the nominal there instead.
+ *
+ * @param y         Value of the unknown.
+ * @param hyprime   Step size times its derivative.
+ * @param ewtInv    Its error weight inverted, `rtol*|y| + atol`.
+ * @param nominal   Its nominal value, scaled by -jacobianNominalFactor.
+ * @return double   The step, unsigned.
+ */
+static inline double numericalJacobianStep(double y, double hyprime, double ewtInv, double nominal)
+{
+  const double scale = fmax(fabs(y), fabs(hyprime));
+  return numericalDifferentiationDeltaXsolver * (scale > ewtInv ? scale : fmax(ewtInv, nominal));
+}
 
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
 

@@ -93,6 +93,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
+/* read the nominal values into the tolerances and the Jacobian's step floor */
+void dassl_setNominals(DATA* data, DASSL_DATA *dasslData);
+
 /* deinitial main dassl Data */
 int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);
 

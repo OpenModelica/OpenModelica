@@ -122,6 +122,59 @@ modelica_boolean IDAflagIsSuccess(int flag) {
 
 
 /**
+ * @brief Read the unknowns' nominal values into the tolerances and the scaling.
+ *
+ * Re-read by updateSolverNominals once initialization has computed the nominals
+ * that are parameter expressions.
+ *
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling
+ * @param idaData     IDA solver data with its arrays already allocated.
+ * @return int        Returns 0 on success.
+ */
+int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* idaData)
+{
+  int flag;
+  long int i;
+  double* abstol = N_VGetArrayPointer_Serial(idaData->absoluteTolerance);
+
+  infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
+  for(i=0; i < data->modelData->nStates; ++i) {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    idaData->nominal[i] = fmax(fabs(nominal), 1e-32);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, idaData->nominal[i]);
+  }
+
+  /* daeMode: set nominal values for algebraic variables */
+  if (idaData->daeMode) {
+    getAlgebraicDAEVarNominals(data, idaData->nominal + data->modelData->nStates);
+    for(i=data->modelData->nStates; i < idaData->N; ++i) {
+      idaData->nominal[i] = fmax(fabs(idaData->nominal[i]), 1e-32);
+    }
+  }
+  /* multiply by tolerance to obtain a relative tolerace */
+  for(i=0; i < idaData->N; ++i) {
+    abstol[i] = idaData->nominal[i] * data->simulationInfo->tolerance;
+  }
+  messageClose(OMC_LOG_SOLVER);
+  flag = IDASVtolerances(idaData->ida_mem, data->simulationInfo->tolerance, idaData->absoluteTolerance);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASVtolerances");
+
+  if (idaData->yScale != NULL) {
+    for(i=0; i < idaData->N; ++i) {
+      idaData->yScale[i] = idaData->nominal[i];
+    }
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
+    for (i=0; i < idaData->N; ++i) {
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. scaleFactor: %g", i+1, idaData->yScale[i]);
+    }
+    messageClose(OMC_LOG_SOLVER_V);
+  }
+
+  return 0;
+}
+
+/**
  * @brief Initialize main IDA data.
  *
  * Allocate memory for IDA_SOLVER struct and initialize IDA solver.
@@ -138,7 +191,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* Variables */
   int flag;
   long int i;
-  double* tmp;
   int maxOrder;
 
   /* Initialize constants */
@@ -217,33 +269,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   flag = IDASetErrHandlerFn(idaData->ida_mem, idaErrorHandlerFunction, idaData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
 
-  /* Set nominal values of the states for absolute tolerances */
-  infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
-
   idaData->jacNominalFactor = omc_flag[FLAG_JACOBIAN_NOMINAL_FACTOR]
       ? atof(omc_flagValue[FLAG_JACOBIAN_NOMINAL_FACTOR]) : 1.0;
 
-  /* Allocate memory for initialization process */
-  tmp = (double*) malloc(idaData->N*sizeof(double));
-  for(i=0; i < data->modelData->nStates; ++i) {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    idaData->nominal[i] = fmax(fabs(nominal), 1e-32);
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, idaData->nominal[i]);
-  }
-
-  /* daeMode: set nominal values for algebraic variables */
-  if (idaData->daeMode) {
-    getAlgebraicDAEVarNominals(data, idaData->nominal + data->modelData->nStates);
-  }
-  /* multiply by tolerance to obtain a relative tolerace */
-  for(i=0; i < idaData->N; ++i) {
-    tmp[i] = idaData->nominal[i] * data->simulationInfo->tolerance;
-  }
-  messageClose(OMC_LOG_SOLVER);
-  flag = IDASVtolerances(idaData->ida_mem, data->simulationInfo->tolerance,
-                         N_VMake_Serial(idaData->N, tmp));
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASVtolerances");
-
+  idaData->absoluteTolerance = N_VNew_Serial(idaData->N);
+  idaData->id = NULL;
 
   if (omc_flag[FLAG_IDA_SCALING]) { /* idaNoScaling */
     /* allocate memory for scaling */
@@ -251,29 +281,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->ypScale  = (double*) malloc(idaData->N*sizeof(double));
     idaData->resScale = (double*) malloc(idaData->N*sizeof(double));
 
-    /* set yScale from nominal values */
-    for(i=0; i < data->modelData->nStates; ++i) {
-      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-      idaData->yScale[i] = fabs(nominal);
+    for(i=0; i < idaData->N; ++i) {
       idaData->ypScale[i] = 1.0; // TODO: 1 is not a good scaling value. Use something like nominal value / number of intervals
     }
-    /* daeMode: set nominal values for algebraic variables */
-    if (idaData->daeMode) {
-      getAlgebraicDAEVarNominals(data, idaData->yScale + data->modelData->nStates);
-      for (i=data->modelData->nStates; i < idaData->N; ++i) {
-        idaData->ypScale[i] = 1.0;
-      }
-    }
-    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
-    for (i=0; i < idaData->N; ++i) {
-      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. scaleFactor: %g", i+1, idaData->yScale[i]);
-    }
-    messageClose(OMC_LOG_SOLVER_V);
   } else {
     idaData->yScale   = NULL;
     idaData->ypScale  = NULL;
     idaData->resScale = NULL;
   }
+
+  ida_solver_setNominals(data, threadData, idaData);
   /* initialize */
   idaData->useScaling = TRUE;
 
@@ -533,11 +550,12 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSuppressAlg");
     }
+    idaData->id = N_VNew_Serial(idaData->N);
     for (i=0; i<idaData->N; ++i) {
-      tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
+      NV_Ith_S(idaData->id, i) = (i<data->modelData->nStates)? 1.0: 0.0;
     }
 
-    flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
+    flag = IDASetId(idaData->ida_mem, idaData->id);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetId");
   }
 
@@ -596,7 +614,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   if (measure_time_flag) rt_clear(SIM_TIMER_SOLVER); /* TODO Initialization should not add to this timer... */
 
-  free(tmp);
   return 0;
 }
 
@@ -640,6 +657,10 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
   }
 
   free(idaData->nominal);
+  N_VDestroy_Serial(idaData->absoluteTolerance);
+  if (idaData->id != NULL) {
+    N_VDestroy_Serial(idaData->id);
+  }
   N_VDestroy_Serial(idaData->newdelta);
 
 #ifdef USE_PARJAC
@@ -1404,8 +1425,9 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = numericalDifferentiationDeltaXsolver;    /* Global variable from model_help.c */
   double delta_hhh;
+  double *abstol = N_VGetArrayPointer_Serial(idaData->absoluteTolerance);
+  double rtol = data->simulationInfo->tolerance;
   long int i,j,l,ii;
 
   double currentStep;
@@ -1434,7 +1456,8 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
       if(sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]),fabs(delta_hhh)), idaData->jacNominalFactor*fabs(idaData->nominal[ii]));
+        delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
+                                             idaData->jacNominalFactor * idaData->nominal[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];      // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];
@@ -1696,10 +1719,10 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = numericalDifferentiationDeltaXsolver;
   double *delta_hh = idaData->delta_hh;
   double delta_hhh;
-  double deltaInv;
+  double *abstol = N_VGetArrayPointer_Serial(idaData->absoluteTolerance);
+  double rtol = data->simulationInfo->tolerance;
 
   long int i,j,ii;
   int nth = 0;
@@ -1743,7 +1766,8 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       if(sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = currentStep * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(states[ii]), fabs(delta_hhh)), idaData->jacNominalFactor*fabs(idaData->nominal[ii]));
+        delta_hh[ii] = numericalJacobianStep(states[ii], delta_hhh, rtol*fabs(states[ii]) + abstol[ii],
+                                             idaData->jacNominalFactor * idaData->nominal[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = (states[ii] + delta_hh[ii]) - states[ii];     // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != (states[ii] + delta_hh[ii]) - states[ii]
         ysave[ii] = states[ii];

@@ -2095,9 +2095,11 @@ struct ResCtx {
     nje: u64,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
     ctx_addr: u32,
-    /// The FD step's floor: `n_states` nominals owned by the driver, scaled.
+    /// The FD step's fallback scale: `n_states` nominals owned by the driver.
     nominals: *const f64,
     nominal_factor: f64,
+    /// Relative tolerance; with `nominals` it gives the first step's floor.
+    tol: f64,
     /// What IDA's Jacobian callback needs on top of the above; all-null otherwise.
     #[cfg(sundials)]
     ida: IdaCtx,
@@ -2294,21 +2296,19 @@ unsafe fn dassl_jac(
     let run = (|| -> Result<()> {
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         for color in &jac.colors {
-            // Perturb every column in this color; record 1/del and the base value.
+            // Perturb every column in this colour; record del and the base value.
             for &col in color {
                 let ci = col as usize;
                 let yi = unsafe { *y.add(ci) };
-                let ypi = unsafe { *yprime.add(ci) };
-                let d6 = h * ypi;
-                let mag = DELTA_X_SOLVER
-                    * yi.abs().max(d6.abs()).max(ctx.nominal_factor * unsafe { *ctx.nominals.add(ci) });
-                let mut del = if d6 >= 0.0 { mag } else { -mag };
+                let hyp = h * unsafe { *yprime.add(ci) };
+                let nom = unsafe { *ctx.nominals.add(ci) };
+                let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 if del == 0.0 {
                     del = DELTA_X_SOLVER;
                 }
                 ctx.jac_ysave[ci] = yi;
-                ctx.jac_del[ci] = 1.0 / del;
+                ctx.jac_del[ci] = del;
                 unsafe { *y.add(ci) = yi + del };
             }
             // One residual evaluation at the perturbed point.
@@ -2324,11 +2324,11 @@ unsafe fn dassl_jac(
             // Scatter the finite difference into the affected rows, restore y.
             for &col in color {
                 let ci = col as usize;
-                let inv_del = ctx.jac_del[ci];
+                let del = ctx.jac_del[ci];
                 for &row in &jac.rows_by_col[ci] {
                     let ri = row as usize;
-                    let val = (ctx.jac_gp[ri] - unsafe { *base.add(ri) }) * inv_del;
-                    unsafe { *pd.add(ci * n + ri) = val };
+                    let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
+                    unsafe { *pd.add(ci * n + ri) = d / del };
                 }
                 unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
             }
@@ -2348,8 +2348,24 @@ unsafe fn dassl_jac(
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver` (`model_help.c`).
-const DELTA_X_SOLVER: f64 = 1e-8;
+/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)` unless
+/// `-numericalDifferentiationDeltaXsolver` says otherwise (`simulation_runtime.cpp`).
+const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+
+/// Give a step the sign of `h*y'`, as both runtimes do.
+fn signed(mag: f64, hyp: f64) -> f64 {
+    if hyp >= 0.0 { mag } else { -mag }
+}
+
+/// The Jacobian's step for a column, C's `numericalJacobianStep` (`model_help.h`):
+/// the relative step, or the nominal where the state is inside its own absolute
+/// tolerance and so is no scale of its own to difference over.
+fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64, factor: f64) -> f64 {
+    let scale = yi.abs().max(hyp.abs());
+    let ewt_inv = tol * (yi.abs() + nominal);
+    let step = if scale > ewt_inv { scale } else { ewt_inv.max(factor * nominal) };
+    signed(DELTA_X_SOLVER * step, hyp)
+}
 
 /// C's `-noEquidistantTimeGrid` (`dassl.c`'s `dasslSteps`): DASKR's own steps are
 /// the output points, not an interpolated equidistant grid.
@@ -2502,6 +2518,8 @@ struct DasslDriver {
     rtol: Vec<f64>,
     atol: Vec<f64>,
     nominals: Vec<f64>,
+    /// Relative tolerance, for the numerical Jacobian's first step.
+    tol: f64,
     rwork: Vec<f64>,
     iwork: Vec<i32>,
     rpar: [f64; 1],
@@ -2631,6 +2649,7 @@ impl DasslDriver {
             rtol,
             atol,
             nominals,
+            tol,
             rwork,
             iwork,
             rpar: [0.0f64],
@@ -2751,6 +2770,7 @@ impl Driver for DasslDriver {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            tol: self.tol,
             #[cfg(sundials)]
             ida: IdaCtx::default(),
         };
@@ -3172,6 +3192,8 @@ struct SolverCore {
     state_events: u64,
     time_events: u64,
     nominals: Vec<f64>,
+    /// Relative tolerance, for the numerical Jacobian's first step.
+    tol: f64,
     /// Chattering detector: a ring of the last [`CHATTER_LIMIT`] state-event times
     /// + a consecutive-event counter. Fires once.
     chatter_times: [f64; CHATTER_LIMIT],
@@ -3342,6 +3364,7 @@ impl SolverCore {
             state_events: 0,
             time_events: 0,
             nominals,
+            tol,
             chatter_times: [0.0; CHATTER_LIMIT],
             chatter_idx: 0,
             chatter_consec: 0,
@@ -3474,6 +3497,7 @@ impl SolverCore {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            tol: self.tol,
             #[cfg(sundials)]
             ida: self.ida_ctx(),
         }
@@ -4491,6 +4515,8 @@ struct CvodeDriver {
     sim_data: u32,
     n_states: usize,
     nominals: Vec<f64>,
+    /// Relative tolerance, for the numerical Jacobian's first step.
+    tol: f64,
     states_base: u32,
     ders_base: u32,
     /// Next output row to produce (row 0 was emitted in `new`).
@@ -4548,6 +4574,7 @@ impl CvodeDriver {
             sim_data,
             n_states,
             nominals,
+            tol,
             states_base,
             ders_base: states_base + layout.n_states * 8,
             row: 1,
@@ -4631,6 +4658,7 @@ impl Driver for CvodeDriver {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            tol: self.tol,
             #[cfg(sundials)]
             ida: IdaCtx::default(),
         };
@@ -5050,13 +5078,12 @@ unsafe extern "C" fn ida_jac(
             for &col in color {
                 let ci = col as usize;
                 let yi = unsafe { *y.add(ci) };
-                let d6 = h * unsafe { *ypv.add(ci) };
-                let mag = DELTA_X_SOLVER
-                    * yi.abs().max(d6.abs()).max(ctx.nominal_factor * unsafe { *ctx.nominals.add(ci) });
-                let mut del = if d6 >= 0.0 { mag } else { -mag };
+                let hyp = h * unsafe { *ypv.add(ci) };
+                let nom = unsafe { *ctx.nominals.add(ci) };
+                let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
                 del = yi + del - yi; // floating-point rounding, as in the C runtime
                 ctx.jac_ysave[ci] = yi;
-                ctx.jac_del[ci] = 1.0 / del;
+                ctx.jac_del[ci] = del;
                 unsafe { *y.add(ci) = yi + del };
             }
             write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
@@ -5067,14 +5094,14 @@ unsafe extern "C" fn ida_jac(
             r?;
             for &col in color {
                 let ci = col as usize;
-                let inv_del = ctx.jac_del[ci];
+                let del = ctx.jac_del[ci];
                 for (k, &row) in jac.rows_by_col[ci].iter().enumerate() {
                     let ri = row as usize;
-                    let d = (ctx.jac_gp[ri] - unsafe { *base.add(ri) }) * inv_del;
+                    let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
                     vals[match pattern {
                         Some(p) => p.slots[ci][k],
                         None => ci * n + ri,
-                    }] = d;
+                    }] = d / del;
                 }
                 unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
             }
@@ -5110,6 +5137,8 @@ struct IdaDriver {
     sim_data: u32,
     n_states: usize,
     nominals: Vec<f64>,
+    /// Relative tolerance, for the numerical Jacobian's first step.
+    tol: f64,
     states_base: u32,
     ders_base: u32,
     /// Next output row to produce (row 0 was emitted in `new`).
@@ -5174,6 +5203,7 @@ impl IdaDriver {
             sim_data,
             n_states,
             nominals,
+            tol,
             states_base,
             ders_base,
             row: 1,
@@ -5268,6 +5298,7 @@ impl Driver for IdaDriver {
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
+            tol: self.tol,
             ida: self.setup.ctx(Some(ida)),
         };
         if !ida.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {
