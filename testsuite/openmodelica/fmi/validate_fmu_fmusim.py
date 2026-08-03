@@ -25,9 +25,10 @@ reference with diffSimulationResults(). Passing --reference-file instead lets
 fmusim do the comparison itself.
 
 Exits non-zero when fmusim is missing or reports a problem, so a test fails
-loudly rather than silently skipping the validation. Pass --skip-if-missing to
-turn a missing fmusim into a skip (exit 0) -- for local runs on a machine that
-has no fmusim installed.
+loudly rather than silently skipping the validation -- the same policy as
+simulate_fmu_fmpy.py. Pass --skip-if-missing to turn a missing fmusim into a
+skip (exit 0); the test suite does not use it, it is there for ad-hoc local runs
+on a machine without fmusim.
 """
 import os
 import shutil

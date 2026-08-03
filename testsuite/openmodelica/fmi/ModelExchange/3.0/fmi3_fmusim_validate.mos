@@ -15,8 +15,10 @@
 // lists; FmusimOut covers an ordinary output and a calculated parameter.
 //
 // fmusim is an external tool (https://github.com/modelica/fmusim), not bundled
-// with OpenModelica. The helper skips when it is not installed, so this test
-// only ever fails on a real validation problem.
+// with OpenModelica; it is installed in the CI image. Like the fmpy helper, the
+// validation is required rather than optional, so a missing fmusim fails the
+// test instead of silently skipping it. To run this locally, put fmusim on PATH
+// or point the FMUSIM environment variable at it.
 
 loadString("
 model FmusimClk
@@ -29,7 +31,7 @@ end FmusimClk;
 "); getErrorString();
 
 buildModelFMU(FmusimClk, version="3.0", fmuType="me"); getErrorString();
-system("python3 ../../validate_fmu_fmusim.py FmusimClk.fmu --skip-if-missing > FmusimClk_fmusim.log 2>&1"); getErrorString();
+system("python3 ../../validate_fmu_fmusim.py FmusimClk.fmu > FmusimClk_fmusim.log 2>&1"); getErrorString();
 
 loadString("
 model FmusimOut
@@ -44,7 +46,7 @@ end FmusimOut;
 "); getErrorString();
 
 buildModelFMU(FmusimOut, version="3.0", fmuType="me"); getErrorString();
-system("python3 ../../validate_fmu_fmusim.py FmusimOut.fmu --skip-if-missing > FmusimOut_fmusim.log 2>&1"); getErrorString();
+system("python3 ../../validate_fmu_fmusim.py FmusimOut.fmu > FmusimOut_fmusim.log 2>&1"); getErrorString();
 
 // Result:
 // true
