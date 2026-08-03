@@ -725,6 +725,7 @@ public uniontype FmiModelStructure
     FmiDerivatives fmiDerivatives;
     Option<JacobianMatrix> continuousPartialDerivatives;
     Option<JacobianMatrix> initialPartialDerivatives;
+    Option<JacobianMatrix> adjointPartialDerivatives "Symbolic adjoint (vector-Jacobian product) Jacobian used by fmi3GetAdjointDerivative. Only ever produced by the new backend.";
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
     list<FmiArray> fmiArrays;

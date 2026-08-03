@@ -12279,6 +12279,7 @@ algorithm
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           initPartSimDer,
+          NONE() /* adjoint derivatives: the old backend never produces an FMIDERADJ jacobian */,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
           fmi3ArrayGroups(inModelInfo, derivatives)));
@@ -12332,6 +12333,7 @@ else
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           initPartSimDer,
+          NONE(),
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
           fmi3ArrayGroups(inModelInfo)));
@@ -13311,6 +13313,7 @@ algorithm
     SimCode.FMIDERIVATIVES(derivs),
     NONE(),
     NONE(),
+    NONE() /* adjoint derivatives are filled in later by generateModelCodeNewBackend, if the NB pipeline produced one */,
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
     fmi3ArrayGroups(modelInfo)));
