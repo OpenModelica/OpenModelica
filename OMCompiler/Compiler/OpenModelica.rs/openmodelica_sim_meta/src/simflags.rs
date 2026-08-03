@@ -23,6 +23,9 @@ pub enum Solver {
     Cvode,
     Gbode,
     Euler,
+    RungeKutta,
+    SymSolver,
+    SymSolverSsc,
 }
 
 /// `-nls`. The discriminants are the wire codes [`SimFlags::solver_codes`] hands to
@@ -158,6 +161,14 @@ pub struct SimFlags {
     /// `-variableFilter=<regex>`: replaces the model's own filter. The caller
     /// compiles it — this crate is `no_std` and has no engine.
     pub variable_filter: Option<String>,
+    /// `-noRestart`: keep integrating across an event instead of restarting.
+    pub no_restart: bool,
+    /// `-noRootFinding`: take the end of the step as the event time.
+    pub no_root_finding: bool,
+    /// The `-gb*` flags, `(name, value)`; a value-less one is stored as `""`.
+    /// gbode reads these by name the way C reads `omc_flagValue`, so the whole
+    /// family does not have to be mirrored as struct fields.
+    pub gb: Vec<(String, String)>,
     /// Flags this runtime does not model, kept so a caller can report them.
     pub unknown: Vec<String>,
     /// The argv this was parsed from, so a host forwards the same bytes rather than
@@ -166,6 +177,16 @@ pub struct SimFlags {
 }
 
 impl SimFlags {
+    /// The value of a `-gb*` flag, or `None` when it was not given.
+    pub fn gb_flag(&self, name: &str) -> Option<String> {
+        self.gb.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone())
+    }
+
+    /// Whether a value-less `-gb*` flag was given.
+    pub fn gb_toggle(&self, name: &str) -> bool {
+        self.gb.iter().any(|(n, _)| n == name)
+    }
+
     pub fn has_log(&self, stream: &str) -> bool {
         crate::omclog::STREAM_NAME
             .iter()
@@ -204,7 +225,6 @@ pub struct Capabilities {
     pub klu: bool,
     pub ida: bool,
     pub cvode: bool,
-    pub gbode: bool,
     /// This runtime has a wall clock, so `-alarm` can be honoured.
     pub alarm: bool,
     /// This runtime can compile a regex, so `-variableFilter` can be honoured.
@@ -233,7 +253,6 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
-        Some(Solver::Gbode) if !cap.gbode => "gbode",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -248,8 +267,9 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
 /// only these never builds a command line [`check`] rejects. `default` is left out:
 /// omitting a flag selects it.
 pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
-    let mut solver = alloc::vec!["dassl", "euler"];
-    for (name, have) in [("ida", cap.ida), ("cvode", cap.cvode), ("gbode", cap.gbode)] {
+    // gbode and the fixed-step solvers are pure Rust, so every build has them.
+    let mut solver = alloc::vec!["dassl", "euler", "rungekutta", "gbode"];
+    for (name, have) in [("ida", cap.ida), ("cvode", cap.cvode)] {
         if have {
             solver.push(name);
         }
@@ -578,6 +598,16 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "initialStepSize" => f.initial_step_size = Some(real(name, &value(name)?)?),
             "homotopyOnFirstTry" => f.homotopy_on_first_try = Some(true),
             "noHomotopyOnFirstTry" => f.homotopy_on_first_try = Some(false),
+            "noRestart" => f.no_restart = true,
+            "noRootFinding" => f.no_root_finding = true,
+            // The `-gb*` family is stored by name; gbode validates the values when
+            // it is built, so an unused one is still rejected (C ignores it).
+            _ if name.starts_with("gb") && C_FLAGS.iter().any(|(n, _)| *n == name) => {
+                let takes_value =
+                    C_FLAGS.iter().find(|(n, _)| *n == name).is_some_and(|(_, v)| *v);
+                let v = if takes_value { value(name)? } else { String::new() };
+                f.gb.push((name.to_string(), v));
+            }
             _ => {
                 let known = C_FLAGS.iter().find(|(n, _)| *n == name);
                 if known.is_some_and(|(_, takes_value)| *takes_value) && inline.is_none() {
@@ -649,7 +679,16 @@ fn solver(v: &str) -> Result<Solver, String> {
         "cvode" => Solver::Cvode,
         "gbode" => Solver::Gbode,
         "euler" => Solver::Euler,
-        _ => return Err(bad("s", v, "dassl, ida, cvode, gbode, euler")),
+        "rungekutta" => Solver::RungeKutta,
+        "symSolver" => Solver::SymSolver,
+        "symSolverSsc" => Solver::SymSolverSsc,
+        _ => {
+            return Err(bad(
+                "s",
+                v,
+                "dassl, ida, cvode, gbode, euler, rungekutta, symSolver, symSolverSsc",
+            ));
+        }
     })
 }
 
@@ -792,7 +831,7 @@ mod tests {
     }
 
     const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, gbode: false, alarm: false, variable_filter: false };
+        Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -829,7 +868,10 @@ mod tests {
 
     #[test]
     fn selectable_solvers_need_no_capability() {
-        for arg in ["-nls=kinsol", "-nls=hybrid", "-lss=rsparse", "-s=euler", "-s=dassl"] {
+        for arg in
+            ["-nls=kinsol", "-nls=hybrid", "-lss=rsparse", "-s=euler", "-s=dassl", "-s=gbode",
+             "-s=rungekutta"]
+        {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");
         }
@@ -839,7 +881,9 @@ mod tests {
     // both the parser and the capability check of the build that offered it.
     #[test]
     fn everything_supported_parses_and_checks() {
-        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true, alarm: true, variable_filter: true }] {
+        for cap in
+            [NOTHING, Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true }]
+        {
             for (flag, values) in supported(cap) {
                 for v in values {
                     let f = parse(&argv(&[&format!("-{flag}={v}")])).expect(&format!("-{flag}={v}"));

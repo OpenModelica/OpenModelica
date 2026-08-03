@@ -17,7 +17,6 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         klu: cfg!(sundials),
         ida: openmodelica_sim_meta::IDA,
         cvode: openmodelica_sim_meta::CVODE,
-        gbode: false,
         // Served by the driver's per-step deadline; both runtimes install a clock.
         alarm: true,
         // No regex engine in wasm; the model's own filter is resolved at codegen.
