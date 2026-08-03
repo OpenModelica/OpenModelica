@@ -25,6 +25,8 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod fixedstep;
+pub mod gbode;
 pub mod omclog;
 pub mod simflags;
 #[cfg(sundials)]

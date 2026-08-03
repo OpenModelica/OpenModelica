@@ -603,7 +603,6 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     // from the same CMake option, so one const covers both.
     ida: openmodelica_sim_meta::IDA,
     cvode: openmodelica_sim_meta::CVODE,
-    gbode: false,
     // Served by the driver's per-step deadline, so every engine has it.
     alarm: true,
     // The `.mat` is written here, where a regex engine is available.

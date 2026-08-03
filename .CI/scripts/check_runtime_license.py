@@ -145,37 +145,29 @@ OSMC_PL_1_8_LICENSE_TEXT_PY = f"""
 
 OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_PY = f"""
 #
-# This file is part of OpenModelica.
+# This file belongs to the OpenModelica Run-Time System
 #
 # Copyright (c) 1998-{CURRENT_YEAR}, Open Source Modelica Consortium (OSMC),
 # c/o Linköpings universitet, Department of Computer and Information Science,
-# SE-58183 Linköping, Sweden.
+# SE-58183 Linköping, Sweden. All rights reserved.
 #
-# All rights reserved.
-#
-# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
-# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
-# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+# AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+# USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+# ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
 # VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
 #
-# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
-# Public License (OSMC-PL) are obtained from OSMC, either from the above
-# address, from the URLs:
-# http://www.openmodelica.org or
-# https://github.com/OpenModelica/ or
-# http://www.ida.liu.se/projects/OpenModelica,
-# and in the OpenModelica distribution.
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+# (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+# http://www.openmodelica.org or https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution.
+# GNU AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL.
+# The BSD NEW License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
 #
-# GNU AGPL version 3 is obtained from:
-# https://www.gnu.org/licenses/licenses.html#GPL
-#
-# This program is distributed WITHOUT ANY WARRANTY; without
-# even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-#
-# See the full OSMC Public License conditions for more details.
+# This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+# SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+# OSMC-PL.
 #
 """
 
@@ -429,9 +421,7 @@ def _replace_python_license_header(filepath: str, content: str, is_runtime: bool
     Returns True after rewriting the file.
     """
 
-    if is_runtime:
-        raise ValueError("No Python runtime license available.")
-    new_header = (OSMC_PL_1_8_LICENSE_TEXT_PY).strip()
+    new_header = (OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_PY if is_runtime else OSMC_PL_1_8_LICENSE_TEXT_PY).strip()
 
     lines = content.splitlines(keepends=True)
 
@@ -692,7 +682,17 @@ def main() -> int:
     runtime_roots = [
         Path(root) / "OMCompiler" / "SimulationRuntime",
         Path(root) / "OMCompiler" / "3rdParty" / "ryu",
-    ]
+    ] + [Path(root) / "OMCompiler" / "Compiler" / "OpenModelica.rs" / subdir for subdir in [
+        "openmodelica_sim_meta",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "openmodelica_wasi",
+        "openmodelica_wasi_libc",
+        "openmodelica_wasm_jit",
+        "openmodelica_mat_writer",
+        "openmodelica_fmi3_wasm",
+        "openmodelica_modelica_utilities",
+    ]]
 
     for abspath in iter_source_files(root, dirs):
         rel = str(abspath.relative_to(root)).replace(os.sep, "/")

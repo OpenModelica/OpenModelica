@@ -261,6 +261,20 @@ pub const CONTEXT_ALGEBRAIC: i32 = 2;
 pub const CONTEXT_EVENTS: i32 = 3;
 pub const CONTEXT_JACOBIAN: i32 = 4;
 
+/// gbode's view of the three `setContext` calls it needs; the driver's own uses go
+/// through [`set_context`] directly.
+pub(crate) fn set_context_jacobian(e: &mut dyn SimEngine, addr: u32) {
+    set_context(e, addr, CONTEXT_JACOBIAN);
+}
+
+pub(crate) fn set_context_algebraic(e: &mut dyn SimEngine, addr: u32) {
+    set_context(e, addr, CONTEXT_ALGEBRAIC);
+}
+
+pub(crate) fn set_context_events(e: &mut dyn SimEngine, addr: u32) {
+    set_context(e, addr, CONTEXT_EVENTS);
+}
+
 /// C's `setContext`; a no-op when the backend has no context slot.
 fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
     if addr != 0 {
@@ -583,7 +597,7 @@ pub fn write_f64(e: &mut dyn SimEngine, addr: u32, v: f64) -> Result<()> {
 }
 
 /// Write one little-endian i32 to linear memory at byte address `addr`.
-fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> {
+pub(crate) fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> {
     e.write_bytes(addr, &v.to_le_bytes())
 }
 
@@ -1694,15 +1708,19 @@ pub fn set_zc_tolerance(
 
 /// Build the resumable driver (init + row 0 + the zero-crossing band); shared by
 /// [`drive`] and the session. `method` empty = DASSL.
-/// `-s=` wins over the method compiled into the model's metadata. `gbode` never
-/// reaches here — `simflags::check` rejects it at startup rather than let it
-/// silently run as DASSL, and so do `cvode`/`ida` without `cfg(sundials)`.
+/// `-s=` wins over the method compiled into the model's metadata. `cvode`/`ida`
+/// without `cfg(sundials)` never reach here — `simflags::check` rejects them at
+/// startup rather than let them silently run as DASSL.
 pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     match crate::simflags::with_flags(|f| f.solver) {
         Some(crate::simflags::Solver::Euler) => "euler",
         Some(crate::simflags::Solver::Dassl) => "dassl",
         Some(crate::simflags::Solver::Cvode) => "cvode",
         Some(crate::simflags::Solver::Ida) => "ida",
+        Some(crate::simflags::Solver::Gbode) => "gbode",
+        Some(crate::simflags::Solver::RungeKutta) => "rungekutta",
+        Some(crate::simflags::Solver::SymSolver) => "symSolver",
+        Some(crate::simflags::Solver::SymSolverSsc) => "symSolverSsc",
         _ => method,
     }
 }
@@ -1716,6 +1734,9 @@ pub fn make_driver(
     let method = effective_method(method);
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
+    // C warns about a deprecated `-s=` while it resolves the flag, before it
+    // allocates the solver or initializes the model.
+    crate::fixedstep::deprecation_warning(method);
     // `dassl_initial`'s flag warnings, before initialization as in C.
     let (freq, out_time) =
         crate::simflags::with_flags(|f| (f.no_equidistant_freq, f.no_equidistant_time));
@@ -1742,24 +1763,47 @@ pub fn make_driver(
     }
     // Ahead of the events path below, which returns before the match.
     // `dassljac` is dassl with a symbolic Jacobian, which C also falls back from.
-    let supported = matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "")
-        || (matches!(method, "cvode" | "ida") && cfg!(sundials));
+    let supported =
+        matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
+            || (matches!(method, "cvode" | "ida") && cfg!(sundials));
     if !supported {
         return Err(UNSUPPORTED_METHOD);
     }
 
-    if layout.n_samples > 0 || layout.n_zc > 0 {
+    // C allocates the solver before it initializes the model, and gbode logs its
+    // configuration there, so it is built here rather than inside the driver.
+    let gbode = if method == "gbode" {
+        let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
+        let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+        Some(alloc::boxed::Box::new(
+            crate::gbode::Gbode::new(
+                layout.n_states as usize,
+                tol,
+                layout.n_zc as usize,
+                colors,
+            )
+            .map_err(leak_error)?,
+        ))
+    } else {
+        None
+    };
+
+    if layout.n_samples > 0 || layout.n_zc > 0 || method == "gbode" {
         let label = match method {
             "cvode" => "cvode-events",
             "ida" => "ida-events",
+            "gbode" => "gbode",
             _ => "dassl-events",
         };
-        return Ok((Box::new(EventsDriver::new(e, model, sim_data, method)?), label));
+        return Ok((Box::new(EventsDriver::new(e, model, sim_data, method, gbode)?), label));
     }
     match method {
         "dassl" | "dasslrt" | "dassljac" | "" => Ok((Box::new(DasslDriver::new(e, model, sim_data)?), "dassl")),
         // Uniform host-driven Euler so it is resumable/cancellable like DASSL.
         "euler" => Ok((Box::new(EulerDriver::new(e, model, sim_data)?), "euler-host")),
+        "rungekutta" => {
+            Ok((Box::new(EventsDriver::new(e, model, sim_data, method, None)?), "rungekutta"))
+        }
         #[cfg(sundials)]
         "cvode" => Ok((Box::new(CvodeDriver::new(e, model, sim_data)?), "cvode")),
         #[cfg(sundials)]
@@ -1771,9 +1815,11 @@ pub fn make_driver(
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
-    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`)"
+    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `ida`, `gbode`, \
+     `euler`, `rungekutta`)"
 } else {
-    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `euler`)"
+    "CodegenWasmJit: unsupported integration method (supported: `dassl`, `gbode`, `euler`, \
+     `rungekutta`)"
 };
 
 /// Free external objects (so repeated runs don't leak) and read back parameter
@@ -2872,6 +2918,12 @@ enum Solver {
     /// Built on first use, as [`Solver::Cvode`].
     #[cfg(sundials)]
     Ida(IdaState),
+    /// `-s=gbode`: takes its own steps, locates its own events and interpolates
+    /// onto the output grid, so [`SolverCore`] only has to hand it a target.
+    Gbode(alloc::boxed::Box<crate::gbode::Gbode>),
+    /// `-s=euler` / `-s=rungekutta`: one step per output interval, events located
+    /// by bisecting the step afterwards.
+    Fixed(crate::fixedstep::FixedStep),
 }
 
 /// DASKR's work arrays and options.
@@ -3128,10 +3180,58 @@ struct SolverCore {
     chatter_emitted: bool,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
+    /// The next time event, which gbode may step up to but not past — it steps
+    /// beyond the output point and interpolates back, so `target` alone is not
+    /// the ceiling.
+    sample_limit: f64,
+    /// The model's ODE Jacobian sparsity+coloring, for the solvers that difference
+    /// it themselves rather than through a `ResCtx` the integrator owns.
+    jac_a: Option<JacAInfo>,
 }
 
 /// Consecutive state events within one output step that count as chattering.
 const CHATTER_LIMIT: usize = 100;
+
+/// The model-call handle the hand-written solvers (gbode, the fixed-step ones)
+/// evaluate through, built from the `ResCtx` the integrator already has.
+fn model_ode<'a>(
+    e: &'a mut (dyn SimEngine + 'static),
+    ctx: &'a ResCtx,
+    states_base: u32,
+    ders_base: u32,
+    nominals: &'a [f64],
+) -> crate::gbode::Ode<'a> {
+    crate::gbode::Ode {
+        e,
+        sim_data: ctx.sim_data,
+        states_base,
+        ders_base,
+        time_off: TIME_OFF,
+        nls_fail_off: ctx.nls_fail_off,
+        ctx_addr: ctx.ctx_addr,
+        jac_a: unsafe { ctx.jac.as_ref() },
+        nominals,
+        nominal_factor: ctx.nominal_factor,
+        zc_off: ctx.zc_off,
+        calls: 0,
+    }
+}
+
+/// C's `-s=euler`/`-s=rungekutta`, the two schemes [`crate::fixedstep`] serves.
+fn fixed_kind(method: &str) -> Option<crate::fixedstep::FixedKind> {
+    match method {
+        "euler" => Some(crate::fixedstep::FixedKind::Euler),
+        "rungekutta" => Some(crate::fixedstep::FixedKind::RungeKutta),
+        _ => None,
+    }
+}
+
+/// The driver's errors are `&'static str`, but a solver setup error carries the
+/// offending flag value, so the message is built at runtime. Leaking it is fine:
+/// it happens at most once per run, on the path that aborts the run.
+fn leak_error(s: String) -> &'static str {
+    alloc::boxed::Box::leak(s.into_boxed_str())
+}
 
 /// How far one [`SolverCore::solve_toward`] got.
 enum Solved {
@@ -3183,7 +3283,14 @@ impl SolverCore {
     /// (`run_initialization`).
     ///
     /// [`read_states`]: SolverCore::read_states
-    fn new(e: &dyn SimEngine, model: &SimModel, sim_data: u32, t: f64, method: &str) -> Result<Self> {
+    fn new(
+        e: &dyn SimEngine,
+        model: &SimModel,
+        sim_data: u32,
+        t: f64,
+        method: &str,
+        gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
+    ) -> Result<Self> {
         let layout = &model.layout;
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -3212,6 +3319,15 @@ impl SolverCore {
         };
         #[cfg(not(sundials))]
         let solver = Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol));
+        let solver = if let Some(kind) = fixed_kind(method) {
+            Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
+        } else if let Some(mut g) = gbode {
+            g.set_experiment(model.start_time, model.stop_time, model.step_size());
+            g.set_nominals(&nominals);
+            Solver::Gbode(g)
+        } else {
+            solver
+        };
         Ok(SolverCore {
             sim_data,
             n_states,
@@ -3231,6 +3347,8 @@ impl SolverCore {
             chatter_consec: 0,
             chatter_emitted: false,
             step_emit: StepEmit::new(),
+            sample_limit: f64::INFINITY,
+            jac_a: model.jac_a.clone(),
         })
     }
 
@@ -3295,8 +3413,19 @@ impl SolverCore {
                     }
                 }
             }
+            Solver::Gbode(g) => g.restart(),
+            // The fixed-step solvers carry no step history to invalidate.
+            Solver::Fixed(_) => {}
         }
         Ok(())
+    }
+
+    /// A time event changes discrete state the derivative may depend on, so a
+    /// solver that carries its own step history has to re-initialize. DASKR only
+    /// needs it when the model has zero-crossings (the existing rule); gbode always
+    /// does, as C's `didEventStep` is set for time events too.
+    fn restart_after_time_event(&self) -> bool {
+        matches!(self.solver, Solver::Gbode(_))
     }
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
@@ -3332,6 +3461,10 @@ impl SolverCore {
                 Solver::Cvode(_) => core::ptr::null(),
                 #[cfg(sundials)]
                 Solver::Ida(s) => s.setup.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+                // gbode differences the ODE Jacobian itself and takes the pattern
+                // from here; the fixed-step solvers need none.
+                Solver::Gbode(_) => self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+                Solver::Fixed(_) => core::ptr::null(),
             },
             jac_gp: vec![0.0; self.n_states],
             jac_ysave: vec![0.0; self.n_states],
@@ -3378,6 +3511,24 @@ impl SolverCore {
                     let e = unsafe { &mut *ctx.engine };
                     let ctx_ptr = ctx as *mut ResCtx;
                     s.step(e, sim_data, &mut self.t, &mut self.y, &mut self.yp, target, ctx_ptr)?
+                }
+                Solver::Fixed(f) => {
+                    let e = unsafe { &mut *ctx.engine };
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals);
+                    match f.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
+                        crate::fixedstep::FixedProgress::Reached => Progress::Reached,
+                        crate::fixedstep::FixedProgress::Root(_) => Progress::Root,
+                    }
+                }
+                Solver::Gbode(g) => {
+                    let e = unsafe { &mut *ctx.engine };
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals);
+                    let limit = self.sample_limit;
+                    match g.step(&mut ode, target, limit, &mut self.t, &mut self.y)? {
+                        crate::gbode::GbStep::Reached => Progress::Reached,
+                        crate::gbode::GbStep::Stepped => Progress::Stepped,
+                        crate::gbode::GbStep::Root(_) => Progress::Root,
+                    }
                 }
             };
             self.nfe = ctx.nfe;
@@ -3430,6 +3581,18 @@ impl SolverCore {
                     fill_sundials_stats(stats, ida.counters());
                 }
             }
+            Solver::Fixed(f) => {
+                stats.steps = f.steps;
+                stats.res_evals = self.nfe;
+            }
+            Solver::Gbode(g) => {
+                let s = g.stats();
+                stats.steps = s.steps;
+                stats.res_evals = s.calls_ode;
+                stats.jac_evals = s.calls_jacobian;
+                stats.err_test_fails = s.err_test_failures;
+                stats.conv_test_fails = s.convergence_test_failures;
+            }
         }
         stats.state_events = self.state_events;
         stats.time_events = self.time_events;
@@ -3444,6 +3607,9 @@ impl SolverCore {
             Solver::Cvode(_) => false,
             #[cfg(sundials)]
             Solver::Ida(_) => true,
+            Solver::Gbode(_) => true,
+            // C's fixed-step solvers land on the output grid by construction.
+            Solver::Fixed(_) => false,
         }
     }
 
@@ -3461,6 +3627,8 @@ impl SolverCore {
             Solver::Ida(s) => {
                 s.ida.as_ref().and_then(|ida| ida.roots().iter().position(|&r| r != 0)).unwrap_or(0)
             }
+            Solver::Gbode(g) => g.root_index(),
+            Solver::Fixed(f) => f.root_index(),
         }
     }
 
@@ -3506,6 +3674,7 @@ impl SolverCore {
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             let te = samp.next_time();
             let target = tout.min(te);
+            self.sample_limit = te;
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
             if target - self.t > eps {
@@ -3638,8 +3807,8 @@ impl SolverCore {
                     self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
                 }
                 // A sample may change discrete state the derivative depends on;
-                // recompute yp and restart so DASKR continues consistently.
-                if layout.n_zc > 0 {
+                // recompute yp and restart so the integrator continues consistently.
+                if layout.n_zc > 0 || self.restart_after_time_event() {
                     e.call1("functionODE", sim_data)?;
                     for i in 0..n_states {
                         self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
@@ -3697,7 +3866,7 @@ impl CsDriver {
         let layout = &model.layout;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
-        let mut core = SolverCore::new(&*e, model, sim_data, t, "dassl")?;
+        let mut core = SolverCore::new(&*e, model, sim_data, t, "dassl", None)?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -3935,7 +4104,15 @@ impl CsDriver {
 }
 
 impl EventsDriver {
-    fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, method: &str) -> Result<Self> {
+    /// `gbode` is built (and has logged its setup) by [`make_driver`] before
+    /// initialization, as C's `gbode_allocateData` runs before `initializeModel`.
+    fn new(
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        sim_data: u32,
+        method: &str,
+        gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
+    ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
@@ -3951,7 +4128,7 @@ impl EventsDriver {
 
         let mut samp = Samples::load(e, sim_data, layout)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut core = SolverCore::new(&*e, model, sim_data, start, method)?;
+        let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
         // A sample scheduled exactly at the start time fires before row 0.
         if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
             samp.fire(e, sim_data, start)?;
