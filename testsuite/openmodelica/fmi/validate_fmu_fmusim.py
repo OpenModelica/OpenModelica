@@ -24,11 +24,11 @@ With --simulate the FMU is also run and the trajectories are written to
 reference with diffSimulationResults(). Passing --reference-file instead lets
 fmusim do the comparison itself.
 
-Exits non-zero when fmusim is missing or reports a problem, so a test fails
-loudly rather than silently skipping the validation -- the same policy as
-simulate_fmu_fmpy.py. Pass --skip-if-missing to turn a missing fmusim into a
-skip (exit 0); the test suite does not use it, it is there for ad-hoc local runs
-on a machine without fmusim.
+Exits non-zero when fmusim reports a problem, and also when it cannot be found,
+so that a test which needs it fails loudly rather than passing silently. Pass
+--skip-if-missing to turn a missing fmusim into a skip (exit 0), which is what
+fmi3_fmusim_validate.mos does: the testsuite containers do not currently resolve
+fmusim for the user the tests run as.
 """
 import os
 import shutil
