@@ -5689,27 +5689,16 @@ mod standalone_tests {
 
         // The standalone runtime imports every driver entry point from `model`; the
         // emitter always exports them, so the stub must too or the merge leaves
-        // unresolved `model.*` imports.
-        let one_arg: &[&str] = &[
-            "functionParameters",
-            "functionInitStartValues",
-            "functionInitialEquations",
-            "functionODE",
-            "functionAlgebraics",
-            "callExternalObjectDestructors",
-            "initSample",
-            "functionZeroCrossings",
-            "functionStateSetJacobians",
-            "functionInitialEquations_lambda0",
-            "functionUpdateRelations",
-            "functionCheckAsserts",
-            "functionStoreDelayed",
-            "functionInitDelay",
-            "functionUpdateBoundParameters",
-        ];
+        // unresolved `model.*` imports. Taken from the canonical list rather than
+        // copied, so adding an entry point cannot leave this stub behind.
+        let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
+            .iter()
+            .copied()
+            .filter(|n| *n != "simulate")
+            .collect();
 
         let mut funcs = we::FunctionSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             funcs.function(1); // (i32)->()
         }
         funcs.function(2); // om_meta_ptr
@@ -5729,7 +5718,7 @@ mod standalone_tests {
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             let mut f = we::Function::new([]);
             f.instruction(&I::End);
             code.function(&f);
