@@ -20,6 +20,8 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         gbode: false,
         // Served by the driver's per-step deadline; both runtimes install a clock.
         alarm: true,
+        // No regex engine in wasm; the model's own filter is resolved at codegen.
+        variable_filter: false,
     }
 }
 
