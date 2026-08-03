@@ -55,7 +55,7 @@ use openmodelica_simcode_types::SimCodeFunction;
 use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
+    ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
@@ -2692,8 +2692,22 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) =
-        collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs], &nls_nominal_map);
+    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) = collect_nls_jobs(
+        &[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs],
+        &nls_nominal_map,
+        &mut attr_targets,
+    );
+    // The integrator's per-state atol and the Jacobian's FD step floor.
+    let state_nominals: Vec<f64> = lst(&vars.stateVars)
+        .take(n_states as usize)
+        .map(|sv| const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32))
+        .collect();
+    for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
+        if let Ok(k) = sim_cref_key(&sv.name) {
+            attr_targets.entry(k).or_default().state = Some(i as u32);
+        }
+    }
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
@@ -2846,10 +2860,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
     let jac_a = build_jac_a_info(sim_code, n_states);
-    let state_nominals: Vec<f64> = lst(&vars.stateVars)
-        .take(n_states as usize)
-        .map(|sv| const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32))
-        .collect();
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
@@ -2867,7 +2877,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         })
         .collect::<Result<Vec<_>>>()?;
     let meta = build_sim_meta(
-        &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
+        &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
@@ -3050,6 +3060,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         bodies.push(build_eq_fn("updateBoundParameters", param_eqs_dep, &var_map, &eq_index, &by_name, &mut literals)?);
         idx
     };
+    let update_bound_attrs_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(build_update_bound_attrs_fn(
+            sim_code, &state_nominals, &attr_targets, &layout, &var_map, &by_name, &mut literals,
+        )?);
+        idx
+    };
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -3088,6 +3105,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
+    functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
 
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
@@ -3177,6 +3195,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
+    exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -3215,6 +3234,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
         ("functionUpdateBoundParameters", update_bound_params_idx),
+        ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
     ] {
         names.push((idx, name.to_string()));
     }
@@ -3304,7 +3324,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         tolerance: settings.tolerance.into_inner(),
         state_sets,
         jac_a,
-        state_nominals,
         editable_params,
         var_units,
         meta,
@@ -3704,7 +3723,6 @@ fn build_sim_meta(
     prefix: &str,
     jac_a: Option<JacAInfo>,
     state_sets: &[StateSetInfo],
-    state_nominals: &[f64],
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
     sens_params: Vec<u32>,
@@ -3723,7 +3741,6 @@ fn build_sim_meta(
         vars: result_vars.to_vec(),
         jac_a,
         state_sets: state_sets.to_vec(),
-        state_nominals: state_nominals.to_vec(),
         fmi_vrs,
         zc_desc,
         sens_params,
@@ -4004,6 +4021,69 @@ fn build_init_start_values_fn(
         pairs.push((sv.initialValue.clone(), REAL_OFF + (2 * layout.n_states + j as u32) * 8, None));
     }
     ctx.emit_init_start_values(&pairs)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionUpdateBoundVariableAttributes(SimData*)`. An attribute bound to a
+/// parameter is not a constant, so the backend hands it over as an equation; only
+/// here, after `functionParameters`, does it have a value. Attributes nothing reads
+/// back are skipped.
+fn build_update_bound_attrs_fn(
+    sim_code: &SimCode::SimCode,
+    state_nominals: &[f64],
+    attr_targets: &HashMap<String, AttrTargets>,
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets)> = Vec::new();
+    for (attr, eqs) in [
+        (Attr::Min, &sim_code.minValueEquations),
+        (Attr::Max, &sim_code.maxValueEquations),
+        (Attr::Nominal, &sim_code.nominalValueEquations),
+    ] {
+        for eq in lst(eqs) {
+            let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { continue };
+            let Some(t) = sim_cref_key(cref).ok().and_then(|k| attr_targets.get(&k)) else { continue };
+            if t.nls.is_empty() && !matches!((attr, t.state), (Attr::Nominal, Some(_))) {
+                continue;
+            }
+            attrs.push((attr, exp.clone(), t.clone()));
+        }
+    }
+    let sim = SimCtx {
+        data_local: 0,
+        vars: var_map.vars.clone(),
+        starts: var_map.starts.clone(),
+        start_slots: var_map.start_slots.clone(),
+        array_groups: var_map.array_groups.clone(),
+        terminate_off: var_map.terminate_off,
+        terminal_off: var_map.terminal_off,
+        term_info_off: var_map.term_info_off,
+        nls_fail_off: var_map.nls_fail_off,
+        nls_jobs: var_map.nls_jobs.clone(),
+        sample_map: var_map.sample_map.clone(),
+        sample_active_off: var_map.sample_active_off,
+        relations_off: var_map.relations_off,
+        rel_fresh_off: var_map.rel_fresh_off,
+        stored_rel_off: var_map.stored_rel_off,
+        relations_pre_off: var_map.relations_pre_off,
+        n_relations: var_map.n_relations,
+        mathevents_off: var_map.mathevents_off,
+        n_mathevents: var_map.n_mathevents,
+        lambda_off: var_map.lambda_off,
+        zctol_off: var_map.zctol_off,
+        zc_pre_off: var_map.zc_pre_off,
+        zc_context: false,
+    };
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_update_bound_attrs(state_nominals, layout.state_nom_off, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -4538,6 +4618,7 @@ fn nls_parts(
 fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
+    attr_targets: &mut HashMap<String, AttrTargets>,
 ) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
@@ -4590,10 +4671,14 @@ fn collect_nls_jobs(
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
-                    let (nom, lo, hi) = sim_cref_key(cr)
-                        .ok()
-                        .and_then(|k| nominal_of.get(&k).copied())
+                    let key = sim_cref_key(cr).ok();
+                    let (nom, lo, hi) = key
+                        .as_ref()
+                        .and_then(|k| nominal_of.get(k).copied())
                         .unwrap_or((1.0, f64::NEG_INFINITY, f64::INFINITY));
+                    if let Some(k) = key {
+                        attr_targets.entry(k).or_default().nls.push(nominals.len() as u32);
+                    }
                     nominals.push(nom);
                     bounds.push(lo);
                     bounds.push(hi);
@@ -5604,27 +5689,16 @@ mod standalone_tests {
 
         // The standalone runtime imports every driver entry point from `model`; the
         // emitter always exports them, so the stub must too or the merge leaves
-        // unresolved `model.*` imports.
-        let one_arg: &[&str] = &[
-            "functionParameters",
-            "functionInitStartValues",
-            "functionInitialEquations",
-            "functionODE",
-            "functionAlgebraics",
-            "callExternalObjectDestructors",
-            "initSample",
-            "functionZeroCrossings",
-            "functionStateSetJacobians",
-            "functionInitialEquations_lambda0",
-            "functionUpdateRelations",
-            "functionCheckAsserts",
-            "functionStoreDelayed",
-            "functionInitDelay",
-            "functionUpdateBoundParameters",
-        ];
+        // unresolved `model.*` imports. Taken from the canonical list rather than
+        // copied, so adding an entry point cannot leave this stub behind.
+        let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
+            .iter()
+            .copied()
+            .filter(|n| *n != "simulate")
+            .collect();
 
         let mut funcs = we::FunctionSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             funcs.function(1); // (i32)->()
         }
         funcs.function(2); // om_meta_ptr
@@ -5644,7 +5718,7 @@ mod standalone_tests {
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             let mut f = we::Function::new([]);
             f.instruction(&I::End);
             code.function(&f);
