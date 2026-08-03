@@ -1,18 +1,18 @@
 // name:     Modelica.Blocks.Sources.BooleanPulse
 // keywords: simulation MSL Examples
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Blocks_Sources_BooleanPulse.fmu Modelica_Blocks_Sources_BooleanPulse_* Modelica.Blocks.Sources.BooleanPulse_* Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo Modelica_Blocks_Sources_BooleanPulse.libs Modelica_Blocks_Sources_BooleanPulse.lib Modelica_Blocks_Sources_BooleanPulse.so Modelica_Blocks_Sources_BooleanPulse.dll Modelica_Blocks_Sources_BooleanPulse.c Modelica_Blocks_Sources_BooleanPulse.makefile
-// cflags: -d=-newInst
+// teardown_command: rm -rf binaries sources modelDescription.xml BooleanPulse.fmu BooleanPulse_* Modelica.Blocks.Sources.BooleanPulse_* output.log
 // Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.1"});
+loadModel(Modelica, {"4.1.0"});
 buildModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="2.0"); getErrorString();
 
-importFMU("Modelica.Blocks.Sources.BooleanPulse.fmu"); getErrorString();
-loadFile("Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"); getErrorString();
-simulate(Modelica_Blocks_Sources_BooleanPulse_me_FMU); getErrorString();
+importFMU("BooleanPulse.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("BooleanPulse_me_FMU.mo"); getErrorString();
+simulate(BooleanPulse_me_FMU); getErrorString();
 
 val(y, 0);
 val(y, 1);
@@ -24,18 +24,20 @@ val(y, 1);
 
 // Result:
 // true
-// "Modelica.Blocks.Sources.BooleanPulse.fmu"
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "BooleanPulse.fmu"
+// "[Modelica 4.1.0+maint.om/Blocks/Sources.mo:2018:5-2019:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
 // "
-// "Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"
+// "BooleanPulse_me_FMU.mo"
+// ""
+// true
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "Modelica_Blocks_Sources_BooleanPulse_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Blocks_Sources_BooleanPulse_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS            | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS            | info    | The simulation finished successfully.
+//     resultFile = "BooleanPulse_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'BooleanPulse_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
@@ -43,12 +45,12 @@ val(y, 1);
 // 1.0
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Sources.BooleanPulse_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Sources.BooleanPulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS            | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS            | info    | The simulation finished successfully.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Sources.BooleanPulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 4.1.0+maint.om/Blocks/Sources.mo:2018:5-2019:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
 // "
 // 1.0
 // 1.0

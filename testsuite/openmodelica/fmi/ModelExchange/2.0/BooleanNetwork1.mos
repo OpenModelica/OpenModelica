@@ -1,7 +1,7 @@
 // name:     BooleanNetwork1
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
 // status:   correct
-// teardown_command: rm -rf Modelica.Blocks.Examples.BooleanNetwork1.fmu Modelica_Blocks_Examples_BooleanNetwork1.log Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo binaries/ modelDescription.xml resources/ sources/
+// teardown_command: rm -rf BooleanNetwork1.fmu BooleanNetwork1_me_FMU* Modelica.Blocks.Examples.BooleanNetwork1* binaries/ modelDescription.xml resources/ sources/ output.log
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
 simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=10, numberOfIntervals=150); getErrorString();
@@ -14,9 +14,10 @@ val(rSFlipFlop.Q, 10);
 val(rSFlipFlop.QI, 10);
 
 buildModelFMU(Modelica.Blocks.Examples.BooleanNetwork1, version="2.0"); getErrorString();
-importFMU("Modelica.Blocks.Examples.BooleanNetwork1.fmu"); getErrorString();
-loadFile("Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"); getErrorString();
-simulate(Modelica_Blocks_Examples_BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150); getErrorString();
+importFMU("BooleanNetwork1.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();
+simulate(BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150); getErrorString();
 
 val(triggeredAdd_y, 2.2);
 val(booleanPulse2_y, 10);
@@ -30,7 +31,7 @@ val(rSFlipFlop_QI, 10);
 // ""
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -42,15 +43,17 @@ val(rSFlipFlop_QI, 10);
 // 0.0
 // 1.0
 // 0.0
-// "Modelica.Blocks.Examples.BooleanNetwork1.fmu"
+// "BooleanNetwork1.fmu"
 // ""
-// "Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"
+// "BooleanNetwork1_me_FMU.mo"
+// ""
+// true
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "Modelica_Blocks_Examples_BooleanNetwork1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Blocks_Examples_BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "BooleanNetwork1_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

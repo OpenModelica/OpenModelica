@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+BooleanNetwork1.mos \
 dae_fmu_export_error.mos \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
@@ -29,6 +30,7 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+BouncingBall.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
 fmi2_array_nonscalarized.mos \
@@ -37,6 +39,7 @@ fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \
 fmi_export_derivative_annotation_unused.mos \
 fmiFilterTest.mos \
+FMIExercise.mos \
 FMUResourceTest.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
@@ -44,6 +47,7 @@ IntegerNetwork1.mos \
 issue10978.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
@@ -69,14 +73,13 @@ ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
+#
+# testExperimentalFMU: two problems. It passes version="2" where buildModelFMU
+# now wants "2.0", and once that is corrected the FMU builds but the generated
+# sources no longer contain advection_functionODE_Partial, which is what the
+# test greps for -- the fmuExperimental QSS/multirate codegen it covers is gone.
 FAILINGTESTFILES= \
 testExperimentalFMU.mos \
-
-FAILING_FMI_IMPORT = \
-BooleanNetwork1.mos \
-BouncingBall.mos \
-FMIExercise.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
