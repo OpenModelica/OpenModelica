@@ -128,7 +128,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-//
+// $RES_SIM_2 ... {$SEED_ODE_JAC_ADJ.$DER.a} ... {($pDER_ODE_JAC_ADJ.a, {}, false)}
+// $RES_SIM_1 ... {$SEED_ODE_JAC_ADJ.$DER.b} ... {($pDER_ODE_JAC_ADJ.b, {}, false)}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
