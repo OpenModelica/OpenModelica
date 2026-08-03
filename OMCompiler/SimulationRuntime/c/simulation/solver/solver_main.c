@@ -282,6 +282,43 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   return retValue;
 }
 
+/*! \fn updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [solverInfo]
+ *
+ *  Re-read the states' nominal (and, for gbode, min and max) attributes. A
+ *  nominal that is a parameter expression is only computed by
+ *  updateBoundVariableAttributes, inside initializeModel, which runs after
+ *  initializeSolverData because DAE mode needs the solver during initialization;
+ *  until then the solver holds the modelDescription default of 1.0.
+ */
+int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  switch (solverInfo->solverMethod)
+  {
+  case S_GBODE:
+    gbode_setVarAttributes(data, solverInfo->solverData);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case S_DASSL:
+    dassl_setNominals(data, solverInfo->solverData);
+    break;
+#endif
+#ifdef WITH_SUNDIALS
+  case S_IDA:
+    return ida_solver_setNominals(data, threadData, solverInfo->solverData);
+  case S_CVODE:
+    return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
+#endif
+  default:
+    break;
+  }
+
+  return 0;
+}
+
 /*! \fn freeSolver(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  \param [ref] [data]
@@ -661,6 +698,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (0 == retVal){
     retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
     omc_alloc_interface.collect_a_little();
+  }
+
+  /* the nominal values are only final now */
+  if (0 == retVal){
+    retVal = updateSolverNominals(data, threadData, &solverInfo);
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
