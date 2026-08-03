@@ -9,8 +9,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
-use metamodelica::{Array, List};
+use metamodelica::{Result, Array, List};
 
 /// Operation recorded during Bareiss elimination, matching `ASSC_OPERATION` in ASSCEXT.h.
 enum AsscOp {
@@ -166,7 +165,7 @@ pub fn ASSC_getOperations(
     ASSC_MATRIX.with(|s| {
         let borrow = s.borrow();
         let Some(m) = borrow.as_ref() else {
-            bail!("ASSCEXT.getOperations failed because ops == NULL");
+            return Err("ASSCEXT.getOperations failed because ops == NULL");
         };
         let ops = &m.operations;
         let expected = ops.len();
@@ -176,19 +175,19 @@ pub fn ASSC_getOperations(
         let len3 = op_val3.borrow().len();
         let len4 = op_val4.borrow().len();
         if expected != len_modes {
-            bail!("BackendDAEEXT.getAssignment failed because op_modes length={len_modes}!={expected}=op length");
+            return Err("BackendDAEEXT.getAssignment failed because op_modes length={len_modes}!={expected}=op length");
         }
         if expected != len1 {
-            bail!("BackendDAEEXT.getAssignment failed because op_val1 length={len1}!={expected}=op length");
+            return Err("BackendDAEEXT.getAssignment failed because op_val1 length={len1}!={expected}=op length");
         }
         if expected != len2 {
-            bail!("BackendDAEEXT.getAssignment failed because op_val2 length={len2}!={expected}=op length");
+            return Err("BackendDAEEXT.getAssignment failed because op_val2 length={len2}!={expected}=op length");
         }
         if expected != len3 {
-            bail!("BackendDAEEXT.getAssignment failed because op_val3 length={len3}!={expected}=op length");
+            return Err("BackendDAEEXT.getAssignment failed because op_val3 length={len3}!={expected}=op length");
         }
         if expected != len4 {
-            bail!("BackendDAEEXT.getAssignment failed because op_val4 length={len4}!={expected}=op length");
+            return Err("BackendDAEEXT.getAssignment failed because op_val4 length={len4}!={expected}=op length");
         }
         let mut modes = op_modes.borrow_mut();
         let mut v1 = op_val1.borrow_mut();
