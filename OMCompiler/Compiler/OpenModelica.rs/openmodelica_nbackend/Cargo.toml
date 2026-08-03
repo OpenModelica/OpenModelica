@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow="1"
 metamodelica.workspace=true
 openmodelica_ast.workspace=true
 openmodelica_backend_types.workspace=true
