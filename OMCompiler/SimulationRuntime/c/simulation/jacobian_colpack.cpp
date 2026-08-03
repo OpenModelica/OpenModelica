@@ -72,7 +72,7 @@ extern "C" int computeColPackColumnColoring(
 
     ColPack::BipartiteGraphPartialColoringInterface coloring(
         SRC_MEM_ADOLC, sparsity.data(), static_cast<int>(nRows), static_cast<int>(nCols));
-    if (coloring.PartialDistanceTwoColoring("LARGEST_FIRST", "COLUMN_PARTIAL_DISTANCE_TWO") != _TRUE) {
+    if (coloring.PartialDistanceTwoColoring("SMALLEST_LAST", "COLUMN_PARTIAL_DISTANCE_TWO") != _TRUE) {
       return 0;
     }
 
