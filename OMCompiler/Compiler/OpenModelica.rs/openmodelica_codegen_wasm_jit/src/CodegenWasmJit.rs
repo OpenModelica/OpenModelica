@@ -69,8 +69,8 @@ use crate::CodegenWasmJitFunctions::{
 // historical host names.
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar, SimMeta,
-    StateSetInfo,
+    var_filter, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar,
+    SimMeta, StateSetInfo,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -236,7 +236,7 @@ fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[Str
 /// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
 /// (reusing the result-var metadata the `.mat` writer uses) and stash it for the
 /// host to read directly.
-fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
+fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]) {
     let n_reals = run.n_reals as usize;
     let n_rows = if n_reals == 0 { 0 } else { run.rows.len() / n_reals };
     let column = |col: usize, negate: bool| -> Vec<f64> {
@@ -261,7 +261,13 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
     let mut seen_cols = HashSet::new();
     let mut seen_param_offs = HashSet::new();
     let mut param_value_by_off: HashMap<u32, f64> = HashMap::new();
-    for v in &model.result_vars {
+    // Every signal is resolved (the editable parameters below read their values from
+    // here regardless of the filter); `keep` is applied to `series` at the end.
+    let mut series_keep: Vec<bool> = Vec::new();
+    for (v, &keep) in model.result_vars.iter().zip(keep) {
+        if !matches!(v.kind, ResultKind::Time) {
+            series_keep.push(keep);
+        }
         match &v.kind {
             ResultKind::Time => time = column(0, false),
             ResultKind::Column { col, negate } => {
@@ -298,7 +304,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
     // A start value shows the state's t0 value; a plain parameter shows its slot.
     let row0_by_name: HashMap<&str, f64> =
         series.iter().map(|s| (s.name.as_str(), s.values.first().copied().unwrap_or(0.0))).collect();
-    let params = model
+    let params: Vec<CapturedParam> = model
         .editable_params
         .iter()
         .map(|p| CapturedParam {
@@ -313,6 +319,8 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
             enum_names: p.enum_names.clone(),
         })
         .collect();
+    let mut kept = series_keep.into_iter();
+    series.retain(|_| kept.next().unwrap_or(true));
     *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
         model_name: model.model_name.clone(),
         start_time: model.start_time,
@@ -598,6 +606,8 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     gbode: false,
     // Served by the driver's per-step deadline, so every engine has it.
     alarm: true,
+    // The `.mat` is written here, where a regex engine is available.
+    variable_filter: true,
 };
 
 /// The solver values a caller may offer for this build, so a menu built from it
@@ -607,17 +617,49 @@ pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
 }
 
 /// Parse `simflags` as an argv and install the result for this run. omc hands the
-/// flags over as one whitespace-separated string; `argv[0]` stands in for the
-/// program name a WASI command would see, so the same parser serves this path and a
-/// standalone `wasmtime model.wasm …` run.
+/// flags over as one string, which for every other target a shell splits into the
+/// executable's argv; `argv[0]` stands in for the program name a WASI command would
+/// see, so the same parser serves this path and a standalone `wasmtime model.wasm …`
+/// run.
 fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, String> {
-    let argv: Vec<String> = core::iter::once("model".to_string())
-        .chain(simflags.split_whitespace().map(str::to_string))
-        .collect();
+    let argv: Vec<String> = core::iter::once("model".to_string()).chain(split_simflags(simflags)).collect();
     let f = simflags::parse(&argv)?;
     simflags::check(&f, CAPABILITIES)?;
     simflags::set_flags(f.clone());
     Ok(f)
+}
+
+/// Split `simflags` as the shell splits `CevalScriptBackend`'s `sim_call` for every
+/// other target: on whitespace outside quotes, `'…'`/`"…"` removed.
+fn split_simflags(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut quote: Option<char> = None;
+    let mut started = false;
+    for c in s.chars() {
+        match (quote, c) {
+            (Some(q), c) if c == q => quote = None,
+            (Some(_), c) => cur.push(c),
+            (None, '\'' | '"') => {
+                quote = Some(c);
+                started = true;
+            }
+            (None, c) if c.is_whitespace() => {
+                if started {
+                    out.push(core::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            (None, c) => {
+                cur.push(c);
+                started = true;
+            }
+        }
+    }
+    if started {
+        out.push(cur);
+    }
+    out
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
@@ -752,11 +794,12 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         if log_stats {
             extra.push_str(&log_stats_block(&run.stats));
         }
-        capture_last_sim(&model, &run);
+        let keep = output_selection(&model);
+        capture_last_sim(&model, &run, &keep);
         if fmt == "mat" {
             // C's `-r=<file>` overrides the name the caller derived from the model.
             let out = flags.result_file.as_deref().unwrap_or(result_file);
-            write_mat4(&model, out, &run.rows, run.n_reals, &run.params)?;
+            write_mat4(&model, out, &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     })();
@@ -882,9 +925,10 @@ mod session {
 
     /// Capture results for the `omc_sim_*` getters and write the `.mat`.
     fn finalize_and_capture(model: &SimModel, result_file: &str, run: &sim_driver::RunResult) -> Result<()> {
-        capture_last_sim(model, run);
+        let keep = output_selection(model);
+        capture_last_sim(model, run, &keep);
         if model.output_format == "mat" {
-            write_mat4(model, result_file, &run.rows, run.n_reals, &run.params)?;
+            write_mat4(model, result_file, &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     }
@@ -1671,10 +1715,45 @@ fn cref_display(cr: &Arc<DAE::ComponentRef>) -> Result<String> {
     Ok(ComponentReferenceBasics::printComponentRefStr(cr.clone())?.to_string())
 }
 
-/// Whether a variable is emitted to the result file, matching the C runtime's
-/// default selection: drop protected variables and `annotation(HideResult=true)`.
+/// C's `shouldFilterOutput`: protected variables and `HideResult=true`, each
+/// switched back on by its own simflag.
+fn filter_bits(sv: &SimCodeVar::SimVar) -> u8 {
+    let mut f = 0;
+    if sv.isProtected {
+        f |= var_filter::PROTECTED;
+        if sv.isEncrypted {
+            f |= var_filter::ENCRYPTED;
+        }
+    }
+    if sv.hideResult == Some(true) {
+        f |= var_filter::HIDE_RESULT;
+    }
+    f
+}
+
+/// In the result file with no simflag asked for it — the `-override` reachable set.
 fn is_result_output(sv: &SimCodeVar::SimVar) -> bool {
-    !sv.isProtected && sv.hideResult != Some(true)
+    filter_bits(sv) == 0
+}
+
+/// Resolve `simulate(..., variableFilter=)` — C's `initializeOutputFilter`, which
+/// filters every name that does not match `^(<filter>)$`. C matches per run; the
+/// runtimes have no regex engine, so it is settled here into
+/// [`var_filter::FILTERED`], protected variables included (`-emit_protected`
+/// can reach them).
+fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
+    if filter == ".*" || filter.is_empty() {
+        return;
+    }
+    let Ok(re) = openmodelica_util::System::Regex::new(&format!("^({filter})$")) else {
+        eprintln!("Failed to compile regular expression: {filter}. Defaulting to outputting all variables.");
+        return;
+    };
+    for v in result_vars.iter_mut() {
+        if !matches!(v.kind, ResultKind::Time) && !re.is_match(&v.name) {
+            v.filter |= var_filter::FILTERED;
+        }
+    }
 }
 
 /// Literal names of an enumeration type (through subtype/array wrappers), or
@@ -1751,21 +1830,6 @@ fn kind_from_slot(off: u32, wty: WTy, negate: bool, heap: bool, layout: &SimLayo
         return Some(ResultKind::Param { off, wty, negate });
     }
     None // string slots
-}
-
-/// Inverse of the `Column` assignment in [`kind_from_slot`]: the SimData byte
-/// offset a result-buffer column reads from.
-fn col_to_off(col: u32, layout: &SimLayout) -> u32 {
-    let nr = layout.n_reals_row();
-    if col < nr {
-        REAL_OFF + (col - 1) * 8
-    } else if col < nr + layout.n_int_alg() {
-        layout.int_off + (col - nr) * 4
-    } else if col < layout.sens_col0() {
-        layout.bool_off + (col - nr - layout.n_int_alg()) * 4
-    } else {
-        layout.sens_off + (col - layout.sens_col0()) * 8
-    }
 }
 
 /// Expand every whole-array `SimVar` (`--simCodeScalarize=false`) into its
@@ -1955,6 +2019,7 @@ fn push_sensitivity_vars(
             name: cref_display(&sv.name)?,
             comment: sv.comment.to_string(),
             kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: false },
+            filter: filter_bits(sv),
         });
     }
     Ok(offs)
@@ -2019,31 +2084,27 @@ fn build_var_map(
         name: "time".to_string(),
         comment: "Simulation time [s]".to_string(),
         kind: ResultKind::Time,
+        filter: 0,
     });
 
     let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
     let ders: Vec<&SimCodeVar::SimVar> = lst(&vars.derivativeVars).collect();
 
-    // Protected/hidden primaries that were filtered out, kept as (name, comment,
-    // off, wty, heap) so they can be re-emitted at the end if a non-protected
-    // output ends up sharing their data slot (an alias-group member the C runtime
-    // keeps in the result).
-    let mut filtered: Vec<(String, String, u32, WTy, bool)> = Vec::new();
-
-    // Push a primary (non-alias) variable: always register its slot (equations
-    // reference even protected/internal vars), but only emit it as a result
-    // signal if it passes the C-compatible filter (else stash it in `filtered`).
+    // Push a primary (non-alias) variable: register its slot (equations reference
+    // even protected ones) and list it as a result signal carrying why a run would
+    // filter it — the overriding flags are not known here.
     let mut push_primary =
-        |map: &mut SimVarMap, result_vars: &mut Vec<ResultVar>, filtered: &mut Vec<(String, String, u32, WTy, bool)>,
+        |map: &mut SimVarMap, result_vars: &mut Vec<ResultVar>,
          sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool, raw_name: String| -> Result<()> {
             insert_var(map, sv, off, wty, heap)?;
             if let Some(name) = result_name(&raw_name) {
-                if is_result_output(sv) {
-                    if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
-                        result_vars.push(ResultVar { name, comment: sv.comment.to_string(), kind });
-                    }
-                } else {
-                    filtered.push((name, sv.comment.to_string(), off, wty, heap));
+                if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
+                    result_vars.push(ResultVar {
+                        name,
+                        comment: sv.comment.to_string(),
+                        kind,
+                        filter: filter_bits(sv),
+                    });
                 }
             }
             Ok(())
@@ -2068,7 +2129,7 @@ fn build_var_map(
                 });
             }
         }
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
     }
     for (i, sv) in ders.iter().enumerate() {
         // der(x) is displayed as `der(<state name>)`.
@@ -2076,13 +2137,13 @@ fn build_var_map(
             Some(s) => format!("der({})", cref_display(&s.name)?),
             None => cref_display(&sv.name)?,
         };
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (layout.n_states + i as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (layout.n_states + i as u32) * 8, WTy::F64, false, name)?;
     }
     let real_algs: Vec<&SimCodeVar::SimVar> =
         lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
     for (j, sv) in real_algs.iter().enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (2 * layout.n_states + j as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (2 * layout.n_states + j as u32) * 8, WTy::F64, false, name)?;
     }
 
     // Real / Integer / Boolean parameters -> data_1. Integer & Boolean algebraic
@@ -2091,27 +2152,27 @@ fn build_var_map(
     for (k, sv) in lst(&vars.paramVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.rparam_off + (k as u32) * 8;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::F64, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::F64, false, name.clone())?;
         push_editable(sv, &name, off, WTy::F64);
     }
     for (i, sv) in lst(&vars.intAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.int_off + (i as u32) * 4, WTy::I32, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.int_off + (i as u32) * 4, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.intParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.iparam_off + (k as u32) * 4;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.boolAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.bool_off + (i as u32) * 4, WTy::I32, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.bool_off + (i as u32) * 4, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.boolParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.bparam_off + (k as u32) * 4;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
@@ -2135,10 +2196,13 @@ fn build_var_map(
     for sv in lst(&vars.constVars).chain(lst(&vars.intConstVars)).chain(lst(&vars.boolConstVars)) {
         let Some(value) = const_value(&sv.initialValue) else { continue };
         const_of.insert(sim_cref_key(&sv.name)?, value);
-        if is_result_output(sv) {
-            if let Some(name) = result_name(&cref_display(&sv.name)?) {
-                result_vars.push(ResultVar { name, comment: sv.comment.to_string(), kind: ResultKind::Const { value } });
-            }
+        if let Some(name) = result_name(&cref_display(&sv.name)?) {
+            result_vars.push(ResultVar {
+                name,
+                comment: sv.comment.to_string(),
+                kind: ResultKind::Const { value },
+                filter: filter_bits(sv),
+            });
         }
     }
 
@@ -2156,11 +2220,14 @@ fn build_var_map(
         let Some(tslot) = map.vars.get(&tkey).copied() else {
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
-                if is_result_output(av) {
-                    if let Some(name) = result_name(&cref_display(&av.name)?) {
-                        let value = if negate { -cval } else { cval };
-                        result_vars.push(ResultVar { name, comment: av.comment.to_string(), kind: ResultKind::Const { value } });
-                    }
+                if let Some(name) = result_name(&cref_display(&av.name)?) {
+                    let value = if negate { -cval } else { cval };
+                    result_vars.push(ResultVar {
+                        name,
+                        comment: av.comment.to_string(),
+                        kind: ResultKind::Const { value },
+                        filter: filter_bits(av) | var_filter::ALIAS,
+                    });
                 }
             }
             continue;
@@ -2172,33 +2239,16 @@ fn build_var_map(
             heap: tslot.heap,
         };
         map.vars.insert(sim_cref_key(&av.name)?, slot);
-        if is_result_output(av) {
-            if let (Some(name), Some(kind)) = (
-                result_name(&cref_display(&av.name)?),
-                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
-            ) {
-                result_vars.push(ResultVar { name, comment: av.comment.to_string(), kind });
-            }
-        }
-    }
-
-    // Re-emit a filtered (protected/hidden) variable if a non-protected output
-    // references its data slot — i.e. it is an alias-group member of an output
-    // variable, which the C runtime keeps in the result (e.g. a protected
-    // parameter aliased by a public connector variable).
-    let referenced: std::collections::HashSet<u32> = result_vars
-        .iter()
-        .filter_map(|v| match &v.kind {
-            ResultKind::Column { col, .. } => Some(col_to_off(*col, layout)),
-            ResultKind::Param { off, .. } => Some(*off),
-            _ => None,
-        })
-        .collect();
-    for (name, comment, off, wty, heap) in filtered {
-        if referenced.contains(&off) {
-            if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
-                result_vars.push(ResultVar { name, comment, kind });
-            }
+        if let (Some(name), Some(kind)) = (
+            result_name(&cref_display(&av.name)?),
+            kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
+        ) {
+            result_vars.push(ResultVar {
+                name,
+                comment: av.comment.to_string(),
+                kind,
+                filter: filter_bits(av) | var_filter::ALIAS,
+            });
         }
     }
 
@@ -2857,6 +2907,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         .simulationSettingsOpt
         .as_ref()
         .ok_or_else(|| "CodegenWasmJit: model has no simulation settings")?;
+    apply_variable_filter(&mut result_vars, &settings.variableFilter);
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
     let jac_a = build_jac_a_info(sim_code, n_states);
@@ -5629,12 +5680,29 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
 /// serialization itself lives in `openmodelica_mat_writer` (`no_std` + `alloc`,
 /// shared with the standalone wasip1 runtime's `_start`); here we only map the
 /// result-var metadata onto its `MatVar`/`MatKind` and write the bytes out.
-fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: &[f64]) -> Result<()> {
+fn write_mat4(
+    model: &SimModel,
+    path: &str,
+    rows: &[f64],
+    n_reals: u32,
+    params: &[f64],
+    keep: &[bool],
+) -> Result<()> {
     use openmodelica_mat_writer::{MatKind, MatVar};
-    let vars: Vec<MatVar> = model
-        .result_vars
-        .iter()
-        .map(|v| MatVar {
+    // `params` is positional over the unfiltered `Param` signals.
+    let mut kept_params: Vec<f64> = Vec::new();
+    let mut param_idx = 0usize;
+    let mut vars: Vec<MatVar> = Vec::new();
+    for (v, &keep) in model.result_vars.iter().zip(keep) {
+        let is_param = matches!(v.kind, ResultKind::Param { .. });
+        if is_param && keep {
+            kept_params.push(params.get(param_idx).copied().unwrap_or(0.0));
+        }
+        param_idx += is_param as usize;
+        if !keep {
+            continue;
+        }
+        vars.push(MatVar {
             name: &v.name,
             comment: &v.comment,
             kind: match &v.kind {
@@ -5643,11 +5711,32 @@ fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: 
                 ResultKind::Param { negate, .. } => MatKind::Param { negate: *negate },
                 ResultKind::Const { value } => MatKind::Const { value: *value },
             },
-        })
-        .collect();
-    let bytes = openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, params);
+        });
+    }
+    let bytes =
+        openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, &kept_params);
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
+}
+
+/// Which result variables this run emits, one flag per [`SimModel::result_vars`]
+/// entry. An uncompilable `-variableFilter` is C's "Defaulting to outputting all
+/// variables": it has already replaced the model's filter, so nothing remains to
+/// fall back on.
+fn output_selection(model: &SimModel) -> Vec<bool> {
+    let Some(pattern) = simflags::with_flags(|f| f.variable_filter.clone()) else {
+        return model.meta.output_keep(None);
+    };
+    match openmodelica_util::System::Regex::new(&format!("^({pattern})$")) {
+        Ok(re) => model.meta.output_keep(Some(&|name: &str| re.is_match(name))),
+        Err(e) => {
+            eprintln!(
+                "Failed to compile regular expression: {pattern} with error: {e}. \
+                 Defaulting to outputting all variables."
+            );
+            model.meta.output_keep(Some(&|_: &str| true))
+        }
+    }
 }
 
 // The standalone-export merge uses `wasmtime::Module` to validate the result, so

@@ -155,10 +155,22 @@ fn run() {
         return; // "empty": run only (benchmarking), no file
     }
 
-    let matvars: Vec<MatVar> = m
-        .vars
-        .iter()
-        .map(|v| MatVar {
+    // A run-time `-variableFilter` was refused at the flag check (no regex engine);
+    // the model's own filter is the codegen's verdict.
+    let keep = m.output_keep(None);
+    let mut params: Vec<f64> = Vec::new();
+    let mut param_idx = 0usize;
+    let mut matvars: Vec<MatVar> = Vec::new();
+    for (v, &keep) in m.vars.iter().zip(&keep) {
+        let is_param = matches!(v.kind, MetaKind::Param { .. });
+        if is_param && keep {
+            params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+        }
+        param_idx += is_param as usize;
+        if !keep {
+            continue;
+        }
+        matvars.push(MatVar {
             name: &v.name,
             comment: &v.comment,
             kind: match &v.kind {
@@ -167,8 +179,8 @@ fn run() {
                 MetaKind::Param { negate, .. } => MatKind::Param { negate: *negate },
                 MetaKind::Const { value } => MatKind::Const { value: *value },
             },
-        })
-        .collect();
+        });
+    }
 
     let bytes = openmodelica_mat_writer::write_mat4(
         &matvars,
@@ -176,7 +188,7 @@ fn run() {
         m.stop_time,
         &result.rows,
         result.n_reals,
-        &result.params,
+        &params,
     );
     std::fs::write(format!("{}_res.mat", m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
 }
