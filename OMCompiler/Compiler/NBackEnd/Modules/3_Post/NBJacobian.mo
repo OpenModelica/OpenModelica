@@ -1427,8 +1427,19 @@ protected
     //adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
     if jacType == JacobianType.ODE then
-      adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
+      adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;
+
+
+    // print seedCandidates, tmp_vars, res_vars, and adjacencyVars for debugging
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
+      print("Seed candidates:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
+      print("Temporary variables:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Temporary Variables") + "\n");
+      //print("Result variables:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Result Variables") + "\n");
+      print("Adjacency variables:\n" + BVariable.VariablePointers.toString(adjacencyVars, "Adjacency Variables") + "\n");
+    end if;
+
+
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);
