@@ -951,6 +951,12 @@ algorithm
         (e1_1,true) := replaceExp(e1, repl, cond);
       then
         (DAE.TSUB(e1_1,i,tp),true);
+    case ((DAE.RSUB(exp = e1,ix = i, fieldName = ident, ty = tp)),repl,cond)
+      algorithm
+        true := replaceExpCond(cond, e1);
+        (e1_1,true) := replaceExp(e1, repl, cond);
+      then
+        (DAE.RSUB(e1_1,i,ident,tp),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
         guard replaceExpCond(cond, e)
       algorithm
