@@ -66,11 +66,19 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         use Fallibility::*;
         let mut m: BTreeMap<&'static str, Fallibility> = BTreeMap::new();
 
-        // ── ASSCEXT.cpp ────────────────────────────────────────────────────
-        // Adjugate-style matrix store: pure data setters/getters, no throws.
+        // ── ASSCEXT.cpp / ASSCEXT_omc.cpp ─────────────────────────────────
+        // Sparse integer matrix store for the Bareiss alias-elimination pass.
+        // setMatrix/freeMatrix/printMatrix/getMatrix/bareiss/getNumberOfOperations
+        // are pure data operations with no MMC_THROW path.
+        // getOperations throws when the operation log is absent or array
+        // sizes mismatch (see ASSCEXT_omc.cpp).
         m.insert("ASSC_setMatrix", Infallible);
         m.insert("ASSC_freeMatrix", Infallible);
         m.insert("ASSC_printMatrix", Infallible);
+        m.insert("ASSC_getMatrix", Infallible);
+        m.insert("ASSC_bareiss", Infallible);
+        m.insert("ASSC_getNumberOfOperations", Infallible);
+        m.insert("ASSC_getOperations", Fallible); // MMC_THROW on NULL ops or size mismatch
 
         // ── BackendDAEEXT_omc.cpp ──────────────────────────────────────────
         // Bipartite-matching state machine. Only getAssignment throws (when
@@ -766,6 +774,10 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         "ASSC_setMatrix" => Some("crate::NBASSCExt::ASSC_setMatrix"),
         "ASSC_freeMatrix" => Some("crate::NBASSCExt::ASSC_freeMatrix"),
         "ASSC_printMatrix" => Some("crate::NBASSCExt::ASSC_printMatrix"),
+        "ASSC_getMatrix" => Some("crate::NBASSCExt::ASSC_getMatrix"),
+        "ASSC_bareiss" => Some("crate::NBASSCExt::ASSC_bareiss"),
+        "ASSC_getNumberOfOperations" => Some("crate::NBASSCExt::ASSC_getNumberOfOperations"),
+        "ASSC_getOperations" => Some("crate::NBASSCExt::ASSC_getOperations"),
         // `-d=gen` dynamic-load pipeline: marshal the argument/result `Values`
         // through the dynamically loaded `in_*` entry point. Only called from
         // `DynLoad.executeFunction` (same crate), hence the `crate::` path.

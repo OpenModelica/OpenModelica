@@ -146,9 +146,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (3):
 // *************************************************
-// 	[RECD] (2) $FUN_2 = z5; ($RES_BND_10)
-// 	[RECD] (2) $FUN_1 = z4; ($RES_BND_9)
-// 	[RECD] (2) z3 = Complex.'+'(z1, z2); ($RES_BND_8)
+// 	[RECD] (2) $FUN_2 = z5; ($RES_BND_12)
+// 	[RECD] (2) $FUN_1 = z4; ($RES_BND_11)
+// 	[RECD] (2) z3 = Complex.'+'(z1, z2); ($RES_BND_10)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -186,9 +186,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (3):
 // *************************************************
-// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_20)
-// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_19)
-// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_18)
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -224,9 +224,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (3):
 // *************************************************
-// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_20)
-// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_19)
-// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_18)
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -262,9 +262,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (3):
 // *************************************************
-// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_20)
-// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_19)
-// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_18)
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -373,9 +373,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (3):
 // *************************************************
-// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_20)
-// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_19)
-// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_18)
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -411,7 +411,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (1):
 // *************************************************
-// 	[RECD] (2) $FUN_2 = v; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_24)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -449,7 +449,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (1):
 // *************************************************
-// 	[RECD] (2) $FUN_2 = v; ($RES_BND_27)
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_28)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
