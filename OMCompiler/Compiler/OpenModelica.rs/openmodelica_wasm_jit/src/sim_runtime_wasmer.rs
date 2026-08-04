@@ -87,7 +87,8 @@ pub fn sim_engine() -> &'static wasmer::Engine {
     ENGINE.get_or_init(|| {
         let mut compiler = Cranelift::default();
         // Experimental opt-level override; default is cranelift's `Speed`.
-        // (wasmer compiles module functions in parallel by default.)
+        // (wasmer compiles module functions in parallel and exposes no knob for it,
+        // so `-n=1` only stops the precompile, not this.)
         match std::env::var("OMC_WASM_OPT_LEVEL").as_deref() {
             Ok("none") => { compiler.opt_level(CraneliftOptLevel::None); }
             Ok("speed_and_size") => { compiler.opt_level(CraneliftOptLevel::SpeedAndSize); }
@@ -207,6 +208,10 @@ pub fn start_runtime_compile() {
     return;
     #[cfg(not(target_arch = "wasm32"))]
     {
+        // Same under `-n=1`.
+        if crate::model::single_threaded() {
+            return;
+        }
         static STARTED: std::sync::Once = std::sync::Once::new();
         STARTED.call_once(|| {
             std::thread::spawn(|| {
@@ -764,6 +769,9 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         Some(m) => m,
         None => take_compiled_model(model)?,
     };
+    // `take_compiled_model` consumes the job, so cache it here too: `finishCompile`
+    // does not run for a resimulate, which would then recompile on every run.
+    *model.prepared.lock().unwrap() = Some(model_module.clone());
     let model_compile = t_model.elapsed();
     let compile_time = t_compile.elapsed();
     if bench {
