@@ -959,10 +959,11 @@ void ShapeAnnotation::updateCornerItem(int index)
 }
 
 /*!
-  Adds new points, geometries & CornerItems at index. \n
-  This function is called when resizing the connection lines and new points are needed to keep the lines manhattanized.
-  \param index
-  */
+ * \brief ShapeAnnotation::insertPointsGeometriesAndCornerItems
+ * Adds new points, geometries & CornerItems at index.\n
+ * This function is called when resizing the connection lines and new points are needed to keep the lines manhattanized.
+ * \param index
+ */
 void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
 {
   QPointF point = (mPoints[index - 1] + mPoints[index]) / 2;
@@ -976,9 +977,12 @@ void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
     mGeometries.insert(index, ShapeAnnotation::HorizontalLine);
   }
   // if we add new points then we need to add new CornerItems and also need to adjust CornerItems connected indexes.
-  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
-  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
-  adjustCornerItemsConnectedIndexes();
+  // Check that the index is in range for mCornerItemsList to avoid out of range access. See issue #16155.
+  if (index < mCornerItemsList.size()) {
+    mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+    mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+    adjustCornerItemsConnectedIndexes();
+  }
 }
 
 /*!
