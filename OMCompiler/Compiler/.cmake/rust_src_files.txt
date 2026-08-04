@@ -208,6 +208,9 @@ openmodelica_nf_frontend/src/FFI.rs
 openmodelica_nf_frontend/src/FFI_wasm.rs
 openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_program_util/Cargo.toml
+openmodelica_revision/Cargo.toml
+openmodelica_revision/build.rs
+openmodelica_revision/src/lib.rs
 openmodelica_script_util/Cargo.toml
 openmodelica_script_util/src/Curl.rs
 openmodelica_script_util/src/Curl_wasm.rs

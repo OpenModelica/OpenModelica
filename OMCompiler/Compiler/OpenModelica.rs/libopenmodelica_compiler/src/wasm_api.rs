@@ -109,6 +109,7 @@ pub fn omc_set_env(name: &str, value: &str) {
 ///     toolchain and are unavailable here).
 #[wasm_bindgen]
 pub fn omc_init() -> bool {
+    crate::set_revision();
     // Panics → console.error (instead of the default unwinding into a wasm trap
     // with no message). Installed once; the hook is process-global.
     std::panic::set_hook(Box::new(|info| {
