@@ -32,7 +32,7 @@ use openmodelica_sim_meta::driver::{
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, FmiVr, Layout, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
@@ -59,43 +59,162 @@ unsafe extern "C" {
     fn om_meta_len() -> u32;
 }
 
-/// The runtime leaves `rt_assert` to the host on this target. A failed assertion
-/// traps, aborting the FMI call; the master surfaces it as a fatal status.
+// ── Messages ─────────────────────────────────────────────────────────────────
+// A component has no stdout, so the `log-message` callback (`fmi3LogMessage`) is
+// the FMU's only channel: `print`, assertions and the `-lv` solver lines all leave
+// through it, with the statuses and categories C's FMU gives them
+// (`fmu3_model_interface.c`).
+
+/// C's `logCategoriesNames`, which is also what `CodegenFMU3` declares in
+/// `modelDescription.xml`. `logFmi3Call` is unused: the adapter logs no call trace.
+const CATEGORIES: [&str; 11] = [
+    "logEvents",
+    "logSingularLinearSystems",
+    "logNonlinearSystems",
+    "logDynamicStateSelection",
+    "logStatusWarning",
+    "logStatusDiscard",
+    "logStatusError",
+    "logStatusFatal",
+    "logStatusPending",
+    "logAll",
+    "logFmi3Call",
+];
+const CAT_EVENTS: u32 = 0;
+const CAT_SINGULAR_LS: u32 = 1;
+const CAT_NLS: u32 = 2;
+const CAT_DSS: u32 = 3;
+const CAT_WARNING: u32 = 4;
+const CAT_ERROR: u32 = 6;
+const CAT_ALL: u32 = 9;
+
+struct Logger {
+    /// `instanceName`, which the callback reports alongside the message.
+    name: String,
+    /// `loggingOn`.
+    on: bool,
+    /// Bit per [`CATEGORIES`] index.
+    cats: u32,
+}
+
+static mut LOGGER: Logger = Logger { name: String::new(), on: false, cats: 0 };
+
+/// The sink is a bare `fn(&str)`, so its context is a static (wasm, single-threaded).
+fn logger() -> &'static mut Logger {
+    unsafe { &mut *core::ptr::addr_of_mut!(LOGGER) }
+}
+
+fn log_raw(status: Status, cat: u32, msg: &str) {
+    let l = logger();
+    fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+}
+
+/// C's `FILTERED_LOG` / `isCategoryLogged`.
+fn fmi_log(status: Status, cat: u32, msg: &str) {
+    let cats = logger().cats;
+    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+        log_raw(status, cat, msg);
+    }
+}
+
+/// The runtime's and driver's log lines. They exist only because [`stream_mask`]
+/// switched their stream on, so the category is `logAll` rather than a per-line one.
+fn log_sink(s: &str) {
+    if logger().on {
+        log_raw(Status::Ok, CAT_ALL, s);
+    }
+}
+
+/// The `-lv` streams the model-diagnostics categories stand for.
+fn stream_mask(cats: u32) -> omclog::Mask {
+    let mut streams: Vec<&str> = Vec::new();
+    for (cat, stream) in [
+        (CAT_EVENTS, "LOG_EVENTS"),
+        (CAT_SINGULAR_LS, "LOG_LS"),
+        (CAT_NLS, "LOG_NLS"),
+        (CAT_DSS, "LOG_DSS"),
+    ] {
+        if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+            streams.push(stream);
+        }
+    }
+    omclog::mask_from_streams(&streams).unwrap_or(omclog::ALWAYS_ON)
+}
+
+/// C's `omcInstantiate`: every category follows `loggingOn` until
+/// `set-debug-logging` picks specific ones.
+fn init_logging(name: String, logging_on: bool) {
+    let l = logger();
+    l.name = name;
+    l.on = logging_on;
+    l.cats = if logging_on { !0 } else { 0 };
+    driver::set_log_sink(log_sink);
+    omclog::set_mask(stream_mask(l.cats));
+}
+
+/// The runtime `String` behind a handle, empty for the null handle.
+fn rt_string(handle: i32) -> String {
+    use openmodelica_codegen_wasm_jit_runtime as rt;
+    let h = handle as u32;
+    if h == 0 {
+        return String::new();
+    }
+    let len = rt::rt_str_len(h) as usize;
+    let bytes = unsafe { core::slice::from_raw_parts(rt::rt_str_data(h) as *const u8, len) };
+    String::from_utf8_lossy(bytes).into_owned()
+}
+
+/// C's `omc_assert_fmi_common`: the source position, then the message.
+fn assert_message(msg: i32, file: i32, sline: i32) -> String {
+    let msg = rt_string(msg);
+    let file = rt_string(file);
+    if file.is_empty() || sline == 0 {
+        return msg;
+    }
+    alloc::format!("{file}:{sline}: {msg}")
+}
+
+/// The runtime leaves `rt_assert` to the host on this target. C's FMU logs and then
+/// throws; the throw is a trap here, aborting the FMI call, which the master
+/// surfaces as a fatal status.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
-    _msg: i32,
-    _file: i32,
-    _sline: i32,
+    msg: i32,
+    file: i32,
+    sline: i32,
     _scol: i32,
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
     _cond: i32,
 ) -> i32 {
+    fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
     core::arch::wasm32::unreachable()
 }
 
-/// Warning-level assertion: non-fatal, so continue. No host logger here, so the
-/// message is dropped.
+/// Warning-level assertion: non-fatal, so continue (C's `omc_assert_fmi_warning`).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert_warning(
     _cond: i32,
-    _msg: i32,
-    _file: i32,
-    _sline: i32,
+    msg: i32,
+    file: i32,
+    sline: i32,
     _scol: i32,
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
 ) {
+    fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
 
-/// The `print` builtin. No host stdout here, so the output is discarded.
+/// The `print` builtin.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_print(_str: i32) {}
+pub extern "C" fn rt_print(str: i32) {
+    log_sink(&rt_string(str));
+}
 
-/// Per-row assert formatting: no logger, and the FMI master steps the model
-/// instead of the emitted `simulate` loop that calls this.
+/// Per-row assert formatting: the FMI master steps the model instead of the emitted
+/// `simulate` loop that calls this.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_row_asserts(_sim_data: i32, _warn: i32) -> i32 {
     0
@@ -225,17 +344,9 @@ impl MeState {
         let mut e = Engine;
         let _ = e.write_bytes(self.sim_data + off, &v.to_le_bytes());
     }
-    /// Read the runtime `String` referenced by the i32 handle in slot `off`. Empty
-    /// for the null handle (an unset String).
+    /// Read the runtime `String` referenced by the i32 handle in slot `off`.
     fn read_string(&self, off: u32) -> String {
-        use openmodelica_codegen_wasm_jit_runtime as rt;
-        let h = self.read_i32(off) as u32;
-        if h == 0 {
-            return String::new();
-        }
-        let len = rt::rt_str_len(h) as usize;
-        let bytes = unsafe { core::slice::from_raw_parts(rt::rt_str_data(h) as *const u8, len) };
-        String::from_utf8_lossy(bytes).into_owned()
+        rt_string(self.read_i32(off))
     }
     /// Store `s` as a fresh runtime `String` handle in slot `off`, releasing the
     /// handle it replaces (a no-op on the null handle).
@@ -356,7 +467,31 @@ fn read_meta() -> openmodelica_sim_meta::SimMeta {
 macro_rules! shared_instance_methods {
     () => {
 
-    fn set_debug_logging(&self, _logging_on: bool, _categories: Vec<String>) -> Status {
+    /// C's `omcSetDebugLogging`: every category off, then the named ones follow
+    /// `logging_on`. An unknown name is reported unfiltered, as in C.
+    fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
+        let mut cats = 0u32;
+        let mut unknown: Vec<String> = Vec::new();
+        for c in categories {
+            match CATEGORIES.iter().position(|n| *n == c) {
+                Some(i) if logging_on => cats |= 1 << i,
+                Some(_) => {}
+                None => unknown.push(c),
+            }
+        }
+        {
+            let l = logger();
+            l.on = logging_on;
+            l.cats = cats;
+        }
+        omclog::set_mask(stream_mask(cats));
+        for c in unknown {
+            log_raw(
+                Status::Warning,
+                CAT_ERROR,
+                &alloc::format!("logging category '{c}' is not supported by model"),
+            );
+        }
         Status::Ok
     }
 
@@ -823,12 +958,13 @@ macro_rules! shared_instance_methods {
 impl GuestModelExchangeInstance for Instance {
     shared_instance_methods!();
     fn instantiate_model_exchange(
-        _instance_name: String,
+        instance_name: String,
         _instantiation_token: String,
         _resource_path: String,
         _visible: bool,
-        _logging_on: bool,
+        logging_on: bool,
     ) -> Option<ModelExchangeInstance> {
+        init_logging(instance_name, logging_on);
         let st = new_state()?;
         Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
     }
@@ -925,15 +1061,16 @@ impl GuestCoSimulationInstance for Instance {
     shared_instance_methods!();
 
     fn instantiate_co_simulation(
-        _instance_name: String,
+        instance_name: String,
         _instantiation_token: String,
         _resource_path: String,
         _visible: bool,
-        _logging_on: bool,
+        logging_on: bool,
         event_mode_used: bool,
         _early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
+        init_logging(instance_name, logging_on);
         let mut st = new_state()?;
         st.event_mode = event_mode_used;
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))

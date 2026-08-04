@@ -5782,11 +5782,10 @@ fn output_selection(model: &SimModel) -> Vec<bool> {
     }
 }
 
-// The standalone-export merge uses `wasmtime::Module` to validate the result, so
-// this test runs only under the default (wasmtime) engine on a native host.
+// Both link paths (standalone merge, FMU component) are native-only.
 #[cfg(test)]
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-mod standalone_tests {
+#[cfg(not(target_arch = "wasm32"))]
+mod link_tests {
     use super::*;
     use wasm_encoder as we;
 
@@ -5879,6 +5878,30 @@ mod standalone_tests {
         m.finish()
     }
 
+    /// Every adapter `env` import must be satisfied by the model or by the runtime
+    /// linked into the adapter itself; an `env` host callback (`rt_host_log`) is an
+    /// unresolved symbol here.
+    #[test]
+    fn fmu_component_links_without_a_host() {
+        for (label, adapter) in [
+            ("ME", FMI3_ME_ADAPTER),
+            ("CS", FMI3_CS_ADAPTER),
+            ("me_cs", FMI3_MECS_ADAPTER),
+        ] {
+            if adapter.is_empty() {
+                continue; // omc built without the wasm32 toolchain
+            }
+            assert!(
+                link_fmu_component(&build_stub_model(), adapter).is_ok(),
+                "{label} adapter does not link into a component: {}",
+                openmodelica_util::Error::printMessagesStr(false)
+            );
+        }
+    }
+
+    // The standalone-export merge validates the result with `wasmtime::Module`, so
+    // it runs only under the default (wasmtime) engine.
+    #[cfg(all(feature = "jit", not(feature = "engine-wasmer")))]
     #[test]
     fn merge_leaves_only_wasi_imports() {
         let merged = merge_standalone(&build_stub_model()).expect("wasm-merge should succeed");

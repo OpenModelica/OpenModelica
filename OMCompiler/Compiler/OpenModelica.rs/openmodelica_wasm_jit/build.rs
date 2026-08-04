@@ -548,9 +548,9 @@ fn build_wasip1_interactive_runtime(
     let wasmer = std::env::var("CARGO_FEATURE_ENGINE_WASMER").is_ok();
     let inwasm_driver = std::env::var("CARGO_FEATURE_INWASM_DRIVER").is_ok();
     let features = if native && !wasmer && !inwasm_driver {
-        "host_lin_solve"
+        "host_lin_solve,host_log"
     } else {
-        "session,inwasm_solve"
+        "session,inwasm_solve,host_log"
     };
     // The feature set is part of the cache key: toggling the engine must rebuild.
     let stamp_val = format!("{hash}:{features}");
