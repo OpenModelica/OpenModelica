@@ -806,7 +806,7 @@ pub fn build_engine(model: &SimModel) -> std::result::Result<(Box<dyn sim_driver
         run_table_probe(&mut store, rt_inst, instance, memory, sim_data, layout.total)?;
     }
 
-    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new() };
+    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), dae_func: None };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -869,6 +869,8 @@ struct WasmtimeEngine {
     instance: wasmtime::Instance,
     rt_inst: wasmtime::Instance,
     funcs: HashMap<String, wasmtime::TypedFunc<u32, ()>>,
+    /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
+    dae_func: Option<wasmtime::TypedFunc<(u32, u32), ()>>,
 }
 
 impl WasmtimeEngine {
@@ -898,6 +900,16 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             return Ok(());
         }
         self.call1(name, arg)
+    }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+        let f = match self.dae_func.clone() {
+            Some(f) => f,
+            None => {
+                let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
+                self.dae_func.insert(f).clone()
+            }
+        };
+        wt(f.call(&mut self.store, (a, b)))
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32> {
         let f = wt(self.instance.get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate"))?;
@@ -1048,6 +1060,9 @@ impl sim_driver::SimEngine for InWasmSession {
     }
     fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Ok(())
+    }
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+        Err("CodegenWasmJit: call2 on in-wasm session (unreachable)")
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")

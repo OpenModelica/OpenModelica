@@ -118,6 +118,9 @@ pub struct SimFlags {
     pub ida_max_nonlin_iters: Option<i32>,
     pub ida_max_conv_fails: Option<i32>,
     pub ida_nonlin_conv_coef: Option<f64>,
+    /// `-noSuppressAlg`, which C reads inverted: setting it is what makes C call
+    /// `IDASetSuppressAlg(TRUE)`.
+    pub ida_no_suppress_alg: bool,
     /// `-maxIntegrationOrder`: caps the BDF order (5 by default).
     pub max_order: Option<i32>,
     /// `-initialStepSize`
@@ -594,6 +597,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "idaMaxNonLinIters" => f.ida_max_nonlin_iters = Some(int(name, &value(name)?)?),
             "idaMaxConvFails" => f.ida_max_conv_fails = Some(int(name, &value(name)?)?),
             "idaNonLinConvCoef" => f.ida_nonlin_conv_coef = Some(real(name, &value(name)?)?),
+            "noSuppressAlg" => f.ida_no_suppress_alg = true,
             "maxIntegrationOrder" => f.max_order = Some(int(name, &value(name)?)?),
             "initialStepSize" => f.initial_step_size = Some(real(name, &value(name)?)?),
             "homotopyOnFirstTry" => f.homotopy_on_first_try = Some(true),

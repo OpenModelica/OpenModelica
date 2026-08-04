@@ -108,6 +108,15 @@ impl SimEngine for InWasmEngine {
         }
         Ok(())
     }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
+        if !self.present(slot) {
+            return Err("in-wasm engine: required model function not exported");
+        }
+        let f: extern "C" fn(u32, u32) = unsafe { core::mem::transmute((self.fn_base + slot) as usize) };
+        f(a, b);
+        Ok(())
+    }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         let slot = slot_of("simulate").ok_or("in-wasm engine: `simulate` has no table slot")?;
         if !self.present(slot) {
