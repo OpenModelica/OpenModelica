@@ -390,6 +390,12 @@ fn with_engine_detail(e: &str) -> String {
     }
 }
 
+/// Mirror `-n` into the engine, before anything reaches the JIT.
+fn sync_engine_threading() -> Result<()> {
+    openmodelica_wasm_jit::model::set_single_threaded(openmodelica_util::Config::noProc()? == 1);
+    Ok(())
+}
+
 /// `CodegenWasmJit.translateModel`: lower `simCode` to a model wasm module, write
 /// `<prefix>.wasm`, and stash the prepared [`SimModel`] for the later
 /// `runSimulation`. On a lowering error the message is recorded to the Error
@@ -397,6 +403,7 @@ fn with_engine_detail(e: &str) -> String {
 /// translation fails — as the other codegen targets do — never a stderr print or
 /// a panic (a panic would trap the wasm instance and lose the buffered message).
 pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
+    sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
@@ -1601,6 +1608,7 @@ fn emit_fmu(
     adapter: &[u8],
     kind: &str,
 ) -> Result<()> {
+    sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
@@ -3439,10 +3447,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let compile_wasm = wasm.clone();
     // Native: compile on a background thread to overlap the rest of the pipeline.
     // wasm: no threads — compile eagerly and store the result for take_compiled_model.
+    // `-n=1`: no job, so `take_compiled_model` compiles inline where it is timed.
     #[cfg(not(target_arch = "wasm32"))]
-    let compiled = Mutex::new(Some(std::thread::spawn(move || {
-        sim_runtime::compile_model_module(&compile_wasm)
-    })));
+    let compiled = Mutex::new(match openmodelica_wasm_jit::model::single_threaded() {
+        true => None,
+        false => Some(std::thread::spawn(move || {
+            sim_runtime::compile_model_module(&compile_wasm)
+        })),
+    });
     #[cfg(target_arch = "wasm32")]
     let compiled = Mutex::new(Some(sim_runtime::compile_model_module(&compile_wasm)));
 

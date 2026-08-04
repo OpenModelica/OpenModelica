@@ -117,7 +117,7 @@ fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engi
     crate::tune_memory(&mut cfg);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
-    cfg.parallel_compilation(true);
+    cfg.parallel_compilation(!crate::model::single_threaded());
     // Experimental opt-level override; default is wasmtime's `Speed`.
     match std::env::var("OMC_WASM_OPT_LEVEL").as_deref() {
         Ok("none") => { cfg.cranelift_opt_level(wasmtime::OptLevel::None); }
@@ -222,6 +222,10 @@ pub fn compile_model_module(wasm: &[u8]) -> std::result::Result<wasmtime::Module
 /// entry) — it then compiles while `build_sim_model` generates the model bytes,
 /// and `run` only waits for whatever did not overlap. Idempotent.
 pub fn start_runtime_compile() {
+    // Under `-n=1` compile it on first use instead, where it is timed.
+    if crate::model::single_threaded() {
+        return;
+    }
     static STARTED: std::sync::Once = std::sync::Once::new();
     STARTED.call_once(|| {
         std::thread::spawn(|| {
@@ -693,6 +697,9 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     } else {
         wts(wasmtime::Module::new(engine, &model.wasm))?
     };
+    // `take_compiled_model` consumes the job, so cache it here too: `finishCompile`
+    // does not run for a resimulate, which would then recompile on every run.
+    *model.prepared.lock().unwrap() = Some(model_module.clone());
     let model_compile = t_model.elapsed();
     let compile_time = t_compile.elapsed();
     if bench {
