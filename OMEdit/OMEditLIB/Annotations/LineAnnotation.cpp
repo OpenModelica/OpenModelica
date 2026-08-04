@@ -1160,10 +1160,11 @@ void LineAnnotation::updateStartPoint(QPointF point)
 }
 
 /*!
-  Updates the end point of the connection, and adjusts the second last point accordingly depending on the geometry list.
-  \param point - is the new end point.
-  \sa updateStartPoint(QPointF point)
-  */
+ * \brief LineAnnotation::updateEndPoint
+ * Updates the end point of the connection, and adjusts the second last point accordingly depending on the geometry list.
+ * \param point - is the new end point.
+ * \sa updateStartPoint(QPointF point)
+ */
 void LineAnnotation::updateEndPoint(QPointF point)
 {
   prepareGeometryChange();
@@ -1178,7 +1179,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
     qreal dy = point.y() - mPoints[lastIndex].y();
     /*
       if connection points are just two we need to add extra points
-      This function is also called when creating a component so for that we don't need to add extra points. In order to avoid this we check
+      This function is also called when creating a connection so for that we don't need to add extra points. In order to avoid this we check
       for the mpEndComponent since mpEndComponent will only be set when the connection is complete.
       */
     if (mPoints.size() == 2 && mpEndElement) {
