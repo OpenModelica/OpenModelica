@@ -139,6 +139,11 @@ impl SimEngine for Engine {
         }
         Ok(())
     }
+    // Importing `evaluateDAEResiduals` would leave every non-DAE model with an
+    // unresolved `model.*` import.
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+        Err("fmi3-me: --daeMode models cannot be exported as an FMU")
+    }
     fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         self.call1(name, arg)
     }

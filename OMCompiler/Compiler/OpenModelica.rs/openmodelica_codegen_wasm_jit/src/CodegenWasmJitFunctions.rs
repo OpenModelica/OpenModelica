@@ -726,7 +726,9 @@ fn supported_external(ext_name: &str, ins: &[SigTy], out: &SigTy) -> bool {
         // `Modelica.Utilities.Strings.substring` → `rt_substring` (1-based incl.).
         "ModelicaStrings_substring" => matches!(ins, [SigTy::Str, SigTy::Int, SigTy::Int]) && matches!(out, SigTy::Str),
         // Scalar math: a host transcendental or single-instruction math function.
-        _ if builtin_index(ext_name).is_some() || matches!(ext_name, "sqrt" | "fabs" | "floor" | "ceil") => {
+        _ if builtin_index(ext_name).is_some()
+            || matches!(ext_name, "sqrt" | "fabs" | "floor" | "ceil" | "abs" | "div" | "mod") =>
+        {
             ins.iter().all(scalar) && scalar(out)
         }
         _ => false,
@@ -1136,12 +1138,13 @@ pub(crate) enum Attr {
 }
 
 /// Where one variable's attribute lands: its entry in each nonlinear system that
-/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice
-/// that in the bounds block), and its state slot.
+/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice that
+/// in the bounds block), and the `SimData` nominal slots the integrator scales by (a
+/// state's, and in DAE mode an algebraic unknown's).
 #[derive(Clone, Default)]
 pub(crate) struct AttrTargets {
     pub(crate) nls: Vec<u32>,
-    pub(crate) state: Option<u32>,
+    pub(crate) nom_offs: Vec<u32>,
 }
 
 /// The contiguous `SimData` slot range backing one scalarized array model
@@ -1279,6 +1282,19 @@ impl<'a> FnCtx<'a> {
         }
     }
 
+    /// Open `if (stage & mask)` around the next equation, `stage` being the DAE-mode
+    /// residual's second parameter; `sim_end_block` closes it.
+    pub(crate) fn sim_stage_guard(&mut self, mask: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Const(mask as i32));
+        self.emit(we::Instruction::I32And);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
+    pub(crate) fn sim_end_block(&mut self) {
+        self.emit(we::Instruction::End);
+    }
+
     /// Lower one equation `cref := rhs` into this context.
     pub(crate) fn sim_assign(&mut self, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()> {
         compile_assign(self, lhs, rhs)
@@ -1338,15 +1354,14 @@ impl<'a> FnCtx<'a> {
     /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
-        state_nominals: &[f64],
-        state_nom_off: u32,
+        nominal_defaults: &[(u32, f64)],
         attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
-        for (i, nom) in state_nominals.iter().enumerate() {
+        for (off, nom) in nominal_defaults {
             self.emit(we::Instruction::LocalGet(data));
             self.emit(we::Instruction::F64Const((*nom).into()));
-            self.emit(we::Instruction::F64Store(mem_arg(state_nom_off + i as u32 * 8, 3)));
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
         }
         if attrs.is_empty() {
             return Ok(());
@@ -1356,14 +1371,16 @@ impl<'a> FnCtx<'a> {
             let w = compile_exp(self, exp)?;
             coerce(self, w, WTy::F64);
             self.emit(we::Instruction::LocalSet(raw));
-            if let (Attr::Nominal, Some(i)) = (attr, targets.state) {
-                // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
-                self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::LocalGet(raw));
-                self.emit(we::Instruction::F64Abs);
-                self.emit(we::Instruction::F64Const(1e-32f64.into()));
-                self.emit(we::Instruction::F64Max);
-                self.emit(we::Instruction::F64Store(mem_arg(state_nom_off + i * 8, 3)));
+            if matches!(attr, Attr::Nominal) {
+                for off in &targets.nom_offs {
+                    // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::LocalGet(raw));
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::F64Const(1e-32f64.into()));
+                    self.emit(we::Instruction::F64Max);
+                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                }
             }
             if targets.nls.is_empty() {
                 continue;
@@ -1739,8 +1756,12 @@ fn compile_external_function(
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, extName, extArgs, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, extName, extArgs, .. } = f else {
         return Err("CodegenWasmJit: compile_external_function on a non-external function");
+    };
+    // Only for the mismatch diagnostics below.
+    let fn_path = || {
+        AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default()
     };
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
@@ -1804,8 +1825,8 @@ fn compile_external_function(
 
     if external_known(f) {
         // Known math/string externals: a single return value, no output pointers.
-        let result = emit_known_external_call(&mut ctx, extName, &input_args)?;
         let (out_idx, out_sty) = ctx.outputs[0].clone();
+        let result = emit_known_external_call(&mut ctx, extName, &input_args, &out_sty)?;
         coerce(&mut ctx, result.wty(), out_sty.wty());
         ctx.emit(we::Instruction::LocalSet(out_idx));
     } else {
@@ -1822,11 +1843,25 @@ fn compile_external_function(
             .filter(|&i| !matches!(ctx.outputs[i].1, SigTy::Array { .. }))
             .collect();
         if results.len() != scalar_outs.len() {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{extName}`: the call returns {} value(s), the function \
+                 declares {} scalar output(s)",
+                fn_path(),
+                results.len(),
+                scalar_outs.len(),
+            ));
             return Err("CodegenWasmJit: external scalar-return/output count mismatch");
         }
         for k in (0..scalar_outs.len()).rev() {
             let (out_idx, out_sty) = ctx.outputs[scalar_outs[k]].clone();
             if results[k].wty() != out_sty.wty() {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{extName}`: output {k} is {:?} in the C call but \
+                     {:?} in the function declaration",
+                    fn_path(),
+                    results[k],
+                    out_sty,
+                ));
                 return Err("CodegenWasmJit: external output type mismatch");
             }
             ctx.emit(we::Instruction::LocalSet(out_idx));
@@ -1846,11 +1881,29 @@ fn compile_external_function(
     Ok(func)
 }
 
-/// Emit a call to a known math `extName` over already-lowered argument
-/// expressions, leaving the (scalar Real) result on the stack. Mirrors the
-/// host-builtin path of [`compile_math_builtin`]: an imported transcendental
-/// ([`BUILTINS`]) or a single-instruction math function emitted inline.
-fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<SigTy> {
+/// Emit a call to a known math/string `extName` over already-lowered arguments,
+/// leaving its result on the stack (the returned `SigTy` says of which type). Mirrors
+/// the host-builtin path of [`compile_math_builtin`]: an imported transcendental
+/// ([`BUILTINS`]) or a single-instruction math function inline. `out` is the declared
+/// output type, which the `external "builtin"` operators are overloaded on.
+fn emit_known_external_call(
+    ctx: &mut FnCtx,
+    ext_name: &str,
+    args: &[Arc<DAE::Exp>],
+    out: &SigTy,
+) -> Result<SigTy> {
+    // `external "builtin" o = abs(v)` and the `div`/`mod` pairs
+    // (`OpenModelica.Internal.{int,real}{Abs,Div,Mod}`) are the tool's own operators,
+    // not C symbols. Their Integer and Real overloads share one `extName`, so a host
+    // import would bind both to the same signature and hand libc's `abs(int)` a double.
+    if matches!(ext_name, "abs" | "div" | "mod") {
+        let args = Arc::new(args.iter().cloned().collect::<List<Arc<DAE::Exp>>>());
+        let attr = match out {
+            SigTy::Int => DAE::callAttrBuiltinInteger(),
+            _ => DAE::callAttrBuiltinReal(),
+        };
+        return compile_math_builtin(ctx, ext_name, &args, &attr);
+    }
     // `ModelicaStrings_*` functions that map directly to existing runtime string
     // ops (same lowering as the corresponding Modelica string builtins, so the
     // argument ARC is handled identically).

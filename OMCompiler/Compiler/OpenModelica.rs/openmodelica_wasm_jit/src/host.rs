@@ -104,6 +104,9 @@ impl openmodelica_sim_meta::driver::SimEngine for MemEngine<'_> {
     fn call1_if_present(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> metamodelica::Result<u32> {
         Err("wasm-jit: MemEngine cannot call the model")
     }

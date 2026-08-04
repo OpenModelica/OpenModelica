@@ -117,6 +117,11 @@ impl SimEngine for StandaloneEngine {
         // call is a no-op when the feature is absent.
         self.call1(name, arg)
     }
+    // Importing `evaluateDAEResiduals` would leave every non-DAE model with an
+    // unresolved `model.*` import, so the standalone export has no DAE mode.
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+        Err("wasm-jit standalone: --daeMode models are not supported by the standalone export")
+    }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
     }

@@ -205,7 +205,22 @@ pub const MODEL_FNS: &[&str] = &[
     "functionInitDelay",
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
+    "evaluateDAEResiduals",
 ];
+
+/// The one model entry point that is not `fn(SimData*)`: `--daeMode`'s residual
+/// takes the evaluation stage as a second argument (C's `currentEvalStage`).
+pub const MODEL_FN_DAE: &str = "evaluateDAEResiduals";
+
+/// C's `EVAL_*` (`dae_mode.c`): which stage of the step an equation belongs to.
+/// `evaluateDAEResiduals` runs exactly those whose `evalStages` intersect it.
+pub mod eval_stage {
+    pub const DYNAMIC: u32 = 1;
+    pub const ALGEBRAIC: u32 = 2;
+    pub const ZEROCROSS: u32 = 4;
+    /// The only stage that runs `when`-bodies.
+    pub const DISCRETE: u32 = 8;
+}
 
 /// The per-run capabilities a backend must expose: read/write the instance's
 /// linear memory and call its exported functions. Object-safe so the drivers can
@@ -221,6 +236,9 @@ pub trait SimEngine {
     /// Like [`call1`] but a no-op if `name` is not exported (optional teardown
     /// hooks such as `callExternalObjectDestructors`).
     fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()>;
+    /// Call the exported `fn(u32, u32) -> ()` `name` — only [`MODEL_FN_DAE`],
+    /// whose second argument is the evaluation stage.
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()>;
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
@@ -1301,6 +1319,43 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
     Ok(true)
 }
 
+/// C's `updateContinuousSystem`: recompute everything an output row reads. A
+/// `--daeMode` model has no explicit ODE, so that is one algebraic-stage residual.
+fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.dae_mode() {
+        return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
+    }
+    e.call1("functionODE", sim_data)?;
+    e.call1("functionAlgebraics", sim_data)
+}
+
+/// `functionODE` alone: the derivative slots for the state the integrator last
+/// wrote. In DAE mode `y'` is an unknown, so the dynamic residual stage stands in.
+fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.dae_mode() {
+        return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC);
+    }
+    e.call1("functionODE", sim_data)
+}
+
+/// One pass of C's `functionDAE`: the discrete update.
+fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.dae_mode() {
+        return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
+    }
+    e.call1("functionODE", sim_data)?;
+    e.call1("functionAlgebraics", sim_data)
+}
+
+/// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
+fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.dae_mode() {
+        return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
+    }
+    e.call1("functionODE", sim_data)?;
+    e.call1("functionAlgebraics", sim_data)
+}
+
 /// Emit one result row from SimData at `time`, recomputing `functionODE`/
 /// `functionAlgebraics` first so the reported derivatives/algebraics are consistent.
 /// The integrator has accepted the state, so a non-converging NLS here is a genuine
@@ -1315,8 +1370,7 @@ fn emit_row(
 ) -> Result<()> {
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)?;
+    eval_continuous(e, sim_data, layout)?;
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
     check_asserts(e, sim_data, layout, if time >= stop { omclog::WARNING } else { omclog::INFO })
@@ -1368,9 +1422,10 @@ fn emit_initial_row(
 /// would break the post-event edge test.
 fn capture_pre(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
     write_f64(e, sim_data + TIME_OFF, time)?;
-    e.call1("functionODE", sim_data)?;
-    if !layout.has_when {
-        e.call1("functionAlgebraics", sim_data)?;
+    if layout.has_when {
+        eval_ode(e, sim_data, layout)?;
+    } else {
+        eval_continuous(e, sim_data, layout)?;
     }
     capture_row(e, rows, sim_data, layout)
 }
@@ -1472,8 +1527,7 @@ fn eval_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout,
     // re-evaluates relations regardless of this flag.
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)?;
+    eval_zc_equations(e, sim_data, layout)?;
     e.call1("functionZeroCrossings", sim_data)?;
     for (i, v) in out.iter_mut().enumerate() {
         *v = read_f64(e, sim_data + layout.zc_off + (i as u32) * 8)?;
@@ -1550,8 +1604,7 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
             seed_pre_from_live(e, sim_data, layout)?;
         }
         update_relations_pre(e, sim_data, layout)?;
-        e.call1("functionODE", sim_data)?;
-        e.call1("functionAlgebraics", sim_data)?;
+        eval_discrete(e, sim_data, layout)?;
         if discrete_snapshot(e, sim_data, layout)? == prev {
             break;
         }
@@ -1570,6 +1623,8 @@ pub struct Samples {
     interval: Vec<f64>,
     /// Absolute address of the `active` flag array (`sim_data + sample_active_off`).
     active_off: u32,
+    /// Which model call a firing evaluates (see [`eval_discrete`]).
+    dae: bool,
 }
 
 impl Samples {
@@ -1583,7 +1638,12 @@ impl Samples {
             next.push(read_f64(e, base)?);
             interval.push(read_f64(e, base + 8)?);
         }
-        Ok(Samples { next, interval, active_off: sim_data + layout.sample_active_off })
+        Ok(Samples {
+            next,
+            interval,
+            active_off: sim_data + layout.sample_active_off,
+            dae: layout.dae_mode(),
+        })
     }
 
     /// Time of the next sample event (min of `next`), or +inf if there are none.
@@ -1607,7 +1667,11 @@ impl Samples {
             }
         }
         write_f64(e, sim_data + TIME_OFF, t)?;
-        e.call1("functionAlgebraics", sim_data)?;
+        if self.dae {
+            e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE)?;
+        } else {
+            e.call1("functionAlgebraics", sim_data)?;
+        }
         for k in 0..self.next.len() {
             if fired[k] {
                 write_i32(e, self.active_off + k as u32 * 4, 0)?;
@@ -1666,8 +1730,7 @@ pub fn event_update(
         refresh_relations(e, sim_data, layout)?;
         // `fire` cleared the `active` flag; re-evaluate so the condition reads
         // false and `pre` records it, or the next firing sees no edge.
-        e.call1("functionODE", sim_data)?;
-        e.call1("functionAlgebraics", sim_data)?;
+        eval_discrete(e, sim_data, layout)?;
     } else {
         // `pre(x)` of a continuous variable must be its value at the crossing.
         save_pre_real(e, sim_data, layout)?;
@@ -1676,7 +1739,7 @@ pub fn event_update(
         store_relations(e, sim_data, layout)?;
         check_nls(e, sim_data, layout)?;
         // A reinit changes the state the derivatives are computed from.
-        e.call1("functionODE", sim_data)?;
+        eval_ode(e, sim_data, layout)?;
     }
 
     let mut states_changed = false;
@@ -1769,6 +1832,10 @@ pub fn make_driver(
     if !supported {
         return Err(UNSUPPORTED_METHOD);
     }
+    // C leaves the choice to the user and then evaluates an empty `functionODE`.
+    if layout.dae_mode() && method != "ida" {
+        return Err("CodegenWasmJit: a model translated with --daeMode can only be simulated with -s=ida");
+    }
 
     // C allocates the solver before it initializes the model, and gbode logs its
     // configuration there, so it is built here rather than inside the driver.
@@ -1788,10 +1855,26 @@ pub fn make_driver(
         None
     };
 
-    if layout.n_samples > 0 || layout.n_zc > 0 || method == "gbode" {
+    // C's `setJacobianMethod` reports INTERNALNUMJAC in DAE mode (no symbolic `A` is
+    // generated) and announces the colored-FD fallback. C configures IDA before
+    // `initializeModel`, so this precedes the initialization messages.
+    #[cfg(sundials)]
+    if layout.dae_mode() && ida_linear_solver(layout) == crate::sundials::IdaLs::Klu {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. \
+             Colored numerical Jacobian will be used.",
+        );
+    }
+    // DAE mode always takes the `SolverCore` path: the consistent-restart its
+    // discrete update needs lives there.
+    let events = layout.n_samples > 0 || layout.n_zc > 0;
+    if events || method == "gbode" || layout.dae_mode() {
         let label = match method {
             "cvode" => "cvode-events",
-            "ida" => "ida-events",
+            "ida" if events => "ida-events",
+            "ida" => "ida",
             "gbode" => "gbode",
             _ => "dassl-events",
         };
@@ -2085,12 +2168,14 @@ struct ResCtx {
     /// ODE Jacobian sparsity+coloring for the colored-FD `jacd`; null ⇒ the
     /// analytic path is off and daskr's own numerical Jacobian is used.
     jac: *const JacAInfo,
-    /// Scratch reused across `dassl_jac` colors (sized `n_states`): perturbed
-    /// residual, saved states, reciprocal steps, and the der read buffer.
+    /// Scratch reused across `dassl_jac` colors (sized by the unknown count):
+    /// perturbed residual, saved states, reciprocal steps, and the der read buffer.
     jac_gp: Vec<f64>,
     jac_ysave: Vec<f64>,
     jac_del: Vec<f64>,
     jac_ders: Vec<u8>,
+    /// DAE mode: the saved `y'` the Jacobian perturbs alongside `y`.
+    jac_ypsave: Vec<f64>,
     /// Jacobian evaluations (colors summed over all Jacobian assemblies).
     nje: u64,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
@@ -2133,12 +2218,19 @@ struct IdaCtx {
     mem: *mut core::ffi::c_void,
     pattern: *const IdaPattern,
     sens: SensPush,
+    /// `--daeMode` only; null for an explicit ODE.
+    dae: *const DaeSolve,
 }
 
 #[cfg(sundials)]
 impl Default for IdaCtx {
     fn default() -> Self {
-        IdaCtx { mem: core::ptr::null_mut(), pattern: core::ptr::null(), sens: SensPush::default() }
+        IdaCtx {
+            mem: core::ptr::null_mut(),
+            pattern: core::ptr::null(),
+            sens: SensPush::default(),
+            dae: core::ptr::null(),
+        }
     }
 }
 
@@ -2486,11 +2578,20 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
 
 /// C's `realVarsData[i].attribute.nominal` for the states, floored at 1e-32 by
 /// `functionUpdateBoundVariableAttributes` and so only readable after
-/// initialization. Length ≥ 1 so daskr never sees an empty array.
+/// initialization. In DAE mode the algebraic unknowns' nominals follow (C's
+/// `getAlgebraicDAEVarNominals`), one per extra component of IDA's `y`. Length ≥ 1
+/// so daskr never sees an empty array.
 fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
-    (0..layout.n_states.max(1))
-        .map(|i| if i < layout.n_states { read_f64(e, sim_data + layout.state_nom_off + i * 8) } else { Ok(1.0) })
-        .collect()
+    let mut nominals: Vec<f64> = (0..layout.n_states)
+        .map(|i| read_f64(e, sim_data + layout.state_nom_off + i * 8))
+        .collect::<Result<_>>()?;
+    for k in 0..layout.n_dae_alg {
+        nominals.push(read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?);
+    }
+    if nominals.is_empty() {
+        nominals.push(1.0);
+    }
+    Ok(nominals)
 }
 
 /// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`.
@@ -2766,6 +2867,7 @@ impl Driver for DasslDriver {
             jac_ysave: vec![0.0; n_states],
             jac_del: vec![0.0; n_states],
             jac_ders: Vec::new(),
+            jac_ypsave: Vec::new(),
             nje: self.nje,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
@@ -3119,6 +3221,40 @@ struct IdaState {
 
 #[cfg(sundials)]
 impl IdaState {
+    /// The IDA block, built on first use — when `y`/`yp` first hold the state to
+    /// start from. In DAE mode that also runs one `IDACalcIC`: C's initialization
+    /// ends with `updateDiscreteSystem`, whose `functionDAE` is `ida_event_update`,
+    /// and that is what makes the algebraic unknowns and `y'` consistent.
+    #[allow(clippy::too_many_arguments)]
+    fn ensure(
+        &mut self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        t: f64,
+        y: &mut [f64],
+        yp: &mut [f64],
+        ctx: *mut ResCtx,
+    ) -> Result<()> {
+        if self.ida.is_some() {
+            return Ok(());
+        }
+        let fresh = self.setup.build(e, sim_data, t, y, yp, self.rtol, &self.atol, self.n_roots)?;
+        let ida = self.ida.insert(fresh);
+        // `IDACalcIC` below calls them, so bind `user_data` first.
+        unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
+        if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
+            return Err("CodegenWasmJit: IDA setup failed");
+        }
+        if self.setup.dae.is_some() {
+            dae_calc_ic(ida, t)?;
+            y.copy_from_slice(ida.y());
+            yp.copy_from_slice(ida.yp());
+            self.setup.dae_store(e, sim_data, y, yp)?;
+            e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE)?;
+        }
+        Ok(())
+    }
+
     /// The IDA block is built on the first step, when `y`/`yp` first hold the
     /// state to start from. `ctx` is the callbacks' `user_data`, which lives on
     /// one `advance`'s stack, so it is rebound per call rather than stored.
@@ -3133,12 +3269,8 @@ impl IdaState {
         target: f64,
         ctx: *mut ResCtx,
     ) -> Result<Progress> {
-        let ida = match self.ida.as_mut() {
-            Some(ida) => ida,
-            None => self.ida.insert(self.setup.build(
-                e, sim_data, *t, y, yp, self.rtol, &self.atol, self.n_roots,
-            )?),
-        };
+        self.ensure(e, sim_data, *t, y, yp, ctx)?;
+        let ida = self.ida.as_mut().expect("built by `ensure`");
         unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: IDA setup failed");
@@ -3180,6 +3312,13 @@ impl IdaState {
 struct SolverCore {
     sim_data: u32,
     n_states: usize,
+    /// Components of the integrator's `y`: the states, plus in DAE mode the
+    /// algebraic unknowns that follow them.
+    n_unknowns: usize,
+    /// `SimData` slot of each algebraic DAE unknown, empty for an explicit ODE.
+    dae_alg_offs: Vec<u32>,
+    /// The model was translated with `--daeMode`, so `y'` is a solver result.
+    dae: bool,
     states_base: u32,
     ders_base: u32,
     y: Vec<f64>,
@@ -3353,6 +3492,9 @@ impl SolverCore {
         Ok(SolverCore {
             sim_data,
             n_states,
+            n_unknowns: n_states + layout.n_dae_alg as usize,
+            dae_alg_offs: model.dae.as_ref().map(|d| d.alg_offs.clone()).unwrap_or_default(),
+            dae: layout.dae_mode(),
             states_base,
             ders_base,
             y: Vec::new(),
@@ -3383,6 +3525,53 @@ impl SolverCore {
             Solver::Ida(s) => s.setup.ctx(s.ida.as_ref()),
             _ => IdaCtx::default(),
         }
+    }
+
+    /// The `IDACalcIC` half of C's `ida_event_update`, run after `restart` has
+    /// re-initialized IDA at the post-event state: consistent algebraic unknowns and
+    /// derivatives, pushed back into `SimData`. `ctx` must be the live callback
+    /// context — `IDACalcIC` evaluates the residual.
+    fn dae_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
+        if !self.dae {
+            return Ok(());
+        }
+        let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
+        #[cfg(sundials)]
+        if let Solver::Ida(s) = &mut self.solver {
+            let Some(ida) = s.ida.as_mut() else { return Ok(()) };
+            if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
+                return Err("CodegenWasmJit: IDA setup failed");
+            }
+            dae_calc_ic(ida, self.t)?;
+            self.y.copy_from_slice(ida.y());
+            self.yp.copy_from_slice(ida.yp());
+            self.write_states(e)?;
+            e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
+        }
+        Ok(())
+    }
+
+    /// The `IDACalcIC` C's initialization performs before the first output row —
+    /// which already reports the algebraic unknowns and derivatives IDA solves for.
+    fn prime(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> Result<()> {
+        if !self.dae {
+            return Ok(());
+        }
+        self.read_states(e)?;
+        let mut ctx = self.res_ctx(e, layout);
+        let ctx_ptr = &mut ctx as *mut ResCtx;
+        RES_CTX.store(ctx_ptr, Ordering::Relaxed);
+        let _guard = ResCtxGuard;
+        let (t, sim_data) = (self.t, self.sim_data);
+        #[cfg(sundials)]
+        if let Solver::Ida(state) = &mut self.solver {
+            let e = unsafe { &mut *ctx.engine };
+            state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx_ptr)?;
+        }
+        if let Some(err) = ctx.err.take() {
+            return Err(err);
+        }
+        Ok(())
     }
 
     /// Record a state event at `time`. `Some((t0, time))` once [`CHATTER_LIMIT`]
@@ -3452,14 +3641,45 @@ impl SolverCore {
     }
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
-    /// that moved a state behind DASKR's back.
+    /// that moved a state behind DASKR's back. In DAE mode the algebraic unknowns
+    /// follow the states in `y` (C's `getAlgebraicDAEVars`); their `y'` entries stay
+    /// zero, as C's `calloc`'d `statesDer` leaves them.
     fn read_states(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
-        self.y = (0..self.n_states)
-            .map(|i| read_f64(e, self.states_base + (i as u32) * 8))
-            .collect::<Result<_>>()?;
+        self.read_y(e)?;
         self.yp = (0..self.n_states)
             .map(|i| read_f64(e, self.ders_base + (i as u32) * 8))
             .collect::<Result<_>>()?;
+        self.yp.resize(self.n_unknowns, 0.0);
+        Ok(())
+    }
+
+    /// The `y` half of [`read_states`](SolverCore::read_states), for the callers
+    /// that must not disturb the integrator's own `y'`.
+    fn read_y(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+        self.y = (0..self.n_states)
+            .map(|i| read_f64(e, self.states_base + (i as u32) * 8))
+            .collect::<Result<_>>()?;
+        for &off in &self.dae_alg_offs {
+            self.y.push(read_f64(e, self.sim_data + off)?);
+        }
+        Ok(())
+    }
+
+    /// The integrator's accepted point back into `SimData`. For an explicit ODE only
+    /// the states move (the model computes `y'`); in DAE mode `y'` and the algebraic
+    /// unknowns are solver results too.
+    fn write_states(&self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+        for i in 0..self.n_states {
+            write_f64(e, self.states_base + (i as u32) * 8, self.y[i])?;
+        }
+        for (k, &off) in self.dae_alg_offs.iter().enumerate() {
+            write_f64(e, self.sim_data + off, self.y[self.n_states + k])?;
+        }
+        if self.dae {
+            for i in 0..self.n_states {
+                write_f64(e, self.ders_base + (i as u32) * 8, self.yp[i])?;
+            }
+        }
         Ok(())
     }
 
@@ -3489,10 +3709,11 @@ impl SolverCore {
                 Solver::Gbode(_) => self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
                 Solver::Fixed(_) => core::ptr::null(),
             },
-            jac_gp: vec![0.0; self.n_states],
-            jac_ysave: vec![0.0; self.n_states],
-            jac_del: vec![0.0; self.n_states],
+            jac_gp: vec![0.0; self.n_unknowns],
+            jac_ysave: vec![0.0; self.n_unknowns],
+            jac_del: vec![0.0; self.n_unknowns],
             jac_ders: Vec::new(),
+            jac_ypsave: vec![0.0; self.n_unknowns],
             nje: self.nje,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
@@ -3678,7 +3899,7 @@ impl SolverCore {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let n_states = self.n_states;
-        let (states_base, ders_base) = (self.states_base, self.ders_base);
+        let ders_base = self.ders_base;
         let eps = tout.abs().max(1.0) * 1e-10;
         let mut grid_covered = false;
 
@@ -3715,9 +3936,7 @@ impl SolverCore {
                     Solved::Reached | Solved::Stepped => false,
                     Solved::Root => true,
                 };
-                for i in 0..n_states {
-                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
-                }
+                self.write_states(e)?;
                 // C emits from `perform_simulation` once `solver_step` returns.
                 if let Solved::Stepped = solved {
                     if let Some(r) = rows.as_deref_mut()
@@ -3784,14 +4003,15 @@ impl SolverCore {
                     }
                     // Re-read states (a reinit may have jumped one), recompute the
                     // consistent derivative, and restart DASKR at troot (INFO(1)=0).
-                    for i in 0..n_states {
-                        self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
-                    }
-                    e.call1("functionODE", sim_data)?;
-                    for i in 0..n_states {
-                        self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                    self.read_states(e)?;
+                    if !self.dae {
+                        e.call1("functionODE", sim_data)?;
+                        for i in 0..n_states {
+                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                        }
                     }
                     self.restart()?;
+                    self.dae_restart(e, ctx)?;
                     continue;
                 }
                 // Reached the target with no state event: breaks a chattering run.
@@ -3827,17 +4047,18 @@ impl SolverCore {
                 if terminated(e, sim_data, layout)? {
                     return Ok(Step::Terminated);
                 }
-                for i in 0..n_states {
-                    self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
-                }
+                self.read_y(e)?;
                 // A sample may change discrete state the derivative depends on;
                 // recompute yp and restart so the integrator continues consistently.
-                if layout.n_zc > 0 || self.restart_after_time_event() {
-                    e.call1("functionODE", sim_data)?;
-                    for i in 0..n_states {
-                        self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                if layout.n_zc > 0 || self.dae || self.restart_after_time_event() {
+                    if !self.dae {
+                        e.call1("functionODE", sim_data)?;
+                        for i in 0..n_states {
+                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                        }
                     }
                     self.restart()?;
+                    self.dae_restart(e, ctx)?;
                 }
                 if te >= tout - eps {
                     grid_covered = true;
@@ -4153,6 +4374,7 @@ impl EventsDriver {
         let mut samp = Samples::load(e, sim_data, layout)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
         let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
+        core.prime(e, layout)?;
         // A sample scheduled exactly at the start time fires before row 0.
         if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
             samp.fire(e, sim_data, start)?;
@@ -4205,11 +4427,12 @@ impl Driver for EventsDriver {
         let stop = model.stop_time;
         let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
         let deadline = deadline_from(budget_ms);
-        let n_states = self.core.n_states;
         // `-noEquidistantTimeGrid`: the rows come from `integrate_to`, so one "row"
         // spans the run; `Samples` still bounds each solve.
-        let no_grid =
-            no_equidistant_grid() && n_states > 0 && stop > start && self.core.reports_steps();
+        let no_grid = no_equidistant_grid()
+            && self.core.n_unknowns > 0
+            && stop > start
+            && self.core.reports_steps();
         let n_rows = if no_grid { 2 } else { n_rows };
         // See `DasslDriver`: C's degenerate first iteration in this mode.
         if no_grid && !self.no_grid_primed {
@@ -4225,7 +4448,9 @@ impl Driver for EventsDriver {
         // that must be located between grid points. Walk grid point to grid point,
         // bracketing each state event on a zero-crossing sign change and bisecting to
         // its exact time, interleaved with the sample (time) events in time order.
-        if n_states == 0 {
+        // A DAE-mode model still has its algebraic unknowns for IDA to solve, so it
+        // takes the integrating path even with no states.
+        if self.core.n_unknowns == 0 {
             let mut did_step = false;
             let mut zc0 = vec![0.0f64; layout.n_zc as usize];
             let mut scratch = vec![0.0f64; layout.n_zc as usize];
@@ -4389,10 +4614,7 @@ impl Driver for EventsDriver {
             // Re-select states at the accepted output point (see `DasslDriver`).
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
                 e.call1("functionODE", sim_data)?;
-                for i in 0..n_states {
-                    self.core.y[i] = read_f64(e, self.core.states_base + (i as u32) * 8)?;
-                    self.core.yp[i] = read_f64(e, self.core.ders_base + (i as u32) * 8)?;
-                }
+                self.core.read_states(e)?;
                 self.core.restart()?;
             }
             self.row += 1;
@@ -4470,14 +4692,17 @@ unsafe extern "C" fn cvode_rhs(
 /// `gout[i] := g_i(t, y)`, the zero-crossing values whose sign changes are state
 /// events. The body of [`dassl_rt`], shared by the CVODE and IDA root callbacks.
 #[cfg(sundials)]
-unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, gout: *mut f64) -> Result<()> {
+unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, gout: *mut f64) -> Result<()> {
     let e = unsafe { &mut *ctx.engine };
     write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
     write_f64(e, ctx.sim_data + TIME_OFF, t)?;
-    let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
-    e.write_bytes(ctx.states_base, y_bytes)?;
+    unsafe { ida_push_unknowns(ctx, y, yp) }?;
     set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-    e.call1("functionODE", ctx.sim_data)?;
+    if unsafe { ctx.ida.dae.as_ref() }.is_some() {
+        e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
+    } else {
+        e.call1("functionODE", ctx.sim_data)?;
+    }
     e.call1("functionZeroCrossings", ctx.sim_data)?;
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
@@ -4493,7 +4718,7 @@ unsafe extern "C" fn cvode_root(
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
-    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(y), gout) } {
+    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(y), core::ptr::null(), gout) } {
         Err(err) => {
             ctx.err = Some(err);
             -1
@@ -4654,6 +4879,7 @@ impl Driver for CvodeDriver {
             jac_ysave: Vec::new(),
             jac_del: Vec::new(),
             jac_ders: Vec::new(),
+            jac_ypsave: Vec::new(),
             nje: 0,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
@@ -4767,15 +4993,16 @@ fn fill_sundials_stats(stats: &mut SolveStats, c: crate::sundials::Counters) {
 // callbacks reach wasm through the same `ResCtx` the DASSL ones use, received as
 // IDA's `user_data`.
 
-/// The CSC layout IDA's sparse Jacobian is filled in: the model's `A` sparsity
-/// widened by the diagonal, which `J = ∂F/∂y - cj·I` needs whether or not the
-/// pattern carries it (C allocates `nnz + N` and lets `SUNMatScaleIAdd_Sparse`
-/// insert what is missing).
+/// The CSC layout IDA's sparse Jacobian is filled in: the model's sparsity, widened
+/// by the diagonal for an ODE model, which `J = ∂F/∂y - cj·I` needs whether or not
+/// the pattern carries it (C allocates `nnz + N` and lets `SUNMatScaleIAdd_Sparse`
+/// insert what is missing). A DAE-mode residual needs no widening — `∂F/∂y'` is
+/// differenced along with `∂F/∂y`.
 #[cfg(sundials)]
 struct IdaPattern {
     colptr: Vec<crate::sundials::SunIndex>,
     rowidx: Vec<crate::sundials::SunIndex>,
-    /// Value index of each column's diagonal entry.
+    /// Value index of each column's diagonal entry; empty when not widened.
     diag: Vec<usize>,
     /// `slots[col][k]` is where `rows_by_col[col][k]`'s difference quotient goes.
     slots: Vec<Vec<usize>>,
@@ -4783,23 +5010,27 @@ struct IdaPattern {
 
 #[cfg(sundials)]
 impl IdaPattern {
-    fn new(jac: &JacAInfo) -> IdaPattern {
+    fn new(jac: &JacAInfo, widen_diagonal: bool) -> IdaPattern {
         let n = jac.n as usize;
         let mut p = IdaPattern {
             colptr: Vec::with_capacity(n + 1),
             rowidx: Vec::new(),
-            diag: Vec::with_capacity(n),
+            diag: Vec::with_capacity(if widen_diagonal { n } else { 0 }),
             slots: Vec::with_capacity(n),
         };
         p.colptr.push(0);
         for col in 0..n {
             let base = p.rowidx.len();
             let mut rows = jac.rows_by_col[col].clone();
-            rows.push(col as u32);
+            if widen_diagonal {
+                rows.push(col as u32);
+            }
             rows.sort_unstable();
             rows.dedup();
-            let at = |r: u32| base + rows.binary_search(&r).expect("row is in the widened column");
-            p.diag.push(at(col as u32));
+            let at = |r: u32| base + rows.binary_search(&r).expect("row is in the column");
+            if widen_diagonal {
+                p.diag.push(at(col as u32));
+            }
             p.slots.push(jac.rows_by_col[col].iter().map(|&r| at(r)).collect());
             p.rowidx.extend(rows.iter().map(|&r| r as crate::sundials::SunIndex));
             p.colptr.push(p.rowidx.len() as crate::sundials::SunIndex);
@@ -4829,31 +5060,98 @@ struct IdaSetup {
     /// Where `IDAGetSens` deposits `n_sens` values for the next row to capture.
     sens_off: u32,
     sens_scratch: Vec<f64>,
+    /// `--daeMode`: the residual and the unknown vector this IDA solves over;
+    /// `None` for an explicit ODE.
+    dae: Option<Box<DaeSolve>>,
+}
+
+/// What the DAE-mode residual and Jacobian need beyond an ODE model's: the shape of
+/// `y = [states | algebraic unknowns]` and where each half lives in `SimData`. Boxed
+/// so the raw pointer the callbacks reach it through outlives every call.
+#[cfg(sundials)]
+struct DaeSolve {
+    /// `nResidualVars` — also `n_states + alg_offs.len()`.
+    n: usize,
+    n_states: usize,
+    /// Base of `daeModeData->residualVars` in `SimData`.
+    res_off: u32,
+    /// `SimData` slot of each algebraic unknown (C's `algIndexes`).
+    alg_offs: Vec<u32>,
+    /// `IDASetId`: 1 for a state, 0 for an algebraic unknown.
+    id: Vec<f64>,
+}
+
+/// `IDACalcIC` over the algebraic unknowns and every derivative, directed by the
+/// step IDA would take next (floored, so a zero step still gives a direction). A
+/// failed first attempt is retried with the line search off, as C does.
+#[cfg(sundials)]
+fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64) -> Result<()> {
+    let mut h = ida.actual_init_step();
+    if h < f64::EPSILON {
+        h = f64::EPSILON;
+        ida.set_init_step(h);
+    }
+    if !ida.calc_ic(t + h, true) && !ida.calc_ic(t + h, false) {
+        return Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)");
+    }
+    if !ida.consistent_ic() {
+        return Err("CodegenWasmJit: IDAGetConsistentIC failed");
+    }
+    // C resets the initial step to automatic afterwards.
+    ida.set_init_step(0.0);
+    Ok(())
+}
+
+/// `-idaLS`, defaulting to KLU as `ida_solver.c` does. Without states there is
+/// nothing to factorize, so KLU's demand for a pattern does not apply — the driver
+/// never steps such a model anyway (a DAE-mode one still has algebraic unknowns).
+#[cfg(sundials)]
+fn ida_linear_solver(layout: &SimLayout) -> crate::sundials::IdaLs {
+    use crate::sundials::IdaLs;
+    let ls = match crate::simflags::with_flags(|f| f.ida_ls) {
+        Some(crate::simflags::IdaLs::Dense) => IdaLs::Dense,
+        Some(crate::simflags::IdaLs::Spgmr) => IdaLs::Spgmr,
+        Some(crate::simflags::IdaLs::Spbcg) => IdaLs::Spbcg,
+        Some(crate::simflags::IdaLs::Sptfqmr) => IdaLs::Sptfqmr,
+        _ => IdaLs::Klu,
+    };
+    if layout.n_states == 0 && !layout.dae_mode() && ls == IdaLs::Klu { IdaLs::Dense } else { ls }
 }
 
 #[cfg(sundials)]
 impl IdaSetup {
     fn new(model: &SimModel) -> Result<IdaSetup> {
         use crate::sundials::IdaLs;
-        let ls = match crate::simflags::with_flags(|f| f.ida_ls) {
-            Some(crate::simflags::IdaLs::Dense) => IdaLs::Dense,
-            Some(crate::simflags::IdaLs::Spgmr) => IdaLs::Spgmr,
-            Some(crate::simflags::IdaLs::Spbcg) => IdaLs::Spbcg,
-            Some(crate::simflags::IdaLs::Sptfqmr) => IdaLs::Sptfqmr,
-            _ => IdaLs::Klu,
+        let layout = &model.layout;
+        let ls = ida_linear_solver(layout);
+        let dae = match layout.dae_mode() {
+            false => None,
+            true => {
+                let info = model.dae.as_ref().ok_or("CodegenWasmJit: DAE-mode model without DAE metadata")?;
+                let n_states = layout.n_states as usize;
+                let mut id = vec![1.0; n_states];
+                id.resize(layout.n_dae_res as usize, 0.0);
+                Some(Box::new(DaeSolve {
+                    n: layout.n_dae_res as usize,
+                    n_states,
+                    res_off: layout.dae_res_off,
+                    alg_offs: info.alg_offs.clone(),
+                    id,
+                }))
+            }
         };
-        // Nothing to factorize without states, so KLU's demand for a pattern does
-        // not apply — the driver never steps such a model anyway.
-        let ls = if model.layout.n_states == 0 && ls == IdaLs::Klu { IdaLs::Dense } else { ls };
         // The Krylov solvers assemble no matrix (C pins them to INTERNALNUMJAC).
+        // In DAE mode the pattern is the residual Jacobian's, not the ODE `A`'s
+        // (which the backend leaves empty there).
         let jac_a = match () {
             _ if ls.matrix_free() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() => None,
+            _ if dae.is_some() => model.dae.as_ref().and_then(|d| d.sparsity.clone()),
             _ => model.jac_a.clone(),
         };
         let pattern = match (&jac_a, ls) {
             // C throws here rather than fall back: KLU has nothing to factorize.
             (None, IdaLs::Klu) => return Err(IDA_NO_SPARSE_PATTERN),
-            (Some(j), IdaLs::Klu) => Some(IdaPattern::new(j)),
+            (Some(j), IdaLs::Klu) => Some(IdaPattern::new(j, dae.is_none())),
             _ => None,
         };
         let opts = crate::simflags::with_flags(|f| crate::sundials::IdaOptions {
@@ -4868,15 +5166,16 @@ impl IdaSetup {
             true => model.sens_params.clone(),
             false => Vec::new(),
         };
-        let n_sens = if sens_offs.is_empty() { 0 } else { model.layout.n_sens as usize };
+        let n_sens = if sens_offs.is_empty() { 0 } else { layout.n_sens as usize };
         Ok(IdaSetup {
             ls,
             jac_a,
             pattern,
             opts,
             sens_offs,
-            sens_off: model.layout.sens_off,
+            sens_off: layout.sens_off,
             sens_scratch: vec![0.0; n_sens],
+            dae,
         })
     }
 
@@ -4930,7 +5229,26 @@ impl IdaSetup {
                 return Err("CodegenWasmJit: IDA sensitivity initialization failed");
             }
         }
+        if let Some(d) = self.dae.as_deref() {
+            let suppress_alg = crate::simflags::with_flags(|f| f.ida_no_suppress_alg);
+            if !ida.set_id(&d.id, suppress_alg) {
+                return Err("CodegenWasmJit: IDASetId failed");
+            }
+        }
         Ok(ida)
+    }
+
+    /// The DAE-mode unknown vector back into `SimData` (C's `setAlgebraicDAEVars`).
+    fn dae_store(&self, e: &mut dyn SimEngine, sim_data: u32, y: &[f64], yp: &[f64]) -> Result<()> {
+        let Some(d) = self.dae.as_deref() else { return Ok(()) };
+        for i in 0..d.n_states {
+            write_f64(e, sim_data + REAL_OFF + (i as u32) * 8, y[i])?;
+            write_f64(e, sim_data + REAL_OFF + ((d.n_states + i) as u32) * 8, yp[i])?;
+        }
+        for (k, &off) in d.alg_offs.iter().enumerate() {
+            write_f64(e, sim_data + off, y[d.n_states + k])?;
+        }
+        Ok(())
     }
 
     fn ctx(&self, ida: Option<&crate::sundials::Ida>) -> IdaCtx {
@@ -4941,6 +5259,7 @@ impl IdaSetup {
                 Some(p) => SensPush { offs: self.sens_offs.as_ptr(), values: p.as_ptr(), n: p.len() },
                 None => SensPush::default(),
             },
+            dae: self.dae.as_deref().map_or(core::ptr::null(), |d| d as *const DaeSolve),
         }
     }
 }
@@ -4949,13 +5268,31 @@ impl IdaSetup {
 const IDA_NO_SPARSE_PATTERN: &str = "CodegenWasmJit: -s=ida with the KLU linear solver needs the model's \
      Jacobian sparsity pattern, which this model has none of (use -idaLS=dense)";
 
-/// `F(t, y, y') := f(t, y) - y'`, the residual `residualFunctionIDA` builds
-/// outside DAE mode: `t` and the candidate states into `SimData`, the wasm
-/// `functionODE`, the derivative slots back out.
+/// The unknown vector into `SimData` without evaluating anything.
+#[cfg(sundials)]
+unsafe fn ida_push_unknowns(ctx: &mut ResCtx, y: *const f64, yp: *const f64) -> Result<()> {
+    let dae = unsafe { ctx.ida.dae.as_ref() };
+    let e = unsafe { &mut *ctx.engine };
+    let n_states = dae.map_or(ctx.n_states, |d| d.n_states);
+    let states = unsafe { core::slice::from_raw_parts(y as *const u8, n_states * 8) };
+    e.write_bytes(ctx.states_base, states)?;
+    if let Some(d) = dae {
+        let ders = unsafe { core::slice::from_raw_parts(yp as *const u8, d.n_states * 8) };
+        e.write_bytes(ctx.ders_base, ders)?;
+        for (k, &off) in d.alg_offs.iter().enumerate() {
+            write_f64(e, ctx.sim_data + off, unsafe { *y.add(d.n_states + k) })?;
+        }
+    }
+    Ok(())
+}
+
+/// `F(t, y, y') := f(t, y) - y'`, the residual `residualFunctionIDA` builds outside
+/// DAE mode: `t` and the candidate states into `SimData`, the wasm `functionODE`, the
+/// derivative slots back out. In DAE mode the model computes the residual itself —
+/// `evaluateDAEResiduals` at the dynamic stage leaves `nResidualVars` values behind.
 #[cfg(sundials)]
 unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, out: *mut f64) -> Result<()> {
     let e = unsafe { &mut *ctx.engine };
-    let n = ctx.n_states;
     let sens = ctx.ida.sens;
     for i in 0..sens.n {
         write_f64(e, ctx.sim_data + unsafe { *sens.offs.add(i) }, unsafe { *sens.values.add(i) })?;
@@ -4964,8 +5301,13 @@ unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, 
         e.call1("functionUpdateBoundParameters", ctx.sim_data)?;
     }
     write_f64(e, ctx.sim_data + TIME_OFF, t)?;
-    let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
-    e.write_bytes(ctx.states_base, y_bytes)?;
+    unsafe { ida_push_unknowns(ctx, y, yp) }?;
+    if let Some(d) = unsafe { ctx.ida.dae.as_ref() } {
+        e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::DYNAMIC)?;
+        let out_bytes = unsafe { core::slice::from_raw_parts_mut(out as *mut u8, d.n * 8) };
+        return e.read_bytes(ctx.sim_data + d.res_off, out_bytes);
+    }
+    let n = ctx.n_states;
     e.call1("functionODE", ctx.sim_data)?;
     let out_bytes = unsafe { core::slice::from_raw_parts_mut(out as *mut u8, n * 8) };
     e.read_bytes(ctx.ders_base, out_bytes)?;
@@ -5018,12 +5360,12 @@ unsafe extern "C" fn ida_res(
 unsafe extern "C" fn ida_root(
     t: f64,
     yy: crate::sundials::NVector,
-    _yp: crate::sundials::NVector,
+    yp: crate::sundials::NVector,
     gout: *mut f64,
     user_data: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
     let ctx = unsafe { &mut *(user_data as *mut ResCtx) };
-    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(yy), gout) } {
+    match unsafe { eval_roots(ctx, t, crate::sundials::nv_data(yy), crate::sundials::nv_data(yp), gout) } {
         Err(err) => {
             ctx.err = Some(err);
             -1
@@ -5054,8 +5396,9 @@ unsafe extern "C" fn ida_jac(
         return -1;
     }
     let jac = unsafe { &*ctx.jac };
+    let dae = unsafe { ctx.ida.dae.as_ref() };
     let e = unsafe { &mut *ctx.engine };
-    let n = ctx.n_states;
+    let n = dae.map_or(ctx.n_states, |d| d.n);
     let y = crate::sundials::nv_data(yy);
     let ypv = crate::sundials::nv_data(yp);
     let base = crate::sundials::nv_data(rr);
@@ -5085,6 +5428,12 @@ unsafe extern "C" fn ida_jac(
                 ctx.jac_ysave[ci] = yi;
                 ctx.jac_del[ci] = del;
                 unsafe { *y.add(ci) = yi + del };
+                // In DAE mode the same difference carries `cj·∂F/∂y'`, so there is
+                // no `-cj·I` term to add afterwards.
+                if dae.is_some() {
+                    ctx.jac_ypsave[ci] = unsafe { *ypv.add(ci) };
+                    unsafe { *ypv.add(ci) += cj * del };
+                }
             }
             write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
             // Detached so the residual can borrow `ctx`; same buffer.
@@ -5104,15 +5453,19 @@ unsafe extern "C" fn ida_jac(
                     }] = d / del;
                 }
                 unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+                if dae.is_some() {
+                    unsafe { *ypv.add(ci) = ctx.jac_ypsave[ci] };
+                }
             }
         }
         // -cj·∂F/∂y' = -cj·I, the diagonal the ∂F/∂y difference does not carry.
-        for col in 0..n {
-            vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+        if dae.is_none() {
+            for col in 0..n {
+                vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+            }
         }
-        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
-        e.write_bytes(ctx.states_base, y_bytes)?;
-        Ok(())
+        // Restore the base point; the last colour left a perturbed one.
+        unsafe { ida_push_unknowns(ctx, y, ypv) }
     })();
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     match run {
@@ -5294,6 +5647,7 @@ impl Driver for IdaDriver {
             jac_ysave: vec![0.0; n_states],
             jac_del: vec![0.0; n_states],
             jac_ders: Vec::new(),
+            jac_ypsave: Vec::new(),
             nje: 0,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),

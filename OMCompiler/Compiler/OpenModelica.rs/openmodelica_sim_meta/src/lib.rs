@@ -147,6 +147,19 @@ pub struct Layout {
     /// as a result row's last columns.
     pub n_sens: u32,
     pub sens_off: u32,
+    /// `--daeMode`: C's `daeModeData->nResidualVars`, also the size of the implicit
+    /// system IDA solves. 0 ⇒ an explicit ODE, and no `dae_*` region exists.
+    pub n_dae_res: u32,
+    /// Base of `daeModeData->residualVars` (f64 each).
+    pub dae_res_off: u32,
+    pub n_dae_aux: u32,
+    /// Base of `daeModeData->auxiliaryVars` (f64 each).
+    pub dae_aux_off: u32,
+    /// `daeModeData->nAlgebraicDAEVars`: the unknowns IDA carries after the states,
+    /// so `n_dae_res == n_states + n_dae_alg`.
+    pub n_dae_alg: u32,
+    /// Base of their `nominal` attributes, written like `state_nom_off`.
+    pub dae_alg_nom_off: u32,
     pub total: u32,
 }
 
@@ -173,6 +186,9 @@ impl Layout {
         n_nlsjac_f64: u32,
         n_math: u32,
         n_sens: u32,
+        n_dae_res: u32,
+        n_dae_aux: u32,
+        n_dae_alg: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -211,19 +227,29 @@ impl Layout {
         let start_off = zctol_off + 8;
         let state_nom_off = start_off + n_states * 8;
         let sens_off = state_nom_off + n_states * 8;
-        let total = sens_off + n_sens * 8;
+        let dae_res_off = sens_off + n_sens * 8;
+        let dae_aux_off = dae_res_off + n_dae_res * 8;
+        let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
+        let total = dae_alg_nom_off + n_dae_alg * 8;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off, total,
+            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off,
+            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off, total,
         }
     }
 
     /// Byte offset of state `i`'s overridable start-value slot.
     pub fn state_start_off(&self, i: u32) -> u32 {
         self.start_off + i * 8
+    }
+
+    /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
+    /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
+    pub fn dae_mode(&self) -> bool {
+        self.n_dae_res > 0
     }
 
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
@@ -320,6 +346,17 @@ pub struct JacAInfo {
     pub rows_by_col: Vec<Vec<u32>>,
 }
 
+/// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct DaeInfo {
+    /// C's `daeModeData->algIndexes` as `SimData` offsets, in the order they follow
+    /// the states in IDA's `y`.
+    pub alg_offs: Vec<u32>,
+    /// `daeModeData->sparsePattern`: `∂F/∂(y, y')` with its coloring. `None` ⇒ no
+    /// pattern, which the KLU linear solver cannot work without.
+    pub sparsity: Option<JacAInfo>,
+}
+
 /// Dynamic state-selection metadata for one `$STATESET`. All offsets are
 /// SimData-relative bytes.
 #[derive(Clone, PartialEq, Debug)]
@@ -410,6 +447,8 @@ pub struct SimMeta {
     /// solver order — C reads the same list out of the `_info.json` `defines` array
     /// to name the unknowns in its `-lv=LOG_NLS` blocks.
     pub nls_vars: Vec<NlsVars>,
+    /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
+    pub dae: Option<DaeInfo>,
 }
 
 /// [`SimMeta::nls_vars`] entry.
@@ -503,7 +542,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 8;
+const VERSION: u32 = 9;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -534,12 +573,24 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.state_nom_off, l.n_sens, l.sens_off, l.total,
+        l.state_nom_off, l.n_sens, l.sens_off,
+        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off, l.total,
     ] {
         put_u32(o, v);
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+}
+fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
+    match j {
+        None => o.push(0),
+        Some(j) => {
+            o.push(1);
+            put_u32(o, j.n);
+            put_u32s2(o, &j.colors);
+            put_u32s2(o, &j.rows_by_col);
+        }
+    }
 }
 fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
     match k {
@@ -583,15 +634,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_kind(&mut o, &v.kind);
         o.push(v.filter);
     }
-    match &m.jac_a {
-        None => o.push(0),
-        Some(j) => {
-            o.push(1);
-            put_u32(&mut o, j.n);
-            put_u32s2(&mut o, &j.colors);
-            put_u32s2(&mut o, &j.rows_by_col);
-        }
-    }
+    put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
     for s in &m.state_sets {
         put_u32(&mut o, s.n_candidates);
@@ -623,6 +666,14 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32(&mut o, v.names.len() as u32);
         for n in &v.names {
             put_str(&mut o, n);
+        }
+    }
+    match &m.dae {
+        None => o.push(0),
+        Some(d) => {
+            o.push(1);
+            put_u32s(&mut o, &d.alg_offs);
+            put_jac(&mut o, &d.sparsity);
         }
     }
     o
@@ -669,6 +720,12 @@ impl<'a> Reader<'a> {
         }
         Ok(v)
     }
+    fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
+        Ok(match self.u8()? {
+            0 => None,
+            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+        })
+    }
     fn layout(&mut self) -> Result<Layout, &'static str> {
         let mut l = Layout {
             n_states: self.u32()?,
@@ -710,6 +767,12 @@ impl<'a> Reader<'a> {
             state_nom_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
+            n_dae_res: self.u32()?,
+            dae_res_off: self.u32()?,
+            n_dae_aux: self.u32()?,
+            dae_aux_off: self.u32()?,
+            n_dae_alg: self.u32()?,
+            dae_alg_nom_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -757,10 +820,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..nvars {
         vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
     }
-    let jac_a = match r.u8()? {
-        0 => None,
-        _ => Some(JacAInfo { n: r.u32()?, colors: r.u32s2()?, rows_by_col: r.u32s2()? }),
-    };
+    let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
@@ -803,10 +863,14 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         nls_vars.push(NlsVars { eq_index, names });
     }
+    let dae = match r.u8()? {
+        0 => None,
+        _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
-        nls_vars,
+        nls_vars, dae,
     })
 }
 
@@ -818,7 +882,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -860,6 +924,14 @@ mod tests {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
             }],
+            dae: Some(DaeInfo {
+                alg_offs: vec![32, 40],
+                sparsity: Some(JacAInfo {
+                    n: 4,
+                    colors: vec![vec![0, 2], vec![1, 3]],
+                    rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                }),
+            }),
         }
     }
 

@@ -408,7 +408,10 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     });
     if let Err(e) = &outcome {
         if openmodelica_util::Error::getNumErrorMessages() == errs_before {
-            record_error(format!("CodegenWasmJit: cannot build simulation module for `{prefix}`: {e:#}"));
+            record_error(format!(
+                "CodegenWasmJit: cannot build simulation module for `{prefix}`: {}",
+                with_engine_detail(e)
+            ));
         }
     }
     outcome
@@ -2576,10 +2579,24 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Jacobian scratch region: nonlinear-system slots + torn-linear slots (after).
     let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code) + lin_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
+    // `--daeMode`: `allEquations`/`odeEquations` are empty and the whole continuous
+    // system is `daeModeData.daeEquations`, the residual `F(t, y, y') = 0`.
+    let dae_mode = sim_code.daeModeData.as_ref();
+    let dae_eqs: Vec<(Arc<SimCode::SimEqSystem>, u32)> =
+        dae_mode.map(|d| dae_residual_equations(d)).unwrap_or_default();
+    let dae_res_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.residualVars).collect()).unwrap_or_default();
+    let dae_aux_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.auxiliaryVars).collect()).unwrap_or_default();
+    let dae_alg_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.algebraicVars).collect()).unwrap_or_default();
+    if dae_mode.is_some() && dae_res_vars.len() != (n_states as usize + dae_alg_vars.len()) {
+        return Err("CodegenWasmJit: DAE mode residual count does not match states + algebraic unknowns");
+    }
     // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
     // when-statements inside an algorithm — both need the per-step pre-value save
     // and the full `allEquations` list as the per-step function.
-    let has_when = all_eqs.iter().any(|e| match &**e {
+    let has_when = dae_eqs.iter().map(|(e, _)| e).chain(all_eqs.iter()).any(|e| match &**e {
         SimCode::SimEqSystem::SES_WHEN { .. } => true,
         SimCode::SimEqSystem::SES_ALGORITHM { statements, .. } => {
             (&**statements).into_iter().any(|s| matches!(&**s, DAE::Statement::STMT_WHEN { .. }))
@@ -2613,11 +2630,27 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         nls_jac_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
         n_sens,
+        dae_res_vars.len() as u32,
+        dae_aux_vars.len() as u32,
+        dae_alg_vars.len() as u32,
         has_when,
         has_homotopy,
     );
 
     let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
+    // the SimVar's `index` as C's `crefToCStr` does. Solver workspace, not results.
+    for (svs, base) in [(&dae_res_vars, layout.dae_res_off), (&dae_aux_vars, layout.dae_aux_off)] {
+        for sv in svs.iter() {
+            let i = u32::try_from(sv.index).map_err(|_| "CodegenWasmJit: DAE mode variable has no index")?;
+            insert_var(&mut var_map, sv, base + i * 8, WTy::F64, false)?;
+        }
+    }
+    // An auxiliary variable can be a whole array (`$AUX.w = f(…)`), so its element
+    // group needs finalizing too.
+    if dae_mode.is_some() {
+        finalize_array_groups(&mut var_map)?;
+    }
     let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
     let var_units = collect_var_units(vars)?;
     // Sample event index -> its slot `k` (position in `samples`), for the
@@ -2652,6 +2685,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     index_list(&sim_code.removedEquations, &mut eq_index);
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
+    for e in dae_eqs.iter() {
+        index_eq_recursive(&e.0, &mut eq_index);
+    }
     for part in lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)) {
         index_list(part, &mut eq_index);
     }
@@ -2742,19 +2778,25 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
     let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
+    let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) = collect_nls_jobs(
-        &[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs],
+        &[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs],
         &nls_nominal_map,
         &mut attr_targets,
     );
-    // The integrator's per-state atol and the Jacobian's FD step floor.
-    let state_nominals: Vec<f64> = lst(&vars.stateVars)
-        .take(n_states as usize)
-        .map(|sv| const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32))
-        .collect();
-    for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().state = Some(i as u32);
+    // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
+    // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
+    let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
+    for (svs, base) in [
+        (lst(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
+        (dae_alg_vars.clone(), layout.dae_alg_nom_off),
+    ] {
+        for (i, sv) in svs.iter().enumerate() {
+            let off = base + (i as u32) * 8;
+            nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
+            if let Ok(k) = sim_cref_key(&sv.name) {
+                attr_targets.entry(k).or_default().nom_offs.push(off);
+            }
         }
     }
     // Register the analytic-Jacobian seed/result crefs before the equation
@@ -2822,6 +2864,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
         Some((residual_type, load_type))
     };
+    // `evaluateDAEResiduals(SimData*, stage)`: (i32,i32) -> (), for a DAE-mode model.
+    let dae_fn_type = (!dae_eqs.is_empty()).then(|| {
+        let ti = types.len();
+        types.ty().function([we::ValType::I32, we::ValType::I32], []);
+        ti
+    });
     // Function references met while lowering the bodies add thunks to the closure
     // pool; this global holds their shared-table base.
     let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
@@ -2926,9 +2974,30 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    // The residual Jacobian's sparsity is a matrix of its own, not the ODE `A` that
+    // the backend leaves empty in DAE mode.
+    let dae = dae_mode
+        .map(|d| -> Result<openmodelica_sim_meta::DaeInfo> {
+            let alg_offs = dae_alg_vars
+                .iter()
+                .map(|sv| {
+                    let key = sim_cref_key(&sv.name)?;
+                    var_map
+                        .vars
+                        .get(&key)
+                        .map(|s| s.off)
+                        .ok_or("CodegenWasmJit: DAE mode algebraic unknown has no SimData slot")
+                })
+                .collect::<Result<Vec<u32>>>()?;
+            Ok(openmodelica_sim_meta::DaeInfo {
+                alg_offs,
+                sparsity: d.sparsityPattern.as_ref().and_then(|jm| jac_pattern_info(jm, dae_res_vars.len())),
+            })
+        })
+        .transpose()?;
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
-        fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars,
+        fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars, dae,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -3113,9 +3182,19 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let update_bound_attrs_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.push(build_update_bound_attrs_fn(
-            sim_code, &state_nominals, &attr_targets, &layout, &var_map, &by_name, &mut literals,
+            sim_code, &nominal_defaults, &attr_targets, &var_map, &by_name, &mut literals,
         )?);
         idx
+    };
+    // Emitted only for a DAE-mode model: its absence is how the standalone export and
+    // the FMU adapters know the model is an explicit ODE.
+    let dae_residuals_idx = match dae_eqs.is_empty() {
+        true => None,
+        false => {
+            let idx = import_base + bodies.len() as u32;
+            bodies.push(build_dae_residuals_fn(&dae_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
+            Some(idx)
+        }
     };
 
     // --- Function section (type index per body, in body order). ---
@@ -3156,6 +3235,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
+    if let Some(ti) = dae_fn_type {
+        functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
+    }
 
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
@@ -3246,6 +3328,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
     exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
+    if let Some(idx) = dae_residuals_idx {
+        exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
+    }
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -3287,6 +3372,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
     ] {
         names.push((idx, name.to_string()));
+    }
+    if let Some(idx) = dae_residuals_idx {
+        names.push((idx, "evaluateDAEResiduals".to_string()));
     }
     names.sort_by_key(|(idx, _)| *idx);
     let mut fn_names = we::NameMap::new();
@@ -3695,8 +3783,22 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     if n_states == 0 {
         return None;
     }
-    let n = n_states as usize;
     let jac = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A")?;
+    let info = jac_pattern_info(jac, n_states as usize)?;
+    if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
+        let nnz: usize = info.rows_by_col.iter().map(|r| r.len()).sum();
+        eprintln!("wasm-jit jac-A: n={n_states} colors={} nnz={nnz}", info.colors.len());
+    }
+    Some(info)
+}
+
+/// One Jacobian matrix's `n × n` sparsity + coloring, or `None` when the backend
+/// left either out (or produced indices out of range), in which case the caller
+/// falls back to a solver-internal numerical Jacobian.
+fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Option<JacAInfo> {
+    if n == 0 {
+        return None;
+    }
     // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
     // column (empty columns carry an empty row list).
     let rows_by_col: Vec<Vec<u32>> = lst(&jac.sparsity)
@@ -3706,8 +3808,6 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     let colors: Vec<Vec<u32>> = lst(&jac.coloredCols)
         .map(|grp| lst(grp).map(|c| *c as u32).collect())
         .collect();
-    // Only usable when the pattern covers exactly the n states, the coloring is
-    // present, and every index is in range; otherwise fall back to numerical.
     if rows_by_col.len() != n
         || colors.is_empty()
         || colors.iter().flatten().any(|&c| c as usize >= n)
@@ -3715,11 +3815,7 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     {
         return None;
     }
-    if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
-        let nnz: usize = rows_by_col.iter().map(|r| r.len()).sum();
-        eprintln!("wasm-jit jac-A: n={n} colors={} nnz={nnz}", colors.len());
-    }
-    Some(JacAInfo { n: n_states, colors, rows_by_col })
+    Some(JacAInfo { n: n as u32, colors, rows_by_col })
 }
 
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
@@ -3777,6 +3873,7 @@ fn build_sim_meta(
     zc_desc: Vec<String>,
     sens_params: Vec<u32>,
     nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
+    dae: Option<openmodelica_sim_meta::DaeInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -3795,6 +3892,7 @@ fn build_sim_meta(
         zc_desc,
         sens_params,
         nls_vars,
+        dae,
     }
 }
 
@@ -3907,29 +4005,10 @@ fn assigned_cref_keys(eqs: &[Arc<SimCode::SimEqSystem>]) -> std::collections::Ha
     set
 }
 
-fn build_eq_fn(
-    which: &str,
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-) -> Result<we::Function> {
-    build_eq_fn_with_prelude(which, &[], eqs, var_map, eq_index, by_name, literals, &[], &[])
-}
-
-fn build_eq_fn_with_prelude(
-    which: &str,
-    prelude: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-    save_pre: &[(u32, u32, u32)],
-    stateset_diag: &[u32],
-) -> Result<we::Function> {
-    let sim = SimCtx {
+/// The lowering context every generated `SimData*` function shares: local 0 is the
+/// `SimData` pointer, and every slot comes from the one variable map.
+fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
+    SimCtx {
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
@@ -3953,7 +4032,117 @@ fn build_eq_fn_with_prelude(
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
-    };
+    }
+}
+
+/// `daeModeData.daeEquations` flattened over its partitions, each equation paired with
+/// the `EVAL_*` stage mask it runs in. Mirrors C's `equationNames_` for
+/// `contextDAEmode`: an equation with no evaluation attributes inherits the preceding
+/// one's mask (C leaves `evalStages` unassigned there), starting from every stage.
+fn dae_residual_equations(dae: &SimCode::DaeModeData) -> Vec<(Arc<SimCode::SimEqSystem>, u32)> {
+    use openmodelica_sim_meta::driver::eval_stage as stage;
+    let all = stage::DYNAMIC | stage::ALGEBRAIC | stage::ZEROCROSS | stage::DISCRETE;
+    let mut stages = all;
+    let mut out = Vec::new();
+    for part in lst(&dae.daeEquations) {
+        for eq in lst(part) {
+            let mut discrete = false;
+            if let Some(attr) = eq_attr_of(eq) {
+                let ev = &attr.evalStages;
+                stages = (ev.dynamicEval as u32) * stage::DYNAMIC
+                    | (ev.algebraicEval as u32) * stage::ALGEBRAIC
+                    | (ev.zerocrossEval as u32) * stage::ZEROCROSS
+                    | (ev.discreteEval as u32) * stage::DISCRETE;
+                discrete = matches!(attr.kind, openmodelica_backend_types::BackendDAE::EquationKind::DISCRETE_EQUATION);
+            }
+            // A discrete-kind equation runs in the discrete stage only.
+            let stages = if discrete { stages & stage::DISCRETE } else { stages };
+            if stages != 0 {
+                out.push((eq.clone(), stages));
+            }
+        }
+    }
+    out
+}
+
+/// The equation's `BackendDAE.EquationAttributes`, absent for the few systems that
+/// carry none (`SES_ALIAS` and friends).
+fn eq_attr_of(eq: &SimCode::SimEqSystem) -> Option<&openmodelica_backend_types::BackendDAE::EquationAttributes> {
+    use SimCode::SimEqSystem as E;
+    match eq {
+        E::SES_RESIDUAL { eqAttr, .. }
+        | E::SES_FOR_RESIDUAL { eqAttr, .. }
+        | E::SES_GENERIC_RESIDUAL { eqAttr, .. }
+        | E::SES_SIMPLE_ASSIGN { eqAttr, .. }
+        | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { eqAttr, .. }
+        | E::SES_ARRAY_CALL_ASSIGN { eqAttr, .. }
+        | E::SES_RESIZABLE_ASSIGN { eqAttr, .. }
+        | E::SES_GENERIC_ASSIGN { eqAttr, .. }
+        | E::SES_ENTWINED_ASSIGN { eqAttr, .. }
+        | E::SES_IFEQUATION { eqAttr, .. }
+        | E::SES_ALGORITHM { eqAttr, .. }
+        | E::SES_INVERSE_ALGORITHM { eqAttr, .. }
+        | E::SES_LINEAR { eqAttr, .. }
+        | E::SES_NONLINEAR { eqAttr, .. }
+        | E::SES_MIXED { eqAttr, .. }
+        | E::SES_WHEN { eqAttr, .. }
+        | E::SES_FOR_LOOP { eqAttr, .. }
+        | E::SES_FOR_EQUATION { eqAttr, .. }
+        | E::SES_ALGEBRAIC_SYSTEM { eqAttr, .. } => Some(eqAttr),
+        E::SES_ALIAS { .. } => None,
+    }
+}
+
+/// Build `evaluateDAEResiduals(SimData*, stage)`, one guarded block per equation. C
+/// tests `evalStages & currentEvalStage` against a per-equation assignment; here the
+/// mask is a constant, so the guard is a single `and`/`if`.
+fn build_dae_residuals_fn(
+    eqs: &[(Arc<SimCode::SimEqSystem>, u32)],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    for (i, (eq, stages)) in eqs.iter().enumerate() {
+        if i & 63 == 0 {
+            metamodelica::cancel::bail_if_cancelled()?;
+        }
+        ctx.sim_stage_guard(*stages);
+        lower_equation(&mut ctx, eq, eq_index)?;
+        ctx.sim_end_block();
+    }
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+fn build_eq_fn(
+    which: &str,
+    eqs: Vec<Arc<SimCode::SimEqSystem>>,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    build_eq_fn_with_prelude(which, &[], eqs, var_map, eq_index, by_name, literals, &[], &[])
+}
+
+fn build_eq_fn_with_prelude(
+    which: &str,
+    prelude: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
+    eqs: Vec<Arc<SimCode::SimEqSystem>>,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+    save_pre: &[(u32, u32, u32)],
+    stateset_diag: &[u32],
+) -> Result<we::Function> {
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_stateset_diag_init(stateset_diag)?;
     for (cref, exp) in prelude {
@@ -3987,31 +4176,7 @@ fn build_init_sample_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     let pairs: Vec<(Arc<DAE::Exp>, Arc<DAE::Exp>)> =
         samples.iter().map(|s| (s.start.clone(), s.interval.clone())).collect();
@@ -4037,31 +4202,7 @@ fn build_init_start_values_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: HashMap::new(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = SimCtx { start_slots: HashMap::new(), ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32, Option<u32>)> = Vec::with_capacity(states.len() + real_algs.len());
     for (i, sv) in states.iter().enumerate() {
@@ -4085,9 +4226,8 @@ fn build_init_start_values_fn(
 /// back are skipped.
 fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
-    state_nominals: &[f64],
+    nominal_defaults: &[(u32, f64)],
     attr_targets: &HashMap<String, AttrTargets>,
-    layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
@@ -4101,39 +4241,15 @@ fn build_update_bound_attrs_fn(
         for eq in lst(eqs) {
             let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { continue };
             let Some(t) = sim_cref_key(cref).ok().and_then(|k| attr_targets.get(&k)) else { continue };
-            if t.nls.is_empty() && !matches!((attr, t.state), (Attr::Nominal, Some(_))) {
+            if t.nls.is_empty() && !(matches!(attr, Attr::Nominal) && !t.nom_offs.is_empty()) {
                 continue;
             }
             attrs.push((attr, exp.clone(), t.clone()));
         }
     }
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(state_nominals, layout.state_nom_off, &attrs)?;
+    ctx.emit_update_bound_attrs(nominal_defaults, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -4152,31 +4268,7 @@ fn build_zero_crossings_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: true,
-    };
+    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_zero_crossings(crossings, layout.zc_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -4195,31 +4287,7 @@ fn build_update_relations_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: true,
-    };
+    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_relations(relations, var_map.relations_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -4242,31 +4310,7 @@ fn build_store_delayed_fn(
         lst(&sim_code.delayedExps.delayedExps)
             .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
             .collect();
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_store_delayed(&delayed)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -5779,10 +5823,13 @@ mod standalone_tests {
         // emitter always exports them, so the stub must too or the merge leaves
         // unresolved `model.*` imports. Taken from the canonical list rather than
         // copied, so adding an entry point cannot leave this stub behind.
+        // `evaluateDAEResiduals` is left out with `simulate`: the standalone runtime
+        // imports neither with this shape (the DAE residual takes two arguments and
+        // only a `--daeMode` model has one).
         let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
             .iter()
             .copied()
-            .filter(|n| *n != "simulate")
+            .filter(|n| *n != "simulate" && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE)
             .collect();
 
         let mut funcs = we::FunctionSection::new();

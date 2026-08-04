@@ -860,7 +860,7 @@ pub fn build_engine(model: &SimModel) -> std::result::Result<(Box<dyn sim_driver
     // Allocate the shared SimData block.
     let sim_data = wts(rt_alloc.call(&mut store, layout.total))?;
 
-    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new() };
+    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), dae_func: None };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -873,6 +873,8 @@ struct WasmerEngine {
     instance: wasmer::Instance,
     rt_inst: wasmer::Instance,
     funcs: HashMap<String, wasmer::TypedFunction<u32, ()>>,
+    /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
+    dae_func: Option<wasmer::TypedFunction<(u32, u32), ()>>,
 }
 
 impl WasmerEngine {
@@ -902,6 +904,16 @@ impl sim_driver::SimEngine for WasmerEngine {
             return Ok(());
         }
         self.call1(name, arg)
+    }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+        let f = match self.dae_func.clone() {
+            Some(f) => f,
+            None => {
+                let f = wt(self.instance.exports.get_typed_function::<(u32, u32), ()>(&self.store, name))?;
+                self.dae_func.insert(f).clone()
+            }
+        };
+        wt(f.call(&mut self.store, a, b))
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32> {
         let f: wasmer::TypedFunction<(u32, f64, f64, u32), u32> =
@@ -1046,6 +1058,9 @@ impl sim_driver::SimEngine for InWasmSession {
     }
     fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Ok(())
+    }
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+        Err("CodegenWasmJit: call2 on in-wasm session (unreachable)")
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
