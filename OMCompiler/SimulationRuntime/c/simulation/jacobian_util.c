@@ -719,7 +719,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
     return;
   }
 
-#if defined(OMC_HAVE_COLPACK) && !defined(OMC_FMI_RUNTIME)
+#if defined(OMC_HAVE_COLPACK)
   if (computeColPackColumnColoring(
           nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors)) {
     return;
