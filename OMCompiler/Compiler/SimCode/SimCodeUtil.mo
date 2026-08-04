@@ -13280,6 +13280,8 @@ public function createMinimalFMIModelStructure
    ContinuousStateDerivative entries an FMI 3.0 Model Exchange master cannot
    drive the integration; the InitialUnknowns are mandatory in FMI 2.0 and 3.0."
   input SimCode.ModelInfo modelInfo;
+  input Option<SimCode.JacobianMatrix> adjointPartialDerivatives = NONE()
+    "NB-generated FMIDERADJ matrix, if symbolic adjoint generation succeeded.";
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
   list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
@@ -13313,7 +13315,7 @@ algorithm
     SimCode.FMIDERIVATIVES(derivs),
     NONE(),
     NONE(),
-    NONE() /* adjoint derivatives are filled in later by generateModelCodeNewBackend, if the NB pipeline produced one */,
+    adjointPartialDerivatives,
     SimCode.FMIDISCRETESTATES({}),
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
     fmi3ArrayGroups(modelInfo)));

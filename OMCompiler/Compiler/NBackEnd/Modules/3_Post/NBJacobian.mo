@@ -98,7 +98,7 @@ protected
   import Util;
 
 public
-  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);
+  type JacobianType = enumeration(ODE, DAE, FMI, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);
 
   function isDynamic
     "is the jacobian used for integration (-> true)
@@ -109,6 +109,7 @@ public
     b := match jacType
       case JacobianType.ODE     then true;
       case JacobianType.DAE     then true;
+      case JacobianType.FMI     then true;
       case JacobianType.OPT_LFG then true;
       case JacobianType.OPT_MRF then true;
       case JacobianType.OPT_R0  then true;
@@ -166,6 +167,73 @@ public
 
     end match;
   end main;
+
+  function fmiAdjoint
+    "Generate the FMI reverse-mode Jacobian, J^T, for fmi3GetAdjointDerivative.
+     Its seed/result axes are deliberately different from the simulation ODE
+     Jacobian: FMI knowns are continuous states plus top-level Real inputs;
+     FMI unknowns are state derivatives plus top-level Real outputs. All other
+     continuous partition unknowns remain partial candidates so the reverse
+     sweep can propagate through intermediate algebraic variables."
+    input BackendDAE.BackendDAE bdae;
+    output Option<Jacobian> jacobian;
+  protected
+    BVariable.VarData varData;
+    VariablePointers fmiKnowns, fmiUnknowns, partialCandidates;
+    list<Pointer<Variable>> stateVars, inputVars, outputVars;
+    list<StrongComponent> comps = {};
+    list<Partition.Partition> partitions;
+    EquationPointers equations;
+    Jacobian fmiJacobian;
+  algorithm
+    jacobian := match bdae
+      case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM()) algorithm
+        /* Match the old-backend FMIDER variable sets: knowns = states + inputs,
+         * unknowns = der(states) + outputs. FMI derivatives are Float64-only. */
+        stateVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.states));
+        inputVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.top_level_inputs));
+        outputVars := list(var for var guard(isFMIOutput(var)) in VariablePointers.toList(varData.variables));
+        fmiKnowns := VariablePointers.fromList(stateVars, varData.states.scalarized);
+        fmiKnowns := VariablePointers.addList(inputVars, fmiKnowns);
+        fmiUnknowns := VariablePointers.fromList(
+          listAppend(
+            list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.derivatives)),
+            outputVars),
+          fmiKnowns.scalarized);
+
+        /* ODE partitions contain state derivatives and ALG partitions contain
+         * top-level output equations. Preserve their primal execution order;
+         * jacobianSymbolicAdjoint traverses this list in reverse. */
+        partitions := listAppend(bdae.ode, bdae.algebraic);
+        partialCandidates := VariablePointers.clone(fmiUnknowns);
+        for part in partitions loop
+          partialCandidates := VariablePointers.addList(VariablePointers.toList(part.unknowns), partialCandidates);
+          if isSome(part.strongComponents) then
+            comps := listAppend(listReverse(arrayList(Util.getOption(part.strongComponents))), comps);
+          end if;
+        end for;
+        comps := listReverse(comps);
+
+        if VariablePointers.size(fmiKnowns) == 0 or VariablePointers.size(fmiUnknowns) == 0 or listEmpty(comps) then
+          jacobian := NONE();
+        else
+          equations := EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps)));
+          jacobian := jacobianSymbolicAdjoint("FMIDER", JacobianType.FMI, fmiKnowns,
+            partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, false);
+          /* jacobianSymbolicAdjoint uses an internal _ADJ suffix for generated
+           * variables. The matrix name must match the FMI callback symbols. */
+          fmiJacobian := match Util.getOption(jacobian)
+            case fmiJacobian as BackendDAE.JACOBIAN() algorithm
+              fmiJacobian.name := "FMIDERADJ";
+            then fmiJacobian;
+          end match;
+          jacobian := SOME(fmiJacobian);
+        end if;
+      then jacobian;
+
+      else NONE();
+    end match;
+  end fmiAdjoint;
 
   function applyToPartitions
     input output list<Partition.Partition> partitions;
@@ -322,6 +390,7 @@ public
     str := match jacType
       case JacobianType.ODE     then "[ODE]";
       case JacobianType.DAE     then "[DAE]";
+      case JacobianType.FMI     then "[FMI]";
       case JacobianType.LS      then "[LS-]";
       case JacobianType.NLS     then "[NLS]";
       case JacobianType.OPT_LFG then "[OPT-LFG]";
@@ -807,7 +876,7 @@ protected
     // For ODE Jacobians, also include state derivatives as adjacency variables.
     // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).
     // Without this, the transitive seed dependency der(x_i) -> der(x_j) -> x_j is lost.
-    if jacType == JacobianType.ODE then
+    if jacType == JacobianType.ODE or jacType == JacobianType.FMI then
       adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
     end if;
     // with resizable arrays the inner equations of algebraic loops are needed for their dependencies
@@ -1596,9 +1665,9 @@ protected
     );
 
     adjacencyVars := VariablePointers.clone(seedCandidates);
-    // tmp_vars are diffed so use the undiffed ones for adjacency (but does this adjacency approach even work because the adjoint adds tmp vars to the system which are not part of the original system?)
+    // tmp_vars are diffed so use the undiffed ones for adjacency
     adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
-    if jacType == JacobianType.ODE then
+    if jacType == JacobianType.ODE or jacType == JacobianType.FMI then
       adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
@@ -1707,6 +1776,7 @@ protected
     func := match jacType
       case JacobianType.ODE     then BVariable.isStateDerivative;
       case JacobianType.DAE     then BVariable.isResidual;
+      case JacobianType.FMI     then isFMIResult;
       case JacobianType.LS      then BVariable.isResidual;
       case JacobianType.NLS     then BVariable.isResidual;
       case JacobianType.OPT_LFG then BVariable.isLfgFunction;
@@ -1717,6 +1787,30 @@ protected
       then fail();
     end match;
   end getTmpFilterFunction;
+
+  function isFMIReal
+    "FMI directional and adjoint derivative APIs operate only on Float64 variables."
+    extends BVariable.checkVar;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    b := Type.isReal(Type.arrayElementType(var.ty));
+  end isFMIReal;
+
+  function isFMIOutput
+    "Top-level Real output eligible for the FMI derivative unknown axis."
+    extends BVariable.checkVar;
+  algorithm
+    b := BVariable.isOutput(var_ptr) and isFMIReal(var_ptr);
+  end isFMIOutput;
+
+  function isFMIResult
+    "Select only FMI unknowns as reverse-mode seeds; all other continuous
+     partial candidates remain temporary adjoints for reverse propagation."
+    extends BVariable.checkVar;
+  algorithm
+    b := (BVariable.isStateDerivative(var_ptr) or BVariable.isOutput(var_ptr)) and isFMIReal(var_ptr);
+  end isFMIResult;
 
   function makeVarTraverse
     input Pointer<Variable> var_ptr;
