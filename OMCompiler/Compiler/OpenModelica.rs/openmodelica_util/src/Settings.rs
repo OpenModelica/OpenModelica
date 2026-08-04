@@ -29,21 +29,12 @@ use arcstr::ArcStr;
 
 use crate::Autoconf;
 
-/// Compiler version string, the analogue of the C build's `CONFIG_VERSION`
-/// (`Settings_getVersionNr` returns it verbatim). The C build injects the git
-/// revision through `revision.h`; we let a build inject the same value via the
-/// `OPENMODELICA_REVISION` environment variable at compile time and otherwise
-/// fall back to the current development version. Defining it here keeps the
-/// version next to the function that exposes it, matching `Settings_omc.cpp`.
-const VERSION: &str = match option_env!("OPENMODELICA_REVISION") {
-    Some(v) => v,
-    None => "v1.27.0-dev",
-};
-
 /// Process-global settings, mirroring the `static` variables in
 /// `settingsimpl.c`. `None` means "not yet computed / cleared"; the getters
 /// lazily fill the cache exactly like the C functions do.
 struct SettingsState {
+    /// `CONFIG_VERSION` in C, injected by the host (see [`setVersionNr`]).
+    version: Option<ArcStr>,
     /// `tempDirectoryPath` in C.
     temp_directory_path: Option<ArcStr>,
     /// `echo` in C — initialised to 1 (true).
@@ -57,6 +48,7 @@ struct SettingsState {
 }
 
 static STATE: Mutex<SettingsState> = Mutex::new(SettingsState {
+    version: None,
     temp_directory_path: None,
     echo: 1,
     installation_path: None,
@@ -82,8 +74,20 @@ fn set_env_var(var: &str, value: &ArcStr) {
     crate::System::setEnv(ArcStr::from(var), value.clone(), true);
 }
 
+/// Set the version `getVersionNr` reports (the C build's `CONFIG_VERSION`). It
+/// has no counterpart in the C runtime: the revision comes from the host rather
+/// than being compiled into this crate, which every other one depends on. See
+/// the `openmodelica_revision` crate.
+pub fn setVersionNr(inString: ArcStr) {
+    STATE.lock().unwrap().version = Some(inString);
+}
+
 pub fn getVersionNr() -> ArcStr {
-    ArcStr::from(VERSION)
+    // Unset: "unknown", the `CONFIG_VERSION` fallback in `omc_config.h`.
+    match &STATE.lock().unwrap().version {
+        Some(v) => v.clone(),
+        None => arcstr::literal!("unknown"),
+    }
 }
 
 pub fn setTempDirectoryPath(inString: ArcStr) {

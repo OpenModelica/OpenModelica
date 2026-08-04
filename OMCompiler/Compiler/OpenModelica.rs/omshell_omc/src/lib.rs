@@ -74,6 +74,8 @@ mod native {
 
     impl OmcBackend for InProcessBackend {
         fn init(&mut self) -> Result<Init, String> {
+            // The version getVersion() reports; see openmodelica_revision.
+            capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
             match catch_unwind(AssertUnwindSafe(|| capi::init(&[]))) {
                 Ok(Ok(())) => {}
                 Ok(Err(e)) => return Err(format!("omc init failed: {e}")),
