@@ -458,6 +458,17 @@ pub fn omc_sim_solver_options() -> JsValue {
     o.into()
 }
 
+/// The `method=` values a Co-Simulation wasm FMU can be exported with, a subset of
+/// [`omc_sim_solver_options`]'s `s`.
+#[wasm_bindgen]
+pub fn omc_fmu_cs_solvers() -> JsValue {
+    let arr = js_sys::Array::new();
+    for v in openmodelica_codegen_wasm_jit::CodegenWasmJit::fmu_cs_solvers() {
+        arr.push(&JsValue::from_str(v));
+    }
+    arr.into()
+}
+
 /// Start a resumable run of a model already built by `buildModel` (keyed by its
 /// `prefix`; `result_file` is where the `.mat` goes). `false` on failure — read
 /// `getErrorString()`.

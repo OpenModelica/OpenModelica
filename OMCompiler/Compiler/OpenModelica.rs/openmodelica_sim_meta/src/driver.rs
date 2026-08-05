@@ -1788,6 +1788,42 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     }
 }
 
+/// Whether this build's `SolverCore` can serve `method` on this model. Shared by
+/// [`make_driver`] and [`CsDriver::new`], neither of which may hand the core a method
+/// it would silently substitute. `dassljac` is dassl with a symbolic Jacobian and `""`
+/// the dassl default.
+fn check_method(method: &str, layout: &SimLayout) -> Result<()> {
+    let supported =
+        matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
+            || (matches!(method, "cvode" | "ida") && cfg!(sundials));
+    if !supported {
+        return Err(UNSUPPORTED_METHOD);
+    }
+    // C leaves the choice to the user and then evaluates an empty `functionODE`.
+    if layout.dae_mode() && method != "ida" {
+        return Err("CodegenWasmJit: a model translated with --daeMode can only be simulated with -s=ida");
+    }
+    Ok(())
+}
+
+/// C allocates the solver before initializing the model, and gbode logs its setup
+/// there, so it is built outside the driver.
+fn alloc_gbode(
+    model: &SimModel,
+    method: &str,
+) -> Result<Option<alloc::boxed::Box<crate::gbode::Gbode>>> {
+    if method != "gbode" {
+        return Ok(None);
+    }
+    let layout = &model.layout;
+    let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
+    let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+    let gb =
+        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors)
+            .map_err(leak_error)?;
+    Ok(Some(alloc::boxed::Box::new(gb)))
+}
+
 pub fn make_driver(
     e: &mut (dyn SimEngine + 'static),
     model: &SimModel,
@@ -1825,35 +1861,8 @@ pub fn make_driver(
         write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
     }
     // Ahead of the events path below, which returns before the match.
-    // `dassljac` is dassl with a symbolic Jacobian, which C also falls back from.
-    let supported =
-        matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
-            || (matches!(method, "cvode" | "ida") && cfg!(sundials));
-    if !supported {
-        return Err(UNSUPPORTED_METHOD);
-    }
-    // C leaves the choice to the user and then evaluates an empty `functionODE`.
-    if layout.dae_mode() && method != "ida" {
-        return Err("CodegenWasmJit: a model translated with --daeMode can only be simulated with -s=ida");
-    }
-
-    // C allocates the solver before it initializes the model, and gbode logs its
-    // configuration there, so it is built here rather than inside the driver.
-    let gbode = if method == "gbode" {
-        let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
-        let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        Some(alloc::boxed::Box::new(
-            crate::gbode::Gbode::new(
-                layout.n_states as usize,
-                tol,
-                layout.n_zc as usize,
-                colors,
-            )
-            .map_err(leak_error)?,
-        ))
-    } else {
-        None
-    };
+    check_method(method, layout)?;
+    let gbode = alloc_gbode(model, method)?;
 
     // C's `setJacobianMethod` reports INTERNALNUMJAC in DAE mode (no symbolic `A` is
     // generated) and announces the colored-FD fallback. C configures IDA before
@@ -4083,10 +4092,9 @@ pub struct CsDriver {
     core: SolverCore,
     samp: Samples,
     pivots: Vec<StateSetPivot>,
-    /// `None` = DASSL; `Some(h)` = fixed-step forward Euler with internal step `h`.
-    /// Only ever set for event-free models (events force DASSL, as in `make_driver`).
-    euler_h: Option<f64>,
-    euler_steps: u64,
+    /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
+    /// variable-step method, which is handed the whole interval.
+    fixed_h: Option<f64>,
     /// A `do_event_update` ran since the last step, so `step_to_event` must re-read
     /// states and restart DASKR.
     resume_reinit: bool,
@@ -4103,15 +4111,16 @@ pub enum CsStep {
 }
 
 impl CsDriver {
-    /// Build over an already-initialized model at time `t`. The integrator follows
-    /// `model.method` (`"euler"` → forward Euler, else DASSL), except that any events
-    /// force DASSL — the same rule `make_driver` applies.
+    /// Build over an already-initialized model at time `t`, integrating with the
+    /// method the FMU was exported with (`buildModelFMU`'s `method=`).
     pub fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t: f64) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
+        let method = effective_method(&model.method);
+        check_method(method, layout)?;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
-        let mut core = SolverCore::new(&*e, model, sim_data, t, "dassl", None)?;
+        let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -4119,15 +4128,9 @@ impl CsDriver {
             }
             core.read_states(e)?;
         }
-        let has_events = layout.n_samples > 0 || layout.n_zc > 0;
-        let euler_h = if !has_events && model.method == "euler" {
-            let n = model.n_intervals.max(1) as f64;
-            let h = (model.stop_time - model.start_time) / n;
-            Some(if h > 0.0 { h } else { f64::INFINITY })
-        } else {
-            None
-        };
-        Ok(CsDriver { core, samp, pivots, euler_h, euler_steps: 0, resume_reinit: false })
+        let h = model.step_size();
+        let fixed_h = fixed_kind(method).map(|_| if h > 0.0 { h } else { f64::INFINITY });
+        Ok(CsDriver { core, samp, pivots, fixed_h, resume_reinit: false })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -4164,18 +4167,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
-        if let Some(h0) = self.euler_h {
-            return self.euler_step_to(e, model, t_target, h0);
-        }
-
-        let mut ctx = self.core.res_ctx(e, layout);
-        let _guard = ResCtxGuard;
-        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
-        let mut did_step = false;
-        let outcome = self.core.integrate_to(
-            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, false,
-        )?;
-        self.core.nfe = ctx.nfe;
+        let outcome = self.integrate_chunked(e, model, t_target, false)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
             // `deadline` is +inf, CS does not cancel, and `stop_at_event` is off on
@@ -4239,14 +4231,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
-        let mut ctx = self.core.res_ctx(e, layout);
-        let _guard = ResCtxGuard;
-        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
-        let mut did_step = false;
-        let outcome = self.core.integrate_to(
-            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, true,
-        )?;
-        self.core.nfe = ctx.nfe;
+        let outcome = self.integrate_chunked(e, model, t_target, true)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
             Step::Event { time } => return Ok(CsStep::Event { time }),
@@ -4291,60 +4276,47 @@ impl CsDriver {
         Ok(up)
     }
 
-    /// Fixed-step forward Euler to `t_target`, sub-stepping by `h0` and landing
-    /// exactly on the communication point. Event-free by construction (see `new`),
-    /// so it never enters Event Mode; non-convergent NLS is fatal (Euler cannot back
-    /// off), matching [`EulerDriver`].
-    fn euler_step_to(
+    /// Integrate to `t_target`: in one go for a variable-step method, or one step per
+    /// call for a fixed-step one. Those steps land on the model's own output grid — the
+    /// sequence the standalone driver produces — so a communication point only cuts the
+    /// last step of an interval short, as an event does. Returns early on `Terminated`
+    /// and, in Event Mode, on the first event.
+    fn integrate_chunked(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         t_target: f64,
-        h0: f64,
-    ) -> Result<CsStep> {
+        stop_at_event: bool,
+    ) -> Result<Step> {
         let layout = &model.layout;
-        let sim_data = self.core.sim_data;
-        let states_base = self.core.states_base;
-        let ders_base = self.core.ders_base;
-        let n_states = self.core.n_states as u32;
         let eps = t_target.abs().max(1.0) * 1e-12;
-        while self.core.t < t_target - eps {
-            let h = (t_target - self.core.t).min(h0);
-            write_f64(e, sim_data + TIME_OFF, self.core.t)?;
-            e.call1("functionODE", sim_data)?;
-            e.call1_if_present("functionAlgebraics", sim_data)?;
-            check_nls(e, sim_data, layout)?;
-            if terminated(e, sim_data, layout)? {
-                return Ok(CsStep::Terminated);
+        let mut ctx = self.core.res_ctx(e, layout);
+        let _guard = ResCtxGuard;
+        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        let mut did_step = false;
+        loop {
+            let target = match self.fixed_h {
+                // The next grid point after `t`; the nudge stops drift just short of
+                // one from producing a step of nearly zero length.
+                Some(h) => {
+                    let k = libm::floor((self.core.t - model.start_time) / h + 1e-10) + 1.0;
+                    (model.start_time + k * h).min(t_target)
+                }
+                None => t_target,
+            };
+            let outcome = self.core.integrate_to(
+                e, model, &mut ctx, &mut self.samp, target, f64::INFINITY, None, &mut did_step,
+                stop_at_event,
+            )?;
+            if !matches!(outcome, Step::Reached { .. }) || self.core.t >= t_target - eps {
+                self.core.nfe = ctx.nfe;
+                return Ok(outcome);
             }
-            if !model.state_sets.is_empty()
-                && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)?
-            {
-                e.call1("functionODE", sim_data)?;
-            }
-            for i in 0..n_states {
-                let s = read_f64(e, states_base + i * 8)?;
-                let d = read_f64(e, ders_base + i * 8)?;
-                write_f64(e, states_base + i * 8, s + h * d)?;
-            }
-            self.core.t += h;
-            self.euler_steps += 1;
         }
-        self.core.t = t_target;
-        write_f64(e, sim_data + TIME_OFF, t_target)?;
-        e.call1("functionODE", sim_data)?;
-        e.call1_if_present("functionAlgebraics", sim_data)?;
-        if terminated(e, sim_data, layout)? {
-            return Ok(CsStep::Terminated);
-        }
-        Ok(CsStep::Reached)
     }
 
     pub fn fill_stats(&self, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
-        if self.euler_h.is_some() {
-            stats.steps = self.euler_steps;
-        }
     }
 }
 

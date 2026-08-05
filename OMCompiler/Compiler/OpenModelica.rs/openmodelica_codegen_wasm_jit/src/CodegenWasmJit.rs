@@ -605,14 +605,18 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 // output — Modelica `Streams.print`, `ModelicaMessage`, …) alongside the result.
 // Capturing keeps that output out of the process stdout (the browser console on
 // the web target) so the caller can fold it into the simulation log.
+/// Whether the driver that will run the model has CVODE and IDA: the host one links
+/// the native archives, the in-wasm one (always, on the web) the wasm archives in the
+/// runtime blob.
+const SUNDIALS_DRIVER: bool =
+    openmodelica_sim_meta::IDA || (cfg!(target_arch = "wasm32") && openmodelica_wasm_jit::SUNDIALS);
+
 /// What the wasm-jit runtimes can serve, for `simflags::check`. Checked at the host
 /// parse, where a rejection still has a message channel to report on.
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
-    // The driver runs here (host-driven) or in-wasm (web); both get CVODE and IDA
-    // from the same CMake option, so one const covers both.
-    ida: openmodelica_sim_meta::IDA,
-    cvode: openmodelica_sim_meta::CVODE,
+    ida: SUNDIALS_DRIVER,
+    cvode: SUNDIALS_DRIVER,
     // Served by the driver's per-step deadline, so every engine has it.
     alarm: true,
     // The `.mat` is written here, where a regex engine is available.
@@ -623,6 +627,35 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
 /// cannot disagree with [`install_sim_flags`]'s check.
 pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
     simflags::supported(CAPABILITIES)
+}
+
+/// What an exported wasm FMU can serve, which is not what this omc can: CVODE and IDA
+/// ride in as a side module the FMU linker adds only for a method that asks for them.
+/// `klu` is the *nonlinear* solver's, which the FMU's runtime has no build of; IDA's
+/// own `SUNLinSol_KLU` is in the side module regardless.
+fn fmu_capabilities() -> simflags::Capabilities {
+    simflags::Capabilities {
+        klu: false,
+        ida: sundials_available(),
+        cvode: sundials_available(),
+        // The driver's per-step deadline comes along; a regex engine does not.
+        alarm: true,
+        variable_filter: false,
+    }
+}
+
+/// Whether an FMU exported with `method` needs the SUNDIALS side module.
+fn fmu_needs_sundials(method: &str) -> bool {
+    matches!(method, "cvode" | "ida")
+}
+
+/// The `method=` values `buildModelFMU` accepts for a `cs`/`me_cs` wasm FMU.
+pub fn fmu_cs_solvers() -> Vec<&'static str> {
+    simflags::supported(fmu_capabilities())
+        .into_iter()
+        .find(|(flag, _)| *flag == "s")
+        .map(|(_, v)| v)
+        .unwrap_or_default()
 }
 
 /// Parse `simflags` as an argv and install the result for this run. omc hands the
@@ -1247,10 +1280,16 @@ use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
 use openmodelica_wasm_jit::FMI3_CS_ADAPTER;
 /// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
 use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
+/// The CS worlds with CVODE/IDA in the embedded driver; their SUNDIALS calls are
+/// resolved by [`SUNDIALS_DYLINK`].
+use openmodelica_wasm_jit::{FMI3_CS_SUNDIALS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER};
 
 /// The external-"C" FMU artifacts, linked in only when the model uses `external
 /// "C"`. Any is empty when that omc was built without the toolchain.
-use openmodelica_wasi_libc::{EXTERNAL_C_DYLINK, LIBC_PIC, WASI_P1_ADAPTER, available as external_c_available};
+use openmodelica_wasi_libc::{
+    available as external_c_available, sundials_available, EXTERNAL_C_DYLINK, LIBC_PIC,
+    SUNDIALS_DYLINK, WASI_P1_ADAPTER,
+};
 
 /// Renames the model's `rt`/`ext` import modules → `env`, the dylink convention
 /// `wit_component::Linker` resolves against (so `ext.<fn>` binds to the
@@ -1366,7 +1405,7 @@ fn first_external_import(model_wasm: &[u8]) -> Option<String> {
 /// the browser omc too). When the model uses `external "C"`, ModelicaExternalC +
 /// PIC `libc.so` are added as shared-everything libraries and libc's preview1
 /// imports bridged to the component's preview2 WASI by the reactor adapter.
-fn link_fmu_component(model_wasm: &[u8], adapter: &[u8]) -> Result<Vec<u8>> {
+fn link_fmu_component(model_wasm: &[u8], adapter: &[u8], sundials: bool) -> Result<Vec<u8>> {
     if adapter.is_empty() {
         return Err("CodegenWasmJit: FMI3 adapter unavailable (build wasm32-unknown-unknown + -Z build-std)");
     }
@@ -1375,10 +1414,18 @@ fn link_fmu_component(model_wasm: &[u8], adapter: &[u8]) -> Result<Vec<u8>> {
     let mut l = wit_component::Linker::default().validate(true);
     l = l.library("adapter", adapter, false).map_err(link_err)?;
     l = l.library("model", &model, false).map_err(link_err)?;
-    if has_ext {
+    if sundials {
+        // CVODE reaches the residual through a C function pointer, which works because
+        // every library here imports the one `env.__indirect_function_table`.
+        l = l.library("sundials", SUNDIALS_DYLINK, false).map_err(link_err)?;
+    }
+    if has_ext || sundials {
         // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
-        // runtime rt_alloc over one shared heap) is intentional.
-        l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
+        // runtime rt_alloc over one shared heap) is intentional. SUNDIALS needs libc
+        // too, so it brings the same libraries along.
+        if has_ext {
+            l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
+        }
         l = l.library("libc", LIBC_PIC, false).map_err(link_err)?;
         l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
     }
@@ -1552,7 +1599,7 @@ pub fn emitMeFmu(
     _guid: ArcStr,
     model_description: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, FMI3_ME_ADAPTER, "ME")
+    emit_fmu(sim_code, fmu_path, model_description, (FMI3_ME_ADAPTER, &[]), "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -1562,7 +1609,7 @@ pub fn emitCsFmu(
     _guid: ArcStr,
     model_description: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, FMI3_CS_ADAPTER, "CS")
+    emit_fmu(sim_code, fmu_path, model_description, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -1573,7 +1620,7 @@ pub fn emitMeCsFmu(
     _guid: ArcStr,
     model_description: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, FMI3_MECS_ADAPTER, "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
 }
 
 /// The distinct CAD file references (`<type>` values ending in a CAD extension)
@@ -1601,11 +1648,13 @@ fn cad_basename(uri: &str) -> &str {
     uri.rsplit(['/', '\\']).next().unwrap_or(uri)
 }
 
+/// `adapter` is `(plain, with-SUNDIALS)`; the second is picked for a method that needs
+/// CVODE/IDA and is empty for Model Exchange.
 fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     model_description: ArcStr,
-    adapter: &[u8],
+    adapter: (&[u8], &[u8]),
     kind: &str,
 ) -> Result<()> {
     sync_engine_threading()?;
@@ -1625,7 +1674,21 @@ fn emit_fmu(
                 return Err("CodegenWasmJit: external \"C\" support not built into this omc");
             }
         }
-        let component = link_fmu_component(&model.wasm, adapter)?;
+        // A CS FMU integrates itself, so an unservable method must fail here rather
+        // than at the importer's first do-step. Empty is the dassl default.
+        let cs = kind != "ME";
+        if cs && !model.method.is_empty() && !fmu_cs_solvers().contains(&model.method.as_str()) {
+            record_error(format!(
+                "CodegenWasmJit: a Co-Simulation wasm FMU cannot integrate with method=\"{}\". \
+                 Available: {}.",
+                model.method,
+                fmu_cs_solvers().join(", ")
+            ));
+            return Err("CodegenWasmJit: unusable Co-Simulation integration method");
+        }
+        let sundials = cs && fmu_needs_sundials(&model.method);
+        let component =
+            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials)?;
         let model_id = sanitize_identifier(&model.model_name);
         let mut entries = vec![
             ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
@@ -5895,16 +5958,18 @@ mod link_tests {
     /// unresolved symbol here.
     #[test]
     fn fmu_component_links_without_a_host() {
-        for (label, adapter) in [
-            ("ME", FMI3_ME_ADAPTER),
-            ("CS", FMI3_CS_ADAPTER),
-            ("me_cs", FMI3_MECS_ADAPTER),
+        for (label, adapter, sundials) in [
+            ("ME", FMI3_ME_ADAPTER, false),
+            ("CS", FMI3_CS_ADAPTER, false),
+            ("me_cs", FMI3_MECS_ADAPTER, false),
+            ("CS+SUNDIALS", FMI3_CS_SUNDIALS_ADAPTER, true),
+            ("me_cs+SUNDIALS", FMI3_MECS_SUNDIALS_ADAPTER, true),
         ] {
-            if adapter.is_empty() {
-                continue; // omc built without the wasm32 toolchain
+            if adapter.is_empty() || (sundials && !sundials_available()) {
+                continue; // omc built without the wasm32 toolchain or without sundials
             }
             assert!(
-                link_fmu_component(&build_stub_model(), adapter).is_ok(),
+                link_fmu_component(&build_stub_model(), adapter, sundials).is_ok(),
                 "{label} adapter does not link into a component: {}",
                 openmodelica_util::Error::printMessagesStr(false)
             );

@@ -214,10 +214,7 @@
         <label class="chk"><input type="checkbox" id="fmiCs" checked /> Co-Simulation</label>
       </div>
       <label for="csSolver">CS solver</label>
-      <select id="csSolver">
-        <option value="dassl">dassl</option>
-        <option value="euler">euler</option>
-      </select>
+      <select id="csSolver"></select>
       <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer.</p>
     </div>
     <div class="modal-foot">
@@ -463,6 +460,15 @@ function fillSolverMenus(options) {
     m.value = options.s.includes(keep) ? keep : options.s[0];
   }
 }
+// A Co-Simulation FMU embeds the driver, and the FMU carries no SUNDIALS, so its
+// method list is its own (omc_fmu_cs_solvers), not the simulator's `-s` menu.
+function fillCsSolvers(values) {
+  const sel = el('csSolver'), keep = sel.value;
+  if (!values || !values.length) return;
+  sel.replaceChildren(...values.map((v) => new Option(v, v)));
+  sel.value = values.includes(keep) ? keep : values[0];
+}
+
 // The selectors plus `-lv` (log streams). Of these the runtime acts on LOG_STATS;
 // the rest are accepted and ignored, as unknown streams are for the C executable.
 const solverFlags = () => ({
@@ -969,6 +975,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
     const v = await call(w1, 'init');
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     fillSolverMenus(v.solverOptions);
+    fillCsSolvers(v.fmuCsSolvers);
     runBtn.disabled = false;
     el('exportFmu').disabled = false;
     setStatus('Ready. ' + v.version);

@@ -41,3 +41,7 @@ strip = true
 default = ["me"]
 me = []
 cs = []
+# CVODE/IDA for the embedded driver, as imports the SUNDIALS side module resolves. A
+# second `cs`/`me_cs` blob is built with it, so an FMU that does not ask for those
+# solvers links neither the calls nor the module.
+sundials = ["openmodelica_sim_meta/sundials_extern"]

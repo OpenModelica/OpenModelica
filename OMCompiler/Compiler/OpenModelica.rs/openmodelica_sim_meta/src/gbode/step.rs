@@ -438,6 +438,13 @@ impl Gbode {
         let int_with_err_ctrl = !const_step && self.conf.interpolation.is_err_ctrl();
         let calls_before = ode.calls;
 
+        // C's `targetTime = fmin(gbData->eventTime, targetTime)`: an event located in
+        // an earlier step but still ahead of the grid caps this call, so the run stops
+        // on it instead of stepping on from the un-updated event state.
+        if !no_grid {
+            target = target.min(self.event_time);
+        }
+
         // C's `saveZeroCrossings` in `simulationUpdate`: the crossing values at the
         // point the caller last emitted are the base this call compares against.
         self.latch_crossings_at(ode, *t, y)?;
@@ -694,3 +701,127 @@ const GBODE_MIN_STEP_ERROR: &str =
     "CodegenWasmJit: gbode reached the minimum step size, but the error is still too large";
 const GBODE_MIN_INTERP_ERROR: &str = "CodegenWasmJit: gbode reached the minimum step size, but the \
                                       interpolation error is still too large";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::driver::SimEngine;
+
+    /// A bouncing ball as a bare linear memory plus the two model functions gbode
+    /// calls.
+    struct Ball {
+        mem: [u8; 64],
+    }
+
+    const SIM_DATA: u32 = 0;
+    const STATES: u32 = 8;
+    const DERS: u32 = 24;
+    const ZC_OFF: u32 = 40;
+    const NLS_FAIL_OFF: u32 = 56;
+    const G: f64 = 9.81;
+
+    impl Ball {
+        fn f64_at(&self, addr: u32) -> f64 {
+            f64::from_le_bytes(self.mem[addr as usize..addr as usize + 8].try_into().unwrap())
+        }
+        fn set_f64(&mut self, addr: u32, v: f64) {
+            self.mem[addr as usize..addr as usize + 8].copy_from_slice(&v.to_le_bytes());
+        }
+    }
+
+    impl SimEngine for Ball {
+        fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
+            let a = addr as usize;
+            buf.copy_from_slice(&self.mem[a..a + buf.len()]);
+            Ok(())
+        }
+        fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
+            let a = addr as usize;
+            self.mem[a..a + buf.len()].copy_from_slice(buf);
+            Ok(())
+        }
+        fn call1(&mut self, name: &str, _arg: u32) -> Result<()> {
+            match name {
+                "functionODE" => {
+                    let v = self.f64_at(STATES + 8);
+                    self.set_f64(DERS, v);
+                    self.set_f64(DERS + 8, -G);
+                }
+                // The codegen emits crossings as ±1, not the relation expression.
+                "functionZeroCrossings" => {
+                    let h = self.f64_at(STATES);
+                    self.set_f64(SIM_DATA + ZC_OFF, if h > 0.0 { 1.0 } else { -1.0 });
+                }
+                _ => return Err("unexpected model function"),
+            }
+            Ok(())
+        }
+        fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
+            Ok(())
+        }
+        fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+            Err("unused")
+        }
+        fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
+            Err("unused")
+        }
+        fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+            None
+        }
+    }
+
+    fn ode<'a>(e: &'a mut Ball, nominals: &'a [f64]) -> Ode<'a> {
+        Ode {
+            e,
+            sim_data: SIM_DATA,
+            states_base: STATES,
+            ders_base: DERS,
+            time_off: 0,
+            nls_fail_off: NLS_FAIL_OFF,
+            ctx_addr: 0,
+            jac_a: None,
+            nominals,
+            nominal_factor: 1.0,
+            zc_off: ZC_OFF,
+            calls: 0,
+        }
+    }
+
+    /// An event located inside an already-taken step must be reported once the grid
+    /// reaches it. Without the cap the run steps on from the event state with no
+    /// discrete update, which here wedges the interpolation-error control.
+    #[test]
+    fn pending_event_is_reported_when_the_grid_reaches_it() {
+        let dt = 2e-3;
+        let mut gb = Gbode::new(2, 1e-6, 1, 0).expect("allocate");
+        gb.set_experiment(0.0, 1.0, dt);
+        gb.set_nominals(&[1.0, 1.0]);
+        let nominals = [1.0, 1.0];
+        let mut e = Ball { mem: [0; 64] };
+        let mut y = [1.0, 0.0]; // h = 1, v = 0
+        let mut t = 0.0;
+        let mut events = alloc::vec::Vec::new();
+        for k in 1..=500 {
+            let target = k as f64 * dt;
+            while t < target - 1e-12 {
+                let mut o = ode(&mut e, &nominals);
+                match gb.step(&mut o, target, f64::INFINITY, &mut t, &mut y).expect("step") {
+                    GbStep::Root(te) => {
+                        events.push(te);
+                        y[1] = -0.7 * y[1]; // the model's reinit at the bounce
+                        gb.restart();
+                    }
+                    GbStep::Reached | GbStep::Stepped => break,
+                }
+            }
+        }
+        // First bounce of a ball dropped from h=1: t = sqrt(2/g).
+        assert!(!events.is_empty(), "no event located");
+        assert!(
+            (events[0] - (2.0 / G).sqrt()).abs() < 1e-9,
+            "first bounce at {} not sqrt(2/g)",
+            events[0]
+        );
+        assert!(t >= 1.0 - dt, "run stopped early at {t}");
+    }
+}

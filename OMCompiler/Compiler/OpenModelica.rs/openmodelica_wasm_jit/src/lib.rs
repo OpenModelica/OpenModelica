@@ -15,6 +15,14 @@ pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fm
 pub static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));
 pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
 
+/// The same two worlds with CVODE/IDA in the embedded driver, for an FMU exported with
+/// `method="cvode"`/`"ida"`; the calls are imports
+/// `openmodelica_wasi_libc::SUNDIALS_DYLINK` resolves.
+pub static FMI3_CS_SUNDIALS_ADAPTER: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_sundials_adapter.wasm"));
+pub static FMI3_MECS_SUNDIALS_ADAPTER: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_sundials_adapter.wasm"));
+
 /// Whether the wasip1 runtimes above have the real SUNDIALS/KLU linked in (the
 /// build script cross-compiled the archives), so a `-lss=klu` run can be served.
 pub const SUNDIALS: bool = cfg!(sundials);
