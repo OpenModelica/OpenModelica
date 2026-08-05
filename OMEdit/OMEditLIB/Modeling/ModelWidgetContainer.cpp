@@ -5099,6 +5099,23 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   if (isCreatingShape() || isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
+
+  /* Helper to execute a context menu and update the connection end point if the
+   * menu is dismissed without selecting an action.
+   */
+  auto execContextMenu = [this](QMenu &menu, const QPoint &globalPos) {
+    QAction *pAction = menu.exec(globalPos);
+    /* Null pAction is returned if user dismisses the context menu.
+     * Update the connection end point accordingly in that case.
+     * See issue #16157.
+     */
+    if (!pAction && mpConnectionLineAnnotation) {
+      QPoint viewPos = viewport()->mapFromGlobal(QCursor::pos());
+      QPointF scenePos = snapPointToGrid(mapToScene(viewPos));
+      mpConnectionLineAnnotation->updateEndPoint(scenePos);
+    }
+  };
+
   // if creating a connection
   if (isCreatingConnection()) {
     if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
@@ -5106,7 +5123,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addAction(mpCreateConnectorAction);
       menu.addSeparator();
       menu.addAction(mpCancelConnectionAction);
-      menu.exec(event->globalPos());
+      execContextMenu(menu, event->globalPos());
     }
     return;
   }
@@ -5116,7 +5133,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     menu.addAction(mpSetInitialStateAction);
     menu.addSeparator();
     menu.addAction(mpCancelTransitionAction);
-    menu.exec(event->globalPos());
+    execContextMenu(menu, event->globalPos());
     return;
   }
   // if some item is right clicked then don't show graphics view context menu
