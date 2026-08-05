@@ -428,8 +428,8 @@ void evalJacobianOneColor(DATA* data, threadData_t* threadData,
       while (nth < (int)sp->leadindex[j + 1]) {
         currentIndex = (int)sp->index[nth];
         setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
-        infoStreamPrint(OMC_LOG_JAC, 0, "evalJacobianOneColor: color=%d, j=%d, nth=%d, currentIndex=%d, value=%g",
-              color, j, nth, currentIndex, jacobian->resultVars[currentIndex]);
+        // infoStreamPrint(OMC_LOG_JAC, 0, "evalJacobianOneColor: color=%d, j=%d, nth=%d, currentIndex=%d, value=%g",
+        //       color, j, nth, currentIndex, jacobian->resultVars[currentIndex]);
         nth++;
       }
       jacobian->seedVars[j] = 0.0;

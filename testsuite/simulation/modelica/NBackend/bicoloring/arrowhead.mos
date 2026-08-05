@@ -29,7 +29,6 @@ simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jaco
 //     messages = "LOG_JAC           | info    | Runtime star bicoloring is being calced.
 // LOG_JAC           | info    | Runtime star bicoloring: 0 column colors, 2 row colors.
 // LOG_JAC           | info    | Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.
-// LOG_STDOUT        | info    | Jacobian method: bicoloredSymbolical
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | State vector y (flat memory)
 // |                 | |       | | flat=0 name='x[1]' y=1.00000003
