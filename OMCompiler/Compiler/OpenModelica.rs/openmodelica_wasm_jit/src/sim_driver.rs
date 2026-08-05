@@ -39,7 +39,17 @@ fn report_assert(info: &AssertInfo) {
 
 /// Install the host hooks (cancel poll + assertion reporter) into the shared
 /// driver. Idempotent; call before entering the driver.
+/// The driver's log lines join the model's captured stdout, so the run's log has
+/// them in the order they happened.
+fn log_to_stdout(s: &str) {
+    openmodelica_wasi::wasi::stdout_write(s.as_bytes());
+}
+
 pub fn init_host_hooks() {
     set_cancel_hook(metamodelica::cancel::check_cancel);
+    openmodelica_sim_meta::driver::set_log_sink(log_to_stdout);
     set_assert_reporter(report_assert);
+    // The host driver shares this process with `rt_assert`, so it sets the flag
+    // directly; the in-wasm driver relays it over a host import.
+    openmodelica_sim_meta::driver::set_no_throw_hook(crate::host::set_no_throw_asserts);
 }

@@ -951,6 +951,12 @@ algorithm
         (e1_1,true) := replaceExp(e1, repl, cond);
       then
         (DAE.TSUB(e1_1,i,tp),true);
+    case ((DAE.RSUB(exp = e1,ix = i, fieldName = ident, ty = tp)),repl,cond)
+      algorithm
+        true := replaceExpCond(cond, e1);
+        (e1_1,true) := replaceExp(e1, repl, cond);
+      then
+        (DAE.RSUB(e1_1,i,ident,tp),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
         guard replaceExpCond(cond, e)
       algorithm
@@ -1765,6 +1771,7 @@ protected
   Boolean initialCall;
   Boolean b1,b2,b3;
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 algorithm
   for stmt in inStatementLst loop
     (outStatementLst, replacementPerformed) := matchcontinue stmt
@@ -1815,7 +1822,7 @@ algorithm
         then
           replaceSTMT_IF(e1_2,statementLst,else_,source,repl,inFuncTypeExpExpToBooleanOption,outStatementLst,replacementPerformed or b1);
 
-      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)
+      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source,sub_iters=sub_iters)
         algorithm
           repl := addIterationVar(repl,ident);
           (statementLst_1,b1) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1826,7 +1833,7 @@ algorithm
           source := ElementSource.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
           repl := removeIterationVar(repl,ident);
         then
-          (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source) :: outStatementLst, true);
+          (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source,sub_iters) :: outStatementLst, true);
 
       case DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)
         algorithm

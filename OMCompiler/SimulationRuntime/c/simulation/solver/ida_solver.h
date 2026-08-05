@@ -72,6 +72,10 @@ typedef struct IDA_SOLVER
   N_Vector yp;                  /* State derivative vector y' */
 
   /* ### scaling data ### */
+  double *nominal;              /* |nominal| per unknown; the tolerances are tolerance times it */
+  double jacNominalFactor;      /* -jacobianNominalFactor */
+  N_Vector absoluteTolerance;   /* Absolute tolerance per unknown, tolerance times nominal */
+  N_Vector id;                  /* 1 for the differential, 0 for the algebraic unknowns; daeMode only */
   double *yScale;               /* Scaling array for states y */
   double *ypScale;              /* Scaling array fpr derivatives y' */
   double *resScale;             /* Scaling for residual F(t,y,y') */
@@ -83,7 +87,6 @@ typedef struct IDA_SOLVER
   double *ysave;
   double *ypsave;
   double *delta_hh;
-  N_Vector errwgt;              /* Error weights W[i] = 1 / (rtol * |y[i]| + atol) */
   N_Vector newdelta;
 
   /* ### ida internal data ### */
@@ -131,6 +134,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
 /* deinitialize main ida Data */
 void ida_solver_deinitial(IDA_SOLVER *idaData);
+
+/* read the nominal values into the tolerances, the scaling and the Jacobian's step floor */
+int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* idaData);
 
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);

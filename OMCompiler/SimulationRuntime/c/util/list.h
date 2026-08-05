@@ -52,6 +52,7 @@ extern "C" {
 
   LIST *allocList(allocListNodeDataFunc_t* allocListNodeFunc, freeListNodeDataFunc_t* freeListNodeFunc, copyListNodeDataFunc_t* copyListNodeDataFunc);
   void freeList(LIST *list);
+  int listEmptyTest(LIST *list);
 
   void listPushFront(LIST *list, const void *data);
   void listPushFrontNodeNoCopy(LIST *list, LIST_NODE *node);
@@ -64,7 +65,9 @@ extern "C" {
   void *listLastData(LIST *list);
 
   LIST_NODE *listPopFrontNode(LIST *list);
+  LIST_NODE *listPopNode(LIST *list, LIST_NODE *prevNode);
   void listRemoveFront(LIST *list);
+  void listRemoveBack(LIST *list);
 
   void listClear(LIST *list);
   void listClearAfterNode(LIST *list, LIST_NODE *startNode);

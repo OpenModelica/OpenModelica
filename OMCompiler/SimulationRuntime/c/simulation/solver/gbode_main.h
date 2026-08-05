@@ -198,6 +198,7 @@ typedef struct DATA_GBODE{
 int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection);
 int gbode_allocateData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void gbode_freeData(DATA* data, DATA_GBODE *gbData);
+void gbode_setVarAttributes(DATA* data, DATA_GBODE* gbData);
 int gbode_main(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 #ifdef __cplusplus

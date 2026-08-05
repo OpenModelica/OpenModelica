@@ -3522,6 +3522,19 @@ case RANGE(__) then
 end algStmtParForRangeInterface_impl;
 
 
+template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case (name, range) then
+    let type_ = 'modelica_<%crefShortType(name)%>'
+    let name_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
+    let size_ = arrayLength(range)
+    <<
+    static const <%type_%> <%name_%>_arr[<%size_%>] = {<%range_%>};
+    <%type_%> <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
+    >>
+end subIterator;
+
 template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
  "Generates a for algorithm statement."
 ::=
@@ -3541,7 +3554,11 @@ case STMT_FOR(range=rng as RANGE(__)) then
   let identTypeShort = expTypeShort(type_)
   let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
                  ;separator="\n")
-  algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls, &auxFunction)
+  let iterName = contextIteratorName(iter, context)
+  let &preExp_si = buffer ""
+  let &sub_si = buffer ""
+  let subIterDecls = (sub_iters |> si => subIterator(si, iterName, context, &preExp_si, &varDecls, &auxFunction, &sub_si); separator="\n")
+  algStmtForRange_impl(rng, iter, identType, identTypeShort, '<%subIterDecls%><%\n%><%stmtStr%>', context, &varDecls, &auxFunction)
 end algStmtForRange;
 
 template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls, Text &auxFunction)
@@ -4745,10 +4762,12 @@ match cr
     functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
   case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = {}) then
-    error(sourceInfo(), 'functionContextCref got a prefix cref with array type and no subs. <%crefStrNoUnderscore(cr)%>')
-    // let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-    // let newpref = fullname + '.'
-    // functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
+    // Array-type prefix with no subscripts: access as a whole-array field in function context.
+    // OpenModelica flattens record arrays to per-field arrays in C function parameters,
+    // so the component name is used as a prefix just like the non-array case.
+    let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    let newpref = fullname + '.'
+    functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
   case cr as CREF_QUAL() then
     let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
@@ -7939,7 +7958,9 @@ template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDec
 ::=
   match sub
   case sub as INDEX() then daeSubscriptExp(exp,context,&preExp,&varDecls,&auxFunction)
-  else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
+  case sub as SLICE() then error(sourceInfo(), 'non INDEX(_) (i.e., SLICE) subscripts should not reach here. Check indexedAssign template. SLICE exp: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
+  case sub as WHOLEDIM() then error(sourceInfo(), 'non INDEX(_) (i.e., WHOLEDIM) subscripts should not reach here. Check indexedAssign template.')
+  else error(sourceInfo(), 'non INDEX(_) (i.e., unknown) subscripts should not reach here. Check indexedAssign template.')
   end match
 end daeSubscript;
 

@@ -40,18 +40,19 @@ pub struct SimModel {
     pub state_sets: Vec<StateSetInfo>,
     /// ODE state Jacobian ∂f/∂x sparsity + coloring; `None` ⇒ daskr's numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
-    /// Per-state nominal magnitude for the per-state atol; `1.0` if absent.
-    pub state_nominals: Vec<f64>,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
     pub meta: SimMeta,
-    /// Pre-rendered `LOG_STDOUT` lines announcing which linear and nonlinear systems
-    /// use a sparse solver (C's `initializeLinearSystems` / `initializeNonlinearSystems`
-    /// messages), prepended to the sim log. Empty when no system is sparse.
+    /// Pre-rendered `LOG_STDOUT` lines announcing which *linear* systems use a
+    /// sparse solver (C's `initializeLinearSystems`), prepended to the sim log.
     pub sparse_solver_log: String,
+    /// `(sysNum, equationIndex, size, nnz)` per nonlinear system, in C's array
+    /// order. The nonlinear half of that announcement is rendered per run instead,
+    /// because `-nlssMinSize`/`-nlssMaxDensity` move the threshold it reports.
+    pub nls_systems: Vec<(i32, i32, u32, u32)>,
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,
@@ -75,6 +76,8 @@ pub struct EditableParam {
 static INWASM_OVERRIDE: std::sync::atomic::AtomicI8 = std::sync::atomic::AtomicI8::new(-1);
 #[cfg(feature = "jit")]
 static SIM_BENCH_FORCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(feature = "jit")]
+static SINGLE_THREADED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Force the driver choice: `1` in-wasm, `0` host, `-1` default. Wins over the env
 /// var and the target default — wasm has no environment.
@@ -93,6 +96,18 @@ pub fn set_sim_bench(on: bool) {
 pub fn sim_bench_enabled() -> bool {
     SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
         || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
+}
+
+/// Set from `-n`: one processor means no background precompile and no parallel
+/// module compilation, so each phase is timed where it runs.
+#[cfg(feature = "jit")]
+pub fn set_single_threaded(on: bool) {
+    SINGLE_THREADED.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[cfg(feature = "jit")]
+pub fn single_threaded() -> bool {
+    SINGLE_THREADED.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// Whether to run through the in-wasm session driver (`rt_sim_*`) instead of the

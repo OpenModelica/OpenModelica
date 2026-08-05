@@ -4,8 +4,6 @@
 //! Indices are `i32` (`SUNDIALS_INDEX_SIZE=32`, see the build script for why) and
 //! `sunrealtype` is `f64`.
 
-use core::sync::atomic::{AtomicBool, Ordering};
-
 /// Whether the real solvers are linked into this blob.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sundials_available() -> i32 {
@@ -17,66 +15,13 @@ pub extern "C" fn rt_sundials_available() -> i32 {
 pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
         klu: cfg!(sundials),
-        ida: false,
-        cvode: false,
-        gbode: false,
+        ida: openmodelica_sim_meta::IDA,
+        cvode: openmodelica_sim_meta::CVODE,
+        // Served by the driver's per-step deadline; both runtimes install a clock.
+        alarm: true,
+        // No regex engine in wasm; the model's own filter is resolved at codegen.
+        variable_filter: false,
     }
-}
-
-// Solver selection, with C's defaults: dense systems go to LAPACK, sparse ones to
-// KLU (`-ls=lapack`, `-lss=klu`, `-nlsLS=klu`).
-
-static KLU_LS: AtomicBool = AtomicBool::new(false);
-static KLU_LSS: AtomicBool = AtomicBool::new(true);
-static KLU_NLS_LS: AtomicBool = AtomicBool::new(true);
-
-/// Which backend serves a sparse solve.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Sparse {
-    Klu,
-    Rsparse,
-}
-
-fn pick(klu: &AtomicBool) -> Sparse {
-    if cfg!(sundials) && klu.load(Ordering::Relaxed) {
-        Sparse::Klu
-    } else {
-        Sparse::Rsparse
-    }
-}
-
-/// `-lss`: torn linear systems solved sparsely.
-pub(crate) fn lss_backend() -> Sparse {
-    pick(&KLU_LSS)
-}
-
-/// `-nlsLS`: the linear solver inside the sparse nonlinear solver.
-pub(crate) fn nls_ls_backend() -> Sparse {
-    pick(&KLU_NLS_LS)
-}
-
-/// `-ls=klu`: dense-stored linear systems handed to KLU.
-pub(crate) fn ls_is_klu() -> bool {
-    cfg!(sundials) && KLU_LS.load(Ordering::Relaxed)
-}
-
-fn set_klu(ls: bool, lss: bool, nls_ls: bool) {
-    KLU_LS.store(ls, Ordering::Relaxed);
-    KLU_LSS.store(lss, Ordering::Relaxed);
-    KLU_NLS_LS.store(nls_ls, Ordering::Relaxed);
-}
-
-/// The three selectors for a host-driven run: that build links no flag store, so
-/// its host parses `-ls`/`-lss`/`-nlsLS` and sets the bits here.
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_lin_set_klu(ls: i32, lss: i32, nls_ls: i32) {
-    set_klu(ls != 0, lss != 0, nls_ls != 0);
-}
-
-#[cfg(any(feature = "session", feature = "standalone"))]
-pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
-    let (ls, lss, nls_ls) = f.klu_selectors();
-    set_klu(ls, lss, nls_ls);
 }
 
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports
@@ -383,6 +328,8 @@ pub(crate) mod kinsol {
         rowidx: &'a [i32],
         eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
         assemble: &'a mut dyn FnMut(&[f64], &mut [f64]),
+        /// Difference the Jacobian rather than assemble it analytically.
+        numeric: bool,
     }
 
     /// Extract the backing array pointer from an N_Vector.
@@ -404,11 +351,38 @@ pub(crate) mod kinsol {
         crate::nls::assert_hit() as c_int
     }
 
-    extern "C" fn jacobian(u: NVector, _fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
+    /// C's `nlsSparseJac`: forward differences into the pattern's CSC values. C
+    /// perturbs a whole colour group per evaluation; column at a time gives the same
+    /// entries (no row sees two columns of a group) for more evaluations, and only on
+    /// the systems whose analytic Jacobian KINSOL has already rejected.
+    fn numeric_csc(ud: &mut Ud, x: &mut [f64], fx: &[f64], vals: &mut [f64]) {
+        /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
+        const DELTA_H: f64 = 6.664001874625056e-08;
+        let mut fres = vec![0.0f64; ud.n];
+        for c in 0..ud.n {
+            let saved = x[c];
+            let dh = DELTA_H * (libm::fabs(saved) + 1.0);
+            x[c] = saved + dh;
+            (ud.eval)(x, &mut fres);
+            x[c] = saved;
+            let inv = 1.0 / dh;
+            for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
+                let row = ud.rowidx[k] as usize;
+                vals[k] = (fres[row] - fx[row]) * inv;
+            }
+        }
+    }
+
+    extern "C" fn jacobian(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
         let ud = unsafe { &mut *(user as *mut Ud) };
         let x = data(u, ud.n);
         let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
-        (ud.assemble)(x, vals);
+        if ud.numeric {
+            let fx = data(fu, ud.n);
+            numeric_csc(ud, x, fx, vals);
+        } else {
+            (ud.assemble)(x, vals);
+        }
         unsafe {
             core::ptr::copy_nonoverlapping(ud.colptr.as_ptr(), SUNSparseMatrix_IndexPointers(j), ud.n + 1);
             core::ptr::copy_nonoverlapping(ud.rowidx.as_ptr(), SUNSparseMatrix_IndexValues(j), ud.nnz);
@@ -434,6 +408,8 @@ pub(crate) mod kinsol {
         nnz: usize,
         strategy: c_int,
         maxstepfactor: f64,
+        /// Set for good once `KIN_LSETUP_FAIL` rejects the analytic Jacobian.
+        numeric_jac: bool,
     }
 
     impl Solver {
@@ -450,6 +426,7 @@ pub(crate) mod kinsol {
                 nnz,
                 strategy: KIN_LINESEARCH,
                 maxstepfactor: MAXSTEPFACTOR,
+                numeric_jac: false,
             };
             if s.kin.is_null()
                 || s.j.is_null()
@@ -538,9 +515,10 @@ pub(crate) mod kinsol {
                     unsafe { SUNLinSol_KLUReInit(self.ls, self.j, self.nnz as i32, SUNKLU_REINIT_PARTIAL) };
                     return true;
                 }
-                // C answers `LSETUP_FAIL` by switching to a numeric Jacobian; this
-                // path only exists for systems that have the analytic one.
-                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LSETUP_FAIL | KIN_LINESEARCH_BCFAIL => {}
+                // A Jacobian KLU cannot factorize (all-zero at the start point, say):
+                // difference it from here on, as C re-points `KINSetJacFn`.
+                KIN_LSETUP_FAIL => self.numeric_jac = true,
+                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
                 _ => return false,
             }
             let mut fnorm = 0.0;
@@ -580,7 +558,8 @@ pub(crate) mod kinsol {
             eval: &mut dyn FnMut(&[f64], &mut [f64]),
             assemble: &mut dyn FnMut(&[f64], &mut [f64]),
         ) -> bool {
-            let mut ud = Ud { n: self.n, nnz: self.nnz, colptr, rowidx, eval, assemble };
+            let mut ud =
+                Ud { n: self.n, nnz: self.nnz, colptr, rowidx, eval, assemble, numeric: self.numeric_jac };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut Ud as *mut c_void) };
             let mut vals = vec![0.0f64; self.nnz];
             let mut success = false;
@@ -595,6 +574,7 @@ pub(crate) mod kinsol {
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
                 let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
+                ud.numeric = self.numeric_jac;
                 retries += 1;
                 passes += 1;
                 if success || !retry || retries >= RETRY_MAX || passes >= 2 * RETRY_MAX {

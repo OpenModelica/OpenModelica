@@ -42,6 +42,11 @@ extern crate alloc;
 
 mod delay;
 mod nls;
+mod omclog;
+pub use nls::{rt_nls_clean_history, rt_set_step_size};
+#[cfg(test)]
+mod nls_c_trace;
+mod solvers;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
@@ -125,6 +130,63 @@ unsafe fn store_f64(addr: u32, v: f64) {
 }
 
 // ---------------------------------------------------------------------------
+// Diagnostic counters
+// ---------------------------------------------------------------------------
+
+/// `rt_stat` slots, read by the host bench line (`OMC_WASM_SIM_BENCH`) — the
+/// wasm-jit analogue of C's `-lv=LOG_STATS`.
+pub const STAT_ALLOC: u32 = 0;
+pub const STAT_ARRAY_NEW: u32 = 1;
+pub const STAT_RECORD_NEW: u32 = 2;
+pub const STAT_STR_NEW: u32 = 3;
+pub const STAT_NLS_SOLVE: u32 = 4;
+pub const STAT_NLS_RES: u32 = 5;
+pub const STAT_NLS_JAC: u32 = 6;
+pub const STAT_NLS_FAIL: u32 = 7;
+pub const STAT_NLS_RETRY: u32 = 8;
+pub const STAT_ELEM_PTR: u32 = 9;
+pub const STAT_NLS_ITER: u32 = 10;
+pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
+pub const STAT_NLS_GUESS_HIT: u32 = 12;
+pub const STAT_NLS_ACCEPT: u32 = 13;
+pub const STAT_NLS_STORE_BACK: u32 = 14;
+pub const STAT_NLS_VARY_START: u32 = 15;
+pub const STAT_NLS_STALE: u32 = 16;
+/// Why `newton_c` (C's `newtonAlgorithm`) gave up, so a run can be compared against
+/// C's own fallback count without a rebuild.
+pub const STAT_NEWTON_IRREGULAR: u32 = 17;
+pub const STAT_NEWTON_LAMBDA: u32 = 18;
+pub const STAT_NEWTON_NEGSTEP: u32 = 19;
+pub const STAT_NEWTON_MAXITER: u32 = 20;
+pub const STAT_NEWTON_STUCK: u32 = 21;
+pub const STAT_NEWTON_JAC: u32 = 22;
+pub const STAT_NEWTON_SINGULAR: u32 = 23;
+pub const N_STATS: usize = 24;
+
+static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
+    [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
+
+#[inline]
+pub(crate) fn stat_inc(kind: u32) {
+    STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stat(kind: u32) -> u64 {
+    match STATS.get(kind as usize) {
+        Some(c) => c.load(core::sync::atomic::Ordering::Relaxed),
+        None => 0,
+    }
+}
+
+/// Called per run (`rt_sim_start`), so the counters are per-run.
+pub fn reset_stats() {
+    for c in STATS.iter() {
+        c.store(0, core::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Allocator + reference counting
 // ---------------------------------------------------------------------------
 
@@ -134,12 +196,45 @@ unsafe fn store_f64(addr: u32, v: f64) {
 const HEADER: usize = 8;
 const ALIGN: usize = 8;
 
+/// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
+/// one array/record per array/record-typed function local on every call (an IF97
+/// property evaluation does hundreds), so a same-size block is nearly always
+/// available and bucketing by 8-byte size class turns both into a push/pop.
+/// `rt_alloc` writes the *rounded* total into the size word, so `rt_free` finds the
+/// same class and `dlmalloc` gets the layout it was handed.
+const CACHE_MAX: usize = 1024;
+const CACHE_CLASSES: usize = CACHE_MAX / ALIGN + 1;
+
+struct FreeLists(core::cell::UnsafeCell<[u32; CACHE_CLASSES]>);
+// The runtime is single-threaded (as is the in-wasm session driver).
+unsafe impl Sync for FreeLists {}
+static FREE: FreeLists = FreeLists(core::cell::UnsafeCell::new([0; CACHE_CLASSES]));
+
+/// `None` when `total` is not cached: too big, or no room for the link word.
+#[inline]
+fn cache_class(total: usize) -> Option<usize> {
+    (total <= CACHE_MAX && total >= HEADER + 4).then(|| total / ALIGN)
+}
+
 /// Allocate an object of `size` payload bytes (including its 4-byte refcount),
 /// returning its pointer. The reference count is left zero — the typed
 /// constructors below set it to 1.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_alloc(size: u32) -> u32 {
-    let total = HEADER + size as usize;
+    stat_inc(STAT_ALLOC);
+    let mut total = HEADER + size as usize;
+    if total <= CACHE_MAX {
+        total = (total + ALIGN - 1) & !(ALIGN - 1);
+    }
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        let head = lists[class];
+        if head != 0 {
+            lists[class] = unsafe { load_u32(head + HEADER as u32) };
+            unsafe { store_u32(head, total as u32) };
+            return head + HEADER as u32;
+        }
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
@@ -158,6 +253,12 @@ pub extern "C" fn rt_free(obj: u32) {
     }
     let raw = obj - HEADER as u32;
     let total = unsafe { load_u32(raw) } as usize;
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        unsafe { store_u32(raw + HEADER as u32, lists[class]) };
+        lists[class] = raw;
+        return;
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }
@@ -277,17 +378,17 @@ fn arr_data(obj: u32) -> u32 {
 /// partially filled array is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
+    stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
-    let obj = rt_alloc(data_off + total * elem_stride(elem_kind));
+    let size = data_off + total * elem_stride(elem_kind);
+    let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + ARR_KIND_OFF, elem_kind);
         store_u32(obj + ARR_NDIMS_OFF, ndims);
         store_u32(obj + ARR_TOTAL_OFF, total);
         // Zero the dim words and the element area (rt_alloc does not zero).
-        for off in (ARR_DIMS_OFF..data_off + total * elem_stride(elem_kind)).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize);
     }
     obj
 }
@@ -316,10 +417,17 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        trap();
+        nls::model_error();
+        return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
 }
+
+/// Storage handed out in place of an out-of-range element address, so the
+/// caller's load/store lands somewhere harmless.
+#[repr(align(8))]
+struct ElemDiscard([u8; 8]);
+static mut ELEM_DISCARD: ElemDiscard = ElemDiscard([0; 8]);
 
 /// Byte address of the element at row-major linear position `index` (1-based).
 /// Traps on an out-of-range index (→ META_FAIL), matching the bounds check the
@@ -328,12 +436,21 @@ pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
 /// the element's natural wasm type.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
+    stat_inc(STAT_ELEM_PTR);
     let total = rt_array_total(obj) as i32;
     if index < 1 || index > total {
-        trap();
+        return rt_elem_ptr_oob();
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
+}
+
+/// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
+/// address computation the codegen emits.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_elem_ptr_oob() -> u32 {
+    nls::model_error();
+    &raw const ELEM_DISCARD as usize as u32
 }
 
 /// Copy every element of `src` into `dst` starting at the 0-based element
@@ -899,7 +1016,8 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     let neg = n < 0;
     if neg {
         if base == 0.0 {
-            trap();
+            nls::model_error();
+            return 0.0;
         }
         n = -n;
     }
@@ -962,8 +1080,8 @@ rt_math2!(fmod);
 /// byte-identical. A negative base with an (effectively) integer exponent or an
 /// odd-root fractional exponent gives a real value; any other negative-base
 /// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
-/// All the error cases trap, surfacing as `fail()` (META_FAIL) exactly as the C
-/// `throwStreamPrint` path does in the function-evaluation context.
+/// The error cases go through [`nls::model_error`], as C's `throwStreamPrint`
+/// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
     let result;
@@ -998,14 +1116,16 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
             if libm::fabs(ifrac) < 1e-10 && ((iint as i64 as u64) & 1) != 0 {
                 result = -libm::pow(-base, frac) * libm::pow(base, int);
             } else {
-                trap();
+                nls::model_error();
+                return 0.0;
             }
         }
     } else {
         result = libm::pow(base, exp);
     }
     if result.is_nan() || result.is_infinite() {
-        trap();
+        nls::model_error();
+        return 0.0;
     }
     result
 }
@@ -1016,7 +1136,8 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_mod_int(x: i32, y: i32) -> i32 {
     if y == 0 {
-        trap();
+        nls::model_error();
+        return 0;
     }
     let r = x.wrapping_rem(y);
     if r != 0 && (r < 0) != (y < 0) { r + y } else { r }
@@ -1055,13 +1176,12 @@ fn rec_data_off(nheap: u32) -> u32 {
 /// start as the null handle, so releasing a partially built record is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_record_new(nheap: u32, size: u32) -> u32 {
+    stat_inc(STAT_RECORD_NEW);
     let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + REC_NHEAP_OFF, nheap);
-        for off in (8..size).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + 8) as *mut u8, 0, size.saturating_sub(8) as usize);
     }
     obj
 }
@@ -1252,7 +1372,8 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
         OP_OR => x | y,
         _ => {
             if y == 0 {
-                trap();
+                nls::model_error();
+                return 0;
             }
             x.wrapping_div(y)
         }
@@ -1462,6 +1583,7 @@ const STR_DATA_OFF: u32 = 8;
 /// set). The caller fills `rt_str_data(obj)..+len` with the bytes.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_new(len: u32) -> u32 {
+    stat_inc(STAT_STR_NEW);
     let obj = rt_alloc(STR_DATA_OFF + len);
     unsafe {
         store_u32(obj, 1); // refcount
@@ -2051,12 +2173,16 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if sundials::ls_is_klu() {
+    if solvers::ls() == solvers::Ls::Klu {
         return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-    if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+    // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
+    // `dgesv`, and the default) is partial-pivot LU with that as its singular
+    // fallback.
+    let lu_first = solvers::ls() != solvers::Ls::TotalPivot;
+    if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
         0
     } else {
         1
@@ -2120,7 +2246,7 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if sundials::lss_backend() == sundials::Sparse::Klu {
+    if solvers::lss() == solvers::Lss::Klu {
         return sundials::klu_solve_dense(a_ptr, b_ptr, n);
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
@@ -2195,7 +2321,11 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     nnz: u32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, sundials::lss_backend())
+    let backend = match solvers::lss() {
+        solvers::Lss::Klu => solvers::Sparse::Klu,
+        solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
+    };
+    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
 }
 
 /// [`rt_solve_lin_sparse_cached`] without the statistics counter — the sparse
@@ -2210,13 +2340,13 @@ pub(crate) fn lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
-    backend: sundials::Sparse,
+    backend: solvers::Sparse,
 ) -> i32 {
     let n = n as usize;
     let nnz = nnz as usize;
 
     #[cfg(sundials)]
-    if backend == sundials::Sparse::Klu {
+    if backend == solvers::Sparse::Klu {
         return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
     }
     #[cfg(not(sundials))]

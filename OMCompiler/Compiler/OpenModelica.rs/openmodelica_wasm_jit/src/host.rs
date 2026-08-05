@@ -6,6 +6,8 @@ use metamodelica::Result;
 /// A failing assertion recorded by `rt_assert`. `msg`/`file` are handles into the
 /// shared linear memory, decoded by the caller after the trap.
 pub struct PendingAssert {
+    /// The dumped condition, or 0 for a model/runtime error, which has none.
+    pub cond: i32,
     pub msg: i32,
     pub file: i32,
     pub sline: i32,
@@ -17,8 +19,21 @@ pub struct PendingAssert {
 
 thread_local! {
     static PENDING_ASSERT: std::cell::RefCell<Option<PendingAssert>> = const { std::cell::RefCell::new(None) };
-    /// `rt_assert_warning` records `[cond, msg, file, sline, scol, eline, ecol, read_only]`.
-    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 8]>> = const { std::cell::RefCell::new(Vec::new()) };
+    /// Violations that did not throw: `[kind, cond, msg, file, sline, scol, eline,
+    /// ecol, read_only]`, `kind` per `driver::ASSERT_*`.
+    static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 9]>> = const { std::cell::RefCell::new(Vec::new()) };
+    /// C's `noThrowAsserts`: the driver has the model on a provisional state, so
+    /// `rt_assert` records instead of telling the caller to trap.
+    static NO_THROW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Driver hook (`driver::set_no_throw_hook`). Opening drops the assertion a
+/// previous phase suppressed, so `enrich_trap` reports the one that failed.
+pub fn set_no_throw_asserts(v: bool) {
+    if v {
+        clear_pending_assert();
+    }
+    NO_THROW.with(|n| n.set(v));
 }
 
 /// Clear any stale pending assertion before a call.
@@ -31,25 +46,131 @@ pub fn take_pending_assert_raw() -> Option<PendingAssert> {
     PENDING_ASSERT.with(|p| p.borrow_mut().take())
 }
 
-/// Take the pending assertion as `[msg, file, sline, scol, eline, ecol, read_only]`
-/// (for the simulation drivers surfacing a failed `assert()` after a trap).
-pub fn take_pending_assert() -> Option<[i32; 7]> {
-    take_pending_assert_raw().map(|pa| [pa.msg, pa.file, pa.sline, pa.scol, pa.eline, pa.ecol, pa.read_only as i32])
+/// Take the pending assertion as `[msg, file, sline, scol, eline, ecol, read_only,
+/// cond]` (for the simulation drivers surfacing a failed `assert()` after a trap).
+pub fn take_pending_assert() -> Option<[i32; 8]> {
+    take_pending_assert_raw()
+        .map(|pa| [pa.msg, pa.file, pa.sline, pa.scol, pa.eline, pa.ecol, pa.read_only as i32, pa.cond])
 }
 
 /// Take (and clear) the warning-level assertion violations recorded since the last call.
-pub fn take_pending_warnings() -> Vec<[i32; 8]> {
+pub fn take_pending_warnings() -> Vec<[i32; 9]> {
     PENDING_WARNINGS.with(|p| core::mem::take(&mut *p.borrow_mut()))
 }
 
-fn record_assert(msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32) {
+/// Take at most `max` of them, oldest first: `rt_host_take_warnings` hands them
+/// to the in-wasm driver a bufferful at a time.
+fn take_pending_warnings_upto(max: usize) -> Vec<[i32; 9]> {
+    PENDING_WARNINGS.with(|p| {
+        let mut p = p.borrow_mut();
+        let n = max.min(p.len());
+        p.drain(..n).collect()
+    })
+}
+
+/// Serialise the records into `dst` (little-endian `[i32; 9]` each).
+fn write_warnings(recs: &[[i32; 9]], dst: &mut [u8]) -> u32 {
+    let n = recs.len().min(dst.len() / REC_BYTES);
+    for (i, rec) in recs[..n].iter().enumerate() {
+        for (k, v) in rec.iter().enumerate() {
+            let off = i * REC_BYTES + k * 4;
+            dst[off..off + 4].copy_from_slice(&v.to_le_bytes());
+        }
+    }
+    n as u32
+}
+
+/// Wire size of one record, shared with the in-wasm reader.
+const REC_BYTES: usize = 9 * 4;
+
+/// A [`SimEngine`] over nothing but a read window into the shared linear memory:
+/// formatting a `LOG_ASSERT` block reads the time and the String handles and never
+/// calls back into the model. The reader is a closure so each engine can serve it
+/// from what it has in the import — a `&[u8]` or a `MemoryView`.
+#[cfg(feature = "jit")]
+struct MemEngine<'a>(&'a dyn Fn(u32, &mut [u8]) -> bool);
+
+#[cfg(feature = "jit")]
+impl openmodelica_sim_meta::driver::SimEngine for MemEngine<'_> {
+    fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> metamodelica::Result<()> {
+        if (self.0)(addr, buf) { Ok(()) } else { Err("wasm-jit: read outside linear memory") }
+    }
+    fn write_bytes(&mut self, _addr: u32, _buf: &[u8]) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine is read-only")
+    }
+    fn call1(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
+    fn call1_if_present(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
+    fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> metamodelica::Result<u32> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
+    /// Left to the engine that owns the run: taking it here would consume what
+    /// `enrich_trap` reports if the loop goes on to trap.
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+        None
+    }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+        take_pending_warnings()
+    }
+}
+
+#[cfg(feature = "jit")]
+fn row_asserts(read: &dyn Fn(u32, &mut [u8]) -> bool, sim_data: u32, warn: i32) -> i32 {
+    openmodelica_sim_meta::driver::row_asserts(&mut MemEngine(read), sim_data, warn)
+}
+
+/// The run's shared linear memory. `rt_row_asserts` is called by the *model*
+/// module, which imports `memory` rather than exporting it, so `Caller::get_export`
+/// cannot find it; the engine sets it here instead (wasmer has [`HostMem`]).
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+mod sim_memory {
+    use std::cell::Cell;
+    thread_local! {
+        static MEMORY: Cell<Option<wasmtime::Memory>> = const { Cell::new(None) };
+    }
+    pub fn set(m: wasmtime::Memory) {
+        MEMORY.with(|c| c.set(Some(m)));
+    }
+    pub fn get() -> Option<wasmtime::Memory> {
+        MEMORY.with(|c| c.get())
+    }
+}
+
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub use sim_memory::set as set_sim_memory;
+
+fn record_assert(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32) {
     PENDING_ASSERT.with(|p| {
-        *p.borrow_mut() = Some(PendingAssert { msg, file, sline, scol, eline, ecol, read_only: read_only != 0 });
+        *p.borrow_mut() = Some(PendingAssert { cond, msg, file, sline, scol, eline, ecol, read_only: read_only != 0 });
     });
 }
 
-fn record_warning(rec: [i32; 8]) {
+fn record_warning(rec: [i32; 9]) {
     PENDING_WARNINGS.with(|p| p.borrow_mut().push(rec));
+}
+
+/// `rt_assert`: a failed `assert()`. Returns 1 when the caller must trap — a model
+/// or runtime error (`cond == 0`) always does, a user assertion is recorded
+/// instead while the driver has asserts suppressed.
+fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32) -> i32 {
+    if cond != 0 && NO_THROW.with(|n| n.get()) {
+        record_warning([
+            openmodelica_sim_meta::driver::ASSERT_SUPPRESSED,
+            cond, msg, file, sline, scol, eline, ecol, read_only,
+        ]);
+        // Also as a pending assertion: if the phase throws, this reports it — the
+        // in-wasm driver's own reporter cannot reach the host's error buffer.
+        record_assert(cond, msg, file, sline, scol, eline, ecol, read_only);
+        return 0;
+    }
+    record_assert(cond, msg, file, sline, scol, eline, ecol, read_only);
+    1
 }
 
 // Native rsparse solve behind the `env.rt_host_lin_solve` import, which the native
@@ -138,14 +259,67 @@ pub mod lin_solve {
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result<()> {
     let wt = |r: std::result::Result<&mut wasmtime::Linker<T>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
-    wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-        record_assert(msg, file, sline, scol, eline, ecol, read_only);
+    wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32| -> i32 {
+        assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only)
     }))?;
     wt(linker.func_wrap("rt", "rt_assert_warning", |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-        record_warning([cond, msg, file, sline, scol, eline, ecol, read_only]);
+        record_warning([openmodelica_sim_meta::driver::ASSERT_WARNING, cond, msg, file, sline, scol, eline, ecol, read_only]);
     }))?;
+    wt(linker.func_wrap(
+        "rt",
+        "rt_row_asserts",
+        |caller: wasmtime::Caller<'_, T>, sim_data: u32, warn: i32| -> i32 {
+            let Some(mem) = sim_memory::get() else { return 1 };
+            let data = mem.data(&caller);
+            row_asserts(
+                &|addr: u32, buf: &mut [u8]| {
+                    let off = addr as usize;
+                    match data.get(off..off + buf.len()) {
+                        Some(src) => {
+                            buf.copy_from_slice(src);
+                            true
+                        }
+                        None => false,
+                    }
+                },
+                sim_data,
+                warn,
+            )
+        },
+    ))?;
+    // The runtime module's `-lv` log lines (the nonlinear solver's), onto the same
+    // stdout the model's `print` and the host driver's own lines use.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_log",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return };
+            let off = ptr as usize;
+            if let Some(b) = mem.data(&caller).get(off..off + len as usize) {
+                openmodelica_wasi::wasi::stdout_write(b);
+            }
+        },
+    ))?;
     wt(linker.func_wrap("env", "rt_host_now_ms", || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
+    wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
+    wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
+    // The model's violations land here even when the driver runs in-wasm; hand
+    // them over so that driver can format the `LOG_ASSERT` block.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_take_warnings",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
+            let recs = take_pending_warnings_upto(max as usize);
+            let off = ptr as usize;
+            let data = mem.data_mut(&mut caller);
+            match data.get_mut(off..off + recs.len() * REC_BYTES) {
+                Some(dst) => write_warnings(&recs, dst),
+                None => 0,
+            }
+        },
+    ))?;
     // Solve the CSC system in the caller's (the runtime's) shared memory; the
     // interactive runtime imports this. Returns 0 (solved, `b` overwritten) or 1.
     wt(linker.func_wrap(
@@ -170,18 +344,83 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     Ok(())
 }
 
+/// The runtime's memory, handed to the wasmer host builtins by [`HostMem::set`]
+/// once the instance exists; the imports have to be defined before it.
 #[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
-pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Imports) -> Result<()> {
+pub struct HostMem(wasmer::FunctionEnv<Option<wasmer::Memory>>);
+
+#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
+impl HostMem {
+    pub fn set(&self, store: &mut wasmer::Store, memory: &wasmer::Memory) {
+        *self.0.as_mut(store) = Some(memory.clone());
+    }
+}
+
+#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
+pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Imports) -> Result<HostMem> {
     use wasmer::Function;
     imports.define("rt", "rt_assert", Function::new_typed(store,
-        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-            record_assert(msg, file, sline, scol, eline, ecol, read_only);
+        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32| -> i32 {
+            assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only)
         }));
     imports.define("rt", "rt_assert_warning", Function::new_typed(store,
         |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-            record_warning([cond, msg, file, sline, scol, eline, ecol, read_only]);
+            record_warning([openmodelica_sim_meta::driver::ASSERT_WARNING, cond, msg, file, sline, scol, eline, ecol, read_only]);
         }));
+    // Both memory-reading imports share one env, filled in by `HostMem::set`.
+    let mem_env = wasmer::FunctionEnv::new(store, None);
+    imports.define(
+        "rt",
+        "rt_row_asserts",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, sim_data: u32, warn: i32| -> i32 {
+                let Some(memory) = env.data().clone() else { return 1 };
+                let view = memory.view(&env);
+                row_asserts(&|addr: u32, buf: &mut [u8]| view.read(addr as u64, buf).is_ok(), sim_data, warn)
+            },
+        ),
+    );
+    // See the wasmtime counterpart.
+    imports.define(
+        "env",
+        "rt_host_log",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, len: u32| {
+                let Some(memory) = env.data().clone() else { return };
+                let mut buf = vec![0u8; len as usize];
+                if memory.view(&env).read(ptr as u64, &mut buf).is_ok() {
+                    openmodelica_wasi::wasi::stdout_write(&buf);
+                }
+            },
+        ),
+    );
     imports.define("env", "rt_host_now_ms", Function::new_typed(store, || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }));
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
-    Ok(())
+    imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
+    imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
+    // See the wasmtime counterpart.
+    imports.define(
+        "env",
+        "rt_host_take_warnings",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |mut env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, max: u32| -> u32 {
+                let (data, store) = env.data_and_store_mut();
+                let Some(memory) = data.clone() else { return 0 };
+                let recs = take_pending_warnings_upto(max as usize);
+                let mut buf = vec![0u8; recs.len() * REC_BYTES];
+                let n = write_warnings(&recs, &mut buf);
+                match memory.view(&store).write(ptr as u64, &buf) {
+                    Ok(()) => n,
+                    Err(_) => 0,
+                }
+            },
+        ),
+    );
+    Ok(HostMem(mem_env))
 }

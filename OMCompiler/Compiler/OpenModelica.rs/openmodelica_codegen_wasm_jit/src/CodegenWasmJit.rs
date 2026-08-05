@@ -15,8 +15,9 @@
 //     approach.
 //   * The forward-Euler integrator loop runs *in wasm* (the precompiled runtime
 //     primitives `rt_euler_step` / `rt_sim_store_row` plus an emitted `simulate`
-//     loop), so a whole run is a single host->wasm call with no per-step
-//     boundary crossing. A second, host-driven driver (the Euler loop in native
+//     loop), so the whole integration is a single host->wasm call with no
+//     per-step boundary crossing (initialization stays with the shared driver).
+//     A second, host-driven driver (the Euler loop in native
 //     Rust, one wasm call per step) is provided for benchmarking — selected with
 //     `OMC_WASM_SIM_DRIVER=host`.
 //
@@ -54,7 +55,7 @@ use openmodelica_simcode_types::SimCodeFunction;
 use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
+    ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
@@ -68,8 +69,8 @@ use crate::CodegenWasmJitFunctions::{
 // historical host names.
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar, SimMeta,
-    StateSetInfo,
+    var_filter, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar,
+    SimMeta, StateSetInfo,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -177,6 +178,9 @@ pub struct CapturedSim {
     pub time: Vec<f64>,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
+    /// Solver counters, so a host with no stdout can tell a run that did more work
+    /// from one that did the same work slower.
+    pub stats: SolveStats,
 }
 
 fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
@@ -184,10 +188,55 @@ fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
     LAST.get_or_init(|| Mutex::new(None))
 }
 
+/// C's `writeOutputVars` (`solver_main.c`): `time=<t>` then `,<name>=<value>` at the
+/// last row, Reals as `%.20g`. An unknown name contributes nothing, as in C.
+fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[String]) -> String {
+    let n_reals = run.n_reals as usize;
+    if n_reals == 0 || run.rows.is_empty() {
+        return String::new();
+    }
+    let last = run.rows.len() - n_reals;
+    let n_real_cols = model.layout.n_reals_row();
+    let g20 = |v: f64| sim_driver::format_g(v, 20);
+    let mut out = format!("time={}", g20(run.rows[last]));
+    for name in names {
+        let mut param_idx = 0usize;
+        for v in &model.result_vars {
+            let hit = v.name == *name;
+            match &v.kind {
+                ResultKind::Column { col, negate } if hit => {
+                    let raw = run.rows[last + *col as usize];
+                    let raw = if *negate { -raw } else { raw };
+                    if *col < n_real_cols {
+                        out.push_str(&format!(",{name}={}", g20(raw)));
+                    } else {
+                        out.push_str(&format!(",{name}={}", raw as i64));
+                    }
+                }
+                ResultKind::Param { off: _, wty, negate } => {
+                    let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
+                    param_idx += 1;
+                    if hit {
+                        let raw = if *negate { -raw } else { raw };
+                        match wty {
+                            WTy::F64 => out.push_str(&format!(",{name}={}", g20(raw))),
+                            _ => out.push_str(&format!(",{name}={}", raw as i64)),
+                        }
+                    }
+                }
+                ResultKind::Const { value } if hit => out.push_str(&format!(",{name}={}", g20(*value))),
+                _ => {}
+            }
+        }
+    }
+    out.push('\n');
+    out
+}
+
 /// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
 /// (reusing the result-var metadata the `.mat` writer uses) and stash it for the
 /// host to read directly.
-fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
+fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]) {
     let n_reals = run.n_reals as usize;
     let n_rows = if n_reals == 0 { 0 } else { run.rows.len() / n_reals };
     let column = |col: usize, negate: bool| -> Vec<f64> {
@@ -212,7 +261,13 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
     let mut seen_cols = HashSet::new();
     let mut seen_param_offs = HashSet::new();
     let mut param_value_by_off: HashMap<u32, f64> = HashMap::new();
-    for v in &model.result_vars {
+    // Every signal is resolved (the editable parameters below read their values from
+    // here regardless of the filter); `keep` is applied to `series` at the end.
+    let mut series_keep: Vec<bool> = Vec::new();
+    for (v, &keep) in model.result_vars.iter().zip(keep) {
+        if !matches!(v.kind, ResultKind::Time) {
+            series_keep.push(keep);
+        }
         match &v.kind {
             ResultKind::Time => time = column(0, false),
             ResultKind::Column { col, negate } => {
@@ -249,7 +304,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
     // A start value shows the state's t0 value; a plain parameter shows its slot.
     let row0_by_name: HashMap<&str, f64> =
         series.iter().map(|s| (s.name.as_str(), s.values.first().copied().unwrap_or(0.0))).collect();
-    let params = model
+    let params: Vec<CapturedParam> = model
         .editable_params
         .iter()
         .map(|p| CapturedParam {
@@ -264,6 +319,8 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
             enum_names: p.enum_names.clone(),
         })
         .collect();
+    let mut kept = series_keep.into_iter();
+    series.retain(|_| kept.next().unwrap_or(true));
     *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
         model_name: model.model_name.clone(),
         start_time: model.start_time,
@@ -271,6 +328,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult) {
         time,
         series,
         params,
+        stats: run.stats.clone(),
     });
 }
 
@@ -320,10 +378,22 @@ pub(crate) fn record_error(msg: String) {
 /// reported itself.
 fn with_engine_detail(e: &str) -> String {
     let detail = openmodelica_wasm_jit::take_engine_error_detail();
+    let e = match (sim_driver::init_failed_lambda(), sim_driver::failed_nls_system()) {
+        (Some(l), Some(k)) if e.ends_with("at lambda") => {
+            format!("{e} = {l} (nonlinear system {k})")
+        }
+        _ => e.to_string(),
+    };
     match detail {
         Some(d) if e != sim_driver::ASSERT_ERR => format!("{e}\n{d}"),
-        _ => e.to_string(),
+        _ => e,
     }
+}
+
+/// Mirror `-n` into the engine, before anything reaches the JIT.
+fn sync_engine_threading() -> Result<()> {
+    openmodelica_wasm_jit::model::set_single_threaded(openmodelica_util::Config::noProc()? == 1);
+    Ok(())
 }
 
 /// `CodegenWasmJit.translateModel`: lower `simCode` to a model wasm module, write
@@ -333,6 +403,7 @@ fn with_engine_detail(e: &str) -> String {
 /// translation fails — as the other codegen targets do — never a stderr print or
 /// a panic (a panic would trap the wasm instance and lose the buffered message).
 pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
+    sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
@@ -344,7 +415,10 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     });
     if let Err(e) = &outcome {
         if openmodelica_util::Error::getNumErrorMessages() == errs_before {
-            record_error(format!("CodegenWasmJit: cannot build simulation module for `{prefix}`: {e:#}"));
+            record_error(format!(
+                "CodegenWasmJit: cannot build simulation module for `{prefix}`: {}",
+                with_engine_detail(e)
+            ));
         }
     }
     outcome
@@ -364,29 +438,45 @@ fn init_success_line() -> String {
     }
 }
 
+/// A run reports itself through `<prefix>.log` alone, which `simulate` returns as
+/// `messages` — as C's separate simulation executable does. Whatever it left in the
+/// Error buffer would also surface from `getErrorString()`, where C returns "".
+const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
+
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
+    openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
     let (res, init_output, sim_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
+    openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
     // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
     // process console.
     let init_line = init_success_line();
-    // `LOG_ASSERT` warnings (min/max attribute violations, …) recorded during the run.
-    let warns: String = sim_driver::take_assert_warnings().concat();
+    // A failed run keeps the init line too, as C does.
+    let init_done = init_output.is_some();
     let init_out = init_output.unwrap_or_default();
-    let combined = format!("{init_out}{sim_output}");
+    let init_seg = if init_done { format!("{init_out}{init_line}\n") } else { init_out };
     let log = match &res {
         // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
-            "{init_out}{init_line}\n{warns}{sim_output}\
+            "{init_seg}{sim_output}\
              LOG_SUCCESS       | info    | The simulation finished successfully.\n"
         ),
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
-        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_line}\n{warns}{combined}"),
+        Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_seg}{sim_output}"),
+        // A failed assertion has already logged C's `LOG_ASSERT` block; any other
+        // failure needs its reason spelled out.
+        Err(e) if *e == sim_driver::ASSERT_ERR => format!("{init_seg}{sim_output}"),
         Err(e) => format!(
-            "{combined}{warns}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
+            "{init_seg}{sim_output}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
             with_engine_detail(e)
         ),
+    };
+    // C's `freeNonlinearSystems`, the last thing a simulation executable logs.
+    let log = if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
+        format!("{log}LOG_NLS           | info    | free non-linear system solvers\n")
+    } else {
+        log
     };
     let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
     // Error is in `<prefix>.log` (hence the result `messages`); no stderr.
@@ -519,38 +609,119 @@ fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Res
 /// parse, where a rejection still has a message channel to report on.
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
-    ida: false,
-    cvode: false,
-    gbode: false,
+    // The driver runs here (host-driven) or in-wasm (web); both get CVODE and IDA
+    // from the same CMake option, so one const covers both.
+    ida: openmodelica_sim_meta::IDA,
+    cvode: openmodelica_sim_meta::CVODE,
+    // Served by the driver's per-step deadline, so every engine has it.
+    alarm: true,
+    // The `.mat` is written here, where a regex engine is available.
+    variable_filter: true,
 };
 
+/// The solver values a caller may offer for this build, so a menu built from it
+/// cannot disagree with [`install_sim_flags`]'s check.
+pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
+    simflags::supported(CAPABILITIES)
+}
+
 /// Parse `simflags` as an argv and install the result for this run. omc hands the
-/// flags over as one whitespace-separated string; `argv[0]` stands in for the
-/// program name a WASI command would see, so the same parser serves this path and a
-/// standalone `wasmtime model.wasm …` run.
+/// flags over as one string, which for every other target a shell splits into the
+/// executable's argv; `argv[0]` stands in for the program name a WASI command would
+/// see, so the same parser serves this path and a standalone `wasmtime model.wasm …`
+/// run.
 fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, String> {
-    let argv: Vec<String> = core::iter::once("model".to_string())
-        .chain(simflags.split_whitespace().map(str::to_string))
-        .collect();
+    let argv: Vec<String> = core::iter::once("model".to_string()).chain(split_simflags(simflags)).collect();
     let f = simflags::parse(&argv)?;
     simflags::check(&f, CAPABILITIES)?;
     simflags::set_flags(f.clone());
     Ok(f)
 }
 
+/// Split `simflags` as the shell splits `CevalScriptBackend`'s `sim_call` for every
+/// other target: on whitespace outside quotes, `'…'`/`"…"` removed.
+fn split_simflags(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut quote: Option<char> = None;
+    let mut started = false;
+    for c in s.chars() {
+        match (quote, c) {
+            (Some(q), c) if c == q => quote = None,
+            (Some(_), c) => cur.push(c),
+            (None, '\'' | '"') => {
+                quote = Some(c);
+                started = true;
+            }
+            (None, c) if c.is_whitespace() => {
+                if started {
+                    out.push(core::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            (None, c) => {
+                cur.push(c);
+                started = true;
+            }
+        }
+    }
+    if started {
+        out.push(cur);
+    }
+    out
+}
+
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
 /// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
 /// values, applied at different points of initialization (see `run_initialization`).
+///
+/// `-iif=<file>` contributes first, so an explicit `-override` of the same quantity
+/// wins — C skips whatever `isQuantityOverridden` reports (ticket #15807).
 fn resolve_overrides(model: &SimModel, flags: &simflags::SimFlags) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
     let mut params = Vec::new();
     let mut starts = Vec::new();
+    let mut push = |p: &EditableParam, v: f64, params: &mut Vec<_>, starts: &mut Vec<_>| {
+        if p.is_start { starts } else { params }.push((p.off, p.wty, v));
+    };
+    if let Some(file) = &flags.init_file {
+        for (p, v) in import_start_values(model, file, &flags.overrides) {
+            push(p, v, &mut params, &mut starts);
+        }
+    }
     for (name, val) in &flags.overrides {
         if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
-            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, *val));
+            push(p, *val, &mut params, &mut starts);
         }
     }
     (params, starts)
+}
+
+/// C's `importStartValues`: every quantity the file names, at the start time,
+/// except the overridden ones. C sets the `start` attribute of every variable;
+/// reachable here are the editable parameters and state start values.
+fn import_start_values<'a>(
+    model: &'a SimModel,
+    file: &str,
+    overrides: &[(String, f64)],
+) -> Vec<(&'a EditableParam, f64)> {
+    let mut reader = match openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file) {
+        Ok(r) => r,
+        Err(e) => {
+            record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
+            return Vec::new();
+        }
+    };
+    let t0 = model.meta.start_time;
+    model
+        .editable_params
+        .iter()
+        .filter(|p| !overrides.iter().any(|(n, _)| *n == p.name))
+        .filter_map(|p| {
+            let idx = reader.find_var(&p.name)?;
+            Some((p, reader.val(idx, t0)?))
+        })
+        .collect()
 }
 
 thread_local! {
@@ -563,15 +734,13 @@ thread_local! {
     static SPLIT_ARMED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-/// Init-done hook: take the init-phase stdout and `LOG_ASSERT` warnings, then
-/// restart the capture. A no-op unless [`run_simulation_inner`] armed it.
+/// Init-done hook: take the initialization phase's output, then restart the
+/// capture. A no-op unless [`run_simulation_inner`] armed it.
 fn on_init_done() {
     if !SPLIT_ARMED.with(|a| a.replace(false)) {
         return;
     }
-    let init = openmodelica_wasi::wasi::take_stdout_capture();
-    let warns: String = sim_driver::take_assert_warnings().concat();
-    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(format!("{init}{warns}")));
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(openmodelica_wasi::wasi::take_stdout_capture()));
     openmodelica_wasi::wasi::start_stdout_capture();
 }
 
@@ -593,12 +762,27 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = flags.has_log("LOG_STATS");
-    // `-override=name=value,...`: resolve each editable parameter to its SimData
-    // slot and hand the list to the driver (applied after `functionParameters`).
+    // C refuses to seed a run from the file it is about to overwrite.
+    if let Some(init) = &flags.init_file
+        && init == flags.result_file.as_deref().unwrap_or(result_file)
+    {
+        return (
+            Err(format!(
+                "Cannot import a result file for initialization that is also the current output \
+                 file <{init}>.\nConsider redirecting the output result file (-r=<new_res.mat>) or \
+                 renaming the result file that is used for initialization import."
+            )
+            ),
+            None,
+            String::new(),
+        );
+    }
     let (param_ov, start_ov) = resolve_overrides(&model, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
+    // The hard `-alarm`, if asked for: set before the modules are instantiated.
+    sim_runtime::set_alarm(flags.alarm);
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
     SPLIT_ARMED.with(|a| a.set(true));
@@ -612,21 +796,22 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
             return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)".to_string());
         }
         let run = sim_runtime::run(&model)?;
+        // C's `finishSimulation` prints these ahead of the LOG_STATS block.
+        if !flags.output_vars.is_empty() {
+            extra.push_str(&write_output_vars(&model, &run, &flags.output_vars));
+        }
         if log_stats {
             extra.push_str(&log_stats_block(&run.stats));
         }
-        capture_last_sim(&model, &run);
+        let keep = output_selection(&model);
+        capture_last_sim(&model, &run, &keep);
         if fmt == "mat" {
-            write_mat4(&model, result_file, &run.rows, run.n_reals, &run.params)?;
+            // C's `-r=<file>` overrides the name the caller derived from the model.
+            let out = flags.result_file.as_deref().unwrap_or(result_file);
+            write_mat4(&model, out, &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     })();
-    // The driver reports chattering out-of-band (it can only return a `&'static str`);
-    // fold its log lines in whether the run finished or aborted.
-    for line in sim_driver::take_chatter_log() {
-        extra.push_str(&line);
-        extra.push('\n');
-    }
     // Disarm in case init failed before the hook fired.
     SPLIT_ARMED.with(|a| a.set(false));
     // Everything captured after the split is the simulation phase (plus `extra`:
@@ -635,10 +820,11 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
-    let init_output = if model.sparse_solver_log.is_empty() {
+    let head = format!("{}{}", flag_change_log(&flags), sparse_solver_log(&model, &flags));
+    let init_output = if head.is_empty() {
         init_output
     } else {
-        Some(format!("{}{}", model.sparse_solver_log, init_output.unwrap_or_default()))
+        Some(format!("{head}{}", init_output.unwrap_or_default()))
     };
     (res, init_output, sim_output)
 }
@@ -700,6 +886,34 @@ mod session {
         /// Wall-clock inside `advance`, summed over chunks: excludes the yields
         /// between them, so it stays comparable to the one-shot `run()` timing.
         integrate_ms: f64,
+        /// The model's output so far. `take_stdout_capture` ends the capture, so
+        /// each chunk drains it here and re-arms.
+        log: String,
+        /// `-lv=LOG_STATS` was requested.
+        log_stats: bool,
+    }
+
+    thread_local! {
+        /// The last run's model output, for [`last_sim_log`]: `sim_advance` returns
+        /// a status code and has no other channel for it.
+        static LAST_SIM_LOG: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    }
+
+    /// The last session run's model output, including a failed run's.
+    pub fn last_sim_log() -> String {
+        LAST_SIM_LOG.with(|c| c.borrow().clone())
+    }
+
+    /// Drain the capture into `dst` and re-arm it for the next chunk.
+    fn drain_capture(dst: &mut String) {
+        dst.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+        openmodelica_wasi::wasi::start_stdout_capture();
+    }
+
+    /// End the capture, fold everything the run produced into `log`, and publish it.
+    fn publish_log(mut log: String) {
+        log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+        LAST_SIM_LOG.with(|c| *c.borrow_mut() = log);
     }
 
     /// Either the host driver (Rust driver calling the model through the wasm
@@ -720,9 +934,10 @@ mod session {
 
     /// Capture results for the `omc_sim_*` getters and write the `.mat`.
     fn finalize_and_capture(model: &SimModel, result_file: &str, run: &sim_driver::RunResult) -> Result<()> {
-        capture_last_sim(model, run);
+        let keep = output_selection(model);
+        capture_last_sim(model, run, &keep);
         if model.output_format == "mat" {
-            write_mat4(model, result_file, &run.rows, run.n_reals, &run.params)?;
+            write_mat4(model, result_file, &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     }
@@ -749,6 +964,12 @@ mod session {
         let (param_ov, start_ov) = resolve_overrides(&model, &flags);
         sim_driver::set_param_overrides(param_ov, start_ov);
         sim_driver::clear_cancel();
+        // Split init from simulation output as `run_simulation_inner` does; the
+        // hook fires while the backend below is built, which is what initializes.
+        LAST_SIM_LOG.with(|c| c.borrow_mut().clear());
+        INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
+        sim_driver::set_init_done_hook(on_init_done);
+        SPLIT_ARMED.with(|a| a.set(true));
         openmodelica_wasi::wasi::start_stdout_capture();
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
@@ -760,7 +981,7 @@ mod session {
                 let (mut engine, sim_data) = sim_runtime::build_engine(&model)?;
                 let made =
                     sim_driver::make_driver(&mut *engine, &model.meta, sim_data, model.method.as_str())
-                        .map_err(|err| sim_driver::enrich_trap(&mut *engine, err));
+                        .map_err(|err| sim_driver::enrich_trap_init(&mut *engine, err, model.start_time));
                 let (driver, _label) = match made {
                     Ok(v) => v,
                     Err(e) => {
@@ -770,10 +991,19 @@ mod session {
                 Ok(SessionBackend::Host { engine, driver, sim_data })
             }
         })();
+        // Disarm in case init failed before the hook fired.
+        SPLIT_ARMED.with(|a| a.set(false));
+        let flags = simflags::flags();
+        let init_log = format!(
+            "{}{}{}",
+            flag_change_log(&flags),
+            sparse_solver_log(&model, &flags),
+            INIT_OUTPUT.with(|c| c.borrow_mut().take()).unwrap_or_default()
+        );
         let backend = match built {
             Ok(v) => v,
             Err(e) => {
-                let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                publish_log(init_log);
                 record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(&e)));
                 return Err("CodegenWasmJit: wasm-jit simulation failed");
             }
@@ -784,6 +1014,8 @@ mod session {
                 result_file: result_file.to_string(),
                 backend,
                 integrate_ms: 0.0,
+                log: init_log,
+                log_stats: flags.has_log("LOG_STATS"),
             })
         });
         Ok(())
@@ -802,8 +1034,11 @@ mod session {
             // touch `guard` again (to clear it on completion/error).
             let model = sess.model.clone();
             let result_file = sess.result_file.clone();
+            let log_stats = sess.log_stats;
             // Stopped before the finalize/`.mat` work in each arm below.
             let mut adv_ms = 0.0f64;
+            // Filled by whichever arm finishes the run, appended to the log below.
+            let mut stats_block = String::new();
 
             // Advance one chunk. All `sess` borrows end when this block returns its
             // status value.
@@ -823,13 +1058,18 @@ mod session {
                         }
                         Ok(done) => {
                             let rows = driver.take_rows();
+                            let mut stats = SolveStats::default();
+                            driver.fill_stats(&model.meta, &mut stats);
                             let params = sim_driver::finalize_run(&mut **engine, &model.meta, *sim_data)?;
                             let run = sim_driver::RunResult {
                                 rows,
                                 n_reals: model.layout.n_row_total(),
                                 params,
-                                stats: SolveStats::default(),
+                                stats,
                             };
+                            if log_stats {
+                                stats_block = log_stats_block(&run.stats);
+                            }
                             finalize_and_capture(&model, &result_file, &run)?;
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
@@ -850,6 +1090,9 @@ mod session {
                         Ok(rc) => {
                             // 1 done, 2 terminated
                             let run = inwasm.take_result()?;
+                            if log_stats {
+                                stats_block = log_stats_block(&run.stats);
+                            }
                             finalize_and_capture(&model, &result_file, &run)?;
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
@@ -859,6 +1102,13 @@ mod session {
             };
             sess.integrate_ms += adv_ms;
             let integrate_ms = sess.integrate_ms;
+            drain_capture(&mut sess.log);
+            sess.log.push_str(&stats_block);
+            // The run is over unless it asked for another chunk, so hand the log on.
+            let run_log = match outcome {
+                Ok(SimStatus::Running) => None,
+                _ => Some(core::mem::take(&mut sess.log)),
+            };
 
             match outcome {
                 Ok(SimStatus::Running) => Ok(SimStatus::Running),
@@ -870,12 +1120,12 @@ mod session {
                             model.n_intervals,
                         );
                     }
-                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    publish_log(run_log.unwrap_or_default());
                     *guard = None;
                     Ok(st)
                 }
                 Err(e) => {
-                    let _ = openmodelica_wasi::wasi::take_stdout_capture();
+                    publish_log(run_log.unwrap_or_default());
                     record_error(format!("wasm-jit simulation failed: {}", with_engine_detail(e)));
                     *guard = None;
                     Err(e)
@@ -889,6 +1139,8 @@ mod session {
     pub fn sim_free() {
         SIM_SESSION.with(|s| {
             if let Some(mut sess) = s.borrow_mut().take() {
+                // Cancel path: end the capture, keeping what was printed.
+                publish_log(core::mem::take(&mut sess.log));
                 // The in-wasm session frees itself on `Drop` (`rt_sim_free`).
                 let SimSession { model, backend, .. } = &mut sess;
                 if let SessionBackend::Host { engine, sim_data, .. } = backend {
@@ -900,7 +1152,7 @@ mod session {
 }
 
 #[cfg(feature = "jit")]
-pub use session::{sim_advance, sim_free, sim_start};
+pub use session::{last_sim_log, sim_advance, sim_free, sim_start};
 
 #[cfg(not(feature = "jit"))]
 pub fn sim_start(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
@@ -912,6 +1164,10 @@ pub fn sim_advance(_budget_ms: f64) -> Result<SimStatus> {
 }
 #[cfg(not(feature = "jit"))]
 pub fn sim_free() {}
+#[cfg(not(feature = "jit"))]
+pub fn last_sim_log() -> String {
+    String::new()
+}
 
 // ===========================================================================
 // Standalone WASI command-module export (native only)
@@ -1352,6 +1608,7 @@ fn emit_fmu(
     adapter: &[u8],
     kind: &str,
 ) -> Result<()> {
+    sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
@@ -1468,10 +1725,45 @@ fn cref_display(cr: &Arc<DAE::ComponentRef>) -> Result<String> {
     Ok(ComponentReferenceBasics::printComponentRefStr(cr.clone())?.to_string())
 }
 
-/// Whether a variable is emitted to the result file, matching the C runtime's
-/// default selection: drop protected variables and `annotation(HideResult=true)`.
+/// C's `shouldFilterOutput`: protected variables and `HideResult=true`, each
+/// switched back on by its own simflag.
+fn filter_bits(sv: &SimCodeVar::SimVar) -> u8 {
+    let mut f = 0;
+    if sv.isProtected {
+        f |= var_filter::PROTECTED;
+        if sv.isEncrypted {
+            f |= var_filter::ENCRYPTED;
+        }
+    }
+    if sv.hideResult == Some(true) {
+        f |= var_filter::HIDE_RESULT;
+    }
+    f
+}
+
+/// In the result file with no simflag asked for it — the `-override` reachable set.
 fn is_result_output(sv: &SimCodeVar::SimVar) -> bool {
-    !sv.isProtected && sv.hideResult != Some(true)
+    filter_bits(sv) == 0
+}
+
+/// Resolve `simulate(..., variableFilter=)` — C's `initializeOutputFilter`, which
+/// filters every name that does not match `^(<filter>)$`. C matches per run; the
+/// runtimes have no regex engine, so it is settled here into
+/// [`var_filter::FILTERED`], protected variables included (`-emit_protected`
+/// can reach them).
+fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
+    if filter == ".*" || filter.is_empty() {
+        return;
+    }
+    let Ok(re) = openmodelica_util::System::Regex::new(&format!("^({filter})$")) else {
+        eprintln!("Failed to compile regular expression: {filter}. Defaulting to outputting all variables.");
+        return;
+    };
+    for v in result_vars.iter_mut() {
+        if !matches!(v.kind, ResultKind::Time) && !re.is_match(&v.name) {
+            v.filter |= var_filter::FILTERED;
+        }
+    }
 }
 
 /// Literal names of an enumeration type (through subtype/array wrappers), or
@@ -1548,19 +1840,6 @@ fn kind_from_slot(off: u32, wty: WTy, negate: bool, heap: bool, layout: &SimLayo
         return Some(ResultKind::Param { off, wty, negate });
     }
     None // string slots
-}
-
-/// Inverse of the `Column` assignment in [`kind_from_slot`]: the SimData byte
-/// offset a result-buffer column reads from.
-fn col_to_off(col: u32, layout: &SimLayout) -> u32 {
-    let nr = layout.n_reals_row();
-    if col < nr {
-        REAL_OFF + (col - 1) * 8
-    } else if col < nr + layout.n_int_alg() {
-        layout.int_off + (col - nr) * 4
-    } else {
-        layout.bool_off + (col - nr - layout.n_int_alg()) * 4
-    }
 }
 
 /// Expand every whole-array `SimVar` (`--simCodeScalarize=false`) into its
@@ -1718,6 +1997,44 @@ fn reindex_aliasvar(av: &SimCodeVar::AliasVariable, idx: &[i32]) -> SimCodeVar::
     }
 }
 
+/// Append the `$Sensitivities.<par>.<state>` result variables — the layout's
+/// sensitivity block, in its order — and return the `SimData` offsets of the
+/// parameters they differentiate against (C's `sensitivityParList`, resolved
+/// through the `paramVars` order the real-parameter region follows). The names
+/// bypass [`result_name`], which filters `$`-prefixed ones; C keeps them.
+fn push_sensitivity_vars(
+    sens_vars: &[&SimCodeVar::SimVar],
+    n_sens_par: usize,
+    vars: &SimCodeVar::SimVars,
+    layout: &SimLayout,
+    result_vars: &mut Vec<ResultVar>,
+) -> Result<Vec<u32>> {
+    if sens_vars.is_empty() {
+        return Ok(Vec::new());
+    }
+    let params: HashMap<String, u32> = lst(&vars.paramVars)
+        .enumerate()
+        .map(|(k, sv)| Ok((cref_display(&sv.name)?, layout.rparam_off + (k as u32) * 8)))
+        .collect::<Result<_>>()?;
+    let mut offs = Vec::with_capacity(n_sens_par);
+    for sv in &sens_vars[..n_sens_par] {
+        let name = cref_display(&sv.name)?;
+        let off = *params
+            .get(&name)
+            .ok_or("CodegenWasmJit: a sensitivity parameter is not a real parameter of the model")?;
+        offs.push(off);
+    }
+    for (i, sv) in sens_vars[n_sens_par..].iter().enumerate() {
+        result_vars.push(ResultVar {
+            name: cref_display(&sv.name)?,
+            comment: sv.comment.to_string(),
+            kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: false },
+            filter: filter_bits(sv),
+        });
+    }
+    Ok(offs)
+}
+
 /// Build the cref->slot map and the result-variable list from the model's
 /// `SimVars`. The slot offsets follow [`SimLayout`]; the result order matches
 /// the C runtime (time, states, state derivatives, real algebraics, then
@@ -1777,31 +2094,27 @@ fn build_var_map(
         name: "time".to_string(),
         comment: "Simulation time [s]".to_string(),
         kind: ResultKind::Time,
+        filter: 0,
     });
 
     let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
     let ders: Vec<&SimCodeVar::SimVar> = lst(&vars.derivativeVars).collect();
 
-    // Protected/hidden primaries that were filtered out, kept as (name, comment,
-    // off, wty, heap) so they can be re-emitted at the end if a non-protected
-    // output ends up sharing their data slot (an alias-group member the C runtime
-    // keeps in the result).
-    let mut filtered: Vec<(String, String, u32, WTy, bool)> = Vec::new();
-
-    // Push a primary (non-alias) variable: always register its slot (equations
-    // reference even protected/internal vars), but only emit it as a result
-    // signal if it passes the C-compatible filter (else stash it in `filtered`).
+    // Push a primary (non-alias) variable: register its slot (equations reference
+    // even protected ones) and list it as a result signal carrying why a run would
+    // filter it — the overriding flags are not known here.
     let mut push_primary =
-        |map: &mut SimVarMap, result_vars: &mut Vec<ResultVar>, filtered: &mut Vec<(String, String, u32, WTy, bool)>,
+        |map: &mut SimVarMap, result_vars: &mut Vec<ResultVar>,
          sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool, raw_name: String| -> Result<()> {
             insert_var(map, sv, off, wty, heap)?;
             if let Some(name) = result_name(&raw_name) {
-                if is_result_output(sv) {
-                    if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
-                        result_vars.push(ResultVar { name, comment: sv.comment.to_string(), kind });
-                    }
-                } else {
-                    filtered.push((name, sv.comment.to_string(), off, wty, heap));
+                if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
+                    result_vars.push(ResultVar {
+                        name,
+                        comment: sv.comment.to_string(),
+                        kind,
+                        filter: filter_bits(sv),
+                    });
                 }
             }
             Ok(())
@@ -1826,7 +2139,7 @@ fn build_var_map(
                 });
             }
         }
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
     }
     for (i, sv) in ders.iter().enumerate() {
         // der(x) is displayed as `der(<state name>)`.
@@ -1834,13 +2147,13 @@ fn build_var_map(
             Some(s) => format!("der({})", cref_display(&s.name)?),
             None => cref_display(&sv.name)?,
         };
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (layout.n_states + i as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (layout.n_states + i as u32) * 8, WTy::F64, false, name)?;
     }
     let real_algs: Vec<&SimCodeVar::SimVar> =
         lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
     for (j, sv) in real_algs.iter().enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, REAL_OFF + (2 * layout.n_states + j as u32) * 8, WTy::F64, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (2 * layout.n_states + j as u32) * 8, WTy::F64, false, name)?;
     }
 
     // Real / Integer / Boolean parameters -> data_1. Integer & Boolean algebraic
@@ -1849,27 +2162,27 @@ fn build_var_map(
     for (k, sv) in lst(&vars.paramVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.rparam_off + (k as u32) * 8;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::F64, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::F64, false, name.clone())?;
         push_editable(sv, &name, off, WTy::F64);
     }
     for (i, sv) in lst(&vars.intAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.int_off + (i as u32) * 4, WTy::I32, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.int_off + (i as u32) * 4, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.intParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.iparam_off + (k as u32) * 4;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.boolAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, layout.bool_off + (i as u32) * 4, WTy::I32, false, name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.bool_off + (i as u32) * 4, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.boolParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.bparam_off + (k as u32) * 4;
-        push_primary(&mut map, &mut result_vars, &mut filtered, sv, off, WTy::I32, false, name.clone())?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
@@ -1893,10 +2206,13 @@ fn build_var_map(
     for sv in lst(&vars.constVars).chain(lst(&vars.intConstVars)).chain(lst(&vars.boolConstVars)) {
         let Some(value) = const_value(&sv.initialValue) else { continue };
         const_of.insert(sim_cref_key(&sv.name)?, value);
-        if is_result_output(sv) {
-            if let Some(name) = result_name(&cref_display(&sv.name)?) {
-                result_vars.push(ResultVar { name, comment: sv.comment.to_string(), kind: ResultKind::Const { value } });
-            }
+        if let Some(name) = result_name(&cref_display(&sv.name)?) {
+            result_vars.push(ResultVar {
+                name,
+                comment: sv.comment.to_string(),
+                kind: ResultKind::Const { value },
+                filter: filter_bits(sv),
+            });
         }
     }
 
@@ -1914,11 +2230,14 @@ fn build_var_map(
         let Some(tslot) = map.vars.get(&tkey).copied() else {
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
-                if is_result_output(av) {
-                    if let Some(name) = result_name(&cref_display(&av.name)?) {
-                        let value = if negate { -cval } else { cval };
-                        result_vars.push(ResultVar { name, comment: av.comment.to_string(), kind: ResultKind::Const { value } });
-                    }
+                if let Some(name) = result_name(&cref_display(&av.name)?) {
+                    let value = if negate { -cval } else { cval };
+                    result_vars.push(ResultVar {
+                        name,
+                        comment: av.comment.to_string(),
+                        kind: ResultKind::Const { value },
+                        filter: filter_bits(av) | var_filter::ALIAS,
+                    });
                 }
             }
             continue;
@@ -1930,33 +2249,16 @@ fn build_var_map(
             heap: tslot.heap,
         };
         map.vars.insert(sim_cref_key(&av.name)?, slot);
-        if is_result_output(av) {
-            if let (Some(name), Some(kind)) = (
-                result_name(&cref_display(&av.name)?),
-                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
-            ) {
-                result_vars.push(ResultVar { name, comment: av.comment.to_string(), kind });
-            }
-        }
-    }
-
-    // Re-emit a filtered (protected/hidden) variable if a non-protected output
-    // references its data slot — i.e. it is an alias-group member of an output
-    // variable, which the C runtime keeps in the result (e.g. a protected
-    // parameter aliased by a public connector variable).
-    let referenced: std::collections::HashSet<u32> = result_vars
-        .iter()
-        .filter_map(|v| match &v.kind {
-            ResultKind::Column { col, .. } => Some(col_to_off(*col, layout)),
-            ResultKind::Param { off, .. } => Some(*off),
-            _ => None,
-        })
-        .collect();
-    for (name, comment, off, wty, heap) in filtered {
-        if referenced.contains(&off) {
-            if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
-                result_vars.push(ResultVar { name, comment, kind });
-            }
+        if let (Some(name), Some(kind)) = (
+            result_name(&cref_display(&av.name)?),
+            kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
+        ) {
+            result_vars.push(ResultVar {
+                name,
+                comment: av.comment.to_string(),
+                kind,
+                filter: filter_bits(av) | var_filter::ALIAS,
+            });
         }
     }
 
@@ -2285,10 +2587,24 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Jacobian scratch region: nonlinear-system slots + torn-linear slots (after).
     let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code) + lin_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
+    // `--daeMode`: `allEquations`/`odeEquations` are empty and the whole continuous
+    // system is `daeModeData.daeEquations`, the residual `F(t, y, y') = 0`.
+    let dae_mode = sim_code.daeModeData.as_ref();
+    let dae_eqs: Vec<(Arc<SimCode::SimEqSystem>, u32)> =
+        dae_mode.map(|d| dae_residual_equations(d)).unwrap_or_default();
+    let dae_res_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.residualVars).collect()).unwrap_or_default();
+    let dae_aux_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.auxiliaryVars).collect()).unwrap_or_default();
+    let dae_alg_vars: Vec<&SimCodeVar::SimVar> =
+        dae_mode.map(|d| lst(&d.algebraicVars).collect()).unwrap_or_default();
+    if dae_mode.is_some() && dae_res_vars.len() != (n_states as usize + dae_alg_vars.len()) {
+        return Err("CodegenWasmJit: DAE mode residual count does not match states + algebraic unknowns");
+    }
     // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
     // when-statements inside an algorithm — both need the per-step pre-value save
     // and the full `allEquations` list as the per-step function.
-    let has_when = all_eqs.iter().any(|e| match &**e {
+    let has_when = dae_eqs.iter().map(|(e, _)| e).chain(all_eqs.iter()).any(|e| match &**e {
         SimCode::SimEqSystem::SES_WHEN { .. } => true,
         SimCode::SimEqSystem::SES_ALGORITHM { statements, .. } => {
             (&**statements).into_iter().any(|s| matches!(&**s, DAE::Statement::STMT_WHEN { .. }))
@@ -2298,6 +2614,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // The backend only emits a lambda-0 initial system when the model uses
     // `homotopy()`; its presence is the signal to wire up the continuation.
     let has_homotopy = (&*sim_code.initialEquations_lambda0).into_iter().next().is_some();
+    // `--calculateSensitivities`: `sensitivityVars` is the `Ns` differentiated
+    // parameters followed by the `Ns * nStates` `$Sensitivities.<par>.<state>`
+    // signals (C's `rSen` init-XML category, split by `numSensitivityParameters`).
+    let n_sens_par = vi.numSensitivityParameters.max(0) as usize;
+    let sens_vars: Vec<&SimCodeVar::SimVar> = lst(&mi.vars.sensitivityVars).collect();
+    let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -2315,11 +2637,29 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         stateset_scratch_f64,
         nls_jac_scratch_f64,
         vi.numMathEventFunctions.max(0) as u32,
+        n_sens,
+        dae_res_vars.len() as u32,
+        dae_aux_vars.len() as u32,
+        dae_alg_vars.len() as u32,
         has_when,
         has_homotopy,
     );
 
-    let (mut var_map, result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
+    // the SimVar's `index` as C's `crefToCStr` does. Solver workspace, not results.
+    for (svs, base) in [(&dae_res_vars, layout.dae_res_off), (&dae_aux_vars, layout.dae_aux_off)] {
+        for sv in svs.iter() {
+            let i = u32::try_from(sv.index).map_err(|_| "CodegenWasmJit: DAE mode variable has no index")?;
+            insert_var(&mut var_map, sv, base + i * 8, WTy::F64, false)?;
+        }
+    }
+    // An auxiliary variable can be a whole array (`$AUX.w = f(…)`), so its element
+    // group needs finalizing too.
+    if dae_mode.is_some() {
+        finalize_array_groups(&mut var_map)?;
+    }
+    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
     let var_units = collect_var_units(vars)?;
     // Sample event index -> its slot `k` (position in `samples`), for the
     // `sample(index,…)` builtin and the driver's per-sample state.
@@ -2353,6 +2693,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     index_list(&sim_code.removedEquations, &mut eq_index);
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
+    for e in dae_eqs.iter() {
+        index_eq_recursive(&e.0, &mut eq_index);
+    }
     for part in lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)) {
         index_list(part, &mut eq_index);
     }
@@ -2413,7 +2756,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // the type/import sections, which need to know whether the model has any
     // nonlinear systems) and consumed by the equation-function builders below. ---
     let param_eqs = flatten_eqs(&sim_code.parameterEquations);
-    let param_bindings = collect_param_bindings(vars, &assigned_cref_keys(&param_eqs));
+    let initial_eqs = flatten_eqs(&sim_code.initialEquations);
+    let mut computed_params = assigned_cref_keys(&param_eqs);
+    computed_params.extend(assigned_cref_keys(&initial_eqs));
+    let param_bindings = collect_param_bindings(vars, &computed_params);
     // When the model has `when`-equations, the discrete update (when-bodies with
     // edge detection) must run each step between the condition and output
     // equations. `allEquations` is the full solved list in that order, so it is
@@ -2431,7 +2777,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     } else {
         Vec::new()
     };
-    let initial_eqs = flatten_eqs(&sim_code.initialEquations);
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
@@ -2440,8 +2785,28 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
     let nls_nominal_map = build_nls_nominal_map(vars);
-    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_patterns) =
-        collect_nls_jobs(&[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs], &nls_nominal_map);
+    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
+    let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) = collect_nls_jobs(
+        &[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs],
+        &nls_nominal_map,
+        &mut attr_targets,
+    );
+    // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
+    // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
+    let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
+    for (svs, base) in [
+        (lst(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(), layout.state_nom_off),
+        (dae_alg_vars.clone(), layout.dae_alg_nom_off),
+    ] {
+        for (i, sv) in svs.iter().enumerate() {
+            let off = base + (i as u32) * 8;
+            nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
+            if let Ok(k) = sim_cref_key(&sv.name) {
+                attr_targets.entry(k).or_default().nom_offs.push(off);
+            }
+        }
+    }
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
@@ -2507,10 +2872,18 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
         Some((residual_type, load_type))
     };
+    // `evaluateDAEResiduals(SimData*, stage)`: (i32,i32) -> (), for a DAE-mode model.
+    let dae_fn_type = (!dae_eqs.is_empty()).then(|| {
+        let ti = types.len();
+        types.ty().function([we::ValType::I32, we::ValType::I32], []);
+        ti
+    });
     // Function references met while lowering the bodies add thunks to the closure
     // pool; this global holds their shared-table base.
     let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
     crate::CodegenWasmJitFunctions::closures::begin(types.len(), closure_global);
+    let lit_global = crate::CodegenWasmJitFunctions::lit_base_global(nls_types.is_some());
+    crate::CodegenWasmJitFunctions::shared_lits::begin(lit_global);
 
     // --- Import section. ---
     let mut imports = we::ImportSection::new();
@@ -2557,6 +2930,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // `parameterEquations` for any computed parameters.
     // Equation functions.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
+    let param_eqs_dep = param_eqs.clone();
     bodies.push(build_eq_fn_with_prelude("parameterEquations", &param_bindings, param_eqs, &var_map, &eq_index, &by_name, &mut literals, &[], &stateset_diag)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
@@ -2572,8 +2946,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let real_algs: Vec<&SimCodeVar::SimVar> =
         lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
     bodies.push(build_init_start_values_fn(&states, &real_algs, &layout, &var_map, &by_name, &mut literals)?);
-    // The integrator loop.
-    bodies.push(build_simulate(&layout, &eqfn)?);
+    // The integrator loop calls `functionCheckAsserts`, whose index is only known
+    // once the nonlinear systems below have taken theirs; keep its fixed slot
+    // (`simulate_idx`) and fill it in there.
+    let simulate_slot = bodies.len();
+    bodies.push(empty_eqfn());
 
     // --- Standalone-export metadata: encode the SimData layout, the run settings
     // and the result variables into a blob the standalone wasip1 runtime decodes
@@ -2585,21 +2962,50 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         .simulationSettingsOpt
         .as_ref()
         .ok_or_else(|| "CodegenWasmJit: model has no simulation settings")?;
+    apply_variable_filter(&mut result_vars, &settings.variableFilter);
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
     let jac_a = build_jac_a_info(sim_code, n_states);
-    let state_nominals: Vec<f64> = lst(&vars.stateVars)
-        .take(n_states as usize)
-        .map(|sv| const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32))
-        .collect();
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
     // it around unused.
     let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
+    // C labels its `-lv=LOG_NLS` unknowns from the `_info.json` `defines` array,
+    // which `SerializeModelInfo` writes from these same `crefs`.
+    let nls_vars = nls_systems
+        .iter()
+        .map(|sys| {
+            Ok(openmodelica_sim_meta::NlsVars {
+                eq_index: sys.index as u32,
+                names: lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    // The residual Jacobian's sparsity is a matrix of its own, not the ODE `A` that
+    // the backend leaves empty in DAE mode.
+    let dae = dae_mode
+        .map(|d| -> Result<openmodelica_sim_meta::DaeInfo> {
+            let alg_offs = dae_alg_vars
+                .iter()
+                .map(|sv| {
+                    let key = sim_cref_key(&sv.name)?;
+                    var_map
+                        .vars
+                        .get(&key)
+                        .map(|s| s.off)
+                        .ok_or("CodegenWasmJit: DAE mode algebraic unknown has no SimData slot")
+                })
+                .collect::<Result<Vec<u32>>>()?;
+            Ok(openmodelica_sim_meta::DaeInfo {
+                alg_offs,
+                sparsity: d.sparsityPattern.as_ref().and_then(|jm| jac_pattern_info(jm, dae_res_vars.len())),
+            })
+        })
+        .transpose()?;
     let meta = build_sim_meta(
-        &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets, &state_nominals,
-        fmi_vrs, zc_descriptions(&zero_crossings),
+        &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
+        fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars, dae,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -2733,15 +3139,17 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // Min/max variable-attribute (and equation) assertion checks: C's
     // `checkForAsserts`, evaluated at each accepted output point. Warning-level
     // asserts record a `LOG_ASSERT` via `rt_assert_warning` and continue.
+    let has_asserts = !assert_eqs.is_empty();
     let check_asserts_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(if assert_eqs.is_empty() {
-            empty_eqfn()
-        } else {
+        bodies.push(if has_asserts {
             build_eq_fn("functionCheckAsserts", assert_eqs, &var_map, &eq_index, &by_name, &mut literals)?
+        } else {
+            empty_eqfn()
         });
         idx
     };
+    bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
     let update_relations_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.push(if relations.iter().all(Option::is_none) {
@@ -2770,6 +3178,31 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             build_init_delay_fn(var_map.n_delays)
         });
         idx
+    };
+    // C's `updateBoundParameters`: `parameterEquations` *without* the constant
+    // bindings, so re-evaluating the dependent parameters does not undo a
+    // perturbation IDAS made to a sensitivity parameter.
+    let update_bound_params_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(build_eq_fn("updateBoundParameters", param_eqs_dep, &var_map, &eq_index, &by_name, &mut literals)?);
+        idx
+    };
+    let update_bound_attrs_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(build_update_bound_attrs_fn(
+            sim_code, &nominal_defaults, &attr_targets, &var_map, &by_name, &mut literals,
+        )?);
+        idx
+    };
+    // Emitted only for a DAE-mode model: its absence is how the standalone export and
+    // the FMU adapters know the model is an explicit ODE.
+    let dae_residuals_idx = match dae_eqs.is_empty() {
+        true => None,
+        false => {
+            let idx = import_base + bodies.len() as u32;
+            bodies.push(build_dae_residuals_fn(&dae_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
+            Some(idx)
+        }
     };
 
     // --- Function section (type index per body, in body order). ---
@@ -2808,9 +3241,22 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
+    functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
+    functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
+    if let Some(ti) = dae_fn_type {
+        functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
+    }
 
-    // --- Closure thunks and the module `start`. The thunks come after every
-    // other body — their `ref.func` indices are only known here. ---
+    // --- Shared literals, closure thunks and the module `start`. Both come after
+    // every other body — their indices are only known here. ---
+    let lits = crate::CodegenWasmJitFunctions::shared_lits::take();
+    let lit_init = (!lits.is_empty())
+        .then(|| {
+            crate::CodegenWasmJitFunctions::shared_lits::build_init_fn(
+                &lits, lit_global, &by_name, &mut literals,
+            )
+        })
+        .transpose()?;
     let closure_wiring = crate::CodegenWasmJitFunctions::closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -2821,19 +3267,29 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() {
-        let start_type = types.len();
+    let start_wiring = if nls_wiring.is_some() || !thunk_indices.is_empty() || lit_init.is_some() {
+        let void_type = types.len();
         types.ty().function([], []);
+        let lit_init_idx = lit_init.map(|f| {
+            let idx = import_base + bodies.len() as u32;
+            functions.function(void_type);
+            bodies.push(f);
+            idx
+        });
         let start_idx = import_base + bodies.len() as u32;
         let mut f = we::Function::new([]);
+        if let Some(i) = lit_init_idx {
+            f.instruction(&we::Instruction::Call(i));
+        }
         if let Some((fn_indices, _)) = &nls_wiring {
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &nls_nominals, &nls_patterns);
+            let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
         }
         f.instruction(&we::Instruction::End);
-        functions.function(start_type);
+        functions.function(void_type);
         bodies.push(f);
         let mut declared: Vec<u32> =
             nls_wiring.as_ref().map(|(_, cbs)| cbs.clone()).unwrap_or_default();
@@ -2842,7 +3298,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     } else {
         None
     };
-    if start_wiring.is_some() {
+    if nls_wiring.is_some() || !thunk_indices.is_empty() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
             table64: false,
@@ -2878,6 +3334,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
+    exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
+    exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
+    if let Some(idx) = dae_residuals_idx {
+        exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
+    }
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -2915,8 +3376,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionUpdateRelations", update_relations_idx),
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
+        ("functionUpdateBoundParameters", update_bound_params_idx),
+        ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
     ] {
         names.push((idx, name.to_string()));
+    }
+    if let Some(idx) = dae_residuals_idx {
+        names.push((idx, "evaluateDAEResiduals".to_string()));
     }
     names.sort_by_key(|(idx, _)| *idx);
     let mut fn_names = we::NameMap::new();
@@ -2931,15 +3397,16 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     module.section(&imports);
     module.section(&functions);
     // Global + Start + Element sections (in the canonical order) carry the
-    // shared-table wiring: NLS callbacks and/or closure thunks.
+    // shared-table wiring (NLS callbacks and/or closure thunks) and the
+    // shared-literal objects.
     if start_wiring.is_some() {
         let mut globals = we::GlobalSection::new();
         // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
-        // NLS_NOMINAL_GLOBAL (nominal block base) and NLS_PAT_GLOBAL (sparse-pattern
-        // block base) when the model has nonlinear systems, then the closure-thunk
-        // table base; all set by `start`.
-        let n_globals = if thunk_indices.is_empty() { closure_global } else { closure_global + 1 };
-        for _ in 0..n_globals {
+        // NLS_NOMINAL_GLOBAL (nominal block base), NLS_PAT_GLOBAL (sparse-pattern
+        // block base) and NLS_BOUNDS_GLOBAL (min/max block base) when the model has
+        // nonlinear systems, then the closure-thunk table base and one per shared
+        // literal; all set by `start`.
+        for _ in 0..lit_global as usize + lits.len() {
             globals.global(
                 we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
                 &we::ConstExpr::i32_const(0),
@@ -2950,9 +3417,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     module.section(&exports);
     if let Some((start_idx, declared)) = &start_wiring {
         module.section(&we::StartSection { function_index: *start_idx });
-        let mut elements = we::ElementSection::new();
-        elements.declared(we::Elements::Functions(declared.as_slice().into()));
-        module.section(&elements);
+        if !declared.is_empty() {
+            let mut elements = we::ElementSection::new();
+            elements.declared(we::Elements::Functions(declared.as_slice().into()));
+            module.section(&elements);
+        }
     }
     if !literals.is_empty() {
         module.section(&we::DataCountSection { count: literals.len() as u32 });
@@ -2978,10 +3447,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let compile_wasm = wasm.clone();
     // Native: compile on a background thread to overlap the rest of the pipeline.
     // wasm: no threads — compile eagerly and store the result for take_compiled_model.
+    // `-n=1`: no job, so `take_compiled_model` compiles inline where it is timed.
     #[cfg(not(target_arch = "wasm32"))]
-    let compiled = Mutex::new(Some(std::thread::spawn(move || {
-        sim_runtime::compile_model_module(&compile_wasm)
-    })));
+    let compiled = Mutex::new(match openmodelica_wasm_jit::model::single_threaded() {
+        true => None,
+        false => Some(std::thread::spawn(move || {
+            sim_runtime::compile_model_module(&compile_wasm)
+        })),
+    });
     #[cfg(target_arch = "wasm32")]
     let compiled = Mutex::new(Some(sim_runtime::compile_model_module(&compile_wasm)));
 
@@ -3001,11 +3474,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         tolerance: settings.tolerance.into_inner(),
         state_sets,
         jac_a,
-        state_nominals,
         editable_params,
         var_units,
         meta,
-        sparse_solver_log: format!("{}{}", build_sparse_lss_log(sim_code), build_sparse_nls_log(sim_code)),
+        sparse_solver_log: build_sparse_lss_log(sim_code),
+        nls_systems: collect_nls_systems(sim_code),
     })
 }
 
@@ -3091,11 +3564,10 @@ fn build_sparse_lss_log(sim_code: &SimCode::SimCode) -> String {
 /// (`nonlinearSystem.c`): one message per system handed to kinsol+KLU, keyed on
 /// why (density and/or size), then one aggregate flag-hint. Systems are in
 /// `indexNonLinearSystem` order (C's array order), matching the `sysNum` printed.
-fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
-    use crate::CodegenWasmJitFunctions::{nls_use_sparse, NLSS_MAX_DENSITY, NLSS_MIN_SIZE};
+fn collect_nls_systems(sim_code: &SimCode::SimCode) -> Vec<(i32, i32, u32, u32)> {
     let mut seen: HashSet<i32> = HashSet::new();
     // (sysNum, equationIndex, size, nnz), deduped, in system-number order.
-    let mut systems: Vec<(i32, i32, usize, usize)> = Vec::new();
+    let mut systems: Vec<(i32, i32, u32, u32)> = Vec::new();
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
         for e in &eqs {
             if let SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } = &**e {
@@ -3104,8 +3576,8 @@ fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
                     systems.push((
                         nlSystem.indexNonLinearSystem,
                         nlSystem.index,
-                        size,
-                        nls_system_nnz(nlSystem),
+                        size as u32,
+                        nls_system_nnz(nlSystem) as u32,
                     ));
                 }
             }
@@ -3116,31 +3588,60 @@ fn build_sparse_nls_log(sim_code: &SimCode::SimCode) -> String {
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     systems.sort_by_key(|&(idx, _, _, _)| idx);
+    systems
+}
 
+/// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
+fn flag_change_log(flags: &simflags::SimFlags) -> String {
+    let mut out = String::new();
+    if let Some(d) = flags.nlss_max_density {
+        out.push_str(&format_log_stdout(&format!(
+            "Maximum density for using non-linear sparse solver changed to {d:.6}"
+        )));
+    }
+    if let Some(n) = flags.nlss_min_size {
+        out.push_str(&format_log_stdout(&format!(
+            "Minimum system size for using non-linear sparse solver changed to {n}"
+        )));
+    }
+    out
+}
+
+/// The linear half is fixed at codegen; the nonlinear half moves with the flags.
+fn sparse_solver_log(model: &SimModel, flags: &simflags::SimFlags) -> String {
+    let (min_size, max_density) = simflags::nlss_thresholds(flags);
+    format!("{}{}", model.sparse_solver_log, sparse_nls_log(&model.nls_systems, min_size, max_density))
+}
+
+/// C's `initializeNonlinearSystems` announcement: `-nlssMinSize`/`-nlssMaxDensity`
+/// move both the choice and the numbers it quotes, so it is rendered per run.
+fn sparse_nls_log(systems: &[(i32, i32, u32, u32)], min_size: u32, max_density: f64) -> String {
     let mut out = String::new();
     let mut some_small_density = false;
     let mut some_big_size = false;
-    for &(idx, eq_index, size, nnz) in &systems {
-        if size == 0 || nnz == 0 || !nls_use_sparse(size, nnz) {
+    for &(idx, eq_index, size, nnz) in systems {
+        let (size, nnz) = (size as usize, nnz as usize);
+        let density = nnz as f64 / (size * size) as f64;
+        let big_size = size > min_size as usize;
+        if size == 0 || nnz == 0 || !(density < max_density || big_size) {
             continue;
         }
-        let density = nnz as f64 / (size * size) as f64;
-        let big_size = size > NLSS_MIN_SIZE;
-        let body = if density < NLSS_MAX_DENSITY {
+        let (nlss_max_density, nlss_min_size) = (max_density, min_size);
+        let body = if density < nlss_max_density {
             some_small_density = true;
             if big_size {
                 some_big_size = true;
                 format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}\nand size of {size} exceeds threshold of {NLSS_MIN_SIZE}."
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}\nand size of {size} exceeds threshold of {nlss_min_size}."
                 )
             } else {
                 format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {NLSS_MAX_DENSITY:.2}."
+                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}."
                 )
             }
         } else {
             some_big_size = true;
-            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {NLSS_MIN_SIZE}.")
+            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {nlss_min_size}.")
         };
         out.push_str(&format_log_stdout(&body));
     }
@@ -3177,19 +3678,49 @@ fn lin_system_nnz(lsystem: &SimCode::LinearSystem) -> usize {
 }
 
 /// A nonlinear system's Jacobian sparsity in CSC — `colptr` (`n+1`), `rowidx`
-/// (`nnz`) and the column coloring — the same pattern C's
-/// `initialResizableAnalyticJacobian` builds: the column of a dependency is the
-/// seed variable's `SimVar.index`, the row of a solved `$pDER` cref is that
-/// variable's index. Only scalar rows are handled; an array-valued row (equation
-/// iterators or subscripted crefs) needs the run-time loops the C template emits,
-/// so those systems keep the numerical Jacobian.
+/// (`nnz`) and the column coloring. Columns and rows are positional, as C's
+/// `evalJacobian` indexes `seedVars[column]` / `resultVars[row]`.
 struct NlsJacPattern {
     colptr: Vec<i32>,
     rowidx: Vec<i32>,
     colors: Vec<Vec<u32>>,
 }
 
+/// The two patterns C can carry, in the order `functionNonLinearResiduals` picks
+/// them.
 fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    match &jm.sparsityMatrix {
+        SimCode::Sparsity::SPARSITY { .. } => nls_jac_pattern_resizable(jm, n),
+        _ => nls_jac_pattern_static(jm, n),
+    }
+}
+
+/// C's `generateStaticSparseData`: one `sparsity` entry per column holding its
+/// nonzero rows, coloring precomputed in `coloredCols`.
+fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    let mut cols: Vec<Vec<i32>> =
+        lst(&jm.sparsity).map(|(_, rows)| lst(rows).copied().collect()).collect();
+    if cols.len() != n || cols.iter().flatten().any(|&r| r < 0 || r as usize >= n) {
+        return None;
+    }
+    let (colptr, rowidx) = csc_from_columns(&mut cols)?;
+    // A coloring that is not a partition of the columns would drop or double-count
+    // entries, so recompute instead of trusting it.
+    let colors: Vec<Vec<u32>> =
+        lst(&jm.coloredCols).map(|grp| lst(grp).map(|&c| c as u32).collect()).collect();
+    let mut seen = vec![false; n];
+    let partition = colors.iter().flatten().all(|&c| {
+        (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true)
+    }) && seen.iter().all(|&s| s);
+    let colors = if partition { colors } else { computed_coloring(&colptr, &rowidx, n) };
+    Some(NlsJacPattern { colptr, rowidx, colors })
+}
+
+/// C's `initialResizableAnalyticJacobian`: the column of a dependency is the seed
+/// variable's `SimVar.index`, the row of a solved `$pDER` cref is that variable's
+/// index. An array-valued row (equation iterators) needs the run-time loops the C
+/// template emits, so those systems keep the numerical Jacobian.
+fn nls_jac_pattern_resizable(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
     let mut seed_col: HashMap<String, usize> = HashMap::new();
@@ -3221,25 +3752,35 @@ fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPatte
             }
         }
     }
-    let mut colptr = vec![0i32; n + 1];
+    let (colptr, rowidx) = csc_from_columns(&mut cols)?;
+    let colors = computed_coloring(&colptr, &rowidx, n);
+    Some(NlsJacPattern { colptr, rowidx, colors })
+}
+
+/// Per-column row lists → CSC, sorted and deduplicated. `None` for an all-zero
+/// Jacobian.
+fn csc_from_columns(cols: &mut [Vec<i32>]) -> Option<(Vec<i32>, Vec<i32>)> {
+    let mut colptr = vec![0i32; cols.len() + 1];
     let mut rowidx: Vec<i32> = Vec::new();
-    for c in 0..n {
-        cols[c].sort_unstable();
-        cols[c].dedup();
-        rowidx.extend_from_slice(&cols[c]);
+    for (c, rows) in cols.iter_mut().enumerate() {
+        rows.sort_unstable();
+        rows.dedup();
+        rowidx.extend_from_slice(rows);
         colptr[c + 1] = rowidx.len() as i32;
     }
-    if rowidx.is_empty() {
-        return None;
-    }
+    (!rowidx.is_empty()).then_some((colptr, rowidx))
+}
+
+/// C's `computeColumnColoring`: one column-equation pass per group of columns
+/// sharing no row.
+fn computed_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> Vec<Vec<u32>> {
     let (color_ptr, color_cols) =
-        crate::CodegenWasmJitFunctions::lin_jac_coloring(&colptr, &rowidx, n);
-    let colors = (0..color_ptr.len() - 1)
+        crate::CodegenWasmJitFunctions::lin_jac_coloring(colptr, rowidx, n);
+    (0..color_ptr.len() - 1)
         .map(|c| {
             color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize].iter().map(|&j| j as u32).collect()
         })
-        .collect();
-    Some(NlsJacPattern { colptr, rowidx, colors })
+        .collect()
 }
 
 /// The nonzero count of a nonlinear system's Jacobian, matching C's
@@ -3254,8 +3795,22 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     if n_states == 0 {
         return None;
     }
-    let n = n_states as usize;
     let jac = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A")?;
+    let info = jac_pattern_info(jac, n_states as usize)?;
+    if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
+        let nnz: usize = info.rows_by_col.iter().map(|r| r.len()).sum();
+        eprintln!("wasm-jit jac-A: n={n_states} colors={} nnz={nnz}", info.colors.len());
+    }
+    Some(info)
+}
+
+/// One Jacobian matrix's `n × n` sparsity + coloring, or `None` when the backend
+/// left either out (or produced indices out of range), in which case the caller
+/// falls back to a solver-internal numerical Jacobian.
+fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Option<JacAInfo> {
+    if n == 0 {
+        return None;
+    }
     // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
     // column (empty columns carry an empty row list).
     let rows_by_col: Vec<Vec<u32>> = lst(&jac.sparsity)
@@ -3265,8 +3820,6 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     let colors: Vec<Vec<u32>> = lst(&jac.coloredCols)
         .map(|grp| lst(grp).map(|c| *c as u32).collect())
         .collect();
-    // Only usable when the pattern covers exactly the n states, the coloring is
-    // present, and every index is in range; otherwise fall back to numerical.
     if rows_by_col.len() != n
         || colors.is_empty()
         || colors.iter().flatten().any(|&c| c as usize >= n)
@@ -3274,11 +3827,7 @@ fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAIn
     {
         return None;
     }
-    if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
-        let nnz: usize = rows_by_col.iter().map(|r| r.len()).sum();
-        eprintln!("wasm-jit jac-A: n={n} colors={} nnz={nnz}", colors.len());
-    }
-    Some(JacAInfo { n: n_states, colors, rows_by_col })
+    Some(JacAInfo { n: n as u32, colors, rows_by_col })
 }
 
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
@@ -3332,9 +3881,11 @@ fn build_sim_meta(
     prefix: &str,
     jac_a: Option<JacAInfo>,
     state_sets: &[StateSetInfo],
-    state_nominals: &[f64],
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
+    sens_params: Vec<u32>,
+    nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
+    dae: Option<openmodelica_sim_meta::DaeInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -3349,9 +3900,11 @@ fn build_sim_meta(
         vars: result_vars.to_vec(),
         jac_a,
         state_sets: state_sets.to_vec(),
-        state_nominals: state_nominals.to_vec(),
         fmi_vrs,
         zc_desc,
+        sens_params,
+        nls_vars,
+        dae,
     }
 }
 
@@ -3428,11 +3981,10 @@ fn collect_param_bindings(
         .chain(lst(&vars.boolParamVars))
         .chain(lst(&vars.stringParamVars))
     {
-        // A parameter computed by a parameterEquation (e.g. `u_max =
-        // getTable1DAbscissaUmax(tableID)`, scheduled after the table
-        // constructor) must not also be assigned from its binding here: the
-        // prelude runs before parameterEquations, so it would evaluate the
-        // binding against not-yet-initialized dependencies (a null handle).
+        // A parameter an equation computes must not also be assigned from its binding
+        // here: the prelude runs before both equation lists, so the binding would see
+        // dependencies that are still 0 (or a null handle). C leaves such a parameter
+        // at the 0 of a `_init.xml` entry with no `start`.
         if let Some(v) = &p.initialValue {
             if sim_cref_key(&p.name).map(|k| computed.contains(&k)).unwrap_or(false) {
                 continue;
@@ -3465,29 +4017,10 @@ fn assigned_cref_keys(eqs: &[Arc<SimCode::SimEqSystem>]) -> std::collections::Ha
     set
 }
 
-fn build_eq_fn(
-    which: &str,
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-) -> Result<we::Function> {
-    build_eq_fn_with_prelude(which, &[], eqs, var_map, eq_index, by_name, literals, &[], &[])
-}
-
-fn build_eq_fn_with_prelude(
-    which: &str,
-    prelude: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-    save_pre: &[(u32, u32, u32)],
-    stateset_diag: &[u32],
-) -> Result<we::Function> {
-    let sim = SimCtx {
+/// The lowering context every generated `SimData*` function shares: local 0 is the
+/// `SimData` pointer, and every slot comes from the one variable map.
+fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
+    SimCtx {
         data_local: 0,
         vars: var_map.vars.clone(),
         starts: var_map.starts.clone(),
@@ -3511,7 +4044,117 @@ fn build_eq_fn_with_prelude(
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
-    };
+    }
+}
+
+/// `daeModeData.daeEquations` flattened over its partitions, each equation paired with
+/// the `EVAL_*` stage mask it runs in. Mirrors C's `equationNames_` for
+/// `contextDAEmode`: an equation with no evaluation attributes inherits the preceding
+/// one's mask (C leaves `evalStages` unassigned there), starting from every stage.
+fn dae_residual_equations(dae: &SimCode::DaeModeData) -> Vec<(Arc<SimCode::SimEqSystem>, u32)> {
+    use openmodelica_sim_meta::driver::eval_stage as stage;
+    let all = stage::DYNAMIC | stage::ALGEBRAIC | stage::ZEROCROSS | stage::DISCRETE;
+    let mut stages = all;
+    let mut out = Vec::new();
+    for part in lst(&dae.daeEquations) {
+        for eq in lst(part) {
+            let mut discrete = false;
+            if let Some(attr) = eq_attr_of(eq) {
+                let ev = &attr.evalStages;
+                stages = (ev.dynamicEval as u32) * stage::DYNAMIC
+                    | (ev.algebraicEval as u32) * stage::ALGEBRAIC
+                    | (ev.zerocrossEval as u32) * stage::ZEROCROSS
+                    | (ev.discreteEval as u32) * stage::DISCRETE;
+                discrete = matches!(attr.kind, openmodelica_backend_types::BackendDAE::EquationKind::DISCRETE_EQUATION);
+            }
+            // A discrete-kind equation runs in the discrete stage only.
+            let stages = if discrete { stages & stage::DISCRETE } else { stages };
+            if stages != 0 {
+                out.push((eq.clone(), stages));
+            }
+        }
+    }
+    out
+}
+
+/// The equation's `BackendDAE.EquationAttributes`, absent for the few systems that
+/// carry none (`SES_ALIAS` and friends).
+fn eq_attr_of(eq: &SimCode::SimEqSystem) -> Option<&openmodelica_backend_types::BackendDAE::EquationAttributes> {
+    use SimCode::SimEqSystem as E;
+    match eq {
+        E::SES_RESIDUAL { eqAttr, .. }
+        | E::SES_FOR_RESIDUAL { eqAttr, .. }
+        | E::SES_GENERIC_RESIDUAL { eqAttr, .. }
+        | E::SES_SIMPLE_ASSIGN { eqAttr, .. }
+        | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { eqAttr, .. }
+        | E::SES_ARRAY_CALL_ASSIGN { eqAttr, .. }
+        | E::SES_RESIZABLE_ASSIGN { eqAttr, .. }
+        | E::SES_GENERIC_ASSIGN { eqAttr, .. }
+        | E::SES_ENTWINED_ASSIGN { eqAttr, .. }
+        | E::SES_IFEQUATION { eqAttr, .. }
+        | E::SES_ALGORITHM { eqAttr, .. }
+        | E::SES_INVERSE_ALGORITHM { eqAttr, .. }
+        | E::SES_LINEAR { eqAttr, .. }
+        | E::SES_NONLINEAR { eqAttr, .. }
+        | E::SES_MIXED { eqAttr, .. }
+        | E::SES_WHEN { eqAttr, .. }
+        | E::SES_FOR_LOOP { eqAttr, .. }
+        | E::SES_FOR_EQUATION { eqAttr, .. }
+        | E::SES_ALGEBRAIC_SYSTEM { eqAttr, .. } => Some(eqAttr),
+        E::SES_ALIAS { .. } => None,
+    }
+}
+
+/// Build `evaluateDAEResiduals(SimData*, stage)`, one guarded block per equation. C
+/// tests `evalStages & currentEvalStage` against a per-equation assignment; here the
+/// mask is a constant, so the guard is a single `and`/`if`.
+fn build_dae_residuals_fn(
+    eqs: &[(Arc<SimCode::SimEqSystem>, u32)],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    for (i, (eq, stages)) in eqs.iter().enumerate() {
+        if i & 63 == 0 {
+            metamodelica::cancel::bail_if_cancelled()?;
+        }
+        ctx.sim_stage_guard(*stages);
+        lower_equation(&mut ctx, eq, eq_index)?;
+        ctx.sim_end_block();
+    }
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+fn build_eq_fn(
+    which: &str,
+    eqs: Vec<Arc<SimCode::SimEqSystem>>,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    build_eq_fn_with_prelude(which, &[], eqs, var_map, eq_index, by_name, literals, &[], &[])
+}
+
+fn build_eq_fn_with_prelude(
+    which: &str,
+    prelude: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
+    eqs: Vec<Arc<SimCode::SimEqSystem>>,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+    save_pre: &[(u32, u32, u32)],
+    stateset_diag: &[u32],
+) -> Result<we::Function> {
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_stateset_diag_init(stateset_diag)?;
     for (cref, exp) in prelude {
@@ -3545,31 +4188,7 @@ fn build_init_sample_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     let pairs: Vec<(Arc<DAE::Exp>, Arc<DAE::Exp>)> =
         samples.iter().map(|s| (s.start.clone(), s.interval.clone())).collect();
@@ -3595,31 +4214,7 @@ fn build_init_start_values_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: HashMap::new(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = SimCtx { start_slots: HashMap::new(), ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32, Option<u32>)> = Vec::with_capacity(states.len() + real_algs.len());
     for (i, sv) in states.iter().enumerate() {
@@ -3629,6 +4224,44 @@ fn build_init_start_values_fn(
         pairs.push((sv.initialValue.clone(), REAL_OFF + (2 * layout.n_states + j as u32) * 8, None));
     }
     ctx.emit_init_start_values(&pairs)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionUpdateBoundVariableAttributes(SimData*)`. An attribute bound to a
+/// parameter is not a constant, so the backend hands it over as an equation; only
+/// here, after `functionParameters`, does it have a value. Attributes nothing reads
+/// back are skipped.
+fn build_update_bound_attrs_fn(
+    sim_code: &SimCode::SimCode,
+    nominal_defaults: &[(u32, f64)],
+    attr_targets: &HashMap<String, AttrTargets>,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets)> = Vec::new();
+    for (attr, eqs) in [
+        (Attr::Min, &sim_code.minValueEquations),
+        (Attr::Max, &sim_code.maxValueEquations),
+        (Attr::Nominal, &sim_code.nominalValueEquations),
+    ] {
+        for eq in lst(eqs) {
+            let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { continue };
+            let Some(t) = sim_cref_key(cref).ok().and_then(|k| attr_targets.get(&k)) else { continue };
+            if t.nls.is_empty() && !(matches!(attr, Attr::Nominal) && !t.nom_offs.is_empty()) {
+                continue;
+            }
+            attrs.push((attr, exp.clone(), t.clone()));
+        }
+    }
+    let sim = sim_ctx(var_map);
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_update_bound_attrs(nominal_defaults, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -3647,31 +4280,7 @@ fn build_zero_crossings_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: true,
-    };
+    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_zero_crossings(crossings, layout.zc_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -3690,31 +4299,7 @@ fn build_update_relations_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: true,
-    };
+    let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_relations(relations, var_map.relations_off)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -3737,31 +4322,7 @@ fn build_store_delayed_fn(
         lst(&sim_code.delayedExps.delayedExps)
             .map(|(i, (e, d, dmax))| (*i, e.clone(), d.clone(), dmax.clone()))
             .collect();
-    let sim = SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-    };
+    let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_store_delayed(&delayed)?;
     let (locals, instrs) = ctx.finish_sim();
@@ -4162,8 +4723,9 @@ fn nls_parts(
 /// threaded to the equation lowering via `SimVarMap`/`SimCtx`.
 fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
-    nominal_of: &HashMap<String, f64>,
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<i32>) {
+    nominal_of: &HashMap<String, (f64, f64, f64)>,
+    attr_targets: &mut HashMap<String, AttrTargets>,
+) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
@@ -4176,6 +4738,8 @@ fn collect_nls_jobs(
     // Concatenated nominal values, in system order; the module `start` writes them
     // into the nominal block, and each job's `nominal_off` indexes into it.
     let mut nominals: Vec<f64> = Vec::new();
+    // `min`/`max` pairs alongside them, in the same order.
+    let mut bounds: Vec<f64> = Vec::new();
     for list in eq_lists {
         for e in *list {
             if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
@@ -4185,20 +4749,20 @@ fn collect_nls_jobs(
                 let n = lst(&nlSystem.crefs).count() as u32;
                 let has_jac = nls_jac_usable(nlSystem);
                 let mixed = nlSystem.mixedSystem;
-                // Sparse (kinsol+KLU in C) when the symbolic pattern is available
-                // and passes C's density/size rule; the pattern is emitted into the
-                // pattern block so `rt_solve_nls` can factorize it.
+                // The pattern goes in whenever it exists: C's density/size rule only
+                // picks the *default* solver (kinsol+KLU vs the dense ladder), while
+                // `-nls=kinsol` hands every patterned system to KINSOL.
                 let pat = has_jac
                     .then(|| nls_jac_pattern(nlSystem.jacobianMatrix.as_ref().unwrap(), n as usize))
-                    .flatten()
-                    .filter(|p| nls_use_sparse(n as usize, p.rowidx.len()));
+                    .flatten();
                 let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
+                let sparse_default = nnz != 0 && nls_use_sparse(n as usize, nnz as usize);
                 if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
                     eprintln!(
                         "wasm-jit nls {}: n={n} nnz={} jac={has_jac} mixed={mixed} sparse={} colors={}",
                         nlSystem.index,
                         nls_system_nnz(nlSystem),
-                        nnz != 0,
+                        sparse_default,
                         pat.as_ref().map_or(0, |p| p.colors.len()),
                     );
                 }
@@ -4206,26 +4770,35 @@ fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, hist_off, nominal_off, has_jac, mixed, nnz, pat_off });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default });
                 if nnz != 0 {
                     pat_off += 4 * (n + 1 + nnz);
                 }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
-                    let nom = sim_cref_key(cr).ok().and_then(|k| nominal_of.get(&k).copied()).unwrap_or(1.0);
+                    let key = sim_cref_key(cr).ok();
+                    let (nom, lo, hi) = key
+                        .as_ref()
+                        .and_then(|k| nominal_of.get(k).copied())
+                        .unwrap_or((1.0, f64::NEG_INFINITY, f64::INFINITY));
+                    if let Some(k) = key {
+                        attr_targets.entry(k).or_default().nls.push(nominals.len() as u32);
+                    }
                     nominals.push(nom);
+                    bounds.push(lo);
+                    bounds.push(hi);
                 }
                 systems.push(nlSystem.clone());
             }
         }
     }
-    (systems, jobs, hist_off, nominals, patterns)
+    (systems, jobs, hist_off, nominals, bounds, patterns)
 }
 
-/// Map each scalar real variable's cref key to its nominal attribute, defaulting to
-/// 1.0 when unset or non-constant. Feeds the NLS x-scaling nominal block.
-fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, f64> {
+/// Map each scalar real variable's cref key to its `(nominal, min, max)` attributes,
+/// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
+fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
     let mut map = HashMap::new();
     let all = lst(&vars.stateVars)
         .chain(lst(&vars.algVars))
@@ -4235,7 +4808,9 @@ fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, f64> {
     for sv in all {
         if let Ok(key) = sim_cref_key(&sv.name) {
             let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
-            map.entry(key).or_insert(nom);
+            let lo = const_value(&sv.minValue).unwrap_or(f64::NEG_INFINITY);
+            let hi = const_value(&sv.maxValue).unwrap_or(f64::INFINITY);
+            map.entry(key).or_insert((nom, lo, hi));
         }
     }
     map
@@ -4766,16 +5341,29 @@ fn emit_nls_start(
     f: &mut we::Function,
     fn_indices: &[(u32, u32, Option<u32>)],
     hist_bytes: u32,
+    sizes: &[u32],
     nominals: &[f64],
+    bounds: &[f64],
     patterns: &[i32],
 ) {
     use we::Instruction as I;
-    use crate::CodegenWasmJitFunctions::{NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
+    use crate::CodegenWasmJitFunctions::{NLS_BOUNDS_GLOBAL, NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
         f.instruction(&I::I32Const(hist_bytes as i32));
         f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
         f.instruction(&I::GlobalSet(NLS_HIST_GLOBAL));
+    }
+    // Hand each system's slice of it to the runtime's roster.
+    let mut hist_off = 0u32;
+    for (k, n) in sizes.iter().enumerate() {
+        f.instruction(&I::I32Const(k as i32));
+        f.instruction(&I::GlobalGet(NLS_HIST_GLOBAL));
+        f.instruction(&I::I32Const(hist_off as i32));
+        f.instruction(&I::I32Add);
+        f.instruction(&I::I32Const(*n as i32));
+        f.instruction(&I::Call(rt_index("rt_nls_register").expect("rt_nls_register is a runtime builtin")));
+        hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(*n);
     }
     // nominal block: rt_alloc, then store each system's iteration-variable nominal
     // constants (concatenated in system order) for `rt_solve_nls`'s x-scaling.
@@ -4786,6 +5374,17 @@ fn emit_nls_start(
         for (i, nom) in nominals.iter().enumerate() {
             f.instruction(&I::GlobalGet(NLS_NOMINAL_GLOBAL));
             f.instruction(&I::F64Const((*nom).into()));
+            f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
+        }
+    }
+    // bounds block: the `min`/`max` pair per iteration variable, same order.
+    if !bounds.is_empty() {
+        f.instruction(&I::I32Const((bounds.len() * 8) as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
+        f.instruction(&I::GlobalSet(NLS_BOUNDS_GLOBAL));
+        for (i, v) in bounds.iter().enumerate() {
+            f.instruction(&I::GlobalGet(NLS_BOUNDS_GLOBAL));
+            f.instruction(&I::F64Const((*v).into()));
             f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
         }
     }
@@ -4949,8 +5548,10 @@ fn empty_eqfn() -> we::Function {
 }
 
 /// Emit the in-wasm forward-Euler integrator loop:
-/// `simulate(sim_data, start, stop, n_steps) -> result_buffer`.
-fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
+/// `simulate(sim_data, start, stop, n_steps) -> result_buffer`. The caller
+/// (`driver::run_wasm`) has initialized the model, so this starts at row 0.
+/// `check_asserts` is `functionCheckAsserts` when the model has any min/max check.
+fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>) -> Result<we::Function> {
     // Params: 0 sim_data(i32), 1 start(f64), 2 stop(f64), 3 n_steps(i32).
     // Locals: 4 buf(i32), 5 h(f64), 6 row(i32).
     const SIM_DATA: u32 = 0;
@@ -4968,20 +5569,6 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     // locals: BUF(i32), H(f64), ROW(i32), DEST(i32)
     let mut f = we::Function::new([(1, we::ValType::I32), (1, we::ValType::F64), (2, we::ValType::I32)]);
     use we::Instruction as I;
-
-    // lambda = 1.0 so homotopy(a, s) evaluates to the actual expression (this
-    // in-wasm Euler path does no homotopy continuation).
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::F64Const(1.0f64.into()));
-    f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(layout.lambda_off, 3)));
-
-    // functionParameters; functionInitStartValues; functionInitialEquations.
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.parameters));
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.init_start_values));
-    f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::Call(eqfn.initial));
 
     // buf = rt_alloc((n_steps + 1) * n_total * 8)
     f.instruction(&I::LocalGet(N_STEPS));
@@ -5019,20 +5606,22 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     f.instruction(&I::F64Add);
     f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg(TIME_OFF, 3)));
 
-    // terminal = (row == n_steps): C's `finishSimulation` evaluates the last
-    // point with `terminal()` true. This path has no events, so raising the flag
-    // is the whole discrete update.
-    f.instruction(&I::LocalGet(SIM_DATA));
+    // Row 0 is the initialized point: capture it without re-evaluating, as C does
+    // after `initializeModel` (a second pass would repeat the equations' side
+    // effects). Every later row is evaluated at its time.
     f.instruction(&I::LocalGet(ROW));
-    f.instruction(&I::LocalGet(N_STEPS));
-    f.instruction(&I::I32Eq);
-    f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg(layout.terminal_off, 2)));
+    f.instruction(&I::If(we::BlockType::Empty));
+
+    // C's terminal step is a row of its own (`emit_terminal_row`), so no row here
+    // raises the flag.
 
     // functionODE(sim_data); functionAlgebraics(sim_data)
     f.instruction(&I::LocalGet(SIM_DATA));
     f.instruction(&I::Call(eqfn.ode));
     f.instruction(&I::LocalGet(SIM_DATA));
     f.instruction(&I::Call(eqfn.algebraics));
+
+    f.instruction(&I::End); // if row != 0
 
     // Store the row at dest = buf + row * n_total * 8:
     //   - copy the real part [time | realVars] (contiguous from sim_data[0])
@@ -5061,6 +5650,32 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
     for j in 0..layout.n_bool_alg() {
         store_islot(&mut f, layout.bool_off + j * 4, n_reals + layout.n_int_alg() + j);
     }
+    // Only IDA fills the sensitivity block, and this loop is Euler's.
+    if layout.n_sens > 0 {
+        f.instruction(&I::LocalGet(DEST));
+        f.instruction(&I::I32Const((layout.sens_col0() * 8) as i32));
+        f.instruction(&I::I32Add);
+        f.instruction(&I::I32Const(0));
+        f.instruction(&I::I32Const((layout.n_sens * 8) as i32));
+        f.instruction(&I::MemoryFill(0));
+    }
+
+    // The driver's per-row `check_asserts`: evaluate the min/max checks, then let
+    // the host format what they recorded while `time` still holds this row's.
+    // Level `warning` for the first and the terminal row, `info` in between.
+    if let Some(idx) = check_asserts {
+        f.instruction(&I::LocalGet(SIM_DATA));
+        f.instruction(&I::Call(idx));
+    }
+    f.instruction(&I::LocalGet(SIM_DATA));
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::I32Eqz);
+    f.instruction(&I::LocalGet(ROW));
+    f.instruction(&I::LocalGet(N_STEPS));
+    f.instruction(&I::I32Eq);
+    f.instruction(&I::I32Or);
+    f.instruction(&I::Call(crate::CodegenWasmJitFunctions::env_extra_index("rt_row_asserts")?));
+    f.instruction(&I::BrIf(1)); // a suppressed assert ends the run; `run_wasm` throws
 
     // if terminate() fired this step (functionAlgebraics raised the flag): break,
     // keeping the row just stored as the last one.
@@ -5120,12 +5735,29 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx) -> Result<we::Function> {
 /// serialization itself lives in `openmodelica_mat_writer` (`no_std` + `alloc`,
 /// shared with the standalone wasip1 runtime's `_start`); here we only map the
 /// result-var metadata onto its `MatVar`/`MatKind` and write the bytes out.
-fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: &[f64]) -> Result<()> {
+fn write_mat4(
+    model: &SimModel,
+    path: &str,
+    rows: &[f64],
+    n_reals: u32,
+    params: &[f64],
+    keep: &[bool],
+) -> Result<()> {
     use openmodelica_mat_writer::{MatKind, MatVar};
-    let vars: Vec<MatVar> = model
-        .result_vars
-        .iter()
-        .map(|v| MatVar {
+    // `params` is positional over the unfiltered `Param` signals.
+    let mut kept_params: Vec<f64> = Vec::new();
+    let mut param_idx = 0usize;
+    let mut vars: Vec<MatVar> = Vec::new();
+    for (v, &keep) in model.result_vars.iter().zip(keep) {
+        let is_param = matches!(v.kind, ResultKind::Param { .. });
+        if is_param && keep {
+            kept_params.push(params.get(param_idx).copied().unwrap_or(0.0));
+        }
+        param_idx += is_param as usize;
+        if !keep {
+            continue;
+        }
+        vars.push(MatVar {
             name: &v.name,
             comment: &v.comment,
             kind: match &v.kind {
@@ -5134,18 +5766,38 @@ fn write_mat4(model: &SimModel, path: &str, rows: &[f64], n_reals: u32, params: 
                 ResultKind::Param { negate, .. } => MatKind::Param { negate: *negate },
                 ResultKind::Const { value } => MatKind::Const { value: *value },
             },
-        })
-        .collect();
-    let bytes = openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, params);
+        });
+    }
+    let bytes =
+        openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, &kept_params);
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
 }
 
-// The standalone-export merge uses `wasmtime::Module` to validate the result, so
-// this test runs only under the default (wasmtime) engine on a native host.
+/// Which result variables this run emits, one flag per [`SimModel::result_vars`]
+/// entry. An uncompilable `-variableFilter` is C's "Defaulting to outputting all
+/// variables": it has already replaced the model's filter, so nothing remains to
+/// fall back on.
+fn output_selection(model: &SimModel) -> Vec<bool> {
+    let Some(pattern) = simflags::with_flags(|f| f.variable_filter.clone()) else {
+        return model.meta.output_keep(None);
+    };
+    match openmodelica_util::System::Regex::new(&format!("^({pattern})$")) {
+        Ok(re) => model.meta.output_keep(Some(&|name: &str| re.is_match(name))),
+        Err(e) => {
+            eprintln!(
+                "Failed to compile regular expression: {pattern} with error: {e}. \
+                 Defaulting to outputting all variables."
+            );
+            model.meta.output_keep(Some(&|_: &str| true))
+        }
+    }
+}
+
+// Both link paths (standalone merge, FMU component) are native-only.
 #[cfg(test)]
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-mod standalone_tests {
+#[cfg(not(target_arch = "wasm32"))]
+mod link_tests {
     use super::*;
     use wasm_encoder as we;
 
@@ -5180,26 +5832,19 @@ mod standalone_tests {
 
         // The standalone runtime imports every driver entry point from `model`; the
         // emitter always exports them, so the stub must too or the merge leaves
-        // unresolved `model.*` imports.
-        let one_arg: &[&str] = &[
-            "functionParameters",
-            "functionInitStartValues",
-            "functionInitialEquations",
-            "functionODE",
-            "functionAlgebraics",
-            "callExternalObjectDestructors",
-            "initSample",
-            "functionZeroCrossings",
-            "functionStateSetJacobians",
-            "functionInitialEquations_lambda0",
-            "functionUpdateRelations",
-            "functionCheckAsserts",
-            "functionStoreDelayed",
-            "functionInitDelay",
-        ];
+        // unresolved `model.*` imports. Taken from the canonical list rather than
+        // copied, so adding an entry point cannot leave this stub behind.
+        // `evaluateDAEResiduals` is left out with `simulate`: the standalone runtime
+        // imports neither with this shape (the DAE residual takes two arguments and
+        // only a `--daeMode` model has one).
+        let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
+            .iter()
+            .copied()
+            .filter(|n| *n != "simulate" && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE)
+            .collect();
 
         let mut funcs = we::FunctionSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             funcs.function(1); // (i32)->()
         }
         funcs.function(2); // om_meta_ptr
@@ -5219,7 +5864,7 @@ mod standalone_tests {
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
-        for _ in one_arg {
+        for _ in &one_arg {
             let mut f = we::Function::new([]);
             f.instruction(&I::End);
             code.function(&f);
@@ -5245,6 +5890,30 @@ mod standalone_tests {
         m.finish()
     }
 
+    /// Every adapter `env` import must be satisfied by the model or by the runtime
+    /// linked into the adapter itself; an `env` host callback (`rt_host_log`) is an
+    /// unresolved symbol here.
+    #[test]
+    fn fmu_component_links_without_a_host() {
+        for (label, adapter) in [
+            ("ME", FMI3_ME_ADAPTER),
+            ("CS", FMI3_CS_ADAPTER),
+            ("me_cs", FMI3_MECS_ADAPTER),
+        ] {
+            if adapter.is_empty() {
+                continue; // omc built without the wasm32 toolchain
+            }
+            assert!(
+                link_fmu_component(&build_stub_model(), adapter).is_ok(),
+                "{label} adapter does not link into a component: {}",
+                openmodelica_util::Error::printMessagesStr(false)
+            );
+        }
+    }
+
+    // The standalone-export merge validates the result with `wasmtime::Module`, so
+    // it runs only under the default (wasmtime) engine.
+    #[cfg(all(feature = "jit", not(feature = "engine-wasmer")))]
     #[test]
     fn merge_leaves_only_wasi_imports() {
         let merged = merge_standalone(&build_stub_model()).expect("wasm-merge should succeed");

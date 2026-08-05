@@ -25,7 +25,17 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod fixedstep;
+pub mod gbode;
+pub mod omclog;
 pub mod simflags;
+#[cfg(sundials)]
+pub mod sundials;
+
+/// Whether this build's driver has the real CVODE and IDA linked in (`build.rs`),
+/// so a `-s=cvode`/`-s=ida` (or `method=`) run can be served.
+pub const CVODE: bool = cfg!(sundials);
+pub const IDA: bool = cfg!(sundials);
 
 /// Byte offset of `time` within `SimData`.
 pub const TIME_OFF: u32 = 0;
@@ -129,6 +139,27 @@ pub struct Layout {
     pub zctol_off: u32,
     /// Base of the overridable start-value region (one f64 per state).
     pub start_off: u32,
+    /// Base of the per-state `nominal` attribute (one f64 per state), written by
+    /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
+    pub state_nom_off: u32,
+    /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
+    /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
+    /// as a result row's last columns.
+    pub n_sens: u32,
+    pub sens_off: u32,
+    /// `--daeMode`: C's `daeModeData->nResidualVars`, also the size of the implicit
+    /// system IDA solves. 0 ⇒ an explicit ODE, and no `dae_*` region exists.
+    pub n_dae_res: u32,
+    /// Base of `daeModeData->residualVars` (f64 each).
+    pub dae_res_off: u32,
+    pub n_dae_aux: u32,
+    /// Base of `daeModeData->auxiliaryVars` (f64 each).
+    pub dae_aux_off: u32,
+    /// `daeModeData->nAlgebraicDAEVars`: the unknowns IDA carries after the states,
+    /// so `n_dae_res == n_states + n_dae_alg`.
+    pub n_dae_alg: u32,
+    /// Base of their `nominal` attributes, written like `state_nom_off`.
+    pub dae_alg_nom_off: u32,
     pub total: u32,
 }
 
@@ -154,6 +185,10 @@ impl Layout {
         n_stateset_f64: u32,
         n_nlsjac_f64: u32,
         n_math: u32,
+        n_sens: u32,
+        n_dae_res: u32,
+        n_dae_aux: u32,
+        n_dae_alg: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -190,19 +225,31 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let total = start_off + n_states * 8;
+        let state_nom_off = start_off + n_states * 8;
+        let sens_off = state_nom_off + n_states * 8;
+        let dae_res_off = sens_off + n_sens * 8;
+        let dae_aux_off = dae_res_off + n_dae_res * 8;
+        let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
+        let total = dae_alg_nom_off + n_dae_alg * 8;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, total,
+            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off,
+            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off, total,
         }
     }
 
     /// Byte offset of state `i`'s overridable start-value slot.
     pub fn state_start_off(&self, i: u32) -> u32 {
         self.start_off + i * 8
+    }
+
+    /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
+    /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
+    pub fn dae_mode(&self) -> bool {
+        self.n_dae_res > 0
     }
 
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
@@ -232,9 +279,13 @@ impl Layout {
     pub fn n_bool_alg(&self) -> u32 {
         (self.bparam_off - self.bool_off) / 4
     }
-    /// Total f64 columns in a result row: the real part plus the integer and
-    /// boolean algebraics (captured per row as f64).
+    /// Total f64 columns in a result row: the real part, the integer and boolean
+    /// algebraics (captured per row as f64), then the sensitivities.
     pub fn n_row_total(&self) -> u32 {
+        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens
+    }
+    /// First result-row column of the sensitivity block.
+    pub fn sens_col0(&self) -> u32 {
         self.n_reals_row() + self.n_int_alg() + self.n_bool_alg()
     }
 }
@@ -263,6 +314,26 @@ pub struct MetaVar {
     pub name: String,
     pub comment: String,
     pub kind: MetaKind,
+    /// C's `filterOutput`, split into its reasons ([`var_filter`]).
+    pub filter: u8,
+}
+
+/// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
+/// which flag lets it back in (C's `shouldFilterOutput` +
+/// `initializeOutputFilter`).
+pub mod var_filter {
+    /// `protected` variable; `-emit_protected` emits it.
+    pub const PROTECTED: u8 = 1;
+    /// `annotation(HideResult=true)`; `-ignoreHideResult` emits it.
+    pub const HIDE_RESULT: u8 = 2;
+    /// The model's `variableFilter` did not match the name; `-variableFilter`
+    /// replaces that decision.
+    pub const FILTERED: u8 = 4;
+    /// An alias reading another variable's slot. Not a filter reason: it gives C's
+    /// un-filter rule its direction (an emitted alias keeps its base variable).
+    pub const ALIAS: u8 = 8;
+    /// Protected and encrypted, which `-emit_protected` does not reach.
+    pub const ENCRYPTED: u8 = 16;
 }
 
 /// ODE state-Jacobian ∂f/∂x ("A") sparsity + coloring for the colored-FD path.
@@ -273,6 +344,17 @@ pub struct JacAInfo {
     pub colors: Vec<Vec<u32>>,
     /// `rows_by_col[col]` = 0-based rows nonzero in column `col` (CSC).
     pub rows_by_col: Vec<Vec<u32>>,
+}
+
+/// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct DaeInfo {
+    /// C's `daeModeData->algIndexes` as `SimData` offsets, in the order they follow
+    /// the states in IDA's `y`.
+    pub alg_offs: Vec<u32>,
+    /// `daeModeData->sparsePattern`: `∂F/∂(y, y')` with its coloring. `None` ⇒ no
+    /// pattern, which the KLU linear solver cannot work without.
+    pub sparsity: Option<JacAInfo>,
 }
 
 /// Dynamic state-selection metadata for one `$STATESET`. All offsets are
@@ -351,9 +433,6 @@ pub struct SimMeta {
     pub jac_a: Option<JacAInfo>,
     /// Dynamic state selection metadata (one per `$STATESET`); empty otherwise.
     pub state_sets: Vec<StateSetInfo>,
-    /// Per-state nominal magnitude `max(|nominal|, 1e-32)` for per-state atol;
-    /// `1.0` if absent. Empty ⇒ all-ones.
-    pub state_nominals: Vec<f64>,
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
@@ -361,18 +440,97 @@ pub struct SimMeta {
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
     pub zc_desc: Vec<String>,
+    /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
+    /// parameters `--calculateSensitivities` selected, in block order.
+    pub sens_params: Vec<u32>,
+    /// Per nonlinear system, its equation index and the iteration variables in
+    /// solver order — C reads the same list out of the `_info.json` `defines` array
+    /// to name the unknowns in its `-lv=LOG_NLS` blocks.
+    pub nls_vars: Vec<NlsVars>,
+    /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
+    pub dae: Option<DaeInfo>,
+}
+
+/// [`SimMeta::nls_vars`] entry.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct NlsVars {
+    pub eq_index: u32,
+    pub names: Vec<String>,
 }
 
 impl SimMeta {
-    /// Number of equidistant output rows the run writes. `n_intervals + 1` for a
-    /// real interval; a zero-length run (`stop <= start`) writes the start and stop
-    /// points only — 2 rows, regardless of `numberOfIntervals`.
+    /// Number of equidistant output rows the run writes, before C's terminal step
+    /// adds its own. `n_intervals + 1` for a real interval; a zero-length run
+    /// (`stop <= start`) writes the start point only, regardless of
+    /// `numberOfIntervals`.
     pub fn n_output_rows(&self) -> u32 {
         if self.stop_time > self.start_time {
             self.n_intervals + 1
         } else {
-            2
+            1
         }
+    }
+
+    /// Which of [`vars`](Self::vars) the result file holds, in order: C's
+    /// `filterOutput` as the file is opened.
+    ///
+    /// `matcher` is a compiled `-variableFilter` (wrapped in C's `^(…)$`) and
+    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it.
+    pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
+        let (emit_protected, ignore_hide) =
+            crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
+        let mut keep: Vec<bool> = self
+            .vars
+            .iter()
+            .map(|v| {
+                if matches!(v.kind, MetaKind::Time) {
+                    return true; // never filtered
+                }
+                if v.filter & var_filter::PROTECTED != 0
+                    && !(emit_protected && v.filter & var_filter::ENCRYPTED == 0)
+                {
+                    return false;
+                }
+                if v.filter & var_filter::HIDE_RESULT != 0 && !ignore_hide {
+                    return false;
+                }
+                match matcher {
+                    Some(m) => m(&v.name),
+                    None => v.filter & var_filter::FILTERED == 0,
+                }
+            })
+            .collect();
+        // `Const` has no slot to share.
+        let slot_of = |v: &MetaVar| match v.kind {
+            MetaKind::Column { col, .. } => Some((0u8, col)),
+            MetaKind::Param { off, .. } => Some((1u8, off)),
+            _ => None,
+        };
+        let mut needed = alloc::collections::BTreeSet::new();
+        for (i, v) in self.vars.iter().enumerate() {
+            if keep[i] && v.filter & var_filter::ALIAS != 0 {
+                needed.extend(slot_of(v));
+            }
+        }
+        if !needed.is_empty() {
+            for (i, v) in self.vars.iter().enumerate() {
+                if !keep[i] && v.filter & var_filter::ALIAS == 0 {
+                    keep[i] = slot_of(v).is_some_and(|s| needed.contains(&s));
+                }
+            }
+        }
+        keep
+    }
+
+    /// C's `simulationInfo->stepSize`: the output interval `SimCodeMain` writes into
+    /// the init XML, or the `-stepSize` override. Solver policy reads it too (the NLS
+    /// initial-guess window, the chattering limit), so it is not only the grid.
+    pub fn step_size(&self) -> f64 {
+        if let Some(h) = crate::simflags::with_flags(|f| f.step_size) {
+            return h;
+        }
+        let n = if self.n_intervals > 0 { self.n_intervals } else { 500 };
+        (self.stop_time - self.start_time) / n as f64
     }
 }
 
@@ -384,7 +542,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 5;
+const VERSION: u32 = 9;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -414,12 +572,25 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
         l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
-        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off, l.total,
+        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
+        l.state_nom_off, l.n_sens, l.sens_off,
+        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off, l.total,
     ] {
         put_u32(o, v);
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+}
+fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
+    match j {
+        None => o.push(0),
+        Some(j) => {
+            o.push(1);
+            put_u32(o, j.n);
+            put_u32s2(o, &j.colors);
+            put_u32s2(o, &j.rows_by_col);
+        }
+    }
 }
 fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
     match k {
@@ -461,16 +632,9 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, &v.name);
         put_str(&mut o, &v.comment);
         put_kind(&mut o, &v.kind);
+        o.push(v.filter);
     }
-    match &m.jac_a {
-        None => o.push(0),
-        Some(j) => {
-            o.push(1);
-            put_u32(&mut o, j.n);
-            put_u32s2(&mut o, &j.colors);
-            put_u32s2(&mut o, &j.rows_by_col);
-        }
-    }
+    put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
     for s in &m.state_sets {
         put_u32(&mut o, s.n_candidates);
@@ -481,10 +645,6 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32s(&mut o, &s.a_offs);
         put_u32s(&mut o, &s.seed_offs);
         put_u32s(&mut o, &s.result_offs);
-    }
-    put_u32(&mut o, m.state_nominals.len() as u32);
-    for &v in &m.state_nominals {
-        put_f64(&mut o, v);
     }
     put_u32(&mut o, m.fmi_vrs.len() as u32);
     for v in &m.fmi_vrs {
@@ -498,6 +658,23 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.zc_desc.len() as u32);
     for d in &m.zc_desc {
         put_str(&mut o, d);
+    }
+    put_u32s(&mut o, &m.sens_params);
+    put_u32(&mut o, m.nls_vars.len() as u32);
+    for v in &m.nls_vars {
+        put_u32(&mut o, v.eq_index);
+        put_u32(&mut o, v.names.len() as u32);
+        for n in &v.names {
+            put_str(&mut o, n);
+        }
+    }
+    match &m.dae {
+        None => o.push(0),
+        Some(d) => {
+            o.push(1);
+            put_u32s(&mut o, &d.alg_offs);
+            put_jac(&mut o, &d.sparsity);
+        }
     }
     o
 }
@@ -543,6 +720,12 @@ impl<'a> Reader<'a> {
         }
         Ok(v)
     }
+    fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
+        Ok(match self.u8()? {
+            0 => None,
+            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+        })
+    }
     fn layout(&mut self) -> Result<Layout, &'static str> {
         let mut l = Layout {
             n_states: self.u32()?,
@@ -581,6 +764,15 @@ impl<'a> Reader<'a> {
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
             start_off: self.u32()?,
+            state_nom_off: self.u32()?,
+            n_sens: self.u32()?,
+            sens_off: self.u32()?,
+            n_dae_res: self.u32()?,
+            dae_res_off: self.u32()?,
+            n_dae_aux: self.u32()?,
+            dae_aux_off: self.u32()?,
+            n_dae_alg: self.u32()?,
+            dae_alg_nom_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -626,12 +818,9 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nvars = r.u32()? as usize;
     let mut vars = Vec::with_capacity(nvars);
     for _ in 0..nvars {
-        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()? });
+        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
     }
-    let jac_a = match r.u8()? {
-        0 => None,
-        _ => Some(JacAInfo { n: r.u32()?, colors: r.u32s2()?, rows_by_col: r.u32s2()? }),
-    };
+    let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
@@ -645,11 +834,6 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             seed_offs: r.u32s()?,
             result_offs: r.u32s()?,
         });
-    }
-    let nnom = r.u32()? as usize;
-    let mut state_nominals = Vec::with_capacity(nnom);
-    for _ in 0..nnom {
-        state_nominals.push(r.f64()?);
     }
     let nvr = r.u32()? as usize;
     let mut fmi_vrs = Vec::with_capacity(nvr);
@@ -667,9 +851,26 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..ndesc {
         zc_desc.push(r.string()?);
     }
+    let sens_params = r.u32s()?;
+    let nsys = r.u32()? as usize;
+    let mut nls_vars = Vec::with_capacity(nsys);
+    for _ in 0..nsys {
+        let eq_index = r.u32()?;
+        let nn = r.u32()? as usize;
+        let mut names = Vec::with_capacity(nn);
+        for _ in 0..nn {
+            names.push(r.string()?);
+        }
+        nls_vars.push(NlsVars { eq_index, names });
+    }
+    let dae = match r.u8()? {
+        0 => None,
+        _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, state_nominals, fmi_vrs, zc_desc,
+        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
+        nls_vars, dae,
     })
 }
 
@@ -681,7 +882,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -691,12 +892,12 @@ mod tests {
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false } },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true } },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false } },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false } },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 } },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false }, filter: var_filter::PROTECTED },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true }, filter: var_filter::ALIAS },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false }, filter: 0 },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false }, filter: var_filter::HIDE_RESULT },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
@@ -713,12 +914,24 @@ mod tests {
                 seed_offs: vec![200, 208, 216],
                 result_offs: vec![224],
             }],
-            state_nominals: vec![1.0, 2.5],
             fmi_vrs: vec![
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            sens_params: vec![88],
+            nls_vars: vec![NlsVars {
+                eq_index: 1074,
+                names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
+            }],
+            dae: Some(DaeInfo {
+                alg_offs: vec![32, 40],
+                sparsity: Some(JacAInfo {
+                    n: 4,
+                    colors: vec![vec![0, 2], vec![1, 3]],
+                    rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                }),
+            }),
         }
     }
 
@@ -738,7 +951,31 @@ mod tests {
         assert_eq!(l.n_reals_row(), 1 + 2 * 2 + 1); // time + 2 states + 2 ders + 1 alg
         assert_eq!(l.n_int_alg(), 1);
         assert_eq!(l.n_bool_alg(), 1);
-        assert_eq!(l.n_row_total(), 6 + 1 + 1);
+        assert_eq!(l.n_sens, 2);
+        assert_eq!(l.n_row_total(), 6 + 1 + 1 + 2);
+        assert_eq!(l.sens_col0(), 6 + 1 + 1);
+    }
+
+    /// The sample's `x` is protected and its alias `y` is not, so `x` rides along.
+    #[test]
+    fn output_keep_follows_the_flags() {
+        let m = sample();
+        let names = |keep: Vec<bool>| -> Vec<&str> {
+            m.vars.iter().zip(keep).filter(|(_, k)| *k).map(|(v, _)| v.name.as_str()).collect()
+        };
+        simflags::set_flags(simflags::SimFlags::default());
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p"]);
+
+        let mut f = simflags::SimFlags { ignore_hide_result: true, ..Default::default() };
+        simflags::set_flags(f.clone());
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
+
+        // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
+        // `time` is never filtered.
+        f.ignore_hide_result = false;
+        simflags::set_flags(f);
+        let only_k = |n: &str| n == "k";
+        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
     }
 
     #[test]

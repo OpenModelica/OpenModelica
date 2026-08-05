@@ -19,6 +19,8 @@ openmodelica_backend_main.workspace = true
 openmodelica_scripting_qt = { workspace = true, optional = true }
 openmodelica_script_util.workspace = true
 openmodelica_util.workspace = true
+# This build's revision, reported as the compiler version (`set_revision`).
+openmodelica_revision.workspace = true
 # Provides our exported `ModelicaAllocateString` (arena-backed) so the dlopen'd
 # ffi ModelicaExternalC libraries never bind the C runtime's GC allocator.
 openmodelica_modelica_utilities.workspace = true

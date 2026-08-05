@@ -28,6 +28,8 @@ pub fn compile_model_module(_wasm: &[u8]) -> std::result::Result<Module, String>
 
 pub fn start_runtime_compile() {}
 
+pub fn set_alarm(_seconds: Option<u32>) {}
+
 pub fn take_compiled_model(_model: &SimModel) -> std::result::Result<Module, String> {
     return Err(NO_ENGINE.to_string())
 }

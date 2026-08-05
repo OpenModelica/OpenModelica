@@ -514,6 +514,34 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
 }
 
 /**
+ * @brief Read the states' nominal values into the absolute tolerances.
+ *
+ * Re-read by updateSolverNominals once initialization has computed the nominals
+ * that are parameter expressions.
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling
+ * @param cvodeData         CVODE solver data struct with absoluteTolerance allocated.
+ * @return int              Return 0 on success.
+ */
+int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER *cvodeData)
+{
+  int flag;
+  long int i;
+  double *abstol = N_VGetArrayPointer_Serial(cvodeData->absoluteTolerance);
+
+  for (i = 0; i < cvodeData->N; ++i)
+  {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    abstol[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
+  }
+  flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
+
+  return 0;
+}
+
+/**
  * @brief Allocate memory, initialize and set configurations for CVODE solver
  *
  * @param data              Runtime data struct
@@ -567,15 +595,9 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Set CVODE relative and absolute error tolerances */
   abstol_tmp = (double *)calloc(cvodeData->N, sizeof(double)); /* Is freed with `free(NV_DATA_S(cvodeData->absoluteTolerance));` */
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
-  for (i = 0; i < cvodeData->N; ++i)
-  {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    abstol_tmp[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
-  }
   cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
-  flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
+  cvode_solver_setNominals(data, threadData, cvodeData);
   infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */

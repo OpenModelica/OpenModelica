@@ -311,7 +311,7 @@ option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse so
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
-  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1)
+  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
@@ -334,11 +334,19 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   ExternalProject_Add(rust_suitesparse_wasm
     SOURCE_DIR ${_suitesparse_sources}
     BINARY_DIR ${_suitesparse_ep_build}
+    LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
       -DBUILD_SHARED_LIBS=OFF
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_USE_FORTRAN=OFF
+      -DSUITESPARSE_USE_OPENMP=OFF
+      -DSUITESPARSE_USE_CUDA=OFF
+      -DSUITESPARSE_DEMOS=OFF
+      -DSUITESPARSE_USE_STRICT=OFF
+      -DKLU_USE_CHOLMOD=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target klu amd colamd btf suitesparseconfig
+      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -360,14 +368,14 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUNDIALS_KLU_ENABLE=ON
       -DSUNDIALS_INDEX_SIZE=32
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
-      -DKLU_LIBRARY=${_suitesparse_ep_build}/libklu.a
-      -DAMD_LIBRARY=${_suitesparse_ep_build}/libamd.a
-      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/libcolamd.a
-      -DBTF_LIBRARY=${_suitesparse_ep_build}/libbtf.a
-      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/libsuitesparseconfig.a
+      -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
+      -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
+      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      -DBTF_LIBRARY=${_suitesparse_ep_build}/BTF/libbtf.a
+      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
-      sundials_kinsol_static sundials_ida_static sundials_cvode_static
+      sundials_kinsol_static sundials_idas_static sundials_cvode_static
       sundials_nvecserial_static sundials_sunmatrixdense_static
       sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
       sundials_sunlinsolklu_static
@@ -380,13 +388,13 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   add_custom_target(rust_sundials_collect
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy
-      ${_suitesparse_ep_build}/libklu.a
-      ${_suitesparse_ep_build}/libamd.a
-      ${_suitesparse_ep_build}/libcolamd.a
-      ${_suitesparse_ep_build}/libbtf.a
-      ${_suitesparse_ep_build}/libsuitesparseconfig.a
+      ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/AMD/libamd.a
+      ${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      ${_suitesparse_ep_build}/BTF/libbtf.a
+      ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
-      ${_sundials_ep_build}/src/ida/libsundials_ida.a
+      ${_sundials_ep_build}/src/idas/libsundials_idas.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
       ${_sundials_ep_build}/src/nvector/serial/libsundials_nvecserial.a
       ${_sundials_ep_build}/src/sunmatrix/dense/libsundials_sunmatrixdense.a
@@ -397,6 +405,31 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     COMMENT "Rust: collecting SUNDIALS/KLU wasm archives -> ${RUST_SUNDIALS_WASM_DIR}/lib/"
     VERBATIM)
   add_dependencies(rust_sundials_collect rust_sundials_wasm)
+
+  # The host CVODE/IDAS the host-driven wasm-jit driver links are the C runtime's
+  # own archives (3rdParty), not a second build: they are already
+  # position-independent (`libSimulationRuntimeC.so` links them), and reusing them
+  # leaves the two copies identical should both end up in one process. Collected
+  # into a fixed directory because the cargo env cannot carry a generator
+  # expression. IDA's default linear solver is KLU, so SuiteSparse comes too.
+  if(TARGET sundials_cvode_static)
+    set(RUST_SUNDIALS_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-sundials-native
+        CACHE PATH "Directory the host SUNDIALS archives are collected into.")
+    set(_native_sundials_libs
+      sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
+      KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static)
+    set(_native_sundials_files "")
+    foreach(_lib IN LISTS _native_sundials_libs)
+      list(APPEND _native_sundials_files $<TARGET_FILE:${_lib}>)
+    endforeach()
+    add_custom_target(rust_sundials_native_collect
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_NATIVE_DIR}/lib
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${_native_sundials_files} ${RUST_SUNDIALS_NATIVE_DIR}/lib/
+      DEPENDS ${_native_sundials_libs}
+      COMMENT "Rust: collecting host SUNDIALS archives -> ${RUST_SUNDIALS_NATIVE_DIR}/lib/"
+      VERBATIM)
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -422,6 +455,11 @@ endif()
 # Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
 # so the cargo build.rs uses them rather than rebuilding.
 # ---------------------------------------------------------------------------
+# The revision this omc reports, tagged "-rust" where the C build says "-cmake".
+# file(GENERATE), not file(WRITE): it keeps the timestamp when the revision is
+# unchanged, so reconfiguring alone rebuilds nothing.
+set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
+file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-rust\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
@@ -430,6 +468,10 @@ list(APPEND CARGO_ENV
      # ModelicaExternalC C-Sources dir (the crate builds from a synced copy whose
      # relative path can't reach the real location).
      "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
+     # A *path*, not the revision itself: that in the environment would be part
+     # of every rustc invocation and miss the whole compilation cache on each
+     # commit. Only the leaf openmodelica_revision crate reads the file.
+     "OMC_REVISION_FILE=${RUST_OMC_REVISION_FILE}"
      # Prebuilt PIC wasi-libc sysroot (with -fPIC libc.so) built by rust_wasi_pic_sysroot.
      "OMC_WASI_PIC_SYSROOT=${RUST_WASI_PIC_SYSROOT}"
      # Preview1 adapter for FMI wasm FMU export.
@@ -437,6 +479,13 @@ list(APPEND CARGO_ENV
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
+  if(TARGET sundials_cvode_static)
+    # The wasm archives are 32-bit-index builds and this one is whatever the C
+    # runtime uses, so the bindings' `sunindextype` follows the archive.
+    list(APPEND CARGO_ENV
+         "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
+         "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${SUNDIALS_INDEX_SIZE}")
+  endif()
 endif()
 
 # Source paths (fallback for raw cargo builds without CMake).
@@ -446,7 +495,7 @@ endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse-5.8.1")
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
@@ -799,6 +848,9 @@ function(omc_rust_setup_codegen)
     VERBATIM)
   if(RUST_OMC_ENABLE_SUNDIALS)
     add_dependencies(rust_libopenmodelica rust_sundials_collect)
+    if(TARGET rust_sundials_native_collect)
+      add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
+    endif()
   endif()
 
   add_custom_target(rust_omc ALL

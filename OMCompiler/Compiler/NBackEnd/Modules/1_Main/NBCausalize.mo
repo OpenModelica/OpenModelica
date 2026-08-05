@@ -310,7 +310,7 @@ protected
         equations := EquationPointers.compress(partition.equations);
 
         // perform ASSC on the system
-        ASSC.main(equations, variables);
+        //ASSC.main(equations, variables);
 
         // create full matrix
         full := Adjacency.Matrix.createFull(variables, equations, kind);

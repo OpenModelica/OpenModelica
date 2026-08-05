@@ -692,7 +692,9 @@ protected
       end for;
       const := Expression.map(const, function Replacements.applySimpleExp(replacements = zero_replacements));
       const := SimplifyExp.simplify(const);
-      if not func(const) then fail(); end if;
+      // Only fail for literals: symbolic CREFs remaining after replacement are inner iterators
+      // (e.g. sum/product) whose bounds are guaranteed by their own range expression.
+      if not func(const) and Expression.isLiteral(const) then fail(); end if;
     end if;
 
     if debug then

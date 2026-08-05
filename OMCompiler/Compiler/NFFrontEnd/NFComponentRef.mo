@@ -2407,7 +2407,7 @@ public
         arr := NONE();
       end if;
     else
-      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(scal) else NONE();
+      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(stripSubscriptsAll(scal)) else NONE();
     end if;
   end getArrayCrefOpt;
 

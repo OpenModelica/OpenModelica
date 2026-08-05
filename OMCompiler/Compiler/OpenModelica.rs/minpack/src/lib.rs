@@ -448,6 +448,19 @@ pub enum Status {
     XtolTooSmall,
     /// Iteration is not making good progress (info = 4 or 5).
     Stalled,
+    /// [`Hooks::abort`] asked to stop (MINPACK's negative `iflag`).
+    Aborted,
+}
+
+/// `abort` is MINPACK's negative-`iflag` early exit, polled after every residual
+/// batch. `fjacobian` receives each Jacobian before [`qrfac`] destroys it (C's
+/// `hybrdData->fjacobian`). `diag` is MINPACK's `mode = 2`: the given variable
+/// scale factors are used as-is instead of the internally rescaled ones.
+#[derive(Default)]
+pub struct Hooks<'a> {
+    pub abort: Option<&'a dyn Fn() -> bool>,
+    pub fjacobian: Option<&'a mut [f64]>,
+    pub diag: Option<&'a [f64]>,
 }
 
 /// Solve `f(x) = 0` for `n` equations in `n` unknowns with MINPACK's `hybrd`
@@ -469,7 +482,39 @@ pub fn hybrd(
     epsfcn: f64,
     factor: f64,
 ) -> Status {
-    hybrd_common(eval, None, n, x, fvec, xtol, maxfev, epsfcn, factor)
+    hybrd_common(eval, None, &mut Hooks::default(), n, x, fvec, xtol, maxfev, epsfcn, factor)
+}
+
+/// [`hybrd`] with [`Hooks`].
+#[allow(clippy::too_many_arguments)]
+pub fn hybrd_hooked(
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    hooks: &mut Hooks,
+    n: usize,
+    x: &mut [f64],
+    fvec: &mut [f64],
+    xtol: f64,
+    maxfev: usize,
+    epsfcn: f64,
+    factor: f64,
+) -> Status {
+    hybrd_common(eval, None, hooks, n, x, fvec, xtol, maxfev, epsfcn, factor)
+}
+
+/// [`hybrj`] with [`Hooks`].
+#[allow(clippy::too_many_arguments)]
+pub fn hybrj_hooked(
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jac: &mut dyn FnMut(&[f64], &mut [f64]),
+    hooks: &mut Hooks,
+    n: usize,
+    x: &mut [f64],
+    fvec: &mut [f64],
+    xtol: f64,
+    maxfev: usize,
+    factor: f64,
+) -> Status {
+    hybrd_common(eval, Some(jac), hooks, n, x, fvec, xtol, maxfev, 0.0, factor)
 }
 
 /// Solve `f(x) = 0` with MINPACK's `hybrj` (user-supplied analytic Jacobian).
@@ -486,7 +531,7 @@ pub fn hybrj(
     maxfev: usize,
     factor: f64,
 ) -> Status {
-    hybrd_common(eval, Some(jac), n, x, fvec, xtol, maxfev, 0.0, factor)
+    hybrd_common(eval, Some(jac), &mut Hooks::default(), n, x, fvec, xtol, maxfev, 0.0, factor)
 }
 
 /// Shared dogleg/trust-region driver for [`hybrd`] (numeric Jacobian via
@@ -495,6 +540,7 @@ pub fn hybrj(
 fn hybrd_common(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     mut jac: Option<&mut dyn FnMut(&[f64], &mut [f64])>,
+    hooks: &mut Hooks,
     n: usize,
     x: &mut [f64],
     fvec: &mut [f64],
@@ -521,8 +567,13 @@ fn hybrd_common(
     let mut info = Status::Stalled;
     let mut nfev;
 
+    let aborted = |hooks: &Hooks| hooks.abort.is_some_and(|a| a());
+
     eval(x, fvec);
     nfev = 1;
+    if aborted(hooks) {
+        return Status::Aborted;
+    }
     let mut fnorm = enorm(&fvec[..n]);
 
     let mut iter = 1;
@@ -540,11 +591,21 @@ fn hybrd_common(
                 nfev += n;
             }
         }
+        if aborted(hooks) {
+            return Status::Aborted;
+        }
+        if let Some(out) = hooks.fjacobian.as_deref_mut() {
+            out.copy_from_slice(&fjac);
+        }
         qrfac(n, n, &mut fjac, &mut wa1, &mut wa2, &mut wa3);
 
         if iter == 1 {
-            for j in 0..n {
-                diag[j] = if wa2[j] == 0.0 { 1.0 } else { wa2[j] };
+            if let Some(d) = hooks.diag {
+                diag.copy_from_slice(&d[..n]);
+            } else {
+                for j in 0..n {
+                    diag[j] = if wa2[j] == 0.0 { 1.0 } else { wa2[j] };
+                }
             }
             for j in 0..n {
                 wa3[j] = diag[j] * x[j];
@@ -586,8 +647,10 @@ fn hybrd_common(
 
         qform(n, n, &mut fjac, &mut wa1);
 
-        for j in 0..n {
-            diag[j] = fmax(diag[j], wa2[j]);
+        if hooks.diag.is_none() {
+            for j in 0..n {
+                diag[j] = fmax(diag[j], wa2[j]);
+            }
         }
 
         loop {
@@ -604,6 +667,9 @@ fn hybrd_common(
 
             eval(&wa2, &mut wa4);
             nfev += 1;
+            if aborted(hooks) {
+                return Status::Aborted;
+            }
             let fnorm1 = enorm(&wa4[..n]);
 
             let actred = if fnorm1 < fnorm {

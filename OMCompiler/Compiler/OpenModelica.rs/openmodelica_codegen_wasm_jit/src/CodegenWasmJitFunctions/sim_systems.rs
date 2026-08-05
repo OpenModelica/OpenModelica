@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use metamodelica::Result;
 
+use openmodelica_backend_types::BackendDAE;
 use openmodelica_frontend_types::DAE;
 use wasm_encoder as we;
 
@@ -41,7 +42,7 @@ fn emit_residual_eval(
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
-        iterators: Vec<(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)>,
+        iterators: Vec<BackendDAE::SimIterator>,
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
@@ -91,13 +92,13 @@ pub(crate) fn emit_nls_residual_body(
 /// registers as a wasm local so `compile_exp` resolves `x[$i]` and bare `$i`.
 fn emit_for_residual(
     ctx: &mut FnCtx,
-    iterators: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
+    iterators: &[BackendDAE::SimIterator],
     exp: &Arc<DAE::Exp>,
     res_index: i32,
     outer: &[(u32, u32)],
 ) -> Result<()> {
     use we::Instruction as I;
-    let Some(((cref, range), rest)) = iterators.split_first() else {
+    let Some((sim_it, rest)) = iterators.split_first() else {
         // addr = r + (res_index + Σ(it - start)) * 8
         ctx.emit(I::LocalGet(2)); // r
         ctx.emit(I::I32Const(res_index));
@@ -115,7 +116,7 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let DAE::Exp::RANGE { start, step, stop, .. } = &**range else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, .. } = sim_it else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -128,12 +129,9 @@ fn emit_for_residual(
     coerce(ctx, sw, WTy::I32);
     ctx.emit(I::LocalTee(start_l));
     ctx.emit(I::LocalSet(it));
-    match step {
-        Some(e) => {
-            let w = compile_exp(ctx, e)?;
-            coerce(ctx, w, WTy::I32);
-        }
-        None => ctx.emit(I::I32Const(1)),
+    {
+        let w = compile_exp(ctx, step)?;
+        coerce(ctx, w, WTy::I32);
     }
     ctx.emit(I::LocalSet(step_l));
     let pw = compile_exp(ctx, stop)?;
@@ -1459,9 +1457,12 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
-    // nominal block address (x-scaling).
+    // nominal block address (x-scaling), and the matching min/max pairs.
     ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
     ctx.emit(I::I32Const(job.nominal_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
+    ctx.emit(I::I32Const(2 * job.nominal_off as i32));
     ctx.emit(I::I32Add);
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {
@@ -1478,9 +1479,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n_rel as i32));
     ctx.emit(I::I32Const(job.mixed as i32));
-    // Sparse systems: this system's `colptr`/`rowidx` in the pattern block, its
-    // nonzero count, and the cache key for the reused symbolic factorization.
-    // `nnz == 0` selects the dense solver ladder (`jac` fills an `n×n` matrix).
+    // A system with a symbolic pattern: its `colptr`/`rowidx` in the pattern block,
+    // the nonzero count, whether the pattern is also the default solver choice (else
+    // only `-nls=kinsol` uses it), and the symbolic-factorization cache key. With
+    // `nnz == 0` the dense ladder runs over an `n×n` `jac`.
     if job.nnz != 0 {
         ctx.emit(I::GlobalGet(NLS_PAT_GLOBAL));
         ctx.emit(I::I32Const(job.pat_off as i32));
@@ -1489,7 +1491,9 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
         ctx.emit(I::I32Const(0));
     }
     ctx.emit(I::I32Const(job.nnz as i32));
+    ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
+    ctx.emit(I::I32Const(job.eq_index as i32));
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

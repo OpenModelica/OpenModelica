@@ -58,6 +58,8 @@ typedef struct DASSL_DATA{
   double *rwork;
   double *rtol;
   double *atol;
+  double *nominal;              /* |nominal| per state, floored at 1e-32; atol is tolerance times it */
+  double jacNominalFactor;      /* -jacobianNominalFactor */
 
   int ng;
   int *jroot;
@@ -90,6 +92,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 /* initial main dassl Data */
 int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
+
+/* read the nominal values into the tolerances and the Jacobian's step floor */
+void dassl_setNominals(DATA* data, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
 int dassl_deinitial(DATA* data, DASSL_DATA *dasslData);

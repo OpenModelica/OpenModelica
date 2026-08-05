@@ -326,6 +326,24 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 }
 
 /**
+ * @brief Read the states' nominal, min and max attributes into the solver data.
+ *
+ * Expensive scalar queries, so cached. Re-read by updateSolverNominals once
+ * initialization has computed the ones that are parameter expressions.
+ *
+ * @param data      Runtime data struct.
+ * @param gbData    Runge-Kutta solver data struct.
+ */
+void gbode_setVarAttributes(DATA* data, DATA_GBODE* gbData)
+{
+  for (int i = 0; i < gbData->nStates; i++) {
+    gbData->nominals[i] = fmax(fabs(getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i)), 1e-32);
+    gbData->mins[i] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    gbData->maxs[i] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+  }
+}
+
+/**
  * @brief Function allocates memory needed for generic RK method.
  *
  * @param data          Runtime data struct.
@@ -467,12 +485,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   printButcherTableau(gbData->tableau);
 
-  // perform expensive scalar queries once
-  for (int i = 0; i < gbData->nStates; i++) {
-    gbData->nominals[i] = fmax(fabs(getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i)), 1e-32);
-    gbData->mins[i] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-    gbData->maxs[i] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
-  }
+  gbode_setVarAttributes(data, gbData);
 
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {

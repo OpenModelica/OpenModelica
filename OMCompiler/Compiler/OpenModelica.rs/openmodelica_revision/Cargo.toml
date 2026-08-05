@@ -1,0 +1,8 @@
+[package]
+name = "openmodelica_revision"
+version = "0.1.0"
+edition = "2024"
+
+# The compiler revision string and nothing else — a leaf crate depended on only
+# by the hosts, so a new revision never rebuilds the compiler. See src/lib.rs.
+[dependencies]

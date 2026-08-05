@@ -50,6 +50,7 @@ use arcstr::ArcStr;
 use metamodelica::List;
 
 use openmodelica_ast::Absyn;
+use openmodelica_frontend_base::Expression;
 use openmodelica_frontend_base::Types;
 use openmodelica_frontend_dump::AbsynUtil;
 use openmodelica_frontend_dump::ExpressionDumpTpl;
@@ -223,9 +224,11 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_*` indices are unaffected), just before the generated functions. The host
 /// closures live in `runtime::add_host_builtins`.
 ///
-/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly)` records a pending
-/// assertion failure (the message and source-info handles) for `load_and_execute`
-/// to route to the error buffer; the generated code then traps (`unreachable`).
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond) -> shouldTrap`
+/// records the failed assertion and answers whether the generated code must trap:
+/// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
+/// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
+/// suppressed; it comes last so callers that already pushed the message append.
 ///
 /// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
@@ -236,11 +239,16 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_print(str)` writes the String's bytes to the model's stdout (the `print`
 /// builtin). The host reads the handle's bytes from the shared memory during the
 /// call; the generated code releases the (owned) handle afterwards.
+///
+/// `rt_row_asserts(sim_data, warn) -> stop` formats the violations recorded at the
+/// output row the emitted `simulate` loop just stored — the driver's per-row
+/// `LOG_ASSERT` step, which that loop cannot reach from wasm. `warn` selects the
+/// level; a nonzero result means a suppressed `assert()` ends the run.
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
-        &[],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
     ),
     (
         "rt_assert_warning",
@@ -248,11 +256,12 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
         &[],
     ),
     ("rt_print", &[WTy::I32], &[]),
+    ("rt_row_asserts", &[WTy::I32, WTy::I32], &[WTy::I32]),
 ];
 
 /// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
 /// and `RT_BUILTINS`).
-fn env_extra_index(name: &str) -> Result<u32> {
+pub(crate) fn env_extra_index(name: &str) -> Result<u32> {
     let pos = ENV_EXTRA
         .iter()
         .position(|(n, _, _)| *n == name)
@@ -294,6 +303,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_total", &[WTy::I32], &[WTy::I32]),
     ("rt_array_dim", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_elem_ptr", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // The out-of-range arm of the inlined element-address computation.
+    ("rt_elem_ptr_oob", &[], &[WTy::I32]),
     ("rt_array_release", &[WTy::I32], &[]),
     // Value-semantics copy (for whole-array assignment from a variable source).
     ("rt_array_copy", &[WTy::I32], &[WTy::I32]),
@@ -342,7 +353,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // integer powers stay byte-identical instead of going through generic pow).
     ("rt_real_int_pow", &[WTy::F64, WTy::I32], &[WTy::F64]),
     // `base ^ exp` generic scalar power matching the C target's negative-base /
-    // odd-root / nan-inf handling (traps on an invalid root, surfacing fail()).
+    // odd-root / nan-inf handling (an invalid root is a model error).
     ("rt_real_pow", &[WTy::F64, WTy::F64], &[WTy::F64]),
     // Integer `mod(x,y)` — floored modulo (result takes the divisor's sign).
     ("rt_mod_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
@@ -398,7 +409,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -407,6 +418,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
+    ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -415,10 +428,17 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
 pub(crate) const NLS_BASE_GLOBAL: u32 = 0;
 
 /// Module global holding the base index this module's closure thunks were
-/// appended to the shared table at (set by `start`): after the four
+/// appended to the shared table at (set by `start`): after the five
 /// nonlinear-solver globals, or the only global when there are none.
 pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
-    if has_nls { NLS_PAT_GLOBAL + 1 } else { 0 }
+    if has_nls { NLS_BOUNDS_GLOBAL + 1 } else { 0 }
+}
+
+/// First of the module's shared-literal globals (see `shared_lits`). The closure
+/// global is reserved whether or not the module has thunks, so this base is known
+/// before the bodies are lowered.
+pub(crate) fn lit_base_global(has_nls: bool) -> u32 {
+    closure_base_global(has_nls) + 1
 }
 
 /// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
@@ -529,6 +549,7 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     // section is emitted. Function references met on the way add thunks to the
     // closure pool; the module's only global holds their table base.
     closures::begin(types.len(), closure_base_global(false));
+    shared_lits::begin(lit_base_global(false));
     let mut functions = we::FunctionSection::new();
     let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
     let mut literals: Vec<Vec<u8>> = Vec::new();
@@ -536,7 +557,12 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
         functions.function(base + id as u32); // type index = base + id
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
-    // Closure thunks, then the `start` that appends them to the shared table.
+    let lits = shared_lits::take();
+    let lit_init = (!lits.is_empty())
+        .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
+        .transpose()?;
+    // Closure thunks, then the `start` that builds the literals and appends the
+    // thunks to the shared table.
     let closure_wiring = closures::take();
     let mut thunk_indices: Vec<u32> = Vec::new();
     for (type_index, body) in closure_wiring.thunks {
@@ -547,20 +573,31 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     for (params, results) in &closure_wiring.types {
         types.ty().function(params.iter().copied(), results.iter().copied());
     }
-    let start_idx = if thunk_indices.is_empty() {
+    let start_idx = if thunk_indices.is_empty() && lit_init.is_none() {
         None
     } else {
-        let start_type = types.len();
+        let void_type = types.len();
         types.ty().function([], []);
+        let lit_init_idx = lit_init.map(|f| {
+            let idx = base + bodies.len() as u32;
+            functions.function(void_type);
+            bodies.push(f);
+            idx
+        });
         let idx = base + bodies.len() as u32;
         let mut f = we::Function::new([]);
-        closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        if let Some(i) = lit_init_idx {
+            f.instruction(&we::Instruction::Call(i));
+        }
+        if !thunk_indices.is_empty() {
+            closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        }
         f.instruction(&we::Instruction::End);
-        functions.function(start_type);
+        functions.function(void_type);
         bodies.push(f);
         Some(idx)
     };
-    if start_idx.is_some() {
+    if !thunk_indices.is_empty() {
         // The thunks are reached by `call_indirect` through the runtime's table.
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
@@ -584,19 +621,24 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     module.section(&imports);
     module.section(&functions);
     if start_idx.is_some() {
+        // The closure-thunk table base, then one global per shared literal.
         let mut globals = we::GlobalSection::new();
-        globals.global(
-            we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
-            &we::ConstExpr::i32_const(0),
-        );
+        for _ in 0..lit_base_global(false) as usize + lits.len() {
+            globals.global(
+                we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
+                &we::ConstExpr::i32_const(0),
+            );
+        }
         module.section(&globals);
     }
     module.section(&exports);
     if let Some(start_idx) = start_idx {
         module.section(&we::StartSection { function_index: start_idx });
-        let mut elements = we::ElementSection::new();
-        elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
-        module.section(&elements);
+        if !thunk_indices.is_empty() {
+            let mut elements = we::ElementSection::new();
+            elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
+            module.section(&elements);
+        }
     }
     // String literals become passive data segments materialized at runtime with
     // `memory.init` (see SCONST in `compile_exp`). The DataCount section must
@@ -684,7 +726,9 @@ fn supported_external(ext_name: &str, ins: &[SigTy], out: &SigTy) -> bool {
         // `Modelica.Utilities.Strings.substring` → `rt_substring` (1-based incl.).
         "ModelicaStrings_substring" => matches!(ins, [SigTy::Str, SigTy::Int, SigTy::Int]) && matches!(out, SigTy::Str),
         // Scalar math: a host transcendental or single-instruction math function.
-        _ if builtin_index(ext_name).is_some() || matches!(ext_name, "sqrt" | "fabs" | "floor" | "ceil") => {
+        _ if builtin_index(ext_name).is_some()
+            || matches!(ext_name, "sqrt" | "fabs" | "floor" | "ceil" | "abs" | "div" | "mod") =>
+        {
             ins.iter().all(scalar) && scalar(out)
         }
         _ => false,
@@ -944,6 +988,9 @@ pub(crate) struct FnCtx<'a> {
     /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
     /// which aliases an element of the array that outlives the loop.
     borrowed_locals: Vec<u32>,
+    /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
+    /// straight-line, so one pair is enough.
+    elem_ptr_tmp: Option<(u32, u32)>,
     /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
@@ -1036,6 +1083,8 @@ pub(crate) struct SimCtx {
 pub(crate) struct NlsJob {
     pub(crate) k: u32,
     pub(crate) n: u32,
+    /// C's `NONLINEAR_SYSTEM_DATA::equationIndex`: the number its messages quote.
+    pub(crate) eq_index: u32,
     pub(crate) hist_off: u32,
     /// Byte offset of this system's `n` nominal values into the nominal block
     /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
@@ -1045,20 +1094,23 @@ pub(crate) struct NlsJob {
     pub(crate) has_jac: bool,
     /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
     pub(crate) mixed: bool,
-    /// Nonzero count of the Jacobian's CSC pattern when the system is solved
-    /// sparsely (C's kinsol+KLU choice), else 0: the `nls_jac` callback then fills
-    /// `nnz` CSC values instead of a dense `n×n` matrix.
+    /// Nonzero count of the Jacobian's CSC pattern, 0 where there is none.
     pub(crate) nnz: u32,
     /// Byte offset of this system's `colptr`/`rowidx` pattern into the pattern
     /// block (`NLS_PAT_GLOBAL`); only meaningful when `nnz != 0`.
     pub(crate) pat_off: u32,
+    /// C's per-system default `nlsMethod` by the density/size rule: `NLS_KINSOL`
+    /// (sparse) rather than the dense `NLS_MIXED` ladder. `-nls=` overrides it, and
+    /// it also picks the format `nls_jac` writes (CSC vs dense `n×n`).
+    pub(crate) sparse_default: bool,
 }
 
-/// Bytes of extrapolation history a system with `n` unknowns needs: a count
-/// (`i32`, padded to 8), the two most-recent solve times (`f64` each), and the
-/// two most-recent solutions (`n` `f64` each). Matches `rt_solve_nls`'s layout.
+/// Per-system solver state for `n` unknowns: a count (padded to 8), C's
+/// `lastTimeSolved`, the residual scaling carried between calls, and `HIST_DEPTH`
+/// stored solutions (time + `n`). Matches `rt_solve_nls`'s layout.
 pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
-    24 + 16 * n
+    const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
+    16 + 8 * n + DEPTH * (8 + 8 * n)
 }
 
 /// Model global holding the base address of the NLS extrapolation-history block
@@ -1072,6 +1124,28 @@ pub(crate) const NLS_NOMINAL_GLOBAL: u32 = 2;
 /// Model global holding the base address of the sparse-NLS pattern block
 /// (`colptr[n+1]` then `rowidx[nnz]`, `i32`, per sparsely-solved system).
 pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
+
+/// Model global holding the base address of the NLS bounds block: the `min`/`max`
+/// pair per iteration variable, which the solver constrains its restarts to.
+pub(crate) const NLS_BOUNDS_GLOBAL: u32 = 4;
+
+/// A variable attribute the solvers read back at run time.
+#[derive(Clone, Copy)]
+pub(crate) enum Attr {
+    Nominal,
+    Min,
+    Max,
+}
+
+/// Where one variable's attribute lands: its entry in each nonlinear system that
+/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice that
+/// in the bounds block), and the `SimData` nominal slots the integrator scales by (a
+/// state's, and in DAE mode an algebraic unknown's).
+#[derive(Clone, Default)]
+pub(crate) struct AttrTargets {
+    pub(crate) nls: Vec<u32>,
+    pub(crate) nom_offs: Vec<u32>,
+}
 
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
@@ -1158,6 +1232,16 @@ impl<'a> FnCtx<'a> {
         self.extra_locals.push(wty.val());
         idx
     }
+    fn elem_ptr_temps(&mut self) -> (u32, u32) {
+        match self.elem_ptr_tmp {
+            Some(p) => p,
+            None => {
+                let p = (self.alloc_temp(WTy::I32), self.alloc_temp(WTy::I32));
+                self.elem_ptr_tmp = Some(p);
+                p
+            }
+        }
+    }
 
     /// Build a context for lowering one *simulation* equation function (see
     /// `CodegenWasmJit`). The function takes the `SimData` base pointer as its
@@ -1193,8 +1277,22 @@ impl<'a> FnCtx<'a> {
             ctrl_depth: 0,
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
+            elem_ptr_tmp: None,
             sim: Some(sim),
         }
+    }
+
+    /// Open `if (stage & mask)` around the next equation, `stage` being the DAE-mode
+    /// residual's second parameter; `sim_end_block` closes it.
+    pub(crate) fn sim_stage_guard(&mut self, mask: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Const(mask as i32));
+        self.emit(we::Instruction::I32And);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
+    pub(crate) fn sim_end_block(&mut self) {
+        self.emit(we::Instruction::End);
     }
 
     /// Lower one equation `cref := rhs` into this context.
@@ -1246,6 +1344,71 @@ impl<'a> FnCtx<'a> {
                 let w = compile_exp(self, exp)?;
                 coerce(self, w, WTy::F64);
                 self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionUpdateBoundVariableAttributes`: the constant per-state
+    /// `nominal`, then each attribute equation, into the slots the solvers read
+    /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
+    pub(crate) fn emit_update_bound_attrs(
+        &mut self,
+        nominal_defaults: &[(u32, f64)],
+        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (off, nom) in nominal_defaults {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::F64Const((*nom).into()));
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+        }
+        if attrs.is_empty() {
+            return Ok(());
+        }
+        let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
+        for (attr, exp, targets) in attrs {
+            let w = compile_exp(self, exp)?;
+            coerce(self, w, WTy::F64);
+            self.emit(we::Instruction::LocalSet(raw));
+            if matches!(attr, Attr::Nominal) {
+                for off in &targets.nom_offs {
+                    // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::LocalGet(raw));
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::F64Const(1e-32f64.into()));
+                    self.emit(we::Instruction::F64Max);
+                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                }
+            }
+            if targets.nls.is_empty() {
+                continue;
+            }
+            self.emit(we::Instruction::LocalGet(raw));
+            match attr {
+                // A nonpositive nominal would collapse the x-scaling; 1 stands in.
+                Attr::Nominal => {
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::LocalTee(val));
+                    self.emit(we::Instruction::F64Const(1.0f64.into()));
+                    self.emit(we::Instruction::LocalGet(val));
+                    self.emit(we::Instruction::F64Const(0.0f64.into()));
+                    self.emit(we::Instruction::F64Gt);
+                    self.emit(we::Instruction::Select);
+                }
+                Attr::Min | Attr::Max => {}
+            }
+            self.emit(we::Instruction::LocalSet(val));
+            let (global, stride, slot) = match attr {
+                Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
+                Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
+                Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+            };
+            for idx in &targets.nls {
+                self.emit(we::Instruction::GlobalGet(global));
+                self.emit(we::Instruction::LocalGet(val));
+                self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
             }
         }
         Ok(())
@@ -1515,7 +1678,7 @@ pub(crate) fn compile_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
     // Allocate every array local/output up front so it is a real (possibly empty)
     // array object, never a null handle — matching the C runtime, where the array
     // descriptor always exists. Unknown (`:`) dimensions start at size 0 and are
@@ -1593,8 +1756,12 @@ fn compile_external_function(
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, extName, extArgs, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, extName, extArgs, .. } = f else {
         return Err("CodegenWasmJit: compile_external_function on a non-external function");
+    };
+    // Only for the mismatch diagnostics below.
+    let fn_path = || {
+        AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default()
     };
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
@@ -1615,7 +1782,7 @@ fn compile_external_function(
         outputs.push(slot);
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
     for (slot, elem, dims) in &array_allocs {
         emit_array_alloc(&mut ctx, *slot, elem, dims)?;
     }
@@ -1658,8 +1825,8 @@ fn compile_external_function(
 
     if external_known(f) {
         // Known math/string externals: a single return value, no output pointers.
-        let result = emit_known_external_call(&mut ctx, extName, &input_args)?;
         let (out_idx, out_sty) = ctx.outputs[0].clone();
+        let result = emit_known_external_call(&mut ctx, extName, &input_args, &out_sty)?;
         coerce(&mut ctx, result.wty(), out_sty.wty());
         ctx.emit(we::Instruction::LocalSet(out_idx));
     } else {
@@ -1676,11 +1843,25 @@ fn compile_external_function(
             .filter(|&i| !matches!(ctx.outputs[i].1, SigTy::Array { .. }))
             .collect();
         if results.len() != scalar_outs.len() {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{extName}`: the call returns {} value(s), the function \
+                 declares {} scalar output(s)",
+                fn_path(),
+                results.len(),
+                scalar_outs.len(),
+            ));
             return Err("CodegenWasmJit: external scalar-return/output count mismatch");
         }
         for k in (0..scalar_outs.len()).rev() {
             let (out_idx, out_sty) = ctx.outputs[scalar_outs[k]].clone();
             if results[k].wty() != out_sty.wty() {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{extName}`: output {k} is {:?} in the C call but \
+                     {:?} in the function declaration",
+                    fn_path(),
+                    results[k],
+                    out_sty,
+                ));
                 return Err("CodegenWasmJit: external output type mismatch");
             }
             ctx.emit(we::Instruction::LocalSet(out_idx));
@@ -1700,11 +1881,29 @@ fn compile_external_function(
     Ok(func)
 }
 
-/// Emit a call to a known math `extName` over already-lowered argument
-/// expressions, leaving the (scalar Real) result on the stack. Mirrors the
-/// host-builtin path of [`compile_math_builtin`]: an imported transcendental
-/// ([`BUILTINS`]) or a single-instruction math function emitted inline.
-fn emit_known_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<SigTy> {
+/// Emit a call to a known math/string `extName` over already-lowered arguments,
+/// leaving its result on the stack (the returned `SigTy` says of which type). Mirrors
+/// the host-builtin path of [`compile_math_builtin`]: an imported transcendental
+/// ([`BUILTINS`]) or a single-instruction math function inline. `out` is the declared
+/// output type, which the `external "builtin"` operators are overloaded on.
+fn emit_known_external_call(
+    ctx: &mut FnCtx,
+    ext_name: &str,
+    args: &[Arc<DAE::Exp>],
+    out: &SigTy,
+) -> Result<SigTy> {
+    // `external "builtin" o = abs(v)` and the `div`/`mod` pairs
+    // (`OpenModelica.Internal.{int,real}{Abs,Div,Mod}`) are the tool's own operators,
+    // not C symbols. Their Integer and Real overloads share one `extName`, so a host
+    // import would bind both to the same signature and hand libc's `abs(int)` a double.
+    if matches!(ext_name, "abs" | "div" | "mod") {
+        let args = Arc::new(args.iter().cloned().collect::<List<Arc<DAE::Exp>>>());
+        let attr = match out {
+            SigTy::Int => DAE::callAttrBuiltinInteger(),
+            _ => DAE::callAttrBuiltinReal(),
+        };
+        return compile_math_builtin(ctx, ext_name, &args, &attr);
+    }
     // `ModelicaStrings_*` functions that map directly to existing runtime string
     // ops (same lowering as the corresponding Modelica string builtins, so the
     // argument ARC is handled identically).
@@ -2078,7 +2277,7 @@ fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigT
 /// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
 /// previous element first. The value is already owned, so no copy is made.
 fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], vt: u32) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, idx_exps)?;
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -2117,8 +2316,6 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
             let idx_exps = index_subscripts(lsubs, rank)?;
             store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
         }
-        ctx.emit(we::Instruction::LocalGet(rec));
-        ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
         return Ok(());
     }
     let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else {
@@ -2197,12 +2394,20 @@ fn value_copy_fns(ty: &SigTy) -> Option<(&'static str, &'static str)> {
 /// aliases an existing object.
 fn value_rhs_is_fresh(e: &DAE::Exp) -> bool {
     use DAE::Exp as E;
+    if shared_lits::is_shared(e) {
+        return false;
+    }
     match e {
         E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::CALL { .. } | E::RECORD { .. } => true,
         E::SHARED_LITERAL { exp, .. } | E::CAST { exp, .. } => value_rhs_is_fresh(exp),
         _ => false,
     }
 }
+
+/// Array-object header offsets, matching the runtime's `ARR_*`.
+const ARR_NDIMS_OFF: u32 = 8;
+const ARR_TOTAL_OFF: u32 = 12;
+const ARR_DIMS_OFF: u32 = 16;
 
 // -------------------------------------------------------------------------
 // Record object layout (mirrors the runtime's record object)
@@ -2470,7 +2675,7 @@ fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE::Type) -> R
     ctx.emit(we::Instruction::BrIf(1));
     ctx.emit(we::Instruction::LocalGet(slot));
     ctx.emit(we::Instruction::LocalGet(i));
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &sig_ty(elem)?)?;
     emit_record_default(ctx, elem)?;
     ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
     ctx.emit(we::Instruction::LocalGet(i));
@@ -2584,12 +2789,11 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
     Ok(())
 }
 
-/// Push an owned record handle for the head of a qualified cref onto a fresh
-/// temp: either a record local (retained, so the local keeps its reference) or
-/// an array-of-records local subscripted down to a single record element.
-/// Returns the temp holding the owned handle and the record's fields; the caller
-/// is responsible for releasing the temp.
-fn push_owned_record_base(
+/// Push a *borrowed* record handle for the head of a qualified cref into a temp:
+/// either a record local, or an array-of-records local subscripted to one element.
+/// The head is always a function local, which holds the reference for the whole
+/// expression, so no retain/release pair is needed.
+fn push_record_base(
     ctx: &mut FnCtx,
     ident: &str,
     subs: &Arc<List<Arc<DAE::Subscript>>>,
@@ -2603,12 +2807,7 @@ fn push_owned_record_base(
         let SigTy::Record { fields, .. } = sty else {
             return Err("CodegenWasmJit: field access on non-record local");
         };
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
-        let t = ctx.alloc_temp(WTy::I32);
-        ctx.emit(we::Instruction::LocalSet(t));
-        Ok((t, fields))
+        Ok((idx, fields))
     } else {
         let SigTy::Array { elem, rank } = sty else {
             return Err("CodegenWasmJit: subscripting non-array local");
@@ -2620,21 +2819,31 @@ fn push_owned_record_base(
         if !is_scalar_index(subs, rank) {
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::LocalGet(idx));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
         let idx_exps = index_subscripts(subs, rank)?;
-        index_loaded(ctx, &elem, &idx_exps)?; // owned record element on the stack
+        emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
         Ok((t, fields))
     }
 }
 
-/// Read field `name` from the owned record handle in temp `rec`, consuming it
-/// (the record is released). Leaves the field value in a fresh temp and returns
-/// `(value_temp, field_type)`; a heap field value is retained so it is owned.
-fn take_field(
+/// Retain the borrowed heap value on top of the stack, leaving it there: the
+/// expression protocol hands its consumer an owned value. No-op for a scalar.
+fn retain_on_stack(ctx: &mut FnCtx, ty: &SigTy) -> Result<()> {
+    if !ty.is_heap() {
+        return Ok(());
+    }
+    let v = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(v));
+    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    ctx.emit(we::Instruction::LocalGet(v));
+    Ok(())
+}
+
+/// Read field `name` out of the borrowed record in `rec` into a fresh temp. The
+/// value is borrowed too.
+fn load_field(
     ctx: &mut FnCtx,
     rec: u32,
     fields: &[(ArcStr, SigTy)],
@@ -2645,13 +2854,6 @@ fn take_field(
     ctx.emit(we::Instruction::LocalGet(rec));
     field_load(ctx, fty.wty(), off);
     ctx.emit(we::Instruction::LocalSet(vt));
-    if fty.is_heap() {
-        // Own the field value before releasing the record that holds it.
-        ctx.emit(we::Instruction::LocalGet(vt));
-        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
-    }
-    ctx.emit(we::Instruction::LocalGet(rec));
-    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok((vt, fty))
 }
 
@@ -2666,7 +2868,7 @@ fn step_into_record(
     field: &str,
     fsubs: &Arc<List<Arc<DAE::Subscript>>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
-    let (vt, fty) = take_field(ctx, rec, fields, field)?;
+    let (vt, fty) = load_field(ctx, rec, fields, field)?;
     if fsubs.is_empty() {
         let SigTy::Record { fields: f2, .. } = fty else {
             return Err("CodegenWasmJit: field access on non-record field");
@@ -2683,9 +2885,9 @@ fn step_into_record(
         if !is_scalar_index(fsubs, rank) {
             return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
         }
-        ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
         let idx_exps = index_subscripts(fsubs, rank)?;
-        index_loaded(ctx, &elem, &idx_exps)?; // owned record element
+        emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
         let t = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(t));
         Ok((t, f2))
@@ -2700,24 +2902,31 @@ fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<W
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
     };
-    let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
             DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
-                let (vt, fty) = take_field(ctx, rec, &fields, field)?;
+                let (vt, fty) = load_field(ctx, rec, &fields, field)?;
                 if fsubs.is_empty() {
                     ctx.emit(we::Instruction::LocalGet(vt));
+                    retain_on_stack(ctx, &fty)?;
                     return Ok(fty.wty());
                 }
                 let SigTy::Array { elem, rank } = fty else {
                     return Err("CodegenWasmJit: subscripting non-array field");
                 };
-                ctx.emit(we::Instruction::LocalGet(vt)); // owned array handle
                 return if is_scalar_index(fsubs, rank) {
                     let idx_exps = index_subscripts(fsubs, rank)?;
-                    index_loaded(ctx, &elem, &idx_exps)
+                    emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
                 } else {
+                    // `slice_loaded` consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
                     slice_loaded(ctx, fsubs)
                 };
             }
@@ -2742,7 +2951,7 @@ fn navigate_qual<'c>(
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
-    let (mut rec, mut fields) = push_owned_record_base(ctx, ident, subscriptLst)?;
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
@@ -2781,9 +2990,6 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
         let idx_exps = index_subscripts(lsubs, rank)?;
         compile_elem_assign(ctx, arr_t, &elem, &idx_exps, rhs)?;
     }
-    // Release the navigated record handle (owned by us).
-    ctx.emit(we::Instruction::LocalGet(rec));
-    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok(())
 }
 
@@ -2792,7 +2998,7 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
 /// the slot is released and the new owned value moved in; the old value is
 /// released only *after* the rhs is computed, in case the rhs reads it.
 fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
-    emit_elem_addr(ctx, arr_idx, idx_exps)?;
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
     if let Some(release_fn) = elem.release_fn() {
@@ -2820,7 +3026,7 @@ fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[
 /// Emit the byte address of array element `a[idx_exps...]`, reading the array
 /// handle from local `arr_idx` (the local owns it — no retain/release). Leaves
 /// the address on the stack. Same row-major linear index as [`index_loaded`].
-fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
     let acc = ctx.alloc_temp(WTy::I32);
     let w = compile_exp(ctx, &idx_exps[0])?;
     coerce(ctx, w, WTy::I32);
@@ -2830,8 +3036,7 @@ fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> 
     for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
         ctx.emit(we::Instruction::LocalGet(acc));
         ctx.emit(we::Instruction::LocalGet(arr_idx));
-        ctx.emit(we::Instruction::I32Const(axis0 as i32 + 1));
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        emit_array_dim(ctx, axis0 as u32 + 1)?;
         ctx.emit(we::Instruction::I32Mul);
         let w = compile_exp(ctx, ie)?;
         coerce(ctx, w, WTy::I32);
@@ -2844,8 +3049,7 @@ fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, idx_exps: &[Arc<DAE::Exp>]) -> 
     ctx.emit(we::Instruction::LocalGet(acc));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
-    Ok(())
+    emit_elem_ptr(ctx, elem)
 }
 
 /// Evaluate a call for its side effects and discard any results. A discarded
@@ -2862,16 +3066,11 @@ fn emit_noretcall(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     Ok(())
 }
 
-/// `if (!cond) { rt_assert(msg, file, line/col…); unreachable }`. The C target
-/// always emits `omc_assert` (an error that throws — the assertion level is not
-/// distinguished here), so a failed assert routes its message + source info to
-/// the error buffer (host import `rt_assert`, read back by `load_and_execute`)
-/// and then traps, matching the `[file:l:c-l:c:writable] Error: <msg>` output.
-/// A warning-level assert (`AssertionLevel.warning`, `level` enum index 1 — e.g.
-/// the min/max variable-attribute checks) instead calls `rt_assert_warning` and
-/// continues: the driver formats the recorded violation as a `LOG_ASSERT` warning
-/// after the step, matching C's `omc_assert_warning` (warn once, do not throw).
-/// Shared by `STMT_ASSERT` and the `when`-body `ASSERT` operator.
+/// C's `assertCommon`: `if (!cond) { rt_assert(msg, assert_cond, file, line/col…);
+/// unreachable }`, the host formatting the three as `omc_assert` does. A warning-level
+/// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
+/// checks) calls `rt_assert_warning` and continues instead, as C's
+/// `omc_assert_warning`. Shared by `STMT_ASSERT` and the `when`-body `ASSERT`.
 fn emit_assert(
     ctx: &mut FnCtx,
     cond: &Arc<DAE::Exp>,
@@ -2890,12 +3089,7 @@ fn emit_assert(
         // The dumped condition (C's `assert_cond`), then the message, then the
         // source position — all consumed by `rt_assert_warning`; execution
         // continues afterwards (no trap).
-        let cond_str = Tpl::textString(ExpressionDumpTpl::dumpExp(
-            Tpl::emptyTxt.clone(),
-            cond.clone(),
-            arcstr::literal!("\""),
-        )?)?;
-        emit_str_literal(ctx, cond_str.as_bytes())?; // dumped condition
+        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition
         let mw = compile_exp(ctx, msg)?; // owned message String handle
         if mw != WTy::I32 {
             return Err("CodegenWasmJit: assert message is not a String");
@@ -2910,18 +3104,8 @@ fn emit_assert(
         ctx.emit(we::Instruction::End);
         return Ok(());
     }
-    // In a nonlinear-solver residual, note the failed assert and return so the solver
-    // backs off (C's ERROR_NONLINEARSOLVER) instead of trapping. Only in a void
-    // function (residuals are void) — a bare `return` in a value-returning function is
-    // invalid wasm, and such a function is not an NLS residual anyway.
-    if ctx.outputs.is_empty() {
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-        ctx.emit(we::Instruction::If(we::BlockType::Empty));
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
-        ctx.emit(we::Instruction::Return);
-        ctx.emit(we::Instruction::End);
-    }
-    let mw = compile_exp(ctx, msg)?; // owned String handle
+    emit_nls_recoverable_return(ctx)?;
+    let mw = compile_exp(ctx, msg)?; // owned message String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
     }
@@ -2931,20 +3115,40 @@ fn emit_assert(
     ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+    emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    // Trap unless the driver took it (suppressed during the event search).
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
     ctx.emit(we::Instruction::Unreachable);
+    ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
 }
 
-/// Trap on a model error whose message String handle is already on the stack
-/// (dummy source position).
+/// A model error inside a nonlinear-solver residual is recoverable in C
+/// (`ERROR_NONLINEARSOLVER` longjmps out and the solver shortens the step): note it
+/// and return, leaving the outputs at their entry values.
+fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// Trap on a model error whose message String handle is already on the stack — C's
+/// `assertCommonVar`: no dumped condition, `omc_dummyFileInfo`.
 fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     emit_str_literal(ctx, b"")?; // file
     for _ in 0..5 {
         ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
     }
+    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
 }
@@ -2952,6 +3156,79 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
 /// The dumped source form of `e`, for embedding in an assertion message.
 fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
+}
+
+/// A math builtin's accepted interval and the message text around the `%g`.
+struct Domain {
+    low: f64,
+    low_strict: bool,
+    high: Option<f64>,
+    head: &'static str,
+    tail: &'static str,
+}
+
+/// The guard C's `daeExpCall` emits for `name`, `None` where the whole range is valid.
+fn math_domain(name: &str) -> Option<Domain> {
+    match name {
+        "asin" | "acos" => Some(Domain {
+            low: -1.0,
+            low_strict: false,
+            high: Some(1.0),
+            head: "outside the domain -1.0 <= ",
+            tail: " <= 1.0",
+        }),
+        "log" | "log10" => Some(Domain {
+            low: 0.0,
+            low_strict: true,
+            high: None,
+            head: "was ",
+            tail: " should be > 0",
+        }),
+        "sqrt" => Some(Domain {
+            low: 0.0,
+            low_strict: false,
+            high: None,
+            head: "was ",
+            tail: " should be >= 0",
+        }),
+        _ => None,
+    }
+}
+
+/// C's `daeExpCall` guard (`CodegenCFunctions.tpl`): evaluate `arg` into a temp,
+/// assert its domain, leave it on the stack for the caller's call.
+fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &Domain) -> Result<()> {
+    use we::Instruction as I;
+    let w = compile_exp(ctx, arg)?;
+    coerce(ctx, w, WTy::F64);
+    let t = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalTee(t));
+    ctx.emit(I::F64Const(d.low.into()));
+    ctx.emit(if d.low_strict { I::F64Gt } else { I::F64Ge });
+    if let Some(high) = d.high {
+        ctx.emit(I::LocalGet(t));
+        ctx.emit(I::F64Const(high.into()));
+        ctx.emit(I::F64Le);
+        ctx.emit(I::I32And);
+    }
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_nls_recoverable_return(ctx)?;
+    let call = format!("{name}({})", dumped_exp(arg)?);
+    emit_str_literal(ctx, format!("Model error: Argument of {call} {}", d.head).as_bytes())?;
+    ctx.emit(I::LocalGet(t));
+    ctx.emit(I::I32Const(6)); // significant digits (C's `%g`)
+    ctx.emit(I::I32Const(0)); // minimum length
+    ctx.emit(I::I32Const(0)); // left justified
+    ctx.emit(I::Call(rt_index("rt_real_format")?));
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_str_literal(ctx, d.tail.as_bytes())?;
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(I::End);
+
+    ctx.emit(I::LocalGet(t));
+    Ok(())
 }
 
 /// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
@@ -3320,7 +3597,7 @@ fn compile_for_array(
     // it = arr[k] (borrowed; the array outlives the loop).
     ctx.emit(we::Instruction::LocalGet(arr_t));
     ctx.emit(we::Instruction::LocalGet(k));
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &elem)?;
     elem_load(ctx, &elem);
     ctx.emit(we::Instruction::LocalSet(it));
     compile_loop_body(ctx, break_level, body)?;
@@ -3574,7 +3851,7 @@ fn compile_reduction(
         ctx.emit(we::Instruction::LocalGet(idx));
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::I32Add);
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+        emit_elem_ptr(ctx, &store_sty)?;
         let w = compile_exp(ctx, expr)?;
         coerce(ctx, w, elem_wty);
         elem_store(ctx, &store_sty);
@@ -4428,6 +4705,9 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
 #[path = "CodegenWasmJitFunctions/closures.rs"]
 pub(crate) mod closures;
 
+#[path = "CodegenWasmJitFunctions/shared_lits.rs"]
+pub(crate) mod shared_lits;
+
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
@@ -4439,6 +4719,10 @@ pub(crate) use sim_systems::{
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
     use DAE::Exp as E;
+    // A heap-valued constant is one module-wide object (C's `_OMC_LIT`).
+    if let Some(w) = shared_lits::compile(ctx, exp)? {
+        return Ok(w);
+    }
     match exp {
         E::ICONST { integer } => {
             ctx.emit(we::Instruction::I32Const(*integer));
@@ -4503,18 +4787,22 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 }
                 Ok(sty.wty())
             } else {
-                // Indexed read `v[i, ...]`: push the (retained, owned) array
-                // handle, then load the element (which releases the handle).
                 let SigTy::Array { elem, rank } = sty else {
                     return Err("CodegenWasmJit: subscripting non-array local");
                 };
-                ctx.emit(we::Instruction::LocalGet(idx));
-                ctx.emit(we::Instruction::LocalGet(idx));
-                ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                // The local keeps the array alive for the whole expression, so read
+                // the element straight out of it; only a heap element is retained.
                 if is_scalar_index(subscriptLst, rank) {
                     let idx_exps = index_subscripts(subscriptLst, rank)?;
-                    index_loaded(ctx, &elem, &idx_exps)
+                    emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
                 } else {
+                    // The slice path consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
                     slice_loaded(ctx, subscriptLst)
                 }
             }
@@ -5487,9 +5775,14 @@ fn compile_math_builtin(
         if argv.len() != params.len() {
             return Err("CodegenWasmJit: builtin expects args");
         }
-        for (a, p) in argv.iter().zip(params.iter()) {
-            let w = compile_exp(ctx, a)?;
-            coerce(ctx, w, *p);
+        match math_domain(name) {
+            Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+            None => {
+                for (a, p) in argv.iter().zip(params.iter()) {
+                    let w = compile_exp(ctx, a)?;
+                    coerce(ctx, w, *p);
+                }
+            }
         }
         ctx.emit(we::Instruction::Call(bi));
         return Ok(SigTy::Real);
@@ -5497,10 +5790,47 @@ fn compile_math_builtin(
 
     match name {
         "sqrt" => {
-            unary_f64(ctx, &argv, we::Instruction::F64Sqrt)?;
+            need_args(&argv, 1, name)?;
+            // C skips the guard where the argument is provably non-negative.
+            let guarded = !Expression::isPositiveOrZero(argv[0].clone())?;
+            match math_domain(name).filter(|_| guarded) {
+                Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+                None => {
+                    let w = compile_exp(ctx, argv[0])?;
+                    coerce(ctx, w, WTy::F64);
+                }
+            }
+            ctx.emit(we::Instruction::F64Sqrt);
             Ok(SigTy::Real)
         }
         "nthRoot" => emit_nth_root(ctx, &argv, name),
+        // C's `(modelica_integer)round(r)`: half-*away*-from-zero, which wasm's
+        // `nearest` (half-to-even) is not. Left as a Real — C's cast only narrows an
+        // already integral value, and the surrounding expression wants the Real.
+        "$_round" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let v = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(v));
+            ctx.emit(we::Instruction::F64Trunc);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(t));
+            // + copysign(1, v) * (|v - trunc(v)| >= 0.5)
+            ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::F64Copysign);
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Const(0.5f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::F64ConvertI32S);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Add);
+            Ok(SigTy::Real)
+        }
         "floor" => {
             unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
             Ok(SigTy::Real)
@@ -6058,13 +6388,18 @@ fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
 /// same host import a failed `assert()` uses, so the simulation drivers surface it
 /// instead of a bare `unreachable` trap) then trap. For failures with no source
 /// location (a singular/non-converged solver system, an invalid `sqrt`, an
-/// out-of-range index) the source info is zeroed.
+/// out-of-range index) the source info is zeroed. C reports these with
+/// `throwStreamPrint`, which a nonlinear solver catches, so the recoverable
+/// escape comes first.
 fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
+    emit_nls_recoverable_return(ctx)?;
     emit_str_literal(ctx, msg.as_bytes())?; // message String handle
     for _ in 0..6 {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
     }
+    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
 }
@@ -6223,6 +6558,67 @@ fn emit_real_string(ctx: &mut FnCtx, arg: &DAE::Exp) -> Result<SigTy> {
 // Arrays (N-dimensional, flat row-major; see the runtime's Arrays section)
 // -------------------------------------------------------------------------
 
+/// Inline what `rt_array_elem_ptr` computes: the byte address of the element at
+/// row-major linear position `index` (1-based), with the same out-of-range arm.
+/// Stack is `[obj, index] -> [addr]`.
+///
+/// Inlined rather than called because element access is the hottest operation in
+/// generated model code (an IF97 property evaluation does hundreds) and the
+/// cross-module call dominated the per-evaluation cost. The stride follows the
+/// element's wasm type, which the load/store that follows already assumes.
+fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
+    use we::Instruction as I;
+    let (ot, it) = ctx.elem_ptr_temps();
+    let shift = match elem.wty() {
+        WTy::F64 => 3,
+        WTy::I32 => 2,
+    };
+    ctx.emit(I::LocalSet(it));
+    ctx.emit(I::LocalSet(ot));
+    ctx.emit(I::Block(we::BlockType::Result(we::ValType::I32)));
+    // index < 1 || index > total -> the runtime's out-of-range arm.
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32LtS);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));
+    ctx.emit(I::Br(1));
+    ctx.emit(I::End);
+    // obj + align8(ARR_DIMS_OFF + ndims*4) + (index - 1) * stride
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_NDIMS_OFF, 2)));
+    ctx.emit(I::I32Const(2));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Const(ARR_DIMS_OFF as i32 + 7));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(-8));
+    ctx.emit(I::I32And);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::I32Const(shift));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Inline `rt_array_dim` for a constant 1-based `axis`. Stack `[obj] -> [size]`.
+fn emit_array_dim(ctx: &mut FnCtx, axis: u32) -> Result<()> {
+    if axis == 0 {
+        return Err("CodegenWasmJit: array dimension axis is 1-based");
+    }
+    ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + (axis - 1) * 4, 2)));
+    Ok(())
+}
+
 /// Load one array element from the byte address on top of the stack, leaving its
 /// value. The wasm load instruction (and natural alignment) follow the element
 /// type.
@@ -6325,7 +6721,7 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
                 // Scalar element.
                 ctx.emit(we::Instruction::LocalGet(obj));
                 ctx.emit(we::Instruction::I32Const(k as i32 + 1));
-                ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+                emit_elem_ptr(ctx, &elem)?;
                 let w = compile_exp(ctx, leaf)?;
                 coerce(ctx, w, elem.wty());
                 elem_store(ctx, &elem);
@@ -6484,7 +6880,7 @@ fn compile_int_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE:
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &SigTy::Int)?;
     ctx.emit(we::Instruction::LocalGet(start_t));
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::LocalGet(step_t));
@@ -6581,7 +6977,7 @@ fn compile_real_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE
     ctx.emit(we::Instruction::LocalGet(k_t));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, &SigTy::Real)?;
     ctx.emit(we::Instruction::LocalGet(val_t));
     elem_store(ctx, &SigTy::Real);
     ctx.emit(we::Instruction::LocalGet(val_t));
@@ -6767,8 +7163,7 @@ fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Re
     for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
         ctx.emit(we::Instruction::LocalGet(acc));
         ctx.emit(we::Instruction::LocalGet(arr_t));
-        ctx.emit(we::Instruction::I32Const(axis0 as i32 + 1)); // 1-based axis
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        emit_array_dim(ctx, axis0 as u32 + 1)?; // 1-based axis
         ctx.emit(we::Instruction::I32Mul);
         let w = compile_exp(ctx, ie)?;
         coerce(ctx, w, WTy::I32);
@@ -6777,12 +7172,11 @@ fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Re
         ctx.emit(we::Instruction::I32Add);
         ctx.emit(we::Instruction::LocalSet(acc));
     }
-    // addr = rt_array_elem_ptr(arr, acc + 1); load the element.
     ctx.emit(we::Instruction::LocalGet(arr_t));
     ctx.emit(we::Instruction::LocalGet(acc));
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_elem_ptr(ctx, elem)?;
     elem_load(ctx, elem);
 
     if elem.is_heap() {
@@ -7120,7 +7514,7 @@ fn compile_array_builtin(
             ctx.emit(we::Instruction::LocalSet(arr_t));
             ctx.emit(we::Instruction::LocalGet(arr_t));
             ctx.emit(we::Instruction::I32Const(1));
-            ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+            emit_elem_ptr(ctx, &elem)?;
             elem_load(ctx, &elem);
             if elem.is_heap() {
                 // Retain the borrowed handle so it outlives the array release.

@@ -109,6 +109,7 @@ pub fn omc_set_env(name: &str, value: &str) {
 ///     toolchain and are unavailable here).
 #[wasm_bindgen]
 pub fn omc_init() -> bool {
+    crate::set_revision();
     // Panics → console.error (instead of the default unwinding into a wasm trap
     // with no message). Installed once; the hook is process-global.
     std::panic::set_hook(Box::new(|info| {
@@ -351,6 +352,14 @@ pub fn omc_sim_info() -> JsValue {
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.time.len() as f64));
+        let st = &sim.stats;
+        for (k, v) in [
+            ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
+            ("errTestFails", st.err_test_fails), ("convTestFails", st.conv_test_fails),
+            ("stateEvents", st.state_events), ("timeEvents", st.time_events),
+        ] {
+            let _ = js_sys::Reflect::set(&o, &JsValue::from_str(k), &JsValue::from_f64(v as f64));
+        }
         o.into()
     })
     .unwrap_or(JsValue::NULL)
@@ -426,6 +435,28 @@ pub fn omc_simulate(
 // run in time-bounded chunks (`omc_sim_start`/`omc_sim_advance`/`omc_sim_free`),
 // draining a cancel between chunks; results reach the page via the `omc_sim_*`
 // getters. See HANDOFF-sim-cancel.md.
+
+/// The last resumable run's model output (prints, `LOG_ASSERT` blocks, chattering,
+/// `-lv=LOG_STATS`). Valid until the next `omc_sim_start`; set even on failure.
+#[wasm_bindgen]
+pub fn omc_sim_log() -> String {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::last_sim_log()
+}
+
+/// `{ s, nls, nlsLS, ls, lss }`: the values each solver flag accepts in this
+/// build. KLU only appears where SUNDIALS is linked.
+#[wasm_bindgen]
+pub fn omc_sim_solver_options() -> JsValue {
+    let o = js_sys::Object::new();
+    for (flag, values) in openmodelica_codegen_wasm_jit::CodegenWasmJit::solver_options() {
+        let arr = js_sys::Array::new();
+        for v in values {
+            arr.push(&JsValue::from_str(v));
+        }
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str(flag), &arr);
+    }
+    o.into()
+}
 
 /// Start a resumable run of a model already built by `buildModel` (keyed by its
 /// `prefix`; `result_file` is where the `.mat` goes). `false` on failure — read

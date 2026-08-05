@@ -4808,6 +4808,7 @@ dependencies = [
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
  "openmodelica_modelica_utilities",
+ "openmodelica_revision",
  "openmodelica_script_util",
  "openmodelica_scripting_qt",
  "openmodelica_util",
@@ -6046,6 +6047,7 @@ dependencies = [
  "arcstr",
  "omshell_core",
  "openmodelica_backend_main",
+ "openmodelica_revision",
  "wasm-bindgen",
 ]
 
@@ -6525,6 +6527,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
+ "openmodelica_script_util",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
@@ -6739,6 +6742,10 @@ dependencies = [
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
 ]
+
+[[package]]
+name = "openmodelica_revision"
+version = "0.1.0"
 
 [[package]]
 name = "openmodelica_script_util"

@@ -335,6 +335,68 @@ fn posix_to_rust(re: &str, extended: bool) -> String {
     out
 }
 
+/// A compiled POSIX ERE, so one pattern can be tested against many strings
+/// ([`regex`] compiles per call). Same backends, so a match means what it does in
+/// the C runtime: libc `regcomp`/`regexec`, the `regex` crate on wasm/Windows.
+pub struct Regex {
+    #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
+    re: regex::Regex,
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
+    preg: Box<libc::regex_t>,
+}
+
+impl Regex {
+    /// No captures (`REG_NOSUB`); the error is the backend's own message.
+    pub fn new(re: &str) -> Result<Self, String> {
+        #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
+        {
+            regex::RegexBuilder::new(&posix_to_rust(re, true))
+                .dot_matches_new_line(true)
+                .build()
+                .map(|re| Regex { re })
+                .map_err(|e| e.to_string())
+        }
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
+        {
+            let c_re = std::ffi::CString::new(re.as_bytes()).map_err(|e| e.to_string())?;
+            let mut preg: Box<libc::regex_t> = Box::new(unsafe { std::mem::zeroed() });
+            let rc = unsafe {
+                libc::regcomp(&mut *preg, c_re.as_ptr(), libc::REG_EXTENDED | libc::REG_NOSUB)
+            };
+            if rc != 0 {
+                let mut buf = vec![0 as core::ffi::c_char; 2048];
+                unsafe { libc::regerror(rc, &*preg, buf.as_mut_ptr(), buf.len()) };
+                let msg = unsafe { std::ffi::CStr::from_ptr(buf.as_ptr()) }.to_string_lossy().into_owned();
+                unsafe { libc::regfree(&mut *preg) };
+                return Err(msg);
+            }
+            Ok(Regex { preg })
+        }
+    }
+
+    pub fn is_match(&self, s: &str) -> bool {
+        #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
+        {
+            self.re.is_match(s)
+        }
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
+        {
+            // regexec takes no NUL; OMC's subjects have none.
+            match std::ffi::CString::new(s.as_bytes()) {
+                Ok(c) => unsafe { libc::regexec(&*self.preg, c.as_ptr(), 0, core::ptr::null_mut(), 0) == 0 },
+                Err(_) => false,
+            }
+        }
+    }
+}
+
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
+impl Drop for Regex {
+    fn drop(&mut self) {
+        unsafe { libc::regfree(&mut *self.preg) };
+    }
+}
+
 #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
 pub fn regex(
     str: ArcStr,

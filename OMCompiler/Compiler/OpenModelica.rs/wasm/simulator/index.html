@@ -59,6 +59,15 @@
   .modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
     border-radius:4px; padding:3px 6px; font:inherit; }
   .modal-body select:disabled { opacity:.5; }
+  /* Settings dialog: label above control, two fields per row, so the solver names
+     and the tolerance stepper each get half the dialog instead of competing for it. */
+  #settingsBackdrop .modal { width:min(520px,100%); }
+  .settings { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
+  .settings .fld { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .settings .fld.wide { grid-column:1 / -1; }
+  .settings label { color:var(--muted); font-size:13px; }
+  .settings label .flag { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; opacity:.65; white-space:nowrap; }
+  .settings select { padding:6px 8px; font-size:15px; }
   .chk-group { display:flex; flex-direction:column; gap:6px; }
   .chk { display:flex; align-items:center; gap:7px; color:var(--fg); }
   .chk input { width:auto; }
@@ -82,7 +91,6 @@
     .left { border-right:0; border-bottom:1px solid var(--border); }
     /* Settings moved to the dialog, so the editor claims that height. */
     textarea { min-height:46vh; }
-    .grid2 { grid-template-columns:auto 1fr; }
     #icPanel { max-height:none; }
     .charts { overflow:visible; }
     header { flex-wrap:wrap; }
@@ -165,19 +173,30 @@
       <span>Simulation settings</span>
       <button class="icon-btn" id="settingsClose" title="Close" aria-label="Close">✕</button>
     </div>
-    <div class="grid2">
-      <label for="stop">Stop time</label>
-      <input id="stop" type="number" step="any" />
-      <label for="intervals">Intervals</label>
-      <input id="intervals" type="number" step="1" min="1" />
-      <label for="method">Solver</label>
-      <select id="method"><option value="dassl">dassl</option><option value="euler">euler</option></select>
-      <label for="tol">Tolerance</label>
-      <div class="stepper">
-        <button type="button" id="tolDn" title="÷10">▼</button>
-        <input id="tol" type="text" inputmode="decimal" />
-        <button type="button" id="tolUp" title="×10">▲</button>
-      </div>
+    <div class="modal-body settings">
+      <div class="fld"><label for="stop">Stop time</label>
+        <input id="stop" type="number" step="any" /></div>
+      <div class="fld"><label for="intervals">Intervals</label>
+        <input id="intervals" type="number" step="1" min="1" /></div>
+      <div class="fld"><label for="method">Integration method <span class="flag">-s</span></label>
+        <select id="method"><option value="dassl">dassl</option><option value="euler">euler</option></select></div>
+      <div class="fld"><label for="tol">Tolerance</label>
+        <div class="stepper">
+          <button type="button" id="tolDn" title="÷10">▼</button>
+          <input id="tol" type="text" inputmode="decimal" />
+          <button type="button" id="tolUp" title="×10">▲</button>
+        </div></div>
+      <div class="fld"><label for="nls">Nonlinear solver <span class="flag">-nls</span></label>
+        <select id="nls"></select></div>
+      <div class="fld"><label for="nlsLS" title="Linear solver used by the nonlinear solver">NLS linear solver <span class="flag">-nlsLS</span></label>
+        <select id="nlsLS"></select></div>
+      <div class="fld"><label for="ls">Linear solver <span class="flag">-ls</span></label>
+        <select id="ls"></select></div>
+      <div class="fld"><label for="lss">Sparse linear solver <span class="flag">-lss</span></label>
+        <select id="lss"></select></div>
+      <div class="fld wide"><label for="lv">Log streams <span class="flag">-lv</span></label>
+        <input id="lv" type="text" placeholder="LOG_STATS, LOG_SOLVER, …" title="Comma separated" /></div>
+      <p class="modal-hint">Solver selectors and log streams are read at each run, so changing one re-simulates without recompiling. The model's output goes to the browser console.</p>
     </div>
   </div>
 </div>
@@ -394,6 +413,7 @@ function parseModelName(text) {
 
 // --- state ------------------------------------------------------------------
 let icValues = new Map();     // param name -> input value (string)
+let icBaseline = new Map();   // the same, as the last run left it: unedited values
 let builtModel = null, lastText = null;
 let running = false, pendingKind = null, runningKind = null;
 let modelFigures = null;      // parsed figures for the current model, or null
@@ -411,11 +431,44 @@ let preloaded = null;         // a class already loaded by copyClass (skip the f
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animView = null;          // the shared 3D animation panel (lazily created on first use)
 
+// Only the parameters the user actually edited. Sending the whole grid back would
+// re-seed every start value from the last run's row 0, and the flag string is
+// parsed per run.
 function overrideFlag() {
   const parts = [];
-  for (const [name, val] of icValues) if (val !== '' && isFinite(parseFloat(val))) parts.push(name + '=' + parseFloat(val));
+  for (const [name, val] of icValues) {
+    if (val === icBaseline.get(name) || val === '' || !isFinite(parseFloat(val))) continue;
+    parts.push(name + '=' + parseFloat(val));
+  }
   return parts.length ? '-override=' + parts.join(',') : '';
 }
+
+// -nls/-nlsLS/-ls/-lss. The values come from the compiler (omc_sim_solver_options),
+// so the menus only offer what this build can actually run — KLU, for one, is there
+// only when SUNDIALS was linked. Empty means "don't pass the flag", i.e. the
+// runtime's own choice, which is the default and not always one of the named values.
+const SOLVER_FLAGS = ['nls', 'nlsLS', 'ls', 'lss'];
+function fillSolverMenus(options) {
+  if (!options) return;
+  for (const flag of SOLVER_FLAGS) {
+    const sel = el(flag), keep = sel.value;
+    sel.replaceChildren(new Option('default', ''));
+    for (const v of options[flag] || []) sel.add(new Option(v, v));
+    sel.value = keep;                     // survives a second worker reporting the same set
+  }
+  // The integration method has no "unset": it is a buildModel argument, not a flag.
+  const m = el('method'), keep = m.value;
+  if (options.s && options.s.length) {
+    m.replaceChildren(...options.s.map((v) => new Option(v, v)));
+    m.value = options.s.includes(keep) ? keep : options.s[0];
+  }
+}
+// The selectors plus `-lv` (log streams). Of these the runtime acts on LOG_STATS;
+// the rest are accepted and ignored, as unknown streams are for the C executable.
+const solverFlags = () => ({
+  ...Object.fromEntries(SOLVER_FLAGS.map((f) => [f, el(f).value])),
+  lv: el('lv').value.split(',').map((s) => s.trim()).filter(Boolean).join(','),
+});
 
 const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"'))
   ? s.slice(1, -1).replace(/\\(.)/g, (_, c) => c === 'n' ? '\n' : c === 't' ? '\t' : c) : s; };
@@ -442,7 +495,7 @@ async function run(kind) {                       // 'full' | 'resim'
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
 
   try {
-    const method = el('method').value, ov = overrideFlag();
+    const method = el('method').value, ov = overrideFlag(), solvers = solverFlags();
     // A freshly loaded model drives its own settings: omit stopTime/intervals/
     // tolerance so simulate() uses the experiment annotation; we read back what it
     // used and seed the dialog. Once seeded (or user-overridden), pass the values.
@@ -454,7 +507,7 @@ async function run(kind) {                       // 'full' | 'resim'
     // Re-simulate the already-built model (fast, no recompile) when possible.
     if (kind === 'resim' && builtModel && builtWorker) {
       jobWorker = builtWorker;
-      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov });
+      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers });
       runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
@@ -478,7 +531,7 @@ async function run(kind) {                       // 'full' | 'resim'
       // figures/doc are annotations, not results — show docs now, before simulating.
       if (lm.figures !== undefined) modelFigures = lm.figures || null;
       if (lm.doc !== undefined) { modelDoc = lm.doc || ''; renderDoc(); }
-      const r = await call(worker, 'simulate', { name: lm.name, override: ov, ...settings });
+      const r = await call(worker, 'simulate', { name: lm.name, override: ov, solvers, ...settings });
       runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
@@ -493,8 +546,15 @@ async function run(kind) {                       // 'full' | 'resim'
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
     const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
     const t = snap.timing;
+    const phases = (t && t.chunks)
+      ? ` (start ${Math.round(t.startMs)} + integrate ${Math.round(t.advanceMs)} ms, ${t.chunks} chunks)` : '';
+    // Solver counters alongside the time: the same work taking longer is a very
+    // different bug from more work being done.
+    const i = snap.info;
+    const work = (i && i.steps != null)
+      ? ` · ${i.steps} steps, ${i.resEvals} ODE, ${i.jacEvals} jac, ${i.stateEvents} events` : '';
     const msNote = t
-      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${drv}`
+      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${phases}${drv}${work}`
       : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
     setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
@@ -529,7 +589,7 @@ function cancelRun() {
 // Immediately blank the stale panels so a switch doesn't keep showing the old
 // model's initial conditions / plots / docs until the new run finishes.
 function showBuilding() {
-  icGrid.replaceChildren(); icValues.clear();
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
   charts.clear(chartsEmpty);
   chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
@@ -605,7 +665,7 @@ function fail(msg) {
 // --- editable initial conditions -------------------------------------------
 function buildInitialConditions() {
   const params = (snap && snap.parameters) || [];
-  icGrid.replaceChildren(); icValues.clear();
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   if (!params.length) { icEmpty.style.display = ''; icEmpty.textContent = 'This model has no editable parameters.'; return; }
   icEmpty.style.display = 'none';
   for (const p of params) {
@@ -617,6 +677,7 @@ function buildInitialConditions() {
       item.classList.add('enum');
       const idx = Math.round(p.value) || 1;
       icValues.set(p.name, String(idx));
+      icBaseline.set(p.name, String(idx));
       const sel = document.createElement('select');
       p.enumNames.forEach((n, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = n; sel.appendChild(o); });
       sel.value = String(idx);
@@ -624,6 +685,7 @@ function buildInitialConditions() {
       item.appendChild(sel);
     } else {
       icValues.set(p.name, String(p.value));
+      icBaseline.set(p.name, String(p.value));
       const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
       inp.addEventListener('change', () => onParamChange(p.name, inp.value));
       const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
@@ -815,6 +877,8 @@ srcEl.addEventListener('input', () => {   // manual edits are authoritative: re-
   clearTimeout(debounce); debounce = setTimeout(() => run('full'), 700);
 });
 for (const id of ['stop', 'intervals', 'method']) el(id).addEventListener('change', () => run('full'));
+// Solver selectors are runtime flags, not build settings: re-simulate, don't rebuild.
+for (const id of [...SOLVER_FLAGS, 'lv']) el(id).addEventListener('change', () => run('resim'));
 function stepTol(factor) { tolValue = cleanTol(Math.min(1e-1, Math.max(1e-15, tolValue * factor))); renderTol(); run('full'); }
 el('tolUp').addEventListener('click', () => stepTol(10));
 el('tolDn').addEventListener('click', () => stepTol(0.1));
@@ -904,6 +968,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
 
     const v = await call(w1, 'init');
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
+    fillSolverMenus(v.solverOptions);
     runBtn.disabled = false;
     el('exportFmu').disabled = false;
     setStatus('Ready. ' + v.version);

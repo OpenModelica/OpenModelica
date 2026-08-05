@@ -490,7 +490,8 @@ public
       function filterSet
         input ComponentRef cref;
         input UnorderedSet<ComponentRef> set;
-        output Boolean b = UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
+        output Boolean b = UnorderedSet.contains(cref, set) or
+                           UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
       end filterSet;
     algorithm
       sparsity := match full
@@ -507,6 +508,7 @@ public
           Boolean repeated;
           list<ComponentRef> inner_deps;
           Boolean changed;
+          Option<list<ComponentRef>> inner_opt;
           UnorderedMap<ComponentRef, Dependency> dep_map;
           UnorderedSet<ComponentRef> rep_set;
 
@@ -543,7 +545,19 @@ public
                 repeated := UnorderedSet.contains(dep_cref, full.repetitions[eqn_index]);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
                   case SOME(inner_deps) then (inner_deps, true);
-                                        else ({dep_cref}, changed);
+                  else algorithm
+                    // Base-key fallback for subscripted inner LS vars (partial-slice NLS).
+                    // Guard prevents outer seed elements (which strip to the same base key
+                    // that may be in inner_map) from being misclassified as inner deps.
+                    inner_deps := {dep_cref};
+                    if not filterSet(dep_cref, seed_set) then
+                      inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
+                      if isSome(inner_opt) then
+                        inner_deps := Util.getOption(inner_opt);
+                        changed := true;
+                      end if;
+                    end if;
+                  then (inner_deps, changed);
                 end match;
                 local_deps := (inner_deps, dep, repeated) :: local_deps;
               end for;
@@ -562,11 +576,19 @@ public
                   (inner_deps, dep, repeated) := tpl;
                   for dep_cref in inner_deps loop
                     if filterSet(dep_cref, seed_set) then
-                      seed_cref := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), diff_map)
-                        case SOME(seed_cref) then ComponentRef.copySubscripts(dep_cref, seed_cref);
-                        else algorithm
-                          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no seed was found for " + ComponentRef.toString(dep_cref) + " in diff_map."});
-                        then fail();
+                      // Try subscripted key first (NLS with per-element scalar seeds), then
+                      // base key with subscript copy (ODE/DAE with full-array base seeds).
+                      seed_cref := match UnorderedMap.get(dep_cref, diff_map)
+                        case SOME(seed_cref) then seed_cref;
+                        else match UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), diff_map)
+                          // Strip subscripts from the base seed before copying so that
+                          // origin subscripts (iterator or literal) merge onto an empty
+                          // template rather than clashing with existing literal subscripts.
+                          case SOME(seed_cref) then ComponentRef.copySubscripts(dep_cref, ComponentRef.stripSubscriptsAll(seed_cref));
+                          else algorithm
+                            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no seed was found for " + ComponentRef.toString(dep_cref) + " in diff_map."});
+                          then fail();
+                        end match;
                       end match;
                       UnorderedMap.add(seed_cref, dep, dep_map);
                       if repeated then

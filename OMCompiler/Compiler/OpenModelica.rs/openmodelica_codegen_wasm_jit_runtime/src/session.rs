@@ -28,6 +28,18 @@ use openmodelica_sim_meta::{SimMeta, SolveStats};
 unsafe extern "C" {
     fn rt_host_now_ms() -> f64;
     fn rt_host_cancel() -> i32;
+    /// Copy up to `max` of the violations the model left with the host's
+    /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
+    fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
+    /// Open/close C's `noThrowAsserts` phase, on the host: that is where
+    /// `rt_assert` lives, whichever driver runs.
+    fn rt_host_set_no_throw(v: i32);
+    /// Initialization is over; the host splits its output capture there.
+    fn rt_host_init_done();
+}
+
+fn init_done_hook() {
+    unsafe { rt_host_init_done() };
 }
 
 fn now_ms_hook() -> f64 {
@@ -96,6 +108,15 @@ impl SimEngine for InWasmEngine {
         }
         Ok(())
     }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
+        if !self.present(slot) {
+            return Err("in-wasm engine: required model function not exported");
+        }
+        let f: extern "C" fn(u32, u32) = unsafe { core::mem::transmute((self.fn_base + slot) as usize) };
+        f(a, b);
+        Ok(())
+    }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         let slot = slot_of("simulate").ok_or("in-wasm engine: `simulate` has no table slot")?;
         if !self.present(slot) {
@@ -105,11 +126,35 @@ impl SimEngine for InWasmEngine {
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 7]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+        let mut out = Vec::new();
+        loop {
+            let mut buf = [[0i32; 9]; 8];
+            let n = unsafe { rt_host_take_warnings(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
+            out.extend_from_slice(&buf[..n.min(buf.len())]);
+            if n < buf.len() {
+                return out;
+            }
+        }
+    }
+    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // The model imports `rt_assert` from the host; a failed assert traps and
         // unwinds out of `rt_sim_advance` to the host, which reports it. Nothing
         // to take in-wasm.
         None
+    }
+    fn rt_stats(&mut self) -> [u64; driver::RT_STATS] {
+        let mut out = [0u64; driver::RT_STATS];
+        for (k, slot) in out.iter_mut().enumerate() {
+            *slot = crate::rt_stat(k as u32);
+        }
+        out
+    }
+    fn context_addr(&mut self) -> u32 {
+        crate::nls::rt_context_addr()
+    }
+    fn clean_nls_history(&mut self, time: f64) {
+        crate::nls::rt_nls_clean_history(time);
     }
 }
 
@@ -145,11 +190,13 @@ fn session() -> &'static mut Option<Session> {
 pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let argv = simflags::argv_from_bytes(bytes);
+    // The host writes the result file for a session run, so it serves `-variableFilter`.
     match simflags::parse(&argv).and_then(|f| {
-        simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
+        let cap = simflags::Capabilities { variable_filter: true, ..crate::sundials::capabilities() };
+        simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
-            crate::sundials::apply_flags(&f);
+            crate::solvers::apply_flags(&f);
             simflags::set_flags(f);
             0
         }
@@ -201,6 +248,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
+    crate::reset_stats();
     crate::sundials::reset_caches();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
@@ -209,8 +257,19 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         Err(_) => return -1,
     };
 
+    crate::nls::rt_set_step_size(model.step_size());
+    // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
+    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
+        model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
+    } else {
+        Vec::new()
+    });
+
     driver::set_clock(now_ms_hook);
     driver::set_cancel_hook(cancel_hook);
+    driver::set_init_done_hook(init_done_hook);
+    driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
+    driver::set_log_sink(crate::omclog::sink);
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_alloc(model.layout.total);
@@ -269,6 +328,13 @@ fn finish(s: &mut Session) {
     s.stats = SolveStats::default();
     s.driver.fill_stats(&s.model, &mut s.stats);
     s.rows = s.driver.take_rows();
+    let _ = driver::emit_terminal_row(
+        &mut s.engine,
+        &mut s.rows,
+        s.sim_data,
+        &s.model.layout,
+        s.n_reals,
+    );
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     s.finished = true;
 }
