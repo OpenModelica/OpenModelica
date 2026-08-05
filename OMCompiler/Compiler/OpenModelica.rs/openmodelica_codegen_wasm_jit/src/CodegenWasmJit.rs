@@ -2362,10 +2362,9 @@ fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, 
 }
 
 /// If `cr` is a scalarized array element `base[c1,…,cn]` — the subscripts on the
-/// *final* component, all constant integers, with every ancestor component
-/// unsubscripted — return `(base cref key, subscripts)`. Returns `None` for a
-/// plain scalar, a non-constant subscript, or a subscript on an intermediate
-/// component (an array of records, handled element-wise instead).
+/// *final* component, all constant integers — return `(base cref key, subscripts)`.
+/// Intermediate subscripts (an array of records) belong to the base key. `None` for
+/// a plain scalar or a non-constant subscript.
 fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(String, Vec<i32>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -2380,10 +2379,10 @@ fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(String, Vec<i
                 return Ok(const_int_subscripts(subscriptLst)?.map(|subs| (base, subs)));
             }
             C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                if !subscriptLst.is_empty() {
+                base.push_str(ident);
+                if !crate::CodegenWasmJitFunctions::push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
                 }
-                base.push_str(ident);
                 base.push('.');
                 node = componentRef;
             }

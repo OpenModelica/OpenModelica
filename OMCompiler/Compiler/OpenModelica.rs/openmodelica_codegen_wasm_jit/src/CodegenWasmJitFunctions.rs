@@ -3955,6 +3955,26 @@ fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Resul
     Ok(())
 }
 
+/// Append an intermediate component's subscripts to an array base key, spelled as
+/// [`sim_cref_key`] spells them (`bodybox[1].body.R_start.T`). `false` when a
+/// subscript is not a constant index, so there is no static base key.
+pub(crate) fn push_qual_subs(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> bool {
+    for sub in &**subs {
+        match &**sub {
+            DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
+                Some(ix) => {
+                    s.push('[');
+                    s.push_str(&ix.to_string());
+                    s.push(']');
+                }
+                None => return false,
+            },
+            _ => return false,
+        }
+    }
+    true
+}
+
 /// If `exp` is a constant index (`ICONST`/enum literal), its 1-based value.
 fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
     match exp {
@@ -3964,11 +3984,10 @@ fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
     }
 }
 
-/// If `cr` is `base[e1,…,en]` — subscripts on the *final* component, every
-/// ancestor unsubscripted — return `(base cref key, subscript index expressions)`.
-/// Unlike [`sim_cref_key`], the subscripts need not be constant; this backs the
-/// dynamic array-element path (e.g. a `for`-loop iterator index). Returns `None`
-/// for a plain scalar, a slice/`:` subscript, or a subscripted intermediate.
+/// If `cr` is `base[e1,…,en]` — subscripts on the *final* component — return
+/// `(base cref key, subscript index expressions)`. Unlike [`sim_cref_key`], those
+/// subscripts need not be constant; this backs the dynamic array-element path
+/// (e.g. a `for`-loop iterator index). `None` for a plain scalar or a slice.
 fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -3990,10 +4009,10 @@ fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
                 return Ok(Some((base, exps)));
             }
             C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                if !subscriptLst.is_empty() {
+                base.push_str(ident);
+                if !push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
                 }
-                base.push_str(ident);
                 base.push('.');
                 node = componentRef;
             }
@@ -4002,10 +4021,10 @@ fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
-/// `base[i1,…,ik, :, …, :]` (leading `INDEX` subscripts, then whole dims; final
-/// component subscripted, ancestors bare) -> `(base key, leading index exprs)`.
-/// Such a selection is a contiguous row-major block. `None` for a scalar, a
-/// `SLICE`, or an `INDEX` after a whole dim.
+/// `base[i1,…,ik, :, …, :]` (leading `INDEX` subscripts, then whole dims, on the
+/// final component) -> `(base key, leading index exprs)`. Such a selection is a
+/// contiguous row-major block. `None` for a scalar, a `SLICE`, or an `INDEX` after
+/// a whole dim.
 fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -4029,10 +4048,10 @@ fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
                 return Ok(Some((base, leading)));
             }
             C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                if !subscriptLst.is_empty() {
+                base.push_str(ident);
+                if !push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
                 }
-                base.push_str(ident);
                 base.push('.');
                 node = componentRef;
             }
@@ -4041,8 +4060,8 @@ fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
     }
 }
 
-/// `base[subs]` (final component subscripted, ancestors bare) -> `(base key, raw
-/// subscript list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
+/// `base[subs]` (subscripts on the final component) -> `(base key, raw subscript
+/// list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
 fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -4057,10 +4076,10 @@ fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<Lis
                 return Ok(Some((base, subscriptLst.clone())));
             }
             C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                if !subscriptLst.is_empty() {
+                base.push_str(ident);
+                if !push_qual_subs(subscriptLst, &mut base) {
                     return Ok(None);
                 }
-                base.push_str(ident);
                 base.push('.');
                 node = componentRef;
             }
