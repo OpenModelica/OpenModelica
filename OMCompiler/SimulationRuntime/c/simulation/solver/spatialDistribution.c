@@ -25,6 +25,164 @@
  *
  */
 
+/* ==========================================================================
+ * PATCFH OVERVIEW, RouvenZ, August 2026
+ *
+ * Three independent improvements / issues are addressed. Every change is confined to this
+ * file and is marked inline with PATCH 1, PATCH 2 or PATCH 3.
+ *
+ * --------------------------------------------------------------------------
+ * PATCH 1 - Silent fallback of the outputs to an undefined value (usually 0.0)
+ *           for continuously positive velocity. 
+ *           This is supposed to fix issue #16182.
+ * --------------------------------------------------------------------------
+ * Root cause:
+ *   findOppositeEndSpatialDistribution() documents that *eventPreValue is
+ *   written whenever the return value is >= 1. Its "Step 0" shortcut (taken
+ *   when the profile advanced by more than one full transport length since the
+ *   last stored node) violated that contract: it returned
+ *   doubleEndedListLen(storedEventsList), which is > 0 whenever the event list
+ *   is non-empty, but never wrote *eventPreValue. The caller then executed
+ *       outValue = eventPreValue;
+ *   on an uninitialized local variable, silently replacing the correctly
+ *   interpolated output with whatever the stack held - typically 0.0. No error
+ *   or warning was emitted as long as the event list held exactly one event.
+ *
+ * Changes:
+ *   1a) findOppositeEndSpatialDistribution(): both Step-0 shortcuts now set
+ *       *eventPreValue to the interpolated value before returning, restoring
+ *       the documented contract. All stored events lie beyond the outlet read
+ *       position in that situation (they have already left the transport
+ *       domain), so the interpolated value is also the correct pre-event value.
+ *   1b) spatialDistribution(): eventPreValue is initialized to NAN as an
+ *       explicit "not available" sentinel and is only used when it was actually
+ *       written. If it was not, the interpolated value is kept and a warning is
+ *       printed instead of silently corrupting the output.
+ *
+ * Note: this removes the undefined behaviour. It does not make integrator steps
+ * that transport more than one full length accurate - such steps inherently
+ * discard profile information. Keep -maxStepSize below length/v_max for
+ * quantitatively correct results. 
+ * 
+ * The last sentence should considered to be added to the documentation of the 
+ * spatialDistribution operator, as it is a general limitation of the operator 
+ * and not an issue of this implementation.
+ *
+ * --------------------------------------------------------------------------
+ * PATCH 2 - Crash on sign changes of the velocity (flow reversal) with
+ *           "New end position is not bigger then previous last node." or
+ *           "New front position is not smaller then previous first node.".
+ *           This is supposed to fix issue #11449.
+ * --------------------------------------------------------------------------
+ * The node positions must stay monotone: for x increasing the new node is
+ * pushed at the front with position -posX, for x decreasing at the back with
+ * position -posX+1. The representation itself is fully reversal-capable - the
+ * positions are material coordinates and the window [-posX, -posX+1] may slide
+ * back and forth over them - but the bookkeeping that decides which end to
+ * write had two holes:
+ *
+ *   a) The mismatch test
+ *          isPositiveVelocity*realDirection > 0
+ *      can only ever be true for isPositiveVelocity == 1, because false is 0 in
+ *      C. The mirror-image mismatch (velocity reported negative while x
+ *      actually increased) was therefore never corrected. The new node was
+ *      pushed at the back with a position smaller than the current back
+ *      position => "New end position is not bigger then previous last node."
+ *
+ *   b) The correction was only considered for deltaX > SPATIAL_ZERO_DELTA_X,
+ *      while the monotonicity assertions in addNewNodeSpatialDistribution are
+ *      exact. A backward drift of x inside that dead band was ignored yet still
+ *      violated the assertion => "New front position is not smaller then
+ *      previous first node."
+ *
+ * The mismatch itself is unavoidable: isPositiveVelocity comes from the
+ * relation v >= 0, which is a discrete value evaluated with hysteresis and held
+ * between events, whereas deltaX is whatever the integrator produced over the
+ * step. Around a reversal the two disagree for at least one step.
+ *
+ * Changes:
+ *   2a) storeSpatialDistribution(): the storage direction is derived from the
+ *       sign of the actual change of x. The reported isPositiveVelocity is only
+ *       used when x did not change at all, in which case the new node lands
+ *       exactly on the current edge position, which the assertions allow.
+ *       No threshold is involved, so the decision is always consistent with
+ *       the exact assertions.
+ *   2b) spatialDistribution(): the same mismatch test is made symmetric. The
+ *       threshold and the "jumped" semantics are kept here, so an out-of-band
+ *       drift does not needlessly suppress the extrapolation of the outputs.
+ *   2c) The assertions used to be called with threadData == NULL, so a failing
+ *       assertion had no jump buffer to unwind to and the process segfaulted
+ *       instead of aborting the simulation with a message. threadData is now
+ *       threaded through 
+ *        - interpolateTransportedQuantity,
+ *        - extrapolateTransportedQuantity, 
+ *        - addNewNodeSpatialDistribution,
+ *        - findOppositeEndSpatialDistribution and 
+ *        - pruneSpatialDistribution.
+ *
+ * Remaining limitation: a sign change of v *inside* a single integrator step is
+ * invisible to the operator, which sees one monotone move of x. That is a
+ * property of the operator definition, not of this implementation.
+ *
+ * --------------------------------------------------------------------------
+ * PATCH 3 - Absolute tolerances versus an unbounded position coordinate.
+ *           
+ *           This does NOT fix an issue, but can be considered for implementation
+ *           to avoid potentially unwanted behaviour.
+ * --------------------------------------------------------------------------
+ * epsilon.h defines
+ *     SPATIAL_EPS            = DBL_EPSILON   (2.2e-16, exactly one ulp at 1.0)
+ *     SPATIAL_ZERO_DELTA_X   = 1e-12
+ * as *absolute* tolerances, while posX = x/length grows without bound: after
+ * 2e6 s at 1 m/s in a 100 m pipe, posX is about 2e4, where the spacing between
+ * two representable doubles (the coordinate quantum) is already 3.6e-12 -
+ * larger than both tolerances.
+ *
+ * What is NOT a problem here (measured by Claude, probably no fix needed):
+ *   - Adding or subtracting 1.0 is *exact* for |x| < 2^52. The spans written by
+ *     the pruning (edgeNodeData->position +/- 1) and the read positions (-posX,
+ *     -posX+1) therefore carry no rounding error at all.
+ *   - Subtracting two nearby doubles is exact as well, so deltaX and the node
+ *     distances carry no rounding error either. The distance-to-one tests and
+ *     the "x got reinitialized during an event" check do *not* misfire from
+ *     large |posX|.
+ *
+ * What is a problem:
+ *   - The tolerance can fall below the coordinate quantum. Already for
+ *     |posX| > 1 the position tolerance is below the quantum (at 2e4 it is
+ *     16384 times smaller), so every "same position" test becomes a
+ *     bitwise equality; from |posX| > 4.5e3 the same holds for the
+ *     SPATIAL_ZERO_DELTA_X dead band, which can then only be satisfied by an
+ *     exactly zero deltaX. The comparisons therefore stop expressing what they
+ *     were written to express.
+ *   - The guards that protect the division inside interpolate/extrapolate
+ *     (fabs(posA - posB) > SPATIAL_EPS) accept a node spacing of a single
+ *     quantum and therefore no longer reject an ill-conditioned interpolation.
+ *   - fabs(front->value - in0) > SPATIAL_EPS compares a *transported quantity*
+ *     against a tolerance sized for 1.0. Specific enthalpies are of order 1e5,
+ *     where one ulp is 7.3e-12, so any difference whatsoever counts as a
+ *     discrete change. This is the case with a directly visible effect: it
+ *     produces spurious event nodes, and a non-empty event list is exactly the
+ *     precondition for the PATCH 1 failure mode.
+ *
+ * Fix: scale each tolerance with the magnitude of the operands the comparison is
+ * made from - the only scale at which a floating point difference carries
+ * information. The helpers spatialPosEps(), spatialValEps() and
+ * spatialZeroDeltaX() below implement this, with the scale clamped at 1.0 from
+ * below so that nothing becomes tighter than before near the origin.
+ *
+ * Residual limitation that scaling cannot address (but which is probably)
+ * no problem anyways: the coordinate *resolution*
+ * itself degrades as posX grows. Two stored nodes collapse onto one double once
+ * v*h/length falls below |posX|*2^-52, which for a 2e6 s run means step sizes
+ * below roughly 4e-10 s - not reachable in practice, but the only real remedy
+ * would be to re-base the origin periodically, i.e. shift startPosX and all
+ * stored positions by a constant.
+ *
+ * Not changed: initSpatialDistribution(). Its initialPoints are normalized to
+ * [0, 1] by definition, so the absolute tolerance is already the correct one.
+ * ========================================================================== */
+
 //#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
 
 /*! \file spatialDistribution.c
@@ -36,6 +194,7 @@
 #include "../../openmodelica.h"
 #include "epsilon.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -66,12 +225,76 @@ typedef struct TRANSPORTED_EVENT_DATA {
 } TRANSPORTED_EVENT_DATA;
 
 
-/* Private function prototypes */
-double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos);
-double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos);
-void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity, double position, double value, int isEvent);
-int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue);
-int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity);
+/* Private function prototypes
+ * PATCH 2c: threadData is threaded through all helpers that assert, so a failing
+ * assertion can unwind instead of dereferencing a NULL thread context. */
+double interpolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos);
+double extrapolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos);
+void addNewNodeSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity, double position, double value, int isEvent);
+int findOppositeEndSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue);
+int pruneSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity);
+
+
+// ############################################################################
+//
+// PATCH 3: magnitude-scaled tolerances
+//
+// ############################################################################
+
+/**
+ * @brief Headroom in ulps for the scaled comparisons.
+ *
+ * The comparison has to be at least a few coordinate quanta wide to express
+ * "not distinguishable at this scale", and a position may carry up to half an
+ * ulp from the startPosX shift in shiftToStartPosX(), so one ulp is not enough
+ * headroom while a handful is. At scale 1.0 this gives 1.8e-15, still many
+ * orders of magnitude below the smallest physically meaningful spacing between
+ * two nodes (v*h/length).
+ */
+static const double SPATIAL_EPS_ULPS = 8.0;
+
+/**
+ * @brief Magnitude of the two operands a difference was computed from.
+ *
+ * Clamped at 1.0 from below so that the scaled tolerances never become tighter
+ * than the original absolute ones near the origin.
+ */
+static double spatialScale(double a, double b) {
+  double scaleA = fabs(a);
+  double scaleB = fabs(b);
+  double scale = (scaleA > scaleB) ? scaleA : scaleB;
+  return (scale > 1.0) ? scale : 1.0;
+}
+
+/**
+ * @brief Tolerance for comparing two positions (or a difference of positions).
+ *
+ * Pass the two *operands*, not their difference: the absolute error of a
+ * floating point difference is set by the magnitude of the operands, not by the
+ * magnitude of the result. This matters for the distance-to-one tests, where the
+ * result is about 1 while the operands can be of order 1e4.
+ */
+static double spatialPosEps(double posA, double posB) {
+  return SPATIAL_EPS_ULPS * SPATIAL_EPS * spatialScale(posA, posB);
+}
+
+/**
+ * @brief Tolerance for deciding whether a transported value changed discretely.
+ *
+ * The transported quantity is arbitrary (specific enthalpies are of order 1e5),
+ * so an absolute tolerance of one ulp at 1.0 would classify every re-store as a
+ * discrete change and fill the event list with spurious entries.
+ */
+static double spatialValEps(double valA, double valB) {
+  return SPATIAL_EPS_ULPS * SPATIAL_EPS * spatialScale(valA, valB);
+}
+
+/**
+ * @brief Scaled version of the "x is standing still" threshold.
+ */
+static double spatialZeroDeltaX(double posA, double posB) {
+  return SPATIAL_ZERO_DELTA_X * spatialScale(posA, posB);
+}
 
 // ############################################################################
 //
@@ -312,37 +535,61 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     realDirection = 0 /* standing still */;
   }
 
-  /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity. */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
-    // TODO: This is probably still a sign that we didn't handle some event or event search correctly.
-    isPositiveVelocity  = !isPositiveVelocity;
+  /* PATCH 2a: Derive the storage direction from the sign of the actual change of
+   * x instead of trusting the reported isPositiveVelocity.
+   *
+   * realDirection == +1 means posX decreased, i.e. x decreased (v < 0), because
+   * deltaX was computed as oldPosX - posX. realDirection == -1 means x increased
+   * (v > 0). The reported isPositiveVelocity is the held value of the relation
+   * v >= 0 and can lag the sign of deltaX by a step around a flow reversal.
+   *
+   * The previous test
+   *     deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0
+   * could only detect the mismatch (reported positive, x decreasing), because
+   * false is 0 in C, and it ignored any mismatch inside the SPATIAL_ZERO_DELTA_X
+   * dead band although the monotonicity assertions in
+   * addNewNodeSpatialDistribution are exact. Both gaps ended in a failing
+   * assertion (and, via threadData == NULL, in a crash) on sign changes of v.
+   *
+   * Deriving the direction from realDirection alone closes both gaps: the end
+   * that is written is by construction the end that keeps the positions
+   * monotone, for arbitrarily small |deltaX|. */
+  if (realDirection > 0) {
+    isPositiveVelocity = 0 /* false: x decreased, write at the back */;
+  } else if (realDirection < 0) {
+    isPositiveVelocity = 1 /* true: x increased, write at the front */;
   }
+  /* realDirection == 0: keep the reported direction. The new node then lands
+   * exactly on the current edge position, which the assertions allow (<=, >=)
+   * and which is the existing event-node case handled below. */
 
   /* Add new node (oldPosX-deltaX, in0) or (oldPosX-deltaX+1, in1) to list
    * Check if it an event and only save it if has a discrete change in in0 or in1.
    */
   if (isPositiveVelocity) {
     TRANSPORTED_QUANTITY_DATA* front = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
-    if (fabs(-posX - front->position) < SPATIAL_EPS) {
-      if (fabs(front->value - in0) > SPATIAL_EPS) {
-        addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX, in0, 1 /* true */);
+    /* PATCH 3: scaled position and value tolerances */
+    if (fabs(-posX - front->position) < spatialPosEps(-posX, front->position)) {
+      if (fabs(front->value - in0) > spatialValEps(front->value, in0)) {
+        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX, in0, 1 /* true */);
       }
     } else {
-      addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX, in0, 0 /* false */);
+      addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX, in0, 0 /* false */);
     }
   } else {
     TRANSPORTED_QUANTITY_DATA* last = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
-    if (fabs(-posX+1 - last->position) < SPATIAL_EPS) {
-      if (fabs(last->value - in1) > SPATIAL_EPS) {
-        addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX+1, in1, 1 /* true */);
+    /* PATCH 3: scaled position and value tolerances */
+    if (fabs(-posX+1 - last->position) < spatialPosEps(-posX+1, last->position)) {
+      if (fabs(last->value - in1) > spatialValEps(last->value, in1)) {
+        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX+1, in1, 1 /* true */);
       }
     } else {
-      addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX+1, in1, 0 /* false */);
+      addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX+1, in1, 0 /* false */);
     }
   }
 
   /* Remove nodes that droppen of spatial distribution */
-  walkedOverEvents = pruneSpatialDistribution(spatialDistribution, isPositiveVelocity);
+  walkedOverEvents = pruneSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
@@ -388,7 +635,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   int realDirection;
   int jumped = 0;
   double deltaX;
-  double eventPreValue;
+  double eventPreValue = NAN;   /* PATCH 1b: sentinel "no event pre-value available" */
   double outValue;
   double out0;      /* First output variable */
   double out1Val;   /* Second output variable, only written to *out1 if out1 != NULL */
@@ -417,20 +664,35 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   }
 
   /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity.
-   * This still indicates something wrong, so we don't extrapolate the output */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
+   * This still indicates something wrong, so we don't extrapolate the output.
+   *
+   * PATCH 2b: made symmetric. The original condition
+   *     isPositiveVelocity*realDirection > 0
+   * could only ever be true for isPositiveVelocity == 1, because false is 0 in C,
+   * so the mismatch (velocity reported negative while x increased) was never
+   * caught. Unlike the store path this keeps the SPATIAL_ZERO_DELTA_X threshold
+   * and the "jumped" flag: a drift below the threshold must not suppress the
+   * extrapolation of the outputs.
+   * PATCH 3: the threshold is scaled with the magnitude of the positions. */
+  if (deltaX > spatialZeroDeltaX(spatialDistribution->oldPosX, posX) &&
+      ((isPositiveVelocity && realDirection > 0) || (!isPositiveVelocity && realDirection < 0))) {
     isPositiveVelocity  = !isPositiveVelocity;
     jumped = 1 /* true */;
   }
 
-  /* Check if x was reinitialized */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && data->simulationInfo->discreteCall) {
+  /* Check if x was reinitialized
+   * PATCH 3: scaled threshold. deltaX itself is exact (subtraction of two nearby
+   * doubles), but the plain SPATIAL_ZERO_DELTA_X falls below the coordinate
+   * quantum for |posX| > 4.5e3, where this dead band degenerates into "deltaX is
+   * exactly zero". */
+  if (deltaX > spatialZeroDeltaX(spatialDistribution->oldPosX, posX) && data->simulationInfo->discreteCall) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "x got reinitialized during an event at time %f. OpenModelica can't handle that.", data->localData[0]->timeValue);
     omc_throw_function(threadData);
   }
 
-  /* Special case: Zero progress */
-  if (deltaX < SPATIAL_EPS) {
+  /* Special case: Zero progress
+   * PATCH 3: scaled tolerance, see above */
+  if (deltaX < spatialPosEps(spatialDistribution->oldPosX, posX)) {
     firstNodeData = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
     lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
     out0 = firstNodeData->value;
@@ -444,7 +706,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   }
 
   /* Get value of ou0/out1 by walkling over list */
-  walkedOverEvents = findOppositeEndSpatialDistribution(spatialDistribution, in0, in1, posX, isPositiveVelocity, &eventPreValue, &outValue);
+  walkedOverEvents = findOppositeEndSpatialDistribution(threadData, spatialDistribution, in0, in1, posX, isPositiveVelocity, &eventPreValue, &outValue);
 
   /* Handle events that would come out of spatialDistribution */
   if (walkedOverEvents > 1) {
@@ -453,8 +715,17 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     messageCloseWarning(OMC_LOG_STDOUT);
   }
   if (walkedOverEvents>0 && !data->simulationInfo->discreteCall) {
-    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
-    outValue = eventPreValue;
+    /* PATCH 1b: Only substitute the pre-event value if it was actually provided.
+     * Using it unconditionally read an uninitialized variable whenever
+     * findOppositeEndSpatialDistribution returned a non-zero event count
+     * without writing eventPreValue, which silently forced the output to an
+     * undefined value (typically 0.0). */
+    if (!isnan(eventPreValue)) {
+      infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
+      outValue = eventPreValue;
+    } else {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "spatialDistribution index %i reported %i event(s) without a pre-value at time %f. Keeping interpolated value.", index, walkedOverEvents, data->localData[0]->timeValue);
+    }
   }
 
   /* Extrapolate return values to break up quasi-loop with inputs */
@@ -462,11 +733,15 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   secondNodeData = dataDoubleEndedList(getNextNodeDoubleEndedList(getFirstNodeDoubleEndedList(transportedQuantityList)));
   lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
   forelastNodeData = dataDoubleEndedList(getPreviousNodeDoubleEndedList(getLastNodeDoubleEndedList(transportedQuantityList)));
+  /* PATCH 3: scaled tolerances. The second test guards the division by the node
+   * distance inside extrapolateTransportedQuantity, so it has to use the same
+   * scale as the positions it compares. */
   if (isPositiveVelocity) {
     if (jumped) {
       out0 = in0;
-    } else if (deltaX > SPATIAL_EPS && fabs(firstNodeData->position-secondNodeData->position)>SPATIAL_EPS) {
-      out0 = extrapolateTransportedQuantity(firstNodeData, secondNodeData, -posX);
+    } else if (deltaX > spatialPosEps(spatialDistribution->oldPosX, posX) &&
+               fabs(firstNodeData->position-secondNodeData->position) > spatialPosEps(firstNodeData->position, secondNodeData->position)) {
+      out0 = extrapolateTransportedQuantity(threadData, firstNodeData, secondNodeData, -posX);
     } else {
       out0 = firstNodeData->value;
     }
@@ -475,8 +750,9 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     out0 = outValue;
     if (jumped) {
       out1Val = in1;
-    } else if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS) {
-      out1Val = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
+    } else if (deltaX > spatialPosEps(spatialDistribution->oldPosX, posX) &&
+               fabs(forelastNodeData->position-lastNodeData->position) > spatialPosEps(forelastNodeData->position, lastNodeData->position)) {
+      out1Val = extrapolateTransportedQuantity(threadData, forelastNodeData, lastNodeData, -posX+1);
     } else {
       out1Val = lastNodeData->value;
     }
@@ -553,7 +829,8 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
     } else {
       while (currentNode != NULL) {
         // Am I on an event?
-        if (fabs(currentNodeData->position+posX-1) <= SPATIAL_EPS) {
+        /* PATCH 3: scaled tolerance */
+        if (fabs(currentNodeData->position+posX-1) <= spatialPosEps(currentNodeData->position, posX)) {
           zeroCrossingValue = -currentNodeData->zeroCrossValue;
           break;
         }
@@ -584,7 +861,8 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
     } else {
       while (currentNode != NULL) {
         // Am I on an event?
-        if (fabs(currentNodeData->position+posX) <= SPATIAL_EPS) {
+        /* PATCH 3: scaled tolerance */
+        if (fabs(currentNodeData->position+posX) <= spatialPosEps(currentNodeData->position, posX)) {
           zeroCrossingValue = -currentNodeData->zeroCrossValue;
           break;
         }
@@ -633,7 +911,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
  * @param interpolationPos        Position where to interpolate.
  * @return double                 Interpolated value
  */
-double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos) {
+double interpolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos) {
   double leftPosition, rightPosition;
   double leftValue, rightValue;
   double distPos;
@@ -645,7 +923,9 @@ double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
   rightValue = rightData->value;
   distPos = rightPosition - leftPosition;
 
-  assertStreamPrint(NULL, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
+  /* PATCH 2c: threadData instead of NULL, so this aborts the simulation with a
+   * message instead of crashing the process. */
+  assertStreamPrint(threadData, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
 
   interpolatedValue = leftValue  * ((rightPosition-interpolationPos)/distPos)
                     + rightValue * ((interpolationPos-leftPosition)/distPos);
@@ -662,7 +942,7 @@ double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
  * @param extrapolationPos      Position where to interpolate.
  * @return double               Extrapolated value.
  */
-double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos) {
+double extrapolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos) {
   double leftPosition, rightPosition;
   double leftValue, rightValue;
   double distPos;
@@ -674,7 +954,8 @@ double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
   rightValue = rightData->value;
   distPos = rightPosition - leftPosition;
 
-  assertStreamPrint(NULL, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
+  /* PATCH 2c: threadData instead of NULL */
+  assertStreamPrint(threadData, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
 
   extrapolatedValue = leftValue + (rightValue-leftValue)/(distPos) * (extrapolationPos - leftPosition);
   return extrapolatedValue;
@@ -693,7 +974,7 @@ double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
  * @param value                       Value of new node.
  * @param isEvent                     Boolean value if new node is an event node.
  */
-void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double position, double value, int isEvent) {
+void addNewNodeSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double position, double value, int isEvent) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -707,15 +988,18 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
 
   /* Add node to transported quantity list */
   infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Adding (%e,%e) at %s.", newNodeData.position, newNodeData.value, front?"front":"back");
+  /* PATCH 2c: these two assertions are the ones that used to fire on flow
+   * reversal. With threadData == NULL a failing assertion had no jump buffer to
+   * unwind to and took the process down instead of aborting the simulation. */
   if (front) {
     // Make sure new first node is smaller then previous first node
     TRANSPORTED_QUANTITY_DATA* oldFront = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
-    assertStreamPrint(NULL, position<=oldFront->position, "New front position is not smaller then previous first node.");
+    assertStreamPrint(threadData, position<=oldFront->position, "New front position is not smaller then previous first node.");
     pushFrontDoubleEndedList(transportedQuantityList, (const void*) &newNodeData);
   } else {
     // Make sure new first node is smaller then previous first node
     TRANSPORTED_QUANTITY_DATA* oldEnd = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
-    assertStreamPrint(NULL, position>=oldEnd->position, "New end position is not bigger then previous last node.");
+    assertStreamPrint(threadData, position>=oldEnd->position, "New end position is not bigger then previous last node.");
     pushBackDoubleEndedList(transportedQuantityList, (const void*) &newNodeData);
   }
 
@@ -731,7 +1015,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
       } else {
         // Make sure new first node is smaller then previous first node
         TRANSPORTED_EVENT_DATA* oldEventFront = (TRANSPORTED_EVENT_DATA*) firstDataDoubleEndedList(storedEventsList);
-        assertStreamPrint(NULL, position<=oldEventFront->position, "New front position is not smaller then previous first event node.");
+        assertStreamPrint(threadData, position<=oldEventFront->position, "New front position is not smaller then previous first event node.");
         newEventNodeData.zeroCrossValue = oldEventFront->zeroCrossValue*(-1);
       }
       pushFrontDoubleEndedList(storedEventsList, (const void*) &newEventNodeData);
@@ -741,7 +1025,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
       } else {
         // Make sure new first node is smaller then previous first node
         TRANSPORTED_EVENT_DATA* oldEventEnd = (TRANSPORTED_EVENT_DATA*) lastDataDoubleEndedList(storedEventsList);
-        assertStreamPrint(NULL, position>=oldEventEnd->position, "New end position is not bigger then previous last event node.");
+        assertStreamPrint(threadData, position>=oldEventEnd->position, "New end position is not bigger then previous last event node.");
         newEventNodeData.zeroCrossValue = oldEventEnd->zeroCrossValue*(-1);
       }
       pushBackDoubleEndedList(storedEventsList, (const void*) &newEventNodeData);
@@ -764,9 +1048,11 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
  *                                    Velocity v is `v:=der(x)`.
  * @param eventPreValue               On output containing value of first/last node before event.
  *                                    This value is only written when function returned 1 or greater.
+ *                                    PATCH: (Patch 1a) The "Step 0" shortcuts below also honour this contract
+ *                                    now; they used to return a non-zero count without writing it.
  * @return int                        Return number of events that were encountered.
  */
-int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue) {
+int findOppositeEndSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -797,7 +1083,14 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
       //                                                  |
       tempData.position = -posX;
       tempData.value = in0;
-      *outValue = interpolateTransportedQuantity(&tempData, firstNodeData, -posX + 1);
+      *outValue = interpolateTransportedQuantity(threadData, &tempData, firstNodeData, -posX + 1);
+      /* PATCH 1a: Every stored event lies at a position >= firstNodeData->position,
+       * i.e. beyond the outlet read position -posX+1, so all of them have already
+       * left the transport domain during this step. The interpolated value is
+       * therefore also the correct pre-event value. Writing it keeps the
+       * documented contract "eventPreValue is valid whenever the return value is
+       * >= 1" and stops the caller from substituting an uninitialized value. */
+      *eventPreValue = *outValue;
       return doubleEndedListLen(storedEventsList);
     }
   } else {
@@ -807,7 +1100,9 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
       //                                                                                  |
       tempData.position = -posX+1;
       tempData.value = in1;
-      *outValue = interpolateTransportedQuantity(lastNodeData, &tempData, -posX);
+      *outValue = interpolateTransportedQuantity(threadData, lastNodeData, &tempData, -posX);
+      /* PATCH 1a: see comment in the positive velocity branch above. */
+      *eventPreValue = *outValue;
       return doubleEndedListLen(storedEventsList);
     }
   }
@@ -825,10 +1120,17 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
   }
   currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
+  /* PATCH 3: a meaningful "not distinguishable from 1" tolerance has to be scaled
+   * by the magnitude of the *operands*, not by the magnitude of the difference
+   * (which is about 1). With the absolute SPATIAL_EPS this test degenerates into
+   * an exact comparison as soon as |position| > 1. The distance itself is exact -
+   * subtracting two nearby doubles introduces no error - so this scaling makes
+   * the comparison meaningful rather than fixing an observed misfire.
+   * PATCH 2c: threadData instead of NULL. */
   currentDistance = fabs(currentNodeData->position - edgeNodePosition);
-  if (currentDistance + SPATIAL_EPS < 1) {
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodePosition) < 1) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug report about it.");
-    omc_throw_function(NULL);
+    omc_throw_function(threadData);
     return walkedOverEvents;
   }
 
@@ -850,14 +1152,16 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
     /* Check for event:
      * Current node position equal to previous visited node position
      */
-    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < SPATIAL_EPS) {
+    /* PATCH 3: scaled tolerance */
+    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < spatialPosEps(prevVisitedNodeData->position, currentNodeData->position)) {
       *eventPreValue = prevVisitedNodeData->value;
       walkedOverEvents += 1;
     }
 
-    /* Check if distance between currentNode and edgeNode is < 1 */
+    /* Check if distance between currentNode and edgeNode is < 1
+     * PATCH 3: scaled tolerance */
     currentDistance = fabs(currentNodeData->position - edgeNodePosition);
-    if (currentDistance + SPATIAL_EPS < 1) {
+    if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodePosition) < 1) {
       break;
     } else {
       prevVisitedNode = currentNode;
@@ -877,9 +1181,9 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
     }
   } else {
     if (isPositiveVelocity) {
-      *outValue = interpolateTransportedQuantity(currentNodeData, prevVisitedNodeData, edgeNodePosition + 1);
+      *outValue = interpolateTransportedQuantity(threadData, currentNodeData, prevVisitedNodeData, edgeNodePosition + 1);
     } else {
-      *outValue = interpolateTransportedQuantity(prevVisitedNodeData, currentNodeData, edgeNodePosition - 1);
+      *outValue = interpolateTransportedQuantity(threadData, prevVisitedNodeData, currentNodeData, edgeNodePosition - 1);
     }
   }
 
@@ -898,7 +1202,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
  *                                    This value is only written when function returned 1 or greater.
  * @return int                        Return number of events that were encountered.
  */
-int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity) {
+int pruneSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -927,10 +1231,11 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   edgeNodeData  = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(edgeNode);
   currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
+  /* PATCH 3: scaled tolerance, PATCH 2c: threadData instead of NULL */
   currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
-  if (currentDistance + SPATIAL_EPS < 1) {
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function pruneSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
-    omc_throw_function(NULL);
+    omc_throw_function(threadData);
   }
 
   /* Move to neighbor */
@@ -948,13 +1253,15 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
     /* Check for event:
      * Current node position equal to previous visited node position
      */
-    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < SPATIAL_EPS) {
+    /* PATCH 3: scaled tolerance */
+    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < spatialPosEps(prevVisitedNodeData->position, currentNodeData->position)) {
       walkedOverEvents += 1;
     }
 
-    /* Check if distance between currentNode and edgeNode is < 1 */
+    /* Check if distance between currentNode and edgeNode is < 1
+     * PATCH 3: scaled tolerance */
     currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
-    if (currentDistance + SPATIAL_EPS < 1) {
+    if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
       break;
     } else {
       prevVisitedNode = currentNode;
@@ -965,12 +1272,13 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   /* Step 2
    * Interpolate at edgeNode->position +/- 1.
    */
-  if (currentDistance + SPATIAL_EPS < 1) {
+  /* PATCH 3: scaled tolerance */
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
     if (isPositiveVelocity) {
-      prevVisitedNodeData->value = interpolateTransportedQuantity(currentNodeData, prevVisitedNodeData, edgeNodeData->position + 1);
+      prevVisitedNodeData->value = interpolateTransportedQuantity(threadData, currentNodeData, prevVisitedNodeData, edgeNodeData->position + 1);
       prevVisitedNodeData->position = edgeNodeData->position + 1;
     } else {
-      prevVisitedNodeData->value = interpolateTransportedQuantity(prevVisitedNodeData, currentNodeData, edgeNodeData->position - 1);
+      prevVisitedNodeData->value = interpolateTransportedQuantity(threadData, prevVisitedNodeData, currentNodeData, edgeNodeData->position - 1);
       prevVisitedNodeData->position = edgeNodeData->position - 1;
     }
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Interpolate at %s", isPositiveVelocity?"end":"front");
@@ -992,7 +1300,8 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   if (doubleEndedListLen(storedEventsList) > 0) {
     if (isPositiveVelocity) {
       eventData = lastDataDoubleEndedList(storedEventsList);
-      while (edgeNodeData->position+1 + SPATIAL_ZERO_DELTA_X < eventData->position) {
+      /* PATCH 3: scaled tolerance */
+      while (edgeNodeData->position+1 + spatialZeroDeltaX(edgeNodeData->position, eventData->position) < eventData->position) {
         spatialDistribution->lastStoredEventValue = eventData->zeroCrossValue;
         removeLastDoubleEndedList(storedEventsList);
         if (doubleEndedListLen(storedEventsList) == 0) {
@@ -1003,7 +1312,8 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
       }
     } else {
       eventData = firstDataDoubleEndedList(storedEventsList);
-      while (edgeNodeData->position-1 - SPATIAL_ZERO_DELTA_X > eventData->position) {
+      /* PATCH 3: scaled tolerance */
+      while (edgeNodeData->position-1 - spatialZeroDeltaX(edgeNodeData->position, eventData->position) > eventData->position) {
         spatialDistribution->lastStoredEventValue = eventData->zeroCrossValue;
         removeFirstDoubleEndedList(storedEventsList);
         if (doubleEndedListLen(storedEventsList) == 0) {
