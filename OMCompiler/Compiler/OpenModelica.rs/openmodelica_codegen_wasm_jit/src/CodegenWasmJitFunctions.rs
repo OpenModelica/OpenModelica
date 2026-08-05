@@ -1003,25 +1003,28 @@ pub(crate) struct FnCtx<'a> {
 /// `SimData` block whose base pointer is held in the wasm local `data_local`
 /// (the equation function's first parameter); every variable lives at a
 /// compile-time-constant byte offset. See `CodegenWasmJit`.
+///
+/// The maps are shared (`Arc`) with `SimVarMap`, not copied: one `SimCtx` is built
+/// per generated function and a large model has hundreds of them.
 pub(crate) struct SimCtx {
     /// wasm local index holding the `SimData` base pointer.
     pub(crate) data_local: u32,
     /// Canonical cref key (`super::sim_cref_key`) -> slot in `SimData`.
-    pub(crate) vars: HashMap<String, SimSlot>,
+    pub(crate) vars: Arc<HashMap<String, SimSlot>>,
     /// Canonical cref key -> its `start` value expression (for `$START.<cref>`),
     /// `None` when the variable has no explicit start (defaults to the type's
     /// zero). Stored separately from `vars` because `$START` reads the start
     /// attribute, not the live value.
-    pub(crate) starts: HashMap<String, Option<Arc<DAE::Exp>>>,
+    pub(crate) starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
-    pub(crate) start_slots: HashMap<String, u32>,
+    pub(crate) start_slots: Arc<HashMap<String, u32>>,
     /// Canonical cref key of an *array-valued* model variable (the base name with
     /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
     /// scalarized elements occupy. A whole-array reference reads/writes the range
     /// as one runtime array object (gather on read, scatter on assign). See
     /// `compile_sim_cref_read`/`compile_sim_cref_assign`.
-    pub(crate) array_groups: HashMap<String, ArrayGroup>,
+    pub(crate) array_groups: Arc<HashMap<String, ArrayGroup>>,
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
     pub(crate) terminate_off: u32,
@@ -1203,6 +1206,11 @@ impl<'a> FnCtx<'a> {
             self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
         }
         Ok(())
+    }
+
+    /// Instructions emitted so far: where to cut a split equation function.
+    pub(crate) fn instr_len(&self) -> usize {
+        self.instrs.len()
     }
 
     fn emit(&mut self, i: we::Instruction<'static>) {

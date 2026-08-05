@@ -1732,14 +1732,16 @@ fn emit_fmu(
 /// The data the equation-function lowering needs to resolve component
 /// references: the cref->slot map and the per-variable start expressions.
 struct SimVarMap {
-    vars: HashMap<String, SimSlot>,
-    starts: HashMap<String, Option<Arc<DAE::Exp>>>,
+    /// Shared with every [`SimCtx`] rather than copied per generated function, so
+    /// filled through `Arc::make_mut` (single owner until emission starts).
+    vars: Arc<HashMap<String, SimSlot>>,
+    starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
     /// slot instead of the inline expression. Empty when building
     /// `functionInitStartValues` (it fills the slots, so must not read them).
-    start_slots: HashMap<String, u32>,
+    start_slots: Arc<HashMap<String, u32>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
-    array_groups: HashMap<String, ArrayGroup>,
+    array_groups: Arc<HashMap<String, ArrayGroup>>,
     /// Transient accumulator: base cref key -> the scalarized elements seen
     /// (subscripts, byte offset, value type). Finalized into `array_groups` at the
     /// end of [`build_var_map`].
@@ -2108,10 +2110,10 @@ fn build_var_map(
     layout: &SimLayout,
 ) -> Result<(SimVarMap, Vec<ResultVar>, Vec<EditableParam>)> {
     let mut map = SimVarMap {
-        vars: HashMap::new(),
-        starts: HashMap::new(),
-        start_slots: HashMap::new(),
-        array_groups: HashMap::new(),
+        vars: Arc::default(),
+        starts: Arc::default(),
+        start_slots: Arc::default(),
+        array_groups: Arc::default(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
@@ -2189,7 +2191,7 @@ fn build_var_map(
         let name = cref_display(&sv.name)?;
         // Every state gets a start slot; value-changeable ones are also editable.
         let start_off = layout.state_start_off(i as u32);
-        map.start_slots.insert(sim_cref_key(&sv.name)?, start_off);
+        Arc::make_mut(&mut map.start_slots).insert(sim_cref_key(&sv.name)?, start_off);
         if sv.isValueChangeable && is_result_output(sv) {
             if let Some(disp) = result_name(&name) {
                 start_editable.push(EditableParam {
@@ -2312,7 +2314,7 @@ fn build_var_map(
             negate: tslot.negate ^ negate,
             heap: tslot.heap,
         };
-        map.vars.insert(sim_cref_key(&av.name)?, slot);
+        Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
         if let (Some(name), Some(kind)) = (
             result_name(&cref_display(&av.name)?),
             kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
@@ -2340,7 +2342,7 @@ fn build_var_map(
         })
         .collect();
     for (key, slot) in pre_entries {
-        map.vars.insert(key, slot);
+        Arc::make_mut(&mut map.vars).insert(key, slot);
     }
 
     finalize_array_groups(&mut map)?;
@@ -2353,8 +2355,8 @@ fn build_var_map(
 /// under its array base name so a whole-array reference can later be marshalled.
 fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool) -> Result<()> {
     let key = sim_cref_key(&sv.name)?;
-    map.vars.insert(key.clone(), SimSlot { off, wty, negate: false, heap });
-    map.starts.insert(key, sv.initialValue.clone());
+    Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: false, heap });
+    Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
     if let Some((base, subs)) = array_element_of(&sv.name)? {
         map.array_acc.entry(base).or_default().push((subs, off, wty));
     }
@@ -2461,7 +2463,7 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         if !contiguous {
             continue;
         }
-        map.array_groups.insert(base, ArrayGroup { base_off, wty, dims, total });
+        Arc::make_mut(&mut map.array_groups).insert(base, ArrayGroup { base_off, wty, dims, total });
     }
     Ok(())
 }
@@ -2985,16 +2987,18 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         metamodelica::cancel::bail_if_cancelled()?;
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
-    // Parameter bindings (`parameter Real c = 0.5`) are not in
-    // `parameterEquations` for constant bindings — the C target reads them from
-    // `_init.xml`. Initialize every parameter from its binding expression
-    // (`SimVar.initialValue`) in declaration order (the backend sorts dependent
-    // parameters so a binding only references earlier ones), then run
-    // `parameterEquations` for any computed parameters.
-    // Equation functions.
+    // Every parameter is initialized from its binding expression in declaration
+    // order (the backend sorts dependent parameters so a binding only references
+    // earlier ones), then `parameterEquations` runs for the computed ones.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
-    let param_eqs_dep = param_eqs.clone();
-    bodies.push(build_eq_fn_with_prelude("parameterEquations", &param_bindings, param_eqs, &var_map, &eq_index, &by_name, &mut literals, &[], &stateset_diag)?);
+    let mut chunks: Vec<we::Function> = Vec::new();
+    let mut splits: Vec<SplitFn> = Vec::new();
+    let param_units: Vec<EqUnit> = param_bindings
+        .iter()
+        .map(|(cref, exp)| EqUnit::Binding(cref, exp))
+        .chain(param_eqs.iter().map(|e| EqUnit::Eq(e, None)))
+        .collect();
+    splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
     let init_save: Vec<(u32, u32, u32)> = if layout.n_rel > 0 {
@@ -3002,9 +3006,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     } else {
         Vec::new()
     };
-    bodies.push(build_eq_fn_with_prelude("initialEquations", &[], initial_eqs, &var_map, &eq_index, &by_name, &mut literals, &init_save, &[])?);
-    bodies.push(build_eq_fn("odeEquations", ode_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
-    bodies.push(build_eq_fn_with_prelude("algebraicEquations", &[], algebraic_eqs, &var_map, &eq_index, &by_name, &mut literals, &save_pre, &[])?);
+    splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+    splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+    splits.push(build_split_fn("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
     // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
     let real_algs: Vec<&SimCodeVar::SimVar> =
         lst(&vars.algVars).chain(lst(&vars.discreteAlgVars)).collect();
@@ -3192,11 +3196,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // first step; a stub for models that do not use `homotopy()`.
     let init_lambda0_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(if lambda0_eqs.is_empty() {
-            empty_eqfn()
-        } else {
-            build_eq_fn("initialEquations_lambda0", lambda0_eqs, &var_map, &eq_index, &by_name, &mut literals)?
-        });
+        splits.push(build_split_fn("functionInitialEquations_lambda0", &eq_units(&lambda0_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
         idx
     };
     // Min/max variable-attribute (and equation) assertion checks: C's
@@ -3205,11 +3205,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let has_asserts = !assert_eqs.is_empty();
     let check_asserts_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(if has_asserts {
-            build_eq_fn("functionCheckAsserts", assert_eqs, &var_map, &eq_index, &by_name, &mut literals)?
-        } else {
-            empty_eqfn()
-        });
+        splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
         idx
     };
     bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
@@ -3247,7 +3243,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // perturbation IDAS made to a sensitivity parameter.
     let update_bound_params_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(build_eq_fn("updateBoundParameters", param_eqs_dep, &var_map, &eq_index, &by_name, &mut literals)?);
+        splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
         idx
     };
     let update_bound_attrs_idx = {
@@ -3259,14 +3255,22 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     };
     // Emitted only for a DAE-mode model: its absence is how the standalone export and
     // the FMU adapters know the model is an explicit ODE.
-    let dae_residuals_idx = match dae_eqs.is_empty() {
-        true => None,
-        false => {
+    let dae_residuals_idx = match dae_fn_type {
+        None => None,
+        Some(ty) => {
             let idx = import_base + bodies.len() as u32;
-            bodies.push(build_dae_residuals_fn(&dae_eqs, &var_map, &eq_index, &by_name, &mut literals)?);
+            splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, ty, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
             Some(idx)
         }
     };
+
+    // The chunks, after all fixed-index bodies; each entry point's placeholder
+    // becomes a thunk calling its own.
+    let chunk_base = import_base + bodies.len() as u32;
+    bodies.extend(chunks);
+    for s in &splits {
+        bodies[s.slot] = s.thunk(chunk_base);
+    }
 
     // --- Function section (type index per body, in body order). ---
     let mut functions = we::FunctionSection::new();
@@ -3308,6 +3312,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
+    }
+    for s in &splits {
+        for _ in 0..s.count {
+            functions.function(s.ty);
+        }
     }
 
     // --- Shared literals, closure thunks and the module `start`. Both come after
@@ -3446,6 +3455,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     }
     if let Some(idx) = dae_residuals_idx {
         names.push((idx, "evaluateDAEResiduals".to_string()));
+    }
+    for s in &splits {
+        for k in 0..s.count {
+            names.push((chunk_base + (s.first + k) as u32, format!("{}${k}", s.name)));
+        }
     }
     names.sort_by_key(|(idx, _)| *idx);
     let mut fn_names = we::NameMap::new();
@@ -4168,95 +4182,206 @@ fn eq_attr_of(eq: &SimCode::SimEqSystem) -> Option<&openmodelica_backend_types::
     }
 }
 
-/// Build `evaluateDAEResiduals(SimData*, stage)`, one guarded block per equation. C
-/// tests `evalStages & currentEvalStage` against a per-equation assignment; here the
-/// mask is a constant, so the guard is a single `and`/`if`.
-fn build_dae_residuals_fn(
-    eqs: &[(Arc<SimCode::SimEqSystem>, u32)],
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-) -> Result<we::Function> {
-    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
-    for (i, (eq, stages)) in eqs.iter().enumerate() {
-        if i & 63 == 0 {
-            metamodelica::cancel::bail_if_cancelled()?;
-        }
-        ctx.sim_stage_guard(*stages);
-        lower_equation(&mut ctx, eq, eq_index)?;
-        ctx.sim_end_block();
-    }
+/// Units of `evaluateDAEResiduals(SimData*, stage)`. C tests `evalStages &
+/// currentEvalStage` against a per-equation assignment; here the mask is a
+/// constant, so the guard is a single `and`/`if`.
+fn dae_units(eqs: &[(Arc<SimCode::SimEqSystem>, u32)]) -> Vec<EqUnit<'_>> {
+    eqs.iter().map(|(eq, stages)| EqUnit::Eq(eq, Some(*stages))).collect()
+}
+
+fn finish_fn(ctx: FnCtx) -> we::Function {
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
         func.instruction(i);
     }
-    Ok(func)
+    func
 }
 
-fn build_eq_fn(
-    which: &str,
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-) -> Result<we::Function> {
-    build_eq_fn_with_prelude(which, &[], eqs, var_map, eq_index, by_name, literals, &[], &[])
+/// One lowering step of an equation entry point.
+enum EqUnit<'a> {
+    /// A parameter's binding expression, assigned ahead of `parameterEquations`.
+    Binding(&'a Arc<DAE::ComponentRef>, &'a Arc<DAE::Exp>),
+    /// A SimCode equation; `Some(mask)` adds the DAE-mode stage guard.
+    Eq(&'a Arc<SimCode::SimEqSystem>, Option<u32>),
 }
 
-fn build_eq_fn_with_prelude(
-    which: &str,
-    prelude: &[(Arc<DAE::ComponentRef>, Arc<DAE::Exp>)],
-    eqs: Vec<Arc<SimCode::SimEqSystem>>,
-    var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
-    save_pre: &[(u32, u32, u32)],
-    stateset_diag: &[u32],
-) -> Result<we::Function> {
-    let sim = sim_ctx(var_map);
-    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_stateset_diag_init(stateset_diag)?;
-    // A constant assignment to a `SimData` slot reads nothing, so one consecutive
-    // stretch of them may be reordered and merged: collect a stretch by slot offset
-    // (last value winning) and let `emit_sim_const_stores` write the adjacent groups
-    // as data segments instead of a store per value.
-    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
-    for (cref, exp) in prelude {
-        if let Some((off, bytes)) = sim_const_store(&ctx, cref, exp)? {
-            pending.insert(off, bytes);
-            continue;
+impl EqUnit<'_> {
+    /// Operands of a plain `cref := exp`, which `sim_const_store` may fold into a
+    /// data segment.
+    fn assign_operands(&self) -> Option<(&Arc<DAE::ComponentRef>, &Arc<DAE::Exp>)> {
+        match self {
+            EqUnit::Binding(cref, exp) => Some((cref, exp)),
+            EqUnit::Eq(eq, None) => match &***eq {
+                SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } => Some((cref, exp)),
+                _ => None,
+            },
+            EqUnit::Eq(_, Some(_)) => None,
         }
-        emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
-        let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
-        ctx.sim_assign(&lhs, exp)?;
     }
-    for (i, eq) in eqs.iter().enumerate() {
-        // Cancellation poll, throttled: the equation functions are the bulk of the
-        // emit for models with no user functions to poll between.
-        if i & 63 == 0 {
-            metamodelica::cancel::bail_if_cancelled()?;
+}
+
+/// Lower one unit. A constant store to a `SimData` slot reads nothing, so a
+/// consecutive stretch of them may be merged: such a unit only joins `pending`
+/// (by slot offset, last value winning), and anything else first flushes the
+/// stretch as data segments through `emit_sim_const_stores`.
+fn lower_unit(
+    ctx: &mut FnCtx,
+    unit: &EqUnit,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    pending: &mut BTreeMap<u32, Vec<u8>>,
+) -> Result<()> {
+    if let Some((cref, exp)) = unit.assign_operands() {
+        if let Some((off, bytes)) = sim_const_store(ctx, cref, exp)? {
+            pending.insert(off, bytes);
+            return Ok(());
         }
-        if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq {
-            if let Some((off, bytes)) = sim_const_store(&ctx, cref, exp)? {
-                pending.insert(off, bytes);
-                continue;
+    }
+    emit_sim_const_stores(ctx, &core::mem::take(pending))?;
+    match unit {
+        EqUnit::Binding(cref, exp) => {
+            let lhs = DAE::Exp::CREF { componentRef: (*cref).clone(), ty: t_real() };
+            ctx.sim_assign(&lhs, exp)
+        }
+        EqUnit::Eq(eq, stages) => {
+            if let Some(mask) = stages {
+                ctx.sim_stage_guard(*mask);
+            }
+            lower_equation(ctx, eq, eq_index)?;
+            if stages.is_some() {
+                ctx.sim_end_block();
+            }
+            Ok(())
+        }
+    }
+}
+
+/// Instruction budget for one chunk of a split equation entry point, cut on emitted
+/// size rather than equation count (one `SES_ALGORITHM` can outweigh a thousand
+/// assignments). Emitting a whole list as one function makes Cranelift the dominant
+/// cost of a wasm-jit build: its register allocation is superlinear in body size,
+/// every declared local is zero-initialized at entry, and per-function parallel
+/// compilation has nothing to spread. `OMC_WASM_CHUNK_INSTRS` overrides it; 0 never
+/// splits.
+fn chunk_instrs() -> usize {
+    static N: OnceLock<usize> = OnceLock::new();
+    *N.get_or_init(|| match std::env::var("OMC_WASM_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {
+        Some(0) => usize::MAX,
+        Some(n) => n,
+        None => 4096,
+    })
+}
+
+/// An equation entry point lowered into chunk functions. The entry points sit at
+/// fixed function indices (`simulate` and the host driver call them by index), so
+/// the chunks go after every fixed-index body and their indices are only known at
+/// the end of module assembly: the entry point is reserved as a placeholder body
+/// and filled in with [`SplitFn::thunk`] there.
+struct SplitFn {
+    /// Entry-point name, which the chunks extend (`functionODE$3`).
+    name: &'static str,
+    /// Body-list slot reserved for the entry point.
+    slot: usize,
+    /// This entry point's chunks in the module's chunk list.
+    first: usize,
+    count: usize,
+    /// `(SimData*)`, plus DAE mode's `stage`.
+    n_params: u32,
+    ty: u32,
+}
+
+impl SplitFn {
+    fn thunk(&self, chunk_base: u32) -> we::Function {
+        use we::Instruction as I;
+        let mut f = we::Function::new([]);
+        for k in 0..self.count {
+            for p in 0..self.n_params {
+                f.instruction(&I::LocalGet(p));
+            }
+            f.instruction(&I::Call(chunk_base + (self.first + k) as u32));
+        }
+        f.instruction(&I::End);
+        f
+    }
+}
+
+/// Lower `units` into chunk functions appended to `chunks`, reserving a `bodies`
+/// slot for the entry point that calls them. `stateset_diag` heads the first chunk
+/// and `save_pre` tails the last; with no units at all they get a chunk to
+/// themselves. Cuts only happen where no constant-store stretch is open, so
+/// [`lower_unit`]'s merging never straddles a chunk boundary.
+#[allow(clippy::too_many_arguments)]
+fn build_split_fn(
+    name: &'static str,
+    units: &[EqUnit],
+    n_params: u32,
+    ty: u32,
+    stateset_diag: &[u32],
+    save_pre: &[(u32, u32, u32)],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+    bodies: &mut Vec<we::Function>,
+    chunks: &mut Vec<we::Function>,
+) -> Result<SplitFn> {
+    let slot = bodies.len();
+    bodies.push(empty_eqfn());
+    let first = chunks.len();
+    let mut i = 0usize;
+    while i < units.len()
+        || (chunks.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty()))
+    {
+        let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, n_params);
+        if chunks.len() == first {
+            ctx.emit_stateset_diag_init(stateset_diag)?;
+        }
+        let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+        while i < units.len() {
+            // Cancellation poll, throttled: the equation functions are the bulk of
+            // the emit for models with no user functions to poll between.
+            if i & 63 == 0 {
+                metamodelica::cancel::bail_if_cancelled()?;
+            }
+            lower_unit(&mut ctx, &units[i], eq_index, &mut pending)?;
+            i += 1;
+            if pending.is_empty() && ctx.instr_len() >= chunk_instrs() {
+                break;
             }
         }
-        emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
-        lower_equation(&mut ctx, eq, eq_index)?;
+        emit_sim_const_stores(&mut ctx, &pending)?;
+        if i == units.len() {
+            ctx.sim_save_pre_values(save_pre)?;
+        }
+        chunks.push(finish_fn(ctx));
     }
-    emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
-    ctx.sim_save_pre_values(save_pre)?;
-    let (locals, instrs) = ctx.finish_sim();
-    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
-    for i in &instrs {
-        func.instruction(i);
+    Ok(SplitFn { name, slot, first, count: chunks.len() - first, n_params, ty })
+}
+
+/// Lower `units` into one function, for entry points whose size is bounded by the
+/// model's structure rather than its equation count.
+fn build_eq_fn_single(
+    units: &[EqUnit],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    for (i, unit) in units.iter().enumerate() {
+        if i & 63 == 0 {
+            metamodelica::cancel::bail_if_cancelled()?;
+        }
+        lower_unit(&mut ctx, unit, eq_index, &mut pending)?;
     }
-    Ok(func)
+    emit_sim_const_stores(&mut ctx, &pending)?;
+    Ok(finish_fn(ctx))
+}
+
+/// `EqUnit::Eq` over a plain equation list.
+fn eq_units(eqs: &[Arc<SimCode::SimEqSystem>]) -> Vec<EqUnit<'_>> {
+    eqs.iter().map(|e| EqUnit::Eq(e, None)).collect()
 }
 
 /// Build the `initSample(SimData*)` function: evaluate each sample's
@@ -4295,7 +4420,7 @@ fn build_init_start_values_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Vec<Vec<u8>>,
 ) -> Result<we::Function> {
-    let sim = SimCtx { start_slots: HashMap::new(), ..sim_ctx(var_map) };
+    let sim = SimCtx { start_slots: Arc::default(), ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     let mut pairs: Vec<(Option<Arc<DAE::Exp>>, u32, Option<u32>)> = Vec::with_capacity(states.len() + real_algs.len());
     for (i, sv) in states.iter().enumerate() {
@@ -4629,7 +4754,7 @@ fn build_state_set_infos(
         for sv in lst(&set.jacobianMatrix.seedVars) {
             let off = cursor;
             cursor += 8;
-            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
             seed_offs.push(off);
         }
         // Result slots (row order) — register the column result var crefs.
@@ -4637,7 +4762,7 @@ fn build_state_set_infos(
         for sv in lst(&col.columnVars) {
             let off = cursor;
             cursor += 8;
-            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
             result_offs.push(off);
         }
 
@@ -4692,7 +4817,7 @@ fn build_stateset_jac_fn(
             eqs.extend(lst(&col.columnEqns).cloned());
         }
     }
-    build_eq_fn("functionStateSetJacobians", eqs, var_map, eq_index, by_name, literals)
+    build_eq_fn_single(&eq_units(&eqs), var_map, eq_index, by_name, literals)
 }
 
 /// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend
@@ -5087,7 +5212,7 @@ fn build_nls_jac_infos(
         for sv in lst(&jm.seedVars) {
             let off = cursor;
             cursor += 8;
-            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
             listed_offs.push(off);
         }
         // Every column variable (results + intermediates) needs a slot so the
@@ -5102,7 +5227,7 @@ fn build_nls_jac_infos(
         for sv in &jac_column_vars(jm) {
             let off = cursor;
             cursor += 8;
-            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
             if matches!(sv.varKind, VarKind::JAC_VAR) {
                 let row = jac_result_row(sv)
                     .filter(|&r| r < n)
@@ -5173,7 +5298,7 @@ fn build_lin_jac_infos(
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
         for sv in lst(&jm.seedVars).chain(jac_column_vars(jm).iter()) {
-            var_map.vars.insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
             cursor += 8;
         }
     }
