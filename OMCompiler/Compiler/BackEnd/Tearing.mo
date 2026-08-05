@@ -382,8 +382,8 @@ protected function checkTearingSettings
   input Integer numVars;
   output Boolean activateTearing = false;
 protected
-  constant list<String> withLSS = {"C"} "targets that provide a linear sparse solver";
-  constant list<String> withNSS = {"C"} "targets that provide a nonlinear sparse solver";
+  constant list<String> withLSS = {"C", "wasm-jit", "wasm"} "targets that provide a linear sparse solver";
+  constant list<String> withNSS = {"C", "wasm-jit", "wasm"} "targets that provide a nonlinear sparse solver";
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
   Integer maxSize;
   Boolean isDense;
