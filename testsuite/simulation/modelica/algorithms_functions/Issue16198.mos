@@ -1,0 +1,88 @@
+// name:     Issue16198
+// keywords: Function Annotations, derivative, zeroDerivative, record, array
+// status:   correct
+// teardown_command: rm -rf Issue16198.M Issue16198.M.* Issue16198.M_* output.log
+//
+// Symbolic time differentiation of function calls that have a record input with
+// String, Integer and array components:
+//  - the derivative annotation with zeroDerivative on the record input has to be
+//    used, the body, which calls a function without a derivative annotation, must
+//    not be differentiated instead
+//  - the zero seed record built for a record input that is differentiated
+//    symbolically has to be type correct, otherwise the generated C does not compile
+//
+
+loadString("
+package Issue16198
+  record Material
+    parameter String name = \"m\";
+    parameter Integer n = 3;
+    parameter Real HD[3] = {1.0, 2.0, 3.0};
+    parameter Real JD[3] = {0.5, 1.5, 2.5};
+  end Material;
+
+  function helper \"no derivative annotation and not inlinable, is differentiated symbolically\"
+    input Real x;
+    input Material m;
+    output Real y;
+  algorithm
+    y := 0;
+    for i in 1:m.n loop
+      y := y + m.HD[i]*x^2 + m.JD[i]*x;
+    end for;
+  end helper;
+
+  function app \"the derivative is given by the annotation, the body is never differentiated\"
+    input Real x;
+    input Material m;
+    output Real y;
+  algorithm
+    y := helper(x, m);
+    annotation(derivative(zeroDerivative = m) = der_app);
+  end app;
+
+  function der_app \"deliberately different from the derivative of app, so that we see it is used\"
+    input Real x;
+    input Material m;
+    input Real dx;
+    output Real dy;
+  algorithm
+    dy := 999*dx;
+  end der_app;
+
+  model M
+    parameter Material m;
+    Real x = 2*time;
+    Real y1 = app(x, Material(\"m\", 3, {1.0, 2.0, 3.0}, {0.5, 1.5, 2.5}));
+    Real dy1 = der(y1) \"der_app is used: 999*der(x) = 1998\";
+    Real y2 = helper(x, m);
+    Real dy2 = der(y2) \"symbolic derivative: (2*sum(m.HD)*x + sum(m.JD))*der(x) = 48*time + 9\";
+  end M;
+end Issue16198;
+"); getErrorString();
+
+simulate(Issue16198.M, stopTime=1.0, numberOfIntervals=2); getErrorString();
+
+val(dy1, 0.0);
+val(dy1, 1.0);
+val(dy2, 0.0);
+val(dy2, 0.5);
+val(dy2, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue16198.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue16198.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1998.0
+// 1998.0
+// 9.0
+// 33.0
+// 57.0
+// endResult
