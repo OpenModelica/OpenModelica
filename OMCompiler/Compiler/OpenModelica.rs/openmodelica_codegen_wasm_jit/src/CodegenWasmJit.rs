@@ -39,7 +39,7 @@
 
 #![allow(non_snake_case)]
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 use std::sync::Arc;
 
@@ -60,7 +60,8 @@ use crate::CodegenWasmJitFunctions::{
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
-    external_general, function_signature, rt_index, sim_cref_key,
+    external_general, function_signature, rt_index, sim_cref_key, sim_const_store,
+    emit_sim_const_stores,
 };
 
 // The `SimData` layout, result-variable descriptors, and solver metadata are
@@ -4220,7 +4221,17 @@ fn build_eq_fn_with_prelude(
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_stateset_diag_init(stateset_diag)?;
+    // A constant assignment to a `SimData` slot reads nothing, so one consecutive
+    // stretch of them may be reordered and merged: collect a stretch by slot offset
+    // (last value winning) and let `emit_sim_const_stores` write the adjacent groups
+    // as data segments instead of a store per value.
+    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
     for (cref, exp) in prelude {
+        if let Some((off, bytes)) = sim_const_store(&ctx, cref, exp)? {
+            pending.insert(off, bytes);
+            continue;
+        }
+        emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
         let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
         ctx.sim_assign(&lhs, exp)?;
     }
@@ -4230,8 +4241,16 @@ fn build_eq_fn_with_prelude(
         if i & 63 == 0 {
             metamodelica::cancel::bail_if_cancelled()?;
         }
+        if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq {
+            if let Some((off, bytes)) = sim_const_store(&ctx, cref, exp)? {
+                pending.insert(off, bytes);
+                continue;
+            }
+        }
+        emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
         lower_equation(&mut ctx, eq, eq_index)?;
     }
+    emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
     ctx.sim_save_pre_values(save_pre)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));

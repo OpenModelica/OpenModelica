@@ -4500,6 +4500,120 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     Ok(true)
 }
 
+/// The `SimData` slot and little-endian value bytes of an assignment
+/// `cref := <compile-time constant>` that [`compile_sim_cref_assign`] would lower
+/// to a single plain store — `None` when either side needs its general path.
+/// Resolving the slot without emitting anything is what lets
+/// [`emit_sim_const_stores`] group runs of them into data segments.
+pub(crate) fn sim_const_store(
+    ctx: &FnCtx,
+    cref: &DAE::ComponentRef,
+    exp: &DAE::Exp,
+) -> Result<Option<(u32, Vec<u8>)>> {
+    let Some(sim) = &ctx.sim else { return Ok(None) };
+    // Mirror the LHS redirections of `compile_sim_cref_assign`.
+    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+        if ident.as_str() == "$START" {
+            return sim_const_store(ctx, componentRef, exp);
+        }
+        if ident.as_str() == "$PRE" && !sim.vars.contains_key(&sim_cref_key(cref)?) {
+            return sim_const_store(ctx, componentRef, exp);
+        }
+    }
+    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+        if subscriptLst.is_empty() && ctx.locals.contains_key(ident.as_str()) {
+            return Ok(None);
+        }
+    }
+    if let Some((_, sub_exps)) = array_ref_of(cref)? {
+        if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
+            return Ok(None);
+        }
+    }
+    if sim_slice_of(cref)?.is_some() {
+        return Ok(None);
+    }
+    let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
+    if slot.negate || slot.heap {
+        return Ok(None);
+    }
+    let bytes = match (const_num(exp), slot.wty) {
+        (Some(ConstNum::R(r)), WTy::F64) => r.to_le_bytes().to_vec(),
+        (Some(ConstNum::I(i)), WTy::F64) => (i as f64).to_le_bytes().to_vec(),
+        (Some(ConstNum::I(i)), WTy::I32) => i.to_le_bytes().to_vec(),
+        _ => return Ok(None),
+    };
+    Ok(Some((slot.off, bytes)))
+}
+
+/// Store the constant values collected by [`sim_const_store`] into their
+/// `SimData` slots. Adjacent slots — an evaluated parameter array is one
+/// contiguous block — are copied from a passive data segment with `memory.init`;
+/// short groups stay individual stores. All groups of one call share a single
+/// segment (each `memory.init` reads it at its own source offset).
+pub(crate) fn emit_sim_const_stores(
+    ctx: &mut FnCtx,
+    stores: &std::collections::BTreeMap<u32, Vec<u8>>,
+) -> Result<()> {
+    use we::Instruction as I;
+    if stores.is_empty() {
+        return Ok(());
+    }
+    // Split into maximal adjacent groups.
+    let mut groups: Vec<Vec<(u32, &Vec<u8>)>> = Vec::new();
+    for (&off, bytes) in stores {
+        match groups.last_mut() {
+            Some(g) if g.last().is_some_and(|(o, b)| o + b.len() as u32 == off) => g.push((off, bytes)),
+            _ => groups.push(vec![(off, bytes)]),
+        }
+    }
+    // A group of fewer than four values costs less as stores than as a segment
+    // copy; the rest go into the shared blob as (dest, src, len).
+    let mut blob: Vec<u8> = Vec::new();
+    let mut copies: Vec<(u32, u32, u32)> = Vec::new();
+    let data = ctx.sim()?.data_local;
+    for g in &groups {
+        if g.len() < 4 {
+            for (off, bytes) in g {
+                ctx.emit(I::LocalGet(data));
+                match bytes.len() {
+                    8 => {
+                        let v = f64::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
+                        ctx.emit(I::F64Const(v.into()));
+                        ctx.emit(I::F64Store(mem_arg(*off, 3)));
+                    }
+                    4 => {
+                        let v = i32::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
+                        ctx.emit(I::I32Const(v));
+                        ctx.emit(I::I32Store(mem_arg(*off, 2)));
+                    }
+                    _ => return Err("CodegenWasmJit: constant slot value of unexpected width"),
+                }
+            }
+            continue;
+        }
+        let src = blob.len() as u32;
+        for (_, bytes) in g {
+            blob.extend_from_slice(bytes);
+        }
+        copies.push((g[0].0, src, blob.len() as u32 - src));
+    }
+    if copies.is_empty() {
+        return Ok(());
+    }
+    let seg = ctx.literals.len() as u32;
+    ctx.literals.push(blob);
+    for (dest, src, len) in copies {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::I32Const(dest as i32));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Const(src as i32));
+        ctx.emit(I::I32Const(len as i32));
+        ctx.emit(I::MemoryInit { mem: 0, data_index: seg });
+    }
+    Ok(())
+}
+
 /// The `(elem_kind, byte_stride)` pair for an array of `wty` scalars: Real maps
 /// to `EK_REAL`/8, Integer/Boolean to `EK_INT`/4. (A whole-array Boolean model
 /// variable is tagged `EK_INT`; the two share 4-byte storage and no in-scope
@@ -6631,10 +6745,122 @@ fn elem_load(ctx: &mut FnCtx, elem: &SigTy) {
 
 /// Store an array element: stack is `[addr, value]`.
 fn elem_store(ctx: &mut FnCtx, elem: &SigTy) {
+    elem_store_off(ctx, elem, 0)
+}
+
+/// Store an array element at a constant byte `offset` from the address on the
+/// stack: `[base, value]`.
+fn elem_store_off(ctx: &mut FnCtx, elem: &SigTy, offset: u32) {
     match elem.wty() {
-        WTy::I32 => ctx.emit(we::Instruction::I32Store(we::MemArg { offset: 0, align: 2, memory_index: 0 })),
-        WTy::F64 => ctx.emit(we::Instruction::F64Store(we::MemArg { offset: 0, align: 3, memory_index: 0 })),
+        WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(offset, 2))),
+        WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(offset, 3))),
     }
+}
+
+/// Byte offset of the first element of an array object of known rank — the
+/// runtime's `arr_data_off`. Constant here, so a construction's element address
+/// is a plain offset off the object rather than the descriptor arithmetic (and
+/// bounds check) [`emit_elem_ptr`] needs for a run-time index.
+fn arr_data_off(rank: u32) -> u32 {
+    (ARR_DIMS_OFF + rank * 4).next_multiple_of(8)
+}
+
+/// Byte size of one array element.
+fn elem_stride(elem: &SigTy) -> u32 {
+    match elem.wty() {
+        WTy::F64 => 8,
+        WTy::I32 => 4,
+    }
+}
+
+/// A compile-time-constant numeric scalar, as the element bytes it occupies in an
+/// array of element type `elem` — `None` when the expression is not such a
+/// constant. Integer/Boolean/enumeration constants widen to `f64` in a `Real`
+/// array, matching the [`coerce`] the element-wise path emits.
+fn const_elem_bytes(e: &DAE::Exp, elem: &SigTy) -> Option<Vec<u8>> {
+    match (const_num(e)?, elem.wty()) {
+        (ConstNum::R(r), WTy::F64) => Some(r.to_le_bytes().to_vec()),
+        (ConstNum::I(i), WTy::F64) => Some((i as f64).to_le_bytes().to_vec()),
+        (ConstNum::I(i), WTy::I32) => Some(i.to_le_bytes().to_vec()),
+        (ConstNum::R(_), WTy::I32) => None,
+    }
+}
+
+enum ConstNum {
+    I(i32),
+    R(f64),
+}
+
+/// The value of a compile-time-constant numeric/Boolean/enumeration expression.
+fn const_num(e: &DAE::Exp) -> Option<ConstNum> {
+    use DAE::Exp as E;
+    match e {
+        E::ICONST { integer } => Some(ConstNum::I(*integer)),
+        E::BCONST { bool } => Some(ConstNum::I(*bool as i32)),
+        E::ENUM_LITERAL { index, .. } => Some(ConstNum::I(*index)),
+        E::RCONST { real } => Some(ConstNum::R(real.into_inner())),
+        E::SHARED_LITERAL { exp, .. } | E::CAST { exp, .. } => const_num(exp),
+        E::UNARY { operator, exp } => match (operator, const_num(exp)?) {
+            (DAE::Operator::UMINUS { .. }, ConstNum::I(i)) => Some(ConstNum::I(i.wrapping_neg())),
+            (DAE::Operator::UMINUS { .. }, ConstNum::R(r)) => Some(ConstNum::R(-r)),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Materialize a run of constant elements collected by [`compile_array_literal`]
+/// into the array object at `dest_off`. A run long enough to pay for the sequence
+/// is copied from a passive data segment with `memory.init`, so a large constant
+/// table costs a fixed handful of instructions rather than a store per element.
+fn emit_const_run(
+    ctx: &mut FnCtx,
+    obj: u32,
+    dest_off: u32,
+    elem: &SigTy,
+    run: &mut Vec<u8>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let bytes = core::mem::take(run);
+    if bytes.is_empty() {
+        return Ok(());
+    }
+    let stride = elem_stride(elem);
+    if bytes.len() as u32 / stride < 4 {
+        for (i, chunk) in bytes.chunks_exact(stride as usize).enumerate() {
+            ctx.emit(I::LocalGet(obj));
+            match elem.wty() {
+                WTy::F64 => {
+                    let v = f64::from_le_bytes(chunk.try_into().map_err(|_| "CodegenWasmJit: bad literal run")?);
+                    ctx.emit(I::F64Const(v.into()));
+                }
+                WTy::I32 => {
+                    let v = i32::from_le_bytes(chunk.try_into().map_err(|_| "CodegenWasmJit: bad literal run")?);
+                    ctx.emit(I::I32Const(v));
+                }
+            }
+            elem_store_off(ctx, elem, dest_off + i as u32 * stride);
+        }
+        return Ok(());
+    }
+    let len = bytes.len() as u32;
+    // The same table often appears in more than one equation function (the initial
+    // and the algebraic system evaluate the same `when`); one segment serves both,
+    // and nothing emits `data.drop`.
+    let seg = match ctx.literals.iter().position(|l| l.len() == bytes.len() && *l == bytes) {
+        Some(i) => i as u32,
+        None => {
+            ctx.literals.push(bytes);
+            ctx.literals.len() as u32 - 1
+        }
+    };
+    ctx.emit(I::LocalGet(obj));
+    ctx.emit(I::I32Const(dest_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32Const(len as i32));
+    ctx.emit(I::MemoryInit { mem: 0, data_index: seg });
+    Ok(())
 }
 
 /// The constant per-axis sizes of an array `DAE.Type`, flattening nested
@@ -6714,17 +6940,34 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
     }
     // Store each leaf at its row-major position. A scalar leaf occupies one
     // element; an array-valued leaf contributes its whole (row-major) contents.
+    // The position is known here, so the element address is `obj` plus a constant
+    // offset — no descriptor arithmetic, no bounds check. Consecutive constant
+    // elements accumulate into `run` and go out as a data segment.
+    let data_off = arr_data_off(rank);
+    let stride = elem_stride(&elem);
+    let mut run: Vec<u8> = Vec::new();
+    let mut run_start: u32 = 0;
     let mut k: u32 = 0; // running 0-based element index
     for leaf in &leaves {
-        match leaf_array_count(leaf)? {
+        let count = leaf_array_count(leaf)?;
+        if count.is_none() {
+            if let Some(bytes) = const_elem_bytes(leaf, &elem) {
+                if run.is_empty() {
+                    run_start = k;
+                }
+                run.extend_from_slice(&bytes);
+                k += 1;
+                continue;
+            }
+        }
+        emit_const_run(ctx, obj, data_off + run_start * stride, &elem, &mut run)?;
+        match count {
             None => {
                 // Scalar element.
                 ctx.emit(we::Instruction::LocalGet(obj));
-                ctx.emit(we::Instruction::I32Const(k as i32 + 1));
-                emit_elem_ptr(ctx, &elem)?;
                 let w = compile_exp(ctx, leaf)?;
                 coerce(ctx, w, elem.wty());
-                elem_store(ctx, &elem);
+                elem_store_off(ctx, &elem, data_off + k * stride);
                 k += 1;
             }
             Some(n) => {
@@ -6743,6 +6986,7 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
             }
         }
     }
+    emit_const_run(ctx, obj, data_off + run_start * stride, &elem, &mut run)?;
     if k != total {
         return Err("CodegenWasmJit: array constructor element/type count mismatch");
     }
