@@ -1119,8 +1119,89 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    recordNavigationPoint();
     centerCursor();
   }
+}
+
+/*!
+ * \brief PlainTextEdit::recordNavigationPoint
+ * Records the current cursor position in the navigation history. Used to
+ * implement the back/forward cursor navigation (mouse buttons 4/5 and
+ * Alt+Left/Alt+Right). A new point truncates any forward points and the
+ * history is limited to NavigationHistorySize points.
+ */
+void PlainTextEdit::recordNavigationPoint()
+{
+  if (mNavigationPos >= 0 && mNavigationPos < mNavigationPoints.size() && mNavigationPoints[mNavigationPos] == textCursor().position()) {
+    return;
+  }
+  if (mNavigationPos >= 0 && mNavigationPos < mNavigationPoints.size() - 1) {
+    mNavigationPoints.resize(mNavigationPos + 1);
+  }
+  mNavigationPoints.append(textCursor().position());
+  mNavigationPos = mNavigationPoints.size() - 1;
+  while (mNavigationPoints.size() > NavigationHistorySize) {
+    mNavigationPoints.removeFirst();
+    --mNavigationPos;
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::goBack
+ * Moves the cursor to the previous navigation point. Returns true if the
+ * cursor was moved.
+ */
+bool PlainTextEdit::goBack()
+{
+  if (mNavigationPos <= 0) {
+    return false;
+  }
+  --mNavigationPos;
+  moveToNavigationPoint(mNavigationPoints.at(mNavigationPos));
+  return true;
+}
+
+/*!
+ * \brief PlainTextEdit::goForward
+ * Moves the cursor to the next navigation point. Returns true if the cursor
+ * was moved.
+ */
+bool PlainTextEdit::goForward()
+{
+  if (mNavigationPos < 0 || mNavigationPos >= mNavigationPoints.size() - 1) {
+    return false;
+  }
+  ++mNavigationPos;
+  moveToNavigationPoint(mNavigationPoints.at(mNavigationPos));
+  return true;
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the cursor to the given position without recording a new navigation
+ * point. The position is clamped to the document so it is safe to visit even
+ * if the document changed after the position was recorded.
+ * \param position - the document position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  position = qBound(0, position, document()->characterCount() - 1);
+  QTextCursor cursor = textCursor();
+  cursor.setPosition(position);
+  setTextCursor(cursor);
+  ensureCursorVisible();
+  centerCursor();
+}
+
+/*!
+ * \brief PlainTextEdit::clearNavigationHistory
+ * Clears all recorded navigation points.
+ */
+void PlainTextEdit::clearNavigationHistory()
+{
+  mNavigationPoints.clear();
+  mNavigationPos = -1;
 }
 
 /*!
@@ -1672,6 +1753,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
+  bool altModifier = pEvent->modifiers().testFlag(Qt::AltModifier);
   bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
   bool isCompleterChar = !pEvent->text().isEmpty() && mCompletionCharacters.indexOf(pEvent->text().front()) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
@@ -1743,6 +1825,14 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   } else if (shiftModifier && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
     /* Ticket #2273. Change shift+enter to enter. */
     pEvent->setModifiers(Qt::NoModifier);
+  } else if (altModifier && !controlModifier && !shiftModifier && pEvent->key() == Qt::Key_Left) {
+    // alt+left is pressed. Navigate back in the cursor position history.
+    goBack();
+    return;
+  } else if (altModifier && !controlModifier && !shiftModifier && pEvent->key() == Qt::Key_Right) {
+    // alt+right is pressed. Navigate forward in the cursor position history.
+    goForward();
+    return;
   }
   /* do not change the order of execution as the indentation event will fail when completer is on */
   if (!mpCompleter || !isCompleterShortcut) { // do not process the shortcut when we have a completer
@@ -2081,12 +2171,24 @@ void PlainTextEdit::wheelEvent(QWheelEvent *event)
  */
 void PlainTextEdit::mousePressEvent(QMouseEvent *event)
 {
+  if (event->button() == Qt::BackButton) {
+    goBack();
+    event->accept();
+    return;
+  } else if (event->button() == Qt::ForwardButton) {
+    goForward();
+    event->accept();
+    return;
+  }
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (controlModifier) {
     mpBaseEditor->symbolAtPosition(event->pos());
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    recordNavigationPoint();
+  }
 }
 
 /*!
@@ -2802,6 +2904,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  mpBaseEditor->getPlainTextEdit()->recordNavigationPoint();
 }
 
 /*!
