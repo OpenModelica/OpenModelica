@@ -495,7 +495,10 @@ endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse")
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
+       # The PIC dylink side module compiles the sources again and needs the
+       # `sundials_config.h` the wasm ExternalProject generates.
+       "OMC_SUNDIALS_WASM_INCLUDE=${_sundials_ep_build}/include")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.

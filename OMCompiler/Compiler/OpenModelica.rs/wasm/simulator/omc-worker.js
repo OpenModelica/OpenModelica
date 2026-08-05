@@ -10,6 +10,7 @@ import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
   omc_enable_cancel_poll,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
+  omc_fmu_cs_solvers,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
@@ -289,7 +290,8 @@ self.onmessage = async (ev) => {
         // so this API call is how the option gets set (models may still opt in via
         // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
         omc_eval('setCommandLineOptions("-d=visxml")');
-        reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options() });
+        reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options(),
+                fmuCsSolvers: omc_fmu_cs_solvers() });
         break;
       }
       case 'warmup': {

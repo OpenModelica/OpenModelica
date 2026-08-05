@@ -36,6 +36,12 @@ fn main() {
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_DIR");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_NATIVE_INDEX_SIZE");
 
+    // The FMI3 adapter's build: the calls stay undefined and become wasm imports the
+    // FMU linker resolves, so there is nothing to link and no target to check.
+    if std::env::var_os("CARGO_FEATURE_SUNDIALS_EXTERN").is_some() {
+        println!("cargo:rustc-cfg=sundials");
+        return;
+    }
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     if arch == "wasm32" {

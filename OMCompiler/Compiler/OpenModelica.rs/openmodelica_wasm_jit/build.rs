@@ -92,11 +92,22 @@ struct AdapterVariant {
     cargo_args: &'static [&'static str],
 }
 
-/// Model Exchange (default features), Co-Simulation, and the combined me_cs world.
+/// Model Exchange (default features), Co-Simulation, and the combined me_cs world; the
+/// `_sundials` variants add CVODE/IDA and are picked only for a `method=` needing them.
 const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant { name: "me", label: "ME", cargo_args: &[] },
     AdapterVariant { name: "cs", label: "CS", cargo_args: &["--no-default-features", "--features", "cs"] },
     AdapterVariant { name: "mecs", label: "me_cs", cargo_args: &["--no-default-features", "--features", "me,cs"] },
+    AdapterVariant {
+        name: "cs_sundials",
+        label: "CS+SUNDIALS",
+        cargo_args: &["--no-default-features", "--features", "cs,sundials"],
+    },
+    AdapterVariant {
+        name: "mecs_sundials",
+        label: "me_cs+SUNDIALS",
+        cargo_args: &["--no-default-features", "--features", "me,cs,sundials"],
+    },
 ];
 
 fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {

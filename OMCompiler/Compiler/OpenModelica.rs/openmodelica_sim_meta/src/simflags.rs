@@ -225,6 +225,7 @@ impl SimFlags {
 /// rather than running a different solver.
 #[derive(Clone, Copy, Debug)]
 pub struct Capabilities {
+    /// The runtime's SUNDIALS archives, which hold KINSOL as well as KLU.
     pub klu: bool,
     pub ida: bool,
     pub cvode: bool,
@@ -270,30 +271,15 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
 /// only these never builds a command line [`check`] rejects. `default` is left out:
 /// omitting a flag selects it.
 pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
-    // gbode and the fixed-step solvers are pure Rust, so every build has them.
-    let mut solver = alloc::vec!["dassl", "euler", "rungekutta", "gbode"];
-    for (name, have) in [("ida", cap.ida), ("cvode", cap.cvode)] {
-        if have {
-            solver.push(name);
-        }
-    }
-    let mut nls_ls = alloc::vec!["totalpivot", "lapack", "rsparse"];
-    let mut ls = alloc::vec!["lapack", "totalpivot"];
-    let mut lss = alloc::vec!["rsparse"];
-    if cap.klu {
-        nls_ls.push("klu");
-        ls.push("klu");
-        lss.push("klu");
-    }
     let mut menu = alloc::vec![
-        ("s", solver),
-        ("nls", alloc::vec!["hybrid", "kinsol", "newton", "mixed", "homotopy"]),
-        ("nlsLS", nls_ls),
-        ("ls", ls),
-        ("lss", lss),
+        ("s", offered(SOLVERS, cap)),
+        ("nls", offered(NLS_VALUES, cap)),
+        ("nlsLS", offered(NLS_LS_VALUES, cap)),
+        ("ls", offered(LS_VALUES, cap)),
+        ("lss", offered(LSS_VALUES, cap)),
     ];
     if cap.ida {
-        menu.push(("idaLS", alloc::vec!["klu", "dense", "spgmr", "spbcg", "sptfqmr"]));
+        menu.push(("idaLS", offered(IDA_LS_VALUES, cap)));
     }
     menu
 }
@@ -504,11 +490,11 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             Ok(v.as_ref().to_string())
         };
         match name {
-            "s" | "solver" => f.solver = Some(solver(&value(name)?)?),
-            "nls" => f.nls = Some(nls(&value(name)?)?),
-            "nlsLS" => f.nls_ls = Some(nls_ls(&value(name)?)?),
-            "ls" => f.ls = Some(ls(&value(name)?)?),
-            "lss" => f.lss = Some(lss(&value(name)?)?),
+            "s" | "solver" => f.solver = Some(pick("s", &value(name)?, SOLVERS)?),
+            "nls" => f.nls = Some(pick("nls", &value(name)?, NLS_VALUES)?),
+            "nlsLS" => f.nls_ls = Some(pick("nlsLS", &value(name)?, NLS_LS_VALUES)?),
+            "ls" => f.ls = Some(pick("ls", &value(name)?, LS_VALUES)?),
+            "lss" => f.lss = Some(pick("lss", &value(name)?, LSS_VALUES)?),
             "lv" => {
                 for s in value(name)?.split(',') {
                     let s = s.trim();
@@ -591,7 +577,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                         .map_err(|_| "-jacobianNominalFactor needs a number".to_string())?,
                 )
             }
-            "idaLS" => f.ida_ls = Some(ida_ls(&value(name)?)?),
+            "idaLS" => f.ida_ls = Some(pick("idaLS", &value(name)?, IDA_LS_VALUES)?),
             "idaSensitivity" => f.ida_sensitivity = true,
             "idaMaxErrorTestFails" => f.ida_max_err_test_fails = Some(int(name, &value(name)?)?),
             "idaMaxNonLinIters" => f.ida_max_nonlin_iters = Some(int(name, &value(name)?)?),
@@ -676,76 +662,107 @@ fn real(flag: &str, v: &str) -> Result<f64, String> {
     v.parse().map_err(|_| format!("-{flag} needs a number"))
 }
 
-fn solver(v: &str) -> Result<Solver, String> {
-    Ok(match v {
-        "dassl" | "dasslrt" => Solver::Dassl,
-        "ida" => Solver::Ida,
-        "cvode" => Solver::Cvode,
-        "gbode" => Solver::Gbode,
-        "euler" => Solver::Euler,
-        "rungekutta" => Solver::RungeKutta,
-        "symSolver" => Solver::SymSolver,
-        "symSolverSsc" => Solver::SymSolverSsc,
-        _ => {
-            return Err(bad(
-                "s",
-                v,
-                "dassl, ida, cvode, gbode, euler, rungekutta, symSolver, symSolverSsc",
-            ));
+/// One accepted value of a solver-selection flag: C's name, what it selects, and
+/// whether to offer it.
+type Value<T> = (&'static str, T, Offer);
+
+/// Whether [`supported`] may offer a value. [`parse`] accepts every value C accepts
+/// regardless, so this only decides what to advertise.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Offer {
+    Always,
+    WithSundials,
+    WithIda,
+    WithCvode,
+    /// `default`, an alias of a listed value, or one this runtime substitutes for.
+    Never,
+}
+
+impl Offer {
+    fn available(self, cap: Capabilities) -> bool {
+        match self {
+            Offer::Always => true,
+            Offer::WithSundials => cap.klu,
+            Offer::WithIda => cap.ida,
+            Offer::WithCvode => cap.cvode,
+            Offer::Never => false,
         }
-    })
+    }
 }
 
-fn nls(v: &str) -> Result<Nls, String> {
-    Ok(match v {
-        "hybrid" => Nls::Hybrid,
-        "kinsol" => Nls::Kinsol,
-        "newton" => Nls::Newton,
-        "mixed" => Nls::Mixed,
-        "homotopy" => Nls::Homotopy,
-        _ => return Err(bad("nls", v, "hybrid, kinsol, newton, mixed, homotopy")),
-    })
+/// `-s`. `symSolver*` parse so the unsupported-*method* error reports them, not the
+/// flag parser.
+const SOLVERS: &[Value<Solver>] = &[
+    ("dassl", Solver::Dassl, Offer::Always),
+    ("dasslrt", Solver::Dassl, Offer::Never),
+    ("euler", Solver::Euler, Offer::Always),
+    ("rungekutta", Solver::RungeKutta, Offer::Always),
+    ("gbode", Solver::Gbode, Offer::Always),
+    ("ida", Solver::Ida, Offer::WithIda),
+    ("cvode", Solver::Cvode, Offer::WithCvode),
+    ("symSolver", Solver::SymSolver, Offer::Never),
+    ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
+];
+
+/// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
+const NLS_VALUES: &[Value<Nls>] = &[
+    ("hybrid", Nls::Hybrid, Offer::Always),
+    ("kinsol", Nls::Kinsol, Offer::WithSundials),
+    ("newton", Nls::Newton, Offer::Always),
+    ("mixed", Nls::Mixed, Offer::Always),
+    ("homotopy", Nls::Homotopy, Offer::Always),
+];
+
+/// `-nlsLS`. Only KLU and `rsparse` exist here; C's dense values fall to `rsparse`.
+const NLS_LS_VALUES: &[Value<NlsLs>] = &[
+    ("default", NlsLs::Default, Offer::Never),
+    ("totalpivot", NlsLs::TotalPivot, Offer::Never),
+    ("lapack", NlsLs::Lapack, Offer::Never),
+    ("rsparse", NlsLs::Rsparse, Offer::Always),
+    ("klu", NlsLs::Klu, Offer::WithSundials),
+];
+
+/// `-ls`. `lapack` is partial-pivot LU falling back to the total-pivot search,
+/// which `totalpivot` goes straight to.
+const LS_VALUES: &[Value<Ls>] = &[
+    ("default", Ls::Default, Offer::Never),
+    ("lapack", Ls::Lapack, Offer::Always),
+    ("totalpivot", Ls::TotalPivot, Offer::Always),
+    ("klu", Ls::Klu, Offer::WithSundials),
+];
+
+/// `-lss`
+const LSS_VALUES: &[Value<Lss>] = &[
+    ("default", Lss::Default, Offer::Never),
+    ("rsparse", Lss::Rsparse, Offer::Always),
+    ("klu", Lss::Klu, Offer::WithSundials),
+];
+
+/// `-idaLS`. All five reach a SUNLinearSolver; the whole entry rides on `cap.ida`.
+const IDA_LS_VALUES: &[Value<IdaLs>] = &[
+    ("klu", IdaLs::Klu, Offer::Always),
+    ("dense", IdaLs::Dense, Offer::Always),
+    ("spgmr", IdaLs::Spgmr, Offer::Always),
+    ("spbcg", IdaLs::Spbcg, Offer::Always),
+    ("sptfqmr", IdaLs::Sptfqmr, Offer::Always),
+];
+
+/// Every value the parser accepts, offered or not.
+fn names<T: Copy>(table: &[Value<T>]) -> Vec<&'static str> {
+    table.iter().map(|&(n, ..)| n).collect()
 }
 
-fn nls_ls(v: &str) -> Result<NlsLs, String> {
-    Ok(match v {
-        "default" => NlsLs::Default,
-        "totalpivot" => NlsLs::TotalPivot,
-        "lapack" => NlsLs::Lapack,
-        "klu" => NlsLs::Klu,
-        "rsparse" => NlsLs::Rsparse,
-        _ => return Err(bad("nlsLS", v, "default, totalpivot, lapack, klu, rsparse")),
-    })
+/// Look a value up, naming every accepted one on a miss.
+fn pick<T: Copy>(flag: &str, v: &str, table: &[Value<T>]) -> Result<T, String> {
+    match table.iter().find(|(name, ..)| *name == v) {
+        Some(&(_, val, _)) => Ok(val),
+        None => Err(bad(flag, v, &names(table).join(", "))),
+    }
 }
 
-fn ls(v: &str) -> Result<Ls, String> {
-    Ok(match v {
-        "default" => Ls::Default,
-        "lapack" => Ls::Lapack,
-        "totalpivot" => Ls::TotalPivot,
-        "klu" => Ls::Klu,
-        _ => return Err(bad("ls", v, "default, lapack, totalpivot, klu")),
-    })
-}
-
-fn ida_ls(v: &str) -> Result<IdaLs, String> {
-    Ok(match v {
-        "dense" => IdaLs::Dense,
-        "klu" => IdaLs::Klu,
-        "spgmr" => IdaLs::Spgmr,
-        "spbcg" => IdaLs::Spbcg,
-        "sptfqmr" => IdaLs::Sptfqmr,
-        _ => return Err(bad("idaLS", v, "dense, klu, spgmr, spbcg, sptfqmr")),
-    })
-}
-
-fn lss(v: &str) -> Result<Lss, String> {
-    Ok(match v {
-        "default" => Lss::Default,
-        "klu" => Lss::Klu,
-        "rsparse" => Lss::Rsparse,
-        _ => return Err(bad("lss", v, "default, klu, rsparse")),
-    })
+/// The values this build may offer, in table order.
+fn offered<T: Copy>(table: &[Value<T>], cap: Capabilities) -> Vec<&'static str> {
+    table.iter().filter(|&&(.., o)| o.available(cap)).map(|&(n, ..)| n).collect()
 }
 
 /// Set once per run before the driver starts; read from anywhere, since the NLS/LS
@@ -836,6 +853,8 @@ mod tests {
 
     const NOTHING: Capabilities =
         Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false };
+    const EVERYTHING: Capabilities =
+        Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -885,9 +904,7 @@ mod tests {
     // both the parser and the capability check of the build that offered it.
     #[test]
     fn everything_supported_parses_and_checks() {
-        for cap in
-            [NOTHING, Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true }]
-        {
+        for cap in [NOTHING, EVERYTHING] {
             for (flag, values) in supported(cap) {
                 for v in values {
                     let f = parse(&argv(&[&format!("-{flag}={v}")])).expect(&format!("-{flag}={v}"));
@@ -895,8 +912,35 @@ mod tests {
                 }
             }
         }
-        // KLU is offered only where it is linked, so it never shows up above.
+        // KLU and KINSOL come from the archives, so neither shows up above.
         assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"klu")));
+        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"kinsol")));
+    }
+
+    /// The other direction: a value [`check`] rejects must not be offered.
+    #[test]
+    fn rejected_values_are_never_offered() {
+        let all = [
+            ("s", names(SOLVERS)),
+            ("nls", names(NLS_VALUES)),
+            ("nlsLS", names(NLS_LS_VALUES)),
+            ("ls", names(LS_VALUES)),
+            ("lss", names(LSS_VALUES)),
+            ("idaLS", names(IDA_LS_VALUES)),
+        ];
+        for cap in [NOTHING, Capabilities { klu: true, ..NOTHING }, EVERYTHING] {
+            let menu = supported(cap);
+            for (flag, values) in &all {
+                for v in values {
+                    let f = parse(&argv(&[&format!("-{flag}={v}")])).expect("parses");
+                    if check(&f, cap).is_ok() {
+                        continue;
+                    }
+                    let offered = menu.iter().any(|(n, vals)| n == flag && vals.contains(v));
+                    assert!(!offered, "-{flag}={v} is offered but rejected");
+                }
+            }
+        }
     }
 
     // The wire codes the wasm-jit runtime decodes: unset is 0, and the values are
