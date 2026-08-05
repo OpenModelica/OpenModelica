@@ -351,18 +351,22 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
   }
 }
 
+// Fixed path for the Rust working copy (rust_omc.cmake's RUST_OMC_DIR): sccache
+// hashes CARGO_MANIFEST_DIR into the Rust cache key and SCCACHE_BASEDIRS does not
+// rewrite env values, so a per-job path makes every crate of ours a guaranteed
+// miss. Outside the workspace; each build gets its own container.
+String rustWorkDir() { return '/tmp/omc-rust' }
+
 // sccache config for the cargo builds: a shared S3 (MinIO) compile cache at
 // sccache.openmodelica.org, replacing the per-node /cache/sccache volume so the
 // cache is shared across agents (see .CI/sccache/). Incremental must be off for
 // sccache to hit. The cache size is bounded server-side (bucket TTL + quota);
 // SCCACHE_CACHE_SIZE does not apply to the S3 backend.
 //
-// RUSTC_WRAPPER is a selective shim (rustc-sccache-wrapper.sh), not sccache
-// directly: it only sends the crates.io/git dependencies through sccache and
-// runs our own (always-regenerated, never-cached) workspace crates under bare
-// rustc, so cargo pipelining survives on the generated-crate chain that
-// dominates the build. Absolute path: cargo's CWD is the OpenModelica.rs
-// workspace, not the repo root.
+// The commented-out RUSTC_WRAPPER is a selective shim (rustc-sccache-wrapper.sh)
+// running our own crates under bare rustc to keep cargo pipelining. It assumed
+// they never hit the cache; they do, now that rustWorkDir() keeps
+// CARGO_MANIFEST_DIR constant.
 //
 // AWS_ACCESS_KEY_ID is the scoped, non-secret key (readwrite on the sccache
 // bucket only); the matching secret is injected separately by withSccache() from
@@ -448,6 +452,7 @@ void buildRustOMC() {
       -DCMAKE_INSTALL_PREFIX=build \
       -DRUST_OMC_TIMINGS=ON \
       -DRUST_OMC_THREADS=4 \
+      -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
   """
   // O3 is the default release opt-level; CI uses O2 to cut build time.
@@ -474,9 +479,16 @@ void buildRustOMC() {
         includes: 'build/**,' +
                   'testsuite/flattening/modelica/ffi/FFITest/Resources/Library/**'
   // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
-  // without re-running codegen.
+  // without re-running codegen. stash reaches only inside the workspace, so stage
+  // them there first, relative to the working copy root.
+  sh """
+    rm -rf rust-generated-src && mkdir -p rust-generated-src
+    cd ${rustWorkDir()}/rust-src
+    find . -path '*/src/*.rs' -print0 |
+      tar --null -T - -cf - | tar -C ${env.WORKSPACE}/rust-generated-src -xf -
+  """
   stash name: 'rust-generated-src',
-        includes: 'build_cmake/OMCompiler/Compiler/rust-src/**/src/*.rs,' +
+        includes: 'rust-generated-src/**,' +
                   'build_cmake/rust-wasi-pic-sysroot/**,' +
                   'build_cmake/rust-sundials-wasm/**,' +
                   'build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm'
@@ -496,10 +508,18 @@ void configureWeb(String extra) {
       -DRUST_OMC_WASM_RUNTIME=${env.WORKSPACE}/runtime.wasm \
       -DRUST_OMC_PREBUILT_GENERATED_SRC=ON \
       -DRUST_OMC_TIMINGS=ON \
+      -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DOM_USE_CCACHE=OFF \
       -DCMAKE_INSTALL_PREFIX=install_web \
       ${extra}
   """
+}
+
+// Lay the stage-1 generated .rs into the working copy, before the cmake configure
+// (which writes a placeholder lib.rs only for the ones still missing).
+void restoreGeneratedSrc() {
+  unstash 'rust-generated-src'
+  sh "mkdir -p ${rustWorkDir()}/rust-src && cp -a rust-generated-src/. ${rustWorkDir()}/rust-src/"
 }
 
 // Run an em++ build under sccache via the shim (see em-sccache-wrapper.sh).
@@ -516,7 +536,7 @@ void buildRustWeb() {
   standardSetup()
   unstash 'wasm-jit-runtime'
   unstash 'runtime-sources-mo'
-  unstash 'rust-generated-src'
+  restoreGeneratedSrc()
   unstash 'omc-cmake-rust-gui-inputs'
   configureWeb('-DRUST_OMC_WEB_QT=OFF')
   withEmSccache {
@@ -535,7 +555,7 @@ void buildRustWebQt() {
   standardSetup()
   unstash 'wasm-jit-runtime'
   unstash 'runtime-sources-mo'
-  unstash 'rust-generated-src'
+  restoreGeneratedSrc()
   unstash 'omc-cmake-rust-gui-inputs'
   configureWeb('-DRUST_OMC_WEB_QT=OFF -DRUST_OMC_WEB_QT_STANDALONE=ON -DOMEDIT_WASM_OPTIMIZE=ON')
   withEmSccache {
@@ -583,6 +603,7 @@ void buildRustGUI() {
       -DOM_ENABLE_GUI_CLIENTS=ON \
       -DRUST_OMC_PREBUILT_CDYLIB=${env.WORKSPACE}/build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so \
       -DRUST_OMC_PREBUILT_SCRIPTING_API_QT_DIR=${env.WORKSPACE}/build_cmake/OMCompiler/Compiler/scripting-api-qt \
+      -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DOM_OMC_ENABLE_CPP_RUNTIME=OFF \
       -DOM_USE_CCACHE=OFF \
       -DCMAKE_C_COMPILER_LAUNCHER=sccache \
@@ -658,10 +679,20 @@ void partestRust(partition) {
 void ctestRust() {
   standardSetup()
   unstash 'rust-generated-src'
-  // Codegen writes the generated .rs into the cmake per-build copy (rust-src);
-  // overlay them onto the crate source tree so cargo sees a complete workspace
-  // (without the generated lib.rs the manifest load fails, "no targets specified").
-  sh "cp -a build_cmake/OMCompiler/Compiler/rust-src/. OMCompiler/Compiler/OpenModelica.rs/"
+  // Assembled in rustWorkDir(), not the workspace, so the crates hit sccache (see
+  // rustWorkDir()). The whole crate tree, not the rust_src_sync manifest: that one
+  // omits test fixtures. Then the stage-1 generated .rs (without them the manifest
+  // load fails) and the builtin .mo openmodelica_wasi include_str!s from ../../../.
+  def work = "${rustWorkDir()}/rust-src"
+  sh """
+    rm -rf ${work} && mkdir -p ${work}
+    tar -C OMCompiler/Compiler/OpenModelica.rs --exclude=./target -cf - . | tar -C ${work} -xf -
+    cp -a rust-generated-src/. ${work}/
+    for d in FrontEnd NFFrontEnd; do
+      mkdir -p ${rustWorkDir()}/\$d
+      cp OMCompiler/Compiler/\$d/*Builtin*.mo ${rustWorkDir()}/\$d/
+    done
+  """
   // Env vars required by the openmodelica_wasi_libc and openmodelica_wasm_jit
   // build.rs (wasm cross-compile artifacts from CMake build).
   def wasmEnv = [
@@ -672,10 +703,12 @@ void ctestRust() {
   ]
   try {
     withSccache(wasmEnv) {
-      sh "cd OMCompiler/Compiler/OpenModelica.rs && cargo nextest run --workspace --exclude openmodelica --profile ci --no-fail-fast"
+      sh "cd ${work} && cargo nextest run --workspace --exclude openmodelica --profile ci --no-fail-fast"
     }
   } finally {
-    junit testResults: 'OMCompiler/Compiler/OpenModelica.rs/target/nextest/ci/junit.xml', allowEmptyResults: true
+    // junit only reads inside the workspace.
+    sh "cp ${work}/target/nextest/ci/junit.xml nextest-junit.xml || true"
+    junit testResults: 'nextest-junit.xml', allowEmptyResults: true
   }
 }
 

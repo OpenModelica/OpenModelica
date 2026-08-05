@@ -22,9 +22,14 @@ find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
 set(RUST_OMC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
     CACHE PATH "Canonical Rust omc source tree (mirrored into the per-build copy).")
+# sccache hashes CARGO_MANIFEST_DIR into the Rust cache key, so a per-checkout
+# working copy makes every crate a guaranteed miss; CI pins this (.CI/common.groovy
+# rustWorkDir()).
+set(RUST_OMC_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    CACHE PATH "Parent directory of the per-build Rust working copy (rust-src).")
 # Not cached: a normal set() shadows a stale cache from before this was per-build,
 # so reconfiguring an existing build dir picks up the new path.
-set(RUST_OMC_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-src)
+set(RUST_OMC_DIR ${RUST_OMC_WORK_DIR}/rust-src)
 set(RUST_SRC_MANIFEST ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_files.txt)
 
 # Mirror now so the configure-time reads below (.gitignore, susanSources.txt) see
