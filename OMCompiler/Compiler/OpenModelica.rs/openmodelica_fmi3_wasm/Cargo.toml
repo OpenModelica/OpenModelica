@@ -5,7 +5,8 @@
 # and drives the model through the kernel functions imported from module `model`.
 #
 # It links `openmodelica_codegen_wasm_jit_runtime` (default-features off, so the
-# `rt_sim_*` session driver and its `env` table import are dropped) purely for the
+# `rt_sim_*` session driver and its `env` table import are dropped, as is the
+# `host_log` sink — there is no `env` host to import one from) purely for the
 # shared dlmalloc allocator + `rt_*` primitives + linear memory: the merged module
 # then has ONE allocator/heap shared by the model's `rt_alloc` and wit-bindgen's
 # `cabi_realloc`. See openmodelica_codegen_wasm_jit/build.rs for how it is built
