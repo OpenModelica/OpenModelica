@@ -36,9 +36,7 @@
 #endif
 
 #include <ColPackHeaders.h>
-
 #include <vector>
-#endif
 
 extern "C" int computeColPackStarBicoloring(
     unsigned int nRows,
@@ -119,3 +117,5 @@ extern "C" int computeColPackStarBicoloring(
     return 0;
   }
 }
+
+#endif
