@@ -135,8 +135,8 @@ buildModel(AdjointJacobian4); getErrorString();
 //
 // Partial Derivative Variables (11/13)
 // **************************************
-// (1)       [JVAR] (1) Real $pDER_ODE_JAC_ADJ.v
-// (2)       [JVAR] (3) Real[3] $pDER_ODE_JAC_ADJ.x
+// (1)       [JVAR] (3) Real[3] $pDER_ODE_JAC_ADJ.x
+// (2)       [JVAR] (1) Real $pDER_ODE_JAC_ADJ.v
 // (3)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_3
 // (4)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
 // (5)       [JTMP] (1) Real $pDER_ODE_JAC_ADJ.b
@@ -149,8 +149,8 @@ buildModel(AdjointJacobian4); getErrorString();
 //
 // Seed Variables (2/4)
 // **********************
-// (1)       [SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.v
-// (2)       [SEED] (3) Real[3] $SEED_ODE_JAC_ADJ.$DER.x
+// (1)       [SEED] (3) Real[3] $SEED_ODE_JAC_ADJ.$DER.x
+// (2)       [SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.v
 //
 // BLOCK 1: Multi Strong Component (status = Solve.EXPLICIT, size = 3)
 // ---------------------------------------------------------------------
@@ -227,6 +227,9 @@ buildModel(AdjointJacobian4); getErrorString();
 //   SPARSITY Adjacency Matrix
 // =============================
 //
+// 0  | {1} .$RES_SIM_3 ...{$SEED_ODE_JAC_ADJ.$DER.x[1]} ..... {}
+// 0  | {1} .$RES_SIM_4 ...{$SEED_ODE_JAC_ADJ.$DER.v} ........ {$pDER_ODE_JAC_ADJ.v[{}]}
+// 0  | {2} .$RES_SIM_1 ...{$SEED_ODE_JAC_ADJ.$DER.x[$i1]} ... {$pDER_ODE_JAC_ADJ.x[(-1) + $i1][{}]}
 //
 //
 // BLOCK: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 2)

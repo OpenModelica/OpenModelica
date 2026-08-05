@@ -10,13 +10,13 @@ loadString("
   equation
     der(x[1]) = sum(x);
     for i in 2:n loop
-      der(x[i]) = x[i];
+      der(x[i]) = x[i] + x[1];
     end for;
   end arrowhead;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
-simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_STATS,LOG_JAC"); getErrorString();
+simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC"); getErrorString();
 
 // Result:
 // true
@@ -25,196 +25,172 @@ simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jaco
 // ""
 // record SimulationResult
 //     resultFile = "arrowhead_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_STATS,LOG_JAC'",
-//     messages = "LOG_JAC           | info    | Runtime star bicoloring is being calced.
-// LOG_JAC           | info    | Runtime star bicoloring: 0 column colors, 2 row colors.
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC'",
+//     messages = "LOG_JAC           | info    | Runtime star bicoloring: 1 column colors, 2 row colors.
 // LOG_JAC           | info    | Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | State vector y (flat memory)
 // |                 | |       | | flat=0 name='x[1]' y=1.00000003
-// |                 | |       | | flat=1 name='x[2]' y=1.00000001
-// |                 | |       | | flat=2 name='x[3]' y=1.00000001
+// |                 | |       | | flat=1 name='x[2]' y=1.00000002
+// |                 | |       | | flat=2 name='x[3]' y=1.00000002
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
 // |                 | |       | | flat=0 name='x[1]' yprime=3
-// |                 | |       | | flat=1 name='x[2]' yprime=1
-// |                 | |       | | flat=2 name='x[3]' yprime=1
+// |                 | |       | | flat=1 name='x[2]' yprime=2
+// |                 | |       | | flat=2 name='x[3]' yprime=2
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-99999999 num=-99999998.99999997
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=1.000000014901161
-// |                 | |       | | flat=4 ana=-99999999 num=-99999999
+// |                 | |       | | flat=0 ana=-99999999 num=-99999999.00000003
+// |                 | |       | | flat=1 ana=1 num=1
+// |                 | |       | | flat=2 ana=1 num=1
+// |                 | |       | | flat=3 ana=1 num=0.999999985098839
+// |                 | |       | | flat=4 ana=-99999999 num=-99999998.99999999
 // |                 | |       | | flat=5 ana=0 num=0
 // |                 | |       | | flat=6 ana=1 num=0.999999985098839
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-99999999 num=-99999999
+// |                 | |       | | flat=8 ana=-99999999 num=-99999998.99999999
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.00000021000001
-// |                 | |       | | flat=1 name='x[2]' y=1.000000070000002
-// |                 | |       | | flat=2 name='x[3]' y=1.000000070000002
+// |                 | |       | | flat=0 name='x[1]' y=1.000000210000014
+// |                 | |       | | flat=1 name='x[2]' y=1.00000014000001
+// |                 | |       | | flat=2 name='x[3]' y=1.00000014000001
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000000201190503
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000000040238098
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000000040238098
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000000281666701
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000000201190499
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000000201190499
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-45833332.33333333 num=-45833332.3333333
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=1.00000004470348
-// |                 | |       | | flat=4 ana=-45833332.33333333 num=-45833332.33333333
+// |                 | |       | | flat=0 ana=-45833332.33333333 num=-45833332.33333336
+// |                 | |       | | flat=1 ana=1 num=1
+// |                 | |       | | flat=2 ana=1 num=1
+// |                 | |       | | flat=3 ana=1 num=0.9999999850988408
+// |                 | |       | | flat=4 ana=-45833332.33333333 num=-45833332.33333331
 // |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.00000001490116
+// |                 | |       | | flat=6 ana=1 num=0.9999999850988408
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-45833332.33333333 num=-45833332.33333333
+// |                 | |       | | flat=8 ana=-45833332.33333333 num=-45833332.33333331
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000000450000059
-// |                 | |       | | flat=1 name='x[2]' y=1.000000150000012
-// |                 | |       | | flat=2 name='x[3]' y=1.000000150000012
+// |                 | |       | | flat=0 name='x[1]' y=1.000000450000082
+// |                 | |       | | flat=1 name='x[2]' y=1.000000300000059
+// |                 | |       | | flat=2 name='x[3]' y=1.000000300000059
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000000771969732
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000000154393945
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000000154393945
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000001080757671
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000000771969765
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000000771969765
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-18749999 num=-18749999.00000003
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=0.9999999701976821
+// |                 | |       | | flat=0 ana=-18749999 num=-18749998.99999997
+// |                 | |       | | flat=1 ana=1 num=1
+// |                 | |       | | flat=2 ana=1 num=1
+// |                 | |       | | flat=3 ana=1 num=1
 // |                 | |       | | flat=4 ana=-18749999 num=-18749999
 // |                 | |       | | flat=5 ana=0 num=0
 // |                 | |       | | flat=6 ana=1 num=1
 // |                 | |       | | flat=7 ana=0 num=0
 // |                 | |       | | flat=8 ana=-18749999 num=-18749999
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000000930000239
-// |                 | |       | | flat=1 name='x[2]' y=1.000000310000048
-// |                 | |       | | flat=2 name='x[3]' y=1.000000310000048
+// |                 | |       | | flat=0 name='x[1]' y=1.000000930000335
+// |                 | |       | | flat=1 name='x[2]' y=1.000000620000239
+// |                 | |       | | flat=2 name='x[3]' y=1.000000620000239
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000001522354705
-// |                 | |       | | flat=1 name='x[2]' yprime=1.00000030447093
-// |                 | |       | | flat=2 name='x[3]' yprime=1.00000030447093
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000002131296791
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000001522354847
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000001522354847
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
 // |                 | |       | | flat=0 ana=-9374999 num=-9374998.99999997
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=0.9999999850988435
-// |                 | |       | | flat=4 ana=-9374999 num=-9374999
-// |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.000000014901157
-// |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-9374999 num=-9374999
-// LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000001890000995
-// |                 | |       | | flat=1 name='x[2]' y=1.000000630000199
-// |                 | |       | | flat=2 name='x[3]' y=1.000000630000199
-// LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000003151811263
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000000630362206
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000000630362206
-// LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-4687499 num=-4687499.000000045
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=0.9999999701976963
-// |                 | |       | | flat=4 ana=-4687499 num=-4687499
+// |                 | |       | | flat=1 ana=1 num=1.000000029802295
+// |                 | |       | | flat=2 ana=1 num=1.000000029802295
+// |                 | |       | | flat=3 ana=1 num=1.000000029802304
+// |                 | |       | | flat=4 ana=-9374999 num=-9374998.99999997
 // |                 | |       | | flat=5 ana=0 num=0
 // |                 | |       | | flat=6 ana=1 num=0.9999999701976963
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-4687499 num=-4687499
+// |                 | |       | | flat=8 ana=-9374999 num=-9374998.99999997
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000003810004033
-// |                 | |       | | flat=1 name='x[2]' y=1.000001270000807
-// |                 | |       | | flat=2 name='x[3]' y=1.000001270000807
+// |                 | |       | | flat=0 name='x[1]' y=1.000001890001393
+// |                 | |       | | flat=1 name='x[2]' y=1.000001260000995
+// |                 | |       | | flat=2 name='x[3]' y=1.000001260000995
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000006344061124
-// |                 | |       | | flat=1 name='x[2]' yprime=1.00000126881203
-// |                 | |       | | flat=2 name='x[3]' yprime=1.00000126881203
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000004412536626
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000003151811859
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000003151811859
+// LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
+// |                 | |       | | flat=0 ana=-4687499 num=-4687498.999999985
+// |                 | |       | | flat=1 ana=1 num=1.000000014901133
+// |                 | |       | | flat=2 ana=1 num=1.000000014901133
+// |                 | |       | | flat=3 ana=1 num=1.000000014901142
+// |                 | |       | | flat=4 ana=-4687499 num=-4687498.999999985
+// |                 | |       | | flat=5 ana=0 num=0
+// |                 | |       | | flat=6 ana=1 num=0.9999999850988577
+// |                 | |       | | flat=7 ana=0 num=0
+// |                 | |       | | flat=8 ana=-4687499 num=-4687498.999999985
+// LOG_JAC           | info    | State vector y (flat memory)
+// |                 | |       | | flat=0 name='x[1]' y=1.000003810005646
+// |                 | |       | | flat=1 name='x[2]' y=1.000002540004033
+// |                 | |       | | flat=2 name='x[3]' y=1.000002540004033
+// LOG_JAC           | info    | State-derivative vector yprime (flat memory)
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000008881689072
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000006344063554
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000006344063554
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
 // |                 | |       | | flat=0 ana=-2343749 num=-2343749
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=1.000000014901142
-// |                 | |       | | flat=4 ana=-2343749 num=-2343749
+// |                 | |       | | flat=1 ana=1 num=1
+// |                 | |       | | flat=2 ana=1 num=1
+// |                 | |       | | flat=3 ana=1 num=1.000000029802247
+// |                 | |       | | flat=4 ana=-2343749 num=-2343748.99999997
 // |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.000000014901142
+// |                 | |       | | flat=6 ana=1 num=0.9999999701977531
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-2343749 num=-2343749
+// |                 | |       | | flat=8 ana=-2343749 num=-2343748.99999997
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000007650016259
-// |                 | |       | | flat=1 name='x[2]' y=1.000002550003252
-// |                 | |       | | flat=2 name='x[3]' y=1.000002550003252
+// |                 | |       | | flat=0 name='x[1]' y=1.000007650022763
+// |                 | |       | | flat=1 name='x[2]' y=1.00000510001626
+// |                 | |       | | flat=2 name='x[3]' y=1.00000510001626
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000012749755854
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000002549950383
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000002549950383
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000017849672379
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000012749765701
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000012749765701
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-1171874 num=-1171873.999999955
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=1.000000014901123
+// |                 | |       | | flat=0 ana=-1171874 num=-1171874.000000015
+// |                 | |       | | flat=1 ana=1 num=0.9999999850989527
+// |                 | |       | | flat=2 ana=1 num=0.9999999850989527
+// |                 | |       | | flat=3 ana=1 num=1
 // |                 | |       | | flat=4 ana=-1171874 num=-1171874
 // |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.000000014901123
+// |                 | |       | | flat=6 ana=1 num=1
 // |                 | |       | | flat=7 ana=0 num=0
 // |                 | |       | | flat=8 ana=-1171874 num=-1171874
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000015330065282
-// |                 | |       | | flat=1 name='x[2]' y=1.000005110013057
-// |                 | |       | | flat=2 name='x[3]' y=1.000005110013057
+// |                 | |       | | flat=0 name='x[1]' y=1.000015330091395
+// |                 | |       | | flat=1 name='x[2]' y=1.000010220065282
+// |                 | |       | | flat=2 name='x[3]' y=1.000010220065282
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000025548706328
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000005109738094
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000005109738094
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000035768245943
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000025548745972
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000025548745972
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
-// |                 | |       | | flat=0 ana=-585936.5 num=-585936.4999999851
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=0.999999985098915
-// |                 | |       | | flat=4 ana=-585936.5 num=-585936.5
+// |                 | |       | | flat=0 ana=-585936.5 num=-585936.5000000149
+// |                 | |       | | flat=1 ana=1 num=0.9999999850990673
+// |                 | |       | | flat=2 ana=1 num=0.9999999850990673
+// |                 | |       | | flat=3 ana=1 num=0.9999999701979823
+// |                 | |       | | flat=4 ana=-585936.5 num=-585936.5000000298
 // |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.000000014901085
+// |                 | |       | | flat=6 ana=1 num=1.000000029802018
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-585936.5 num=-585936.5
+// |                 | |       | | flat=8 ana=-585936.5 num=-585936.5000000298
 // LOG_JAC           | info    | State vector y (flat memory)
-// |                 | |       | | flat=0 name='x[1]' y=1.000030690261637
-// |                 | |       | | flat=1 name='x[2]' y=1.000010230052327
-// |                 | |       | | flat=2 name='x[3]' y=1.000010230052327
+// |                 | |       | | flat=0 name='x[1]' y=1.000030690366293
+// |                 | |       | | flat=1 name='x[2]' y=1.000020460261638
+// |                 | |       | | flat=2 name='x[3]' y=1.000020460261638
 // LOG_JAC           | info    | State-derivative vector yprime (flat memory)
-// |                 | |       | | flat=0 name='x[1]' yprime=3.000051150015459
-// |                 | |       | | flat=1 name='x[2]' yprime=1.000010229990367
-// |                 | |       | | flat=2 name='x[3]' yprime=1.000010229990367
+// |                 | |       | | flat=0 name='x[1]' yprime=3.000071610250688
+// |                 | |       | | flat=1 name='x[2]' yprime=2.000051150174518
+// |                 | |       | | flat=2 name='x[3]' yprime=2.000051150174518
 // LOG_JAC           | info    | Jacobian comparison (column-major flat memory): analytical vs numerical
 // |                 | |       | | flat=0 ana=-292967.75 num=-292967.75
-// |                 | |       | | flat=1 ana=0 num=0
-// |                 | |       | | flat=2 ana=0 num=0
-// |                 | |       | | flat=3 ana=1 num=0.9999999850989914
-// |                 | |       | | flat=4 ana=-292967.75 num=-292967.75
+// |                 | |       | | flat=1 ana=1 num=1
+// |                 | |       | | flat=2 ana=1 num=1
+// |                 | |       | | flat=3 ana=1 num=0.9999999850991437
+// |                 | |       | | flat=4 ana=-292967.75 num=-292967.7500000149
 // |                 | |       | | flat=5 ana=0 num=0
-// |                 | |       | | flat=6 ana=1 num=1.000000014901009
+// |                 | |       | | flat=6 ana=1 num=0.9999999850991437
 // |                 | |       | | flat=7 ana=0 num=0
-// |                 | |       | | flat=8 ana=-292967.75 num=-292967.75
-// LOG_STATS         | info    | ### STATISTICS ###
-// |                 | |       | | timer
-// |                 | |       | | |   0.00312855s          reading init.xml
-// |                 | |       | | |  0.000110731s          reading info.xml
-// |                 | |       | | |   0.00218683s [ 51.1%] pre-initialization
-// |                 | |       | | |   8.0449e-05s [  1.9%] initialization
-// |                 | |       | | |   0.00189988s [ 44.4%] steps
-// |                 | |       | | |   0.00145296s [ 33.9%] solver (excl. callbacks)
-// |                 | |       | | |  0.000101212s [  2.4%] creating output-file
-// |                 | |       | | |    1.674e-06s [  0.0%] event-handling
-// |                 | |       | | |   1.1936e-05s [  0.3%] overhead
-// |                 | |       | | |  -0.00145285s [-33.9%] simulation
-// |                 | |       | | |   0.00428208s [100.0%] total
-// |                 | |       | | events
-// |                 | |       | | |     0 state events
-// |                 | |       | | |     0 time events
-// |                 | |       | | solver: dassl
-// |                 | |       | | |    10 steps taken
-// |                 | |       | | |    10 calls of functionODE
-// |                 | |       | | |     9 evaluations of jacobian
-// |                 | |       | | |     0 error test failures
-// |                 | |       | | |     0 convergence test failures
-// |                 | |       | | | 0.000768782s time of jacobian evaluation
+// |                 | |       | | flat=8 ana=-292967.75 num=-292967.7500000149
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

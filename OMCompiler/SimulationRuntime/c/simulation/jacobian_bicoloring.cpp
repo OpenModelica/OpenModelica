@@ -68,15 +68,6 @@ extern "C" int computeColPackStarBicoloring(
       sparsity[row] = rowStorage[row].data();
     }
 
-    // print sparsity pattern for debugging
-    infoStreamPrint(OMC_LOG_JAC, 0, "ColPack star bicoloring: %u rows, %u cols, %u nonzeros", nRows, nCols, rowPtr[nRows]);
-    for (unsigned int row = 0; row < nRows; row++) {
-      infoStreamPrint(OMC_LOG_JAC, 0, "Row %u: %u nonzeros", row, rowStorage[row][0]);
-      for (unsigned int nz = 0; nz < rowStorage[row][0]; nz++) {
-        infoStreamPrint(OMC_LOG_JAC, 0, "  Col %u", rowStorage[row][nz + 1]);
-      }
-    }
-
     ColPack::BipartiteGraphBicoloringInterface coloring(
         SRC_MEM_ADOLC, sparsity.data(), static_cast<int>(nRows), static_cast<int>(nCols));
     if (coloring.Bicoloring("LARGEST_FIRST", "IMPLICIT_COVERING__STAR_BICOLORING") != _TRUE) {
@@ -102,15 +93,6 @@ extern "C" int computeColPackStarBicoloring(
     }
     *nRowColors = maxRowColor;
     *nColColors = maxColColor;
-
-    // print the colColors and rowColors for debugging
-    infoStreamPrint(OMC_LOG_JAC, 0, "ColPack star bicoloring: %u row colors, %u col colors", *nRowColors, *nColColors);
-    for (unsigned int row = 0; row < nRows; row++) {
-      infoStreamPrint(OMC_LOG_JAC, 0, "Row %u: color %u", row, rowColors[row]);
-    }
-    for (unsigned int col = 0; col < nCols; col++) {
-      infoStreamPrint(OMC_LOG_JAC, 0, "Col %u: color %u", col, colColors[col]);
-    }
 
     return 1;
   } catch (...) {

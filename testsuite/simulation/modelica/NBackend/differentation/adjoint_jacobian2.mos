@@ -174,11 +174,11 @@ buildModel(AdjointJacobian2); getErrorString();
 //
 // SeedVars (size = 8)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.m
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.z
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
 //   (2)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.l
-//   (3)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
-//   (4)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (3)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.z
+//   (4)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.m
 //   (5)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[1]
 //   (6)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[2]
 //   (7)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[3]
@@ -226,7 +226,12 @@ buildModel(AdjointJacobian2); getErrorString();
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-//
+// $RES_SIM_5 ... {$SEED_ODE_JAC_ADJ.$DER.x} ... {($pDER_ODE_JAC_ADJ.x, {}, false), ($pDER_ODE_JAC_ADJ.y, {}, false)}
+// $RES_SIM_4 ... {$SEED_ODE_JAC_ADJ.$DER.y} ... {($pDER_ODE_JAC_ADJ.x, {}, false), ($pDER_ODE_JAC_ADJ.y, {}, false)}
+// $RES_SIM_1 ... {$SEED_ODE_JAC_ADJ.$DER.l} ... {($pDER_ODE_JAC_ADJ.y, {}, false), ($pDER_ODE_JAC_ADJ.x, {}, false)}
+// $RES_SIM_3 ... {$SEED_ODE_JAC_ADJ.$DER.z} ... {($pDER_ODE_JAC_ADJ.y, {}, false), ($pDER_ODE_JAC_ADJ.x, {}, false)}
+// $RES_SIM_0 ... {$SEED_ODE_JAC_ADJ.$DER.m} ... {($pDER_ODE_JAC_ADJ.y, {}, false), ($pDER_ODE_JAC_ADJ.x, {}, false), ($pDER_ODE_JAC_ADJ.z, {}, false)}
+// $RES_SIM_2 ... {$SEED_ODE_JAC_ADJ.$DER.k[:]} ... {($pDER_ODE_JAC_ADJ.k[:], {-}, true)}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
