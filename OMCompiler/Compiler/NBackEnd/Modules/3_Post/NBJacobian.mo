@@ -1348,6 +1348,7 @@ protected
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+
       if BVariable.isContinuous(v, staticAsContinuous) then
         UnorderedSet.add(BVariable.getVarName(v), seed_set);
       end if;
@@ -1435,6 +1436,7 @@ protected
     );
 
     adjacencyVars := VariablePointers.clone(seedCandidates);
+    // tmp_vars are diffed so use the undiffed ones for adjacency (but does this adjacency approach even work because the adjoint adds tmp vars to the system which are not part of the original system?)
     adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
