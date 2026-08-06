@@ -574,20 +574,16 @@ void assembleWeb() {
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
 
-  // Merge the three Rust-partest partition shards into one sorted failure list,
+  // Merge the Rust-partest partition shards into one sorted failure list,
   // archived so regressions are easy to diff between runs. Here (not a dedicated
-  // agent) since the web deliverable is already assembled; shards may be absent.
+  // agent) since the web deliverable is already assembled. Same guard as the
+  // testsuite-rust stages, so a missing shard is a hard error rather than the
+  // normal case of those stages not having run.
   sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
-  def haveShard = false
-  for (p in [1, 2, 3]) {
-    try {
+  if (shouldWeRunRustTests() && !shouldWeDisableAllCMakeBuilds()) {
+    for (p in [1,2]) {
       unstash "partest-failed-${p}"
-      haveShard = true
-    } catch (ignored) {
-      echo "partest-failed-${p}: no shard (rust partest disabled or run failed)"
     }
-  }
-  if (haveShard) {
     sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
     archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
   }
@@ -640,6 +636,11 @@ void partestRust(partition) {
     build/bin/omc-diff -v1.4
   """
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
+  // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
+  // MetaModelica code generation only works against the C runtime. 63bit/antlr:
+  // the port's Integer is i32 and its parser is winnow, not ANTLR; see
+  // testsuite/rust-ignore-tests.txt.
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr'
   try {
     sh """#!/bin/bash
       set -o pipefail
@@ -648,7 +649,7 @@ void partestRust(partition) {
       rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/3 -nocolour -with-xml${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/2 -nocolour -with-xml${suitesArg}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
       # 0/7 == the run completed (7 means some tests failed); only fail the step on

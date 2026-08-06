@@ -3,6 +3,7 @@
 // cflags: +g=MetaModelica -d=-newInst
 // status:   correct
 // teardown_command: rm -rf MatchCase10_*
+// suite: metamodelica
 //
 // Match Testing
 //

@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=gen -d=-newInst
 // status: correct
 // teardown_command: rm -f MatchCase14_*
+// suite: metamodelica
 package MatchCase14
 
 function fn

@@ -355,7 +355,7 @@ pipeline {
       parallel {
         // partest against the Rust-built omc; dedicated runtest cache. See
         // common.partestRust().
-        stage('01 testsuite-rust 1/3') {
+        stage('01 testsuite-rust 1/2') {
           agent {
             docker {
               alwaysPull true
@@ -382,7 +382,7 @@ pipeline {
             }
           }
         }
-        stage('02 testsuite-rust 2/3') {
+        stage('02 testsuite-rust 2/2') {
           agent {
             docker {
               alwaysPull true
@@ -406,33 +406,6 @@ pipeline {
           steps {
             script {
               common.partestRust(2)
-            }
-          }
-        }
-        stage('03 testsuite-rust 3/3') {
-          agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-rust-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
-          }
-          steps {
-            script {
-              common.partestRust(3)
             }
           }
         }
