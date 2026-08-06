@@ -3078,15 +3078,18 @@ Element* GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
     if (!pElement && pGraphicsItem->parentItem()) {
       pElement = dynamic_cast<Element*>(pGraphicsItem->parentItem());
     }
-    if (!pElement) {
-      OriginItem *pOriginItem = dynamic_cast<OriginItem*>(pGraphicsItem);
-      if (pOriginItem) {
-        pElement = pOriginItem->getElement();
-      }
-    }
+    /* Do not check for OriginItem. The OriginItem can be drawn outside the component boundingRect.
+     * Issue #16004
+     */
+    // if (!pElement) {
+    //   OriginItem *pOriginItem = dynamic_cast<OriginItem*>(pGraphicsItem);
+    //   if (pOriginItem) {
+    //     pElement = pOriginItem->getElement();
+    //   }
+    // }
     return pElement;
   }
-  return 0;
+  return nullptr;
 }
 
 /*!
