@@ -209,6 +209,10 @@ pub const MODEL_FNS: &[&str] = &[
     "functionInitSynchronous",
     "functionUpdateSynchronous",
     "functionEquationsSynchronous",
+    "linearJacA",
+    "linearJacB",
+    "linearJacC",
+    "linearJacD",
 ];
 
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
@@ -401,6 +405,8 @@ pub struct RunResult {
     pub params: Vec<f64>,
     /// Solver statistics (steps, evaluations, events).
     pub stats: SolveStats,
+    /// `-l`'s linearized model, for the caller to write out.
+    pub lin: Option<crate::linearize::LinFile>,
 }
 
 /// Outcome of one [`Driver::advance`] chunk.
@@ -2202,8 +2208,9 @@ pub fn drive(
     let rows = outcome?;
     stats.method = label;
 
+    let lin = crate::linearize::linearize(e, model, sim_data)?;
     let params = finalize_run(e, model, sim_data)?;
-    Ok((RunResult { rows, n_reals, params, stats }, label))
+    Ok((RunResult { rows, n_reals, params, stats, lin }, label))
 }
 
 /// In-wasm driver: initialize here (so the run initializes like every other

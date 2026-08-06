@@ -27,6 +27,7 @@ use alloc::vec::Vec;
 pub mod driver;
 pub mod fixedstep;
 pub mod gbode;
+pub mod linearize;
 pub mod omclog;
 pub mod simflags;
 pub mod sync;
@@ -163,6 +164,13 @@ pub struct Layout {
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
     pub state_nom_off: u32,
+    /// Base of the per-state `max` attribute, written the same way; C's
+    /// `functionJacAC_num` flips its difference quotient at the bound.
+    pub state_max_off: u32,
+    /// Base of the linearization scratch (f64): the symbolic `A|B|C|D` the
+    /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
+    pub linz_off: u32,
+    pub n_linz: u32,
     /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
     /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
     /// as a result row's last columns.
@@ -224,6 +232,7 @@ impl Layout {
         n_dae_alg: u32,
         n_base_clocks: u32,
         n_sub_clocks: u32,
+        n_linz: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -261,22 +270,24 @@ impl Layout {
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
         let state_nom_off = start_off + n_states * 8;
-        let sens_off = state_nom_off + n_states * 8;
+        let state_max_off = state_nom_off + n_states * 8;
+        let sens_off = state_max_off + n_states * 8;
         let dae_res_off = sens_off + n_sens * 8;
         let dae_aux_off = dae_res_off + n_dae_res * 8;
         let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
         let clock_off = dae_alg_nom_off + n_dae_alg * 8;
         let subclock_off = clock_off + n_base_clocks * BASECLOCK_BYTES;
         let clock_fire_off = subclock_off + n_sub_clocks * SUBCLOCK_BYTES;
-        let total = clock_fire_off + n_base_clocks * 4;
+        let linz_off = (clock_fire_off + n_base_clocks * 4 + 7) & !7;
+        let total = linz_off + n_linz * 8;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off,
+            mathevents_off, zctol_off, start_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
-            n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, total,
+            n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz, total,
         }
     }
 
@@ -405,6 +416,64 @@ pub struct DaeInfo {
     pub sparsity: Option<JacAInfo>,
 }
 
+/// `--linearizationDumpLanguage`: the frame, the matrix rendering and the
+/// file name.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum LinLanguage {
+    #[default]
+    Modelica,
+    Matlab,
+    Julia,
+    Python,
+}
+
+impl LinLanguage {
+    /// The extension `linearized_model` gets.
+    pub fn ext(self) -> &'static str {
+        match self {
+            LinLanguage::Modelica => ".mo",
+            LinLanguage::Matlab => ".m",
+            LinLanguage::Julia => ".jl",
+            LinLanguage::Python => ".py",
+        }
+    }
+}
+
+/// One `input`/`output` variable's `SimData` slot.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct LinVar {
+    pub off: u32,
+    pub negate: bool,
+}
+
+/// What `-l` needs beyond the ODE: C's `nInputVars`/`nOutputVars` as `SimData`
+/// slots (standing in for its `input_function`/`output_function`), and the
+/// `linear_model_frame()` the code generator baked the dump language into.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct LinInfo {
+    /// Slots of the top-level `input` variables, in `u`/`B` column order.
+    pub input_vars: Vec<LinVar>,
+    /// Slots of the top-level `output` variables, in `y`/`C` row order.
+    pub output_vars: Vec<LinVar>,
+    pub language: LinLanguage,
+    /// C's `linear_model_frame()` / `linear_model_datarecovery_frame()`: a printf
+    /// frame with `%s` per matrix/vector (and `%g` for the stop time). Empty is
+    /// what the template emits when linearization is disabled or too big.
+    pub frame: String,
+    pub frame_datarec: String,
+    /// What C's empty frame prints before it.
+    pub disabled_reason: String,
+    /// Bit `k` ⇒ matrix `k` (`A`,`B`,`C`,`D`) has a symbolic `linearJac*` export,
+    /// C's `initialAnalyticJacobian<X>` availability. Bit 0 is also C's
+    /// `sizeTmpVars > 0`, which decides whether the numeric pass runs.
+    pub sym_mask: u8,
+    /// C's `modelData->runTestsuite`: shortens the created-model notice.
+    pub run_testsuite: bool,
+    /// Rows of each matrix: `nStates` for `A`/`B`, `nOutputVars` for `C`/`D`.
+    pub jac_rows: [u32; 4],
+    pub jac_cols: [u32; 4],
+}
+
 /// The compile-time half of C's `SUBCLOCK_DATA` (its `CLOCK_STATS` live in `SimData`).
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct SubClockMeta {
@@ -528,6 +597,8 @@ pub struct SimMeta {
     /// Synchronous base clocks in `base_idx` order; empty for a model with no
     /// clocked partitions.
     pub clocks: Vec<BaseClockMeta>,
+    /// What `-l` needs; `None` for a target that emits no linearization support.
+    pub lin: Option<LinInfo>,
 }
 
 /// [`SimMeta::nls_vars`] entry.
@@ -694,6 +765,15 @@ impl SimMeta {
         if f.noemit {
             self.output_format = String::from("empty");
         }
+        // C's `startNonInteractiveSimulation`, after `read_experiment`.
+        if let Some(t) = f.linearize {
+            self.stop_time = t;
+            omclog::info(
+                STDOUT,
+                false,
+                &alloc::format!("Linearization will be performed at point of time: {t:.6}"),
+            );
+        }
     }
 
     /// [`apply_flags`](Self::apply_flags) on a copy, for a caller whose metadata is
@@ -713,7 +793,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 10;
+const VERSION: u32 = 11;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -744,9 +824,10 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.state_nom_off, l.n_sens, l.sens_off,
+        l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
-        l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off, l.total,
+        l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
+        l.linz_off, l.n_linz, l.total,
     ] {
         put_u32(o, v);
     }
@@ -862,6 +943,28 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             o.push(s.external_solver as u8);
         }
     }
+    match &m.lin {
+        None => o.push(0),
+        Some(l) => {
+            o.push(1);
+            for g in [&l.input_vars, &l.output_vars] {
+                put_u32(&mut o, g.len() as u32);
+                for v in g {
+                    put_u32(&mut o, v.off);
+                    o.push(v.negate as u8);
+                }
+            }
+            o.push(l.language as u8);
+            put_str(&mut o, &l.frame);
+            put_str(&mut o, &l.frame_datarec);
+            put_str(&mut o, &l.disabled_reason);
+            o.push(l.sym_mask);
+            o.push(l.run_testsuite as u8);
+            for v in l.jac_rows.iter().chain(l.jac_cols.iter()) {
+                put_u32(&mut o, *v);
+            }
+        }
+    }
     o
 }
 
@@ -954,6 +1057,7 @@ impl<'a> Reader<'a> {
             zctol_off: self.u32()?,
             start_off: self.u32()?,
             state_nom_off: self.u32()?,
+            state_max_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
             n_dae_res: self.u32()?,
@@ -967,6 +1071,8 @@ impl<'a> Reader<'a> {
             n_sub_clocks: self.u32()?,
             subclock_off: self.u32()?,
             clock_fire_off: self.u32()?,
+            linz_off: self.u32()?,
+            n_linz: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -1081,10 +1187,54 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         clocks.push(BaseClockMeta { is_event_clock, inferred, sub_base, sub });
     }
+    let lin = match r.u8()? {
+        0 => None,
+        _ => {
+            let mut group = || -> Result<Vec<LinVar>, &'static str> {
+                let n = r.u32()? as usize;
+                let mut out = Vec::with_capacity(n);
+                for _ in 0..n {
+                    out.push(LinVar { off: r.u32()?, negate: r.u8()? != 0 });
+                }
+                Ok(out)
+            };
+            let input_vars = group()?;
+            let output_vars = group()?;
+            let language = match r.u8()? {
+                0 => LinLanguage::Modelica,
+                1 => LinLanguage::Matlab,
+                2 => LinLanguage::Julia,
+                3 => LinLanguage::Python,
+                _ => return Err("sim_meta: bad LinLanguage tag"),
+            };
+            let frame = r.string()?;
+            let frame_datarec = r.string()?;
+            let disabled_reason = r.string()?;
+            let sym_mask = r.u8()?;
+            let run_testsuite = r.u8()? != 0;
+            let mut dims = [0u32; 8];
+            for d in &mut dims {
+                *d = r.u32()?;
+            }
+            let (rows, cols) = dims.split_at(4);
+            Some(LinInfo {
+                input_vars,
+                output_vars,
+                language,
+                frame,
+                frame_datarec,
+                disabled_reason,
+                sym_mask,
+                run_testsuite,
+                jac_rows: rows.try_into().unwrap(),
+                jac_cols: cols.try_into().unwrap(),
+            })
+        }
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
-        nls_vars, dae, clocks,
+        nls_vars, dae, clocks, lin,
     })
 }
 
@@ -1096,7 +1246,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1155,6 +1305,18 @@ mod tests {
                     SubClockMeta { shift_num: 1, shift_den: 3, factor_num: 4, factor_den: 1, hold_events: true, external_solver: false },
                 ],
             }],
+            lin: Some(LinInfo {
+                input_vars: vec![LinVar { off: 40, negate: false }],
+                output_vars: vec![LinVar { off: 48, negate: true }],
+                language: LinLanguage::Julia,
+                frame: "function linearized_model()\n%s%s%s%s%s%s\nend".to_string(),
+                frame_datarec: String::new(),
+                disabled_reason: String::new(),
+                sym_mask: 0b1011,
+                run_testsuite: false,
+                jac_rows: [2, 2, 1, 1],
+                jac_cols: [2, 1, 2, 1],
+            }),
         }
     }
 

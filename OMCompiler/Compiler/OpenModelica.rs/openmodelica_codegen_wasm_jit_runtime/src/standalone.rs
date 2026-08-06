@@ -51,6 +51,10 @@ unsafe extern "C" {
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
+    fn linearJacA(sim_data: u32);
+    fn linearJacB(sim_data: u32);
+    fn linearJacC(sim_data: u32);
+    fn linearJacD(sim_data: u32);
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
     /// Pointer to / length of the encoded `SimMeta` blob in linear memory.
     fn om_meta_ptr() -> u32;
@@ -107,6 +111,10 @@ impl SimEngine for StandaloneEngine {
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
+                "linearJacA" => linearJacA(arg),
+                "linearJacB" => linearJacB(arg),
+                "linearJacC" => linearJacC(arg),
+                "linearJacD" => linearJacD(arg),
                 "functionInitSynchronous" => return Err(SYNC_UNSUPPORTED),
                 _ => return Err("wasm-jit standalone: unknown model function"),
             }
@@ -171,6 +179,19 @@ fn run() {
         }
     };
 
+    if let Some(f) = &result.lin {
+        let path = lin_file(&f.name);
+        std::fs::write(&path, &f.content)
+            .expect("wasm-jit standalone: cannot write the linearized model");
+        if let Some(lin) = &m.lin {
+            use openmodelica_sim_meta::omclog::{STDOUT, error, info};
+            let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, f, &path);
+            for msg in &msgs {
+                if is_error { error(STDOUT, false, msg) } else { info(STDOUT, false, msg) }
+            }
+        }
+    }
+
     if m.output_format != "mat" {
         return; // "empty": run only (benchmarking), no file
     }
@@ -220,6 +241,14 @@ fn result_file(prefix: &str) -> String {
         (Some(r), _) => r.clone(),
         (None, Some(dir)) => format!("{dir}/{prefix}_res.mat"),
         (None, None) => format!("{prefix}_res.mat"),
+    })
+}
+
+/// C's `linearize`: `linearized_model.<ext>` under `-outputPath`.
+fn lin_file(name: &str) -> String {
+    simflags::with_flags(|f| match &f.output_path {
+        Some(dir) => format!("{dir}/{name}"),
+        None => name.to_string(),
     })
 }
 

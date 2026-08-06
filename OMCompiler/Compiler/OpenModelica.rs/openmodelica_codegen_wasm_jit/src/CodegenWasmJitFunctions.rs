@@ -1180,6 +1180,8 @@ pub(crate) enum Attr {
 pub(crate) struct AttrTargets {
     pub(crate) nls: Vec<u32>,
     pub(crate) nom_offs: Vec<u32>,
+    /// A state's `SimData` `max` slot, which the numeric linearization reads.
+    pub(crate) max_offs: Vec<u32>,
 }
 
 /// The contiguous `SimData` slot range backing one scalarized array model
@@ -1507,13 +1509,13 @@ impl<'a> FnCtx<'a> {
     /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
-        nominal_defaults: &[(u32, f64)],
+        defaults: &[(u32, f64)],
         attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
-        for (off, nom) in nominal_defaults {
+        for (off, value) in defaults {
             self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::F64Const((*nom).into()));
+            self.emit(we::Instruction::F64Const((*value).into()));
             self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
         }
         if attrs.is_empty() {
@@ -1532,6 +1534,13 @@ impl<'a> FnCtx<'a> {
                     self.emit(we::Instruction::F64Abs);
                     self.emit(we::Instruction::F64Const(1e-32f64.into()));
                     self.emit(we::Instruction::F64Max);
+                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                }
+            }
+            if matches!(attr, Attr::Max) {
+                for off in &targets.max_offs {
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::LocalGet(raw));
                     self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
                 }
             }
@@ -5032,8 +5041,9 @@ mod sim_systems;
 pub(crate) use sim_systems::{
     LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
-    compile_linear_system_symbolic, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_load_body,
-    emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring, lin_use_sparse, nls_use_sparse,
+    compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
+    emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
+    lin_use_sparse, nls_use_sparse,
 };
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {

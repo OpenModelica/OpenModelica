@@ -981,6 +981,8 @@ pub struct InWasmSession {
     params_ptr: wasmer::TypedFunction<(), u32>,
     params_len: wasmer::TypedFunction<(), u32>,
     stat_f: wasmer::TypedFunction<u32, u64>,
+    lin_ptr: wasmer::TypedFunction<(), u32>,
+    lin_len: wasmer::TypedFunction<(), u32>,
     free_f: wasmer::TypedFunction<(), ()>,
 }
 
@@ -1045,6 +1047,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         params_ptr: gf(&store, "rt_sim_params_ptr")?,
         params_len: gf(&store, "rt_sim_params_len")?,
         stat_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_stat"))?,
+        lin_ptr: gf(&store, "rt_sim_lin_ptr")?,
+        lin_len: gf(&store, "rt_sim_lin_len")?,
         free_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_free"))?,
         store,
         memory,
@@ -1127,7 +1131,22 @@ impl InWasmSession {
         stats.conv_test_fails = stat(4)?;
         stats.state_events = stat(5)?;
         stats.time_events = stat(6)?;
-        Ok(sim_driver::RunResult { rows, n_reals, params, stats })
+        let lin = self.take_lin()?;
+        Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+    }
+
+    /// The runtime's `-l` blob (`<file name>\0<content>`), empty when unasked.
+    fn take_lin(&mut self) -> Result<Option<openmodelica_sim_meta::linearize::LinFile>> {
+        let p = wt(self.lin_ptr.call(&mut self.store))?;
+        let n = wt(self.lin_len.call(&mut self.store))? as usize;
+        let mut bytes = vec![0u8; n];
+        if n > 0 {
+            self.memory
+                .view(&self.store)
+                .read(p as u64, &mut bytes)
+                .map_err(|_| "CodegenWasmJit: linearization read")?;
+        }
+        Ok(crate::split_lin_blob(&bytes))
     }
 }
 
