@@ -876,7 +876,7 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
     // Allocate the shared SimData block.
     let sim_data = wts(rt_alloc.call(&mut store, layout.total))?;
 
-    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), dae_func: None };
+    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -890,7 +890,9 @@ struct WasmerEngine {
     rt_inst: wasmer::Instance,
     funcs: HashMap<String, wasmer::TypedFunction<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
-    dae_func: Option<wasmer::TypedFunction<(u32, u32), ()>>,
+    /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
+    /// synchronous dispatchers), so one cached entry cannot answer for another.
+    funcs2: HashMap<String, wasmer::TypedFunction<(u32, u32), ()>>,
 }
 
 impl WasmerEngine {
@@ -922,11 +924,12 @@ impl sim_driver::SimEngine for WasmerEngine {
         self.call1(name, arg)
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        let f = match self.dae_func.clone() {
-            Some(f) => f,
+        let f = match self.funcs2.get(name) {
+            Some(f) => f.clone(),
             None => {
                 let f = wt(self.instance.exports.get_typed_function::<(u32, u32), ()>(&self.store, name))?;
-                self.dae_func.insert(f).clone()
+                self.funcs2.insert(name.to_string(), f.clone());
+                f
             }
         };
         wt(f.call(&mut self.store, a, b))

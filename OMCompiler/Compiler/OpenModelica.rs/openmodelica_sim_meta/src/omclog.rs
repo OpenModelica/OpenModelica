@@ -103,6 +103,7 @@ pub const SOTI: Stream = 50;
 pub const STATS: Stream = 52;
 pub const STATS_V: Stream = 53;
 pub const SUCCESS: Stream = 54;
+pub const SYNCHRONOUS: Stream = 55;
 pub const ZEROCROSSINGS: Stream = 56;
 
 /// C's `OMC_LOG_TYPE_*` / `OMC_LOG_TYPE_DESC`.

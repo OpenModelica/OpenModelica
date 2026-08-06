@@ -682,13 +682,13 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
     Ok(f)
 }
 
-/// C's `initializeResultData` formats. `mat` and `empty` are the ones this runtime
-/// has a writer for; `csv`/`plt`/`ia` are C's and would need one of their own.
+/// C's `initializeResultData` formats. `mat`, `csv` and `empty` are the ones this
+/// runtime has a writer for; `plt`/`ia` are C's and would need one of their own.
 fn output_format(v: &str) -> Result<String, String> {
     match v {
-        "mat" | "empty" => Ok(v.to_string()),
-        "csv" | "plt" | "ia" => Err(format!(
-            "-outputFormat={v}: this runtime writes `mat` results, or `empty` for none"
+        "mat" | "csv" | "empty" => Ok(v.to_string()),
+        "plt" | "ia" => Err(format!(
+            "-outputFormat={v}: this runtime writes `mat`/`csv` results, or `empty` for none"
         )),
         _ => Err(format!("Unknown output format: {v}")),
     }
@@ -1218,7 +1218,8 @@ mod tests {
     fn only_the_writable_output_formats_are_accepted() {
         assert_eq!(parse(&argv(&["-outputFormat=empty"])).expect("parses").output_format.as_deref(),
                    Some("empty"));
-        assert!(parse(&argv(&["-outputFormat=csv"])).expect_err("no csv writer").contains("mat"));
+        assert_eq!(parse(&argv(&["-outputFormat=csv"])).expect("csv writer").output_format.as_deref(), Some("csv"));
+        assert!(parse(&argv(&["-outputFormat=plt"])).expect_err("no plt writer").contains("mat"));
         assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.
         assert!(parse(&argv(&["-noemit"])).expect("parses").noemit);

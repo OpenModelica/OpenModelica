@@ -206,11 +206,17 @@ pub const MODEL_FNS: &[&str] = &[
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
     "evaluateDAEResiduals",
+    "functionInitSynchronous",
+    "functionUpdateSynchronous",
+    "functionEquationsSynchronous",
 ];
 
-/// The one model entry point that is not `fn(SimData*)`: `--daeMode`'s residual
-/// takes the evaluation stage as a second argument (C's `currentEvalStage`).
+/// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
+/// takes the evaluation stage as a second argument (C's `currentEvalStage`), and
+/// the two synchronous dispatchers take a clock index.
 pub const MODEL_FN_DAE: &str = "evaluateDAEResiduals";
+pub const MODEL_FN_UPDATE_SYNC: &str = "functionUpdateSynchronous";
+pub const MODEL_FN_EQS_SYNC: &str = "functionEquationsSynchronous";
 
 /// C's `EVAL_*` (`dae_mode.c`): which stage of the step an equation belongs to.
 /// `evaluateDAEResiduals` runs exactly those whose `evalStages` intersect it.
@@ -962,7 +968,7 @@ mod steady_report {
 }
 
 /// Format `%f`-style (C's `%f`: 6 fractional digits), for the assertion time value.
-fn format_f(v: f64) -> String {
+pub(crate) fn format_f(v: f64) -> String {
     alloc::format!("{v:.6}")
 }
 
@@ -1176,6 +1182,28 @@ pub fn set_abort_slow(v: bool) {
 /// `run_initialization_impl`. Leaves lambda = 1, then seeds `relationsPre` for the
 /// continuous phase's held relations.
 pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
+    init_model(e, sim_data, layout, start_time)?;
+    signal_init_done();
+    Ok(())
+}
+
+/// [`run_initialization`] plus C's `initSynchronous`, which `initializeModel` runs
+/// before it reports success — so the clock dump lands in the log's init segment.
+pub fn run_initialization_with_clocks(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    model: &SimMeta,
+) -> Result<crate::sync::Sync> {
+    init_model(e, sim_data, &model.layout, model.start_time)?;
+    let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
+    // An event clock whose `when` already fired during the initial discrete update
+    // is only *scheduled* here (C's `data->simulationInfo->initial` case).
+    sync.take_fired(e, model.start_time)?;
+    signal_init_done();
+    Ok(sync)
+}
+
+fn init_model(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_f64(e, sim_data + TIME_OFF, start_time)?;
@@ -1200,9 +1228,6 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     // C's `initializeModel` ends with `checkForAsserts` — before the
     // initialization-success line.
     check_asserts(e, sim_data, layout, omclog::WARNING)?;
-    // Initialization output is complete; the next model output is the simulation
-    // phase. Let the host close the init segment of the capture.
-    signal_init_done();
     Ok(())
 }
 
@@ -1314,7 +1339,7 @@ fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimL
 /// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
 /// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
 /// same layout.
-fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
     for i in 0..layout.n_reals_row() {
         rows.push(read_f64(e, sim_data + i * 8)?);
     }
@@ -1779,6 +1804,71 @@ impl Samples {
     }
 }
 
+/// The clock half of C's `simulationUpdate`: fire every timer due at `time`,
+/// running the discrete update in between whenever one asks for an event, until
+/// nothing more fires. `SimData` must already hold the state at `time` — a tick
+/// emits its result row *before* evaluating its partition. Returns whether any
+/// ticked, which makes the caller restart the integrator (`hold()` may have moved).
+fn fire_clocks(
+    e: &mut dyn SimEngine,
+    sync: &mut crate::sync::Sync,
+    model: &SimModel,
+    sim_data: u32,
+    time: f64,
+    eps: f64,
+    mut rows: Option<&mut Vec<f64>>,
+) -> Result<bool> {
+    use crate::sync::Fired;
+    if sync.is_empty() {
+        return Ok(false);
+    }
+    let layout = &model.layout;
+    let mut any = false;
+    let mut did_event = false;
+    for _ in 0..MAX_EVENT_ITER {
+        sync.take_fired(e, time)?;
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        let fired = sync.handle_timers(e, time, eps, rows.as_deref_mut())?;
+        if fired == Fired::None {
+            break;
+        }
+        any = true;
+        rethrow_store::note_event();
+        did_event |= fired == Fired::Event;
+        if fired == Fired::Event {
+            // C's pre-event row: after the partition ran, unlike the tick's own row.
+            if let Some(r) = rows.as_deref_mut()
+                && !no_event_emit()
+            {
+                capture_row(e, r, sim_data, layout)?;
+            }
+            write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+            iterate_discrete(e, sim_data, layout)?;
+            store_relations(e, sim_data, layout)?;
+        }
+        seed_pre_from_live(e, sim_data, layout)?;
+    }
+    if any {
+        // C: "Update continous system because hold() needs to be re-evaluated".
+        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+        eval_continuous(e, sim_data, layout)?;
+        // C truncates the step to the activation time, so its output row lands here.
+        if let Some(r) = rows
+            && (!did_event || emit_post_event_row(model, time))
+        {
+            capture_row(e, r, sim_data, layout)?;
+        }
+    }
+    Ok(any)
+}
+
+/// Output point `row` of the equidistant grid, as C's `perform_simulation`
+/// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
+/// the two round differently and the result files must agree bit for bit.
+fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
+    if n_steps == 0 { start } else { row as f64 * (stop - start) / n_steps as f64 + start }
+}
+
 /// Outcome of one [`event_update`] pass.
 pub struct EventUpdate {
     /// A `reinit` moved a continuous state, so the integrator must re-read them.
@@ -1969,7 +2059,9 @@ pub fn make_driver(
     }
     // DAE mode always takes the `SolverCore` path: the consistent-restart its
     // discrete update needs lives there.
-    let events = layout.n_samples > 0 || layout.n_zc > 0;
+    // A clocked partition is an event source too, and only `EventsDriver` has the
+    // timer list and the consistent restart a tick needs.
+    let events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
     if events || method == "gbode" || layout.dae_mode() {
         let label = match method {
             "cvode" => "cvode-events",
@@ -2057,7 +2149,7 @@ pub fn drive(
     let stop = model.stop_time;
 
     let mut stats = SolveStats::default();
-    let use_events = layout.n_samples > 0 || layout.n_zc > 0;
+    let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
     let method = effective_method(method);
 
     let mut label = "";
@@ -2184,7 +2276,7 @@ impl Driver for EulerDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let states_base = sim_data + REAL_OFF;
         let ders_base = states_base + n_states * 8;
 
@@ -2200,7 +2292,7 @@ impl Driver for EulerDriver {
             }
             did_step = true;
             // The last row lands exactly on `stop`: the terminal step.
-            let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let time = if self.row == n_steps { stop } else { grid(self.row) };
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
@@ -2227,7 +2319,8 @@ impl Driver for EulerDriver {
             {
                 e.call1("functionODE", sim_data)?;
             }
-            // Forward-Euler update of the states.
+            // Forward-Euler update of the states, over this row's own step.
+            let h = grid(self.row + 1) - grid(self.row);
             for i in 0..n_states {
                 let s = read_f64(e, states_base + i * 8)?;
                 let d = read_f64(e, ders_base + i * 8)?;
@@ -2911,7 +3004,7 @@ impl Driver for DasslDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
         // IDID=1 returns below.
@@ -2937,7 +3030,7 @@ impl Driver for DasslDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -3015,7 +3108,7 @@ impl Driver for DasslDriver {
             let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
                 stop
             } else {
-                start + self.row as f64 * h
+                grid(self.row)
             });
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
             // so emit the held state directly instead of stepping.
@@ -3542,6 +3635,7 @@ struct EventsDriver {
     row: u32,
     pivots: Vec<StateSetPivot>,
     samp: Samples,
+    sync: crate::sync::Sync,
     rows: Vec<f64>,
     /// Resume state for a yield mid output row, so `grid_covered` is not reset.
     mid_row: bool,
@@ -4004,6 +4098,7 @@ impl SolverCore {
         model: &SimModel,
         ctx: &mut ResCtx,
         samp: &mut Samples,
+        sync: &mut crate::sync::Sync,
         tout: f64,
         deadline: f64,
         mut rows: Option<&mut Vec<f64>>,
@@ -4032,8 +4127,14 @@ impl SolverCore {
             // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             let te = samp.next_time();
-            let target = tout.min(te);
-            self.sample_limit = te;
+            // C's `checkForSynchronous`: never step past the next activation. Snapped
+            // onto `tout` (as samples are) so the last row's time is exactly `stop`.
+            let mut tc = sync.next_time();
+            if (tc - tout).abs() <= eps {
+                tc = tout;
+            }
+            let target = tout.min(te).min(tc);
+            self.sample_limit = te.min(tc);
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
             if target - self.t > eps {
@@ -4115,6 +4216,10 @@ impl SolverCore {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
+                    fire_clocks(e, sync, model, sim_data, troot, eps, rows.as_deref_mut())?;
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(Step::Terminated);
+                    }
                     // Re-read states (a reinit may have jumped one), recompute the
                     // consistent derivative, and restart DASKR at troot (INFO(1)=0).
                     self.read_states(e)?;
@@ -4133,7 +4238,7 @@ impl SolverCore {
             }
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).
-            if te <= tout + eps {
+            if te <= target + eps {
                 // Snap an event near `tout` onto it (keeps the final row at `stop`
                 // despite float drift).
                 let te = if (te - tout).abs() <= eps { tout } else { te };
@@ -4178,6 +4283,33 @@ impl SolverCore {
                     grid_covered = true;
                 }
             }
+            // C's `handleTimers`, plus any event clock a `when` body above just fired.
+            if !sync.is_empty() {
+                write_f64(e, sim_data + TIME_OFF, target)?;
+                sync.take_fired(e, target)?;
+            }
+            if sync.next_time() <= target + eps {
+                *did_step = true;
+                write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                eval_continuous(e, sim_data, layout)?;
+                if fire_clocks(e, sync, model, sim_data, target, eps, rows.as_deref_mut())? {
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(Step::Terminated);
+                    }
+                    self.read_y(e)?;
+                    if !self.dae {
+                        e.call1("functionODE", sim_data)?;
+                        for i in 0..n_states {
+                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
+                        }
+                    }
+                    self.restart()?;
+                    self.dae_restart(e, ctx)?;
+                    if target >= tout - eps {
+                        grid_covered = true;
+                    }
+                }
+            }
             if target >= tout - eps {
                 return Ok(Step::Reached { grid_covered });
             }
@@ -4196,6 +4328,7 @@ impl SolverCore {
 pub struct CsDriver {
     core: SolverCore,
     samp: Samples,
+    sync: crate::sync::Sync,
     pivots: Vec<StateSetPivot>,
     /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
     /// variable-step method, which is handed the whole interval.
@@ -4225,6 +4358,8 @@ impl CsDriver {
         check_method(method, layout)?;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
+        let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
+        sync.take_fired(e, t)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
@@ -4235,7 +4370,7 @@ impl CsDriver {
         }
         let h = model.step_size();
         let fixed_h = fixed_kind(method).map(|_| if h > 0.0 { h } else { f64::INFINITY });
-        Ok(CsDriver { core, samp, pivots, fixed_h, resume_reinit: false })
+        Ok(CsDriver { core, samp, sync, pivots, fixed_h, resume_reinit: false })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -4410,8 +4545,8 @@ impl CsDriver {
                 None => t_target,
             };
             let outcome = self.core.integrate_to(
-                e, model, &mut ctx, &mut self.samp, target, f64::INFINITY, None, &mut did_step,
-                stop_at_event,
+                e, model, &mut ctx, &mut self.samp, &mut self.sync, target, f64::INFINITY, None,
+                &mut did_step, stop_at_event,
             )?;
             if !matches!(outcome, Step::Reached { .. }) || self.core.t >= t_target - eps {
                 self.core.nfe = ctx.nfe;
@@ -4439,7 +4574,8 @@ impl EventsDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.
-        run_initialization(e, sim_data, layout, model.start_time)?;
+        crate::sync::clear_fire_flags(e, sim_data, layout)?;
+        let sync = run_initialization_with_clocks(e, sim_data, model)?;
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
@@ -4476,6 +4612,7 @@ impl EventsDriver {
             row: 1,
             pivots,
             samp,
+            sync,
             rows,
             mid_row: false,
             grid_covered: false,
@@ -4502,7 +4639,7 @@ impl Driver for EventsDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: the rows come from `integrate_to`, so one "row"
         // spans the run; `Samples` still bounds each solve.
@@ -4517,7 +4654,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| {
-            if no_grid || row == n_steps { stop } else { start + row as f64 * h }
+            if no_grid || row == n_steps { stop } else { grid(row) }
         };
 
         // No continuous states: nothing to integrate, but zero-crossings on `time`
@@ -4550,7 +4687,11 @@ impl Driver for EventsDriver {
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
                     let te = self.samp.next_time();
-                    let subtarget = tout.min(te);
+                    let mut tc = self.sync.next_time();
+                    if (tc - tout).abs() <= eps {
+                        tc = tout;
+                    }
+                    let subtarget = tout.min(te).min(tc);
                     // A state event bracketed in (t, subtarget]?
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
@@ -4576,6 +4717,13 @@ impl Driver for EventsDriver {
                             return Ok(Advance::Terminated);
                         }
                         self.core.t = tr;
+                        // The discrete update may have fired an event clock.
+                        if fire_clocks(e, &mut self.sync, model, sim_data, tr, eps, Some(&mut self.rows))?
+                            && terminated(e, sim_data, layout)?
+                        {
+                            self.finished = true;
+                            return Ok(Advance::Terminated);
+                        }
                         e.call1_if_present("functionStoreDelayed", sim_data)?;
                         eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
@@ -4584,7 +4732,7 @@ impl Driver for EventsDriver {
                     // No state event before the next sample time. Fire the sample if
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
-                    if te <= tout + eps {
+                    if te <= subtarget + eps {
                         let te = if (te - tout).abs() <= eps { tout } else { te };
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
                         if !no_event_emit() {
@@ -4611,7 +4759,30 @@ impl Driver for EventsDriver {
                         if te >= tout - eps {
                             grid_covered = true;
                         }
-                    } else {
+                    }
+                    if !self.sync.is_empty() {
+                        write_f64(e, sim_data + TIME_OFF, subtarget)?;
+                        self.sync.take_fired(e, subtarget)?;
+                    }
+                    if self.sync.next_time() <= subtarget + eps {
+                        self.core.t = subtarget;
+                        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                        eval_continuous(e, sim_data, layout)?;
+                        if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, eps, Some(&mut self.rows))? {
+                            if terminated(e, sim_data, layout)? {
+                                self.finished = true;
+                                return Ok(Advance::Terminated);
+                            }
+                            e.call1_if_present("functionStoreDelayed", sim_data)?;
+                            if layout.n_zc > 0 {
+                                eval_zero_crossings(e, sim_data, layout, subtarget, &mut zc0)?;
+                                save_zc_pre(e, sim_data, layout)?;
+                            }
+                            if subtarget >= tout - eps {
+                                grid_covered = true;
+                            }
+                        }
+                    } else if te > subtarget + eps {
                         break;
                     }
                 }
@@ -4662,7 +4833,8 @@ impl Driver for EventsDriver {
             // the state the model is evaluated at may still be discarded.
             open_assert_window();
             match self.core.integrate_to(
-                e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step, false,
+                e, model, &mut ctx, &mut self.samp, &mut self.sync, tout, deadline,
+                Some(&mut self.rows), &mut did_step, false,
             )? {
                 Step::Yielded => {
                     // Resume on the same row; `mid_row` keeps `grid_covered`.
@@ -4908,7 +5080,7 @@ impl Driver for CvodeDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
 
         // No integration — evaluate outputs on the grid — with no states or an
@@ -4924,7 +5096,7 @@ impl Driver for CvodeDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -4982,7 +5154,7 @@ impl Driver for CvodeDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let tout = if self.row == n_steps { stop } else { grid(self.row) };
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in cv.y().iter().enumerate() {
@@ -5668,7 +5840,7 @@ impl Driver for IdaDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
         // one-step returns below (`ida_solver.c`'s `idaSmode`).
@@ -5692,7 +5864,7 @@ impl Driver for IdaDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -5749,7 +5921,7 @@ impl Driver for IdaDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if no_grid || self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let tout = if no_grid || self.row == n_steps { stop } else { grid(self.row) };
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {

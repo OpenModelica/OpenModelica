@@ -822,7 +822,7 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         run_table_probe(&mut store, rt_inst, instance, memory, sim_data, layout.total)?;
     }
 
-    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), dae_func: None };
+    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -886,7 +886,9 @@ struct WasmtimeEngine {
     rt_inst: wasmtime::Instance,
     funcs: HashMap<String, wasmtime::TypedFunc<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
-    dae_func: Option<wasmtime::TypedFunc<(u32, u32), ()>>,
+    /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
+    /// synchronous dispatchers), so one cached entry cannot answer for another.
+    funcs2: HashMap<String, wasmtime::TypedFunc<(u32, u32), ()>>,
 }
 
 impl WasmtimeEngine {
@@ -918,11 +920,12 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         self.call1(name, arg)
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        let f = match self.dae_func.clone() {
-            Some(f) => f,
+        let f = match self.funcs2.get(name) {
+            Some(f) => f.clone(),
             None => {
                 let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
-                self.dae_func.insert(f).clone()
+                self.funcs2.insert(name.to_string(), f.clone());
+                f
             }
         };
         wt(f.call(&mut self.store, (a, b)))
