@@ -183,12 +183,17 @@ const SQRT_EPS: f64 = 1.4901161193847656e-08;
 const FD_DELTA: f64 = 6.664001874625056e-08;
 /// Newton/LM convergence tolerance: stop once a residual / step measure drops below.
 const NEWTON_EPS: f64 = 1.0e-6;
-/// C's `newtonFTol`/`newtonXTol` (nonlinearSolverHomotopy.c). `newton_solve`
-/// mirrors C's residual-gated convergence: a step-stall counts as success only
-/// when the residual is also small (`< NEWTON_FTOL*1e3`), else it fails so the
-/// homotopy globaliser engages instead of accepting a non-root.
-const NEWTON_FTOL: f64 = 1.0e-12;
-const NEWTON_XTOL: f64 = 1.0e-12;
+/// C's `newtonFTol`/`newtonXTol` (nonlinearSolverHomotopy.c), which `-newtonFTol` /
+/// `-newtonXTol` move. `newton_solve` mirrors C's residual-gated convergence: a
+/// step-stall counts as success only when the residual is also small
+/// (`< ftol*1e3`), else it fails so the homotopy globaliser engages instead of
+/// accepting a non-root.
+fn newton_ftol() -> f64 {
+    crate::solvers::newton_ftol()
+}
+fn newton_xtol() -> f64 {
+    crate::solvers::newton_xtol()
+}
 const MAX_ITER: i32 = 100;
 /// Line-search damping floor (2^-10): below this, keep the small step and let the
 /// outer iteration retry (or hit the iteration limit → recoverable failure).
@@ -558,7 +563,7 @@ fn homotopy_solve(
 
         // ---- Corrector: Newton with coordinate `pos` fixed ----
         let last_step = y1[n] >= 1.0;
-        let h_eps = if last_step { NEWTON_FTOL } else { H_EPS };
+        let h_eps = if last_step { newton_ftol() } else { H_EPS };
         let mut pos = if last_step { n as i32 } else { tangent_pos };
         let mut step_accept = false;
         let mut corrector_ok = true;
@@ -672,7 +677,7 @@ pub(crate) fn newton_solve(
 
     eval(x, &mut fvec);
     let mut error_f = enorm(&fvec);
-    if error_f < NEWTON_FTOL {
+    if error_f < newton_ftol() {
         return true;
     }
     f_old.copy_from_slice(&fvec);
@@ -758,15 +763,16 @@ pub(crate) fn newton_solve(
         if neg_steps > 20 {
             return false;
         }
-        let f_small = error_f < NEWTON_FTOL || scaled_error_f < NEWTON_FTOL;
-        let x_small = delta_x < NEWTON_XTOL || delta_x_scaled < NEWTON_XTOL;
+        let (ftol, xtol) = (newton_ftol(), newton_xtol());
+        let f_small = error_f < ftol || scaled_error_f < ftol;
+        let x_small = delta_x < xtol || delta_x_scaled < xtol;
         if f_small && x_small {
             return true;
         }
-        small_steps += (delta_x < NEWTON_XTOL * 100.0 || delta_x_scaled < NEWTON_XTOL * 100.0) as i32;
+        small_steps += (delta_x < xtol * 100.0 || delta_x_scaled < xtol * 100.0) as i32;
         if x_small || small_steps > 20 {
             // Stalled step: accept only with a small residual (C's ftol*1e3), else fail.
-            return error_f < NEWTON_FTOL * 1.0e3 || scaled_error_f < NEWTON_FTOL * 1.0e3;
+            return error_f < ftol * 1.0e3 || scaled_error_f < ftol * 1.0e3;
         }
         iter += 1;
         if iter > MAX_ITER {
@@ -1566,8 +1572,8 @@ fn newton_c(
 ) -> (bool, bool) {
     const ALPHA: f64 = 1.0e-1;
     const LAMBDA_MIN_C: f64 = 1.0e-4;
-    let ftol_sq = NEWTON_FTOL * NEWTON_FTOL;
-    let xtol_sq = NEWTON_XTOL * NEWTON_XTOL;
+    let ftol_sq = newton_ftol() * newton_ftol();
+    let xtol_sq = newton_xtol() * newton_xtol();
     let nsq = |v: &[f64]| -> f64 {
         let e = enorm(v);
         e * e
@@ -2147,11 +2153,9 @@ fn solve_newton_c(
     }
 }
 
-/// KINSOL function-norm / scaled-step stopping tolerances (C's `newtonFTol` /
-/// `newtonXTol`, `model_help.c`) and the norm below which C accepts a less
-/// accurate solution rather than failing (`FTOL_WITH_LESS_ACCURACY`).
-const KIN_FNORMTOL: f64 = 1.0e-12;
-const KIN_SCSTEPTOL: f64 = 1.0e-12;
+/// The norm below which C accepts a less accurate solution rather than failing
+/// (`FTOL_WITH_LESS_ACCURACY`). KINSOL's own stopping tolerances are C's
+/// `newtonFTol`/`newtonXTol`, i.e. [`newton_ftol`]/[`newton_xtol`].
 const KIN_FTOL_LESS_ACCURACY: f64 = 1.0e-6;
 
 /// `‖diag(scale)·v‖∞`, the norm KINSOL's stopping tests use.
@@ -2289,7 +2293,7 @@ fn newton_sparse_solve(
             if !fnorm.is_finite() {
                 break;
             }
-            if fnorm <= KIN_FNORMTOL {
+            if fnorm <= newton_ftol() {
                 solved = true;
                 break;
             }
@@ -2332,7 +2336,7 @@ fn newton_sparse_solve(
             }
             x.copy_from_slice(&xnew);
             fnorm = fnew;
-            if step <= KIN_SCSTEPTOL {
+            if step <= newton_xtol() {
                 solved = fnorm < KIN_FTOL_LESS_ACCURACY;
                 break;
             }

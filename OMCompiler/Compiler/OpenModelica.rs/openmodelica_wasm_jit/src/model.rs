@@ -55,6 +55,15 @@ pub struct SimModel {
     pub nls_systems: Vec<(i32, i32, u32, u32)>,
 }
 
+impl SimModel {
+    /// C's `read_experiment`: this run's scalars, i.e. the model's metadata with the
+    /// flags installed for the run applied. The model is shared between runs, so the
+    /// run works off a copy.
+    pub fn run_meta(&self) -> SimMeta {
+        openmodelica_sim_meta::simflags::with_flags(|f| self.meta.with_flags(f))
+    }
+}
+
 /// A user-settable parameter (an editable initial condition): display name, unit,
 /// and `SimData` slot so an `-override=name=value` can write it.
 #[derive(Clone)]

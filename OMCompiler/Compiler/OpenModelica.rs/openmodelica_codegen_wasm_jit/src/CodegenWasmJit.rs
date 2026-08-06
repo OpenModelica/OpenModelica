@@ -705,6 +705,36 @@ fn split_simflags(s: &str) -> Vec<String> {
     out
 }
 
+/// This run's scalars, and what `read_experiment` printed getting them — captured
+/// separately because C prints it ahead of every other startup notice.
+fn run_experiment(model: &SimModel, flags: &simflags::SimFlags) -> (SimMeta, String) {
+    openmodelica_wasi::wasi::start_stdout_capture();
+    let meta = model.meta.with_flags(flags);
+    (meta, openmodelica_wasi::wasi::take_stdout_capture())
+}
+
+/// C's `initializeResultData`: the formats this runtime has a writer for, over the
+/// model's own `outputFormat` as `-outputFormat` may have replaced it.
+fn check_output_format(meta: &SimMeta) -> std::result::Result<(), String> {
+    match meta.output_format.as_str() {
+        "mat" | "empty" => Ok(()),
+        other => Err(format!(
+            "CodegenWasmJit: this runtime writes `mat` results, or `empty` for none (got `{other}`)"
+        )),
+    }
+}
+
+/// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
+/// `<prefix>_res.<format>` under `-outputPath`, else what the caller derived from
+/// the model.
+fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> String {
+    match (&flags.result_file, &flags.output_path) {
+        (Some(r), _) => r.clone(),
+        (None, Some(dir)) => format!("{dir}/{}_res.{}", meta.prefix, meta.output_format),
+        (None, None) => derived.to_string(),
+    }
+}
+
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
 /// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
@@ -712,14 +742,19 @@ fn split_simflags(s: &str) -> Vec<String> {
 ///
 /// `-iif=<file>` contributes first, so an explicit `-override` of the same quantity
 /// wins — C skips whatever `isQuantityOverridden` reports (ticket #15807).
-fn resolve_overrides(model: &SimModel, flags: &simflags::SimFlags) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
+fn resolve_overrides(
+    model: &SimModel,
+    meta: &SimMeta,
+    flags: &simflags::SimFlags,
+) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
     let mut params = Vec::new();
     let mut starts = Vec::new();
     let mut push = |p: &EditableParam, v: f64, params: &mut Vec<_>, starts: &mut Vec<_>| {
         if p.is_start { starts } else { params }.push((p.off, p.wty, v));
     };
     if let Some(file) = &flags.init_file {
-        for (p, v) in import_start_values(model, file, &flags.overrides) {
+        let t = flags.init_time.unwrap_or(meta.start_time);
+        for (p, v) in import_start_values(model, file, t, &flags.overrides) {
             push(p, v, &mut params, &mut starts);
         }
     }
@@ -731,12 +766,14 @@ fn resolve_overrides(model: &SimModel, flags: &simflags::SimFlags) -> (Vec<(u32,
     (params, starts)
 }
 
-/// C's `importStartValues`: every quantity the file names, at the start time,
-/// except the overridden ones. C sets the `start` attribute of every variable;
-/// reachable here are the editable parameters and state start values.
+/// C's `importStartValues`: every quantity the file names, at `t0` (`-iit`, the
+/// start time by default), except the overridden ones. C sets the `start` attribute
+/// of every variable; reachable here are the editable parameters and state start
+/// values.
 fn import_start_values<'a>(
     model: &'a SimModel,
     file: &str,
+    t0: f64,
     overrides: &[(String, f64)],
 ) -> Vec<(&'a EditableParam, f64)> {
     let mut reader = match openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file) {
@@ -746,7 +783,6 @@ fn import_start_values<'a>(
             return Vec::new();
         }
     };
-    let t0 = model.meta.start_time;
     model
         .editable_params
         .iter()
@@ -811,25 +847,24 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
             String::new(),
         );
     }
-    let (param_ov, start_ov) = resolve_overrides(&model, &flags);
+    INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
+    sim_driver::set_init_done_hook(on_init_done);
+    SPLIT_ARMED.with(|a| a.set(true));
+    sim_driver::init_host_hooks();
+    let (meta, experiment_log) = run_experiment(&model, &flags);
+    openmodelica_wasi::wasi::start_stdout_capture();
+    let (param_ov, start_ov) = resolve_overrides(&model, &meta, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov);
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
     // The hard `-alarm`, if asked for: set before the modules are instantiated.
     sim_runtime::set_alarm(flags.alarm);
-    INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
-    sim_driver::set_init_done_hook(on_init_done);
-    SPLIT_ARMED.with(|a| a.set(true));
-    openmodelica_wasi::wasi::start_stdout_capture();
     let mut extra = String::new();
     let res = (|| -> std::result::Result<(), String> {
-        // `empty` runs the integration but writes no result file — useful for
-        // benchmarking the solver in isolation from the `.mat` writer.
-        let fmt = model.output_format.as_str();
-        if fmt != "mat" && fmt != "empty" {
-            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)".to_string());
-        }
-        let run = sim_runtime::run(&model)?;
+        // `empty` (and `-noemit`) runs the integration but writes no result file —
+        // useful for benchmarking the solver in isolation from the `.mat` writer.
+        check_output_format(&meta)?;
+        let run = sim_runtime::run(&model, &meta)?;
         // C's `finishSimulation` prints these ahead of the LOG_STATS block.
         if !flags.output_vars.is_empty() {
             extra.push_str(&write_output_vars(&model, &run, &flags.output_vars));
@@ -839,10 +874,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         }
         let keep = output_selection(&model);
         capture_last_sim(&model, &run, &keep);
-        if fmt == "mat" {
-            // C's `-r=<file>` overrides the name the caller derived from the model.
-            let out = flags.result_file.as_deref().unwrap_or(result_file);
-            write_mat4(&model, out, &run.rows, run.n_reals, &run.params, &keep)?;
+        if meta.output_format == "mat" {
+            write_mat4(&model, &meta, &result_path(&flags, &meta, result_file), &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     })();
@@ -854,7 +887,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
-    let head = format!("{}{}", flag_change_log(&flags), sparse_solver_log(&model, &flags));
+    let head =
+        format!("{experiment_log}{}{}", flag_change_log(&flags), sparse_solver_log(&model, &flags));
     let init_output = if head.is_empty() {
         init_output
     } else {
@@ -915,6 +949,8 @@ mod session {
     /// per process).
     pub(super) struct SimSession {
         model: Arc<SimModel>,
+        /// This run's scalars: the model's metadata with the run's flags applied.
+        meta: SimMeta,
         result_file: String,
         backend: SessionBackend,
         /// Wall-clock inside `advance`, summed over chunks: excludes the yields
@@ -967,11 +1003,16 @@ mod session {
     }
 
     /// Capture results for the `omc_sim_*` getters and write the `.mat`.
-    fn finalize_and_capture(model: &SimModel, result_file: &str, run: &sim_driver::RunResult) -> Result<()> {
+    fn finalize_and_capture(
+        model: &SimModel,
+        meta: &SimMeta,
+        result_file: &str,
+        run: &sim_driver::RunResult,
+    ) -> Result<()> {
         let keep = output_selection(model);
         capture_last_sim(model, run, &keep);
-        if model.output_format == "mat" {
-            write_mat4(model, result_file, &run.rows, run.n_reals, &run.params, &keep)?;
+        if meta.output_format == "mat" {
+            write_mat4(model, meta, result_file, &run.rows, run.n_reals, &run.params, &keep)?;
         }
         Ok(())
     }
@@ -987,16 +1028,10 @@ mod session {
             .get(prefix)
             .cloned()
             .ok_or_else(|| "no prepared wasm-jit model for (translateModel not run?)")?;
-        let fmt = model.output_format.as_str();
-        if fmt != "mat" && fmt != "empty" {
-            return Err("CodegenWasmJit: only the `mat` and `empty` output formats are supported (got)");
-        }
         let flags = install_sim_flags(simflags).map_err(|e| {
             record_error(format!("wasm-jit: {e}"));
             "CodegenWasmJit: unusable simulation flags"
         })?;
-        let (param_ov, start_ov) = resolve_overrides(&model, &flags);
-        sim_driver::set_param_overrides(param_ov, start_ov);
         sim_driver::clear_cancel();
         // Split init from simulation output as `run_simulation_inner` does; the
         // hook fires while the backend below is built, which is what initializes.
@@ -1004,7 +1039,15 @@ mod session {
         INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
         sim_driver::set_init_done_hook(on_init_done);
         SPLIT_ARMED.with(|a| a.set(true));
+        sim_driver::init_host_hooks();
+        let (meta, experiment_log) = run_experiment(&model, &flags);
+        check_output_format(&meta).map_err(|e| {
+            record_error(e);
+            "CodegenWasmJit: unsupported output format"
+        })?;
         openmodelica_wasi::wasi::start_stdout_capture();
+        let (param_ov, start_ov) = resolve_overrides(&model, &meta, &flags);
+        sim_driver::set_param_overrides(param_ov, start_ov);
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
         let inwasm = inwasm_driver_enabled();
@@ -1012,10 +1055,9 @@ mod session {
             if inwasm {
                 Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model)?))
             } else {
-                let (mut engine, sim_data) = sim_runtime::build_engine(&model)?;
-                let made =
-                    sim_driver::make_driver(&mut *engine, &model.meta, sim_data, model.method.as_str())
-                        .map_err(|err| sim_driver::enrich_trap_init(&mut *engine, err, model.start_time));
+                let (mut engine, sim_data) = sim_runtime::build_engine(&model, &meta)?;
+                let made = sim_driver::make_driver(&mut *engine, &meta, sim_data, meta.method.as_str())
+                    .map_err(|err| sim_driver::enrich_trap_init(&mut *engine, err, meta.start_time));
                 let (driver, _label) = match made {
                     Ok(v) => v,
                     Err(e) => {
@@ -1029,7 +1071,7 @@ mod session {
         SPLIT_ARMED.with(|a| a.set(false));
         let flags = simflags::flags();
         let init_log = format!(
-            "{}{}{}",
+            "{experiment_log}{}{}{}",
             flag_change_log(&flags),
             sparse_solver_log(&model, &flags),
             INIT_OUTPUT.with(|c| c.borrow_mut().take()).unwrap_or_default()
@@ -1045,7 +1087,8 @@ mod session {
         SIM_SESSION.with(|s| {
             *s.borrow_mut() = Some(SimSession {
                 model,
-                result_file: result_file.to_string(),
+                result_file: result_path(&flags, &meta, result_file),
+                meta,
                 backend,
                 integrate_ms: 0.0,
                 log: init_log,
@@ -1069,6 +1112,7 @@ mod session {
             let model = sess.model.clone();
             let result_file = sess.result_file.clone();
             let log_stats = sess.log_stats;
+            let n_intervals = sess.meta.n_intervals;
             // Stopped before the finalize/`.mat` work in each arm below.
             let mut adv_ms = 0.0f64;
             // Filled by whichever arm finishes the run, appended to the log below.
@@ -1080,21 +1124,21 @@ mod session {
                 SessionBackend::Host { engine, driver, sim_data } => {
                     let t = sim_driver::now_ms_host();
                     let advanced = driver
-                        .advance(&mut **engine, &model.meta, budget_ms)
+                        .advance(&mut **engine, &sess.meta, budget_ms)
                         .map_err(|err| sim_driver::enrich_trap(&mut **engine, err));
                     adv_ms = sim_driver::now_ms_host() - t;
                     match advanced {
                         Ok(sim_driver::Advance::Running) => Ok(SimStatus::Running),
                         Ok(sim_driver::Advance::Cancelled) => {
                             // Free external objects so the cancelled run leaks nothing.
-                            let _ = sim_driver::finalize_run(&mut **engine, &model.meta, *sim_data);
+                            let _ = sim_driver::finalize_run(&mut **engine, &sess.meta, *sim_data);
                             Ok(SimStatus::Cancelled)
                         }
                         Ok(done) => {
                             let rows = driver.take_rows();
                             let mut stats = SolveStats::default();
-                            driver.fill_stats(&model.meta, &mut stats);
-                            let params = sim_driver::finalize_run(&mut **engine, &model.meta, *sim_data)?;
+                            driver.fill_stats(&sess.meta, &mut stats);
+                            let params = sim_driver::finalize_run(&mut **engine, &sess.meta, *sim_data)?;
                             let run = sim_driver::RunResult {
                                 rows,
                                 n_reals: model.layout.n_row_total(),
@@ -1104,7 +1148,7 @@ mod session {
                             if log_stats {
                                 stats_block = log_stats_block(&run.stats);
                             }
-                            finalize_and_capture(&model, &result_file, &run)?;
+                            finalize_and_capture(&model, &sess.meta, &result_file, &run)?;
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
                             } else {
@@ -1127,7 +1171,7 @@ mod session {
                             if log_stats {
                                 stats_block = log_stats_block(&run.stats);
                             }
-                            finalize_and_capture(&model, &result_file, &run)?;
+                            finalize_and_capture(&model, &sess.meta, &result_file, &run)?;
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
                         Err(e) => Err(e),
@@ -1151,7 +1195,7 @@ mod session {
                         eprintln!(
                             "wasm-jit session [{}]: integrate {integrate_ms:.1} ms ({} intervals)",
                             if inwasm_driver_enabled() { "in-wasm" } else { "host" },
-                            model.n_intervals,
+                            n_intervals,
                         );
                     }
                     publish_log(run_log.unwrap_or_default());
@@ -1176,9 +1220,9 @@ mod session {
                 // Cancel path: end the capture, keeping what was printed.
                 publish_log(core::mem::take(&mut sess.log));
                 // The in-wasm session frees itself on `Drop` (`rt_sim_free`).
-                let SimSession { model, backend, .. } = &mut sess;
+                let SimSession { meta, backend, .. } = &mut sess;
                 if let SessionBackend::Host { engine, sim_data, .. } = backend {
-                    let _ = sim_driver::finalize_run(&mut **engine, &model.meta, *sim_data);
+                    let _ = sim_driver::finalize_run(&mut **engine, meta, *sim_data);
                 }
             }
         });
@@ -3670,16 +3714,15 @@ fn collect_nls_systems(sim_code: &SimCode::SimCode) -> Vec<(i32, i32, u32, u32)>
 
 /// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
 fn flag_change_log(flags: &simflags::SimFlags) -> String {
+    use openmodelica_modelica_utilities::{LOG_STDOUT_INFO, LOG_STDOUT_WARNING};
     let mut out = String::new();
-    if let Some(d) = flags.nlss_max_density {
-        out.push_str(&format_log_stdout(&format!(
-            "Maximum density for using non-linear sparse solver changed to {d:.6}"
-        )));
-    }
-    if let Some(n) = flags.nlss_min_size {
-        out.push_str(&format_log_stdout(&format!(
-            "Minimum system size for using non-linear sparse solver changed to {n}"
-        )));
+    for (ty, msg) in simflags::notices(flags) {
+        let prefix = if ty == openmodelica_sim_meta::omclog::WARNING {
+            LOG_STDOUT_WARNING
+        } else {
+            LOG_STDOUT_INFO
+        };
+        out.push_str(&openmodelica_modelica_utilities::format_log_stdout(&msg, prefix));
     }
     out
 }
@@ -5943,6 +5986,7 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
 /// result-var metadata onto its `MatVar`/`MatKind` and write the bytes out.
 fn write_mat4(
     model: &SimModel,
+    meta: &SimMeta,
     path: &str,
     rows: &[f64],
     n_reals: u32,
@@ -5975,7 +6019,7 @@ fn write_mat4(
         });
     }
     let bytes =
-        openmodelica_mat_writer::write_mat4(&vars, model.start_time, model.stop_time, rows, n_reals, &kept_params);
+        openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept_params);
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
 }

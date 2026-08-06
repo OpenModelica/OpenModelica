@@ -86,6 +86,42 @@ pub enum IdaLs {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SimFlags {
     pub solver: Option<Solver>,
+    /// C's `read_experiment` overrides, folded into the metadata by
+    /// [`SimMeta::apply_flags`](crate::SimMeta::apply_flags).
+    pub start_time: Option<f64>,
+    pub stop_time: Option<f64>,
+    pub tolerance: Option<f64>,
+    pub output_format: Option<String>,
+    /// `-noemit`: no result file, C's `sim_noemit` (which it treats as `empty`).
+    pub noemit: bool,
+    /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
+    pub output_path: Option<String>,
+    /// `-iit=<t>`: where `-iif`'s result file is read (C's `init_time`, default the
+    /// start time).
+    pub init_time: Option<f64>,
+    /// `-mei`: discrete-update iterations allowed at one event (C's
+    /// `maxEventIterations`, default 20).
+    pub max_event_iter: Option<u32>,
+    /// `-mbi`: bisection steps allowed when locating a state event, 0 = C's own
+    /// bound from the bracket width (`maxBisectionIterations`).
+    pub max_bisection_iter: Option<u32>,
+    /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor`: C's `newtonFTol`,
+    /// `newtonXTol` and `maxStepFactor`, shared by the homotopy Newton and KINSOL.
+    pub newton_ftol: Option<f64>,
+    pub newton_xtol: Option<f64>,
+    pub newton_max_step_factor: Option<f64>,
+    /// `-steadyState` / `-steadyStateTol` (C's default 1e-3), read through
+    /// [`steady_state_tol`].
+    pub steady_state: bool,
+    pub steady_state_tol: Option<f64>,
+    /// `-w`: print warnings whose stream is inactive. Carried in
+    /// [`log_mask`](Self::log_mask) as [`omclog::SHOW_ALL_WARNINGS`](crate::omclog::SHOW_ALL_WARNINGS).
+    pub show_all_warnings: bool,
+    /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
+    pub dae_mode: bool,
+    /// `-jacobianThreads`: this runtime evaluates Jacobians single-threaded, as a C
+    /// runtime built without `--enable-parjac` does.
+    pub jacobian_threads: Option<i32>,
     pub nls: Option<Nls>,
     pub nls_ls: Option<NlsLs>,
     pub ls: Option<Ls>,
@@ -514,6 +550,30 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "output" => f.output_vars = split_top_level(&value(name)?),
+            "startTime" => f.start_time = Some(real(name, &value(name)?)?),
+            "stopTime" => f.stop_time = Some(real(name, &value(name)?)?),
+            "tolerance" => f.tolerance = Some(real(name, &value(name)?)?),
+            "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
+            "noemit" => f.noemit = true,
+            "outputPath" => f.output_path = Some(value(name)?),
+            "iit" => f.init_time = Some(real(name, &value(name)?)?),
+            "mei" => f.max_event_iter = Some(int(name, &value(name)?)?.max(0) as u32),
+            "mbi" => f.max_bisection_iter = Some(int(name, &value(name)?)?.max(0) as u32),
+            "newtonFTol" => f.newton_ftol = Some(real(name, &value(name)?)?),
+            "newtonXTol" => f.newton_xtol = Some(real(name, &value(name)?)?),
+            "newtonMaxStepFactor" => f.newton_max_step_factor = Some(real(name, &value(name)?)?),
+            "steadyState" => f.steady_state = true,
+            "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
+            "w" => f.show_all_warnings = true,
+            "daeMode" => f.dae_mode = true,
+            "jacobianThreads" => f.jacobian_threads = Some(int(name, &value(name)?)?),
+            // C's only other formats are the XML ones its `-port` server speaks.
+            "logFormat" => {
+                let v = value(name)?;
+                if v != "text" {
+                    return Err(format!("-logFormat={v}: this runtime writes plain text logs only"));
+                }
+            }
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
             "variableFilter" => f.variable_filter = Some(value(name)?),
@@ -608,10 +668,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                     None => return Err(format!("invalid command line option: {arg}")),
                     Some((n, _)) if !IGNORED_FLAGS.contains(n) => {
                         f.unknown.push(arg.to_string());
-                        return Err(format!(
-                            "-{n}: this runtime does not implement the flag, so the run would \
-                             silently ignore it"
-                        ));
+                        return Err(format!("-{n}: not implemented by this runtime"));
                     }
                     Some(_) => {}
                 }
@@ -619,13 +676,127 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
         }
     }
     f.log_mask = crate::omclog::mask_from_streams(&f.log)?;
+    if f.show_all_warnings {
+        f.log_mask |= crate::omclog::SHOW_ALL_WARNINGS;
+    }
     Ok(f)
+}
+
+/// C's `initializeResultData` formats. `mat` and `empty` are the ones this runtime
+/// has a writer for; `csv`/`plt`/`ia` are C's and would need one of their own.
+fn output_format(v: &str) -> Result<String, String> {
+    match v {
+        "mat" | "empty" => Ok(v.to_string()),
+        "csv" | "plt" | "ia" => Err(format!(
+            "-outputFormat={v}: this runtime writes `mat` results, or `empty` for none"
+        )),
+        _ => Err(format!("Unknown output format: {v}")),
+    }
+}
+
+/// C's `simulation_runtime.cpp` startup notices for the flags that move a solver
+/// constant, in its order. Rendered by the caller, which owns the run's log.
+pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
+    let g = |v: f64| crate::driver::format_g(v, 6);
+    let mut out = Vec::new();
+    if let Some(d) = f.nlss_max_density {
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum density for using non-linear sparse solver changed to {d:.6}"),
+        ));
+    }
+    if let Some(n) = f.nlss_min_size {
+        out.push((
+            crate::omclog::INFO,
+            format!("Minimum system size for using non-linear sparse solver changed to {n}"),
+        ));
+    }
+    if let Some(v) = f.newton_xtol {
+        out.push((
+            crate::omclog::INFO,
+            format!("Tolerance for updating solution vector in Newton solver changed to {}", g(v)),
+        ));
+    }
+    if let Some(v) = f.newton_ftol {
+        out.push((
+            crate::omclog::INFO,
+            format!("Tolerance for accepting accuracy in Newton solver changed to {}", g(v)),
+        ));
+    }
+    if let Some(v) = f.newton_max_step_factor {
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum step size factor for a Newton step changed to {}", g(v)),
+        ));
+    }
+    if f.dae_mode {
+        out.push((
+            crate::omclog::WARNING,
+            "The daeMode flag is *deprecated*, because it is not needed any more.\nIf a model is \
+             compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically \
+             in DAE mode."
+                .to_string(),
+        ));
+    }
+    if f.jacobian_threads.is_some() {
+        out.push((
+            crate::omclog::WARNING,
+            "Simulation flag jacobianThreads not available. This runtime evaluates Jacobians \
+             single-threaded."
+                .to_string(),
+        ));
+    }
+    if let Some(v) = f.steady_state_tol {
+        out.push((
+            crate::omclog::INFO,
+            format!("Tolerance for steady state detection changed to {}", g(v)),
+        ));
+    }
+    if let Some(n) = f.max_bisection_iter {
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum number of bisection iterations changed to {n}"),
+        ));
+    }
+    if let Some(n) = f.max_event_iter {
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum number of event iterations changed to {n}"),
+        ));
+    }
+    out
+}
+
+/// [`notices`] through the log, for a caller that renders nothing itself.
+pub fn print_notices(f: &SimFlags) {
+    for (ty, msg) in notices(f) {
+        match ty {
+            crate::omclog::WARNING => crate::omclog::warning(crate::omclog::STDOUT, false, &msg),
+            _ => crate::omclog::info(crate::omclog::STDOUT, false, &msg),
+        }
+    }
 }
 
 /// C's `nonlinearSparseSolverMinSize` / `nonlinearSparseSolverMaxDensity`, with
 /// C's defaults (`simulation_options.h`) where the flags are absent.
 pub fn nlss_thresholds(f: &SimFlags) -> (u32, f64) {
     (f.nlss_min_size.unwrap_or(1000), f.nlss_max_density.unwrap_or(0.1))
+}
+
+/// The `-steadyState` bound (C's default without `-steadyStateTol`), `None` when
+/// the run is not looking for a steady state.
+pub fn steady_state_tol(f: &SimFlags) -> Option<f64> {
+    f.steady_state.then(|| f.steady_state_tol.unwrap_or(1e-3))
+}
+
+/// C's `newtonFTol` / `newtonXTol` / `maxStepFactor` (`model_help.c`), with C's
+/// defaults where the flags are absent.
+pub fn newton_tuning(f: &SimFlags) -> (f64, f64, f64) {
+    (
+        f.newton_ftol.unwrap_or(1e-12),
+        f.newton_xtol.unwrap_or(1e-12),
+        f.newton_max_step_factor.unwrap_or(1e12),
+    )
 }
 
 /// C's `parseVariableStr`: split on commas outside `[...]`, so `x[1,2]` stays one name.
@@ -1017,6 +1188,69 @@ mod tests {
     #[test]
     fn missing_value_is_an_error() {
         assert!(parse(&argv(&["-nls"])).is_err());
+    }
+
+    // What OMEdit always sends (`SimulationDialog::createSimulationOptions`), which
+    // has to parse as a whole.
+    #[test]
+    fn the_omedit_command_line_parses() {
+        let f = parse(&argv(&[
+            "-startTime=0",
+            "-stopTime=1.5",
+            "-stepSize=0.002",
+            "-tolerance=1e-06",
+            "-s=dassl",
+            "-outputFormat=mat",
+            "-variableFilter=.*",
+            "-r=/tmp/M_res.mat",
+            "-jacobian=coloredNumerical",
+            "-w",
+        ]))
+        .expect("parses");
+        assert_eq!((f.start_time, f.stop_time), (Some(0.0), Some(1.5)));
+        assert_eq!((f.step_size, f.tolerance), (Some(0.002), Some(1e-6)));
+        assert_eq!(f.output_format.as_deref(), Some("mat"));
+        assert_eq!(f.result_file.as_deref(), Some("/tmp/M_res.mat"));
+        assert!(f.show_all_warnings && f.log_mask & crate::omclog::SHOW_ALL_WARNINGS != 0);
+    }
+
+    #[test]
+    fn only_the_writable_output_formats_are_accepted() {
+        assert_eq!(parse(&argv(&["-outputFormat=empty"])).expect("parses").output_format.as_deref(),
+                   Some("empty"));
+        assert!(parse(&argv(&["-outputFormat=csv"])).expect_err("no csv writer").contains("mat"));
+        assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
+        // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.
+        assert!(parse(&argv(&["-noemit"])).expect("parses").noemit);
+    }
+
+    #[test]
+    fn the_solver_tunables_carry_their_values() {
+        let f = parse(&argv(&["-mei=7", "-mbi=3", "-newtonFTol=1e-10", "-newtonXTol=1e-9",
+                              "-newtonMaxStepFactor=1e6", "-iit=0.5", "-outputPath=/tmp/out"]))
+            .expect("parses");
+        assert_eq!((f.max_event_iter, f.max_bisection_iter), (Some(7), Some(3)));
+        assert_eq!(newton_tuning(&f), (1e-10, 1e-9, 1e6));
+        assert_eq!(f.init_time, Some(0.5));
+        assert_eq!(f.output_path.as_deref(), Some("/tmp/out"));
+        // `-steadyStateTol` alone tunes nothing: `-steadyState` is what arms it.
+        assert_eq!(steady_state_tol(&parse(&argv(&["-steadyStateTol=1e-5"])).expect("parses")), None);
+        let f = parse(&argv(&["-steadyState", "-steadyStateTol=1e-5"])).expect("parses");
+        assert_eq!(steady_state_tol(&f), Some(1e-5));
+        assert_eq!(steady_state_tol(&parse(&argv(&["-steadyState"])).expect("parses")), Some(1e-3));
+        // Absent, every tunable is C's default.
+        assert_eq!(newton_tuning(&parse(&argv(&[])).expect("parses")), (1e-12, 1e-12, 1e12));
+    }
+
+    // C warns about these rather than refusing them, so they must parse.
+    #[test]
+    fn deprecated_and_unavailable_flags_only_warn() {
+        let f = parse(&argv(&["-daeMode", "-jacobianThreads=4", "-logFormat=text"])).expect("parses");
+        assert!(f.dae_mode && f.jacobian_threads == Some(4));
+        let msgs = notices(&f);
+        assert_eq!(msgs.len(), 2);
+        assert!(msgs.iter().all(|(ty, _)| *ty == crate::omclog::WARNING));
+        assert!(parse(&argv(&["-logFormat=xml"])).is_err());
     }
 
     // C's `-alarm=0` disables the alarm rather than setting a zero-second one.
