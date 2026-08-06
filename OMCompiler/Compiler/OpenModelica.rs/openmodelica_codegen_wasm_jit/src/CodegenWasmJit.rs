@@ -48,6 +48,7 @@ use arcstr::ArcStr;
 use metamodelica::List;
 use wasm_encoder as we;
 
+use openmodelica_backend_types::BackendDAE;
 use openmodelica_frontend_types::DAE;
 use openmodelica_simcode_types::SimCode;
 use openmodelica_simcode_types::SimCodeVar;
@@ -58,6 +59,7 @@ use crate::CodegenWasmJitFunctions::{
     ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
+    ClockInit, ClockUpdate,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general, function_signature, rt_index, sim_cref_key, sim_const_store,
@@ -70,8 +72,8 @@ use crate::CodegenWasmJitFunctions::{
 // historical host names.
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    var_filter, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, MetaVar as ResultVar,
-    SimMeta, StateSetInfo,
+    var_filter, BaseClockMeta, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
+    MetaVar as ResultVar, SimMeta, StateSetInfo, SubClockMeta,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -717,9 +719,9 @@ fn run_experiment(model: &SimModel, flags: &simflags::SimFlags) -> (SimMeta, Str
 /// model's own `outputFormat` as `-outputFormat` may have replaced it.
 fn check_output_format(meta: &SimMeta) -> std::result::Result<(), String> {
     match meta.output_format.as_str() {
-        "mat" | "empty" => Ok(()),
+        "mat" | "csv" | "empty" => Ok(()),
         other => Err(format!(
-            "CodegenWasmJit: this runtime writes `mat` results, or `empty` for none (got `{other}`)"
+            "CodegenWasmJit: this runtime writes `mat`/`csv` results, or `empty` for none (got `{other}`)"
         )),
     }
 }
@@ -731,7 +733,15 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
     match (&flags.result_file, &flags.output_path) {
         (Some(r), _) => r.clone(),
         (None, Some(dir)) => format!("{dir}/{}_res.{}", meta.prefix, meta.output_format),
-        (None, None) => derived.to_string(),
+        // C names the file after the format `-outputFormat` settled on, while the
+        // caller keeps the name it derived from the model — swap the extension in
+        // `derived` to land on C's name without losing its directory.
+        (None, None) => match derived.rsplit_once('.') {
+            Some((stem, _)) if flags.output_format.is_some() => {
+                format!("{stem}.{}", meta.output_format)
+            }
+            _ => derived.to_string(),
+        },
     }
 }
 
@@ -874,9 +884,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         }
         let keep = output_selection(&model);
         capture_last_sim(&model, &run, &keep);
-        if meta.output_format == "mat" {
-            write_mat4(&model, &meta, &result_path(&flags, &meta, result_file), &run.rows, run.n_reals, &run.params, &keep)?;
-        }
+        write_result(&model, &meta, &result_path(&flags, &meta, result_file), &run, &keep)?;
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -1011,9 +1019,7 @@ mod session {
     ) -> Result<()> {
         let keep = output_selection(model);
         capture_last_sim(model, run, &keep);
-        if meta.output_format == "mat" {
-            write_mat4(model, meta, result_file, &run.rows, run.n_reals, &run.params, &keep)?;
-        }
+        write_result(model, meta, result_file, run, &keep)?;
         Ok(())
     }
 
@@ -1825,6 +1831,8 @@ struct SimVarMap {
     zctol_off: u32,
     /// `SimData` byte offset of `zeroCrossingsPre` (`SimLayout::zc_pre_off`).
     zc_pre_off: u32,
+    /// `SimData` byte offset of the `$_clkfire` flags (`SimLayout::clock_fire_off`).
+    clock_fire_off: u32,
     /// Number of `delay(...)` expression buffers (`delayedExps.maxDelayedIndex + 1`).
     n_delays: u32,
 }
@@ -2176,6 +2184,7 @@ fn build_var_map(
         lambda_off: layout.lambda_off,
         zctol_off: layout.zctol_off,
         zc_pre_off: layout.zc_pre_off,
+        clock_fire_off: layout.clock_fire_off,
         n_delays: 0,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
@@ -2677,6 +2686,61 @@ fn collect_samples(
     Ok(out)
 }
 
+/// One synchronous base clock: the [`BaseClockMeta`] the driver needs, plus the
+/// `ClockKind` expressions and sub-partition equations the three emitted
+/// functions are built from (C's `baseClockInit`/`updatePartition`/
+/// `functionEquationsSynchronous`).
+struct ClockInfo {
+    meta: BaseClockMeta,
+    kind: Arc<DAE::ClockKind>,
+    /// Equations of each sub-partition (`equations ++ removedEquations`).
+    sub_eqs: Vec<Vec<Arc<SimCode::SimEqSystem>>>,
+}
+
+/// Split a `ClockedPartition` list into per-base-clock info, assigning the flat
+/// sub-clock indices the `SimData` sub-clock region is addressed by.
+fn collect_clocks(partitions: &Arc<List<SimCode::ClockedPartition>>) -> Result<Vec<ClockInfo>> {
+    let mut out = Vec::new();
+    let mut sub_base = 0u32;
+    for part in lst(partitions) {
+        let mut sub = Vec::new();
+        let mut sub_eqs = Vec::new();
+        for sp in lst(&part.subPartitions) {
+            let BackendDAE::SubClock::SUBCLOCK { factor, shift, solver } = &sp.subClock else {
+                return Err("CodegenWasmJit: sub-partition still has an inferred sub-clock");
+            };
+            sub.push(SubClockMeta {
+                shift_num: shift.nom as i64,
+                shift_den: shift.denom as i64,
+                factor_num: factor.nom as i64,
+                factor_den: factor.denom as i64,
+                hold_events: sp.holdEvents,
+                external_solver: solver.is_some(),
+            });
+            sub_eqs.push(lst(&sp.equations).chain(lst(&sp.removedEquations)).cloned().collect());
+        }
+        // C's "fake" sub-partition 0 for an empty clocked partition, which its
+        // base-clock handling then activates like any other.
+        if sub.is_empty() {
+            sub.push(SubClockMeta { shift_den: 1, factor_num: 1, factor_den: 1, ..SubClockMeta::default() });
+            sub_eqs.push(Vec::new());
+        }
+        let n_sub = sub.len() as u32;
+        out.push(ClockInfo {
+            meta: BaseClockMeta {
+                is_event_clock: matches!(&*part.baseClock, DAE::ClockKind::EVENT_CLOCK { .. }),
+                inferred: matches!(&*part.baseClock, DAE::ClockKind::INFERRED_CLOCK),
+                sub_base,
+                sub,
+            },
+            kind: part.baseClock.clone(),
+            sub_eqs,
+        });
+        sub_base += n_sub;
+    }
+    Ok(out)
+}
+
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
 fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
@@ -2729,6 +2793,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let n_sens_par = vi.numSensitivityParameters.max(0) as usize;
     let sens_vars: Vec<&SimCodeVar::SimVar> = lst(&mi.vars.sensitivityVars).collect();
     let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
+    let clocks = collect_clocks(&sim_code.clockedPartitions)?;
+    let n_sub_clocks: u32 = clocks.iter().map(|c| c.meta.sub.len() as u32).sum();
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -2750,6 +2816,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         dae_res_vars.len() as u32,
         dae_aux_vars.len() as u32,
         dae_alg_vars.len() as u32,
+        clocks.len() as u32,
+        n_sub_clocks,
         has_when,
         has_homotopy,
     );
@@ -2987,6 +3055,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
         ti
     });
+    // `functionUpdateSynchronous`/`functionEquationsSynchronous`: (i32,i32) -> ().
+    let sync_fn_type = (!clocks.is_empty()).then(|| {
+        let ti = types.len();
+        types.ty().function([we::ValType::I32, we::ValType::I32], []);
+        ti
+    });
     // Function references met while lowering the bodies add thunks to the closure
     // pool; this global holds their shared-table base.
     let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
@@ -3117,6 +3191,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars, dae,
+        clocks.iter().map(|c| c.meta.clone()).collect(),
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -3297,6 +3372,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         )?);
         idx
     };
+    // Synchronous features: emitted only for a model with clocked partitions, so a
+    // clock-free model's module is unchanged.
+    let sync_idx = match clocks.is_empty() {
+        true => None,
+        false => {
+            let init = import_base + bodies.len() as u32;
+            bodies.push(build_init_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
+            bodies.push(build_update_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
+            bodies.push(build_equations_synchronous_fn(
+                &clocks, &layout, &var_map, &eq_index, &by_name, &mut literals,
+            )?);
+            Some((init, init + 1, init + 2))
+        }
+    };
     // Emitted only for a DAE-mode model: its absence is how the standalone export and
     // the FMU adapters know the model is an explicit ODE.
     let dae_residuals_idx = match dae_fn_type {
@@ -3354,6 +3443,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
+    if let Some(ti) = sync_fn_type {
+        functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
+        functions.function(ti); // functionUpdateSynchronous: (i32, i32) -> ()
+        functions.function(ti); // functionEquationsSynchronous: (i32, i32) -> ()
+    }
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
     }
@@ -3452,6 +3546,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
     exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
+    if let Some((init, update, eqs)) = sync_idx {
+        exports.export("functionInitSynchronous", we::ExportKind::Func, init);
+        exports.export("functionUpdateSynchronous", we::ExportKind::Func, update);
+        exports.export("functionEquationsSynchronous", we::ExportKind::Func, eqs);
+    }
     if let Some(idx) = dae_residuals_idx {
         exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
     }
@@ -3496,6 +3595,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
     ] {
         names.push((idx, name.to_string()));
+    }
+    if let Some((init, update, eqs)) = sync_idx {
+        names.push((init, "functionInitSynchronous".to_string()));
+        names.push((update, "functionUpdateSynchronous".to_string()));
+        names.push((eqs, "functionEquationsSynchronous".to_string()));
     }
     if let Some(idx) = dae_residuals_idx {
         names.push((idx, "evaluateDAEResiduals".to_string()));
@@ -4006,6 +4110,7 @@ fn build_sim_meta(
     sens_params: Vec<u32>,
     nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
     dae: Option<openmodelica_sim_meta::DaeInfo>,
+    clocks: Vec<BaseClockMeta>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -4025,6 +4130,7 @@ fn build_sim_meta(
         sens_params,
         nls_vars,
         dae,
+        clocks,
     }
 }
 
@@ -4164,6 +4270,8 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
+        clock_fire_off: var_map.clock_fire_off,
+        sub_clock_off: None,
     }
 }
 
@@ -4442,6 +4550,106 @@ fn build_init_sample_fn(
     let pairs: Vec<(Arc<DAE::Exp>, Arc<DAE::Exp>)> =
         samples.iter().map(|s| (s.start.clone(), s.interval.clone())).collect();
     ctx.emit_init_sample(&pairs, layout.sample_off)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionInitSynchronous(SimData*)` — C's `function_initSynchronous`.
+fn build_init_synchronous_fn(
+    clocks: &[ClockInfo],
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let inits: Vec<ClockInit> = clocks
+        .iter()
+        .enumerate()
+        .map(|(i, c)| ClockInit {
+            off: layout.base_clock_off(i as u32),
+            resolution: match &*c.kind {
+                DAE::ClockKind::RATIONAL_CLOCK { resolution, .. } => Some(resolution.clone()),
+                _ => None,
+            },
+            start_interval: match &*c.kind {
+                DAE::ClockKind::EVENT_CLOCK { startInterval, .. } => Some(startInterval.clone()),
+                _ => None,
+            },
+            sub_offs: (0..c.meta.sub.len() as u32)
+                .map(|k| layout.sub_clock_off(c.meta.sub_base + k))
+                .collect(),
+        })
+        .collect();
+    ctx.emit_init_synchronous(&inits)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionUpdateSynchronous(SimData*, base_idx)` — C's
+/// `function_updateSynchronous`, whose `switch` becomes one `if` per base clock.
+fn build_update_synchronous_fn(
+    clocks: &[ClockInfo],
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    for (i, c) in clocks.iter().enumerate() {
+        let update = match &*c.kind {
+            DAE::ClockKind::RATIONAL_CLOCK { intervalCounter, .. } => ClockUpdate::Rational(intervalCounter.clone()),
+            DAE::ClockKind::REAL_CLOCK { interval } => ClockUpdate::Real(interval.clone()),
+            DAE::ClockKind::INFERRED_CLOCK => ClockUpdate::Inferred,
+            DAE::ClockKind::EVENT_CLOCK { .. } | DAE::ClockKind::SOLVER_CLOCK { .. } => ClockUpdate::Nothing,
+        };
+        if matches!(update, ClockUpdate::Nothing) {
+            continue;
+        }
+        ctx.sim_index_guard(i as u32);
+        ctx.emit_update_synchronous(layout.base_clock_off(i as u32), &update)?;
+        ctx.sim_end_block();
+    }
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionEquationsSynchronous(SimData*, sub_idx)` — C's
+/// `function_equationsSynchronous`, with the (base, sub) pair flattened to the
+/// sub-clock's index in the `SimData` sub-clock region.
+fn build_equations_synchronous_fn(
+    clocks: &[ClockInfo],
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
+    for c in clocks {
+        for (k, eqs) in c.sub_eqs.iter().enumerate() {
+            let flat = c.meta.sub_base + k as u32;
+            ctx.sim_index_guard(flat);
+            ctx.set_sub_clock(Some(layout.sub_clock_off(flat)));
+            for eq in eqs {
+                lower_equation(&mut ctx, eq, eq_index)?;
+            }
+            ctx.set_sub_clock(None);
+            ctx.sim_end_block();
+        }
+    }
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -5501,6 +5709,8 @@ fn build_nls_fns(
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
+        clock_fire_off: var_map.clock_fire_off,
+        sub_clock_off: None,
     };
     let finish = |ctx: FnCtx| -> we::Function {
         let (locals, instrs) = ctx.finish_sim();
@@ -5983,6 +6193,72 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
 /// `[time, realVars...]`); `params` come from the [`SimModel`] result vars. The
 /// serialization itself lives in `openmodelica_mat_writer` (`no_std` + `alloc`,
 /// shared with the standalone wasip1 runtime's `_start`); here we only map the
+/// Write the run's results in the format `-outputFormat` settled on; `empty`
+/// writes none. The one place a result writer is chosen.
+fn write_result(
+    model: &SimModel,
+    meta: &SimMeta,
+    path: &str,
+    run: &sim_driver::RunResult,
+    keep: &[bool],
+) -> Result<()> {
+    match meta.output_format.as_str() {
+        "mat" => write_mat4(model, meta, path, &run.rows, run.n_reals, &run.params, keep),
+        "csv" => write_csv(model, meta, path, &run.rows, run.n_reals, keep),
+        _ => Ok(()),
+    }
+}
+
+/// Write the run as C's `simulation_result_csv`: a quoted-name header row, then
+/// one line per output row with `%.16g` reals and `%i` integers/booleans. As in
+/// C, time-invariant signals are not columns.
+fn write_csv(
+    model: &SimModel,
+    meta: &SimMeta,
+    path: &str,
+    rows: &[f64],
+    n_reals: u32,
+    keep: &[bool],
+) -> Result<()> {
+    let layout = &meta.layout;
+    let int_col0 = layout.n_reals_row();
+    let bool_col0 = int_col0 + layout.n_int_alg();
+    let sens_col0 = layout.sens_col0();
+    // Integers and booleans are captured as f64 but printed as integers.
+    let cols: Vec<(&str, u32, bool, bool)> = model
+        .result_vars
+        .iter()
+        .zip(keep)
+        .filter_map(|(v, &k)| match v.kind {
+            ResultKind::Column { col, negate } if k => {
+                Some((v.name.as_str(), col, negate, col >= int_col0 && col < sens_col0))
+            }
+            _ => None,
+        })
+        .collect();
+    let mut out = String::from("\"time\"");
+    for (name, ..) in &cols {
+        out.push_str(&format!(",\"{}\"", name.replace('"', "\"\"")));
+    }
+    out.push('\n');
+    let n_reals = n_reals as usize;
+    for row in rows.chunks_exact(n_reals.max(1)) {
+        out.push_str(&sim_driver::format_g(row[0], 16));
+        for &(_, col, negate, is_int) in &cols {
+            let v = row.get(col as usize).copied().unwrap_or(0.0);
+            let v = if negate { -v } else { v };
+            out.push(',');
+            if is_int {
+                out.push_str(&format!("{}", v as i64));
+            } else {
+                out.push_str(&sim_driver::format_g(v, 16));
+            }
+        }
+        out.push('\n');
+    }
+    write_output(path, out.as_bytes()).map_err(|e| "CodegenWasmJit: cannot write")
+}
+
 /// result-var metadata onto its `MatVar`/`MatKind` and write the bytes out.
 fn write_mat4(
     model: &SimModel,

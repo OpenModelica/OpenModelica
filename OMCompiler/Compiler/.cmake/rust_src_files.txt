@@ -245,6 +245,7 @@ openmodelica_sim_meta/src/lib.rs
 openmodelica_sim_meta/src/omclog.rs
 openmodelica_sim_meta/src/simflags.rs
 openmodelica_sim_meta/src/sundials.rs
+openmodelica_sim_meta/src/sync.rs
 openmodelica_simcode_types/Cargo.toml
 openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml

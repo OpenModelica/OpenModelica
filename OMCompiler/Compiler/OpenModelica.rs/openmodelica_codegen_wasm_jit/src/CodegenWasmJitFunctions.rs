@@ -95,6 +95,7 @@ fn unknown_variable(name: &str) -> &'static str {
 // wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
 // trait rather than an inherent method.
 pub(crate) use openmodelica_sim_meta::WTy;
+use openmodelica_sim_meta::clock_field;
 pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, FnSig, SigTy, WTyVal};
 
 /// Parse one `.wasm.sig` line into a list of [`SigTy`]s (see [`SigTy::write_code`]
@@ -1078,6 +1079,34 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
     /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
     pub(crate) zc_pre_off: u32,
+    /// `SimData` byte offset of the per-base-clock `$_clkfire` flags.
+    pub(crate) clock_fire_off: u32,
+    /// Sub-clock block of the clocked partition being lowered — C's
+    /// `baseClockIndex`/`subClockIndex`, resolved to an address. `None` outside one.
+    pub(crate) sub_clock_off: Option<u32>,
+}
+
+/// One base clock's `SimData` slots and its parameter-dependent init expressions
+/// (see [`FnCtx::emit_init_synchronous`]).
+pub(crate) struct ClockInit {
+    pub(crate) off: u32,
+    /// `RATIONAL_CLOCK`'s `resolution`; `None` is C's default of 1.
+    pub(crate) resolution: Option<Arc<DAE::Exp>>,
+    /// `EVENT_CLOCK`'s `startInterval`, C's initial `stats.previousInterval`.
+    pub(crate) start_interval: Option<Arc<DAE::Exp>>,
+    pub(crate) sub_offs: Vec<u32>,
+}
+
+/// What one base clock's arm of `functionUpdateSynchronous` recomputes.
+pub(crate) enum ClockUpdate {
+    /// `RATIONAL_CLOCK`: `intervalCounter`, and `interval` from it.
+    Rational(Arc<DAE::Exp>),
+    /// `REAL_CLOCK`: `interval` directly.
+    Real(Arc<DAE::Exp>),
+    /// `INFERRED_CLOCK`, defaulted to `Clock(1, 1)`.
+    Inferred,
+    /// An event or solver clock has no interval to recompute.
+    Nothing,
 }
 
 /// One nonlinear system's `rt_solve_nls` wiring: `k` is the job ordinal (its
@@ -1302,8 +1331,25 @@ impl<'a> FnCtx<'a> {
         self.emit(we::Instruction::If(we::BlockType::Empty));
     }
 
+    /// Open `if (idx == v)` on the second parameter, where C dispatches with a
+    /// `switch`; `sim_end_block` closes it.
+    pub(crate) fn sim_index_guard(&mut self, v: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Const(v as i32));
+        self.emit(we::Instruction::I32Eq);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
     pub(crate) fn sim_end_block(&mut self) {
         self.emit(we::Instruction::End);
+    }
+
+    /// Point the clock builtins at sub-clock `off` (a `SimData` byte offset) while
+    /// the partition it belongs to is lowered.
+    pub(crate) fn set_sub_clock(&mut self, off: Option<u32>) {
+        if let Some(s) = self.sim.as_mut() {
+            s.sub_clock_off = off;
+        }
     }
 
     /// Lower one equation `cref := rhs` into this context.
@@ -1355,6 +1401,102 @@ impl<'a> FnCtx<'a> {
                 let w = compile_exp(self, exp)?;
                 coerce(self, w, WTy::F64);
                 self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionInitSynchronous`: C's `function_initSynchronous` minus the
+    /// compile-time constants. Called after `functionParameters`, since
+    /// `resolution` / `startInterval` may be parameter-dependent.
+    pub(crate) fn emit_init_synchronous(&mut self, clocks: &[ClockInit]) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for c in clocks {
+            self.emit(we::Instruction::LocalGet(data));
+            match &c.resolution {
+                Some(e) => {
+                    let w = compile_exp(self, e)?;
+                    coerce(self, w, WTy::I32);
+                }
+                None => self.emit(we::Instruction::I32Const(1)),
+            }
+            self.emit(we::Instruction::I32Store(mem_arg(c.off + clock_field::RESOLUTION, 2)));
+            // C's `(CLOCK_STATS){<startInterval>, 0, -1}`.
+            self.emit(we::Instruction::LocalGet(data));
+            match &c.start_interval {
+                Some(e) => {
+                    let w = compile_exp(self, e)?;
+                    coerce(self, w, WTy::F64);
+                }
+                None => self.emit(we::Instruction::F64Const(0.0.into())),
+            }
+            self.emit(we::Instruction::F64Store(mem_arg(c.off + clock_field::PREV_INTERVAL, 3)));
+            for (off, v) in [
+                (c.off + clock_field::INTERVAL, -1.0),
+                (c.off + clock_field::LAST_ACTIVATION, -1.0),
+            ] {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(v.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+            for (off, v) in [
+                (c.off + clock_field::COUNT, 0),
+                (c.off + clock_field::INTERVAL_COUNTER, -1),
+            ] {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(v));
+                self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+            }
+            for &sub in &c.sub_offs {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(0.0.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_PREV_INTERVAL, 3)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const((-1.0).into()));
+                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_LAST_ACTIVATION, 3)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(0));
+                self.emit(we::Instruction::I32Store(mem_arg(sub + clock_field::SUB_COUNT, 2)));
+            }
+        }
+        Ok(())
+    }
+
+    /// One base clock's arm of `functionUpdateSynchronous` (C's `updatePartition`):
+    /// re-evaluate the clock's interval, which may depend on a variable.
+    pub(crate) fn emit_update_synchronous(&mut self, off: u32, update: &ClockUpdate) -> Result<()> {
+        let data = self.sim()?.data_local;
+        match update {
+            ClockUpdate::Nothing => {}
+            ClockUpdate::Rational(counter) => {
+                self.emit(we::Instruction::LocalGet(data));
+                let w = compile_exp(self, counter)?;
+                coerce(self, w, WTy::I32);
+                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::F64ConvertI32S);
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::RESOLUTION, 2)));
+                self.emit(we::Instruction::F64ConvertI32S);
+                self.emit(we::Instruction::F64Div);
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+            }
+            ClockUpdate::Real(interval) => {
+                self.emit(we::Instruction::LocalGet(data));
+                let w = compile_exp(self, interval)?;
+                coerce(self, w, WTy::F64);
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+            }
+            // C's `INFERRED_CLOCK` default `Clock(intervalCounter=1, resolution=1)`.
+            ClockUpdate::Inferred => {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(1));
+                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(1.0.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
             }
         }
         Ok(())
@@ -3916,6 +4058,27 @@ fn pre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
     })
 }
 
+/// The `previous(cr)` component reference: `cr` wrapped in `DAE.previousNamePrefix`,
+/// the variable the backend introduced for it (key `$CLKPRE.<cr>`).
+fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    let identType = match cr {
+        C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
+        _ => crate::CodegenWasmJit::t_real(),
+    };
+    Arc::new(C::CREF_QUAL {
+        ident: arcstr::literal!("$CLKPRE"),
+        identType,
+        subscriptLst: metamodelica::nil(),
+        componentRef: Arc::new(cr.clone()),
+    })
+}
+
+/// Address of the sub-clock block `interval()`/`firstTick()` read.
+fn sub_clock_off(sim: &SimCtx) -> Result<u32> {
+    sim.sub_clock_off.ok_or("CodegenWasmJit: clock builtin outside a clocked partition")
+}
+
 /// The `der(cr)` component reference: `cr` wrapped in a `$DER` qualifier, as the
 /// backend names the derivative variable (key `$DER.<cr>`).
 fn der_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
@@ -6354,6 +6517,59 @@ fn compile_math_builtin(
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
             Ok(SigTy::Bool)
+        }
+        // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
+        // `daeExpCall` does: the backend already put the reference in that partition.
+        "interval" if argv.len() <= 1 => {
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::F64Load(mem_arg(off + clock_field::SUB_PREV_INTERVAL, 3)));
+            Ok(SigTy::Real)
+        }
+        "firstTick" if argv.len() <= 1 => {
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
+            ctx.emit(we::Instruction::I32Const(1));
+            ctx.emit(we::Instruction::I32Eq);
+            Ok(SigTy::Bool)
+        }
+        // C's `crefPrefixPrevious`: the `$CLKPRE.x` variable the partition assigns.
+        "previous" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
+                return Err("CodegenWasmJit: `previous` expects a variable reference");
+            };
+            let prev = clkpre_cref(componentRef);
+            match compile_sim_cref_read(ctx, &prev)? {
+                Some(WTy::F64) => Ok(SigTy::Real),
+                Some(WTy::I32) => Ok(SigTy::Int),
+                None => return Err("CodegenWasmJit: `previous` of a non-model variable"),
+            }
+        }
+        // C's `handleBaseClock(data, threadData, i-1, time)`. The timer list is on
+        // the driver's side of the wasm boundary, so raise the clock's flag instead
+        // and let the driver fire it when the model call returns.
+        "$_clkfire" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::ICONST { integer } = &**argv[0] else {
+                return Err("CodegenWasmJit: `$_clkfire` index must be an integer literal");
+            };
+            let base = (*integer - 1).max(0) as u32;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.clock_fire_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Const(1));
+            ctx.emit(we::Instruction::I32Store(mem_arg(off + base * 4, 2)));
+            // Only ever reached through `noReturnCall`, which drops one result.
+            ctx.emit(we::Instruction::I32Const(0));
+            Ok(SigTy::Bool)
+        }
+        // `hold(e)` / `sample(e, clk)` after partitioning: just `e` here.
+        "$getPart" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            Ok(exp_sigty(argv[0])
+                .unwrap_or(if w == WTy::F64 { SigTy::Real } else { SigTy::Int }))
         }
         // der(cref): an explicit derivative left in an equation. Read the
         // derivative variable's slot ($DER.<cref>), as the C target does.

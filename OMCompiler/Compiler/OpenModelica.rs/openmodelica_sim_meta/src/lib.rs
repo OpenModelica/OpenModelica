@@ -29,6 +29,7 @@ pub mod fixedstep;
 pub mod gbode;
 pub mod omclog;
 pub mod simflags;
+pub mod sync;
 #[cfg(sundials)]
 pub mod sundials;
 
@@ -46,6 +47,26 @@ pub const REAL_OFF: u32 = 8;
 /// i32 words in the fired-`terminate` info block at [`Layout::term_info_off`]:
 /// `msg`, `file`, `lineStart`, `colStart`, `lineEnd`, `colEnd`, `readOnly`.
 pub const TERM_INFO_WORDS: u32 = 7;
+
+/// Bytes per base clock / sub-clock in `SimData` — the mutable half of C's
+/// `BASECLOCK_DATA` / `SUBCLOCK_DATA`; the constant half is in [`BaseClockMeta`].
+pub const BASECLOCK_BYTES: u32 = 40;
+pub const SUBCLOCK_BYTES: u32 = 24;
+
+/// Field offsets inside those blocks, baked into the emitted module and read back
+/// by the driver.
+pub mod clock_field {
+    pub const INTERVAL: u32 = 0;
+    pub const PREV_INTERVAL: u32 = 8;
+    pub const LAST_ACTIVATION: u32 = 16;
+    pub const COUNT: u32 = 24;
+    pub const INTERVAL_COUNTER: u32 = 28;
+    pub const RESOLUTION: u32 = 32;
+
+    pub const SUB_PREV_INTERVAL: u32 = 0;
+    pub const SUB_LAST_ACTIVATION: u32 = 8;
+    pub const SUB_COUNT: u32 = 16;
+}
 
 /// The wasm value type a scalar occupies in `SimData` (4-byte `i32` for
 /// Integer/Boolean, 8-byte `f64` for Real). The single definition used by both
@@ -160,6 +181,18 @@ pub struct Layout {
     pub n_dae_alg: u32,
     /// Base of their `nominal` attributes, written like `state_nom_off`.
     pub dae_alg_nom_off: u32,
+    /// Number of synchronous base clocks (`SimCode.clockedPartitions`).
+    pub n_base_clocks: u32,
+    /// Base of the per-base-clock state ([`BASECLOCK_BYTES`] each).
+    pub clock_off: u32,
+    /// Total number of sub-clocks over all base clocks.
+    pub n_sub_clocks: u32,
+    /// Base of the per-sub-clock state ([`SUBCLOCK_BYTES`] each), flattened in
+    /// base-clock order — [`BaseClockMeta::sub_base`] indexes into it.
+    pub subclock_off: u32,
+    /// Base of the per-base-clock `$_clkfire` flags (one i32 each): an event
+    /// clock's `when`-body raises its flag, the driver fires and clears it.
+    pub clock_fire_off: u32,
     pub total: u32,
 }
 
@@ -189,6 +222,8 @@ impl Layout {
         n_dae_res: u32,
         n_dae_aux: u32,
         n_dae_alg: u32,
+        n_base_clocks: u32,
+        n_sub_clocks: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -230,15 +265,28 @@ impl Layout {
         let dae_res_off = sens_off + n_sens * 8;
         let dae_aux_off = dae_res_off + n_dae_res * 8;
         let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
-        let total = dae_alg_nom_off + n_dae_alg * 8;
+        let clock_off = dae_alg_nom_off + n_dae_alg * 8;
+        let subclock_off = clock_off + n_base_clocks * BASECLOCK_BYTES;
+        let clock_fire_off = subclock_off + n_sub_clocks * SUBCLOCK_BYTES;
+        let total = clock_fire_off + n_base_clocks * 4;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off,
-            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off, total,
+            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
+            n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, total,
         }
+    }
+
+    /// Byte offset of base clock `i`'s state block.
+    pub fn base_clock_off(&self, i: u32) -> u32 {
+        self.clock_off + i * BASECLOCK_BYTES
+    }
+    /// Byte offset of the sub-clock at flat index `k`.
+    pub fn sub_clock_off(&self, k: u32) -> u32 {
+        self.subclock_off + k * SUBCLOCK_BYTES
     }
 
     /// Byte offset of state `i`'s overridable start-value slot.
@@ -357,6 +405,34 @@ pub struct DaeInfo {
     pub sparsity: Option<JacAInfo>,
 }
 
+/// The compile-time half of C's `SUBCLOCK_DATA` (its `CLOCK_STATS` live in `SimData`).
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct SubClockMeta {
+    /// `shiftCounter/resolution` of `shiftSample`/`backSample`, relative to the
+    /// base clock.
+    pub shift_num: i64,
+    pub shift_den: i64,
+    /// `subSample(u, f)` is `f/1`, `superSample(u, f)` is `1/f`.
+    pub factor_num: i64,
+    pub factor_den: i64,
+    /// Trigger an event at the sub-clock's activation time.
+    pub hold_events: bool,
+    /// The sub-clock names a `solverMethod` (C's `"External"`). Only the
+    /// `LOG_SYNCHRONOUS` dump distinguishes it; it is driven like any other.
+    pub external_solver: bool,
+}
+
+/// The compile-time half of C's `BASECLOCK_DATA`.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct BaseClockMeta {
+    pub is_event_clock: bool,
+    /// An `INFERRED_CLOCK` base clock, defaulted to `Clock(1, 1)` with a warning.
+    pub inferred: bool,
+    /// Flat index of this clock's first sub-clock in the sub-clock region.
+    pub sub_base: u32,
+    pub sub: Vec<SubClockMeta>,
+}
+
 /// Dynamic state-selection metadata for one `$STATESET`. All offsets are
 /// SimData-relative bytes.
 #[derive(Clone, PartialEq, Debug)]
@@ -449,6 +525,9 @@ pub struct SimMeta {
     pub nls_vars: Vec<NlsVars>,
     /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
     pub dae: Option<DaeInfo>,
+    /// Synchronous base clocks in `base_idx` order; empty for a model with no
+    /// clocked partitions.
+    pub clocks: Vec<BaseClockMeta>,
 }
 
 /// [`SimMeta::nls_vars`] entry.
@@ -634,7 +713,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 9;
+const VERSION: u32 = 10;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -666,7 +745,8 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
         l.state_nom_off, l.n_sens, l.sens_off,
-        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off, l.total,
+        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
+        l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off, l.total,
     ] {
         put_u32(o, v);
     }
@@ -768,6 +848,20 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_jac(&mut o, &d.sparsity);
         }
     }
+    put_u32(&mut o, m.clocks.len() as u32);
+    for c in &m.clocks {
+        o.push(c.is_event_clock as u8);
+        o.push(c.inferred as u8);
+        put_u32(&mut o, c.sub_base);
+        put_u32(&mut o, c.sub.len() as u32);
+        for s in &c.sub {
+            for v in [s.shift_num, s.shift_den, s.factor_num, s.factor_den] {
+                o.extend_from_slice(&v.to_le_bytes());
+            }
+            o.push(s.hold_events as u8);
+            o.push(s.external_solver as u8);
+        }
+    }
     o
 }
 
@@ -787,6 +881,9 @@ impl<'a> Reader<'a> {
     }
     fn f64(&mut self) -> Result<f64, &'static str> {
         Ok(f64::from_le_bytes(self.take(8)?.try_into().unwrap()))
+    }
+    fn i64(&mut self) -> Result<i64, &'static str> {
+        Ok(i64::from_le_bytes(self.take(8)?.try_into().unwrap()))
     }
     fn u8(&mut self) -> Result<u8, &'static str> {
         Ok(self.take(1)?[0])
@@ -865,6 +962,11 @@ impl<'a> Reader<'a> {
             dae_aux_off: self.u32()?,
             n_dae_alg: self.u32()?,
             dae_alg_nom_off: self.u32()?,
+            n_base_clocks: self.u32()?,
+            clock_off: self.u32()?,
+            n_sub_clocks: self.u32()?,
+            subclock_off: self.u32()?,
+            clock_fire_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -959,10 +1061,30 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         0 => None,
         _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
     };
+    let nclocks = r.u32()? as usize;
+    let mut clocks = Vec::with_capacity(nclocks);
+    for _ in 0..nclocks {
+        let is_event_clock = r.u8()? != 0;
+        let inferred = r.u8()? != 0;
+        let sub_base = r.u32()?;
+        let nsub = r.u32()? as usize;
+        let mut sub = Vec::with_capacity(nsub);
+        for _ in 0..nsub {
+            sub.push(SubClockMeta {
+                shift_num: r.i64()?,
+                shift_den: r.i64()?,
+                factor_num: r.i64()?,
+                factor_den: r.i64()?,
+                hold_events: r.u8()? != 0,
+                external_solver: r.u8()? != 0,
+            });
+        }
+        clocks.push(BaseClockMeta { is_event_clock, inferred, sub_base, sub });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
-        nls_vars, dae,
+        nls_vars, dae, clocks,
     })
 }
 
@@ -974,7 +1096,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1024,6 +1146,15 @@ mod tests {
                     rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
                 }),
             }),
+            clocks: vec![BaseClockMeta {
+                is_event_clock: false,
+                inferred: false,
+                sub_base: 0,
+                sub: vec![
+                    SubClockMeta { shift_num: 0, shift_den: 1, factor_num: 1, factor_den: 1, hold_events: false, external_solver: false },
+                    SubClockMeta { shift_num: 1, shift_den: 3, factor_num: 4, factor_den: 1, hold_events: true, external_solver: false },
+                ],
+            }],
         }
     }
 
