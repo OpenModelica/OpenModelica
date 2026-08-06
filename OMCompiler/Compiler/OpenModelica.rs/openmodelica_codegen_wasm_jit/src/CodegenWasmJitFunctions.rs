@@ -339,6 +339,9 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // (src, nspec, spec) where `spec` is an Integer array of (kind, value) pairs
     // per source axis (kind 0 INDEX, 1 WHOLE, 2 SLICE). Returns a fresh array.
     ("rt_array_slice", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Sliced left-hand side `a[i, :, lo:hi, ...] := src`: (dst, nspec, spec, src),
+    // same spec encoding. `src` holds the selected positions in selection order.
+    ("rt_array_indexed_assign", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[]),
     // `cat(dim, a1, ..., an)`: (dim, n, handles) where `handles` is an Integer
     // array of the `n` input array handles. Returns a fresh concatenated array.
     ("rt_array_cat", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
@@ -2211,6 +2214,9 @@ fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()>
         let SigTy::Array { elem, rank } = dst_sty else {
             return Err("CodegenWasmJit: subscripting non-array local");
         };
+        if !is_scalar_index(subscriptLst, rank) {
+            return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Exp(rhs));
+        }
         let idx_exps = index_subscripts(subscriptLst, rank)?;
         return compile_elem_assign(ctx, idx, &elem, &idx_exps, rhs);
     }
@@ -2321,6 +2327,9 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
             ctx.emit(we::Instruction::LocalGet(rec));
             field_load(ctx, WTy::I32, off);
             ctx.emit(we::Instruction::LocalSet(arr_t));
+            if !is_scalar_index(lsubs, rank) {
+                return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Temp { local: vt, wty });
+            }
             let idx_exps = index_subscripts(lsubs, rank)?;
             store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
         }
@@ -2341,6 +2350,9 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
     let SigTy::Array { elem, rank } = dst_sty else {
         return Err("CodegenWasmJit: subscripting non-array local");
     };
+    if !is_scalar_index(subscriptLst, rank) {
+        return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Temp { local: vt, wty });
+    }
     let idx_exps = index_subscripts(subscriptLst, rank)?;
     store_fresh_into_elem(ctx, idx, &elem, &idx_exps, vt)
 }
@@ -2995,6 +3007,9 @@ fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE
         ctx.emit(we::Instruction::LocalGet(rec));
         field_load(ctx, WTy::I32, off);
         ctx.emit(we::Instruction::LocalSet(arr_t));
+        if !is_scalar_index(lsubs, rank) {
+            return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Exp(rhs));
+        }
         let idx_exps = index_subscripts(lsubs, rank)?;
         compile_elem_assign(ctx, arr_t, &elem, &idx_exps, rhs)?;
     }
@@ -7366,10 +7381,9 @@ fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: 
     Ok(WTy::I32)
 }
 
-/// Lower `a[i, j, ...]` (full subscripting of an N-D array to a scalar element).
-/// `base` produces the owned array handle; `subs` must be one `INDEX` per
-/// dimension (slicing / partial indexing is not yet supported). Returns the
-/// element's wasm type.
+/// Lower `a[i, j, ...]`: one `INDEX` per dimension reads a scalar element,
+/// anything else slices to a lower-rank sub-array. `base` produces the owned
+/// array handle. Returns the result's wasm type.
 fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
     let SigTy::Array { elem, rank } = exp_sigty(base)? else {
         return Err("CodegenWasmJit: subscripting a non-array expression");
@@ -7399,18 +7413,18 @@ fn is_scalar_index(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> bool {
     all_index && n == rank
 }
 
-/// Extract one `INDEX` expression per dimension from a subscript list, or fail
-/// for slicing / whole-dimension / wrong arity (not yet supported).
+/// Extract one `INDEX` expression per dimension from a subscript list. Callers
+/// gate on [`is_scalar_index`] first, so anything else is a codegen bug.
 fn index_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
     let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
     if subs.len() as u32 != rank {
-        return Err("CodegenWasmJit: array slicing / partial indexing not supported");
+        return Err("CodegenWasmJit: partial indexing on the scalar-index path");
     }
     let mut out = Vec::with_capacity(subs.len());
     for s in subs {
         match &**s {
             DAE::Subscript::INDEX { exp } => out.push(exp.clone()),
-            other => return Err("CodegenWasmJit: non-scalar subscript (slicing not supported)"),
+            other => return Err("CodegenWasmJit: non-scalar subscript on the scalar-index path"),
         }
     }
     Ok(out)
@@ -7475,29 +7489,18 @@ fn spec_elem_addr(ctx: &mut FnCtx, spec_t: u32, slot: i32) -> Result<()> {
     Ok(())
 }
 
-/// Given an owned source-array handle on top of the stack and a subscript list
-/// that slices / partially indexes it (any `WHOLEDIM`/`SLICE`, or fewer
-/// subscripts than the rank), build the per-axis spec and call `rt_array_slice`,
-/// leaving a fresh (owned) lower-rank sub-array handle. The source array and any
-/// `SLICE` index arrays are released. Returns `WTy::I32` (an array handle).
-fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
-    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
-    let nspec = subs.len() as u32;
-
-    let arr_t = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(arr_t));
-
-    // The spec is an Integer[2*nspec] array of (kind, value) pairs, one per axis:
-    // kind 0 INDEX (value = 1-based index), 1 WHOLE (value unused), 2 SLICE
-    // (value = handle to an Integer index array). Read by `rt_array_slice`.
+/// Build the per-axis spec `rt_array_slice` / `rt_array_indexed_assign` read: an
+/// `Integer[2*nspec]` of (kind, value) pairs, one pair per subscript. Returns the
+/// temps holding the spec and the owned SLICE index arrays; the caller releases
+/// both.
+fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&Arc<DAE::Subscript>]) -> Result<(u32, Vec<u32>)> {
     let spec_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::I32Const(0)); // EK_INT
     ctx.emit(we::Instruction::I32Const(1)); // ndims
-    ctx.emit(we::Instruction::I32Const(2 * nspec as i32)); // total
+    ctx.emit(we::Instruction::I32Const(2 * subs.len() as i32)); // total
     ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
     ctx.emit(we::Instruction::LocalSet(spec_t));
 
-    // SLICE index arrays are owned (a fresh range/array); release them after.
     let mut slice_idx_temps: Vec<u32> = Vec::new();
     for (ax, s) in subs.iter().enumerate() {
         let kind_slot = 2 * ax as i32 + 1;
@@ -7534,6 +7537,21 @@ fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Resul
             }
         }
     }
+    Ok((spec_t, slice_idx_temps))
+}
+
+/// Given an owned source-array handle on top of the stack and a subscript list
+/// that slices / partially indexes it (any `WHOLEDIM`/`SLICE`, or fewer
+/// subscripts than the rank), build the per-axis spec and call `rt_array_slice`,
+/// leaving a fresh (owned) lower-rank sub-array handle. The source array and any
+/// `SLICE` index arrays are released. Returns `WTy::I32` (an array handle).
+fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    let nspec = subs.len() as u32;
+
+    let arr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr_t));
+    let (spec_t, slice_idx_temps) = emit_slice_spec(ctx, &subs)?;
 
     // result = rt_array_slice(src, nspec, spec)
     ctx.emit(we::Instruction::LocalGet(arr_t));
@@ -7552,6 +7570,40 @@ fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Resul
 
     ctx.emit(we::Instruction::LocalGet(result_t));
     Ok(WTy::I32)
+}
+
+/// Slice assignment `a[i, :, lo:hi, …] := rhs`, written in place into the array
+/// in `arr_idx` (which privately owns its buffer, as for element assignment).
+/// The rhs is an array holding the selected positions in selection order;
+/// `rt_array_indexed_assign` copies it in, so the rhs reference is released.
+fn compile_slice_assign(
+    ctx: &mut FnCtx,
+    arr_idx: u32,
+    subs: &Arc<List<Arc<DAE::Subscript>>>,
+    rhs: RhsSource,
+) -> Result<()> {
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    let nspec = subs.len() as u32;
+    let (spec_t, slice_idx_temps) = emit_slice_spec(ctx, &subs)?;
+
+    let src_t = ctx.alloc_temp(WTy::I32);
+    if rhs.push(ctx)? != WTy::I32 {
+        return Err("CodegenWasmJit: slice assignment rhs is not an array");
+    }
+    ctx.emit(we::Instruction::LocalSet(src_t));
+
+    ctx.emit(we::Instruction::LocalGet(arr_idx));
+    ctx.emit(we::Instruction::I32Const(nspec as i32));
+    ctx.emit(we::Instruction::LocalGet(spec_t));
+    ctx.emit(we::Instruction::LocalGet(src_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_indexed_assign")?));
+
+    release_temp_array(ctx, src_t)?;
+    for s_t in slice_idx_temps {
+        release_temp_array(ctx, s_t)?;
+    }
+    release_temp_array(ctx, spec_t)?;
+    Ok(())
 }
 
 /// Release an owned array handle held in scratch local `t`.
