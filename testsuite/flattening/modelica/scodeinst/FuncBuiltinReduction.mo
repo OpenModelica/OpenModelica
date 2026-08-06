@@ -1,6 +1,7 @@
 // name: FuncBuiltinReduction
 // keywords: reduction
 // status: correct
+// suite: 63bit
 //
 // Tests the builtin reduction operators.
 //

@@ -1,5 +1,6 @@
 // status: incorrect
 // cflags: +g=MetaModelica -d=-newInst
+// suite: metamodelica
 
 model PatternMatchInvalidType
 
@@ -17,7 +18,7 @@ end PatternMatchInvalidType;
 
 // Result:
 // Error processing file: PatternMatchInvalidType.mo
-// [metamodelica/meta/PatternMatchInvalidType.mo:9:10-9:15:writable] Error: Type mismatch in pattern {}
+// [metamodelica/meta/PatternMatchInvalidType.mo:10:10-10:15:writable] Error: Type mismatch in pattern {}
 // expression type:
 //   Integer
 // pattern type:

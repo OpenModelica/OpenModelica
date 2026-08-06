@@ -1,6 +1,7 @@
 // name: ErrorInvalidPattern2
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 package ErrorInvalidPattern2
 
@@ -25,7 +26,7 @@ end ErrorInvalidPattern2;
 
 // Result:
 // Error processing file: ErrorInvalidPattern2.mo
-// [metamodelica/meta/ErrorInvalidPattern2.mo:17:10-17:22:writable] Error: Invalid named fields: exp. Valid field names: .
+// [metamodelica/meta/ErrorInvalidPattern2.mo:18:10-18:22:writable] Error: Invalid named fields: exp. Valid field names: .
 // Error: Error occurred while flattening model ErrorInvalidPattern2
 //
 // # Error encountered! Exiting...

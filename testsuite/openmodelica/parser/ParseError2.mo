@@ -1,6 +1,7 @@
 // name:     ParseError2
 // keywords: parse error
 // status:   incorrect
+// suite: antlr
 //
 // Parsing error message.
 //
@@ -14,7 +15,7 @@ end ParseError2;
 // Error processing file: ParseError2.mo
 // Failed to parse file: ParseError2.mo!
 //
-// [openmodelica/parser/ParseError2.mo:9:3-9:7:writable] Error: No viable alternative near token: Real
+// [openmodelica/parser/ParseError2.mo:10:3-10:7:writable] Error: No viable alternative near token: Real
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

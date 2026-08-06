@@ -19,6 +19,11 @@ rtest special directives added to help creating testcases:
   Will execute the provided command before running omc.
 * teardown_command: rm -f ...  
   Will execute the provided command after running omc.
+* suite: metamodelica, 63bit  
+  Puts the test in one or more test suites, so that a run which cannot support
+  them can deselect it: `partest/runtests.pl -suites=-metamodelica,-63bit`.
+  Run `runtests.pl -h` for the suites and their defaults. The directive must be
+  in the test's header, i.e. before the first line of code.
 
 **NOTE**:  
 A test MUST have the finishing "end ..." at the same indentation level as the "model ..." otherwise there will be a warning(perl -w rtest file) for the next test that are executed.

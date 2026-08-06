@@ -1,6 +1,10 @@
 # Tests known to fail in the Rust port for reasons we accept (not codegen bugs).
 # Used to filter failed.frontend-refactor-deps before triaging.
 #
+# The parser-position and Integer-width groups below are also marked in the test
+# files themselves with '// suite: antlr' and '// suite: 63bit', so partest can
+# deselect them with -suites=-antlr,-63bit. Keep the two in sync.
+#
 # Rust aborts the process on stack overflow (no catchable recursion limit),
 # unlike MMC which unwinds. Any test that deliberately drives deep recursion
 # to hit a recursion-limit / stack-overflow error message will differ.
@@ -12,12 +16,10 @@
 # ANTLR's error recovery picked. The error is still raised and the file still
 # fails to parse; only which token/line:col is named differs.
 ./openmodelica/parser/Class4.mo
-./openmodelica/parser/ConstructParameters1.mo
 ./openmodelica/parser/Declaration1.mo
 ./openmodelica/parser/Declaration2.mo
 ./openmodelica/parser/Declaration3.mo
 ./openmodelica/parser/Identifier.mo
-./openmodelica/parser/ParseError1.mo
 ./openmodelica/parser/ParseError2.mo
 ./openmodelica/parser/RealOpLexerModelica.mo
 ./openmodelica/parser/WildLexerMetaModelica.mo
@@ -55,7 +57,8 @@
 # IntegerTest passes with the Rust port on the C runtime (modelica_integer is
 # 64-bit there). It only differs under --simCodeTarget=wasm-jit, whose runtime
 # Integer is i32, so `2147483647 * 2` wraps to -2 instead of 4294967294. Not an
-# ignore entry — left commented so it is not filtered out on the C-runtime path.
+# ignore entry — it carries '// suite: 63bit', which the wasm-jit run deselects
+# and the C-runtime run keeps.
 #./simulation/modelica/types/IntegerTest.mos
 # saveTotalModel(obfuscate=true) replaces assert/terminate messages with
 # "<fn> message <stringHashDjb2(msg)>"; C's stringHashDjb2 accumulates djb2 in a

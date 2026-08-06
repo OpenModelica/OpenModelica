@@ -1,6 +1,7 @@
 // name: PolymorphicCallTypeSpec3
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 
 setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("

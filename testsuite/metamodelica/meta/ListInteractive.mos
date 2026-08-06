@@ -2,6 +2,7 @@
 // keywords: Lists
 // status:   correct
 // cflags:   +g=MetaModelica -d=-newInst
+// suite: metamodelica
 //
 // List Testing
 loadFile("ListInteractive.mo");
