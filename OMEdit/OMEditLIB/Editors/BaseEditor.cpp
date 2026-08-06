@@ -65,7 +65,7 @@ struct NavigationPoint {
   int position;
 };
 /*! The global navigation history shared by all editors. */
-QList<NavigationPoint> gNavigationPoints;
+QVector<NavigationPoint> gNavigationPoints;
 /*! Index of the current position in the global navigation history. */
 int gNavigationPos = -1;
 /*! True while a programmatic back/forward navigation is in progress.
