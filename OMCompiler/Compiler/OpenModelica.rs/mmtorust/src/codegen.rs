@@ -4331,10 +4331,14 @@ fn emit_type_item(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cla
 // "`?`-free body" restriction on the candidate, so fallible / `matchcontinue`-
 // using recursions are eligible.
 //
-// Multi-output functions and multi-mutual recursion (SCCs of size 2–3) are
-// *not* yet lowered — see the open TODOs. The current MetaModelica source
-// rarely needs mutual recursion (every important case in `BaseAvlTree`/`List`
-// is a single self-recursive function).
+// An `input output` accumulator is lowered too: dropping its declaration
+// leaves the `mut` parameter, which `continue` reassigns. Only pure outputs
+// must stay write-once.
+//
+// Multi-mutual recursion (SCCs of size 2–3) is *not* yet lowered — see the
+// open TODOs. The current MetaModelica source rarely needs mutual recursion
+// (every important case in `BaseAvlTree`/`List` is a single self-recursive
+// function).
 
 /// Return true if any tail position of `exp` is a call to `self_short_name`.
 ///
@@ -5224,6 +5228,7 @@ fn case_uses_local_name(case: &typedexp::TypedCase, name: &str) -> bool {
 fn plan_tail_call_lowering<'a>(
     typed_stmts: &[typedexp::TypedStmt],
     outputs: &[(String, Ty, Option<Arc<Absyn::Modification>>, bool)],
+    input_names: &HashSet<String>,
     fn_short_name: &str,
     is_fallible_fn: bool,
     ctx: &GenCtx,
@@ -5238,7 +5243,12 @@ fn plan_tail_call_lowering<'a>(
     if !stmts_lowerable_as_tail_expr(typed_stmts, &out_names) { return None; }
     if !stmts_have_tail_self_call(typed_stmts, &out_names, fn_short_name) { return None; }
 
-    // Suppressing each output's `let mut <n>` declaration only works if the
+    // An `input output` keeps a readable, writable place with its shadow
+    // suppressed — the `mut` parameter, which is also what `continue`
+    // reassigns. The two checks below therefore apply to pure outputs only.
+    let pure_outs = || out_names.iter().filter(|n| !input_names.contains(*n));
+
+    // Suppressing a pure output's `let mut <n>` declaration only works if the
     // body never reads it as a value — every reference becomes a
     // "cannot find value" error otherwise. Fold-style functions
     // (`BaseAvlTree.fold`) declare an accumulator output and thread it
@@ -5251,13 +5261,13 @@ fn plan_tail_call_lowering<'a>(
     // suppression; refuse the plan in this case and fall back to the
     // ordinary `let mut out; out = match ...; out` emission, which compiles
     // (no tail-loop optimisation for accumulator-threading folds).
-    if out_names.iter().any(|n| stmts_read_name(typed_stmts, n)) { return None; }
+    if pure_outs().any(|n| stmts_read_name(typed_stmts, n)) { return None; }
 
-    // Each output's `let mut <out>` is suppressed, so any *write* to one
+    // A pure output's `let mut <out>` is suppressed, so any *write* to one
     // outside the consumed tail position(s) would reference an undeclared
     // place (E0425). A preamble (non-last) statement, or a non-tail branch of
     // the trailing `if`, that assigns an output therefore disqualifies it.
-    if out_names.iter().any(|n| preamble_writes_out(typed_stmts, n)) { return None; }
+    if pure_outs().any(|n| preamble_writes_out(typed_stmts, n)) { return None; }
 
     // An explicit `return` reads (and returns) all outputs, which we suppress.
     if body_has_return(typed_stmts) { return None; }
@@ -7381,7 +7391,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     // arms are ordinary control flow, not `tailcall::call!` sites a second
     // macro has to find). Bodies needing `match_deref!` are therefore lowered
     // normally; see `emit_match`, which no longer special-cases loop bodies.
-    let tail_plan = plan_tail_call_lowering(&typed_stmts, &outputs, name, is_fallible_fn, ctx, top_level);
+    let tail_plan = plan_tail_call_lowering(&typed_stmts, &outputs, &input_names, name, is_fallible_fn, ctx, top_level);
 
     // Set the ambient "we're inside a loop-lowered body" flag so that
     // [`emit_match`] can emit a *diverging* fallback for a non-exhaustive
