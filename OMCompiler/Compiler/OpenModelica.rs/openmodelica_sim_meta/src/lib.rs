@@ -286,6 +286,26 @@ pub struct MetaVar {
     pub name: String,
     pub comment: String,
     pub kind: MetaKind,
+    /// C's `filterOutput`, split into its reasons ([`var_filter`]).
+    pub filter: u8,
+}
+
+/// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
+/// which flag lets it back in (C's `shouldFilterOutput` +
+/// `initializeOutputFilter`).
+pub mod var_filter {
+    /// `protected` variable; `-emit_protected` emits it.
+    pub const PROTECTED: u8 = 1;
+    /// `annotation(HideResult=true)`; `-ignoreHideResult` emits it.
+    pub const HIDE_RESULT: u8 = 2;
+    /// The model's `variableFilter` did not match the name; `-variableFilter`
+    /// replaces that decision.
+    pub const FILTERED: u8 = 4;
+    /// An alias reading another variable's slot. Not a filter reason: it gives C's
+    /// un-filter rule its direction (an emitted alias keeps its base variable).
+    pub const ALIAS: u8 = 8;
+    /// Protected and encrypted, which `-emit_protected` does not reach.
+    pub const ENCRYPTED: u8 = 16;
 }
 
 /// ODE state-Jacobian ∂f/∂x ("A") sparsity + coloring for the colored-FD path.
@@ -410,6 +430,57 @@ impl SimMeta {
         }
     }
 
+    /// Which of [`vars`](Self::vars) the result file holds, in order: C's
+    /// `filterOutput` as the file is opened.
+    ///
+    /// `matcher` is a compiled `-variableFilter` (wrapped in C's `^(…)$`) and
+    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it.
+    pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
+        let (emit_protected, ignore_hide) =
+            crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
+        let mut keep: Vec<bool> = self
+            .vars
+            .iter()
+            .map(|v| {
+                if matches!(v.kind, MetaKind::Time) {
+                    return true; // never filtered
+                }
+                if v.filter & var_filter::PROTECTED != 0
+                    && !(emit_protected && v.filter & var_filter::ENCRYPTED == 0)
+                {
+                    return false;
+                }
+                if v.filter & var_filter::HIDE_RESULT != 0 && !ignore_hide {
+                    return false;
+                }
+                match matcher {
+                    Some(m) => m(&v.name),
+                    None => v.filter & var_filter::FILTERED == 0,
+                }
+            })
+            .collect();
+        // `Const` has no slot to share.
+        let slot_of = |v: &MetaVar| match v.kind {
+            MetaKind::Column { col, .. } => Some((0u8, col)),
+            MetaKind::Param { off, .. } => Some((1u8, off)),
+            _ => None,
+        };
+        let mut needed = alloc::collections::BTreeSet::new();
+        for (i, v) in self.vars.iter().enumerate() {
+            if keep[i] && v.filter & var_filter::ALIAS != 0 {
+                needed.extend(slot_of(v));
+            }
+        }
+        if !needed.is_empty() {
+            for (i, v) in self.vars.iter().enumerate() {
+                if !keep[i] && v.filter & var_filter::ALIAS == 0 {
+                    keep[i] = slot_of(v).is_some_and(|s| needed.contains(&s));
+                }
+            }
+        }
+        keep
+    }
+
     /// C's `simulationInfo->stepSize`: the output interval `SimCodeMain` writes into
     /// the init XML, or the `-stepSize` override. Solver policy reads it too (the NLS
     /// initial-guess window, the chattering limit), so it is not only the grid.
@@ -508,6 +579,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, &v.name);
         put_str(&mut o, &v.comment);
         put_kind(&mut o, &v.kind);
+        o.push(v.filter);
     }
     match &m.jac_a {
         None => o.push(0),
@@ -681,7 +753,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nvars = r.u32()? as usize;
     let mut vars = Vec::with_capacity(nvars);
     for _ in 0..nvars {
-        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()? });
+        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
     }
     let jac_a = match r.u8()? {
         0 => None,
@@ -754,12 +826,12 @@ mod tests {
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false } },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true } },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false } },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false } },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 } },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false }, filter: var_filter::PROTECTED },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true }, filter: var_filter::ALIAS },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false }, filter: 0 },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false }, filter: var_filter::HIDE_RESULT },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
@@ -808,6 +880,28 @@ mod tests {
         assert_eq!(l.n_sens, 2);
         assert_eq!(l.n_row_total(), 6 + 1 + 1 + 2);
         assert_eq!(l.sens_col0(), 6 + 1 + 1);
+    }
+
+    /// The sample's `x` is protected and its alias `y` is not, so `x` rides along.
+    #[test]
+    fn output_keep_follows_the_flags() {
+        let m = sample();
+        let names = |keep: Vec<bool>| -> Vec<&str> {
+            m.vars.iter().zip(keep).filter(|(_, k)| *k).map(|(v, _)| v.name.as_str()).collect()
+        };
+        simflags::set_flags(simflags::SimFlags::default());
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p"]);
+
+        let mut f = simflags::SimFlags { ignore_hide_result: true, ..Default::default() };
+        simflags::set_flags(f.clone());
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
+
+        // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
+        // `time` is never filtered.
+        f.ignore_hide_result = false;
+        simflags::set_flags(f);
+        let only_k = |n: &str| n == "k";
+        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
     }
 
     #[test]

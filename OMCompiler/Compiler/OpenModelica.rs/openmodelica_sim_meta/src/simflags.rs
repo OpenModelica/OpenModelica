@@ -151,6 +151,13 @@ pub struct SimFlags {
     /// `nonlinearSparseSolverMaxDensity`, the rule that hands a system to kinsol+KLU.
     pub nlss_min_size: Option<u32>,
     pub nlss_max_density: Option<f64>,
+    /// `-emit_protected`: keep `protected` variables in the result file.
+    pub emit_protected: bool,
+    /// `-ignoreHideResult`: keep `annotation(HideResult=true)` variables too.
+    pub ignore_hide_result: bool,
+    /// `-variableFilter=<regex>`: replaces the model's own filter. The caller
+    /// compiles it — this crate is `no_std` and has no engine.
+    pub variable_filter: Option<String>,
     /// Flags this runtime does not model, kept so a caller can report them.
     pub unknown: Vec<String>,
     /// The argv this was parsed from, so a host forwards the same bytes rather than
@@ -200,6 +207,8 @@ pub struct Capabilities {
     pub gbode: bool,
     /// This runtime has a wall clock, so `-alarm` can be honoured.
     pub alarm: bool,
+    /// This runtime can compile a regex, so `-variableFilter` can be honoured.
+    pub variable_filter: bool,
 }
 
 /// Reject flag values this runtime cannot honour.
@@ -217,6 +226,9 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     }
     if f.alarm.is_some() && !cap.alarm {
         return Err("-alarm: this runtime has no wall clock".to_string());
+    }
+    if f.variable_filter.is_some() && !cap.variable_filter {
+        return Err("-variableFilter: this runtime has no regex engine".to_string());
     }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
@@ -438,10 +450,8 @@ const JACOBIAN_METHODS: &[&str] = &[
     "bicoloredSymbolical",
 ];
 
-/// C flags deliberately let through. The wasm-jit codegen drops protected variables
-/// when it generates the module, so `emit_protected` has nothing to switch on — a
-/// real gap, but every library test passes it and erroring would say nothing new.
-const IGNORED_FLAGS: &[&str] = &["emit_protected"];
+/// C flags deliberately let through.
+const IGNORED_FLAGS: &[&str] = &[];
 
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
 /// `-flag=value` and `-flag value` are both accepted, as in the C runtime.
@@ -495,6 +505,9 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "output" => f.output_vars = split_top_level(&value(name)?),
+            "emit_protected" => f.emit_protected = true,
+            "ignoreHideResult" => f.ignore_hide_result = true,
+            "variableFilter" => f.variable_filter = Some(value(name)?),
             "r" => f.result_file = Some(value(name)?),
             "iif" => f.init_file = Some(value(name)?),
             "noEquidistantTimeGrid" => f.no_equidistant_grid = true,
@@ -779,7 +792,7 @@ mod tests {
     }
 
     const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, gbode: false, alarm: false };
+        Capabilities { klu: false, ida: false, cvode: false, gbode: false, alarm: false, variable_filter: false };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -826,7 +839,7 @@ mod tests {
     // both the parser and the capability check of the build that offered it.
     #[test]
     fn everything_supported_parses_and_checks() {
-        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true, alarm: true }] {
+        for cap in [NOTHING, Capabilities { klu: true, ida: true, cvode: true, gbode: true, alarm: true, variable_filter: true }] {
             for (flag, values) in supported(cap) {
                 for v in values {
                     let f = parse(&argv(&[&format!("-{flag}={v}")])).expect(&format!("-{flag}={v}"));
@@ -876,9 +889,8 @@ mod tests {
     fn unimplemented_and_invalid_flags_are_rejected() {
         let e = parse(&argv(&["-noSuchFlag"])).expect_err("must reject");
         assert!(e.contains("invalid command line option"), "{e}");
-        // `emit_protected` is the one C flag deliberately let through.
         let f = parse(&argv(&["-emit_protected", "-lv=LOG_STATS"])).expect("parses");
-        assert!(f.has_log("LOG_STATS"));
+        assert!(f.emit_protected && f.has_log("LOG_STATS"));
     }
 
     // The value of a rejected option must not be read as a flag of its own.

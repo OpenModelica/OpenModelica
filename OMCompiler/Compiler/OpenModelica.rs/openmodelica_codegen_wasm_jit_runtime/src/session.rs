@@ -181,8 +181,10 @@ fn session() -> &'static mut Option<Session> {
 pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let argv = simflags::argv_from_bytes(bytes);
+    // The host writes the result file for a session run, so it serves `-variableFilter`.
     match simflags::parse(&argv).and_then(|f| {
-        simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
+        let cap = simflags::Capabilities { variable_filter: true, ..crate::sundials::capabilities() };
+        simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
             crate::solvers::apply_flags(&f);
