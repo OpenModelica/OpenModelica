@@ -40,6 +40,7 @@ impl Instant {
 
 use crate::sim_driver;
 use crate::model::SimModel;
+use openmodelica_sim_meta::SimMeta;
 use crate::sig::WTy;
 use crate::host::add_host_builtins;
 
@@ -687,19 +688,19 @@ fn read_side_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, off: u3
     Ok(out)
 }
 
-pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, String> {
+pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::RunResult, String> {
     let bench = crate::model::sim_bench_enabled();
     if crate::model::inwasm_driver_enabled() {
         return run_inwasm(model, bench);
     }
-    let (mut engine, sim_data) = build_engine(model)?;
+    let (mut engine, sim_data) = build_engine(model, meta)?;
     // `OMC_WASM_SIM_DRIVER=host` forces the native Euler loop over the in-wasm one.
     let host_driven = std::env::var("OMC_WASM_SIM_DRIVER").map(|v| v == "host").unwrap_or(false);
-    let n_steps = model.n_intervals;
+    let n_steps = meta.n_intervals;
     let n_rows = n_steps + 1;
     let t0 = Instant::now();
     let (mut result, driver_label) =
-        sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench)?;
+        sim_driver::drive(&mut *engine, meta, sim_data, meta.method.as_str(), host_driven, bench)?;
     // The solves ran in-wasm, where the driver's stats cannot see them.
     result.stats.lin_solves = engine.lin_solves();
     if bench {
@@ -747,7 +748,7 @@ struct Instantiated {
 
 /// Compile/join the modules and instantiate them (runtime first, then model,
 /// sharing the runtime's `memory`).
-fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, String> {
+fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<Instantiated, String> {
     let bench = crate::model::sim_bench_enabled();
     let engine = sim_engine();
 
@@ -826,6 +827,13 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         });
         wts(set.call(&mut store, min_size, max_density))?;
     }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(f64, f64, f64), ()>(&store, "rt_set_newton_tuning") {
+        let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::newton_tuning(f)
+        });
+        wts(set.call(&mut store, ftol, xtol, msf))?;
+    }
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_log_streams") {
         wts(set.call(&mut store, log_mask as u32, (log_mask >> 32) as u32))?;
@@ -836,7 +844,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     {
         let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
         wts(set.call(&mut store, u32::MAX, 0, 0))?;
-        for sys in &model.meta.nls_vars {
+        for sys in &meta.nls_vars {
             let mut blob = Vec::new();
             for n in &sys.names {
                 blob.extend_from_slice(n.as_bytes());
@@ -851,7 +859,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         }
     }
     if let Ok(set) = rt_inst.exports.get_typed_function::<f64, ()>(&store, "rt_set_step_size") {
-        wts(set.call(&mut store, model.meta.step_size()))?;
+        wts(set.call(&mut store, meta.step_size()))?;
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -860,9 +868,9 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     Ok(Instantiated { store, rt_inst, instance, memory, rt_alloc })
 }
 
-pub fn build_engine(model: &SimModel) -> std::result::Result<(Box<dyn sim_driver::SimEngine + 'static>, u32), String> {
+pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Box<dyn sim_driver::SimEngine + 'static>, u32), String> {
     sim_driver::init_host_hooks(); // cancel poll + model-assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, meta)?;
 
     let layout = &model.layout;
     // Allocate the shared SimData block.
@@ -977,7 +985,7 @@ pub struct InWasmSession {
 /// metadata blob, and `rt_sim_start` a resumable in-wasm run.
 pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).

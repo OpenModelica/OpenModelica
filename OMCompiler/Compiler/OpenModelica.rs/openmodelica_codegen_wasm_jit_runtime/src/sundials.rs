@@ -311,11 +311,9 @@ pub(crate) mod kinsol {
     const KIN_LSOLVE_FAIL: c_int = -12;
     const KIN_REPTD_SYSFUNC_ERR: c_int = -15;
 
-    /// C's `newtonFTol`/`newtonXTol`, `maxStepFactor` and `FTOL_WITH_LESS_ACCURACY`
-    /// defaults, and `RETRY_MAX`.
-    const FNORMTOL: f64 = 1.0e-12;
-    const SCSTEPTOL: f64 = 1.0e-12;
-    const MAXSTEPFACTOR: f64 = 1.0e12;
+    /// C's `FTOL_WITH_LESS_ACCURACY` and `RETRY_MAX`; the stopping tolerances and
+    /// the step factor are C's `newtonFTol`/`newtonXTol`/`maxStepFactor`, which
+    /// `crate::solvers` holds because `-newtonFTol` and friends move them.
     const FTOL_LESS_ACCURACY: f64 = 1.0e-6;
     const RETRY_MAX: i32 = 5;
 
@@ -425,7 +423,7 @@ pub(crate) mod kinsol {
                 n,
                 nnz,
                 strategy: KIN_LINESEARCH,
-                maxstepfactor: MAXSTEPFACTOR,
+                maxstepfactor: crate::solvers::max_step_factor(),
                 numeric_jac: false,
             };
             if s.kin.is_null()
@@ -446,8 +444,8 @@ pub(crate) mod kinsol {
                 {
                     return None;
                 }
-                KINSetFuncNormTol(s.kin, FNORMTOL);
-                KINSetScaledStepTol(s.kin, SCSTEPTOL);
+                KINSetFuncNormTol(s.kin, crate::solvers::newton_ftol());
+                KINSetScaledStepTol(s.kin, crate::solvers::newton_xtol());
                 KINSetNumMaxIters(s.kin, 100 * n as c_long);
                 KINSetNoInitSetup(s.kin, 0);
             }
@@ -583,8 +581,8 @@ pub(crate) mod kinsol {
             }
             if reset_tol {
                 unsafe {
-                    KINSetFuncNormTol(self.kin, FNORMTOL);
-                    KINSetScaledStepTol(self.kin, SCSTEPTOL);
+                    KINSetFuncNormTol(self.kin, crate::solvers::newton_ftol());
+                    KINSetScaledStepTol(self.kin, crate::solvers::newton_xtol());
                 }
             }
             if success {

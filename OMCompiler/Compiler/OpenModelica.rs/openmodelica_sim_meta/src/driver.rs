@@ -923,6 +923,44 @@ mod term_report {
     pub use imp::{mark, reset};
 }
 
+/// Whether `-steadyState` was ever satisfied, for the warning C prints when the run
+/// reaches `stopTime` without it. Same shape as [`term_report`].
+mod steady_report {
+    #[cfg(feature = "std")]
+    mod imp {
+        use core::cell::Cell;
+        std::thread_local! {
+            static HIT: Cell<bool> = const { Cell::new(false) };
+        }
+        pub fn reset() {
+            HIT.with(|d| d.set(false));
+        }
+        pub fn mark() {
+            HIT.with(|d| d.set(true));
+        }
+        pub fn hit() -> bool {
+            HIT.with(|d| d.get())
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<bool>);
+        unsafe impl Sync for Store {}
+        static HIT: Store = Store(UnsafeCell::new(false));
+        pub fn reset() {
+            unsafe { *HIT.0.get() = false };
+        }
+        pub fn mark() {
+            unsafe { *HIT.0.get() = true };
+        }
+        pub fn hit() -> bool {
+            unsafe { *HIT.0.get() }
+        }
+    }
+    pub use imp::{hit, mark, reset};
+}
+
 /// Format `%f`-style (C's `%f`: 6 fractional digits), for the assertion time value.
 fn format_f(v: f64) -> String {
     alloc::format!("{v:.6}")
@@ -1178,6 +1216,7 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     let _ = rethrow_store::take();
     set_no_throw(false);
     term_report::reset();
+    steady_report::reset();
     seed_start_values(e, sim_data, layout)?;
 
     // C's `symbolic_initialization`: a model with `homotopy()` goes straight to the
@@ -1292,11 +1331,13 @@ fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &S
     Ok(())
 }
 
-/// True if `terminate()` raised the `SimData` flag during the last step. The
-/// first observation reports it (C's `checkSimulationTerminated`).
+/// Whether the run stops here rather than at `stopTime`: `terminate()` raised the
+/// `SimData` flag during the last step (C's `checkSimulationTerminated`), or
+/// `-steadyState` is satisfied. Every driver asks after each output row, so both
+/// C stop conditions are served in one place. The first observation reports it.
 fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
     if read_i32(e, sim_data + layout.terminate_off)? == 0 {
-        return Ok(false);
+        return steady_state_reached(e, sim_data, layout);
     }
     if term_report::mark() {
         let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
@@ -1316,6 +1357,42 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
             ),
         );
     }
+    Ok(true)
+}
+
+/// C's `-steadyState` (`perform_simulation.c.inc`): the run ends once every state
+/// derivative is under `-steadyStateTol` relative to that state's nominal.
+fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
+    let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol) else {
+        return Ok(false);
+    };
+    if layout.n_states == 0 {
+        return Err("No states in model. Flag -steadyState can only be used if states are present.");
+    }
+    let ders = sim_data + REAL_OFF + layout.n_states * 8;
+    let mut max_der = 0.0f64;
+    for i in 0..layout.n_states {
+        let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
+        let d = libm::fabs(read_f64(e, ders + i * 8)? / nominal);
+        if max_der < d {
+            max_der = d;
+        }
+    }
+    if max_der >= tol {
+        return Ok(false);
+    }
+    steady_report::mark();
+    omclog::info(
+        omclog::STDOUT,
+        false,
+        &alloc::format!(
+            "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
+             relative tolerance = {}",
+            format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+            format_g(max_der, 6),
+            format_g(tol, 6),
+        ),
+    );
     Ok(true)
 }
 
@@ -1466,8 +1543,22 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
     Ok(())
 }
 
-/// Upper bound on discrete-update iterations at one event (C's `maxEventIterations`).
+/// Upper bound on discrete-update iterations at one event: C's `maxEventIterations`
+/// default, which `-mei` replaces.
 const MAX_EVENT_ITER: usize = 20;
+
+fn max_event_iter() -> usize {
+    crate::simflags::with_flags(|f| f.max_event_iter).map_or(MAX_EVENT_ITER, |n| n as usize)
+}
+
+/// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it is
+/// set to a positive value, else what halving the bracket down to `ttol` takes.
+pub(crate) fn bisection_iterations(width: f64, ttol: f64) -> i64 {
+    match crate::simflags::with_flags(|f| f.max_bisection_iter) {
+        Some(n) if n > 0 => n as i64,
+        _ => 1 + libm::ceil(libm::log(libm::fabs(width) / ttol) / libm::log(2.0)) as i64,
+    }
+}
 
 /// Snapshot the zero-crossing g-values into `zeroCrossingsPre` (C's
 /// `saveZeroCrossings`); `delayZeroCrossing` reads it as the held g-value.
@@ -1596,7 +1687,7 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     // this pass's relations, then re-evaluates the continuous system; the discrete
     // state settles across passes. Comparing the snapshot before and after the
     // evaluation lets an already-settled system stop after a single evaluation.
-    for iter in 0..MAX_EVENT_ITER {
+    for iter in 0..max_event_iter() {
         let prev = discrete_snapshot(e, sim_data, layout)?;
         // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
         // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
@@ -1917,6 +2008,20 @@ const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
 /// Free external objects (so repeated runs don't leak) and read back parameter
 /// values (result `Param` order) after a run.
 pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<Vec<f64>> {
+    if let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol)
+        && !steady_report::hit()
+    {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            &alloc::format!(
+                "Steady state has not been reached.\nThis may be due to too restrictive relative \
+                 tolerance ({}) or short stopTime ({}).",
+                format_g(tol, 6),
+                format_g(model.stop_time, 6),
+            ),
+        );
+    }
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
     let mut params = Vec::new();
     for v in &model.vars {

@@ -140,7 +140,12 @@ impl SimEngine for StandaloneEngine {
 /// Run the prepared model with the shared driver and write its result file.
 /// A failure traps (the command then exits nonzero).
 fn run() {
-    let m = read_meta();
+    let mut m = read_meta();
+    driver::set_log_sink(crate::omclog::sink);
+    simflags::with_flags(|f| {
+        simflags::print_notices(f);
+        m.apply_flags(f);
+    });
     let sim_data = crate::rt_alloc(m.layout.total);
     let mut engine = StandaloneEngine;
     crate::nls::rt_set_step_size(m.step_size());
@@ -195,7 +200,17 @@ fn run() {
         result.n_reals,
         &params,
     );
-    std::fs::write(format!("{}_res.mat", m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+    std::fs::write(result_file(&m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+}
+
+/// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
+/// `<prefix>_res.mat` under `-outputPath`.
+fn result_file(prefix: &str) -> String {
+    simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
+        (Some(r), _) => r.clone(),
+        (None, Some(dir)) => format!("{dir}/{prefix}_res.mat"),
+        (None, None) => format!("{prefix}_res.mat"),
+    })
 }
 
 /// Wall clock for the driver, in ms since the first reading.

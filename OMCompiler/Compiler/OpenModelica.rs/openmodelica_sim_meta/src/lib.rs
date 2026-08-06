@@ -529,8 +529,100 @@ impl SimMeta {
         if let Some(h) = crate::simflags::with_flags(|f| f.step_size) {
             return h;
         }
+        self.translated_step_size()
+    }
+
+    /// [`step_size`](Self::step_size) as the model was translated, ignoring
+    /// `-stepSize`: what C reads out of the init XML.
+    fn translated_step_size(&self) -> f64 {
         let n = if self.n_intervals > 0 { self.n_intervals } else { 500 };
         (self.stop_time - self.start_time) / n as f64
+    }
+
+    /// C's `read_experiment` (`simulation_input_xml.c`) plus the step-size checks
+    /// `solver_main.c` makes right after it: the run scalars the model was translated
+    /// with, overridden by the command line. [`n_intervals`](Self::n_intervals) is C's
+    /// `numSteps`, which the output grid is cut from, so a moved step size lands there.
+    ///
+    /// Called once per run by whichever entry point owns the driver.
+    pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
+        use crate::omclog::{self, STDOUT};
+        let translated = self.translated_step_size();
+        let mut recalc = false;
+        if let Some(t) = f.start_time {
+            self.start_time = t;
+            recalc = true;
+        }
+        if let Some(t) = f.stop_time {
+            self.stop_time = t;
+            recalc = true;
+        }
+        let span = self.stop_time - self.start_time;
+        let mut step = match f.step_size {
+            Some(h) => h,
+            None if recalc => {
+                omclog::warning(
+                    STDOUT,
+                    true,
+                    "Start or stop time was overwritten, but no new integrator step size was \
+                     provided.",
+                );
+                omclog::info(STDOUT, false, "Re-calculating step size for 500 intervals.");
+                omclog::info(STDOUT, false, "Use `-stepSize=<value>` to silence this warning.");
+                omclog::close_warning(STDOUT);
+                span / 500.0
+            }
+            None => translated,
+        };
+        let min_step = 4.0 * f64::EPSILON * libm::fmax(libm::fabs(self.start_time), libm::fabs(self.stop_time));
+        if step < min_step && span > 0.0 {
+            omclog::warning(
+                STDOUT,
+                false,
+                &alloc::format!(
+                    "The step-size {} is too small. Adjust the step-size to {}.",
+                    crate::driver::format_g(step, 6),
+                    crate::driver::format_g(min_step, 6)
+                ),
+            );
+            step = min_step;
+        }
+        if step > span + 1e-7 {
+            omclog::warning(STDOUT, true, "Integrator step size greater than length of experiment");
+            omclog::info(
+                STDOUT,
+                false,
+                &alloc::format!(
+                    "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
+                    self.start_time,
+                    self.stop_time,
+                    step
+                ),
+            );
+            omclog::close_warning(STDOUT);
+        }
+        // Only when a flag moved it: `n_intervals` is exact where C re-derives it
+        // from the step size the init XML carries.
+        if (recalc || f.step_size.is_some()) && span > 0.0 && step > 0.0 {
+            self.n_intervals = libm::round(span / step) as u32;
+        }
+        if let Some(t) = f.tolerance {
+            self.tolerance = t;
+        }
+        if let Some(fmt) = &f.output_format {
+            self.output_format = fmt.clone();
+        }
+        if f.noemit {
+            self.output_format = String::from("empty");
+        }
+    }
+
+    /// [`apply_flags`](Self::apply_flags) on a copy, for a caller whose metadata is
+    /// shared between runs.
+    pub fn with_flags(&self, f: &crate::simflags::SimFlags) -> SimMeta {
+        let mut m = self.clone();
+        m.apply_flags(f);
+        m
     }
 }
 
@@ -976,6 +1068,37 @@ mod tests {
         simflags::set_flags(f);
         let only_k = |n: &str| n == "k";
         assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
+    }
+
+    /// C's `read_experiment`: the command line replaces what the model was
+    /// translated with, and `numSteps` follows the step size.
+    #[test]
+    fn apply_flags_is_cs_read_experiment() {
+        let flags = |args: &[&str]| {
+            let argv: Vec<String> =
+                core::iter::once("model".into()).chain(args.iter().map(|a| a.to_string())).collect();
+            simflags::parse(&argv).expect("parses")
+        };
+        // Untouched by an empty command line.
+        let m = sample().with_flags(&simflags::SimFlags::default());
+        assert_eq!((m.start_time, m.stop_time, m.n_intervals), (0.0, 1.0, 500));
+
+        // Moving the interval alone re-cuts it into 500 intervals, as C does.
+        let m = sample().with_flags(&flags(&["-startTime=1", "-stopTime=3"]));
+        assert_eq!((m.start_time, m.stop_time, m.n_intervals), (1.0, 3.0, 500));
+
+        // `-stepSize` is what `numSteps` is derived from.
+        let f = flags(&["-stopTime=2", "-stepSize=0.01", "-tolerance=1e-9", "-outputFormat=empty"]);
+        let m = sample().with_flags(&f);
+        assert_eq!((m.stop_time, m.n_intervals, m.tolerance), (2.0, 200, 1e-9));
+        assert_eq!(m.output_format, "empty");
+        // ... and `step_size()` still reports the exact value asked for.
+        simflags::set_flags(f);
+        assert_eq!(m.step_size(), 0.01);
+        simflags::set_flags(simflags::SimFlags::default());
+
+        // `-noemit` is `-outputFormat=empty`.
+        assert_eq!(sample().with_flags(&flags(&["-noemit"])).output_format, "empty");
     }
 
     #[test]

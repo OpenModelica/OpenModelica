@@ -120,6 +120,11 @@ pub type Mask = u64;
 /// The three streams C activates without `-lv`, and which [`deactivate`] leaves.
 pub const ALWAYS_ON: Mask = (1 << STDOUT) | (1 << ASSERT) | (1 << SUCCESS);
 
+/// C's `omc_showAllWarnings` (`-w`): a warning prints even on an inactive stream.
+/// It rides in the mask, above every stream index, so the single value a run pushes
+/// into the wasm runtime carries it too.
+pub const SHOW_ALL_WARNINGS: Mask = 1 << 63;
+
 pub fn mask_has(m: Mask, s: Stream) -> bool {
     m & (1 << s) != 0
 }
@@ -134,7 +139,7 @@ pub fn mask_from_streams<S: AsRef<str>>(streams: &[S]) -> Result<Mask, String> {
     // C re-enables only these two, so `-lv=-LOG_SUCCESS` does what it promises.
     m |= (1 << STDOUT) | (1 << ASSERT);
     if streams.iter().any(|s| s.as_ref().contains("LOG_ALL")) {
-        return Ok(finish(!0 << 1));
+        return Ok(finish(((1 << N_STREAMS) - 1) & !1));
     }
     for s in streams {
         let s = s.as_ref();
@@ -265,7 +270,7 @@ pub fn deactivate() {
             return;
         }
         s.backup = s.use_stream;
-        s.use_stream = ALWAYS_ON;
+        s.use_stream = ALWAYS_ON | (s.use_stream & SHOW_ALL_WARNINGS);
         s.streams_active = false;
     });
 }
@@ -286,8 +291,9 @@ pub fn info(stream: Stream, indent_next: bool, msg: &str) {
     }
 }
 
+/// C's `OMC_ACTIVE_WARNING_STREAM`.
 pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
-    if active(stream) {
+    if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
         message_text(WARNING, stream, indent_next, msg);
     }
 }
@@ -300,6 +306,16 @@ pub fn error(stream: Stream, indent_next: bool, msg: &str) {
 pub fn close(stream: Stream) {
     store::with(|s| {
         if mask_has(s.use_stream, stream) {
+            s.level[stream as usize] -= 1;
+        }
+    });
+}
+
+/// C's `messageCloseWarning`: [`close`] for a block [`warning`] opened, so `-w`
+/// keeps the level balanced on an inactive stream.
+pub fn close_warning(stream: Stream) {
+    store::with(|s| {
+        if mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0 {
             s.level[stream as usize] -= 1;
         }
     });
@@ -517,6 +533,19 @@ mod tests {
         let m = mask_from_streams(&["-LOG_SUCCESS"]).expect("parses");
         assert!(!mask_has(m, SUCCESS) && mask_has(m, STDOUT));
         assert!(mask_has(mask_from_streams::<&str>(&[]).expect("parses"), SUCCESS));
+    }
+
+    /// `-w`: a warning prints on an inactive stream, an info still does not.
+    #[test]
+    fn show_all_warnings_only_lifts_warnings() {
+        set_mask(ALWAYS_ON);
+        assert!(capture(|| warning(NLS, false, "quiet")).is_empty());
+        set_mask(ALWAYS_ON | SHOW_ALL_WARNINGS);
+        let out = capture(|| {
+            info(NLS, false, "still quiet");
+            warning(NLS, false, "loud");
+        });
+        assert_eq!(out, "LOG_NLS           | warning | loud\n");
     }
 
     #[test]

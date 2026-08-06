@@ -252,10 +252,15 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     crate::sundials::reset_caches();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
-    let model = match openmodelica_sim_meta::decode(bytes) {
+    let mut model = match openmodelica_sim_meta::decode(bytes) {
         Ok(m) => m,
         Err(_) => return -1,
     };
+    // A session always has a host, which renders `read_experiment`'s notices from
+    // the same flags; saying it again here would double every line.
+    driver::set_log_sink(|_| {});
+    simflags::with_flags(|f| model.apply_flags(f));
+    driver::set_log_sink(crate::omclog::sink);
 
     crate::nls::rt_set_step_size(model.step_size());
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
@@ -269,7 +274,6 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
-    driver::set_log_sink(crate::omclog::sink);
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_alloc(model.layout.total);
