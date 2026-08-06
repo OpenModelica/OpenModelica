@@ -1498,3 +1498,48 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::Drop);
     Ok(())
 }
+
+/// Emit a linearization matrix's `linearJac<X>(sim_data)` body (wasm local 0 =
+/// `SimData`): per seed column, seed it, zero the result slots, run the column
+/// equations and store the rows as column `j` at `out_off` (`out[j*rows + i]`).
+/// C's `functionJacX` loop; the constant equations run in the caller.
+pub(crate) fn emit_linz_jac_body(
+    ctx: &mut FnCtx,
+    out_off: u32,
+    rows: usize,
+    seed_offs: &[u32],
+    result_offs: &[Option<u32>],
+    lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    if result_offs.len() != rows {
+        return Err("CodegenWasmJit: linearization Jacobian row count mismatch");
+    }
+    let store_const = |ctx: &mut FnCtx, off: u32, val: f64| {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::F64Const(val.into()));
+        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    };
+    for j in 0..seed_offs.len() {
+        for (k, &soff) in seed_offs.iter().enumerate() {
+            store_const(ctx, soff, if k == j { 1.0 } else { 0.0 });
+        }
+        for &roff in result_offs.iter().flatten() {
+            store_const(ctx, roff, 0.0);
+        }
+        lower_column(ctx)?;
+        for (i, roff) in result_offs.iter().enumerate() {
+            let out = out_off + ((j * rows + i) as u32) * 8;
+            match roff {
+                Some(roff) => {
+                    ctx.emit(I::LocalGet(0));
+                    ctx.emit(I::LocalGet(0));
+                    ctx.emit(I::F64Load(mem_arg(*roff, 3)));
+                    ctx.emit(I::F64Store(mem_arg(out, 3)));
+                }
+                None => store_const(ctx, out, 0.0),
+            }
+        }
+    }
+    Ok(())
+}

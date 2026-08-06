@@ -54,6 +54,15 @@ mod engine_config;
 #[cfg(all(feature = "jit", not(target_arch = "wasm32")))]
 pub use engine_config::tune_memory;
 
+/// Split the runtime's `-l` blob (`<file name>\0<content>`) into a [`LinFile`].
+pub fn split_lin_blob(bytes: &[u8]) -> Option<openmodelica_sim_meta::linearize::LinFile> {
+    let i = bytes.iter().position(|&b| b == 0)?;
+    Some(openmodelica_sim_meta::linearize::LinFile {
+        name: String::from_utf8_lossy(&bytes[..i]).into_owned(),
+        content: String::from_utf8_lossy(&bytes[i + 1..]).into_owned(),
+    })
+}
+
 // A thin facade over openmodelica_sim_meta::driver; present even in the no-jit
 // stub build, which reads its result types.
 pub mod sim_driver;

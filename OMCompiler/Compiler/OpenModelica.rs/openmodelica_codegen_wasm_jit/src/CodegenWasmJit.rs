@@ -92,9 +92,12 @@ pub(crate) use openmodelica_wasm_jit::model::{
     encode_overrides, inwasm_driver_enabled, sim_bench_enabled, INWASM_SLOT_NAMES,
 };
 
+#[path = "CodegenWasmJit/linearize.rs"]
+pub(crate) mod linearize;
+
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
-fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
+pub(crate) fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
     (&**l).into_iter()
 }
 
@@ -448,7 +451,7 @@ const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
 
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
     openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
-    let (res, init_output, sim_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
+    let (res, init_output, sim_output, post_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
     openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
     // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
@@ -462,7 +465,7 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
             "{init_seg}{sim_output}\
-             LOG_SUCCESS       | info    | The simulation finished successfully.\n"
+             LOG_SUCCESS       | info    | The simulation finished successfully.\n{post_output}"
         ),
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
@@ -826,19 +829,48 @@ fn on_init_done() {
 
 /// Run the model, returning the result and the model's stdout split into the
 /// initialization segment (`Some` once init completed) and the simulation segment.
-fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std::result::Result<(), String>, Option<String>, String) {
+/// Write `-l`'s linearized model where C's `linearize` puts it and render its
+/// notice, which the caller appends after the run's success line.
+fn write_lin_file(meta: &SimMeta, run: &sim_driver::RunResult, flags: &simflags::SimFlags) -> String {
+    let (Some(f), Some(lin)) = (&run.lin, &meta.lin) else { return String::new() };
+    let path = match &flags.output_path {
+        Some(dir) => format!("{dir}/{}", f.name),
+        None => f.name.clone(),
+    };
+    if write_output(&path, f.content.as_bytes()).is_err() {
+        return openmodelica_modelica_utilities::format_log_stdout(
+            &format!("Cannot open File {path}"),
+            openmodelica_modelica_utilities::LOG_STDOUT_ERROR,
+        );
+    }
+    let full = std::fs::canonicalize(&path).map(|p| p.display().to_string()).unwrap_or(path);
+    let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, f, &full);
+    let prefix = if is_error {
+        openmodelica_modelica_utilities::LOG_STDOUT_ERROR
+    } else {
+        openmodelica_modelica_utilities::LOG_STDOUT_INFO
+    };
+    msgs.iter().map(|m| openmodelica_modelica_utilities::format_log_stdout(m, prefix)).collect()
+}
+
+fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std::result::Result<(), String>, Option<String>, String, String) {
     let model = sim_models()
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .get(prefix)
         .cloned();
     let Some(model) = model else {
-        return (Err("no prepared wasm-jit model for (translateModel not run?)".to_string()), None, String::new());
+        return (
+            Err("no prepared wasm-jit model for (translateModel not run?)".to_string()),
+            None,
+            String::new(),
+            String::new(),
+        );
     };
     // The caller prefixes the failure, so this is the bare reason.
     let flags = match install_sim_flags(simflags) {
         Ok(f) => f,
-        Err(e) => return (Err(e), None, String::new()),
+        Err(e) => return (Err(e), None, String::new(), String::new()),
     };
     // The `-lv=` runtime flag list selects log streams, as for the C executable.
     let log_stats = flags.has_log("LOG_STATS");
@@ -855,6 +887,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
             ),
             None,
             String::new(),
+            String::new(),
         );
     }
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
@@ -870,6 +903,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     // The hard `-alarm`, if asked for: set before the modules are instantiated.
     sim_runtime::set_alarm(flags.alarm);
     let mut extra = String::new();
+    let mut post = String::new();
     let res = (|| -> std::result::Result<(), String> {
         // `empty` (and `-noemit`) runs the integration but writes no result file —
         // useful for benchmarking the solver in isolation from the `.mat` writer.
@@ -885,6 +919,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         let keep = output_selection(&model);
         capture_last_sim(&model, &run, &keep);
         write_result(&model, &meta, &result_path(&flags, &meta, result_file), &run, &keep)?;
+        post = write_lin_file(&meta, &run, &flags);
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -902,7 +937,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     } else {
         Some(format!("{head}{}", init_output.unwrap_or_default()))
     };
-    (res, init_output, sim_output)
+    (res, init_output, sim_output, post)
 }
 
 // ===========================================================================
@@ -1016,11 +1051,11 @@ mod session {
         meta: &SimMeta,
         result_file: &str,
         run: &sim_driver::RunResult,
-    ) -> Result<()> {
+    ) -> Result<String> {
         let keep = output_selection(model);
         capture_last_sim(model, run, &keep);
         write_result(model, meta, result_file, run, &keep)?;
-        Ok(())
+        Ok(write_lin_file(meta, run, &simflags::flags()))
     }
 
     /// Start a resumable run of a model already prepared by `buildModel`
@@ -1144,17 +1179,24 @@ mod session {
                             let rows = driver.take_rows();
                             let mut stats = SolveStats::default();
                             driver.fill_stats(&sess.meta, &mut stats);
+                            let lin = openmodelica_sim_meta::linearize::linearize(
+                                &mut **engine,
+                                &sess.meta,
+                                *sim_data,
+                            )?;
                             let params = sim_driver::finalize_run(&mut **engine, &sess.meta, *sim_data)?;
                             let run = sim_driver::RunResult {
                                 rows,
                                 n_reals: model.layout.n_row_total(),
                                 params,
                                 stats,
+                                lin,
                             };
                             if log_stats {
                                 stats_block = log_stats_block(&run.stats);
                             }
-                            finalize_and_capture(&model, &sess.meta, &result_file, &run)?;
+                            stats_block
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &run)?);
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
                             } else {
@@ -1177,7 +1219,8 @@ mod session {
                             if log_stats {
                                 stats_block = log_stats_block(&run.stats);
                             }
-                            finalize_and_capture(&model, &sess.meta, &result_file, &run)?;
+                            stats_block
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &run)?);
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
                         Err(e) => Err(e),
@@ -2795,6 +2838,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let n_sens = sens_vars.len().saturating_sub(n_sens_par) as u32;
     let clocks = collect_clocks(&sim_code.clockedPartitions)?;
     let n_sub_clocks: u32 = clocks.iter().map(|c| c.meta.sub.len() as u32).sum();
+    // `-l`: the symbolic A/B/C/D and the scratch their column equations need.
+    let linz = build_linz_plan(sim_code, vars, n_states)?;
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -2818,6 +2863,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         dae_alg_vars.len() as u32,
         clocks.len() as u32,
         n_sub_clocks,
+        linz.n_scratch_f64(),
         has_when,
         has_homotopy,
     );
@@ -2984,11 +3030,22 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             }
         }
     }
+    // C's `functionJacAC_num` reads each state's `max` to sign its step.
+    let mut max_defaults: Vec<(u32, f64)> = Vec::new();
+    for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
+        let off = layout.state_max_off + (i as u32) * 8;
+        max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::INFINITY)));
+        if let Ok(k) = sim_cref_key(&sv.name) {
+            attr_targets.entry(k).or_default().max_offs.push(off);
+        }
+    }
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
     // Same, for torn linear systems that assemble A analytically.
     build_lin_jac_infos(sim_code, &layout, &mut var_map)?;
+    // Same, for the `-l` linearization matrices.
+    let linz_jac_infos = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
 
     // --- Type section: one type per import, per model function, per equation
@@ -3192,6 +3249,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
+        build_lin_info(&linz, vars, &var_map)?,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -3367,10 +3425,28 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     };
     let update_bound_attrs_idx = {
         let idx = import_base + bodies.len() as u32;
+        let defaults: Vec<(u32, f64)> =
+            nominal_defaults.iter().chain(max_defaults.iter()).copied().collect();
         bodies.push(build_update_bound_attrs_fn(
-            sim_code, &nominal_defaults, &attr_targets, &var_map, &by_name, &mut literals,
+            sim_code, &defaults, &attr_targets, &var_map, &by_name, &mut literals,
         )?);
         idx
+    };
+    // Always exported (empty when the backend generated none) so the standalone
+    // merge resolves regardless of the model.
+    let linz_jac_idx = {
+        let base = import_base + bodies.len() as u32;
+        let mut out_off = layout.linz_off;
+        for k in 0..4 {
+            bodies.push(match linz_jac_infos.get(k).and_then(Option::as_ref) {
+                Some(info) => build_linz_jac_fn(
+                    &linz, info, k, out_off, &var_map, &eq_index, &by_name, &mut literals,
+                )?,
+                None => empty_eqfn(),
+            });
+            out_off += linz.rows[k] * linz.cols[k] * 8;
+        }
+        base
     };
     // Synchronous features: emitted only for a model with clocked partitions, so a
     // clock-free model's module is unchanged.
@@ -3443,6 +3519,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
+    for _ in 0..4 {
+        functions.function(eqfn_type); // linearJacA..linearJacD: (i32) -> ()
+    }
     if let Some(ti) = sync_fn_type {
         functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
         functions.function(ti); // functionUpdateSynchronous: (i32, i32) -> ()
@@ -3546,6 +3625,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
     exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
+    for (k, name) in ["linearJacA", "linearJacB", "linearJacC", "linearJacD"].iter().enumerate() {
+        exports.export(name, we::ExportKind::Func, linz_jac_idx + k as u32);
+    }
     if let Some((init, update, eqs)) = sync_idx {
         exports.export("functionInitSynchronous", we::ExportKind::Func, init);
         exports.export("functionUpdateSynchronous", we::ExportKind::Func, update);
@@ -3593,6 +3675,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ("functionInitDelay", init_delay_idx),
         ("functionUpdateBoundParameters", update_bound_params_idx),
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
+        ("linearJacA", linz_jac_idx),
+        ("linearJacB", linz_jac_idx + 1),
+        ("linearJacC", linz_jac_idx + 2),
+        ("linearJacD", linz_jac_idx + 3),
     ] {
         names.push((idx, name.to_string()));
     }
@@ -4111,6 +4197,7 @@ fn build_sim_meta(
     nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
     dae: Option<openmodelica_sim_meta::DaeInfo>,
     clocks: Vec<BaseClockMeta>,
+    lin: Option<openmodelica_sim_meta::LinInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -4131,6 +4218,7 @@ fn build_sim_meta(
         nls_vars,
         dae,
         clocks,
+        lin,
     }
 }
 
@@ -4155,7 +4243,7 @@ pub(crate) fn t_real() -> Arc<DAE::Type> {
     Arc::new(DAE::Type::T_REAL { varLst: metamodelica::nil() })
 }
 
-fn count<T: Clone>(list: &Arc<List<T>>) -> usize {
+pub(crate) fn count<T: Clone>(list: &Arc<List<T>>) -> usize {
     lst(list).count()
 }
 
@@ -4695,7 +4783,7 @@ fn build_init_start_values_fn(
 /// back are skipped.
 fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
-    nominal_defaults: &[(u32, f64)],
+    defaults: &[(u32, f64)],
     attr_targets: &HashMap<String, AttrTargets>,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
@@ -4710,7 +4798,12 @@ fn build_update_bound_attrs_fn(
         for eq in lst(eqs) {
             let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { continue };
             let Some(t) = sim_cref_key(cref).ok().and_then(|k| attr_targets.get(&k)) else { continue };
-            if t.nls.is_empty() && !(matches!(attr, Attr::Nominal) && !t.nom_offs.is_empty()) {
+            let wanted = match attr {
+                Attr::Nominal => !t.nom_offs.is_empty(),
+                Attr::Max => !t.max_offs.is_empty(),
+                Attr::Min => false,
+            };
+            if t.nls.is_empty() && !wanted {
                 continue;
             }
             attrs.push((attr, exp.clone(), t.clone()));
@@ -4718,7 +4811,7 @@ fn build_update_bound_attrs_fn(
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(nominal_defaults, &attrs)?;
+    ctx.emit_update_bound_attrs(defaults, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -5284,7 +5377,7 @@ struct NlsJacInfo {
 
 /// The residual row a Jacobian result var maps to: its `SimVar.index`, which is
 /// what the C template indexes `jacobian->resultVars[]` with.
-fn jac_result_row(sv: &SimCodeVar::SimVar) -> Option<usize> {
+pub(crate) fn jac_result_row(sv: &SimCodeVar::SimVar) -> Option<usize> {
     usize::try_from(sv.index).ok()
 }
 
@@ -5292,7 +5385,7 @@ fn jac_result_row(sv: &SimCodeVar::SimVar) -> Option<usize> {
 /// seeds: the `$pDER` results and the temporaries. The old backend lists them in
 /// `columnVars`; the new backend leaves that empty and registers them (together
 /// with the seeds, which are filtered out here) in `crefsHT` only.
-fn jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<SimCodeVar::SimVar> {
+pub(crate) fn jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<SimCodeVar::SimVar> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let mut seen: HashSet<String> = HashSet::new();
     let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
@@ -5322,7 +5415,7 @@ fn jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<SimCodeVar::SimVar> {
 /// assignment whose crefs do too. An array-valued Jacobian (whole-dimension seeds,
 /// sliced results) needs the run-time loops the C template emits, so such a system
 /// keeps the numerical Jacobian instead.
-fn jac_lowerable(jm: &SimCode::JacobianMatrix) -> bool {
+pub(crate) fn jac_lowerable(jm: &SimCode::JacobianMatrix) -> bool {
     use SimCode::SimEqSystem as E;
     let Some(col) = lst(&jm.columns).next() else { return false };
     if lst(&jm.seedVars).any(|sv| sim_cref_key(&sv.name).is_err()) {
@@ -5492,6 +5585,192 @@ fn build_nls_jac_infos(
         infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
     }
     Ok(infos)
+}
+
+/// The `-l` plan: the frames, and the symbolic `A`/`B`/`C`/`D` the flat emitter
+/// can lower.
+pub(crate) struct LinzPlan {
+    frames: linearize::Frames,
+    /// `[A, B, C, D]` dimensions.
+    rows: [u32; 4],
+    cols: [u32; 4],
+    jacs: [Option<Arc<SimCode::JacobianMatrix>>; 4],
+}
+
+impl LinzPlan {
+    /// C's `initialAnalyticJacobian<X>` availability, as [`LinInfo::sym_mask`].
+    fn sym_mask(&self) -> u8 {
+        (0..4).filter(|&k| self.jacs[k].is_some()).fold(0u8, |m, k| m | 1 << k)
+    }
+
+    /// f64 slots the matrices occupy at the head of the region — all four, so an
+    /// offset does not move with availability.
+    fn n_matrix_f64(&self) -> u32 {
+        (0..4).map(|k| self.rows[k] * self.cols[k]).sum()
+    }
+
+    /// Those plus every seed / column variable the available columns assign.
+    fn n_scratch_f64(&self) -> u32 {
+        if self.sym_mask() == 0 {
+            return 0;
+        }
+        self.n_matrix_f64()
+            + self
+                .jacs
+                .iter()
+                .flatten()
+                .map(|jm| count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32)
+                .sum::<u32>()
+    }
+}
+
+fn build_linz_plan(
+    sim_code: &SimCode::SimCode,
+    vars: &SimCodeVar::SimVars,
+    n_states: u32,
+) -> Result<LinzPlan> {
+    let n_in = count(&vars.inputVars) as u32;
+    let n_out = count(&vars.outputVars) as u32;
+    let n_alg = count(&vars.algVars) as u32;
+    let prefix = model_name_prefix(sim_code);
+    let frames = linearize::build_frames(vars, n_states, n_in, n_out, n_alg, &prefix)?;
+    let rows = [n_states, n_states, n_out, n_out];
+    let cols = [n_states, n_in, n_states, n_in];
+    let jacs = linearize::symbolic_jacobians(sim_code, rows, cols);
+    Ok(LinzPlan { frames, rows, cols, jacs })
+}
+
+/// C's `modelNamePrefix`, which the frames quote as the model's description.
+fn model_name_prefix(sim_code: &SimCode::SimCode) -> String {
+    openmodelica_util::System::makeC89Identifier(sim_code.fileNamePrefix.clone()).to_string()
+}
+
+/// Register the Jacobians' seed / column-variable crefs behind the matrices, and
+/// return each matrix's seed and result slots.
+fn build_linz_jac_infos(
+    plan: &LinzPlan,
+    layout: &SimLayout,
+    var_map: &mut SimVarMap,
+) -> Result<Vec<Option<LinzJacInfo>>> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let mut cursor = layout.linz_off + plan.n_matrix_f64() * 8;
+    let mut infos = Vec::with_capacity(4);
+    for (k, jm) in plan.jacs.iter().enumerate() {
+        let Some(jm) = jm else {
+            infos.push(None);
+            continue;
+        };
+        let (rows, cols) = (plan.rows[k] as usize, plan.cols[k] as usize);
+        let mut listed = Vec::new();
+        for sv in lst(&jm.seedVars) {
+            Arc::make_mut(&mut var_map.vars)
+                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+            listed.push(cursor);
+            cursor += 8;
+        }
+        // A row the backend left out is structurally zero, so it gets no slot.
+        let mut result_offs = vec![None; rows];
+        for sv in &jac_column_vars(jm) {
+            Arc::make_mut(&mut var_map.vars)
+                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+            if matches!(sv.varKind, VarKind::JAC_VAR)
+                && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
+            {
+                result_offs[row] = Some(cursor);
+            }
+            cursor += 8;
+        }
+        let seed_offs = jac_seed_offs_by_column(jm, &listed, cols)
+            .ok_or("CodegenWasmJit: linearization Jacobian seed columns are not a permutation")?;
+        infos.push(Some(LinzJacInfo { seed_offs, result_offs }));
+    }
+    Ok(infos)
+}
+
+/// One matrix's seed slots (column order) and result slots (row order; `None` is
+/// a structural zero).
+struct LinzJacInfo {
+    seed_offs: Vec<u32>,
+    result_offs: Vec<Option<u32>>,
+}
+
+/// The runtime half of the plan, once the variable map exists.
+fn build_lin_info(
+    plan: &LinzPlan,
+    vars: &SimCodeVar::SimVars,
+    var_map: &SimVarMap,
+) -> Result<Option<openmodelica_sim_meta::LinInfo>> {
+    use openmodelica_sim_meta::LinVar;
+    // A compile-time-constant input/output has no slot to perturb or read, so the
+    // model cannot be linearized (nor can C's); `-l` reports it rather than
+    // translation failing.
+    let slots = |list: &Arc<List<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
+        let mut out = Vec::new();
+        for sv in lst(list) {
+            let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
+            out.push(LinVar { off: slot.off, negate: slot.negate });
+        }
+        Ok(Some(out))
+    };
+    let (Some(input_vars), Some(output_vars)) = (slots(&vars.inputVars)?, slots(&vars.outputVars)?)
+    else {
+        return Ok(None);
+    };
+    Ok(Some(openmodelica_sim_meta::LinInfo {
+        input_vars,
+        output_vars,
+        language: plan.frames.language,
+        frame: plan.frames.frame.clone(),
+        frame_datarec: plan.frames.frame_datarec.clone(),
+        disabled_reason: plan.frames.disabled_reason.clone(),
+        sym_mask: plan.sym_mask(),
+        run_testsuite: openmodelica_util::Testsuite::isRunning()?,
+        jac_rows: plan.rows,
+        jac_cols: plan.cols,
+    }))
+}
+
+/// Build one `linearJac<X>(SimData*)`: C's `functionJacX` loop moved into the
+/// model, so the driver reads a finished matrix.
+#[allow(clippy::too_many_arguments)]
+fn build_linz_jac_fn(
+    plan: &LinzPlan,
+    info: &LinzJacInfo,
+    k: usize,
+    out_off: u32,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Vec<Vec<u8>>,
+) -> Result<we::Function> {
+    let jm = plan.jacs[k].as_ref().ok_or("CodegenWasmJit: no linearization Jacobian")?;
+    let col = lst(&jm.columns).next();
+    let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+        col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
+    let column_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+        col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let mut lower = |c: &mut FnCtx, eqs: &[Arc<SimCode::SimEqSystem>]| -> Result<()> {
+        for eq in eqs {
+            lower_equation(c, eq, eq_index)?;
+        }
+        Ok(())
+    };
+    lower(&mut ctx, &constant_eqns)?;
+    crate::CodegenWasmJitFunctions::emit_linz_jac_body(
+        &mut ctx,
+        out_off,
+        plan.rows[k] as usize,
+        &info.seed_offs,
+        &info.result_offs,
+        &mut |c: &mut FnCtx| lower(c, &column_eqns),
+    )?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
 }
 
 /// Number of scalar `SES_RESIDUAL` in a linear system (its `A x = b` row count).

@@ -204,6 +204,12 @@ pub struct SimFlags {
     pub no_restart: bool,
     /// `-noRootFinding`: take the end of the step as the event time.
     pub no_root_finding: bool,
+    /// `-l=<t>`: linearize at `t`, which also becomes the run's stop time.
+    pub linearize: Option<f64>,
+    /// `-l_datarec`: also emit the data-recovery matrices `Cz`/`Dz`.
+    pub linearize_datarec: bool,
+    /// `-deltaXLinearize`: C's `numericalDifferentiationDeltaXlinearize`.
+    pub delta_x_linearize: Option<f64>,
     /// The `-gb*` flags, `(name, value)`; a value-less one is stored as `""`.
     /// gbode reads these by name the way C reads `omc_flagValue`, so the whole
     /// family does not have to be mirrored as struct fields.
@@ -650,6 +656,9 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "noHomotopyOnFirstTry" => f.homotopy_on_first_try = Some(false),
             "noRestart" => f.no_restart = true,
             "noRootFinding" => f.no_root_finding = true,
+            "l" => f.linearize = Some(real(name, &value(name)?)?),
+            "l_datarec" => f.linearize_datarec = true,
+            "deltaXLinearize" => f.delta_x_linearize = Some(real(name, &value(name)?)?),
             // The `-gb*` family is stored by name; gbode validates the values when
             // it is built, so an unused one is still rejected (C ignores it).
             _ if name.starts_with("gb") && C_FLAGS.iter().any(|(n, _)| *n == name) => {

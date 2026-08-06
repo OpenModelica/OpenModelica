@@ -144,6 +144,7 @@ openmodelica_codegen_fmu_omsi/Cargo.toml
 openmodelica_codegen_graphml/Cargo.toml
 openmodelica_codegen_wasm_jit/Cargo.toml
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/linearize.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/closures.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_stub.rs
@@ -242,6 +243,7 @@ openmodelica_sim_meta/src/gbode/step.rs
 openmodelica_sim_meta/src/gbode/tableau.rs
 openmodelica_sim_meta/src/gbode/tableau_data.rs
 openmodelica_sim_meta/src/lib.rs
+openmodelica_sim_meta/src/linearize.rs
 openmodelica_sim_meta/src/omclog.rs
 openmodelica_sim_meta/src/simflags.rs
 openmodelica_sim_meta/src/sundials.rs

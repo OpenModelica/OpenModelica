@@ -171,6 +171,8 @@ struct Session {
     rows: Vec<f64>,
     params: Vec<f64>,
     stats: SolveStats,
+    /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
+    lin: Vec<u8>,
 }
 
 struct SessionCell(UnsafeCell<Option<Session>>);
@@ -295,6 +297,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         rows: Vec::new(),
         params: Vec::new(),
         stats: SolveStats::default(),
+        lin: Vec::new(),
     });
     0
 }
@@ -339,6 +342,11 @@ fn finish(s: &mut Session) {
         &s.model.layout,
         s.n_reals,
     );
+    if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
+        s.lin.extend_from_slice(f.name.as_bytes());
+        s.lin.push(0);
+        s.lin.extend_from_slice(f.content.as_bytes());
+    }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     s.finished = true;
 }
@@ -367,6 +375,17 @@ pub extern "C" fn rt_sim_rows_len() -> u32 {
 pub extern "C" fn rt_sim_n_reals() -> u32 {
     session().as_ref().map_or(0, |s| s.n_reals)
 }
+/// `-l`'s linearized model as `<file name>\0<content>`; the host writes the file
+/// (this runtime's WASI is the browser's VFS).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_lin_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.lin.as_ptr() as u32)
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_lin_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.lin.len() as u32)
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_params_ptr() -> u32 {
     session().as_ref().map_or(0, |s| s.params.as_ptr() as u32)
