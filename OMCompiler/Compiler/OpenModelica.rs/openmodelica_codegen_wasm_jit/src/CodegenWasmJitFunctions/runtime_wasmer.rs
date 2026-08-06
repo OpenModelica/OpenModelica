@@ -1127,6 +1127,78 @@ mod tests {
         assert_eq!((rf(&mut store, pick, 1), rf(&mut store, pick, 2)), (3.0, 1.0));
     }
 
+    /// `rt_array_indexed_assign` on a 3x3 Real matrix: a row lhs `m[2,:] :=
+    /// {40,50,60}`, a strided column lhs `m[:,3] := {70,80,90}`, and an
+    /// index-array lhs `m[1,{3,1}] := {11,12}` (the source is consumed in
+    /// selection order, so 11 lands in column 3).
+    #[test]
+    fn precompiled_runtime_array_indexed_assign() {
+        let (mut store, inst) = runtime_instance();
+        let mem = inst.exports.get_memory("memory").unwrap().clone();
+        let arr_new = inst.exports.get_typed_function::<(i32, i32, i32), i32>(&store, "rt_array_new").unwrap();
+        let set_dim = inst.exports.get_typed_function::<(i32, i32, i32), ()>(&store, "rt_array_set_dim").unwrap();
+        let elem_ptr = inst.exports.get_typed_function::<(i32, i32), i32>(&store, "rt_array_elem_ptr").unwrap();
+        let assign = inst
+            .exports
+            .get_typed_function::<(i32, i32, i32, i32), ()>(&store, "rt_array_indexed_assign")
+            .unwrap();
+
+        // m = [[1,2,3],[4,5,6],[7,8,9]] Real, row-major.
+        let m = arr_new.call(&mut store, 1, 2, 9).unwrap();
+        set_dim.call(&mut store, m, 0, 3).unwrap();
+        set_dim.call(&mut store, m, 1, 3).unwrap();
+        for k in 0..9 {
+            let addr = elem_ptr.call(&mut store, m, k + 1).unwrap() as usize;
+            mem.view(&store).write(addr as u64, &((k + 1) as f64).to_le_bytes()).unwrap();
+        }
+        let rf = |store: &mut Store, h: i32, k: i32| {
+            let addr = elem_ptr.call(&mut *store, h, k).unwrap() as usize;
+            let mut b = [0u8; 8];
+            mem.view(&*store).read(addr as u64, &mut b).unwrap();
+            f64::from_le_bytes(b)
+        };
+        let make_spec = |store: &mut Store, pairs: &[(i32, i32)]| -> i32 {
+            let s = arr_new.call(&mut *store, 0, 1, pairs.len() as i32 * 2).unwrap();
+            for (i, (k, v)) in pairs.iter().enumerate() {
+                let ka = elem_ptr.call(&mut *store, s, i as i32 * 2 + 1).unwrap() as usize;
+                mem.view(&*store).write(ka as u64, &k.to_le_bytes()).unwrap();
+                let va = elem_ptr.call(&mut *store, s, i as i32 * 2 + 2).unwrap() as usize;
+                mem.view(&*store).write(va as u64, &v.to_le_bytes()).unwrap();
+            }
+            s
+        };
+        let make_real_vec = |store: &mut Store, vals: &[f64]| -> i32 {
+            let v = arr_new.call(&mut *store, 1, 1, vals.len() as i32).unwrap();
+            set_dim.call(&mut *store, v, 0, vals.len() as i32).unwrap();
+            for (i, x) in vals.iter().enumerate() {
+                let a = elem_ptr.call(&mut *store, v, i as i32 + 1).unwrap() as usize;
+                mem.view(&*store).write(a as u64, &x.to_le_bytes()).unwrap();
+            }
+            v
+        };
+
+        let sp = make_spec(&mut store, &[(0, 2), (1, 0)]);
+        let v = make_real_vec(&mut store, &[40.0, 50.0, 60.0]);
+        assign.call(&mut store, m, 2, sp, v).unwrap();
+
+        let sp = make_spec(&mut store, &[(1, 0), (0, 3)]);
+        let v = make_real_vec(&mut store, &[70.0, 80.0, 90.0]);
+        assign.call(&mut store, m, 2, sp, v).unwrap();
+
+        let idx = arr_new.call(&mut store, 0, 1, 2).unwrap();
+        set_dim.call(&mut store, idx, 0, 2).unwrap();
+        for (k, i) in [3i32, 1].iter().enumerate() {
+            let a = elem_ptr.call(&mut store, idx, k as i32 + 1).unwrap() as usize;
+            mem.view(&store).write(a as u64, &i.to_le_bytes()).unwrap();
+        }
+        let sp = make_spec(&mut store, &[(0, 1), (2, idx)]);
+        let v = make_real_vec(&mut store, &[11.0, 12.0]);
+        assign.call(&mut store, m, 2, sp, v).unwrap();
+
+        let got: Vec<f64> = (1..=9).map(|k| rf(&mut store, m, k)).collect();
+        assert_eq!(got, vec![12.0, 2.0, 11.0, 40.0, 50.0, 80.0, 7.0, 8.0, 90.0]);
+    }
+
     /// `rt_array_cat` on Real arrays: a 1-D 3-way concat along dim 1, and a 2-D
     /// concat along dim 2 (strided copy into the result).
     #[test]
