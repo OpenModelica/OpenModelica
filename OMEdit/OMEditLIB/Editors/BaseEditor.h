@@ -285,9 +285,8 @@ private:
   bool mIsUndoAvailable;
   bool mIsRedoAvailable;
   QString mCompletionCharacters;
-  QList<int> mNavigationPoints;
-  int mNavigationPos = -1;
-  static const int NavigationHistorySize = 50;
+  static void navigateToNavigationPoint(PlainTextEdit *pEditor, int position);
+  void pruneStaleNavigationPoints();
 
   void highlightCurrentLine();
   void highlightParentheses();
