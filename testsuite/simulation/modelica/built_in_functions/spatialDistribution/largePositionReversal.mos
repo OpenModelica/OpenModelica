@@ -1,0 +1,65 @@
+// name:                largePositionReversal.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f largePositionReversalSpatialDistribution*
+//
+// Runs the belt fast enough in one direction that the operator's internal
+// position coordinate (posX) reaches O(1e4) transport lengths, then reverses
+// once. Guards spatialZeroDeltaX()'s magnitude-scaled "standing still"
+// threshold, which becomes very lenient (~1e-8) at posX ~ 1e4 and could in
+// principle let a genuine direction-mismatch slip through undetected at
+// that scale. leftInput/rightInput are plain constants, so interpolation
+// between same-valued nodes is exact regardless of position, giving exact
+// expected flush values with no numerical-approximation slack.
+
+loadModel(Modelica); getErrorString();
+loadString("model largePositionReversalSpatialDistribution
+  extends Modelica.Icons.Example;
+  Real leftInput = 111.0;
+  Real rightInput = 222.0;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {0.0, 0.0};
+  parameter Real v0 = 12000;
+  Real v;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = if time < 1 then v0 else -v0;
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end largePositionReversalSpatialDistribution;"); getErrorString();
+
+// v0=12000 for 1s pushes x (posX) to exactly ~12000 at the moment of
+// reversal, squarely in the O(1e4) regime the scaled tolerance guard needs
+// to hold up at.
+simulate(largePositionReversalSpatialDistribution, stopTime=2.0, numberOfIntervals=500); getErrorString();
+
+val(leftOutput, 0.0);
+val(rightOutput, 0.0);
+val(leftOutput, 0.5);
+val(rightOutput, 0.5);
+val(leftOutput, 1.5);
+val(rightOutput, 1.5);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "largePositionReversalSpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'largePositionReversalSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 111.0
+// 111.0
+// 222.0
+// 222.0
+// endResult
