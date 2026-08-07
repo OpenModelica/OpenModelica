@@ -26,6 +26,8 @@ pub enum Solver {
     RungeKutta,
     SymSolver,
     SymSolverSsc,
+    /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
+    Optimization,
 }
 
 /// `-nls`. The discriminants are the wire codes [`SimFlags::solver_codes`] hands to
@@ -177,6 +179,8 @@ pub struct SimFlags {
     /// `-iif=<file>`: a result file whose values at the start time seed the start
     /// attributes and parameters (C's `importStartValues`).
     pub init_file: Option<String>,
+    /// `-iim=<symbolic|none>`: C's `INIT_INIT_METHOD`.
+    pub init_method: InitMethod,
     /// `-noEquidistantTimeGrid`: emit the integrator's own steps instead of
     /// interpolating onto the output grid.
     pub no_equidistant_grid: bool,
@@ -193,6 +197,31 @@ pub struct SimFlags {
     /// `nonlinearSparseSolverMaxDensity`, the rule that hands a system to kinsol+KLU.
     pub nlss_min_size: Option<u32>,
     pub nlss_max_density: Option<f64>,
+    /// `method="optimization"` (the Ipopt collocation solver): `-optimizerNP=<1|3>`
+    /// collocation points per interval, and `-optimizerTimeGrid=<file>` listing the
+    /// interval end points instead of an equidistant grid.
+    pub optimizer_np: Option<i32>,
+    pub optimizer_tgrid: Option<String>,
+    /// `-ipopt_init=<const|sim|file>`: where the initial trajectory comes from.
+    pub ipopt_init: Option<String>,
+    /// `-ipopt_hesse=<BFGS|const|num>`: how Ipopt approximates the Hessian.
+    pub ipopt_hesse: Option<String>,
+    /// `-ipopt_max_iter=<n>`; C also accepts `<m>e<x>`, so it stays a string.
+    pub ipopt_max_iter: Option<String>,
+    /// `-ipopt_warm_start=<decade>`: shift `mu_init` and the bound multipliers.
+    pub ipopt_warm_start: Option<String>,
+    /// `-ls_ipopt=<solver>`: Ipopt's linear solver (`mumps`, `ma27`, …).
+    pub ls_ipopt: Option<String>,
+    /// `-keepHessian=<n>`: reuse the Hessian for `n` iterations.
+    pub keep_hessian: Option<i32>,
+    /// `-stateFile=<file>`: `name value` lines overriding start values.
+    pub state_file: Option<String>,
+    /// `-csvInput=<file>`: external input `time,u…` rows, interpolated for the
+    /// optimizer's initial guess (C's `external_input.c`).
+    pub csv_input: Option<String>,
+    /// `-csvOstep=<file>` / `-optDebugJac=<iter>`: the optimizer's debug dumps.
+    pub csv_ostep: Option<String>,
+    pub opt_debug_jac: Option<String>,
     /// `-emit_protected`: keep `protected` variables in the result file.
     pub emit_protected: bool,
     /// `-ignoreHideResult`: keep `annotation(HideResult=true)` variables too.
@@ -275,6 +304,8 @@ pub struct Capabilities {
     pub alarm: bool,
     /// This runtime can compile a regex, so `-variableFilter` can be honoured.
     pub variable_filter: bool,
+    /// Ipopt is linked, so `method="optimization"` / `-s=optimization` can run.
+    pub optimization: bool,
 }
 
 /// Reject flag values this runtime cannot honour.
@@ -299,6 +330,7 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
+        Some(Solver::Optimization) if !cap.optimization => "optimization",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -319,6 +351,7 @@ pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
         ("nlsLS", offered(NLS_LS_VALUES, cap)),
         ("ls", offered(LS_VALUES, cap)),
         ("lss", offered(LSS_VALUES, cap)),
+        ("iim", offered(INIT_METHODS, cap)),
     ];
     if cap.ida {
         menu.push(("idaLS", offered(IDA_LS_VALUES, cap)));
@@ -490,6 +523,19 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("parmodDumpStages", true),
 ];
 
+/// C's `INIT_INIT_METHOD` (`simulation_options.c`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum InitMethod {
+    /// Solve the initial system.
+    #[default]
+    Symbolic,
+    /// Leave every variable at its start value; C's `IIM_NONE`.
+    None,
+}
+
+const INIT_METHODS: &[Value<InitMethod>] =
+    &[("none", InitMethod::None, Offer::Always), ("symbolic", InitMethod::Symbolic, Offer::Always)];
+
 /// C's `JACOBIAN_METHOD_NAME` (`simulation_options.c`).
 const JACOBIAN_METHODS: &[&str] = &[
     "coloredNumerical",
@@ -585,6 +631,23 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "variableFilter" => f.variable_filter = Some(value(name)?),
             "r" => f.result_file = Some(value(name)?),
             "iif" => f.init_file = Some(value(name)?),
+            // The optimizer's flags (`method="optimization"`).
+            "optimizerNP" => f.optimizer_np = Some(int(name, &value(name)?)?),
+            "optimizerTimeGrid" => f.optimizer_tgrid = Some(value(name)?),
+            "ipopt_init" => f.ipopt_init = Some(value(name)?),
+            "ipopt_hesse" => f.ipopt_hesse = Some(value(name)?),
+            "ipopt_max_iter" => f.ipopt_max_iter = Some(value(name)?),
+            "ipopt_warm_start" => f.ipopt_warm_start = Some(value(name)?),
+            "ls_ipopt" => f.ls_ipopt = Some(value(name)?),
+            "keepHessian" => f.keep_hessian = Some(int(name, &value(name)?)?),
+            "stateFile" => f.state_file = Some(value(name)?),
+            "csvInput" => f.csv_input = Some(value(name)?),
+            "csvOstep" => f.csv_ostep = Some(value(name)?),
+            "optDebugJac" => f.opt_debug_jac = Some(value(name)?),
+            // C declares `-ipopt_jac` but never reads it; accept and ignore, as it does.
+            "ipopt_jac" => {
+                let _ = value(name)?;
+            }
             "noEquidistantTimeGrid" => f.no_equidistant_grid = true,
             "noEquidistantOutputFrequency" => {
                 f.no_equidistant_freq = Some(
@@ -613,13 +676,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                         .map_err(|_| "-noEquidistantOutputTime needs a number".to_string())?,
                 )
             }
-            // The only method this runtime has is C's default.
-            "iim" => {
-                let v = value(name)?;
-                if v != "symbolic" {
-                    return Err(format!("-iim={v}: this runtime only has the symbolic method"));
-                }
-            }
+            "iim" => f.init_method = pick("iim", &value(name)?, INIT_METHODS)?,
             "abortSlowSimulation" => f.abort_slow = true,
             "alarm" => {
                 let secs = value(name)?
@@ -854,6 +911,7 @@ enum Offer {
     WithSundials,
     WithIda,
     WithCvode,
+    WithIpopt,
     /// `default`, an alias of a listed value, or one this runtime substitutes for.
     Never,
 }
@@ -865,6 +923,7 @@ impl Offer {
             Offer::WithSundials => cap.klu,
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
+            Offer::WithIpopt => cap.optimization,
             Offer::Never => false,
         }
     }
@@ -880,6 +939,7 @@ const SOLVERS: &[Value<Solver>] = &[
     ("gbode", Solver::Gbode, Offer::Always),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
+    ("optimization", Solver::Optimization, Offer::WithIpopt),
     ("symSolver", Solver::SymSolver, Offer::Never),
     ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
 ];
@@ -1032,9 +1092,9 @@ mod tests {
     }
 
     const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false };
+        Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false, optimization: false };
     const EVERYTHING: Capabilities =
-        Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true };
+        Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true, optimization: true };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -1178,8 +1238,21 @@ mod tests {
 
     #[test]
     fn a_rejected_options_value_is_not_read_as_a_flag() {
-        let e = parse(&argv(&["-csvInput", "in.csv"])).expect_err("must reject");
-        assert!(e.contains("csvInput"), "{e}");
+        let e = parse(&argv(&["-idaScaling", "-lv=LOG_STATS"])).expect_err("must reject");
+        assert!(e.contains("idaScaling"), "{e}");
+    }
+
+    #[test]
+    fn the_optimizer_flags_parse() {
+        let f = parse(&argv(&[
+            "-optimizerNP=1", "-ipopt_init=const", "-ipopt_max_iter=1e3",
+            "-stateFile", "s.csv", "-ipopt_jac=NUM",
+        ]))
+        .expect("parses");
+        assert_eq!(f.optimizer_np, Some(1));
+        assert_eq!(f.ipopt_init.as_deref(), Some("const"));
+        assert_eq!(f.ipopt_max_iter.as_deref(), Some("1e3"));
+        assert_eq!(f.state_file.as_deref(), Some("s.csv"));
     }
 
     #[test]

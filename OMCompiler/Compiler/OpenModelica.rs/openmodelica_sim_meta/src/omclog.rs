@@ -8,6 +8,7 @@
 
 use alloc::format;
 use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 /// Index into [`STREAM_NAME`], i.e. C's `OMC_LOG_*` enumerators.
 pub type Stream = u8;
@@ -88,6 +89,11 @@ pub const EVENTS_V: Stream = 13;
 pub const INIT: Stream = 19;
 pub const INIT_HOMOTOPY: Stream = 20;
 pub const INIT_V: Stream = 21;
+pub const IPOPT: Stream = 22;
+pub const IPOPT_FULL: Stream = 23;
+pub const IPOPT_JAC: Stream = 24;
+pub const IPOPT_HESSE: Stream = 25;
+pub const IPOPT_ERROR: Stream = 26;
 pub const JAC: Stream = 27;
 pub const LS: Stream = 28;
 pub const LS_V: Stream = 29;
@@ -97,6 +103,7 @@ pub const NLS_HOMOTOPY: Stream = 34;
 pub const NLS_JAC: Stream = 35;
 pub const NLS_RES: Stream = 42;
 pub const NLS_EXTRAPOLATE: Stream = 43;
+pub const SIMULATION: Stream = 46;
 pub const SOLVER: Stream = 47;
 pub const SOLVER_V: Stream = 48;
 pub const SOTI: Stream = 50;
@@ -392,6 +399,103 @@ fn exp_str(v: f64, prec: usize) -> String {
     alloc::format!("{s}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
 }
 
+
+/// C's `ryu_hr_tdzp_buf` (`3rdParty/ryu/ryu/om_format.c`): the shortest round-trip
+/// representation, rendered decimal where that is shorter. The optimizer's
+/// `LOG_IPOPT_ERROR` lines are printed with it, so they must match digit for digit.
+///
+/// The same port lives in `metamodelica::real::ryu` for the compiler's `realString`;
+/// this copy keeps the `no_std` simulation runtime independent of it.
+pub fn shortest(d: f64) -> String {
+    if d.is_infinite() {
+        return if d < 0.0 { "-inf".into() } else { "inf".into() };
+    }
+    if d.is_nan() {
+        return "NaN".into();
+    }
+    ryu_to_hr(&format!("{d:e}"), false)
+}
+
+fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
+    let Some(epos) = d2s_str.find(['e', 'E']) else {
+        // Not in mantissa-exponent form (e.g. "NaN"); pass through.
+        return d2s_str.replace('E', "e");
+    };
+    let mant_str = &d2s_str[..epos];
+    let mut exp: i32 = d2s_str[epos + 1..].parse().unwrap_or(0);
+    let (neg, mut digits) = match mant_str.strip_prefix('-') {
+        Some(m) => (true, m.to_string()),
+        None => (false, mant_str.to_string()),
+    };
+    // Number of digits after the decimal point in the mantissa.
+    let mut ndec: i32 = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+    // The exponential rendering used when the decimal form is unsuitable.
+    let mut exp_repr: String = d2s_str.replace('E', "e");
+
+    if ndec > 12 && !real_output {
+        // Round the mantissa to 12 decimals; use it only if that removed at
+        // least 4 trailing zeros (i.e. the long tail was an artifact).
+        let mant: f64 = digits.parse().unwrap_or(0.0);
+        let mut rounded = format!("{mant:.12}");
+        // 9.999999999999999 rounds to 10.000000000000: renormalise.
+        if rounded == "10.000000000000" {
+            rounded = "1.000000000000".to_string();
+            exp += 1;
+        }
+        let mut nz = 0;
+        while rounded.ends_with('0') {
+            rounded.pop();
+            nz += 1;
+        }
+        if rounded.ends_with('.') {
+            rounded.pop();
+        }
+        if nz > 3 {
+            digits = rounded;
+            ndec = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+            exp_repr = format!("{}{digits}e{exp}", if neg { "-" } else { "" });
+        }
+    }
+
+    if !(-3..=5).contains(&exp) || (exp > 0 && exp - ndec > 3) {
+        return exp_repr;
+    }
+
+    // Decimal form. `digs` is the mantissa without its decimal point:
+    // one leading digit followed by `ndec` decimals.
+    let digs: Vec<char> = digits.chars().filter(|c| *c != '.').collect();
+    let mut out = String::with_capacity(24);
+    if neg {
+        out.push('-');
+    }
+    if exp == 0 {
+        out.push_str(&digits);
+    } else if exp > 0 {
+        // Move the decimal point `exp` places to the right.
+        out.push(digs[0]);
+        let take = ndec.min(exp) as usize;
+        out.extend(&digs[1..1 + take]);
+        if exp > ndec {
+            for _ in 0..(exp - ndec) {
+                out.push('0');
+            }
+        } else if exp < ndec {
+            out.push('.');
+            out.extend(&digs[1 + take..]);
+        }
+    } else {
+        // exp < 0: the number starts with "0." and some zeros.
+        out.push_str("0.");
+        for _ in 0..(-exp - 1) {
+            out.push('0');
+        }
+        out.extend(&digs);
+    }
+    if exp >= ndec && real_output {
+        out.push_str(".0");
+    }
+    out
+}
 /// C's `debugString`: one plain line.
 pub fn debug_string(stream: Stream, msg: &str) {
     info(stream, false, msg);

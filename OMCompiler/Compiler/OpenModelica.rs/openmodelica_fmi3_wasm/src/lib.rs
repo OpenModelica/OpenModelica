@@ -522,7 +522,8 @@ macro_rules! shared_instance_methods {
         set_param_overrides(params, starts);
         let mut e = Engine;
         let start_time = st.read_f64(TIME_OFF);
-        if run_initialization(&mut e, st.sim_data, &st.layout, start_time).is_err() {
+        // No `-csvInput` on the FMI path: the importer drives the inputs.
+        if run_initialization(&mut e, st.sim_data, &st.layout, &[], start_time).is_err() {
             return Status::Error;
         }
         // Apply deferred String parameter sets now that init equations have run, so

@@ -42,6 +42,14 @@ pub struct SimModel {
     pub jac_a: Option<JacAInfo>,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
+    /// C's `realVarsData[i].info.name` and its `attribute.start` slot, in
+    /// real-variable index order. `-iif` imports into these; unlike `-override`
+    /// it reaches every real variable, changeable or not.
+    pub real_starts: Vec<(String, u32)>,
+    /// The rest of what `-iif` imports, likewise by name: the integer and boolean
+    /// variables, and the real, integer and boolean parameters. Their live slot is
+    /// their start here — only reals have a separate attribute array.
+    pub import_slots: Vec<(String, u32, WTy)>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
