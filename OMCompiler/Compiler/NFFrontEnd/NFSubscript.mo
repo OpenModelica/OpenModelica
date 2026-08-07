@@ -1059,7 +1059,9 @@ public
 
       case SLICE()
         algorithm
-          exp := ExpandExp.expand(subscript.slice, resize);
+          // A range with constant but non-literal bounds (`3:end-1` becomes
+          // `3:5-1`) does not expand until it is simplified.
+          exp := ExpandExp.expand(SimplifyExp.simplify(subscript.slice), resize);
 
           if Expression.isArray(exp) then
             outSubscript := EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(exp)));
