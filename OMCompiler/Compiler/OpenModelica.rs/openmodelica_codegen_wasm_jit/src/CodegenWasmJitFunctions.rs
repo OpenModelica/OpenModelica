@@ -1466,6 +1466,18 @@ impl<'a> FnCtx<'a> {
         self.emit(we::Instruction::If(we::BlockType::Empty));
     }
 
+    /// Open `if (cond)`; `sim_else` starts the next branch, `sim_end_block` closes one.
+    pub(crate) fn sim_if_cond(&mut self, cond: &DAE::Exp) -> Result<()> {
+        let w = compile_exp(self, cond)?;
+        coerce(self, w, WTy::I32);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+        Ok(())
+    }
+
+    pub(crate) fn sim_else(&mut self) {
+        self.emit(we::Instruction::Else);
+    }
+
     pub(crate) fn sim_end_block(&mut self) {
         self.emit(we::Instruction::End);
     }
@@ -2506,7 +2518,15 @@ fn compile_stmts(ctx: &mut FnCtx, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Res
 /// Assign `rhs` to a lhs: a whole-variable (scalar / whole array / string) or a
 /// subscripted array element (`a[i,...] := x`, written in place).
 fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()> {
+    // `(l1, l2, …) = f(...)` in a when-equation (C's `whenOperators` ASSIGN-of-TUPLE).
+    if let DAE::Exp::TUPLE { PR } = lhs {
+        return compile_tuple_assign(ctx, PR, rhs);
+    }
     let DAE::Exp::CREF { componentRef, .. } = lhs else {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: assignment to non-cref lhs `{}`",
+            dumped_exp(&Arc::new(lhs.clone()))?
+        ));
         return Err("CodegenWasmJit: assignment to non-cref lhs not supported");
     };
     // Simulation mode: assigning to a model variable writes into the shared
@@ -4645,13 +4665,20 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     if ctx.sim.is_none() {
         return Ok(None);
     }
-    // `time` is the only built-in scalar; it lives at offset 0 of `SimData`.
+    // `time` lives at offset 0 of `SimData`; `__HOM_LAMBDA` is left behind by
+    // differentiating `homotopy(a, s)` (C maps it to `simulationInfo->lambda`).
     if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
         if subscriptLst.is_empty() {
             if ident.as_str() == "time" {
                 let data = ctx.sim()?.data_local;
                 ctx.emit(we::Instruction::LocalGet(data));
                 ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+                return Ok(Some(WTy::F64));
+            }
+            if ident.as_str() == openmodelica_backend_types::BackendDAE::homotopyLambda {
+                let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+                ctx.emit(we::Instruction::LocalGet(data));
+                ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
                 return Ok(Some(WTy::F64));
             }
             // A real wasm local (e.g. a `for` iterator) shadows model lookup.
@@ -7377,10 +7404,141 @@ fn emit_const_run(
     Ok(())
 }
 
+/// [`const_dims`] keeping the non-constant dimensions.
+fn type_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
+    let DAE::Type::T_ARRAY { ty: elem, dims } = ty else {
+        return Vec::new();
+    };
+    let mut out: Vec<Arc<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
+    out.extend(type_dims(elem));
+    out
+}
+
+/// [`leaf_array_count`] without needing the size.
+fn leaf_is_array(exp: &DAE::Exp) -> bool {
+    matches!(exp_dae_type(exp).as_deref(), Some(DAE::Type::T_ARRAY { .. }))
+}
+
+/// [`compile_array_literal`] for sizes only known at run time (`Real m[2, n]`
+/// with `n` a parameter): allocate from the evaluated dimensions and fill
+/// through a running element index, a sub-array leaf's length being dynamic too.
+fn compile_array_literal_dynamic(
+    ctx: &mut FnCtx,
+    ty: &DAE::Type,
+    elem: &SigTy,
+    rank: u32,
+    whole: &DAE::Exp,
+) -> Result<()> {
+    use we::Instruction as I;
+    let dims = type_dims(ty);
+    if dims.len() as u32 != rank {
+        return Err("CodegenWasmJit: array constructor rank does not match dimensions");
+    }
+    // `emit_dim_value` makes an unknown (`:`) axis 0; fail rather than mis-size.
+    if dims.iter().any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) {
+        return Err("CodegenWasmJit: array construction needs constant dimensions");
+    }
+    let mut dim_temps = Vec::with_capacity(dims.len());
+    for d in &dims {
+        let t = ctx.alloc_temp(WTy::I32);
+        emit_dim_value(ctx, d)?;
+        ctx.emit(I::LocalSet(t));
+        dim_temps.push(t);
+    }
+    ctx.emit(I::LocalGet(dim_temps[0]));
+    for t in &dim_temps[1..] {
+        ctx.emit(I::LocalGet(*t));
+        ctx.emit(I::I32Mul);
+    }
+    let total = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(total));
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(elem.elem_kind() as i32));
+    ctx.emit(I::I32Const(rank as i32));
+    ctx.emit(I::LocalGet(total));
+    ctx.emit(I::Call(rt_index("rt_array_new")?));
+    ctx.emit(I::LocalSet(obj));
+    for (axis, t) in dim_temps.iter().enumerate() {
+        ctx.emit(I::LocalGet(obj));
+        ctx.emit(I::I32Const(axis as i32));
+        ctx.emit(I::LocalGet(*t));
+        ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+    }
+    let mut leaves = Vec::new();
+    flatten_array_exp(whole, &mut leaves);
+    let k = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(k));
+    let data_off = arr_data_off(rank);
+    let stride = elem_stride(elem);
+    for leaf in &leaves {
+        if leaf_is_array(leaf) {
+            let h = ctx.alloc_temp(WTy::I32);
+            compile_exp(ctx, leaf)?;
+            ctx.emit(I::LocalSet(h));
+            ctx.emit(I::LocalGet(obj));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::Call(rt_index("rt_array_blit")?));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::Call(rt_index("rt_array_release")?));
+        } else {
+            ctx.emit(I::LocalGet(obj));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::I32Const(stride as i32));
+            ctx.emit(I::I32Mul);
+            ctx.emit(I::I32Add);
+            let w = compile_exp(ctx, leaf)?;
+            coerce(ctx, w, elem.wty());
+            elem_store_off(ctx, elem, data_off);
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::I32Const(1));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(k));
+        }
+    }
+    ctx.emit(I::LocalGet(obj));
+    Ok(())
+}
+
+/// The per-axis sizes of a constructor taken from its own shape, for a declared
+/// type that has none (`Real t[:] = {...}`). Mirrors [`flatten_array_exp`]; the
+/// first element supplies the axes below the node's own.
+fn constructor_dims(exp: &DAE::Exp) -> Result<Vec<u32>> {
+    use DAE::Exp as E;
+    match exp {
+        E::SHARED_LITERAL { exp, .. } => constructor_dims(exp),
+        E::ARRAY { array, .. } => {
+            let mut out = vec![(&**array).into_iter().count() as u32];
+            if let Some(first) = (&**array).into_iter().next() {
+                out.extend(constructor_dims(first)?);
+            }
+            Ok(out)
+        }
+        E::MATRIX { matrix, .. } => {
+            let rows: Vec<_> = (&**matrix).into_iter().collect();
+            let mut out = vec![rows.len() as u32, rows.first().map_or(0, |r| (&***r).into_iter().count()) as u32];
+            if let Some(first) = rows.first().and_then(|r| (&***r).into_iter().next()) {
+                out.extend(constructor_dims(first)?);
+            }
+            Ok(out)
+        }
+        other => match exp_dae_type(other) {
+            Some(ty) => const_dims(&ty),
+            None => Ok(Vec::new()),
+        },
+    }
+}
+
 /// The constant per-axis sizes of an array `DAE.Type`, flattening nested
 /// `T_ARRAY`s (a rectangular array may be one `T_ARRAY` with several `dims` or a
 /// nest of `T_ARRAY`s). Fails on a non-constant dimension (`:` / expression),
-/// which needs the dynamic-allocation path (resize) not yet implemented.
+/// for which the constructor's own shape ([`constructor_dims`]) decides.
 fn const_dims(ty: &DAE::Type) -> Result<Vec<u32>> {
     let DAE::Type::T_ARRAY { ty: elem, dims } = ty else {
         return Ok(Vec::new());
@@ -7427,17 +7585,19 @@ fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> R
     let SigTy::Array { elem, rank } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: array constructor with non-array type");
     };
-    let dims = const_dims(ty)?;
-    if dims.len() as u32 != rank {
-        return Err("CodegenWasmJit: array constructor rank does not match dimensions");
-    }
-    let total: u32 = dims.iter().product();
     // The top-level structure (`ARRAY`/`MATRIX` nodes) is flattened to its
     // outermost element expressions. Each is either a scalar (one element) or an
     // array-valued expression (a sub-array, e.g. `{v, w}` of vectors) whose
     // elements are blitted in. (Scalar leaves remain the common case.)
     let mut leaves = Vec::new();
     flatten_array_exp(whole, &mut leaves);
+    // Static placement needs the axis sizes and every sub-array leaf's length as
+    // constants; a parameter-sized axis is only known once parameters have run.
+    let dims = match const_dims(ty).or_else(|_| constructor_dims(whole)) {
+        Ok(d) if d.len() as u32 == rank && leaves.iter().all(|l| leaf_array_count(l).is_ok()) => d,
+        _ => return compile_array_literal_dynamic(ctx, ty, &elem, rank, whole),
+    };
+    let total: u32 = dims.iter().product();
 
     // obj = rt_array_new(elem_kind, rank, total); set each dimension size.
     let obj = ctx.alloc_temp(WTy::I32);
@@ -7531,6 +7691,9 @@ fn exp_dae_type(exp: &DAE::Exp) -> Option<Arc<DAE::Type>> {
             Some(ty.clone())
         }
         E::CALL { attr, .. } => Some(attr.ty.clone()),
+        // The whole array type for an `array(...)` comprehension, the scalar
+        // accumulator type for a fold (see `compile_reduction`).
+        E::REDUCTION { reductionInfo, .. } => Some(reductionInfo.exprType.clone()),
         E::SHARED_LITERAL { exp, .. } => exp_dae_type(exp),
         E::BINARY { operator, .. } | E::UNARY { operator, .. } => operator_dae_type(operator),
         _ => None,

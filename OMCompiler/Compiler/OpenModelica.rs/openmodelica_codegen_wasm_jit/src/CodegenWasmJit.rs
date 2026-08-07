@@ -2895,7 +2895,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
     // when-statements inside an algorithm — both need the per-step pre-value save
     // and the full `allEquations` list as the per-step function.
-    let has_when = dae_eqs.iter().map(|(e, _)| e).chain(all_eqs.iter()).any(|e| match &**e {
+    let when_scan = eqs_with_branches(&all_eqs);
+    let has_when = dae_eqs.iter().map(|(e, _)| e).chain(when_scan.iter()).any(|e| match &**e {
         SimCode::SimEqSystem::SES_WHEN { .. } => true,
         SimCode::SimEqSystem::SES_ALGORITHM { statements, .. } => {
             (&**statements).into_iter().any(|s| matches!(&**s, DAE::Statement::STMT_WHEN { .. }))
@@ -3095,8 +3096,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let nls_nominal_map = build_nls_nominal_map(vars);
     let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
     let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
+    let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> =
+        [&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs]
+            .iter()
+            .map(|l| eqs_with_branches(l.as_slice()))
+            .collect();
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) = collect_nls_jobs(
-        &[&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs],
+        &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
         &mut attr_targets,
     );
@@ -4475,6 +4481,29 @@ fn flatten_eqs_ll(
     out
 }
 
+/// `eqs` with the equations nested in every `SES_IFEQUATION` branch appended, for
+/// the scans that register nonlinear systems and detect `when` behaviour.
+fn eqs_with_branches(eqs: &[Arc<SimCode::SimEqSystem>]) -> Vec<Arc<SimCode::SimEqSystem>> {
+    fn push(e: &Arc<SimCode::SimEqSystem>, out: &mut Vec<Arc<SimCode::SimEqSystem>>) {
+        out.push(e.clone());
+        if let SimCode::SimEqSystem::SES_IFEQUATION { ifbranches, elsebranch, .. } = &**e {
+            for (_, branch) in lst(ifbranches) {
+                for inner in lst(branch) {
+                    push(inner, out);
+                }
+            }
+            for inner in lst(elsebranch) {
+                push(inner, out);
+            }
+        }
+    }
+    let mut out = Vec::with_capacity(eqs.len());
+    for e in eqs {
+        push(e, &mut out);
+    }
+    out
+}
+
 /// Build one equation function (`SimData* -> ()`), lowering each equation in
 /// order. Unsupported equation kinds (systems, array assigns) fail loudly so a
 /// model that needs them is rejected rather than silently mis-simulated.
@@ -5122,6 +5151,25 @@ fn lower_equation(
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
         E::SES_WHEN { conditions, whenStmtLst, elseWhen, .. } => {
             ctx.sim_when(conditions, whenStmtLst, elseWhen)
+        }
+        // C's `equationIfEquationAssign`.
+        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+            let mut depth = 0;
+            for (cond, eqs) in lst(ifbranches) {
+                ctx.sim_if_cond(cond)?;
+                for e in lst(eqs) {
+                    lower_equation(ctx, e, eq_index)?;
+                }
+                ctx.sim_else();
+                depth += 1;
+            }
+            for e in lst(elsebranch) {
+                lower_equation(ctx, e, eq_index)?;
+            }
+            for _ in 0..depth {
+                ctx.sim_end_block();
+            }
+            Ok(())
         }
         // An alias equation re-runs another equation (by index): inline it.
         E::SES_ALIAS { aliasOf, .. } => {
@@ -5893,7 +5941,7 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     let mut seen: HashSet<i32> = HashSet::new();
     let mut total = 0u32;
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
-        for e in &eqs {
+        for e in &eqs_with_branches(&eqs) {
             if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
                 if seen.insert(nlSystem.index) && nls_jac_usable(nlSystem) {
                     // seeds + all column variables (results + intermediates) get slots.
