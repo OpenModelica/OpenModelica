@@ -56,7 +56,7 @@ use openmodelica_simcode_types::SimCodeFunction;
 use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
+    ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
@@ -3154,7 +3154,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     }
 
     // --- Compile bodies (collecting String literals into the module pool). ---
-    let mut literals: Vec<Vec<u8>> = Vec::new();
+    let mut literals = Literals::default();
     let mut bodies: Vec<we::Function> = Vec::new();
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
@@ -3253,8 +3253,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
-    let meta_seg = literals.len() as u32;
-    literals.push(meta_bytes);
+    let meta_off = literals.intern(&meta_bytes);
     {
         // om_meta_ptr(): rt_alloc(len), memory.init the blob into it, return ptr.
         use we::Instruction as I;
@@ -3262,9 +3261,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         f.instruction(&I::I32Const(meta_len as i32));
         f.instruction(&I::Call(rt_index("rt_alloc")?));
         f.instruction(&I::LocalTee(0));
-        f.instruction(&I::I32Const(0));
+        f.instruction(&I::I32Const(meta_off as i32));
         f.instruction(&I::I32Const(meta_len as i32));
-        f.instruction(&I::MemoryInit { mem: 0, data_index: meta_seg });
+        f.instruction(&I::MemoryInit { mem: 0, data_index: 0 });
         f.instruction(&I::LocalGet(0));
         f.instruction(&I::End);
         bodies.push(f);
@@ -3735,14 +3734,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         }
     }
     if !literals.is_empty() {
-        module.section(&we::DataCountSection { count: literals.len() as u32 });
+        module.section(&we::DataCountSection { count: 1 });
     }
     module.section(&code);
     if !literals.is_empty() {
         let mut data = we::DataSection::new();
-        for lit in &literals {
-            data.passive(lit.iter().copied());
-        }
+        data.passive(literals.blob().iter().copied());
         module.section(&data);
     }
     module.section(&name_section);
@@ -4560,7 +4557,7 @@ fn build_split_fn(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
     bodies: &mut Vec<we::Function>,
     chunks: &mut Vec<we::Function>,
 ) -> Result<SplitFn> {
@@ -4604,7 +4601,7 @@ fn build_eq_fn_single(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
     let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
@@ -4631,7 +4628,7 @@ fn build_init_sample_fn(
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -4652,7 +4649,7 @@ fn build_init_synchronous_fn(
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
     let inits: Vec<ClockInit> = clocks
@@ -4689,7 +4686,7 @@ fn build_update_synchronous_fn(
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
     for (i, c) in clocks.iter().enumerate() {
@@ -4723,7 +4720,7 @@ fn build_equations_synchronous_fn(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 2);
     for c in clocks {
@@ -4757,7 +4754,7 @@ fn build_init_start_values_fn(
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let sim = SimCtx { start_slots: Arc::default(), ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -4787,7 +4784,7 @@ fn build_update_bound_attrs_fn(
     attr_targets: &HashMap<String, AttrTargets>,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets)> = Vec::new();
     for (attr, eqs) in [
@@ -4828,7 +4825,7 @@ fn build_zero_crossings_fn(
     layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -4847,7 +4844,7 @@ fn build_update_relations_fn(
     relations: &[Option<Arc<DAE::Exp>>],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -4866,7 +4863,7 @@ fn build_store_delayed_fn(
     sim_code: &SimCode::SimCode,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let delayed: Vec<(i32, Arc<DAE::Exp>, Arc<DAE::Exp>, Arc<DAE::Exp>)> =
         lst(&sim_code.delayedExps.delayedExps)
@@ -5153,7 +5150,7 @@ fn build_stateset_jac_fn(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut eqs: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
     for set in lst(state_sets) {
@@ -5741,7 +5738,7 @@ fn build_linz_jac_fn(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     let jm = plan.jacs[k].as_ref().ok_or("CodegenWasmJit: no linearization Jacobian")?;
     let col = lst(&jm.columns).next();
@@ -5946,7 +5943,7 @@ fn build_nls_fns(
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
 ) -> Result<(we::Function, we::Function, Option<we::Function>)> {
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;

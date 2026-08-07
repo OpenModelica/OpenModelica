@@ -556,7 +556,7 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     shared_lits::begin(lit_base_global(false));
     let mut functions = we::FunctionSection::new();
     let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
-    let mut literals: Vec<Vec<u8>> = Vec::new();
+    let mut literals = Literals::default();
     for (id, f) in funcs.iter().enumerate() {
         functions.function(base + id as u32); // type index = base + id
         bodies.push(compile_function(f, &by_name, &mut literals)?);
@@ -644,18 +644,16 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
             module.section(&elements);
         }
     }
-    // String literals become passive data segments materialized at runtime with
+    // String literals live in the constant pool, materialized at runtime with
     // `memory.init` (see SCONST in `compile_exp`). The DataCount section must
     // precede the code section; the Data section follows it.
     if !literals.is_empty() {
-        module.section(&we::DataCountSection { count: literals.len() as u32 });
+        module.section(&we::DataCountSection { count: 1 });
     }
     module.section(&code);
     if !literals.is_empty() {
         let mut data = we::DataSection::new();
-        for lit in &literals {
-            data.passive(lit.iter().copied());
-        }
+        data.passive(literals.blob().iter().copied());
         module.section(&data);
     }
     let bytes = module.finish();
@@ -960,6 +958,45 @@ fn record_decl_fields(path: &str) -> Option<Arc<Vec<(ArcStr, Arc<DAE::Type>)>>> 
     RECORD_DECLS.with(|r| r.borrow().get(path).cloned())
 }
 
+/// The module's constant pool: every literal concatenated into the single
+/// passive data segment 0, since `memory.init` reads its segment at a source
+/// offset. One segment rather than one per literal, which wasm caps at 100000.
+#[derive(Default)]
+pub(crate) struct Literals {
+    blob: Vec<u8>,
+    /// `(hash, len)` -> offsets already placed. Keyed by hash so the pool is not
+    /// held twice; `intern` still compares before reusing one.
+    seen: HashMap<(u64, usize), Vec<u32>>,
+}
+
+impl Literals {
+    /// Offset of `bytes` within segment 0, appending them if not already there.
+    pub(crate) fn intern(&mut self, bytes: &[u8]) -> u32 {
+        use core::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        bytes.hash(&mut h);
+        let key = (h.finish(), bytes.len());
+        let offsets = self.seen.entry(key).or_default();
+        if let Some(&off) = offsets.iter().find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes) {
+            return off;
+        }
+        let off = self.blob.len() as u32;
+        self.blob.extend_from_slice(bytes);
+        offsets.push(off);
+        off
+    }
+
+    /// Whether nothing was interned. Not "the blob is empty": an empty String
+    /// literal adds no bytes but still emits a `memory.init` naming segment 0.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.seen.is_empty()
+    }
+
+    pub(crate) fn blob(&self) -> &[u8] {
+        &self.blob
+    }
+}
+
 // -------------------------------------------------------------------------
 // Function-body compilation
 // -------------------------------------------------------------------------
@@ -977,8 +1014,8 @@ pub(crate) struct FnCtx<'a> {
     outputs: Vec<(u32, SigTy)>,
     /// Resolves a `CALL` to another generated function.
     by_name: &'a HashMap<String, FnInfo>,
-    /// Module-wide String-literal pool; index = passive data-segment index.
-    literals: &'a mut Vec<Vec<u8>>,
+    /// Module-wide constant pool; `intern` gives the offset into data segment 0.
+    literals: &'a mut Literals,
     instrs: Vec<we::Instruction<'static>>,
     /// Number of currently-open structured-control frames (`block`/`loop`/`if`),
     /// maintained automatically by [`FnCtx::emit`]. A relative branch index to a
@@ -1294,7 +1331,7 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn new_sim(
         sim: SimCtx,
         by_name: &'a HashMap<String, FnInfo>,
-        literals: &'a mut Vec<Vec<u8>>,
+        literals: &'a mut Literals,
     ) -> Self {
         Self::new_sim_params(sim, by_name, literals, 1)
     }
@@ -1305,7 +1342,7 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn new_sim_params(
         sim: SimCtx,
         by_name: &'a HashMap<String, FnInfo>,
-        literals: &'a mut Vec<Vec<u8>>,
+        literals: &'a mut Literals,
         n_params: u32,
     ) -> Self {
         FnCtx {
@@ -1803,7 +1840,7 @@ impl<'a> FnCtx<'a> {
 pub(crate) fn compile_function(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     if matches!(f, SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { .. }) {
         return compile_external_function(f, by_name, literals);
@@ -1915,7 +1952,7 @@ pub(crate) fn compile_function(
 fn compile_external_function(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut Literals,
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, extName, extArgs, .. } = f else {
@@ -4815,15 +4852,14 @@ pub(crate) fn emit_sim_const_stores(
     if copies.is_empty() {
         return Ok(());
     }
-    let seg = ctx.literals.len() as u32;
-    ctx.literals.push(blob);
+    let base = ctx.literals.intern(&blob);
     for (dest, src, len) in copies {
         ctx.emit(I::LocalGet(data));
         ctx.emit(I::I32Const(dest as i32));
         ctx.emit(I::I32Add);
-        ctx.emit(I::I32Const(src as i32));
+        ctx.emit(I::I32Const((base + src) as i32));
         ctx.emit(I::I32Const(len as i32));
-        ctx.emit(I::MemoryInit { mem: 0, data_index: seg });
+        ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
     }
     Ok(())
 }
@@ -6751,17 +6787,16 @@ fn emit_string_format(ctx: &mut FnCtx, val: &DAE::Exp, fmt: &DAE::Exp, vty: &Sig
 /// data segment with `memory.init`, leaving the owned handle on the stack.
 fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
     let len = bytes.len() as u32;
-    let seg = ctx.literals.len() as u32;
-    ctx.literals.push(bytes.to_vec());
+    let off = ctx.literals.intern(bytes);
     let obj = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::I32Const(len as i32));
     ctx.emit(we::Instruction::Call(rt_index("rt_str_new")?));
     ctx.emit(we::Instruction::LocalTee(obj));
-    // memory.init dest=rt_str_data(obj), src_offset=0, size=len
+    // memory.init dest=rt_str_data(obj), src_offset=off, size=len
     ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
-    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32Const(off as i32));
     ctx.emit(we::Instruction::I32Const(len as i32));
-    ctx.emit(we::Instruction::MemoryInit { mem: 0, data_index: seg });
+    ctx.emit(we::Instruction::MemoryInit { mem: 0, data_index: 0 });
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(())
 }
@@ -7112,22 +7147,15 @@ fn emit_const_run(
         return Ok(());
     }
     let len = bytes.len() as u32;
-    // The same table often appears in more than one equation function (the initial
-    // and the algebraic system evaluate the same `when`); one segment serves both,
-    // and nothing emits `data.drop`.
-    let seg = match ctx.literals.iter().position(|l| l.len() == bytes.len() && *l == bytes) {
-        Some(i) => i as u32,
-        None => {
-            ctx.literals.push(bytes);
-            ctx.literals.len() as u32 - 1
-        }
-    };
+    // Nothing emits `data.drop`, so a table shared by several equation functions
+    // stays readable.
+    let off = ctx.literals.intern(&bytes);
     ctx.emit(I::LocalGet(obj));
     ctx.emit(I::I32Const(dest_off as i32));
     ctx.emit(I::I32Add);
-    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32Const(off as i32));
     ctx.emit(I::I32Const(len as i32));
-    ctx.emit(I::MemoryInit { mem: 0, data_index: seg });
+    ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
     Ok(())
 }
 
