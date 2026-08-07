@@ -536,13 +536,9 @@ int initBidirectionalRecovery(JACOBIAN* fwd)
   if (computeColPackStarBicoloring(nRows, nCols,
                                    adjsp->leadindex, adjsp->index,
                                    adjsp->colorCols, &adjsp->maxColors,
-                                   fwdsp->colorCols, &fwdsp->maxColors)) {
-    infoStreamPrint(OMC_LOG_JAC, 0,
-                    "Runtime star bicoloring: %u column colors, %u row colors.",
-                    fwdsp->maxColors, adjsp->maxColors);
-  } else {
+                                   fwdsp->colorCols, &fwdsp->maxColors) == 0) {
     warningStreamPrint(OMC_LOG_JAC, 0,
-                       "Runtime star bicoloring failed; using independent distance-1 colorings.");
+                       "Runtime star bicoloring failed.");
   }
 #endif
 
