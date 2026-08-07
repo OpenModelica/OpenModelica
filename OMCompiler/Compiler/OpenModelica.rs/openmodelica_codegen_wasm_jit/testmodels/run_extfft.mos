@@ -1,0 +1,9 @@
+// external "C" with protected work arrays / array outputs. Usage: omc run_extfft.mos
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadFile("TestExtFFT.mo"); getErrorString();
+simulate(TestExtFFT, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(amplitudes[1], 1.0);
+val(amplitudes[2], 1.0);
+val(phases[2], 1.0);
+val(info, 1.0);

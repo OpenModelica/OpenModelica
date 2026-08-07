@@ -173,6 +173,55 @@ fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i
     1
 }
 
+/// The runtime array object as both engines' external-"C" trampolines read it:
+/// header `[refcount][elem kind][ndims][total][dim…]`, then the flat row-major
+/// elements from the next 8-byte boundary on.
+pub mod array_abi {
+    use crate::sig::SigTy;
+
+    /// Every heap handle is a 4-byte `i32`.
+    pub fn elem_size(elem: &SigTy) -> usize {
+        match elem {
+            SigTy::Real => 8,
+            _ => 4,
+        }
+    }
+
+    /// The dimensions and element-area offset of the array object at `obj`.
+    pub fn dims_and_data(mem: &[u8], obj: usize) -> Option<(Vec<usize>, usize)> {
+        let word = |off: usize| -> Option<usize> {
+            Some(u32::from_le_bytes(mem.get(off..off + 4)?.try_into().ok()?) as usize)
+        };
+        let ndims = word(obj + 8)?;
+        let dims = (0..ndims).map(|k| word(obj + 16 + 4 * k)).collect::<Option<Vec<_>>>()?;
+        Some((dims, (16 + ndims * 4 + 7) & !7))
+    }
+
+    /// Copy `src` to `dst` converting between row-major and column-major storage
+    /// (C's `convert_alloc_*_{to,from}_f77`, without its 2-D-only restriction).
+    pub fn reorder(src: &[u8], dst: &mut [u8], dims: &[usize], esz: usize, to_fortran: bool) {
+        let total: usize = dims.iter().product();
+        let mut idx = vec![0usize; dims.len()];
+        for r in 0..total {
+            let mut c = 0usize;
+            let mut stride = 1usize;
+            for k in 0..dims.len() {
+                c += idx[k] * stride;
+                stride *= dims[k];
+            }
+            let (from, to) = if to_fortran { (r, c) } else { (c, r) };
+            dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+            for k in (0..dims.len()).rev() {
+                idx[k] += 1;
+                if idx[k] < dims[k] {
+                    break;
+                }
+                idx[k] = 0;
+            }
+        }
+    }
+}
+
 // Native rsparse solve behind the `env.rt_host_lin_solve` import, which the native
 // interactive runtime calls from `rt_solve_lin_sparse_cached`. Symbolic analysis
 // cached per system `handle`; `count()` feeds `stats.lin_solves`.

@@ -151,6 +151,15 @@ pub struct FnSig {
     pub results: Vec<SigTy>,
 }
 
+/// The calling convention of an external function's `extArgs`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ExtLang {
+    /// `external "C"` / `external "builtin"`: scalars by value, arrays row-major.
+    C,
+    /// `external "FORTRAN 77"`: every argument by reference, arrays column-major.
+    Fortran77,
+}
+
 /// The C-call shape of a general external "C" import. `args` is the C argument
 /// list in `extArgs` order, each flagged as an `_Out_` pointer or not; `ret` is
 /// the C return-value type (`None` for a `void` function). The corresponding wasm
@@ -159,10 +168,13 @@ pub struct FnSig {
 /// string outputs — the C return value first (if any), then each `_Out_` scalar/
 /// string pointer's written value — as multi-value results. Array outputs are
 /// filled in place (native) or copied back by the host (web), so they are NOT
-/// results. The host trampoline owns all pointer marshalling.
+/// results. The host trampoline owns all pointer marshalling, including the
+/// by-reference/column-major conversions `lang == Fortran77` asks for.
 #[derive(Clone)]
 pub struct ExtCallSig {
+    /// The linker symbol; already `_`-suffixed for [`ExtLang::Fortran77`].
     pub name: String,
+    pub lang: ExtLang,
     pub args: Vec<(SigTy, bool)>,
     pub ret: Option<SigTy>,
 }
