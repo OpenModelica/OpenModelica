@@ -1987,57 +1987,18 @@ pub(crate) fn compile_function(
     }
 
     let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
-    // Allocate every array local/output up front so it is a real (possibly empty)
-    // array object, never a null handle — matching the C runtime, where the array
-    // descriptor always exists. Unknown (`:`) dimensions start at size 0 and are
-    // resized by the first whole-array assignment.
-    for (slot, elem, dims) in &array_allocs {
-        emit_array_alloc(&mut ctx, *slot, elem, dims)?;
-    }
-    // Record locals/outputs are default-constructed at entry (C's
-    // `<Rec>_construct`), so a record without a binding still has its class
-    // defaults and its array fields' descriptors.
-    let mut constructed: Vec<u32> = Vec::new();
-    for v in (&**outVars).into_iter().chain(&**variableDeclarations) {
-        let SimCodeFunction::Variable::Variable::VARIABLE { ty, bind_from_outside, .. } = &**v else {
-            continue;
-        };
-        let (name, sty) = var_name_ty(v)?;
-        let elem_record = match &sty {
-            SigTy::Record { .. } => true,
-            SigTy::Array { elem, .. } => matches!(&**elem, SigTy::Record { .. }),
-            _ => false,
-        };
-        if *bind_from_outside || !elem_record {
-            continue;
-        }
-        let Some((slot, _)) = ctx.locals.get(&name).cloned() else { continue };
-        if constructed.contains(&slot) {
-            continue;
-        }
-        constructed.push(slot);
-        if matches!(sty, SigTy::Array { .. }) {
-            emit_array_record_defaults(&mut ctx, slot, &Types::arrayElementType(ty.clone()))?;
-        } else {
-            emit_record_default(&mut ctx, ty)?;
-            ctx.emit(we::Instruction::LocalSet(slot));
-        }
-    }
-    // Default-binding initializers for protected/output variables, in
-    // declaration order, mirroring the C target's `varInit` (driven by the
-    // variable's `value`). A `bind_from_outside` variable is supplied by the
-    // caller rather than its default, so it is skipped; inputs (function
-    // arguments) are never initialized here — they arrive as parameters.
-    for v in &**variableDeclarations {
-        let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v else {
-            continue;
-        };
-        if *bind_from_outside {
-            continue;
-        }
-        let Some(val) = value else { continue };
-        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
-        compile_assign(&mut ctx, &lhs, val)?;
+    // In declaration order, like C's `varInit` loop: a declaration's dimensions
+    // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
+    // allocation and binding must interleave. `variableDeclarations` already
+    // contains the outputs; one missing from it is initialized first.
+    let decl_slots: Vec<u32> = (&**variableDeclarations).into_iter().filter_map(|v| var_slot(&ctx, v)).collect();
+    let loose_outs: Vec<_> = (&**outVars)
+        .into_iter()
+        .filter(|v| !var_slot(&ctx, v).is_some_and(|s| decl_slots.contains(&s)))
+        .collect();
+    let mut done: Vec<u32> = Vec::new();
+    for v in loose_outs.into_iter().chain(&**variableDeclarations) {
+        init_var(&mut ctx, v, &mut array_allocs, &mut done)?;
     }
     compile_stmts(&mut ctx, body)?;
     // Fall-through return: release heap locals, push the output locals and end.
@@ -2369,6 +2330,56 @@ fn intern_local(
         }
     }
     Ok(slot)
+}
+
+/// The wasm local a `VARIABLE` was interned into, if any.
+fn var_slot(ctx: &FnCtx, v: &SimCodeFunction::Variable::Variable) -> Option<u32> {
+    let (name, _) = var_name_ty(v).ok()?;
+    ctx.locals.get(&name).map(|(slot, _)| *slot)
+}
+
+/// Initialize one local/output at function entry, in C's `varInit` order:
+/// array allocation (unknown `:` dims start at size 0), record default
+/// construction (C's `<Rec>_construct`), then the default binding. A
+/// `bind_from_outside` variable gets only its allocation; an already-initialized
+/// slot is skipped.
+fn init_var(
+    ctx: &mut FnCtx,
+    v: &SimCodeFunction::Variable::Variable,
+    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
+    done: &mut Vec<u32>,
+) -> Result<()> {
+    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = v else {
+        return Ok(());
+    };
+    let (_, sty) = var_name_ty(v)?;
+    let Some(slot) = var_slot(ctx, v) else { return Ok(()) };
+    if done.contains(&slot) {
+        return Ok(());
+    }
+    done.push(slot);
+    if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
+        let (_, elem, dims) = array_allocs.remove(k);
+        emit_array_alloc(ctx, slot, &elem, &dims)?;
+    }
+    if *bind_from_outside {
+        return Ok(());
+    }
+    match &sty {
+        SigTy::Record { .. } => {
+            emit_record_default(ctx, ty)?;
+            ctx.emit(we::Instruction::LocalSet(slot));
+        }
+        SigTy::Array { elem, .. } if matches!(&**elem, SigTy::Record { .. }) => {
+            emit_array_record_defaults(ctx, slot, &Types::arrayElementType(ty.clone()))?;
+        }
+        _ => {}
+    }
+    if let Some(val) = value {
+        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        compile_assign(ctx, &lhs, val)?;
+    }
+    Ok(())
 }
 
 /// The dimension list of an array `VARIABLE`, consistent with [`variable_sigty`]:
