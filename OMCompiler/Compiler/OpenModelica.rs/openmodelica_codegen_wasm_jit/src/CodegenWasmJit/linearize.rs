@@ -301,28 +301,52 @@ fn covers_sparsity(jm: &SimCode::JacobianMatrix, rows: u32) -> bool {
         .all(|r| (*r as u32) < rows && produced.contains(&(*r as usize)))
 }
 
-/// The `A`,`B`,`C`,`D` Jacobians, `Some` only where the flat emitter can lower
-/// one: C's per-matrix `initialAnalyticJacobian<X>` availability.
+/// The `A`,`B`,`C`,`D` Jacobians the flat emitter can lower, with the shape each
+/// one actually has (C's per-matrix `initialAnalyticJacobian<X>`: `sizeCols` is the
+/// seed count, `sizeRows` covers every row the results and the sparsity mention).
+///
+/// The shape is read off the matrix rather than derived from
+/// `nStates`/`nInputVars`/`nOutputVars`, because `DynamicOptimization` reshapes
+/// these same matrices for an `optimization` model — B and C then have
+/// `nStates+nInputVars` columns and a row per state, path constraint and objective
+/// term. [`crate::CodegenWasmJit::LinzPlan`] compares the shape against what `-l`
+/// expects and only lets the linearization use the ones that match.
 pub(crate) fn symbolic_jacobians(
     sim_code: &SimCode::SimCode,
-    rows: [u32; 4],
-    cols: [u32; 4],
-) -> [Option<Arc<SimCode::JacobianMatrix>>; 4] {
+) -> [Option<(Arc<SimCode::JacobianMatrix>, u32, u32)>; 4] {
     let names = ["A", "B", "C", "D"];
     core::array::from_fn(|k| {
-        if rows[k] == 0 || cols[k] == 0 {
+        let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();
+        let cols = crate::CodegenWasmJit::count(&jm.seedVars) as u32;
+        let rows = matrix_rows(&jm);
+        if rows == 0 || cols == 0 {
             return None;
         }
-        let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();
         // A sparsity-only matrix carries seeds but no equations; C reports it as
         // `JACOBIAN_NOT_AVAILABLE`.
         let has_equations = lst(&jm.columns)
             .next()
             .is_some_and(|c| lst(&c.columnEqns).next().is_some());
-        let usable = has_equations
-            && covers_sparsity(&jm, rows[k])
-            && crate::CodegenWasmJit::jac_lowerable(&jm)
-            && crate::CodegenWasmJit::count(&jm.seedVars) as u32 == cols[k];
-        usable.then_some(jm)
+        let usable =
+            has_equations && covers_sparsity(&jm, rows) && crate::CodegenWasmJit::jac_lowerable(&jm);
+        usable.then_some((jm, rows, cols))
     })
+}
+
+/// C's `sizeRows`: one past the last row either a `JAC_VAR` result or the sparsity
+/// pattern names.
+fn matrix_rows(jm: &SimCode::JacobianMatrix) -> u32 {
+    let results = crate::CodegenWasmJit::jac_column_vars(jm)
+        .iter()
+        .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
+        .filter_map(crate::CodegenWasmJit::jac_result_row)
+        .map(|r| r as u32 + 1)
+        .max()
+        .unwrap_or(0);
+    let sparse = lst(&jm.sparsity)
+        .flat_map(|(_, nz)| lst(nz))
+        .map(|r| *r as u32 + 1)
+        .max()
+        .unwrap_or(0);
+    results.max(sparse)
 }

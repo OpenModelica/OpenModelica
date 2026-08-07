@@ -1685,7 +1685,15 @@ algorithm
           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          // As in the simulate() case: the wasm-jit target runs the JIT-compiled
+          // model in-process instead of spawning an executable.
+          if Config.simCodeTarget() == "wasm-jit" then
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+          elseif Config.simCodeTarget() == "wasm" then
+            resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+          else
+            resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          end if;
           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file := "";

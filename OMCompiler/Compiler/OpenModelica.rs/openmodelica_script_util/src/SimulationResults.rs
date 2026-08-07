@@ -921,7 +921,8 @@ fn cmp_data(
                     }
                     if !refevent {
                         j -= 1;
-                        if j == 0 {
+                        // C tests `j == 0`, and reads `reftime[-1]` when it started at 0.
+                        if j <= 0 {
                             break;
                         }
                         tr = reftime[j as usize];

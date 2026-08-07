@@ -912,19 +912,18 @@ fn hybrd_scaled(
     arm_attempt();
     let mut hooks =
         minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
-    let status = minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
+    minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
     drop(seval);
     for i in 0..n {
         x[i] *= scale[i];
     }
-    nls_accept(status, fvec)
+    nls_accept(fvec)
 }
 
-/// A solve succeeds when MINPACK reports convergence or the residual is already at
-/// the tolerance (an exact Jacobian can reach the root before the step test fires,
-/// leaving `Stalled` with a machine-zero residual).
-fn nls_accept(status: minpack::Status, fvec: &[f64]) -> bool {
-    status == minpack::Status::Converged || enorm(fvec) <= 1.0e-12
+/// A solve succeeds only when the residual is at C's `local_tol`: MINPACK's
+/// `info == 1` is a step test (the trust region collapsed), not a root.
+fn nls_accept(fvec: &[f64]) -> bool {
+    enorm(fvec) <= 1.0e-12
 }
 
 /// C's `resScaling` over the Jacobian `hybrd` last formed. C reads
@@ -1053,12 +1052,14 @@ fn hybrd_c(
             }
             (enorm(&fvec), enorm(&scaled))
         };
+        // C's `if (info < 4 && xerror > local_tol && xerror_scaled > local_tol) info = 4`:
+        // only the residual decides, and a rejected run advances a rung.
         let accurate = xerror <= local_tol || xerror_scaled <= local_tol;
         if non_continuous && !accurate {
             non_continuous = false;
         }
 
-        if status == minpack::Status::Converged || accurate {
+        if accurate {
             nlsx.copy_from_slice(&xv);
             x.copy_from_slice(&xv);
             // C confirms the solution by evaluating there once more; an assert at it
@@ -1212,14 +1213,13 @@ fn hybrj_scaled(
     arm_attempt();
     let mut hooks =
         minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
-    let status =
-        minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
+    minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
     drop(seval);
     drop(sjac);
     for i in 0..n {
         x[i] *= scale[i];
     }
-    nls_accept(status, fvec)
+    nls_accept(fvec)
 }
 
 /// `-nlsLS`: which backend the linear solve inside the sparse nonlinear solver
@@ -1690,14 +1690,15 @@ fn newton_c(
         let grad_f = -2.0 * error_f_sqrd;
         let grad_f_scaled = -2.0 * error_f_sqrd_scaled;
 
-        // λ1: back off from the full step until the residual eval is finite.
+        // λ1: back off from the full step while the residual asserts (C's `longjmp`);
+        // an overflowed but finite one goes to the damping below, which collapses λ.
         let mut lambda1 = 1.0;
         loop {
             for i in 0..n {
                 x1[i] = x[i] + lambda1 * step[i];
             }
             eval(&x1, &mut fvec);
-            if fvec.iter().all(|v| v.abs() < 1e30) {
+            if !assert_hit() {
                 break;
             }
             lambda1 *= 0.655;
@@ -2616,31 +2617,29 @@ pub extern "C" fn rt_solve_nls(
             }
         }
         settled &= converged;
-        let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
-            if has_jac {
-                hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
-            } else {
-                hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
-            }
-        };
-        if !converged {
-            // `solveHybrd` reads whichever vector `solveHomotopy` overwrote with the
-            // point its entry phase settled on, so it restarts from that either way.
-            x.copy_from_slice(&nlsx);
-            converged = solve(&mut x, &mut fvec);
-        }
+        // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
         if !converged {
             stat_inc(STAT_NLS_RETRY);
-            x.copy_from_slice(&warm);
-            converged = solve(&mut x, &mut fvec);
+            // C's `discreteCall` is set for an initial system too; only an event call
+            // has relations to hold, so only there does the continuity flag move.
+            let mut set_cont = |c: bool| {
+                if saved_rel_fresh == 1 {
+                    unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+                }
+            };
+            converged = hybrd_c(
+                n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
+                &mut set_cont,
+            );
         }
-        drop(solve);
+        // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
+        // `nls_accept` takes only a point at tolerance, so none can report a non-root.
         if !converged {
             stat_inc(STAT_NLS_RETRY);
             x.copy_from_slice(&warm);
             converged = newton_solve(n, &mut x, &mut eval);
         }
-        // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
+        // An initial system gets a second `newtonAlgorithm`, from `x0`.
         if !converged && saved_rel_fresh == 2 {
             x.copy_from_slice(&guess);
             converged = newton_c(
@@ -2649,7 +2648,6 @@ pub extern "C" fn rt_solve_nls(
             )
             .0;
         }
-        // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
         if !converged {
             stat_inc(STAT_NLS_RETRY);
             converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
@@ -2677,22 +2675,6 @@ pub extern "C" fn rt_solve_nls(
                     break;
                 }
             }
-        }
-        // C's `NLS_MIXED`: whatever `solveHomotopy` leaves unsolved goes to the full
-        // `solveHybrd` ladder, which is where the hardest systems are actually solved.
-        if !converged {
-            stat_inc(STAT_NLS_RETRY);
-            // C's `discreteCall` is set for an initial system too; only an event call
-            // has relations to hold, so only there does the continuity flag move.
-            let mut set_cont = |c: bool| {
-                if saved_rel_fresh == 1 {
-                    unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
-                }
-            };
-            converged = hybrd_c(
-                n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
-                &mut set_cont,
-            );
         }
         converged
     };

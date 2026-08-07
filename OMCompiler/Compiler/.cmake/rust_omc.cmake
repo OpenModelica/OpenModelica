@@ -438,6 +438,29 @@ if(RUST_OMC_ENABLE_SUNDIALS)
 endif()
 
 # ---------------------------------------------------------------------------
+# Ipopt for `method="optimization"` (the classic dynamic-optimization runtime),
+# collected like the host SUNDIALS archives above. Host-only: MUMPS is Fortran 90,
+# so there is no wasm build and an in-wasm runtime reports the same
+# "Ipopt is needed but not available" a C runtime without OMC_HAVE_IPOPT does.
+# ---------------------------------------------------------------------------
+if(OM_OMC_ENABLE_OPTIMIZATION AND TARGET ipopt)
+  set(RUST_IPOPT_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-ipopt-native
+      CACHE PATH "Directory the host Ipopt archives are collected into.")
+  set(_native_ipopt_libs ipopt dmumps mumps_common seq metis)
+  set(_native_ipopt_files "")
+  foreach(_lib IN LISTS _native_ipopt_libs)
+    list(APPEND _native_ipopt_files $<TARGET_FILE:${_lib}>)
+  endforeach()
+  add_custom_target(rust_ipopt_native_collect
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_IPOPT_NATIVE_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${_native_ipopt_files} ${RUST_IPOPT_NATIVE_DIR}/lib/
+    DEPENDS ${_native_ipopt_libs}
+    COMMENT "Rust: collecting host Ipopt archives -> ${RUST_IPOPT_NATIVE_DIR}/lib/"
+    VERBATIM)
+endif()
+
+# ---------------------------------------------------------------------------
 # Preview1→preview2 reactor adapter (mandatory for FMI wasm FMU export).
 # ---------------------------------------------------------------------------
 set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
@@ -491,6 +514,10 @@ if(RUST_OMC_ENABLE_SUNDIALS)
          "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
          "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${SUNDIALS_INDEX_SIZE}")
   endif()
+endif()
+
+if(TARGET rust_ipopt_native_collect)
+  list(APPEND CARGO_ENV "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
 endif()
 
 # Source paths (fallback for raw cargo builds without CMake).
@@ -859,6 +886,9 @@ function(omc_rust_setup_codegen)
     if(TARGET rust_sundials_native_collect)
       add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
     endif()
+  endif()
+  if(TARGET rust_ipopt_native_collect)
+    add_dependencies(rust_libopenmodelica rust_ipopt_native_collect)
   endif()
 
   add_custom_target(rust_omc ALL

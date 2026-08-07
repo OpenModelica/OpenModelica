@@ -819,7 +819,7 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
         let ty = match &**a {
             A::SIMEXTARGSIZE { .. } => SigTy::Int,
             A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => {
-                sig_ty(type_).map_err(|e| e.to_string())?
+                sig_ty_quiet(type_).map_err(|e| e.to_string())?
             }
             _ => return Err("unsupported external-call argument".to_string()),
         };
@@ -833,7 +833,7 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
     match &**extReturn {
         A::SIMNOEXTARG => {}
         A::SIMEXTARG { type_, outputIndex, .. } => {
-            let t = sig_ty(type_).map_err(|e| e.to_string())?;
+            let t = sig_ty_quiet(type_).map_err(|e| e.to_string())?;
             if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize) {
                 return Err(format!("return type {t:?} cannot be marshalled"));
             }
@@ -911,7 +911,9 @@ fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Res
 /// `ty` is authoritative (its `dims` are complete); otherwise a non-empty
 /// `instDims` makes the scalar `ty` the element type of a rank-`|instDims|` array.
 fn variable_sigty(ty: &DAE::Type, inst_dims: &Arc<List<Arc<DAE::Dimension>>>) -> Result<SigTy> {
-    let base = sig_ty(ty)?;
+    // Quiet: `external_known`/`external_general` map a function's variables only to
+    // decide whether they can lower the call at all.
+    let base = sig_ty_quiet(ty)?;
     if matches!(base, SigTy::Array { .. }) {
         return Ok(base);
     }
@@ -923,8 +925,10 @@ fn variable_sigty(ty: &DAE::Type, inst_dims: &Arc<List<Arc<DAE::Dimension>>>) ->
     }
 }
 
-/// Map a `DAE.Type` to a `SigTy`, or fail for types not yet supported.
-pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
+/// Map a `DAE.Type` to a `SigTy`, or fail for types not yet supported. Without
+/// the diagnostic: callers that only *probe* a type must not report the ones they
+/// go on to handle.
+pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
     Ok(match ty {
         DAE::Type::T_INTEGER { .. } => SigTy::Int,
         DAE::Type::T_REAL { .. } => SigTy::Real,
@@ -938,7 +942,7 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
         // since Modelica arrays are rectangular.
         DAE::Type::T_ARRAY { ty, dims } => {
             let ndims = (&**dims).into_iter().count() as u32;
-            match sig_ty(ty)? {
+            match sig_ty_quiet(ty)? {
                 SigTy::Array { elem, rank } => SigTy::Array { elem, rank: rank + ndims },
                 elem => SigTy::Array { elem: Arc::new(elem), rank: ndims },
             }
@@ -957,12 +961,12 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
             match record_decl_fields(&path_str) {
                 Some(decl) => {
                     for (name, ty) in decl.iter() {
-                        fields.push((name.clone(), sig_ty(ty)?));
+                        fields.push((name.clone(), sig_ty_quiet(ty)?));
                     }
                 }
                 None => {
                     for v in &**varLst {
-                        fields.push((v.name.clone(), sig_ty(&v.ty)?));
+                        fields.push((v.name.clone(), sig_ty_quiet(&v.ty)?));
                     }
                 }
             }
@@ -971,14 +975,24 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
         // A function reference's argument/result types arrive MetaModelica-boxed
         // (C calls one boxed `boxptr_` shape); our closures are typed and pass
         // values unboxed, so the box is nothing.
-        DAE::Type::T_METABOXED { ty } => sig_ty(ty)?,
+        DAE::Type::T_METABOXED { ty } => sig_ty_quiet(ty)?,
         // A function reference: a closure handle, callable with the wrapped
         // function type's signature.
         DAE::Type::T_FUNCTION_REFERENCE_VAR { .. } | DAE::Type::T_FUNCTION_REFERENCE_FUNC { .. } => {
             closures::reference_sigty(ty)?
         }
         DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
-        other => return Err("CodegenWasmJit: type not supported"),
+        _ => return Err("CodegenWasmJit: type not supported"),
+    })
+}
+
+/// The wasm signature type of a DAE type, reporting the type it cannot handle.
+pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
+    sig_ty_quiet(ty).inspect_err(|_| {
+        let name = openmodelica_frontend_dump::TypesDump::unparseType(Arc::new(ty.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: type not supported: {name}"));
     })
 }
 
@@ -1131,6 +1145,9 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of the `terminal()` flag, raised by the driver for
     /// the run's final discrete update.
     pub(crate) terminal_off: u32,
+    /// `SimData` byte offset of the `initial()` flag, raised by the driver for
+    /// the initialization phase.
+    pub(crate) initial_off: u32,
     /// `SimData` byte offset of the fired `terminate(...)`'s message + source
     /// position (C's `TermMsg`/`TermInfo`).
     pub(crate) term_info_off: u32,
@@ -1266,6 +1283,8 @@ pub(crate) enum Attr {
     Nominal,
     Min,
     Max,
+    /// `start`, which the optimizer reads for the input variables (C's `u0`).
+    Start,
 }
 
 /// Where one variable's attribute lands: its entry in each nonlinear system that
@@ -1278,6 +1297,15 @@ pub(crate) struct AttrTargets {
     pub(crate) nom_offs: Vec<u32>,
     /// A state's `SimData` `max` slot, which the numeric linearization reads.
     pub(crate) max_offs: Vec<u32>,
+    /// The optimizer's per-real-variable attribute slots (C's
+    /// `realVarsData[i].attribute`, which it reads for every state, input and
+    /// constrained variable). Unlike the two above these take the value as it is:
+    /// no `fmax(|nominal|, 1e-32)` clamp, since the optimizer applies its own
+    /// heuristic.
+    pub(crate) opt_min_offs: Vec<u32>,
+    pub(crate) opt_max_offs: Vec<u32>,
+    pub(crate) opt_nom_offs: Vec<u32>,
+    pub(crate) start_offs: Vec<u32>,
 }
 
 /// The contiguous `SimData` slot range backing one scalarized array model
@@ -1606,6 +1634,7 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
         defaults: &[(u32, f64)],
+        int_defaults: &[(u32, i32)],
         attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
@@ -1613,6 +1642,11 @@ impl<'a> FnCtx<'a> {
             self.emit(we::Instruction::LocalGet(data));
             self.emit(we::Instruction::F64Const((*value).into()));
             self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+        }
+        for (off, value) in int_defaults {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Const(*value));
+            self.emit(we::Instruction::I32Store(mem_arg(*off, 2)));
         }
         if attrs.is_empty() {
             return Ok(());
@@ -1640,11 +1674,25 @@ impl<'a> FnCtx<'a> {
                     self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
                 }
             }
+            // The optimizer's attribute arrays take the value verbatim.
+            let opt_offs: &[u32] = match attr {
+                Attr::Min => &targets.opt_min_offs,
+                Attr::Max => &targets.opt_max_offs,
+                Attr::Nominal => &targets.opt_nom_offs,
+                Attr::Start => &targets.start_offs,
+            };
+            for off in opt_offs {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(raw));
+                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            }
             if targets.nls.is_empty() {
                 continue;
             }
             self.emit(we::Instruction::LocalGet(raw));
             match attr {
+                // `start` has no nonlinear-solver slot; it only feeds the optimizer.
+                Attr::Start => {}
                 // A nonpositive nominal would collapse the x-scaling; 1 stands in.
                 Attr::Nominal => {
                     self.emit(we::Instruction::F64Abs);
@@ -1662,6 +1710,8 @@ impl<'a> FnCtx<'a> {
                 Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
                 Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
                 Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+                // Not a solver input; `targets.nls` is empty for a `start`.
+                Attr::Start => continue,
             };
             for idx in &targets.nls {
                 self.emit(we::Instruction::GlobalGet(global));
@@ -1672,17 +1722,14 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Store each variable's `start` expression (`0.0` when it has none) at `off`,
-    /// and at `live_off` when the variable also has a live slot (a state, whose
-    /// `off` is its start attribute). The second store is C's `setAllVarsToStart`:
-    /// an initial equation reading a state before the initial system solves it
-    /// must see `start`, not zero.
+    /// Store each real variable's `start` expression (`0.0` when it has none) in
+    /// its start attribute slot at `off`.
     pub(crate) fn emit_init_start_values(
         &mut self,
-        starts: &[(Option<Arc<DAE::Exp>>, u32, Option<u32>)],
+        starts: &[(Option<Arc<DAE::Exp>>, u32)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
-        for (exp, off, live_off) in starts {
+        for (exp, off) in starts {
             self.emit(we::Instruction::LocalGet(data));
             match exp {
                 Some(e) => {
@@ -1691,16 +1738,7 @@ impl<'a> FnCtx<'a> {
                 }
                 None => self.emit(we::Instruction::F64Const(0.0f64.into())),
             }
-            if let Some(live) = live_off {
-                let v = self.alloc_temp(WTy::F64);
-                self.emit(we::Instruction::LocalTee(v));
-                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
-                self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::LocalGet(v));
-                self.emit(we::Instruction::F64Store(mem_arg(*live, 3)));
-            } else {
-                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
-            }
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
         }
         Ok(())
     }
@@ -2077,7 +2115,7 @@ fn compile_external_function(
         let is_out = ext_arg_output_index(a) != 0;
         Ok(match a {
             // An output array is pre-allocated and passed by pointer, like an input.
-            A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty(type_), Ok(SigTy::Array { .. })) => {
+            A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })) => {
                 Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
             }
             A::SIMEXTARG { .. } => None,
@@ -2133,7 +2171,7 @@ fn compile_external_function(
         }
         for a in &**extArgs {
             let oi = ext_arg_output_index(a);
-            let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty(type_), Ok(SigTy::Array { .. })));
+            let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })));
             if oi != 0 && scalar {
                 targets.push(oi - 1);
             }
@@ -3802,7 +3840,7 @@ fn compile_for(
     ty: &DAE::Type,
 ) -> Result<()> {
     if let DAE::Exp::RANGE { .. } = range {
-        if matches!(sig_ty(ty), Ok(SigTy::Int)) {
+        if matches!(sig_ty_quiet(ty), Ok(SigTy::Int)) {
             return compile_for_int_range(ctx, iter, range, body);
         }
     }
@@ -5450,7 +5488,10 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::BINARY { operator, .. } => operator_wty(operator)?,
         E::UNARY { operator, .. } => operator_wty(operator)?,
         E::IFEXP { expThen, .. } => exp_wty_hint(ctx, expThen)?,
-        E::CALL { attr, .. } => sig_ty(&attr.ty)?.wty(),
+        E::CALL { attr, .. } => match identity_builtin_arg(exp) {
+            Some(inner) if sig_ty_quiet(&attr.ty).is_err() => exp_wty_hint(ctx, &inner)?,
+            _ => sig_ty(&attr.ty)?.wty(),
+        },
         E::SHARED_LITERAL { exp, .. } => exp_wty_hint(ctx, exp)?,
         // Array/record handles and `size(a, d)` are `i32`; an array element's /
         // record field's wasm type comes from its element / field type.
@@ -5516,9 +5557,35 @@ fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
         | O::POW_SCALAR_ARRAY { ty }
         | O::POW_ARR { ty }
         | O::POW_ARR2 { ty } => ty,
-        other => return Err("CodegenWasmJit: cannot determine type of operator"),
+        _ => return Err("CodegenWasmJit: cannot determine type of operator"),
     };
-    sig_ty(ty)
+    sig_ty_quiet(ty)
+}
+
+/// The type an operator the frontend left untyped works on: whichever of String,
+/// Real or Integer an operand carries, in Modelica's promotion order.
+fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
+    let ops = [exp_sigty(e1).ok(), exp_sigty(e2).ok()];
+    for want in [SigTy::Str, SigTy::Real, SigTy::Int] {
+        if ops.iter().flatten().any(|s| *s == want) {
+            return Ok(want);
+        }
+    }
+    Err("CodegenWasmJit: cannot determine type of operator")
+}
+
+/// The value expression an identity builtin wraps. C's `daeExpCall` returns the
+/// argument's own expression for these, so the call's type *is* the argument's --
+/// which matters where the frontend left the call itself untyped.
+fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
+    let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
+    let name = AbsynUtil::pathLastIdent(path.clone()).ok()?;
+    let args: Vec<&Arc<DAE::Exp>> = (&**expLst).into_iter().collect();
+    match (name.as_str(), args.len()) {
+        ("smooth", 2) => Some(args[1].clone()),
+        ("noEvent", 1) | ("$getPart", 1) => Some(args[0].clone()),
+        _ => None,
+    }
 }
 
 /// The `SigTy` of an expression, from the DAE type annotations it carries (the
@@ -5533,17 +5600,23 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::BCONST { .. } => SigTy::Bool,
         E::RCONST { .. } => SigTy::Real,
         E::SCONST { .. } => SigTy::Str,
-        E::CREF { ty, .. } => sig_ty(ty)?,
-        E::CALL { attr, .. } => sig_ty(&attr.ty)?,
-        E::CAST { ty, .. } => sig_ty(ty)?,
+        E::CREF { ty, .. } => sig_ty_quiet(ty)?,
+        E::CALL { attr, .. } => match sig_ty_quiet(&attr.ty) {
+            Ok(s) => s,
+            Err(e) => match identity_builtin_arg(exp) {
+                Some(inner) => exp_sigty(&inner)?,
+                None => return Err(e),
+            },
+        },
+        E::CAST { ty, .. } => sig_ty_quiet(ty)?,
         E::BINARY { operator, .. } | E::UNARY { operator, .. } => operator_sigty(operator)?,
         E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. } => SigTy::Bool,
         E::IFEXP { expThen, .. } => exp_sigty(expThen)?,
         E::SHARED_LITERAL { exp, .. } => exp_sigty(exp)?,
         // Array-valued expressions carry their (array) type directly.
-        E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => sig_ty(ty)?,
+        E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => sig_ty_quiet(ty)?,
         // A reduction's result type is its element/fold type.
-        E::REDUCTION { reductionInfo, .. } => sig_ty(&reductionInfo.exprType)?,
+        E::REDUCTION { reductionInfo, .. } => sig_ty_quiet(&reductionInfo.exprType)?,
         // `a[subs]`: subscripting reduces the rank by the number of subscripts
         // (a full index yields the scalar element).
         E::ASUB { exp, sub } => {
@@ -5560,12 +5633,12 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::SIZE { sz: Some(_), .. } => SigTy::Int,
         E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
         // A record constructor / field access carry their type directly.
-        E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty(ty)?,
-        E::TSUB { ty, .. } => sig_ty(ty)?,
+        E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty_quiet(ty)?,
+        E::TSUB { ty, .. } => sig_ty_quiet(ty)?,
         // A function reference: what the value it produces may be called with.
         E::PARTEVALFUNCTION { ty, .. } => closures::reference_sigty(ty)?,
         E::BOX { exp } => exp_sigty(exp)?,
-        E::UNBOX { ty, .. } => sig_ty(ty)?,
+        E::UNBOX { ty, .. } => sig_ty_quiet(ty)?,
         other => return Err("CodegenWasmJit: cannot determine type of expression"),
     })
 }
@@ -5573,7 +5646,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
 fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<WTy> {
     // Array negation `-a`: negate every element into a fresh array.
     if let DAE::Operator::UMINUS_ARR { ty } = op {
-        let SigTy::Array { elem, .. } = sig_ty(ty)? else {
+        let SigTy::Array { elem, .. } = sig_ty_quiet(ty)? else {
             return Err("CodegenWasmJit: UMINUS_ARR with non-array type");
         };
         let rt = if elem.wty() == WTy::F64 { "rt_array_neg_f64" } else { "rt_array_neg_i32" };
@@ -5588,7 +5661,7 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
     let DAE::Operator::UMINUS { ty } = op else {
         return Err("CodegenWasmJit: unsupported unary operator");
     };
-    let wty = sig_ty(ty)?.wty();
+    let wty = sig_ty_quiet(ty)?.wty();
     let w = compile_exp(ctx, exp)?;
     coerce(ctx, w, wty);
     match wty {
@@ -5633,16 +5706,35 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
         O::POW_SCALAR_ARRAY { ty } => return compile_array_scalar(ctx, e1, e2, OP_POW, true, ty),
         _ => {}
     }
+    // C's `daeExpBinary` reads the operator's own type only to tell a String `+`
+    // from arithmetic, and otherwise works off the operands' C types; the new
+    // frontend leaves some operators `T_UNKNOWN`, so fall back the same way.
+    let sig = match operator_sigty(op) {
+        Ok(s) => s,
+        Err(_) => operand_sigty(e1, e2).map_err(|e| {
+            let show = |x: &DAE::Exp| {
+                openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+                    .map(|s| s.to_string())
+                    .unwrap_or_default()
+            };
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: untyped binary operator between `{}` and `{}`",
+                show(e1),
+                show(e2)
+            ));
+            e
+        })?,
+    };
     // String `+` is concatenation: both operands are String handles, the result
     // is a fresh String handle from the runtime.
-    if operator_sigty(op)? == SigTy::Str {
+    if sig == SigTy::Str {
         let O::ADD { .. } = op else {
             return Err("CodegenWasmJit: unsupported String operator");
         };
         str_binop(ctx, e1, e2, "rt_concat")?;
         return Ok(WTy::I32);
     }
-    let wty = operator_wty(op)?;
+    let wty = sig.wty();
     // POW has no wasm instruction. Mirror the C target's scalar-power dispatch
     // exactly: a literal `0.5` exponent is `sqrt` (with a negative-base check),
     // an integer-literal exponent is exponentiation by squaring
@@ -5714,8 +5806,13 @@ fn compile_relation(
 ) -> Result<WTy> {
     use DAE::Operator as O;
     // String comparisons go through the runtime: equality via `rt_streq`,
-    // ordering via `rt_strcmp` (which returns -1/0/1) compared against 0.
-    if relation_operand_sigty(op)? == SigTy::Str {
+    // ordering via `rt_strcmp` (which returns -1/0/1) compared against 0. As for
+    // the arithmetic operators, an untyped relation takes its operands' type.
+    let sig = match relation_operand_sigty(op) {
+        Ok(s) => s,
+        Err(_) => operand_sigty(e1, e2)?,
+    };
+    if sig == SigTy::Str {
         match op {
             O::EQUAL { .. } => str_binop(ctx, e1, e2, "rt_streq")?,
             O::NEQUAL { .. } => {
@@ -5961,9 +6058,9 @@ fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
         O::LESS { ty } | O::LESSEQ { ty } | O::GREATER { ty } | O::GREATEREQ { ty } | O::EQUAL { ty } | O::NEQUAL { ty } => ty,
-        other => return Err("CodegenWasmJit: not a relational operator"),
+        _ => return Err("CodegenWasmJit: not a relational operator"),
     };
-    sig_ty(ty)
+    sig_ty_quiet(ty)
 }
 
 /// Compile a `CALL`, leaving its result value(s) on the stack; returns their
@@ -6006,7 +6103,7 @@ fn compile_call(
     // A call whose result is a record and which is not a generated function is a
     // record constructor `R(v1, …)` (the constructor function itself is not
     // emitted — construction is lowered inline).
-    if let Ok(rty @ SigTy::Record { .. }) = sig_ty(&attr.ty) {
+    if let Ok(rty @ SigTy::Record { .. }) = sig_ty_quiet(&attr.ty) {
         compile_record_call(ctx, &attr.ty, args)?;
         return Ok(vec![rty]);
     }
@@ -6228,7 +6325,7 @@ fn compile_math_builtin(
         return Ok(sig);
     }
 
-    let result_sig = sig_ty(&attr.ty).unwrap_or(SigTy::Real);
+    let result_sig = sig_ty_quiet(&attr.ty).unwrap_or(SigTy::Real);
     let result_wty = result_sig.wty();
 
     // Event forms (trailing index) get held/refresh semantics; plain arities fall
@@ -6648,6 +6745,15 @@ fn compile_math_builtin(
         "terminal" => {
             need_args(&argv, 0, name)?;
             let (data, off) = { let s = ctx.sim()?; (s.data_local, s.terminal_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            Ok(SigTy::Bool)
+        }
+        // `initial()` — C's `simulationInfo->initial`, true for the whole
+        // initialization phase.
+        "initial" => {
+            need_args(&argv, 0, name)?;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.initial_off) };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
             Ok(SigTy::Bool)

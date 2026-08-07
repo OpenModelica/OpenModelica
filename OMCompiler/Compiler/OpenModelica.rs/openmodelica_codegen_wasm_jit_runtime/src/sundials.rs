@@ -21,6 +21,9 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         alarm: true,
         // No regex engine in wasm; the model's own filter is resolved at codegen.
         variable_filter: false,
+        // Ipopt has no wasm build (MUMPS is Fortran), so `method="optimization"`
+        // reports "Ipopt is needed but not available." here.
+        optimization: false,
     }
 }
 
