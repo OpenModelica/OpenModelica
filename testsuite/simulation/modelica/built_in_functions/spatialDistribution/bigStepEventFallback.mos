@@ -1,0 +1,64 @@
+// name:                bigStepEventFallback.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f bigStepEventFallback*
+//
+// Belt whose initial profile already contains one genuine discrete jump
+// (100 -> 285 at the mid-point), combined with a fixed Euler step spanning
+// more than one transport length in a single accepted step. This forces
+// findOppositeEndSpatialDistribution() into its "Step 0" shortcut while
+// storedEventsList still holds pending events (issue #16182).
+
+loadModel(Modelica); getErrorString();
+loadString("
+  model bigStepEventFallback
+    extends Modelica.Icons.Example;
+    Real leftInput = 285.0;
+    Real rightInput = 285.0;
+    Real leftOutput;
+    Real rightOutput;
+    constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 0.5, 0.5, 1.0};
+    constant Real[:] initialValues = {100.0, 100.0, 285.0, 285.0};
+    Real v = 5;
+    Boolean posV;
+    Real x(start=0, fixed=true);
+  equation
+    v = der(x);
+    posV = v >= 0;
+    (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+  end bigStepEventFallback;"); getErrorString();
+
+// Simulate: 2 fixed Euler steps of 0.5s each => x jumps 0 -> 2.5 -> 5.0,
+// i.e. 2.5 transport lengths per accepted step.
+simulate(bigStepEventFallback, startTime=0, stopTime=1.0, numberOfIntervals=2, method="euler"); getErrorString();
+
+val(leftOutput, 0.0);
+val(rightOutput, 0.0);
+val(leftOutput, 0.5);
+val(rightOutput, 0.5);
+val(leftOutput, 1.0);
+val(rightOutput, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bigStepEventFallback_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'bigStepEventFallback', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | warning | Need to output more then one event from spatialDistribution. Step size to big!
+// |                 | |       | | time: 0.500000, spatialDistribution index: 0, number of events: 2
+// LOG_STDOUT        | warning | Removed more then one event from spatialDistribution. Step size to big!
+// |                 | |       | | time: 0.500000, spatialDistribution index: 0, number of events: 2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 100.0
+// 285.0
+// 285.0
+// 285.0
+// 285.0
+// 285.0
+// endResult

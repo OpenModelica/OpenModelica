@@ -13,6 +13,9 @@ TESTFILES = \
 	test1.mos \
 	test2.mos \
 	test3.mos \
+	bigStepEventFallback.mos \
+	doubleReversal.mos \
+	largePositionReversal.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
