@@ -62,7 +62,8 @@ use crate::CodegenWasmJitFunctions::{
     ClockInit, ClockUpdate,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
-    external_general, function_signature, rt_index, sim_cref_key, sim_const_store,
+    external_general_why, note_declined_external, reset_declined_externals,
+    function_signature, rt_index, sim_cref_key, sim_const_store,
     emit_sim_const_stores,
 };
 
@@ -2924,12 +2925,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     }
 
     // --- Collect the model's Modelica functions (callable from equations). ---
+    reset_declined_externals();
     let model_fns: Vec<&SimCodeFunction::Function::Function> = lst(&mi.functions)
         .map(|f| &**f)
         .filter(|f| {
-            matches!(f, SimCodeFunction::Function::Function::FUNCTION { .. })
-                || external_known(f)
-                || external_general(f)
+            if matches!(f, SimCodeFunction::Function::Function::FUNCTION { .. }) || external_known(f) {
+                return true;
+            }
+            match external_general_why(f) {
+                Ok(()) => true,
+                Err(why) => {
+                    note_declined_external(f, why);
+                    false
+                }
+            }
         })
         .collect();
 
@@ -2939,7 +2948,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let mut ext_imports: Vec<ExtCallSig> = Vec::new();
     let mut ext_seen: HashSet<String> = HashSet::new();
     for f in &model_fns {
-        if external_general(f) {
+        if external_general_why(f).is_ok() {
             let sig = external_import_sig(f)?;
             if ext_seen.insert(sig.name.clone()) {
                 ext_imports.push(sig);

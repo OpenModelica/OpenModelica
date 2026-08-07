@@ -330,8 +330,14 @@ fn define_external_imports(
             sig.wasm_params().iter().map(|s| wty_valtype(s.wty())),
             sig.wasm_results().iter().map(|s| wty_valtype(s.wty())),
         );
-        let addr = openmodelica_util::dynload::external_symbol(&sig.name)
-            .ok_or_else(|| "external \"C\" function not found in any loaded library")?;
+        let addr = openmodelica_util::dynload::external_symbol(&sig.name).ok_or_else(|| {
+            crate::set_engine_error_detail(format!(
+                "  `{}` is in none of the loaded libraries — the wasm-jit target cannot \
+                 build a model's own external C sources",
+                sig.name,
+            ));
+            "external \"C\" function not found in any loaded library"
+        })?;
         let name = sig.name.clone();
         let sig = sig.clone();
         let rt_str_new = rt_str_new.clone();
@@ -417,6 +423,9 @@ fn zero_results(
 /// the registry, and `char*` outputs copied into a fresh in-wasm String
 /// (`rt_str_new`+`rt_str_data`). The whole call is bracketed by
 /// `sim_external_begin/end` so any `ModelicaAllocateString` uses our arena.
+///
+/// A `FORTRAN 77` external takes every argument by reference and its arrays
+/// column-major — the marshalling `extFunCallF77` puts in the generated wrapper.
 unsafe fn call_external(
     addr: usize,
     sig: &crate::sig::ExtCallSig,
@@ -451,12 +460,17 @@ unsafe fn call_external(
         F(f64),
         P(*mut c_void),
     }
+    let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut slots: Vec<Slot> = Vec::with_capacity(sig.args.len());
     let mut cstrings: Vec<std::ffi::CString> = Vec::new();
     let mut types: Vec<Type> = Vec::with_capacity(sig.args.len());
     // One 8-byte native cell per `_Out_` pointer arg (fits int/double/pointer),
     // in output order; the C call writes through the pointer we pass.
     let mut out_cells: Vec<(SigTy, Box<[u8; 8]>)> = Vec::new();
+    // Fortran by-reference input cells, kept alive for the call.
+    let mut in_cells: Vec<Box<[u8; 8]>> = Vec::new();
+    // (buffer, wasm element-area offset, dims, element size, is output).
+    let mut f77_arrays: Vec<(Vec<u8>, usize, Vec<usize>, usize, bool)> = Vec::new();
     let mut in_i = 0usize;
     // Phase 1: build the C argument list. Reads wasm memory for Str/Array inputs;
     // the borrow ends with this block (only owned copies / raw addresses escape).
@@ -475,6 +489,18 @@ unsafe fn call_external(
             }
             let v = &args[in_i];
             in_i += 1;
+            // Fortran passes scalars by reference; give each one a native cell.
+            if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+                let mut cell: Box<[u8; 8]> = Box::new([0u8; 8]);
+                match ty {
+                    SigTy::Real => cell[..8].copy_from_slice(&v.unwrap_f64().to_le_bytes()),
+                    _ => cell[..4].copy_from_slice(&v.unwrap_i32().to_le_bytes()),
+                }
+                slots.push(Slot::P(cell.as_mut_ptr() as *mut c_void));
+                types.push(Type::pointer());
+                in_cells.push(cell);
+                continue;
+            }
             match ty {
                 SigTy::Real => {
                     slots.push(Slot::F(v.unwrap_f64()));
@@ -502,12 +528,22 @@ unsafe fn call_external(
                 // Array: a native pointer to the runtime array's contiguous
                 // row-major data (`align8(16 + ndims*4)` past the header). The C
                 // callee reads it in place; the memory can't grow during the call.
-                SigTy::Array { .. } => {
+                // A rank-2-or-higher Fortran array goes as a column-major copy.
+                SigTy::Array { elem, .. } => {
                     let off = v.unwrap_i32() as usize;
-                    let ndims = u32::from_le_bytes(mem[off + 8..off + 12].try_into().unwrap()) as usize;
-                    let data_off = (16 + ndims * 4 + 7) & !7;
-                    let native = mem.as_ptr() as usize + off + data_off;
-                    slots.push(Slot::P(native as *mut c_void));
+                    let (dims, data_off) = crate::host::array_abi::dims_and_data(mem, off)
+                        .ok_or("external \"C\" : malformed array argument")?;
+                    let base = off + data_off;
+                    if fortran && dims.len() > 1 {
+                        let esz = crate::host::array_abi::elem_size(elem);
+                        let n = dims.iter().product::<usize>() * esz;
+                        let mut buf = vec![0u8; n];
+                        crate::host::array_abi::reorder(&mem[base..base + n], &mut buf, &dims, esz, true);
+                        slots.push(Slot::P(buf.as_mut_ptr() as *mut c_void));
+                        f77_arrays.push((buf, base, dims, esz, *is_out));
+                    } else {
+                        slots.push(Slot::P((mem.as_ptr() as usize + base) as *mut c_void));
+                    }
                     types.push(Type::pointer());
                 }
                 other => return Err("CodegenWasmJit: external \"C\" : input argument type not yet marshalled"),
@@ -559,6 +595,16 @@ unsafe fn call_external(
         return Err("CodegenWasmJit: external \"C\" raised a runtime error");
     }
     openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
+
+    // C's `convert_alloc_*_from_f77`.
+    {
+        let mem = memory.data_mut(&mut *caller);
+        for (buf, base, dims, esz, is_out) in &f77_arrays {
+            if *is_out {
+                crate::host::array_abi::reorder(buf, &mut mem[*base..*base + buf.len()], dims, *esz, false);
+            }
+        }
+    }
 
     // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
     // offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is

@@ -96,7 +96,7 @@ fn unknown_variable(name: &str) -> &'static str {
 // trait rather than an inherent method.
 pub(crate) use openmodelica_sim_meta::WTy;
 use openmodelica_sim_meta::clock_field;
-pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, FnSig, SigTy, WTyVal};
+pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, ExtLang, FnSig, SigTy, WTyVal};
 
 /// Parse one `.wasm.sig` line into a list of [`SigTy`]s (see [`SigTy::write_code`]
 /// for the encoding). Types are concatenated without separators; an `'['`
@@ -737,62 +737,116 @@ fn supported_external(ext_name: &str, ins: &[SigTy], out: &SigTy) -> bool {
     }
 }
 
-/// A general external function routed to an `ext.<extName>` host import: a
-/// single return (the C return value), all-input args, whose `extName` is NOT a
-/// known builtin ([`external_known`]). Inputs and the output must each be a
-/// marshallable kind — scalar (Real/Integer/Boolean), `String` (→ `char*`), or an
-/// external object (→ `void*`). Arrays and output-pointer args are handled once
-/// [`external_import_sig`]/the trampoline learn `SIMEXTARGSIZE` (see HANDOFF T1).
+/// The declared-output slot an `extArgs` entry writes, 1-based as `SimExtArg`
+/// records it; 0 for an input-side argument. `isInput` does *not* answer this: a
+/// protected `biVars` local is `isInput = false, outputIndex = 0` and passed in.
+fn ext_arg_output_index(a: &SimCodeFunction::SimExtArg::SimExtArg) -> usize {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    match a {
+        A::SIMEXTARG { outputIndex, .. } | A::SIMEXTARGSIZE { outputIndex, .. } => (*outputIndex).max(0) as usize,
+        _ => 0,
+    }
+}
+
+/// The external calling convention of `language`, or `None` for one we do not
+/// lower. `"BUILTIN"` shares C's convention, as in `extFunCall`.
+fn ext_lang(language: &str) -> Option<ExtLang> {
+    match language {
+        "C" | "BUILTIN" => Some(ExtLang::C),
+        "FORTRAN 77" => Some(ExtLang::Fortran77),
+        _ => None,
+    }
+}
+
+thread_local! {
+    /// Externals left out of the module, by Modelica identifier, with why. A call
+    /// to one reports that instead of failing as an unknown builtin — the name
+    /// reaching [`compile_math_builtin`] looks the same either way.
+    static DECLINED_EXTERNALS: std::cell::RefCell<HashMap<String, String>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+pub(crate) fn reset_declined_externals() {
+    DECLINED_EXTERNALS.with(|d| d.borrow_mut().clear());
+}
+
+pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
+    let Ok(ident) = AbsynUtil::pathLastIdent(name.clone()) else { return };
+    DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
+}
+
+fn declined_external_reason(ident: &str) -> Option<String> {
+    DECLINED_EXTERNALS.with(|d| d.borrow().get(ident).cloned())
+}
+
+/// A general external function routed to an `ext.<extName>` host import: one
+/// whose `extName` is not a known builtin ([`external_known`]). Every value
+/// crossing the C boundary must be a marshallable kind — scalar
+/// (Real/Integer/Boolean), `String` (→ `char*`), an external object (→ `void*`),
+/// or an array (→ a pointer to its data); only the return value may not be an
+/// array.
 pub(crate) fn external_general(f: &SimCodeFunction::Function::Function) -> bool {
+    external_general_why(f).is_ok()
+}
+
+/// [`external_general`] with the rejection reason, for the diagnostics the
+/// unlowered call site reports.
+pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> std::result::Result<(), String> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
     if external_known(f) {
-        return false;
+        return Err("lowered as a known math/string builtin".to_string());
     }
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, extReturn, extArgs, .. } = f else {
-        return false;
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, biVars, extReturn, extArgs, language, .. } = f else {
+        return Err("not an external function".to_string());
     };
-    // Inputs may be scalars, strings, external objects, or arrays (passed as a
-    // native data pointer). Outputs (the C return value and any `_Out_` pointer
-    // args) must be scalar / string / extObj — an array output would need
-    // copy-back marshalling (not yet).
-    let in_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. });
-    // Output args may also be arrays (filled in place / copied back); the C return
-    // value may not (no array returns).
-    let out_arg_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. });
-    let out_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr);
-    let mut n_out_args = 0usize;
+    if ext_lang(language).is_none() {
+        return Err(format!("external language \"{language}\" is not supported"));
+    }
+    let arg_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. });
+    let ret_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr);
+    let n_out = (&**outVars).into_iter().count();
+    // Each declared output is written by at most one `extArgs` entry (or the
+    // return value); one left unwritten keeps its binding, as in the C target.
+    let mut written = vec![false; n_out];
+    let mut claim = |oi: usize| -> bool {
+        if oi == 0 {
+            return true;
+        }
+        oi <= n_out && !std::mem::replace(&mut written[oi - 1], true)
+    };
     for a in &**extArgs {
-        match &**a {
-            A::SIMEXTARG { isInput: true, type_, .. } => match sig_ty(type_) {
-                Ok(t) if in_ok(&t) => {}
-                _ => return false,
-            },
-            A::SIMEXTARG { isInput: false, type_, .. } => {
-                match sig_ty(type_) {
-                    Ok(t) if out_arg_ok(&t) => {}
-                    _ => return false,
-                }
-                n_out_args += 1;
+        let ty = match &**a {
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => {
+                sig_ty(type_).map_err(|e| e.to_string())?
             }
-            A::SIMEXTARGEXP { .. } | A::SIMEXTARGSIZE { isInput: true, .. } => {}
-            _ => return false,
+            _ => return Err("unsupported external-call argument".to_string()),
+        };
+        if !arg_ok(&ty) {
+            return Err(format!("argument type {ty:?} cannot be marshalled"));
+        }
+        if !claim(ext_arg_output_index(a)) {
+            return Err("an argument writes an output the function does not declare".to_string());
         }
     }
-    let n_ret = match &**extReturn {
-        A::SIMNOEXTARG => 0,
-        A::SIMEXTARG { type_, .. } => match sig_ty(type_) {
-            Ok(t) if out_ok(&t) => 1,
-            _ => return false,
-        },
-        _ => return false,
-    };
-    let Ok(ins) = var_sigtys(funArgs) else { return false };
-    if !ins.iter().all(in_ok) {
-        return false;
+    match &**extReturn {
+        A::SIMNOEXTARG => {}
+        A::SIMEXTARG { type_, outputIndex, .. } => {
+            let t = sig_ty(type_).map_err(|e| e.to_string())?;
+            if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize) {
+                return Err(format!("return type {t:?} cannot be marshalled"));
+            }
+        }
+        _ => return Err("unsupported external return".to_string()),
     }
-    // One wasm result per output (return value + each `_Out_` pointer), matching
-    // the external function's declared outputs.
-    (&**outVars).into_iter().count() == n_ret + n_out_args
+    for (what, vars) in [("input", funArgs), ("output", outVars), ("protected variable", biVars)] {
+        let tys = var_sigtys(vars).map_err(|e| format!("{what}: {e}"))?;
+        if let Some(t) = tys.iter().find(|t| !arg_ok(t)) {
+            return Err(format!("{what} of type {t:?} is not supported"));
+        }
+    }
+    Ok(())
 }
 
 /// The C-call shape ([`ExtCallSig`]) of a general external function, for its
@@ -800,26 +854,31 @@ pub(crate) fn external_general(f: &SimCodeFunction::Function::Function) -> bool 
 /// wrapper's own signature).
 pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, .. } = f else {
         return Err("CodegenWasmJit: external_import_sig on a non-external function");
     };
+    let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
     let mut args: Vec<(SigTy, bool)> = Vec::new();
     for a in &**extArgs {
-        let (ty, is_out) = match &**a {
+        let ty = match &**a {
             // A `size(array, dim)` argument is a C `int` dimension (input).
-            A::SIMEXTARGSIZE { .. } => (SigTy::Int, false),
-            A::SIMEXTARG { type_, isInput, .. } => (sig_ty(type_)?, !*isInput),
-            A::SIMEXTARGEXP { type_, .. } => (sig_ty(type_)?, false),
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
             other => return Err("CodegenWasmJit: unsupported external-call argument"),
         };
-        args.push((ty, is_out));
+        args.push((ty, ext_arg_output_index(a) != 0));
     }
     let ret = match &**extReturn {
         A::SIMNOEXTARG => None,
         A::SIMEXTARG { type_, .. } => Some(sig_ty(type_)?),
         other => return Err("CodegenWasmJit: unsupported external return"),
     };
-    Ok(ExtCallSig { name: extName.to_string(), args, ret })
+    // Fortran symbols carry a trailing underscore, as `extFunCallF77` emits.
+    let name = match lang {
+        ExtLang::C => extName.to_string(),
+        ExtLang::Fortran77 => format!("{extName}_"),
+    };
+    Ok(ExtCallSig { name, lang, args, ret })
 }
 
 /// The input/output scalar `SigTy`s of the main function, for the sidecar.
@@ -1944,18 +2003,17 @@ pub(crate) fn compile_function(
     Ok(func)
 }
 
-/// Lower a known scalar-math `external "C"`/"builtin" function (see
-/// [`external_known`]) to a wasm function body that calls the corresponding host
-/// builtin: `output := extName(extArgs…)`. The inputs are the wasm parameters;
-/// the external-call arguments (`extArgs`) reference them (or are constant
-/// expressions). Only the return-value form is reached here.
+/// Lower an `external "C"`/`"builtin"`/`"FORTRAN 77"` function to the wasm
+/// equivalent of C's `functionBodyExternalFunction`: allocate and bind the
+/// outputs and the protected `biVars` locals, call `extName` over `extArgs`,
+/// then copy the results into the outputs.
 fn compile_external_function(
     f: &SimCodeFunction::Function::Function,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, extName, extArgs, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, biVars, extName, extArgs, extReturn, .. } = f else {
         return Err("CodegenWasmJit: compile_external_function on a non-external function");
     };
     // Only for the mismatch diagnostics below.
@@ -1980,27 +2038,49 @@ fn compile_external_function(
         let slot = intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
         outputs.push(slot);
     }
+    for v in &**biVars {
+        intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+    }
 
     let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
-    for (slot, elem, dims) in &array_allocs {
-        emit_array_alloc(&mut ctx, *slot, elem, dims)?;
+    // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
+    // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
+    // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
+    let lang = external_import_sig(f).map(|s| s.lang).unwrap_or(ExtLang::C);
+    let ordered: Vec<&Arc<SimCodeFunction::Variable::Variable>> = match lang {
+        ExtLang::Fortran77 => (&**biVars).into_iter().chain(&**outVars).collect(),
+        ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
+    };
+    for v in ordered {
+        let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v else {
+            continue;
+        };
+        let slot = var_name_ty(v).ok().and_then(|(n, _)| ctx.locals.get(&n).cloned());
+        if let Some((slot, SigTy::Array { elem, .. })) = slot
+            && let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot)
+        {
+            let (_, _, dims) = array_allocs.remove(k);
+            emit_array_alloc(&mut ctx, slot, &elem, &dims)?;
+        }
+        if *bind_from_outside {
+            continue;
+        }
+        let Some(val) = value else { continue };
+        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        compile_assign(&mut ctx, &lhs, val)?;
     }
 
     // Lower an extArg to the argument expression it contributes to the C call.
-    // `_Out_` pointer args (`isInput: false`) contribute no wasm argument — their
-    // value comes back as a call result — so `None` skips them.
+    // A scalar/String `_Out_` arg contributes none — its value comes back as a
+    // call result — so `None` skips it.
     let lower_arg = |a: &A| -> Result<Option<Arc<DAE::Exp>>> {
+        let is_out = ext_arg_output_index(a) != 0;
         Ok(match a {
-            // An output array is pre-allocated and passed by pointer (like an input);
-            // a scalar/string `_Out_` arg contributes no wasm argument (its value
-            // comes back as a call result).
-            A::SIMEXTARG { isInput: false, cref, type_, .. } if matches!(sig_ty(type_), Ok(SigTy::Array { .. })) => {
+            // An output array is pre-allocated and passed by pointer, like an input.
+            A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty(type_), Ok(SigTy::Array { .. })) => {
                 Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
             }
-            A::SIMEXTARG { isInput: false, .. } => None,
-            A::SIMEXTARG { cref, type_, .. } => {
-                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
-            }
+            A::SIMEXTARG { .. } => None,
             A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
             // `size(array, dim)`: `cref`+`type_` are the array (full type), `exp`
             // is the 1-based dimension index. Lower as a `size(cref, exp)`
@@ -2033,26 +2113,42 @@ fn compile_external_function(
         // (the C return value first, then each `_Out_` scalar/string pointer's
         // value). Array outputs are filled in place / copied back by the host, so
         // they are not results — their locals are already populated. The results
-        // land on the stack in order; store them into the non-array outputs
-        // back-to-front.
-        // Per-arg SigTy, so the shared-memory path knows which args are String/array.
-        let arg_types = external_import_sig(f)?.wasm_params();
-        let results = emit_general_external_call(&mut ctx, extName, &input_args, &arg_types)?;
-        let scalar_outs: Vec<usize> = (0..ctx.outputs.len())
-            .filter(|&i| !matches!(ctx.outputs[i].1, SigTy::Array { .. }))
-            .collect();
-        if results.len() != scalar_outs.len() {
+        // land on the stack in order, so they are stored back-to-front into the
+        // declared outputs their `outputIndex` names.
+        let sig = external_import_sig(f)?;
+        // No host trampoline there, so nowhere to do the Fortran conversions.
+        if sig.lang == ExtLang::Fortran77 && EXTERNALS_SHARED.with(|c| c.get()) {
             openmodelica_wasm_jit::set_engine_error_detail(format!(
-                "  {}, external `{extName}`: the call returns {} value(s), the function \
-                 declares {} scalar output(s)",
+                "  {}: external \"FORTRAN 77\" is not available in a shared-memory wasm FMU",
+                fn_path(),
+            ));
+            return Err("CodegenWasmJit: external \"FORTRAN 77\" in a shared-memory module");
+        }
+        let results = emit_general_external_call(&mut ctx, &sig.name, &input_args, &sig.wasm_params())?;
+        // The declared output each wasm result feeds, in result order: the C
+        // return value first, then each scalar/String `_Out_` arg.
+        let mut targets: Vec<usize> = Vec::new();
+        if let A::SIMEXTARG { outputIndex, .. } = &**extReturn {
+            targets.push(*outputIndex as usize - 1);
+        }
+        for a in &**extArgs {
+            let oi = ext_arg_output_index(a);
+            let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty(type_), Ok(SigTy::Array { .. })));
+            if oi != 0 && scalar {
+                targets.push(oi - 1);
+            }
+        }
+        if results.len() != targets.len() {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{extName}`: the call returns {} value(s) for {} scalar output(s)",
                 fn_path(),
                 results.len(),
-                scalar_outs.len(),
+                targets.len(),
             ));
             return Err("CodegenWasmJit: external scalar-return/output count mismatch");
         }
-        for k in (0..scalar_outs.len()).rev() {
-            let (out_idx, out_sty) = ctx.outputs[scalar_outs[k]].clone();
+        for k in (0..targets.len()).rev() {
+            let (out_idx, out_sty) = ctx.outputs[targets[k]].clone();
             if results[k].wty() != out_sty.wty() {
                 openmodelica_wasm_jit::set_engine_error_detail(format!(
                     "  {}, external `{extName}`: output {k} is {:?} in the C call but \
@@ -2556,8 +2652,10 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
     };
     let lhs_v: Vec<&Arc<DAE::Exp>> = (&**lhs).into_iter().collect();
     let results = compile_call(ctx, path, expLst, attr)?;
-    if results.len() != lhs_v.len() {
-        return Err("CodegenWasmJit: tuple assignment arity mismatch");
+    // Trailing outputs the statement does not name are dropped, as in
+    // `algStmtTupleAssign`.
+    if results.len() < lhs_v.len() {
+        return Err("CodegenWasmJit: tuple assignment names more targets than the call returns");
     }
     // Pop the results into temps (the last result is on top of the stack).
     let mut temps = vec![0u32; results.len()];
@@ -2565,6 +2663,12 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
         let vt = ctx.alloc_temp(results[i].wty());
         ctx.emit(we::Instruction::LocalSet(vt));
         temps[i] = vt;
+    }
+    for i in lhs_v.len()..results.len() {
+        if let Some(release_fn) = results[i].release_fn() {
+            ctx.emit(we::Instruction::LocalGet(temps[i]));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
     }
     for (i, lhs_exp) in lhs_v.iter().enumerate() {
         let sty = &results[i];
@@ -6630,12 +6734,20 @@ fn compile_math_builtin(
                 None => return Err("CodegenWasmJit: der() is only supported in simulation mode"),
             }
         }
-        other => {
-            crate::CodegenWasmJit::record_error(format!(
-                "CodegenWasmJit: builtin function not yet supported: {other}"
-            ));
-            Err("CodegenWasmJit: builtin function not yet supported")
-        }
+        other => match declined_external_reason(other) {
+            Some(why) => {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: external function not lowered: {other} ({why})"
+                ));
+                Err("CodegenWasmJit: external function not lowered")
+            }
+            None => {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: builtin function not yet supported: {other}"
+                ));
+                Err("CodegenWasmJit: builtin function not yet supported")
+            }
+        },
     }
 }
 

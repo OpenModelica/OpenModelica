@@ -441,8 +441,16 @@ fn define_external_imports(
 
     for sig in &model.ext_imports {
         let name = &sig.name;
-        let func = side_inst.exports.get_function(name)
-            .map_err(|e| "CodegenWasmJit: ModelicaExternalC side module has no")?
+        let func = side_inst
+            .exports
+            .get_function(name)
+            .map_err(|e| {
+                crate::set_engine_error_detail(format!(
+                    "  the ModelicaExternalC side module exports no `{name}` — the web \
+                     target only has the libraries built into it"
+                ));
+                "CodegenWasmJit: external \"C\" function not in the side module"
+            })?
             .clone();
         // Nothing to marshal: bind the export straight in, so the engine calls it
         // wasm->wasm instead of through a host trampoline.
@@ -477,13 +485,15 @@ fn define_external_imports(
 /// Whether the wasm import is already the side module's C export. `Ptr` qualifies:
 /// an external object is an opaque handle only the side module dereferences.
 /// `_Out_` args need a scratch cell, and `Str`/`Array`/`Record` bytes live in the
-/// other memory, so both still need the trampoline.
+/// other memory, so both still need the trampoline — as does every Fortran call,
+/// which takes its arguments by reference.
 fn is_passthrough(sig: &crate::sig::ExtCallSig) -> bool {
     use crate::sig::SigTy;
     fn scalar(t: &SigTy) -> bool {
         matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Ptr)
     }
-    sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
+    sig.lang == crate::sig::ExtLang::C
+        && sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
         && sig.ret.as_ref().is_none_or(scalar)
 }
 
@@ -526,8 +536,10 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     // (output SigTy, scratch offset), in output order — matches the import's results.
     let mut out_cells: Vec<(SigTy, u32)> = Vec::new();
     // Output arrays to copy back after the call: (sim array offset, side scratch
-    // offset, byte length, header data offset).
-    let mut out_arrays: Vec<(u32, u32, usize, u32)> = Vec::new();
+    // offset, byte length, header data offset, column-major dims + element size
+    // for a Fortran callee).
+    let mut out_arrays: Vec<(u32, u32, usize, u32, Option<(Vec<usize>, usize)>)> = Vec::new();
+    let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut in_i = 0usize;
     for (ty, is_out) in &sig.args {
         // Scalar/string outputs get an `_Out_` scratch cell (returned as a result);
@@ -543,6 +555,19 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
         }
         let v = &args[in_i];
         in_i += 1;
+        // Fortran passes scalars by reference; give each one a side-memory cell.
+        if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+            let mut raw = [0u8; 8];
+            match ty {
+                SigTy::Real => raw.copy_from_slice(&v.f64().ok_or_else(|| "expected f64 arg")?.to_le_bytes()),
+                _ => raw[..4].copy_from_slice(&v.i32().ok_or_else(|| "expected i32 arg")?.to_le_bytes()),
+            }
+            let cell = malloc.call(&mut store, 8).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            side_mem.view(&store).write(cell as u64, &raw).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            temps.push(cell);
+            call_args.push(Value::I32(cell as i32));
+            continue;
+        }
         match ty {
             SigTy::Real => call_args.push(Value::F64(v.f64().ok_or_else(|| "expected f64 arg")?)),
             SigTy::Int | SigTy::Bool | SigTy::Ptr => {
@@ -562,11 +587,24 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 let off = v.i32().ok_or_else(|| "expected i32 array handle arg")? as u32;
                 let ndims = read_u32_mem(&sim_mem, &store, off + 8)?;
                 let total = read_u32_mem(&sim_mem, &store, off + 12)? as usize;
-                let elem_size = if matches!(**elem, SigTy::Real) { 8 } else { 4 };
+                let elem_size = crate::host::array_abi::elem_size(elem);
                 let data_off = (16 + ndims * 4 + 7) & !7;
                 let bytes = total * elem_size;
                 let mut buf = vec![0u8; bytes];
                 sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                // A Fortran callee reads the array column-major.
+                let f77 = if fortran && ndims > 1 {
+                    let mut dims = Vec::with_capacity(ndims as usize);
+                    for k in 0..ndims {
+                        dims.push(read_u32_mem(&sim_mem, &store, off + 16 + 4 * k)? as usize);
+                    }
+                    let mut col = vec![0u8; bytes];
+                    crate::host::array_abi::reorder(&buf, &mut col, &dims, elem_size, true);
+                    buf = col;
+                    Some((dims, elem_size))
+                } else {
+                    None
+                };
                 let dst = malloc.call(&mut store, bytes as u32).map_err(|_| "CodegenWasmJit: wasm engine error")?;
                 side_mem.view(&store).write(dst as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
                 temps.push(dst);
@@ -574,7 +612,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 // An output array is filled by the callee in side memory; copy it
                 // back into the pre-allocated wasm array after the call.
                 if *is_out {
-                    out_arrays.push((off, dst, bytes, data_off));
+                    out_arrays.push((off, dst, bytes, data_off, f77));
                 }
             }
             _ => return Err("input argument type not marshalled for the web target"),
@@ -585,9 +623,14 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
 
     // Copy each output array back from the side module's memory into its
     // pre-allocated wasm array (the callee filled the side scratch in place).
-    for (woff, dst, bytes, data_off) in &out_arrays {
+    for (woff, dst, bytes, data_off, f77) in &out_arrays {
         let mut buf = vec![0u8; *bytes];
         side_mem.view(&store).read(*dst as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+        if let Some((dims, esz)) = f77 {
+            let mut row = vec![0u8; *bytes];
+            crate::host::array_abi::reorder(&buf, &mut row, dims, *esz, false);
+            buf = row;
+        }
         sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
     }
 
