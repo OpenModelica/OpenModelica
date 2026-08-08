@@ -217,6 +217,43 @@ struct OMVariable {
   ~OMVariable();
 };
 
+/* One iteration variable of a runtime solve record (see OMRuntimeSolve). */
+struct OMRuntimeVariable {
+  QString name;
+  double value = 0.0;
+  double residual = 0.0;
+  double residualScaled = 0.0;   // residual / resScaling (newtonIteration records)
+  double nominal = 0.0;
+};
+
+/* A single runtime solve of an equation system, exported by the runtime to
+ * <model>_dbg.json when the LOG_EBDD stream is active. A record is either a
+ * final solve ("nonlinear") or one Newton iteration ("newtonIteration"). */
+struct OMRuntimeSolve {
+  QString kind;       // "nonlinear", "newtonIteration", "jacobian" or "homotopy"
+  QString section;    // "initial" or "regular"
+  QString status;     // "solved", "solved_less_accuracy" or "failed"
+  double time = 0.0;
+  int iterations = 0; // total iterations (nonlinear) ...
+  int iteration = 0;  // ... or this iteration's 1-based index (newtonIteration/jacobian)
+  int step = 0;       // homotopy: 1-based accepted-step index
+  double lambda = 0.0;// homotopy: continuation parameter at this step
+  // chattering records
+  double timeStart = 0.0;
+  double timeEnd = 0.0;
+  int stateEvents = 0;
+  QString zeroCrossing;
+  // nullSpace records: variables forming the singular / null-space part
+  QStringList linearlyDependentVars;
+  // convergenceDiagnostics records
+  int nonlinearEquations = 0;
+  QStringList nonlinearVars;
+  QList<OMRuntimeVariable> variables;
+  // jacobian records: column labels and the dense matrix rows (d f_row / d x_col)
+  QStringList jacobianVars;
+  QList<QList<double>> jacobianRows;
+};
+
 struct OMEquation {
   QString section;
   int index,profileBlock,parent,ncall = 0;
@@ -230,6 +267,8 @@ struct OMEquation {
   QList<OMOperation*> ops;
   QList<int> eqs;
   int unknowns;
+  int aliasOf = -1;   // for tag=="alias": index of the original equation (#10995)
+  QList<OMRuntimeSolve> runtimeSolves;   // runtime values from <model>_dbg.json
   OMEquation();
   ~OMEquation();
   QString toString() const;

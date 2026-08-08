@@ -37,6 +37,7 @@
 #include "../../util/omc_error.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
+#include "ebdd_runtime.h"
 #include "../arrayIndex.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
@@ -121,6 +122,10 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
 
+  /* EBDD: the discrete state after the first DAE evaluation of this event.
+   * No-op unless -lv=LOG_EBDD. */
+  ebddRuntimeLogEventIteration(data, 0);
+
   /* Deactivate possible sample events after first event iteration */
   if(data->simulationInfo->sampleActivated)
   {
@@ -152,6 +157,9 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
     relationChanged = checkRelations(data);
     discreteChanged = checkForDiscreteChanges(data, threadData);
+
+    /* EBDD: the discrete state after this event iteration. No-op unless -lv=LOG_EBDD. */
+    ebddRuntimeLogEventIteration(data, numEventIterations);
   }
   storeRelations(data);
 }

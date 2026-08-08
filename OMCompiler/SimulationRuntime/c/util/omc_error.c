@@ -101,6 +101,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_SUCCESS",
   "LOG_SYNCHRONOUS",
   "LOG_ZEROCROSSINGS",
+  "LOG_EBDD",
 };
 
 const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
@@ -161,7 +162,8 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "additional statistics for OMC_LOG_STATS",                                    /* OMC_LOG_STATS_V */
   "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* OMC_LOG_SUCCESS */
   "log clocks and sub-clocks for synchronous features",                         /* OMC_LOG_SYNCHRONOUS */
-  "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
+  "additional information about the zerocrossings",                             /* OMC_LOG_ZEROCROSSINGS */
+  "export equation-based declarative debugger runtime info to <model>_dbg.json" /* OMC_LOG_EBDD */
 };
 
 const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
