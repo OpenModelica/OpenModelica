@@ -2352,6 +2352,15 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     if (!libs.isEmpty()) {
       libs.removeFirst();
     }
+    // Bulk-fetch class information for the whole subtree in one call; each item
+    // created below then reads it from cache instead of a round-trip.
+    QStringList prefetchClasses;
+    foreach (QString lib, libs) {
+      if (!lib.contains("$Code")) {
+        prefetchClasses.append(lib);
+      }
+    }
+    pOMCProxy->prefetchClassInformationList(prefetchClasses);
     LibraryTreeItem *pParentLibraryTreeItem = 0;
 #if defined(__EMSCRIPTEN__)
     const int totalLibs = libs.size();
