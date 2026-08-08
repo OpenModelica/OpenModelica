@@ -1506,19 +1506,34 @@ case FUNCTION(__) then
   let boxedFn = if not funcHasParallelInOutArrays(fn) then functionBodyBoxed(fn, isSimulation) else ""
   let &afterBody = buffer ""
   let prototype = functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation, false, afterBody)
+  /* Issue #10790: save/restore the memory pool around function bodies so that
+     local array allocations (protected arrays) are freed on return, preventing
+     unbounded memory growth in FMU simulation.  Skip for functions that return
+     arrays or records, since the return value may point into pool memory. */
+  let doPoolSaveRestore = match outVars
+    case (v as VARIABLE(ty=T_ARRAY(__)))::_ then false
+    case (v as VARIABLE(ty=T_COMPLEX(__)))::_ then false
+    case _::_ then true
+    case _ then true
   <<
   <%auxFunction%>
   <% match visibility case PUBLIC(__) then "DLLDirection" %>
   <%prototype%>
   {
     <%varDecls%>
+    <% if doPoolSaveRestore then '#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    MemPoolState _omc_poolState = omc_util_get_pool_state();
+#endif
+' %>
     <% if boolNot(isSimulation) then 'MMC_SO();<%\n%>'%>_tailrecursive: OMC_LABEL_UNUSED
     <%varInits%>
     <%bodyPart%>
     _return: OMC_LABEL_UNUSED
     <%outVarAssign%><%restoreJmpbuf%>
-    <%if acceptParModelicaGrammar() then
-    '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
+    <% if doPoolSaveRestore then '#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    omc_util_restore_pool_state(_omc_poolState);
+#endif
+' %>
     <%freeConstructedExternalObjects%>
     <%match outVars
        case v::_ then 'return <%funArgName(v)%>;'
