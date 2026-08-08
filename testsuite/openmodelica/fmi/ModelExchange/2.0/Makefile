@@ -32,6 +32,7 @@ fmi_attributes_25.mos \
 fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
 Issue13905.mos \
+Issue13905_pool_expand.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
 fmi_export_derivative_annotation.mos \
