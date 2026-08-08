@@ -31,7 +31,12 @@ endif()
 if(CMAKE_VERSION VERSION_LESS "3.30.0")
   FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options)
 else()
-  FIND_PACKAGE(Boost CONFIG COMPONENTS program_options REQUIRED)
+  FIND_PACKAGE(Boost CONFIG REQUIRED COMPONENTS program_options)
+  # In CONFIG mode, BoostConfig.cmake does not set Boost_INCLUDE_DIR.
+  # Extract it from the Boost::headers target.
+  if(TARGET Boost::headers)
+    get_target_property(Boost_INCLUDE_DIR Boost::headers INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
 endif()
 
 if (Boost_FOUND)
