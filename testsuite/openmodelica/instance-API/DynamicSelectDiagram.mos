@@ -1,0 +1,66 @@
+// name: DynamicSelectDiagram
+// keywords: DynamicSelect annotation diagram
+// status: correct
+//
+// A component whose icon uses a DynamicSelect user function must animate when it
+// is shown as a sub-component in an enclosing model's diagram. OMEdit draws the
+// diagram from getModelInstance on the enclosing model and reads the values from
+// that model's result file, so for the sub-component's icon three things must
+// hold:
+//   * the enclosing model must build/simulate (the synthesized auxiliary binding
+//     must reference the instance, e.g. display.u, not the class A.B.u),
+//   * getModelInstance on the enclosing model must reference the auxiliary
+//     variable by its instance path (display.$DynamicSelect$H), matching the
+//     name it is given in the result file, and
+//   * the auxiliary name must be independent of the instantiation context: the
+//     hash from getModelInstance on the component's own class (where it is typed
+//     as f(u)) must equal the one in the result file (here f(u*1) also checks
+//     that simplification agrees).
+//
+
+setCommandLineOptions("-d=nfAPIDynamicSelectAux"); getErrorString();
+loadString("
+  function f
+    input Real u;
+    output Real y = 1.0 + 9.0*u;
+  end f;
+  model Display
+    Real u(start = 0.0, fixed = true);
+  equation
+    der(u) = 1.0 - u;
+    annotation(Icon(graphics = {Rectangle(extent = {{-100,-100},{100,100}}, lineThickness = DynamicSelect(0.25, f(u*1)))}));
+  end Display;
+  model DynSelDiagram
+    Display display;
+  end DynSelDiagram;
+"); getErrorString();
+// The hash from the component's own class (context-independent, no prefix).
+(_,compMatch) := regex(getModelInstance(Display, prettyPrint=false), "DynamicSelect.([0-9]+)", 2); getErrorString();
+// The instance-path reference from the enclosing model: prefix and hash.
+(_,diagMatch) := regex(getModelInstance(DynSelDiagram, prettyPrint=false), "\"([A-Za-z0-9_]+)\"[]}, {[]+\"name\":\"[$]DynamicSelect[$]([0-9]+)", 3); getErrorString();
+simulate(DynSelDiagram, stopTime=1.0, numberOfIntervals=2, outputFormat="csv"); getErrorString();
+// The instance-path name in the result file: prefix and hash.
+(_,resMatch) := regex(readFile("DynSelDiagram_res.csv"), "([A-Za-z0-9_]+)[.][$]DynamicSelect[$]([0-9]+)", 3); getErrorString();
+compMatch[2] <> "" and compMatch[2] == resMatch[3] and diagMatch[2] == "display" and diagMatch[3] == resMatch[3] and resMatch[2] == "display";
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ""
+//
+// ""
+// record SimulationResult
+//     resultFile = "DynSelDiagram_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DynSelDiagram', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+//
+// ""
+// true
+// endResult

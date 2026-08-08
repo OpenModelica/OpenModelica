@@ -65,6 +65,7 @@ protected
   import Typing = NFTyping;
   import Util;
   import ExpandExp = NFExpandExp;
+  import SimplifyExp = NFSimplifyExp;
   import Operator = NFOperator;
   import Component = NFComponent;
   import NFPrefixes.ConnectorType;
@@ -2129,7 +2130,6 @@ protected
 
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
     (arg1, ty1, var1) := Typing.typeExp(expStatic, context, info);
-    arg1 := ExpandExp.expand(arg1);
 
     // if we cannot typecheck the dynamic part, ignore it!
     // https://trac.openmodelica.org/OpenModelica/ticket/5631
@@ -2145,19 +2145,204 @@ protected
       end if;
     end try;
 
-    arg2 := ExpandExp.expand(arg2);
+    // OMEdit's annotation evaluator cannot call Modelica user functions.
+    // Replace each user function call in the dynamic expression with a reference
+    // to an auxiliary result-file variable (synthesized during flattening under
+    // the same deterministic name), keeping the rest of the expression so OMEdit
+    // can still evaluate it. The expression is simplified first so that the
+    // auxiliary name (a hash of the call) matches the one computed on the
+    // flattening side, which also simplifies before hashing.
+    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) and InstContext.inInstanceAPI(context) then
+      arg2 := SimplifyExp.simplify(arg2);
+      (arg2, _) := replaceDynamicSelectUserFunctions(arg2);
+    end if;
+
     ty := ty1;
     variability := var2;
 
     {fn} := Function.typeRefCache(fn_ref);
 
-    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, purity, ty1));
-    else
-      variability := var1;
-      callExp := arg1;
-    end if;
+    // Always keep both arguments; OMEdit selects the static or dynamic part.
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, purity, ty1));
   end typeDynamicSelectCall;
+
+public
+  constant String DYNAMIC_SELECT_AUX_PREFIX = "$DynamicSelect$";
+
+  function dynamicSelectAuxName
+    "Deterministic name for the auxiliary variable bound to a DynamicSelect user
+     function call, derived from the content of the call so that the instance API
+     annotation rewrite and the flattening pass agree on the name without any
+     shared state. Both the class/package path and the instance scope prefixing
+     every component reference are stripped first, leaving the reference relative
+     to the component's own class, so that the name does not depend on the
+     instantiation context: the same call is typed as 'scaleVal(u)' when the class
+     is flattened on its own, but as 'scaleVal(display.u)' when the instance API
+     types the annotation in an enclosing model's component scope. Both must yield
+     the same auxiliary variable name so a component's icon animates when shown in
+     an enclosing model's diagram. Only the class path and the scope prefix are
+     stripped (both marked accordingly), not references written in the source, so
+     e.g. scaleVal(a.u) and scaleVal(b.u) in the same class stay distinct."
+    input Expression callExp;
+    output String name =
+      DYNAMIC_SELECT_AUX_PREFIX +
+      intString(stringHashDjb2Mod(Expression.toString(Expression.map(callExp, stripCrefPrefixForName)), 1073741789));
+  end dynamicSelectAuxName;
+
+  function stripCrefPrefixForName
+    "Strips the leading class/package path and the instance scope prefix from
+     every component reference in the expression (see dynamicSelectAuxName)."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF()
+        then Expression.CREF(exp.ty, stripCrefContextPrefix(exp.cref));
+      else exp;
+    end match;
+  end stripCrefPrefixForName;
+
+  function stripCrefContextPrefix
+    "Like stripCrefClassPrefix but also removes the instance scope prefix, i.e.
+     the nodes added when a reference is prefixed with its enclosing scope (marked
+     Origin.SCOPE), e.g. the component prefix 'display' in display.u. The result is
+     relative to the component's own class, so the auxiliary name is the same
+     whether the DynamicSelect call is typed in the component's scope (instance
+     API, giving display.u) or in the class scope (flattening, giving u)."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF()
+        algorithm
+          if restCrefIsClassOrScope(cref.restCref) then
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+          else
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripCrefContextPrefix(cref.restCref));
+          end if;
+        then
+          outCref;
+      else cref;
+    end match;
+  end stripCrefContextPrefix;
+
+  function restCrefIsClassOrScope
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF(origin = NFComponentRef.Origin.SCOPE) then true;
+      case ComponentRef.CREF() then InstNode.isClass(cref.node);
+      else false;
+    end match;
+  end restCrefIsClassOrScope;
+
+  function stripCrefClassPrefix
+    "Cuts the class/package path prefixing a component reference so only the part
+     relative to the component's own class remains, e.g. A.B.a.u -> a.u."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF()
+        algorithm
+          if restCrefStartsWithClass(cref.restCref) then
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+          else
+            outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripCrefClassPrefix(cref.restCref));
+          end if;
+        then
+          outCref;
+      else cref;
+    end match;
+  end stripCrefClassPrefix;
+
+  function restCrefStartsWithClass
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF() then InstNode.isClass(cref.node);
+      else false;
+    end match;
+  end restCrefStartsWithClass;
+
+  function replaceDynamicSelectUserFunctions
+    "Replaces every user (non-builtin) function call in the expression
+     with a reference to an auxiliary variable, keeping the surrounding
+     expression intact, and returns the rewritten expression together with the
+     list of (auxiliary name, binding call) pairs. Shared by the instance API
+     annotation rewrite (NFBuiltinCall.typeDynamicSelectCall) and the flattening
+     synthesis (NFInst)."
+    input Expression exp;
+    output Expression outExp;
+    output list<tuple<String, Expression>> auxVars;
+  algorithm
+    (outExp, auxVars) := replaceDynamicSelectUserFunctions2(exp, {});
+  end replaceDynamicSelectUserFunctions;
+
+  function prefixDynamicSelectAuxRefs
+    "Prefixes every synthesized DynamicSelect auxiliary reference in the
+     expression with the given instance scope, so a sub-component's auxiliary
+     variable is referenced by its full instance path (e.g.
+     display.$DynamicSelect$H), matching the name the variable is given in the
+     result file after flattening. typeDynamicSelectCall creates the references
+     without a scope because it does not know the annotation's owning instance;
+     the instance API applies the scope here, where it is available."
+    input output Expression exp;
+    input InstNode scope;
+  algorithm
+    exp := Expression.map(exp, function prefixDynamicSelectAuxRef(scope = scope));
+  end prefixDynamicSelectAuxRefs;
+
+  function prefixDynamicSelectAuxRef
+    input output Expression exp;
+    input InstNode scope;
+  protected
+    String nm;
+  algorithm
+    exp := match exp
+      case Expression.CREF(cref = ComponentRef.CREF(node = InstNode.NAME_NODE(name = nm)))
+        guard 0 == System.strncmp(nm, DYNAMIC_SELECT_AUX_PREFIX, stringLength(DYNAMIC_SELECT_AUX_PREFIX))
+        then Expression.CREF(exp.ty, ComponentRef.appendScope(scope, exp.cref));
+      else exp;
+    end match;
+  end prefixDynamicSelectAuxRef;
+
+protected
+  function replaceDynamicSelectUserFunctions2
+    input output Expression exp;
+    input output list<tuple<String, Expression>> auxVars;
+  protected
+    Function fn;
+    String name;
+    Type ty;
+  algorithm
+    (exp, auxVars) := match exp
+      // A user function call: replace the whole call (with its original
+      // arguments) by a reference to an auxiliary variable, and do not descend
+      // into it (so its arguments stay in the binding).
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+        guard not Function.isBuiltin(fn)
+        algorithm
+          ty := Expression.typeOf(exp);
+          name := dynamicSelectAuxName(exp);
+
+          if not List.exist1(auxVars, dynamicSelectAuxExists, name) then
+            auxVars := (name, exp) :: auxVars;
+          end if;
+        then
+          (Expression.CREF(ty, ComponentRef.fromNode(InstNode.NAME_NODE(name), ty)), auxVars);
+
+      // Anything else: descend into the direct subexpressions.
+      else Expression.mapFoldShallow(exp, replaceDynamicSelectUserFunctions2, auxVars);
+    end match;
+  end replaceDynamicSelectUserFunctions2;
+
+  function dynamicSelectAuxExists
+    input tuple<String, Expression> auxVar;
+    input String name;
+    output Boolean res = Util.tuple21(auxVar) == name;
+  end dynamicSelectAuxExists;
 
   function typeBackSampleCall
     input Call call;

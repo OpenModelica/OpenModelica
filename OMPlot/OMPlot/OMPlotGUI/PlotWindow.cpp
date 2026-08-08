@@ -646,6 +646,15 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     for (uint32_t i = 0; i < reader.nall; i++) {
       if (mVariablesList.contains(reader.allInfo[i].name) || isPlotAll()) {
         variablesPlotted.append(reader.allInfo[i].name);
+        // String variables (e.g. the DynamicSelect string auxiliaries written by
+        // the instance API) are not numeric and cannot be plotted as curves. Skip
+        // them; they are counted as plotted above so an explicit request for one
+        // does not raise a spurious "variable does not exist" error. Their index
+        // refers to the separate string-signal table, so reading it as numeric
+        // data would otherwise plot an unrelated column.
+        if (reader.allInfo[i].isString) {
+          continue;
+        }
         // create the plot curve for variable
         if (!editCase) {
           QFileInfo fileInfo(mFile);

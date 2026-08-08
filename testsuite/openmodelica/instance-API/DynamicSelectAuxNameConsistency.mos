@@ -1,0 +1,50 @@
+// name: DynamicSelectAuxNameConsistency
+// keywords: DynamicSelect annotation hash
+// status: correct
+//
+// The auxiliary variable name for a DynamicSelect user-function call is derived
+// independently on the instance-API side (getModelInstance) and on the
+// flattening side (simulation). They must agree even when the dynamic
+// expression is not already in simplified form (here f(u*1), which simplifies
+// to f(u)); otherwise OMEdit would read a variable that is not in the result
+// file. This checks the two names match by extracting the hash from both the
+// getModelInstance output and the result file. Regression test for a mismatch.
+//
+
+setCommandLineOptions("-d=nfAPIDynamicSelectAux"); getErrorString();
+loadString("
+  function f
+    input Real u;
+    output Real y = u;
+  end f;
+  model M
+    Real u(start = 0.0, fixed = true);
+  equation
+    der(u) = 1.0 - u;
+    annotation(Icon(graphics = {Rectangle(extent = {{-100, -100}, {100, 100}}, lineThickness = DynamicSelect(0.25, f(u*1)))}));
+  end M;
+"); getErrorString();
+(_,instMatch) := regex(getModelInstance(M, prettyPrint=false), "DynamicSelect.([0-9]+)", 2); getErrorString();
+simulate(M, stopTime=1.0, numberOfIntervals=1, outputFormat="csv"); getErrorString();
+(_,csvMatch) := regex(readFile("M_res.csv"), "DynamicSelect.([0-9]+)", 2); getErrorString();
+instMatch[2] <> "" and instMatch[2] == csvMatch[2];
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ""
+// record SimulationResult
+//     resultFile = "M_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+//
+// ""
+// true
+// endResult

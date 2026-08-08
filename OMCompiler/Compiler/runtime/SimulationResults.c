@@ -134,7 +134,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   case CSV:
-    simresglob->csvReader = read_csv(filename);
+    simresglob->csvReader = read_csv_all(filename);
     if (simresglob->csvReader==NULL) {
       msg[1] = filename;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
@@ -327,6 +327,10 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     int *vars = (int*) calloc(simresglob->matReader.nvar+1,sizeof(int));
     for (i=simresglob->matReader.nall-1; i>=0; i--) {
       if (0 >= simresglob->matReader.allInfo[i].index) continue; /* Negated aliases always have a real variable, so skip it */
+      /* String variables index the stringData matrix, not data_1/data_2, so their
+       * index is unrelated to nparam/nvar and must not be used with the params/vars
+       * arrays. They are not numerically comparable, so skip them here. */
+      if (simresglob->matReader.allInfo[i].isString) continue;
       if (simresglob->matReader.allInfo[i].isParam && params[simresglob->matReader.allInfo[i].index]) continue;
       if (!simresglob->matReader.allInfo[i].isParam && vars[simresglob->matReader.allInfo[i].index]) continue;
       if (simresglob->matReader.allInfo[i].isParam) {

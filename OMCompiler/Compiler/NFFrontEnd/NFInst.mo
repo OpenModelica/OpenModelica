@@ -59,6 +59,7 @@ import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import NFModifier.ModifierScope;
+import NFModifier.ModTable;
 import Operator = NFOperator;
 import Equation = NFEquation;
 import Statement = NFStatement;
@@ -88,6 +89,8 @@ import SCodeDump;
 import SCodeUtil;
 import System;
 import Call = NFCall;
+import BuiltinCall = NFBuiltinCall;
+import SimplifyExp = NFSimplifyExp;
 import Absyn.Path;
 import NFClassTree.ClassTree;
 import NFSections.Sections;
@@ -203,9 +206,17 @@ algorithm
   Error.checkCancel();
   Typing.typeClass(inst_cls, context);
 
+  // Synthesize auxiliary variables bound to DynamicSelect dynamic
+  // expressions that call user functions, so their values reach the result file
+  // and OMEdit can display them without calling the function itself.
+  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT_AUX) then
+    synthesizeDynamicSelectAux(inst_cls, context);
+  end if;
+
   // Flatten the model and evaluate constants in it.
   Error.checkCancel();
   flatModel := Flatten.flatten(inst_cls, classPath);
+
   flatModel := EvalConstants.evaluate(flatModel, context);
 
   InstUtil.dumpFlatModelDebug("eval", flatModel);
@@ -4204,6 +4215,321 @@ algorithm
     fail();
   end if;
 end checkInstanceRestriction;
+
+public
+function synthesizeDynamicSelectAux
+  "Walks the instance tree and, for every class whose graphical annotations
+   contain a DynamicSelect whose dynamic expression calls a user function,
+   injects an auxiliary component bound to that dynamic expression. Flattening
+   then emits it as a result-file variable named exactly the way the instance
+   API rewrites the annotation (see NFBuiltinCall.dynamicSelectAuxName), so
+   OMEdit can read the value from the result file instead of calling the user
+   function itself."
+  input InstNode clsNode;
+  input InstContext.Type context;
+algorithm
+  synthesizeDynamicSelectAuxNode(clsNode, ComponentRef.EMPTY(), context);
+end synthesizeDynamicSelectAux;
+
+protected
+function synthesizeDynamicSelectAuxNode
+  input InstNode clsNode;
+  input ComponentRef prefix
+    "The component instance path from the flat model root down to this class, so
+     that the synthesized bindings can reference the instance's variables.";
+  input InstContext.Type context;
+protected
+  Class cls;
+  array<InstNode> comps;
+  InstNode comp_cls;
+  ComponentRef comp_prefix;
+algorithm
+  if InstNode.isEmpty(clsNode) or not InstNode.isClass(clsNode) then
+    return;
+  end if;
+
+  cls := InstNode.getClass(clsNode);
+
+  if Class.isOnlyBuiltin(cls) then
+    return;
+  end if;
+
+  // Snapshot the components before injecting any auxiliary ones.
+  comps := Class.getComponents(cls);
+
+  // Process this class' own graphical annotations.
+  injectClassDynamicSelectAux(clsNode, prefix, context);
+
+  // Recurse into the classes of the (original) components, extending the prefix
+  // with each component so its bindings resolve to the right instance.
+  for c in comps loop
+    if InstNode.isComponent(c) then
+      comp_cls := Component.classInstance(InstNode.component(c));
+      comp_prefix := ComponentRef.prefixCref(c, InstNode.getType(c), {}, prefix);
+      synthesizeDynamicSelectAuxNode(comp_cls, comp_prefix, context);
+    end if;
+  end for;
+end synthesizeDynamicSelectAuxNode;
+
+function injectClassDynamicSelectAux
+  input InstNode clsNode;
+  input ComponentRef prefix;
+  input InstContext.Type context;
+protected
+  list<Absyn.Exp> bindings;
+  list<Absyn.Exp> dyns;
+  list<InstNode> aux_comps = {};
+  list<tuple<String, Expression>> aux_vars;
+  Expression exp, binding;
+  Class cls;
+  ClassTree tree;
+  String name;
+algorithm
+  bindings := dynamicSelectAnnotationBindings(clsNode);
+
+  if listEmpty(bindings) then
+    return;
+  end if;
+
+  for b in bindings loop
+    // Collect the dynamic (second) arguments of any DynamicSelect calls in this
+    // annotation binding, then type each one in the *model* context (not an
+    // annotation context) so that any user functions it references are fully
+    // instantiated with their bodies. The same user function calls are what the
+    // instance API rewrite hashes for the auxiliary variable names.
+    (_, dyns) := AbsynUtil.traverseExp(b, collectDynamicSelectDynExp, {});
+
+    for dyn in dyns loop
+      ErrorExt.setCheckpoint(getInstanceName());
+      try
+        exp := instExp(dyn, clsNode, context, Absyn.dummyInfo);
+        exp := Typing.typeExp(exp, context, Absyn.dummyInfo);
+        exp := SimplifyExp.simplify(exp);
+
+        // Synthesize one auxiliary variable per user function call.
+        (_, aux_vars) := BuiltinCall.replaceDynamicSelectUserFunctions(exp);
+
+        for aux_var in aux_vars loop
+          (name, binding) := aux_var;
+          if not List.exist1(aux_comps, isNamedComponent, name) then
+            // The binding's component references are typed relative to this
+            // class (e.g. A.B.u); rewrite them to the instance path (e.g. c.u)
+            // so that they are valid once the class is flattened as a component,
+            // since flattening does not prefix binding references.
+            binding := Expression.map(binding, function instanceDynamicSelectBindingCref(prefix = prefix));
+            aux_comps := makeDynamicSelectAuxComponent(name, binding, clsNode) :: aux_comps;
+          end if;
+        end for;
+      else
+      end try;
+      ErrorExt.rollBack(getInstanceName());
+    end for;
+  end for;
+
+  if not listEmpty(aux_comps) then
+    cls := InstNode.getClass(clsNode);
+    tree := ClassTree.appendComponentsToFlatTree(aux_comps, Class.classTree(cls));
+    InstNode.updateClass(Class.setClassTree(tree, cls), clsNode);
+  end if;
+end injectClassDynamicSelectAux;
+
+function dynamicSelectAnnotationBindings
+  "Collects the Absyn expressions of a class' Icon and Diagram graphical
+   annotations, which are the ones that may contain DynamicSelect."
+  input InstNode clsNode;
+  output list<Absyn.Exp> bindings = {};
+protected
+  SCode.Element def;
+  Option<SCode.Comment> ocmt;
+  list<SCode.SubMod> submods;
+  SCode.Mod m;
+algorithm
+  try
+    def := InstNode.definition(clsNode);
+  else
+    return;
+  end try;
+
+  ocmt := SCodeUtil.getElementComment(def);
+
+  submods := match ocmt
+    case SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(
+        modification = SCode.MOD(subModLst = submods))))) then submods;
+    else {};
+  end match;
+
+  for sm in submods loop
+    bindings := match sm
+      case SCode.NAMEMOD(ident = "Icon", mod = m) then SCodeUtil.collectModBindings(m, bindings);
+      case SCode.NAMEMOD(ident = "Diagram", mod = m) then SCodeUtil.collectModBindings(m, bindings);
+      else bindings;
+    end match;
+  end for;
+end dynamicSelectAnnotationBindings;
+
+function collectDynamicSelectDynExp
+  "Absyn traversal function that collects the dynamic (second) argument of every
+   DynamicSelect(static, dynamic) call."
+  input output Absyn.Exp exp;
+  input output list<Absyn.Exp> dyns;
+protected
+  Absyn.Exp dyn;
+algorithm
+  () := match exp
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "DynamicSelect"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {_, dyn}))
+      algorithm
+        dyns := dyn :: dyns;
+      then
+        ();
+
+    else ();
+  end match;
+end collectDynamicSelectDynExp;
+
+function isNamedComponent
+  input InstNode node;
+  input String name;
+  output Boolean res = InstNode.name(node) == name;
+end isNamedComponent;
+
+function instanceDynamicSelectBindingCref
+  "Rewrites a component reference in a synthesized DynamicSelect binding from the
+   class-relative form to the instance path: the class/package prefix is stripped
+   and the instance prefix is appended, so e.g. A.B.u with prefix c becomes c.u."
+  input ComponentRef prefix;
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.CREF()
+      then Expression.CREF(exp.ty,
+        ComponentRef.append(BuiltinCall.stripCrefClassPrefix(exp.cref), prefix));
+    else exp;
+  end match;
+end instanceDynamicSelectBindingCref;
+
+function makeDynamicSelectAuxComponent
+  "Builds a typed auxiliary component named `name`, bound to `dynExp`, as a public
+   member of the class `parent`."
+  input String name;
+  input Expression dynExp;
+  input InstNode parent;
+  output InstNode node;
+protected
+  Type ty = Expression.typeOf(dynExp);
+  Type elem_ty = Type.arrayElementType(ty);
+  InstNode cls_inst;
+  Variability var = Expression.variability(dynExp);
+  Binding binding;
+  Component comp;
+  Attributes attr = NFAttributes.DEFAULT_ATTR;
+  SCode.Element def;
+  String type_name;
+algorithm
+  // A String variable without a start attribute is a null pointer at the first
+  // output, so give String auxiliaries a class whose start is the empty string.
+  // The start is set here, when the component is created, because a basic type's
+  // attributes are taken from its class during flattening.
+  if Type.isString(elem_ty) then
+    cls_inst := makeStringAuxClassNode();
+  else
+    cls_inst := dynamicSelectAuxClassNode(dynExp, elem_ty);
+  end if;
+  type_name := InstNode.name(cls_inst);
+
+  // Integer, Boolean and enumeration variables cannot be continuous, so clamp
+  // them to discrete. Real and String variables are left with the variability of
+  // the expression: a String bound to a continuous expression becomes an
+  // algebraic ("variable" kind) string that is re-evaluated at every output
+  // point, which is exactly what we want for a display value.
+  if Type.isInteger(elem_ty) or Type.isBoolean(elem_ty) or Type.isEnumeration(elem_ty) then
+    var := Prefixes.variabilityMin(var, Variability.DISCRETE);
+  end if;
+
+  binding := NFBinding.TYPED_BINDING(dynExp, ty, var, Expression.purity(dynExp),
+    NFBinding.EachType.NOT_EACH, Mutable.create(NFBinding.EvalState.NOT_EVALUATED),
+    false, NFBinding.Source.GENERATED, NFBinding.NO_CONFIDENCE, Absyn.dummyInfo);
+
+  attr.variability := var;
+
+  def := SCode.COMPONENT(name, SCode.defaultPrefixes, SCode.defaultVarAttr,
+    Absyn.TPATH(Absyn.IDENT(type_name), NONE()), SCode.NOMOD(), SCode.noComment,
+    NONE(), Absyn.dummyInfo);
+
+  comp := Component.COMPONENT(cls_inst, ty, binding, NFBinding.EMPTY_BINDING, attr,
+    SCode.noComment, ComponentState.Typed, Absyn.dummyInfo);
+
+  node := InstNode.COMPONENT_NODE(name, SOME(def), Visibility.PUBLIC,
+    Pointer.create(comp), parent, InstNodeType.NORMAL_COMP());
+end makeDynamicSelectAuxComponent;
+
+function makeStringAuxClassNode
+  "Returns a copy of the builtin String type node whose start attribute is bound
+   to the empty string, used as the class of a synthesized DynamicSelect String
+   auxiliary variable so that flattening emits start=\"\" for it."
+  output InstNode node = NFBuiltin.STRING_NODE;
+protected
+  Class cls;
+  ClassTree tree;
+  array<InstNode> comps;
+  Modifier start_mod;
+algorithm
+  cls := InstNode.getClass(node);
+  tree := Class.classTree(cls);
+  comps := arrayCopy(ClassTree.getComponents(tree));
+
+  start_mod := Modifier.MODIFIER("start", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+    NFBinding.makeFlat(Expression.STRING(""), Variability.CONSTANT, NFBinding.Source.GENERATED),
+    ModTable.EMPTY(), Absyn.dummyInfo);
+
+  for i in 1:arrayLength(comps) loop
+    if InstNode.name(comps[i]) == "start" then
+      comps[i] := InstNode.COMPONENT_NODE("start", NONE(), Visibility.PUBLIC,
+        Pointer.create(Component.TYPE_ATTRIBUTE(Type.STRING(), start_mod)),
+        InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
+    end if;
+  end for;
+
+  tree := match tree
+    case ClassTree.FLAT_TREE()
+      then ClassTree.FLAT_TREE(tree.tree, tree.classes, comps, tree.imports, tree.duplicates);
+    else tree;
+  end match;
+
+  node := InstNode.replaceClass(Class.setClassTree(tree, cls), node);
+end makeStringAuxClassNode;
+
+function dynamicSelectAuxClassNode
+  "Returns the class node to use for an auxiliary variable bound to the given
+   user function call, taken from the function's (single) output component so
+   that any return type is handled correctly (basic types, enumerations,
+   records). Falls back to the builtin node for the element type if the binding
+   is not a user function call."
+  input Expression exp;
+  input Type elemTy;
+  output InstNode node;
+protected
+  Function fn;
+algorithm
+  node := match exp
+    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+      guard not listEmpty(fn.outputs)
+      then Component.classInstance(InstNode.component(listHead(fn.outputs)));
+    else builtinTypeNode(elemTy);
+  end match;
+end dynamicSelectAuxClassNode;
+
+function builtinTypeNode
+  input Type ty;
+  output InstNode node;
+algorithm
+  node := match ty
+    case Type.INTEGER() then NFBuiltin.INTEGER_NODE;
+    case Type.BOOLEAN() then NFBuiltin.BOOLEAN_NODE;
+    case Type.STRING() then NFBuiltin.STRING_NODE;
+    else NFBuiltin.REAL_NODE;
+  end match;
+end builtinTypeNode;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFInst;
