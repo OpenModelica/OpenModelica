@@ -297,9 +297,27 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   modelica_boolean nextTimerDefined;
   fmi2Real nextTimerActivationTime;
   int syncRet;
+  size_t nStates;
+  double* statesBeforeEvent = NULL;
 
   if (nullPointer(comp, "internalEventUpdate", "eventInfo", eventInfo)) {
     return fmi2Error;
+  }
+
+  /* A reinit in a when-equation changes a continuous state, and the importer
+     only re-reads the states when valuesOfContinuousStatesChanged says so. The
+     reinit itself sets needToIterate, but updateDiscreteSystem below clears
+     that flag on entry and iterates until nothing changes, so by the time the
+     flag is tested there is nothing left to see. Keep a copy of the states and
+     compare, which also covers any other way an event changes them. The
+     built-in solvers never needed this because they re-read the states after
+     every event regardless. */
+  nStates = (size_t)comp->fmuData->modelData->nStates;
+  if (nStates > 0) {
+    statesBeforeEvent = (double*)malloc(nStates*sizeof(double));
+    if (statesBeforeEvent) {
+      memcpy(statesBeforeEvent, comp->fmuData->localData[0]->realVars, nStates*sizeof(double));
+    }
   }
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
@@ -372,6 +390,16 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
      * in fmi2 import and export. This is an workaround,
      * since the iteration seem not starting.
      */
+    if (statesBeforeEvent) {
+      for (i = 0; i < (int)nStates; i++) {
+        if (statesBeforeEvent[i] != comp->fmuData->localData[0]->realVars[i]) {
+          FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: continuous states changed by the event")
+          eventInfo->valuesOfContinuousStatesChanged = fmi2True;
+          break;
+        }
+      }
+    }
+
     storePreValues(comp->fmuData);
     updateRelationsPre(comp->fmuData);
     /* due to an event overwrite old values */

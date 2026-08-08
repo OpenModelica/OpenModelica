@@ -108,7 +108,7 @@ case SIMCODE(__) then
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
     <%fmiModelVariables3(simCode, FMUType)%>
-    <%modelStructure3(simCode, modelStructure)%>
+    <%modelStructure3(simCode, modelStructure, FMUType)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
@@ -433,13 +433,30 @@ case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   let types = (SimCodeUtil.getEnumerationTypes(vars) |> var => TypeDefinition3(var) ;separator="\n")
-  if boolNot(stringEq(types, "")) then
+  let floatTypes = (SimCodeUtil.getFmiFloat64Types(vars) |> var => Float64Type3(var, simCode) ;separator="\n")
+  if boolNot(stringEq(types + floatTypes, "")) then
   <<
   <TypeDefinitions>
     <%types%>
+    <%floatTypes%>
   </TypeDefinitions>
   >>
 end TypeDefinitions3;
+
+template Float64Type3(SimVar simVar, SimCode simCode)
+ "Generates a Float64Type for a declared Real type, e.g.
+  Modelica.Units.SI.Temperature, so that its unit and quantity are stated once
+  instead of on every variable of that type. Variables refer to it through their
+  declaredType attribute."
+::=
+match simVar
+case SIMVAR(__) then
+  let name = SimCodeUtil.getFmiFloat64DeclaredType(simVar)
+  let quantityAttr = if quantity then ' quantity="<%Util.escapeModelicaStringToXmlString(quantity)%>"'
+  <<
+  <Float64Type name="<%Util.escapeModelicaStringToXmlString(name)%>"<%quantityAttr%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%>/>
+  >>
+end Float64Type3;
 
 template TypeDefinition3(SimVar simVar)
 ::=
@@ -551,15 +568,15 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%DeclaredTypeString3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%DisplayUnitString3(simVar, simCode)%><%QuantityString3(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%QuantityString3(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
-      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
+      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ScalarStartString3(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
     case T_STRING(__) then
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%StringStartChild3(simVar)%><%AliasElements3(simVar, simCode)%></String>'
     case T_ENUMERATION(path=path) then
-      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ScalarStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
 
@@ -611,6 +628,24 @@ case FMI_CLOCK(__) then
   let res = if boolNot(stringEq(resolution, "")) then ' resolution="<%resolution%>"'
   '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="<%causality%>" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
 end Clock3;
+
+template ScalarStartString3(SimVar simVar)
+ "Generates the start attribute for an FMI 3.0 scalar variable. Like the shared
+  StartString2 but additionally emits the start for continuous-time states: a
+  state is initial = exact (fixed start) or approx (unfixed start) and both
+  require a start, but the new backend leaves initial_ unset for states (it uses
+  the fixed attribute instead). FMI 3.0 specific so the FMI 2.0 output (which
+  uses StartString2) is unchanged. Mirrors ArrayStartString3 for array states."
+::=
+match simVar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(initialValue = NONE()) then ''
+case SIMVAR(varKind = STATE(__)) then startString3(simVar)
+case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then startString3(simVar)
+case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then startString3(simVar)
+case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then startString3(simVar)
+else ''
+end ScalarStartString3;
 
 template ArrayStartString3(SimVar simVar)
  "Generates the start attribute (a space separated list of the scalar element
@@ -718,7 +753,7 @@ case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then
 else ''
 end StringStartChild3;
 
-template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStructure)
+template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStructure, String FMUType)
  "Generates the FMI 3.0 ModelStructure. Unknowns are referenced by valueReference."
 ::=
 match fmiModelStructure
@@ -726,18 +761,72 @@ case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <<
   <ModelStructure>
     <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
+    <%ClockUnknowns3(simCode, FMUType, "Output")%>
     <%ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)%>
     <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
+    <%ClockUnknowns3(simCode, FMUType, "InitialUnknown")%>
     <%EventIndicators3(simCode)%>
   </ModelStructure>
   >>
 else
   <<
   <ModelStructure>
+    <%ClockUnknowns3(simCode, FMUType, "Output")%>
+    <%ClockUnknowns3(simCode, FMUType, "InitialUnknown")%>
     <%EventIndicators3(simCode)%>
   </ModelStructure>
   >>
 end modelStructure3;
+
+template QuantityString3(SimVar simVar)
+ "Generates the quantity attribute, the physical quantity the variable measures
+  (Temperature, Pressure, ...). FMI 3.0 has it on the numeric types."
+::=
+match simVar
+case SIMVAR(quantity = quantity) then
+  if quantity then ' quantity="<%Util.escapeModelicaStringToXmlString(quantity)%>"'
+end QuantityString3;
+
+template DeclaredTypeString3(SimVar simVar, SimCode simCode)
+ "Generates the declaredType attribute. The same predicate decides which
+  <Float64Type> definitions exist, so a variable can never reference a type that
+  is not declared."
+::=
+  let name = SimCodeUtil.getFmiFloat64DeclaredType(simVar)
+  if name then ' declaredType="<%Util.escapeModelicaStringToXmlString(name)%>"'
+end DeclaredTypeString3;
+
+template DisplayUnitString3(SimVar simVar, SimCode simCode)
+ "Generates the displayUnit attribute of a Float64 variable, but only when that
+  display unit is declared as a <DisplayUnit> of the variable's <Unit>. Naming an
+  undeclared display unit makes the modelDescription.xml invalid, which is why
+  the attribute is dropped rather than guessed at."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(unitDefinitions = unitDefinitions)) then
+  let displayUnit = SimCodeUtilShared.getFmiDisplayUnit(simVar, unitDefinitions)
+  if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
+end DisplayUnitString3;
+
+template ClockUnknowns3(SimCode simCode, String FMUType, String element)
+ "Model clocks are exported as <Clock> variables with causality output, so they
+  belong in the ModelStructure Output list, and — having no start value — in the
+  InitialUnknown list as well. For Scheduled Execution the clocks are input
+  clocks activated by the importer, so they are neither."
+::=
+  if isFMISEType(FMUType) then ''
+  else (SimCodeUtil.getFMI3Clocks(simCode) |> clk => ClockUnknown3(clk, element) ;separator="\n")
+end ClockUnknowns3;
+
+template ClockUnknown3(FmiClock clock, String element)
+ "A single ModelStructure entry for a clock variable. No dependencies are
+  emitted, which per the FMI specification means the importer must assume a
+  dependency on all knowns."
+::=
+match clock
+case FMI_CLOCK(__) then
+  '<<%element%> valueReference="<%valueReference%>"/>'
+end ClockUnknown3;
 
 template ModelStructureOutputs3(SimCode simCode, FmiOutputs fmiOutputs)
 ::=

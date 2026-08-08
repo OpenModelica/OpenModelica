@@ -1,0 +1,70 @@
+// name: fmi3_enumeration.mos
+// keywords: FMI 3.0 export enumeration
+// status: correct
+// teardown_command: rm -rf fmi3_enumeration.fmu fmi3_enumeration.xml fmi3_enumeration_tmp.xml fmi3_enumeration.fmutmp/ fmi3_enumeration.log fmi3_enumeration_info.json index.html
+//
+// Modelica enumerations are exported as FMI 3.0 <Enumeration> variables that
+// reference an <EnumerationType> declared under <TypeDefinitions> (the items
+// are 1-based). This is checked for a native enumeration array (exported with
+// the new backend, one <Enumeration> with a <Dimension> child) and an
+// enumeration parameter, including the TypeDefinitions entry that the array
+// variable refers to via declaredType. The exported FMU is validated against
+// the FMI 3.0 schema with fmpy.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi3_enumeration
+  type Color = enumeration(red, green, blue);
+  Real x(start = 1.0, fixed = true);
+  parameter Color pc = Color.blue;
+  Color carr[3] = {Color.red, Color.green, Color.blue};
+equation
+  der(x) = -x;
+end fmi3_enumeration;
+"); getErrorString();
+
+buildModelFMU(fmi3_enumeration, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_enumeration.fmu modelDescription.xml > fmi3_enumeration_tmp.xml"); getErrorString();
+
+// the enumeration TypeDefinitions and the enumeration variables
+system("sed -n \"/<TypeDefinitions>/,/<\\/TypeDefinitions>/p\" fmi3_enumeration_tmp.xml > fmi3_enumeration.xml"); getErrorString();
+readFile("fmi3_enumeration.xml"); getErrorString();
+
+system("grep -E \"Enumeration \" fmi3_enumeration_tmp.xml > fmi3_enumeration.xml"); getErrorString();
+readFile("fmi3_enumeration.xml"); getErrorString();
+
+// validate against the FMI 3.0 schema with an independent importer (fmpy)
+system("python3 -c \"import fmpy; fmpy.read_model_description('fmi3_enumeration.fmu', validate=True); print('FMPY_VALID')\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_enumeration.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <TypeDefinitions>
+//     <EnumerationType name=\"Color\" quantity=\"Color\">
+//       <Item name=\"red\" value=\"1\"/>
+//       <Item name=\"green\" value=\"2\"/>
+//       <Item name=\"blue\" value=\"3\"/>
+//     </EnumerationType>
+//   </TypeDefinitions>
+// "
+// ""
+// 0
+// ""
+// "    <Enumeration name=\"carr\" valueReference=\"2\" variability=\"discrete\" declaredType=\"Color\"><Dimension start=\"3\"/></Enumeration>
+//     <Enumeration name=\"pc\" valueReference=\"5\" causality=\"parameter\" variability=\"fixed\" declaredType=\"Color\" start=\"3\"/>
+// "
+// ""
+// FMPY_VALID
+// 0
+// ""
+// endResult

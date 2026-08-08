@@ -89,6 +89,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     String comment;
     String unit;
     String displayUnit;
+    String quantity              "the quantity attribute, exported by FMI 3.0";
     Integer index;
     Option<DAE.Exp> minValue;
     Option<DAE.Exp> maxValue;

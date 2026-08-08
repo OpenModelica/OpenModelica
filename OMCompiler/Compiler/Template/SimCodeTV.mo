@@ -327,6 +327,7 @@ package SimCodeVar
       String comment;
       String unit;
       String displayUnit;
+      String quantity;
       Integer index;
       Option<DAE.Exp> minValue;
       Option<DAE.Exp> maxValue;
@@ -911,9 +912,17 @@ end SparsityRow;
     record UNITDEFINITION
       String name;
       BaseUnit baseUnit;
-      //TODO DisplayUnit
+      list<DisplayUnit> displayUnits;
     end UNITDEFINITION;
   end UnitDefinition;
+
+  uniontype DisplayUnit "a <DisplayUnit> of a <Unit> in modelDescription.xml"
+    record DISPLAYUNIT
+      String name;
+      Real factor;
+      Real offset;
+    end DISPLAYUNIT;
+  end DisplayUnit;
 
   uniontype BaseUnit
     record BASEUNIT
@@ -1502,6 +1511,16 @@ package SimCodeUtil
     output list<SimCode.FmiClock> clocks;
   end getFMI3Clocks;
 
+  function getFmiFloat64DeclaredType
+    input SimCodeVar.SimVar var;
+    output String name;
+  end getFmiFloat64DeclaredType;
+
+  function getFmiFloat64Types
+    input SimCodeVar.SimVars inVars;
+    output list<SimCodeVar.SimVar> outVars;
+  end getFmiFloat64Types;
+
   function getFMI3TimeValueReference
     input SimCode.SimCode inSimCode;
     output String outValueReference;
@@ -1708,6 +1727,16 @@ package SimCodeUtil
     output String str;
   end simGenericCallString;
 end SimCodeUtil;
+
+package SimCodeUtilShared
+
+  function getFmiDisplayUnit
+    input SimCodeVar.SimVar var;
+    input list<SimCode.UnitDefinition> unitDefinitions;
+    output String displayUnit;
+  end getFmiDisplayUnit;
+
+end SimCodeUtilShared;
 
 package SimCodeFunctionUtil
   function varName

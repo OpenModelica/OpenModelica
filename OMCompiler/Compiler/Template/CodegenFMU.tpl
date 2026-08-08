@@ -994,10 +994,13 @@ template getIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
-  let ixFirstParam = numAlgVars
-  let ixFirstAlias = intAdd(numParams, numAlgVars)
-  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars)) then
+  // per-scalar block boundaries (sum getNumElems), so non-scalarized array
+  // variables index the correct contiguous integerVars range. (numScalarElems is
+  // inlined because a Susan `let` binds a Text, not an Integer.)
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.intAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars)))
   <<
   <% if numAliasVars then
   <<
@@ -1032,10 +1035,11 @@ template setIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
-  let ixFirstParam = numAlgVars
-  let ixFirstAlias = intAdd(numParams, numAlgVars)
-  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars)) then
+  // per-scalar block boundaries, matching getInteger above
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.intAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.intParamVars), SimCodeUtil.numScalarElems(vars.intAlgVars)))
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
     // set start value attribute for all variable that has start value, till initialization mode
@@ -1067,16 +1071,41 @@ template getBooleanFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setBoolean function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numBoolAliasVars=numAliasVars)) then
+  // Blocks are addressed by range rather than by a switch with one case per
+  // variable: a non-scalarized Boolean array is a single variable but occupies
+  // a contiguous block of value references, so a per-variable switch reaches
+  // only its first element and every other element falls through to the
+  // default. The boundaries are per-scalar sums (numScalarElems is inlined
+  // because a Susan `let` binds a Text, not an Integer).
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.boolAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars)))
   <<
+  <% if numAliasVars then
+  <<
+  static const int boolAliasIndexes[<%numAliasVars%>] = {
+    <%vars.boolAliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
+  };
+
+  >>
+  %>
   fmi2Boolean getBoolean(ModelInstance* comp, const fmi2ValueReference vr) {
-    switch (vr) {
-      <%vars.boolAlgVars |> var => SwitchVars(simCode, var, "booleanVars") ;separator="\n"%>
-      <%vars.boolParamVars |> var => SwitchParameters(simCode, var, "booleanParameter") ;separator="\n"%>
-      <%vars.boolAliasVars |> var => SwitchAliasVars(simCode, var, "Boolean", "!") ;separator="\n"%>
-      default:
-        return fmi2False;
+    if (vr < <%ixFirstParam%>) {
+      return comp->fmuData->localData[0]->booleanVars[vr];
     }
+    if (vr < <%ixFirstAlias%>) {
+      return comp->fmuData->simulationInfo->booleanParameter[vr-<%ixFirstParam%>];
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = boolAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix>=0 ? getBoolean(comp, ix) : !getBoolean(comp, -(ix+1));
+    }
+    >>
+    %>
+    return fmi2False;
   }
 
   >>
@@ -1086,17 +1115,30 @@ template setBooleanFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getBoolean function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numBoolAliasVars=numAliasVars)) then
+  // per-scalar block boundaries, matching getBoolean above
+  let ixFirstParam = SimCodeUtil.numScalarElems(vars.boolAlgVars)
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars))
+  let ixEnd = intAdd(numAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars), SimCodeUtil.numScalarElems(vars.boolAlgVars)))
   <<
   fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value) {
-    switch (vr) {
-      <%vars.boolAlgVars |> var => SwitchVarsSet(simCode, var, "booleanVars") ;separator="\n"%>
-      <%vars.boolParamVars |> var => SwitchParametersSet(simCode, var, "booleanParameter") ;separator="\n"%>
-      <%vars.boolAliasVars |> var => SwitchAliasVarsSet(simCode, var, "Boolean", "!") ;separator="\n"%>
-      default:
-        return fmi2Error;
+    if (vr < <%ixFirstParam%>) {
+      comp->fmuData->localData[0]->booleanVars[vr] = value;
+      return fmi2OK;
     }
-    return fmi2OK;
+    if (vr < <%ixFirstAlias%>) {
+      comp->fmuData->simulationInfo->booleanParameter[vr-<%ixFirstParam%>] = value;
+      return fmi2OK;
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = boolAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix >= 0 ? setBoolean(comp, ix, value) : setBoolean(comp, -(ix+1), !value);
+    }
+    >>
+    %>
+    return fmi2Error;
   }
 
   >>
@@ -3501,8 +3543,58 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%vars.stringParamVars |> var => ScalarVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
   }
+
+  void <%symbolName(modelNamePrefix(simCode),"set_input_fmu_dimensions")%>(MODEL_DATA* modelData)
+  {
+    /* Sets only the non-scalarized array dimensions, a subset of read_input_fmu.
+       The FMI runtime has to know the dimensions before it sizes the value
+       vectors, but read_input_fmu cannot be moved that early because it also
+       writes start values that have to come after the index maps (#15686).
+       The variable order and the tmp-tick consumption mirror read_input_fmu
+       exactly, so the running index ci refers to the same variable. */
+    <%System.tmpTickReset(1000)%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stateVars       |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.derivativeVars  |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.algVars         |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.discreteAlgVars |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeConstraintsVars
+                           |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeFinalConstraintsVars
+                           |> var => DimensionVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.paramVars       |> var => DimensionVariableFMU(var,"realParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intAlgVars      |> var => DimensionVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intParamVars    |> var => DimensionVariableFMU(var,"integerParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolAlgVars     |> var => DimensionVariableFMU(var,"booleanVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolParamVars   |> var => DimensionVariableFMU(var,"booleanParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringAlgVars   |> var => DimensionVariableFMU(var,"stringVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringParamVars |> var => DimensionVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+  }
   >>
 end simulationInitFunction;
+
+template DimensionVariableFMU(SimVar simVar, String classType)
+ "Emits only the array dimension setup of a variable, the subset of
+  ScalarVariableFMU that has to run before the value vectors are sized. The
+  match pattern and the tmp-tick consumption mirror ScalarVariableFMU exactly so
+  that the running index ci refers to the same variable: a variable that
+  ScalarVariableFMU skips (no SOURCE) has to be skipped here too, otherwise ci
+  desynchronizes and the dimensions land on the wrong variables."
+::=
+  match simVar
+    case SIMVAR(source = SOURCE(info = info)) then
+      let valueReference = System.tmpTick()
+      let ci = System.tmpTickIndex(2)
+      DimensionsFMU(simVar, classType, ci)
+end DimensionVariableFMU;
 
 template getInfoArgsFMU(String str, builtin.SourceInfo info)
 ::=
@@ -3545,17 +3637,22 @@ template DimensionsFMU(SimVar simVar, String classType, String ci)
   array variables (type_ = T_ARRAY) are dimensioned: a scalarized array element
   still carries the parent numArrayElement but is a scalar and must keep
   numberOfDimensions 0, otherwise the start/min/max/nominal bound-attribute
-  update treats it as an array."
+  update treats it as an array. The allocation is guarded so that it happens
+  only once: set_input_fmu_dimensions runs this before the value vectors are
+  sized and read_input_fmu runs it again afterwards, and allocating twice would
+  leak the first block."
 ::=
 match simVar
 case SIMVAR(type_ = T_ARRAY(), numArrayElement = dims) then
   if listEmpty(dims) then '' else
   <<
-  modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
-  modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
-  <%dims |> d hasindex k0 =>
-    'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
-   ;separator="\n"%>
+  if (modelData-><%classType%>[<%ci%>].dimension.dimensions == NULL) {
+    modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
+    modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
+    <%dims |> d hasindex k0 =>
+      'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>    modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>    modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
+     ;separator="\n"%>
+  }
   >>
 end DimensionsFMU;
 

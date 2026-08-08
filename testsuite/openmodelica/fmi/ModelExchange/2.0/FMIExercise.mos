@@ -1,16 +1,16 @@
 // name: FMIExercise
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml FMIExercise_Components_PI* FMIExercise.TestPIFMU* output.log
-// cflags: -d=-newInst
+// teardown_command: rm -rf binaries sources modelDescription.xml PI.fmu PI_me_FMU* FMIExercise.TestPIFMU* output.log
 //
 
 echo(false);
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("FMIExercise.mo"); getErrorString();
 buildModelFMU(FMIExercise.Components.PI, version="2.0"); getErrorString();
-importFMU("FMIExercise.Components.PI.fmu"); getErrorString();
-loadFile("FMIExercise_Components_PI_me_FMU.mo"); getErrorString();
+importFMU("PI.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("PI_me_FMU.mo"); getErrorString();
 simulate(FMIExercise.TestPIFMU); getErrorString();
 echo(true);
 val(PI.y,0);
@@ -21,7 +21,7 @@ val(fMIExercise_Components_PI_me_FMU1.y,1);
 // Result:
 // true
 // 0.0
-// 4.043
+// 4.043000000007086
 // 0.0
-// 4.043
+// 4.043000000007086
 // endResult

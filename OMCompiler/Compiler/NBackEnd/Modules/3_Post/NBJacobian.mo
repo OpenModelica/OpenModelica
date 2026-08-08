@@ -72,7 +72,7 @@ protected
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
-  import NBEquation.{Equation, EquationPointers, EqData};
+  import NBEquation.{CrefLst, Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Partition = NBPartition;
@@ -171,6 +171,125 @@ public
   algorithm
     partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
   end applyToPartitions;
+
+  function createFMISparsity
+    "Builds the structural dependency information needed for the FMI
+     <ModelStructure>. The seed variables (matrix columns) are the continuous
+     states and the top level inputs; the rows are the state derivatives and the
+     output variables. The returned row-wise pattern maps each derivative/output
+     to the states and inputs it structurally depends on (transitively through
+     intermediate algebraic variables), which is exactly what the FMI <Output>
+     and <ContinuousStateDerivative> dependency lists require.
+
+     This is a dedicated FMI variant of the Jacobian sparsity computation: the
+     simulation Jacobian is differentiated and only tracks state dependencies for
+     derivative rows, whereas the FMI model structure needs plain structural
+     information, including input dependencies and output rows. We therefore build
+     our own full adjacency matrix over the relevant variables plus the seeds,
+     read the direct dependencies of every solved variable out of it
+     (collectFMIDependencies) and resolve them transitively down to the seeds
+     (resolveRowDependencies).
+     The crefs are scalarized; array variables are recombined by the caller.
+
+     With forInitialization = true the same machinery is run over the
+     initialization partitions with the parameters added to the seeds: at
+     initialization the derivatives and outputs additionally depend on the
+     (independent) parameters, which is what the FMI <InitialUnknown> dependency
+     lists require (continuous-time states keep being seeds; calculated
+     parameters and approximated states are reported without dependencies, which
+     is valid)."
+    input BackendDAE bdae;
+    input Boolean forInitialization = false;
+    output list<tuple<ComponentRef, list<ComponentRef>>> dependencies = {};
+  protected
+    VariablePointers seedCandidates, relevanceCandidates, adjacencyVars;
+    EquationPointers adjacencyEqns;
+    Adjacency.Matrix full;
+    list<Partition.Partition> partitions;
+    list<StrongComponent> comps = {};
+    list<Pointer<Equation>> eqn_lst = {};
+    list<ComponentRef> seed_vars, relevant_vars, row_crefs;
+    list<Pointer<Variable>> seed_lst, output_vars;
+    UnorderedMap<ComponentRef, CrefLst> map;
+    UnorderedSet<ComponentRef> seed_set;
+  algorithm
+    () := match bdae
+      local
+        VarData varData;
+      case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM()) algorithm
+        // seeds (columns): for the continuous structure the continuous states and
+        // top level inputs; for the initialization additionally all knowns
+        // (parameters, constants and states) since outputs/derivatives depend on
+        // the parameters at initialization
+        seed_lst := listAppend(VariablePointers.toList(varData.states),
+                               VariablePointers.toList(varData.top_level_inputs));
+        if forInitialization then
+          // at initialization the knowns also include the parameters/constants
+          seed_lst := listAppend(VariablePointers.toList(varData.knowns), seed_lst);
+        end if;
+        seedCandidates := VariablePointers.fromList(seed_lst);
+        // relevance set so intermediate variables are tracked for the transitive
+        // closure down to the seeds: all unknowns for the continuous structure,
+        // all variables for the initialization (intermediate parameters included)
+        relevanceCandidates := if forInitialization then varData.variables else varData.unknowns;
+
+        // collect the strong components of the relevant partitions
+        if forInitialization then
+          partitions := bdae.init;
+          if isSome(bdae.init_0) then
+            partitions := listAppend(Util.getOption(bdae.init_0), partitions);
+          end if;
+        else
+          partitions := listAppend(listAppend(bdae.ode, bdae.ode_event),
+                                   listAppend(bdae.algebraic, bdae.alg_event));
+        end if;
+        for part in partitions loop
+          comps := match part.strongComponents
+            local array<StrongComponent> arr;
+            case SOME(arr) then listAppend(arrayList(arr), comps);
+            else comps;
+          end match;
+          eqn_lst := listAppend(EquationPointers.toList(part.equations), eqn_lst);
+        end for;
+
+        // scalar cref name lists
+        seed_vars     := VariablePointers.getScalarVarNames(seedCandidates, false);
+        relevant_vars := VariablePointers.getScalarVarNames(relevanceCandidates, false);
+
+        // rows = state derivatives + outputs
+        output_vars := list(v for v guard(BVariable.isOutput(v)) in VariablePointers.toList(varData.variables));
+        row_crefs := listAppend(
+          VariablePointers.getScalarVarNames(varData.derivatives, false),
+          VariablePointers.getScalarVarNames(VariablePointers.fromList(output_vars), false));
+
+        // The adjacency matrices stored on the partitions only track the partition
+        // unknowns, so they carry no dependency on inputs or parameters - exactly what
+        // the FMI model structure is about. Build a dedicated full matrix over the
+        // relevant variables *and* the seeds so those occurrences are recorded.
+        adjacencyVars := VariablePointers.fromList(listAppend(seed_lst, VariablePointers.toList(relevanceCandidates)));
+        adjacencyEqns := EquationPointers.fromList(eqn_lst);
+        full := Adjacency.Matrix.createFull(adjacencyVars, adjacencyEqns,
+                  if forInitialization then NBPartition.Kind.INI else NBPartition.Kind.ODE);
+
+        // direct dependencies (solved variable -> crefs occurring in its equations)
+        map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(relevant_vars)));
+        seed_set := UnorderedSet.fromList(seed_vars, ComponentRef.hash, ComponentRef.isEqual);
+        for cref in VariablePointers.getVarNames(seedCandidates) loop
+          UnorderedSet.add(cref, seed_set);
+        end for;
+        collectFMIDependencies(comps, full, map);
+
+        // build the row-wise dependency list for derivatives and outputs,
+        // resolving each row transitively down to the seeds (states/inputs)
+        for cref in row_crefs loop
+          if UnorderedMap.contains(cref, map) then
+            dependencies := (cref, resolveRowDependencies(cref, map, seed_set)) :: dependencies;
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end createFMISparsity;
 
   function nonlinear
     input VariablePointers seedCandidates;
@@ -312,6 +431,94 @@ public
 
 
 protected
+  function collectFMIDependencies
+    "Reads the direct structural dependencies out of the full adjacency matrix:
+     every variable solved by a strong component depends on the crefs occurring
+     in the equations of that component. Discrete components are skipped, they
+     are not part of the continuous FMI model structure."
+    input list<StrongComponent> comps;
+    input Adjacency.Matrix full;
+    input UnorderedMap<ComponentRef, CrefLst> map;
+  protected
+    list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
+  algorithm
+    () := match full
+      local
+        UnorderedMap<ComponentRef, Integer> index_map;
+        Integer eqn_index;
+        list<ComponentRef> deps, old;
+
+      case Adjacency.Matrix.FULL() algorithm
+        // equation name -> index in the matrix
+        index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(arrayLength(full.equation_names)));
+        for i in 1:arrayLength(full.equation_names) loop
+          UnorderedMap.add(full.equation_names[i], i, index_map);
+        end for;
+
+        for comp in comps loop
+          if not StrongComponent.isDiscrete(comp) then
+            deps := {};
+            for eqn in StrongComponent.getEquations(comp) loop
+              // torn algebraic loops report their residual equations, those are not
+              // part of the partition and therefore not in the matrix - skip them
+              deps := match UnorderedMap.get(Equation.getEqnName(eqn), index_map)
+                case SOME(eqn_index) then listAppend(UnorderedMap.keyList(full.dependencies[eqn_index]), deps);
+                else deps;
+              end match;
+            end for;
+            deps := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in deps));
+            // all variables of the component depend on all of its dependencies
+            for cref in StrongComponent.getVariableCrefs(comp) loop
+              for scalar_cref in ComponentRef.scalarizeAll(cref, true) loop
+                old := UnorderedMap.getOrDefault(scalar_cref, map, tmp_lst);
+                UnorderedMap.add(scalar_cref, listAppend(deps, old), map);
+              end for;
+            end for;
+          end if;
+        end for;
+      then ();
+      else ();
+    end match;
+  end collectFMIDependencies;
+
+  function resolveDependency
+    "Follows the dependencies of cref down to the seed variables and collects
+     them in dep_set. Used by createFMISparsity for the FMI <ModelStructure>."
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, CrefLst> map;
+    input UnorderedSet<ComponentRef> seed_set;
+    input UnorderedSet<ComponentRef> visited;
+    input UnorderedSet<ComponentRef> dep_set "collect seed dependencies here";
+  protected
+    list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
+  algorithm
+    if UnorderedSet.add(cref, visited) then
+      if UnorderedSet.contains(cref, seed_set) then
+        UnorderedSet.add(cref, dep_set);
+      else
+        for dep in UnorderedMap.getOrDefault(cref, map, tmp_lst) loop
+          resolveDependency(dep, map, seed_set, visited, dep_set);
+        end for;
+      end if;
+    end if;
+  end resolveDependency;
+
+  function resolveRowDependencies
+    "Resolves one row of the dependency map transitively down to the seeds."
+    input ComponentRef row;
+    input UnorderedMap<ComponentRef, CrefLst> map;
+    input UnorderedSet<ComponentRef> seed_set;
+    output list<ComponentRef> dependencies;
+  protected
+    UnorderedSet<ComponentRef> dep_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
+  algorithm
+    for dep in UnorderedMap.getOrDefault(row, map, tmp_lst) loop
+      resolveDependency(dep, map, seed_set, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual), dep_set);
+    end for;
+    dependencies := List.sort(UnorderedSet.toList(dep_set), ComponentRef.isGreater);
+  end resolveRowDependencies;
+
   // ToDo: all the DAEMode stuff is probably incorrect!
 
   // TODO: refactor with map

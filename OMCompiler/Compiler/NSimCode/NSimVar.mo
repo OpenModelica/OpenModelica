@@ -92,6 +92,7 @@ public
       String comment;
       String unit;
       String displayUnit;
+      String quantity;
       Integer index;
       Option<Expression> min;
       Option<Expression> max;
@@ -157,7 +158,7 @@ public
       simVar := match var
         local
           VariableKind varKind;
-          String comment, unit, displayUnit;
+          String comment, unit, displayUnit, quantity;
           Option<Expression> min;
           Option<Expression> max;
           Option<Expression> start;
@@ -168,7 +169,7 @@ public
 
         case Variable.VARIABLE() algorithm
           comment := parseComment(var.comment);
-          (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected)
+          (varKind, unit, displayUnit, quantity, min, max, start, nominal, isFixed, isDiscrete, isProtected)
           := parseAttributes(var.backendinfo);
           // for parameters the binding supersedes the start value if it exists and is constant
           // ToDo: also for other cases? (constant, struct param ...)
@@ -179,6 +180,7 @@ public
             comment             = comment,
             unit                = unit,
             displayUnit         = displayUnit,
+            quantity            = quantity,
             index               = typeIndex,
             min                 = min,
             max                 = max,
@@ -324,6 +326,7 @@ public
         comment             = simVar.comment,
         unit                = simVar.unit,
         displayUnit         = simVar.displayUnit,
+        quantity            = simVar.quantity,
         index               = simVar.index,
         minValue            = Util.applyOption(simVar.min, function Expression.toDAE(allowEmpty = false)),
         maxValue            = Util.applyOption(simVar.max, function Expression.toDAE(allowEmpty = false)),
@@ -435,6 +438,7 @@ public
       output VariableKind varKind;
       output String unit = "";
       output String displayUnit = "";
+      output String quantity = "";
       output Option<Expression> min = NONE();
       output Option<Expression> max = NONE();
       output Option<Expression> start = NONE();
@@ -451,6 +455,7 @@ public
           algorithm
             unit        := Util.applyOptionOrDefault(Util.applyOption(varAttr.unit,        Binding.getTypedExp), Expression.stringValue, "");
             displayUnit := Util.applyOptionOrDefault(Util.applyOption(varAttr.displayUnit, Binding.getTypedExp), Expression.stringValue, "");
+            quantity    := Util.applyOptionOrDefault(Util.applyOption(varAttr.quantity,    Binding.getTypedExp), Expression.stringValue, "");
             min         := Util.applyOption(varAttr.min,     Binding.getTypedExp);
             max         := Util.applyOption(varAttr.max,     Binding.getTypedExp);
             start       := Util.applyOption(varAttr.start,   Binding.getTypedExp);
@@ -471,6 +476,7 @@ public
 
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_INT())
           algorithm
+            quantity := Util.applyOptionOrDefault(Util.applyOption(varAttr.quantity, Binding.getTypedExp), Expression.stringValue, "");
             min     := Util.applyOption(varAttr.min,   Binding.getTypedExp);
             max     := Util.applyOption(varAttr.max,   Binding.getTypedExp);
             start   := Util.applyOption(varAttr.start, Binding.getTypedExp);
@@ -856,6 +862,60 @@ public
       str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true);
       // ToDo: all the other stuff
     end toString;
+
+    function globalizeFMIIndex
+      "Renumbers fmi_index with a single global counter across the variable lists
+       that the FMI ModelStructure references, so that fmi_index uniquely
+       identifies a variable in the modelDescription. The new backend otherwise
+       assigns fmi_index per base type, which collides between e.g. variables and
+       parameters; getFMI3ValueReferenceFromFMIIndex (used to map the dependency
+       indices to value references) then resolves a parameter dependency to the
+       wrong variable. The value references themselves are cref based and not
+       affected; only the internal fmi_index is made unique."
+      input output SimVars vars;
+    protected
+      Integer idx = 0;
+      list<SimVar> lst;
+    algorithm
+      // same lists, in the same order, that getFMI3ValueReferenceFromFMIIndex scans
+      (lst, idx) := renumberFMIIndex(vars.stateVars, idx);      vars.stateVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.derivativeVars, idx); vars.derivativeVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.algVars, idx);        vars.algVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.discreteAlgVars, idx);vars.discreteAlgVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.intAlgVars, idx);     vars.intAlgVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.boolAlgVars, idx);    vars.boolAlgVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.stringAlgVars, idx);  vars.stringAlgVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.inputVars, idx);      vars.inputVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.outputVars, idx);     vars.outputVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.paramVars, idx);      vars.paramVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.intParamVars, idx);   vars.intParamVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.boolParamVars, idx);  vars.boolParamVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.stringParamVars, idx);vars.stringParamVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.aliasVars, idx);      vars.aliasVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.intAliasVars, idx);   vars.intAliasVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.boolAliasVars, idx);  vars.boolAliasVars := lst;
+      (lst, idx) := renumberFMIIndex(vars.stringAliasVars, idx);vars.stringAliasVars := lst;
+    end globalizeFMIIndex;
+
+    function renumberFMIIndex
+      "Assigns a running fmi_index to every variable that is exported (has an
+       fmi_index); others are left untouched."
+      input list<SimVar> inVars;
+      output list<SimVar> outVars = {};
+      input output Integer idx;
+    protected
+      SimVar var;
+    algorithm
+      for v in inVars loop
+        var := v;
+        if isSome(var.fmi_index) then
+          var.fmi_index := SOME(idx);
+          idx := idx + 1;
+        end if;
+        outVars := var :: outVars;
+      end for;
+      outVars := listReverse(outVars);
+    end renumberFMIIndex;
 
     function create
       input BVariable.VarData varData;

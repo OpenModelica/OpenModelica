@@ -1,0 +1,69 @@
+// name: fmi3_quantity_types.mos
+// keywords: FMI 3.0 export quantity TypeDefinitions Float64Type declaredType
+// status: correct
+// teardown_command: rm -rf fmi3_quantity_types.fmu fmi3_quantity_types.fmutmp/ fmi3_quantity_types.xml fmi3_quantity_types_tmp.xml fmi3_quantity_types.log fmi3_quantity_types_info.json index.html
+//
+// FMI 3.0 quantity and <Float64Type>: the quantity attribute is exported for
+// the numeric types, and every quantity becomes a <Float64Type> under
+// <TypeDefinitions> that the variables of that quantity refer to through
+// declaredType.
+//
+// The type is named after the Modelica quantity rather than after the class the
+// type is declared in, because that class path is only recorded in the element
+// source under -d=infoXmlOperations or -d=visualXml and is therefore not
+// available in an ordinary export.
+//
+// der(T) must not get a declaredType: it inherits the quantity of its state but
+// its unit is the state's divided by seconds, so it is not of the state's type.
+
+loadString("
+model fmi3_quantity_types
+  parameter Real p(unit = \"Pa\", displayUnit = \"bar\", quantity = \"Pressure\") = 1e5;
+  Real T(unit = \"K\", quantity = \"ThermodynamicTemperature\", start = 300, fixed = true);
+  Real T2(unit = \"K\", quantity = \"ThermodynamicTemperature\");
+  Integer n(quantity = \"Count\") = 3;
+  Real plain;
+equation
+  der(T) = 0;
+  T2 = T + 1;
+  plain = time;
+end fmi3_quantity_types;
+"); getErrorString();
+
+buildModelFMU(fmi3_quantity_types, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_quantity_types.fmu modelDescription.xml > fmi3_quantity_types_tmp.xml"); getErrorString();
+system("sed -n \"/<TypeDefinitions>/,/<\\/TypeDefinitions>/p\" fmi3_quantity_types_tmp.xml > fmi3_quantity_types.xml"); getErrorString();
+readFile("fmi3_quantity_types.xml"); getErrorString();
+
+// the declaredType and quantity of each variable (value references stripped)
+system("grep -oE \"<(Float64|Int32) name=\\\"[^\\\"]*\\\"[^>]*\" fmi3_quantity_types_tmp.xml | sed -E \"s/ valueReference=\\\"[0-9]+\\\"//\" | sed -E \"s/ (causality|variability|initial|start|unit|displayUnit|derivative|description)=\\\"[^\\\"]*\\\"//g\" > fmi3_quantity_types.xml"); getErrorString();
+readFile("fmi3_quantity_types.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi3_quantity_types.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <TypeDefinitions>
+//     <Float64Type name=\"ThermodynamicTemperature\" quantity=\"ThermodynamicTemperature\" unit=\"K\"/>
+//     <Float64Type name=\"Pressure\" quantity=\"Pressure\" unit=\"Pa\" displayUnit=\"bar\"/>
+//   </TypeDefinitions>
+// "
+// ""
+// 0
+// ""
+// "<Float64 name=\"time\"/
+// <Float64 name=\"T\"  declaredType=\"ThermodynamicTemperature\" quantity=\"ThermodynamicTemperature\"/
+// <Float64 name=\"der(T)\" /
+// <Float64 name=\"T2\"  declaredType=\"ThermodynamicTemperature\" quantity=\"ThermodynamicTemperature\"/
+// <Float64 name=\"plain\" /
+// <Float64 name=\"p\"  declaredType=\"Pressure\" quantity=\"Pressure\"/
+// <Int32 name=\"n\"  quantity=\"Count\"/
+// "
+// ""
+// endResult

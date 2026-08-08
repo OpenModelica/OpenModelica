@@ -390,6 +390,14 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   initialAnalyticalJacobian_func_ptr initialPartialFMIDERINIT;
   jacobianColumn_func_ptr functionJacFMIDERINIT_column;
   const int INDEX_JAC_FMIDERINIT;
+
+  /*
+  * FMU's set the dimensions of their non-scalarized array variables through
+  * this callback, before the value vectors are sized. read_input_fmu also sets
+  * them, but it runs too late for that. Appended at the end so that the
+  * positional initializers of this struct keep matching.
+  */
+  void (*set_input_fmu_dimensions)(MODEL_DATA* modelData);
 };
 
 

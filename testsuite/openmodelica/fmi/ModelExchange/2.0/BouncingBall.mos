@@ -2,7 +2,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml BouncingBallFMI20* output.log BouncingBallFMI20/*
-// cflags: -d=-newInst
 // Event handling in FMU Import
 //
 
@@ -26,6 +25,7 @@ end BouncingBallFMI20;
 "); getErrorString();
 buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="me_cs"); getErrorString();
 importFMU("BouncingBallFMI20.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 loadFile("BouncingBallFMI20_me_FMU.mo"); getErrorString();
 simulate(BouncingBallFMI20_me_FMU, stopTime=3.0); getErrorString();
 val(h,0);
@@ -42,15 +42,17 @@ val(h,3);
 // ""
 // true
 // ""
+// true
+// ""
 // record SimulationResult
 //     resultFile = "BouncingBallFMI20_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBallFMI20_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'BouncingBallFMI20_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // 1.0
-// 0.2250205209353687
-// -0.9555208441479278
+// 0.22502052093536873
+// -0.9555208462705483
 // endResult

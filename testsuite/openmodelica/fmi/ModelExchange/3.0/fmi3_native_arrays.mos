@@ -1,0 +1,46 @@
+// name: fmi3_native_arrays.mos
+// keywords: FMI 3.0 export array runtime
+// status: correct
+// teardown_command: rm -rf fmi3_native_arrays.fmu fmi3_native_arrays.fmutmp/ fmi3_native_arrays.log fmi3_native_arrays_info.json index.html
+//
+// A native FMI 3.0 array variable (exported with the new backend) occupies a
+// contiguous block of scalar value references. This checks that every element
+// of a Real, Integer and Boolean array can be read back through the FMI typed
+// getters (not just the first element): the FMU is simulated with fmpy and the
+// recorded array trajectories must match the model equations. Regression test
+// for the per-base-type get/set bounds that used the variable count instead of
+// the scalar element count.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi3_native_arrays
+  Real    r[3];
+  Integer i[3];
+  Boolean b[3];
+  Real    x(start = 0.0, fixed = true);
+equation
+  der(x) = 1;
+  r = {1.5, 2.5, 3.5};
+  i = {10, 20, 30};
+  b = {true, false, true};
+end fmi3_native_arrays;
+"); getErrorString();
+
+buildModelFMU(fmi3_native_arrays, version="3.0", fmuType="me"); getErrorString();
+
+system("python3 -c \"from fmpy import simulate_fmu; res=simulate_fmu('fmi3_native_arrays.fmu', stop_time=0.1, output=['r','i','b']); print('r=', [float(v) for v in res['r'][-1]]); print('i=', [int(v) for v in res['i'][-1]]); print('b=', [int(v) for v in res['b'][-1]])\""); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_native_arrays.fmu"
+// ""
+// r= [1.5, 2.5, 3.5]
+// i= [10, 20, 30]
+// b= [1, 0, 1]
+// 0
+// ""
+// endResult

@@ -63,7 +63,7 @@ third, drag and drop block and connect it"));
       Placement(transformation(extent = {{-62, 52}, {-42, 72}})));
     Modelica.Blocks.Sources.Step step(startTime = 0.1, height = 130) annotation(
       Placement(transformation(extent = {{-94, 52}, {-74, 72}})));
-  FMIExercise_Components_PI_me_FMU fMIExercise_Components_PI_me_FMU1(T = Ti, k = 0.1)  annotation(
+  PI_me_FMU fMIExercise_Components_PI_me_FMU1(T = Ti, k = 0.1)  annotation(
       Placement(visible = true, transformation(origin = {-26, 22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
     connect(fMIExercise_Components_PI_me_FMU1.u, feedback.y) annotation(
