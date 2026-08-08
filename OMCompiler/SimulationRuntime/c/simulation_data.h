@@ -190,8 +190,8 @@ typedef struct NONLINEAR_PATTERN
 typedef struct JACOBIAN
 {
   JACOBIAN_AVAILABILITY availability;   /* Availability status */
-  size_t sizeCols;                      /* Number of columns of Jacobian */
-  size_t sizeRows;                      /* Number of rows of Jacobian */
+  size_t sizeCols;                      /* Length of seedVars / active compressed dimension */
+  size_t sizeRows;                      /* Length of resultVars / passive inner dimension */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
   SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC/CSR format including column/row coloring */
   modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
@@ -202,13 +202,14 @@ typedef struct JACOBIAN
   EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
-  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
-                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
+  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns.
+                                           Row evaluation uses CSR and row coloring; sizeCols is then the primal
+                                           row count and sizeRows is the primal column count. */
   /* Bidirectional (star bicoloring) support */
   modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
   struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
-  unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
+  unsigned int* csrToCscMap;            /* Maps row-evaluation CSR nz positions to canonical CSC nz positions. Size nnz. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT

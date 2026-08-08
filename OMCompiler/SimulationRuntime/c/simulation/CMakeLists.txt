@@ -5,6 +5,7 @@ find_package(LAPACK REQUIRED)
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
   "eval_dep.c"
+  "jacobian_bicoloring.cpp"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -42,7 +43,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/ida_solver.c"
   "solver/initialization/initialization.c"
   "solver/jacobian_analysis.c"
-  "solver/jacobianSymbolical.c"
   "solver/kinsol_b.c"
   "solver/kinsolSolver.c"
   "solver/linearSolverKlu.c"
@@ -117,7 +117,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/ida_solver.h"
   "solver/initialization/initialization.h"
   "solver/jacobian_analysis.h"
-  "solver/jacobianSymbolical.h"
   "solver/kinsol_b.h"
   "solver/kinsolSolver.h"
   "solver/linearSolverKlu.h"
@@ -185,6 +184,11 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     omc::3rd::lis
     ${LAPACK_LIBRARIES}
 )
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PUBLIC OMC_HAVE_COLPACK)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PRIVATE omc::3rd::colpack)
+endif()
 
 if(OM_OMC_ENABLE_PRIMME)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)

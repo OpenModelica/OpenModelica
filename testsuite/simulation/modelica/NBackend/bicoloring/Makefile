@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 arrowhead.mos \
+asymmetric2x2.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

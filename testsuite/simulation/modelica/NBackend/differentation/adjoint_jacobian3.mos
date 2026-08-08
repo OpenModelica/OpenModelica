@@ -115,8 +115,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
 //
 // TmpVars (size = 2)
 // ********************
@@ -138,7 +138,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-//
+// $RES_SIM_1 ... {$SEED_ODE_JAC_ADJ.$DER.y, $SEED_ODE_JAC_ADJ.$DER.x} ... {($pDER_ODE_JAC_ADJ.y, {}, false), ($pDER_ODE_JAC_ADJ.x, {}, false)}
+// $RES_SIM_0 ... {$SEED_ODE_JAC_ADJ.$DER.y, $SEED_ODE_JAC_ADJ.$DER.x} ... {($pDER_ODE_JAC_ADJ.x, {}, false), ($pDER_ODE_JAC_ADJ.y, {}, false)}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 8, partition = 0)

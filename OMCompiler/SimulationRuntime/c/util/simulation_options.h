@@ -507,6 +507,13 @@ typedef enum JACOBIAN_METHOD
 extern const char *JACOBIAN_METHOD_NAME[JAC_MAX];
 extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
+typedef enum JACOBIAN_OUTPUT_FORMAT
+{
+  JAC_OUTPUT_DENSE,      /* dense column-major modelica_real* buffer, zeroed here */
+  JAC_OUTPUT_SPARSE_RAW, /* raw compressed sparse buffer, setJacElementRawSparse */
+  JAC_OUTPUT_CUSTOM      /* opaque buffer (e.g. SUNDIALS matrix); caller supplies setFwd/setAdj */
+} JACOBIAN_OUTPUT_FORMAT;
+
 /**
  * @brief Linear system solver method
  *

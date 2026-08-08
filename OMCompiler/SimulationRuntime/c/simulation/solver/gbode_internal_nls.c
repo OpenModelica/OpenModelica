@@ -100,6 +100,8 @@ typedef struct GB_INTERNAL_NLS_DATA
   KLUInternals *klu_internals_cmplx; // internal data structures for complex systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   SPARSE_PATTERN *nlsPattern;        // sparse pattern struct(I + J) (for DIRK == NLS sparse pattern, else created)
   modelica_boolean ownsNlsPattern;   // true if sparse pattern was created or false if taken from the NLS
+  SPARSE_PATTERN *odePattern;        // canonical CSC pattern of the full ODE Jacobian
+  modelica_boolean ownsODEPattern;   // true for the CSC converted from an adjoint CSR pattern
   double *jacobian_callback;         // buffer for continuous ODE Jacobian (size = nnz(J_f))
   int *ode_to_nls;                   // mapping ODE Jacobian nnz -> NLS Jacobian nnz
   int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
@@ -131,6 +133,21 @@ typedef struct GB_INTERNAL_NLS_DATA
   unsigned int* colorCols_stub;       // contains the coloring for evalJacobian
   unsigned int maxColors_stub;        // Number of colors
 } GB_INTERNAL_NLS_DATA;
+
+typedef struct GB_ADJOINT_SPARSE_CONTEXT
+{
+  double *values;
+  const unsigned int *csrToCscMap;
+} GB_ADJOINT_SPARSE_CONTEXT;
+
+static void setJacElementGBAdjointSparse(int col, int row, int nth, double value, void *context, int nRows)
+{
+  GB_ADJOINT_SPARSE_CONTEXT *ctx = (GB_ADJOINT_SPARSE_CONTEXT *) context;
+  (void) col;
+  (void) row;
+  (void) nRows;
+  ctx->values[ctx->csrToCscMap[nth]] = value;
+}
 
 /**
  * @brief Map ODE sparsity pattern indices into the enlarged (I+J) pattern.
@@ -352,7 +369,7 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
   }
   else
   {
-    sparsity = jacobian_ODE->sparsePattern;
+    sparsity = nls->odePattern;
     size = gbData->nStates;
     max_colors = sparsity->maxColors;
     color_cols = sparsity->colorCols;
@@ -450,7 +467,8 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 #endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[
+    (!nls->multirate && gbData->useAdjJacobian) ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A]);
 
   if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
@@ -458,7 +476,20 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   }
   else if (!nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
-    evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+    if (gbData->jacobianMethod == BICOLOREDSYMJAC) {
+      evalJacobianExtended(data, threadData, BICOLOREDSYMJAC,
+               jacobian_ODE, NULL, /*t_jac=*/NULL, nls->jacobian_callback,
+               JAC_OUTPUT_SPARSE_RAW, NULL, NULL);
+    } else if (jacobian_ODE->isRowEval) {
+      GB_ADJOINT_SPARSE_CONTEXT ctx = {nls->jacobian_callback, jacobian_ODE->csrToCscMap};
+      evalJacobianExtended(data, threadData, COLOREDSYMJACADJ,
+               jacobian_ODE, NULL, /*t_jac=*/NULL, &ctx,
+               JAC_OUTPUT_CUSTOM, NULL, setJacElementGBAdjointSparse);
+    } else {
+      evalJacobianExtended(data, threadData, COLOREDSYMJAC,
+               jacobian_ODE, NULL, /*t_jac=*/NULL, nls->jacobian_callback,
+               JAC_OUTPUT_SPARSE_RAW, NULL, NULL);
+    }
   }
   else
   {
@@ -795,7 +826,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   double *scal = nls->scal;
 
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=(nls->multirate ? (void *) gbData->gbfData : (void *) gbData)};
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = nls->multirate ? nls->odePatternMR : nls->odePattern;
 
   const int flag = 1;
   modelica_boolean jac_called = FALSE;
@@ -1197,7 +1228,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = nls->multirate ? nls->odePatternMR : nls->odePattern;
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
   modelica_boolean jac_called = FALSE;
@@ -1491,7 +1522,9 @@ void *gbInternalNlsAllocate(int size,
   BUTCHER_TABLEAU *tabl = (isFast ? ((DATA_GBODEF *) userData->solverData)->tableau
                                   : ((DATA_GBODE *) userData->solverData)->tableau);
   T_TRANSFORM *transform = tabl->t_transform;
-  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
+  modelica_boolean _useAdj = !isFast && ((DATA_GBODE *) userData->solverData)->useAdjJacobian;
+  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[
+    _useAdj ? userData->data->callback->INDEX_JAC_ADJ : userData->data->callback->INDEX_JAC_A]);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
 
@@ -1504,6 +1537,24 @@ void *gbInternalNlsAllocate(int size,
 
   nls->nls_user_data = userData;
   nls->size = jacobian_ODE->sizeRows;
+
+  if (_useAdj) {
+    initAdjointCSRtoCSCMap(jacobian_ODE);
+    if (jacobian_ODE->csrToCscMap == NULL && jacobian_ODE->sparsePattern->nnz > 0) {
+      throwStreamPrint(NULL, "Failed to construct GBODE adjoint CSR-to-CSC mapping.");
+    }
+    nls->odePattern = cscToCsr(jacobian_ODE->sparsePattern,
+                               jacobian_ODE->sizeCols, jacobian_ODE->sizeRows);
+    if (nls->odePattern == NULL) {
+      throwStreamPrint(NULL, "Failed to construct GBODE CSC sparsity from adjoint CSR.");
+    }
+    computeColumnColoring(nls->odePattern, jacobian_ODE->sizeRows, jacobian_ODE->sizeCols);
+    nls->ownsODEPattern = TRUE;
+  } else {
+    nls->odePattern = jacobian_ODE->sparsePattern;
+    nls->ownsODEPattern = FALSE;
+  }
+
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(double));
   nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(int));
   nls->nls_diag_indices = (int *) malloc(jacobian_ODE->sizeRows * sizeof(int));
@@ -1531,7 +1582,7 @@ void *gbInternalNlsAllocate(int size,
   else if (nls->use_t_transform)
   {
     // allocate the correct sparse pattern directly
-    nls->nlsPattern = buildSparsePatternWithDiagonal(jacobian_ODE->sparsePattern, jacobian_ODE->sizeRows, NULL);
+    nls->nlsPattern = buildSparsePatternWithDiagonal(nls->odePattern, jacobian_ODE->sizeRows, NULL);
     nls->ownsNlsPattern = TRUE;
   }
   else
@@ -1544,7 +1595,7 @@ void *gbInternalNlsAllocate(int size,
   if (!nls->multirate)
   {
     // create ODE Jac -> NLS Jacobian mapping
-    updateSparsePatternMappings(nls->nlsPattern, jacobian_ODE->sparsePattern, nls, jacobian_ODE->sizeRows);
+    updateSparsePatternMappings(nls->nlsPattern, nls->odePattern, nls, jacobian_ODE->sizeRows);
 
     nls->odePatternMR = NULL;
     nls->ownsODEPatternMR = FALSE;
@@ -1705,6 +1756,11 @@ void gbInternalNlsFree(void *nls_ptr)
   if (nls->ownsNlsPattern)
   {
     freeSparsePattern(nls->nlsPattern);
+  }
+
+  if (nls->ownsODEPattern)
+  {
+    freeSparsePattern(nls->odePattern);
   }
 
   if (nls->ownsODEPatternMR)
