@@ -47,10 +47,35 @@
 #include "Util/Helper.h"
 #include "Options/NotificationsDialog.h"
 
+#include <QApplication>
 #include <QCompleter>
 #include <QMenu>
 #include <QMessageBox>
 
+namespace {
+  QColor modelicaEditorSyntaxColor(ModelicaEditorPage *pModelicaEditorPage, const QString &item)
+  {
+    if (!qApp->property("omeditDarkMode").toBool()) {
+      return pModelicaEditorPage->getColor(item);
+    } else if (item.compare("Text") == 0) {
+      return QColor(232, 234, 237);
+    } else if (item.compare("Number") == 0) {
+      return QColor(251, 191, 36);
+    } else if (item.compare("Keyword") == 0) {
+      return QColor(248, 113, 113);
+    } else if (item.compare("Type") == 0) {
+      return QColor(147, 197, 253);
+    } else if (item.compare("Function") == 0) {
+      return QColor(192, 132, 252);
+    } else if (item.compare("Quotes") == 0) {
+      return QColor(134, 239, 172);
+    } else if (item.compare("Comment") == 0) {
+      return QColor(148, 163, 184);
+    } else {
+      return pModelicaEditorPage->getColor(item);
+    }
+  }
+}
 
 /*!
  * \class ModelicaEditor
@@ -727,15 +752,15 @@ void ModelicaHighlighter::initializeSettings()
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpModelicaEditorPage->getColor("Text"));
-  mKeywordFormat.setForeground(mpModelicaEditorPage->getColor("Keyword"));
-  mTypeFormat.setForeground(mpModelicaEditorPage->getColor("Type"));
-  mSingleLineCommentFormat.setForeground(mpModelicaEditorPage->getColor("Comment"));
-  mMultiLineCommentFormat.setForeground(mpModelicaEditorPage->getColor("Comment"));
-  mFunctionFormat.setForeground(mpModelicaEditorPage->getColor("Function"));
-  mQuotationFormat.setForeground(mpModelicaEditorPage->getColor("Quotes"));
+  mTextFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Text"));
+  mKeywordFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Keyword"));
+  mTypeFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Type"));
+  mSingleLineCommentFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Comment"));
+  mMultiLineCommentFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Comment"));
+  mFunctionFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Function"));
+  mQuotationFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Quotes"));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
-  mNumberFormat.setForeground(mpModelicaEditorPage->getColor("Number"));
+  mNumberFormat.setForeground(modelicaEditorSyntaxColor(mpModelicaEditorPage, "Number"));
   rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
@@ -998,7 +1023,7 @@ void ModelicaHighlighter::highlightBlock(const QString &text)
   if (pTextBlockUserData) {
     pTextBlockUserData->setFoldingState(false);
   }
-  setFormat(0, text.length(), mpModelicaEditorPage->getColor("Text"));
+  setFormat(0, text.length(), modelicaEditorSyntaxColor(mpModelicaEditorPage, "Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);

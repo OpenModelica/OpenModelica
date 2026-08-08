@@ -49,6 +49,7 @@
 #include "FMI/FMUExportOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
 
+#include <QApplication>
 #include <QMenu>
 #include <QMessageBox>
 
@@ -195,12 +196,30 @@ void MessageWidget::applyMessagesSettings()
   font.setPointSizeF(fontSize);
   mpMessagesTextBrowser->setFont(font);
   // set the messages color by setting the style sheet
-  QString messagesCSS = QString(".notification {color: %1}"
-                                ".warning {color: %2}"
-                                ".error {color: %3}")
-      .arg(OptionsDialog::instance()->getMessagesPage()->getNotificationColor().name())
-      .arg(OptionsDialog::instance()->getMessagesPage()->getWarningColor().name())
-      .arg(OptionsDialog::instance()->getMessagesPage()->getErrorColor().name());
+  QColor notificationColor = pMessagesPage->getNotificationColor();
+  QColor warningColor = pMessagesPage->getWarningColor();
+  QColor errorColor = pMessagesPage->getErrorColor();
+  QColor linkColor = QColor(Qt::blue);
+  if (qApp->property("omeditDarkMode").toBool()) {
+    if (notificationColor == QColor(Qt::black)) {
+      notificationColor = QColor(232, 234, 237);
+    }
+    if (warningColor == QColor(255, 170, 0)) {
+      warningColor = QColor(250, 204, 21);
+    }
+    if (errorColor == QColor(Qt::red)) {
+      errorColor = QColor(255, 107, 107);
+    }
+    linkColor = QColor(147, 197, 253);
+  }
+  QString messagesCSS = QString("a {color: %1}"
+                                ".notification {color: %2}"
+                                ".warning {color: %3}"
+                                ".error {color: %4}")
+      .arg(linkColor.name())
+      .arg(notificationColor.name())
+      .arg(warningColor.name())
+      .arg(errorColor.name());
   mpMessagesTextBrowser->document()->setDefaultStyleSheet(messagesCSS);
   // move the cursor to end.
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
