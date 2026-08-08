@@ -10234,6 +10234,22 @@ algorithm
   end for;
 end warnAboutIterationVariablesWithNoNominal;
 
+public function useSparseSolver
+"Whether a system of this size and sparsity is factorized sparse or dense. The
+ runtime used to decide this itself, which left the backend guessing."
+  input Integer size;
+  input Integer nnz;
+  input Boolean isLinear;
+  output Boolean sparse;
+protected
+  constant Real maxDensityLinear = 0.2, maxDensityNonlinear = 0.1;
+  constant Integer minSize = 1000;
+algorithm
+  sparse := if size <= 0 then false
+            else intReal(nnz) / intReal(size * size) < (if isLinear then maxDensityLinear else maxDensityNonlinear)
+                 or size > minSize;
+end useSparseSolver;
+
 public function getLinearfromJacType "  author: Frenkel TUD 2012-09"
   input BackendDAE.JacobianType jacType;
   output Boolean linear;

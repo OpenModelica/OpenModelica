@@ -797,12 +797,6 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         let codes = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, codes))?;
     }
-    if let Ok(set) = rt_inst.get_typed_func::<(u32, f64), ()>(&mut store, "rt_set_nlss_thresholds") {
-        let t = openmodelica_sim_meta::simflags::with_flags(|f| {
-            openmodelica_sim_meta::simflags::nlss_thresholds(f)
-        });
-        wts(set.call(&mut store, t))?;
-    }
     // `-newtonFTol`/`-newtonXTol`/`-newtonMaxStepFactor`: the nonlinear solvers that
     // read them run in-wasm whichever driver owns the run.
     if let Ok(set) = rt_inst.get_typed_func::<(f64, f64, f64), ()>(&mut store, "rt_set_newton_tuning") {
