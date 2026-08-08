@@ -50,6 +50,16 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* f
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
 SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
 void freeSparsePattern(SPARSE_PATTERN *spp);
+#if defined(OMC_HAVE_COLPACK)
+int computeColPackColumnColoring(
+	unsigned int nRows,
+	unsigned int nCols,
+	const unsigned int* leadindex,
+	const unsigned int* index,
+	unsigned int nnz,
+	unsigned int* colorCols,
+	unsigned int* maxColors);
+#endif
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols);
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);

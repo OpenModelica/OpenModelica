@@ -688,11 +688,11 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
 }
 
 /**
- * @brief Greedy distance-1 column coloring of a CSC sparse pattern.
+ * @brief Distance-1 column coloring of a CSC sparse pattern.
  *
  * Two columns may share a color only if they have no non-zero row in common.
- * Uses the existing csc_to_csr helper to build the row→columns map, then
- * assigns the smallest available color to each column in order.
+ * Uses ColPack's partial distance-two column coloring when available, with
+ * a greedy C-only fallback.
  *
  * Needed for the resizable analytic Jacobian path: the C sparsity pattern
  * is built at runtime from WHOLEDIM loops that over-approximate array
@@ -706,7 +706,18 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  */
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
-  if (!sp || nCols == 0) return;
+  if (!sp || !sp->colorCols) return;
+  if (nCols == 0) {
+    sp->maxColors = 0;
+    return;
+  }
+
+#if defined(OMC_HAVE_COLPACK)
+  if (computeColPackColumnColoring(
+          nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors)) {
+    return;
+  }
+#endif
 
   SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
   if (!csr) {

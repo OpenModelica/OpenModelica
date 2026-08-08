@@ -252,6 +252,7 @@ RESULTS_FILES = MatVer4.cpp \
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \
+           jacobian_colpack$(OBJ_EXT) \
            simulation_runtime$(OBJ_EXT) \
            socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
