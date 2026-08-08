@@ -49,8 +49,32 @@
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QPointer>
 #include <QTextDocumentFragment>
 #include <QDockWidget>
+
+namespace {
+
+/*!
+ * \brief The NavigationPoint struct
+ * Stores an editor and the cursor position to jump to when navigating back
+ * and forward through the cursor position history.
+ */
+struct NavigationPoint {
+  QPointer<PlainTextEdit> editor;
+  int position;
+};
+/*! The global navigation history shared by all editors. */
+QVector<NavigationPoint> gNavigationPoints;
+/*! Index of the current position in the global navigation history. */
+int gNavigationPos = -1;
+/*! True while a programmatic back/forward navigation is in progress.
+ * Used to avoid recording new points when the navigation activates a tab. */
+bool gNavigationActive = false;
+/*! Maximum number of points kept in the global navigation history. */
+const int gNavigationHistorySize = 50;
+
+}
 
 /*!
  * \class TabSettings
@@ -1119,7 +1143,169 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    recordNavigationPoint();
     centerCursor();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::recordNavigationPoint
+ * Records the current cursor position in the global navigation history. Used
+ * to implement the back/forward cursor navigation (mouse buttons 4/5 and
+ * Alt+Left/Alt+Right). The history is shared between all editors so the
+ * navigation works across different tabs, models and editors. A new point
+ * truncates any forward points and the history is limited to
+ * gNavigationHistorySize points.
+ */
+void PlainTextEdit::recordNavigationPoint()
+{
+  if (gNavigationActive) {
+    return;
+  }
+  pruneStaleNavigationPoints();
+  const int position = textCursor().position();
+  if (gNavigationPos >= 0 && gNavigationPos < gNavigationPoints.size()
+      && gNavigationPoints.at(gNavigationPos).editor == this && gNavigationPoints.at(gNavigationPos).position == position) {
+    return;
+  }
+  if (gNavigationPos >= 0 && gNavigationPos < gNavigationPoints.size() - 1) {
+    gNavigationPoints.resize(gNavigationPos + 1);
+  }
+  NavigationPoint navigationPoint;
+  navigationPoint.editor = this;
+  navigationPoint.position = position;
+  gNavigationPoints.append(navigationPoint);
+  gNavigationPos = gNavigationPoints.size() - 1;
+  while (gNavigationPoints.size() > gNavigationHistorySize) {
+    gNavigationPoints.removeFirst();
+    --gNavigationPos;
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::goBack
+ * Moves the cursor to the previous navigation point, activating the tab of
+ * the editor the point belongs to if needed. Returns true if the cursor was
+ * moved.
+ */
+bool PlainTextEdit::goBack()
+{
+  pruneStaleNavigationPoints();
+  if (gNavigationPos <= 0) {
+    return false;
+  }
+  --gNavigationPos;
+  PlainTextEdit::navigateToNavigationPoint(gNavigationPoints.at(gNavigationPos).editor, gNavigationPoints.at(gNavigationPos).position);
+  return true;
+}
+
+/*!
+ * \brief PlainTextEdit::goForward
+ * Moves the cursor to the next navigation point, activating the tab of the
+ * editor the point belongs to if needed. Returns true if the cursor was
+ * moved.
+ */
+bool PlainTextEdit::goForward()
+{
+  pruneStaleNavigationPoints();
+  if (gNavigationPos < 0 || gNavigationPos >= gNavigationPoints.size() - 1) {
+    return false;
+  }
+  ++gNavigationPos;
+  PlainTextEdit::navigateToNavigationPoint(gNavigationPoints.at(gNavigationPos).editor, gNavigationPoints.at(gNavigationPos).position);
+  return true;
+}
+
+/*!
+ * \brief PlainTextEdit::navigateToNavigationPoint
+ * Activates the tab of the editor the navigation point belongs to and moves
+ * its cursor to the given position without recording a new navigation point.
+ * \param pEditor - the editor the navigation point belongs to.
+ * \param position - the document position to move to.
+ */
+void PlainTextEdit::navigateToNavigationPoint(PlainTextEdit *pEditor, int position)
+{
+  if (!pEditor) {
+    return;
+  }
+  gNavigationActive = true;
+  ModelWidget *pModelWidget = pEditor->mpBaseEditor->getModelWidget();
+  if (pModelWidget) {
+    ModelWidgetContainer *pModelWidgetContainer = MainWindow::instance()->getModelWidgetContainer();
+    if (pModelWidgetContainer) {
+      QMdiSubWindow *pSubWindow = pModelWidgetContainer->getMdiSubWindow(pModelWidget);
+      if (pSubWindow) {
+        pModelWidgetContainer->setActiveSubWindow(pSubWindow);
+      }
+    }
+  }
+  pEditor->moveToNavigationPoint(position);
+  pEditor->setFocus(Qt::ActiveWindowFocusReason);
+  gNavigationActive = false;
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the cursor to the given position without recording a new navigation
+ * point. The position is clamped to the document so it is safe to visit even
+ * if the document changed after the position was recorded.
+ * \param position - the document position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  position = qBound(0, position, document()->characterCount() - 1);
+  QTextCursor cursor = textCursor();
+  cursor.setPosition(position);
+  setTextCursor(cursor);
+  ensureCursorVisible();
+  centerCursor();
+}
+
+/*!
+ * \brief PlainTextEdit::clearNavigationHistory
+ * Removes the navigation points of this editor from the global navigation
+ * history. Used when the content of the editor is replaced so stale points
+ * do not point to the old content.
+ */
+void PlainTextEdit::clearNavigationHistory()
+{
+  for (int i = 0; i < gNavigationPoints.size(); ++i) {
+    if (gNavigationPoints.at(i).editor == this) {
+      gNavigationPoints.removeAt(i);
+      if (i <= gNavigationPos) {
+        --gNavigationPos;
+      }
+      --i;
+    }
+  }
+  if (gNavigationPoints.isEmpty()) {
+    gNavigationPos = -1;
+  } else {
+    gNavigationPos = qBound(0, gNavigationPos, gNavigationPoints.size() - 1);
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::pruneStaleNavigationPoints
+ * Removes the navigation points of editors that have been destroyed from the
+ * global navigation history and keeps gNavigationPos pointing to the same
+ * logical position.
+ */
+void PlainTextEdit::pruneStaleNavigationPoints()
+{
+  for (int i = 0; i < gNavigationPoints.size(); ++i) {
+    if (gNavigationPoints.at(i).editor.isNull()) {
+      gNavigationPoints.removeAt(i);
+      if (i <= gNavigationPos) {
+        --gNavigationPos;
+      }
+      --i;
+    }
+  }
+  if (gNavigationPoints.isEmpty()) {
+    gNavigationPos = -1;
+  } else {
+    gNavigationPos = qBound(0, gNavigationPos, gNavigationPoints.size() - 1);
   }
 }
 
@@ -1672,6 +1858,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
+  bool altModifier = pEvent->modifiers().testFlag(Qt::AltModifier);
   bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
   bool isCompleterChar = !pEvent->text().isEmpty() && mCompletionCharacters.indexOf(pEvent->text().front()) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
@@ -1743,6 +1930,14 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   } else if (shiftModifier && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
     /* Ticket #2273. Change shift+enter to enter. */
     pEvent->setModifiers(Qt::NoModifier);
+  } else if (altModifier && !controlModifier && !shiftModifier && pEvent->key() == Qt::Key_Left) {
+    // alt+left is pressed. Navigate back in the cursor position history.
+    goBack();
+    return;
+  } else if (altModifier && !controlModifier && !shiftModifier && pEvent->key() == Qt::Key_Right) {
+    // alt+right is pressed. Navigate forward in the cursor position history.
+    goForward();
+    return;
   }
   /* do not change the order of execution as the indentation event will fail when completer is on */
   if (!mpCompleter || !isCompleterShortcut) { // do not process the shortcut when we have a completer
@@ -2081,12 +2276,24 @@ void PlainTextEdit::wheelEvent(QWheelEvent *event)
  */
 void PlainTextEdit::mousePressEvent(QMouseEvent *event)
 {
+  if (event->button() == Qt::BackButton) {
+    goBack();
+    event->accept();
+    return;
+  } else if (event->button() == Qt::ForwardButton) {
+    goForward();
+    event->accept();
+    return;
+  }
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (controlModifier) {
     mpBaseEditor->symbolAtPosition(event->pos());
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    recordNavigationPoint();
+  }
 }
 
 /*!
@@ -2802,6 +3009,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  mpBaseEditor->getPlainTextEdit()->recordNavigationPoint();
 }
 
 /*!

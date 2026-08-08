@@ -48,6 +48,7 @@
 #include <QCheckBox>
 #include <QToolButton>
 #include <QStandardItemModel>
+#include <QList>
 
 class ModelWidget;
 class InfoBar;
@@ -262,6 +263,10 @@ public:
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   void lineNumberAreaMouseEvent(QMouseEvent *event);
   void goToLineNumber(int lineNumber);
+  void recordNavigationPoint();
+  bool goBack();
+  bool goForward();
+  void clearNavigationHistory();
   QCompleter *completer();
   bool isUndoAvailable() {return mIsUndoAvailable;}
   bool isRedoAvailable() {return mIsRedoAvailable;}
@@ -280,6 +285,8 @@ private:
   bool mIsUndoAvailable;
   bool mIsRedoAvailable;
   QString mCompletionCharacters;
+  static void navigateToNavigationPoint(PlainTextEdit *pEditor, int position);
+  void pruneStaleNavigationPoints();
 
   void highlightCurrentLine();
   void highlightParentheses();
@@ -293,6 +300,7 @@ private:
   void foldOrUnfold(bool unFold);
   void handleHomeKey(bool keepAnchor);
   void toggleBlockVisible(const QTextBlock &block);
+  void moveToNavigationPoint(int position);
 private slots:
   void showCompletionItemToolTip(const QModelIndex & index);
   void insertCompletionItem(const QModelIndex & index);
