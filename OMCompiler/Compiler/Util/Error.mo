@@ -1170,6 +1170,10 @@ public constant ErrorTypes.Message WARNING_DEF_USE_UNPROVEN = ErrorTypes.MESSAGE
   "%s was possibly used before it was defined (given a value): it is not defined on all control flow paths leading to the use. Per the Modelica specification using an uninitialized variable is an error.");
 public constant ErrorTypes.Message UNASSIGNED_FUNCTION_OUTPUT_UNPROVEN = ErrorTypes.MESSAGE(625, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "Output parameter %s was possibly not assigned a value: it is not assigned on all control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
+public constant ErrorTypes.Message TEARING_NOT_WORTH_IT = ErrorTypes.MESSAGE(626, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
+  "Tearing is skipped for linear strong component %s: solving it torn to %s iteration variables is estimated at %s flops against %s for the untorn system of size %s.");
+public constant ErrorTypes.Message TEARING_AMPLIFIES_ERROR = ErrorTypes.MESSAGE(627, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
+  "Tearing is skipped for linear strong component %s: substituting through its %s inner equations amplifies an error by 1e%s, which double precision cannot carry.");
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Local variable '%s' shadows another variable.");

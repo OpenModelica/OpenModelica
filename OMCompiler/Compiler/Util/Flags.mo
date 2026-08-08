@@ -571,6 +571,8 @@ constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
 constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
   "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
+constant DebugFlag TEARING_COST = DEBUG_FLAG(201, "tearingCost", false,
+  "Dumps the estimated cost of every torn system against solving it untorn.");
 
 public
 // CONFIGURATION FLAGS
@@ -1434,6 +1436,9 @@ constant ConfigFlag FMU_VERSION = CONFIG_FLAG(169, "fmiVersion",
   NONE(), EXTERNAL(), ENUM_FLAG(FMI_VERSION_20, {("1.0", FMI_VERSION_10), ("2.0", FMI_VERSION_20), ("3.0", FMI_VERSION_30)}),
   SOME(STRING_OPTION({"1.0", "2.0", "3.0"})),
   "FMI version for FMU export: 1.0, 2.0, 3.0.");
+constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(170, "tearingCostMargin",
+  NONE(), EXTERNAL(), REAL_FLAG(2.0), NONE(),
+  "How much cheaper solving a linear system untorn has to be estimated before its\ntearing set is dropped. Raise it to keep tearing systems the estimate would give\nup on, lower it towards 0 to tear less (default 2).");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

@@ -1346,6 +1346,16 @@ end SimCodeFunction;
 
 package SimCodeUtil
 
+  function linearSystemMatrixFormat
+    input SimCode.LinearSystem ls;
+    output String format;
+  end linearSystemMatrixFormat;
+
+  function nonlinearSystemMatrixFormat
+    input SimCode.NonlinearSystem nls;
+    output String format;
+  end nonlinearSystemMatrixFormat;
+
   function absoluteClockIdxForBaseClock
     input Integer baseClockIdx;
     input list<SimCode.ClockedPartition> allBaseClockPartitions;

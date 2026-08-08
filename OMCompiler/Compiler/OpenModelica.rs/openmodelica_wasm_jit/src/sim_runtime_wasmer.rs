@@ -864,12 +864,6 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         let (nls, nls_ls, ls, lss) = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, nls, nls_ls, ls, lss))?;
     }
-    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, f64), ()>(&store, "rt_set_nlss_thresholds") {
-        let (min_size, max_density) = openmodelica_sim_meta::simflags::with_flags(|f| {
-            openmodelica_sim_meta::simflags::nlss_thresholds(f)
-        });
-        wts(set.call(&mut store, min_size, max_density))?;
-    }
     // See the wasmtime counterpart.
     if let Ok(set) = rt_inst.exports.get_typed_function::<(f64, f64, f64), ()>(&store, "rt_set_newton_tuning") {
         let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::with_flags(|f| {

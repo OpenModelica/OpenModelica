@@ -978,8 +978,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
-    let head =
-        format!("{experiment_log}{}{}", flag_change_log(&flags), sparse_solver_log(&model, &flags));
+    let head = format!("{experiment_log}{}", flag_change_log(&flags));
     let init_output = if head.is_empty() {
         init_output
     } else {
@@ -1161,9 +1160,8 @@ mod session {
         SPLIT_ARMED.with(|a| a.set(false));
         let flags = simflags::flags();
         let init_log = format!(
-            "{experiment_log}{}{}{}",
+            "{experiment_log}{}{}",
             flag_change_log(&flags),
-            sparse_solver_log(&model, &flags),
             INIT_OUTPUT.with(|c| c.borrow_mut().take()).unwrap_or_default()
         );
         let backend = match built {
@@ -3970,118 +3968,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         import_slots,
         var_units,
         meta,
-        sparse_solver_log: build_sparse_lss_log(sim_code),
-        nls_systems: collect_nls_systems(sim_code),
     })
 }
 
 /// Wrap a `\n`-separated message in the `LOG_STDOUT`/continuation prefixes.
 fn format_log_stdout(msg: &str) -> String {
     openmodelica_modelica_utilities::format_log_stdout(msg, openmodelica_modelica_utilities::LOG_STDOUT_INFO)
-}
-
-/// Reproduce C's `initializeLinearSystems` sparse-solver announcements
-/// (`linearSystem.c`): for each torn linear system chosen as sparse (by
-/// [`lin_use_sparse`]), one message keyed on why (density and/or size), then one
-/// aggregate flag-hint. Systems are taken across the init + simulation equation
-/// lists, deduplicated and ordered by `indexLinearSystem` (C's array order).
-fn build_sparse_lss_log(sim_code: &SimCode::SimCode) -> String {
-    use crate::CodegenWasmJitFunctions::{lin_use_sparse, LSS_MAX_DENSITY, LSS_MIN_SIZE};
-    // (indexLinearSystem, size, nnz), deduped by index, in index order.
-    let mut seen: HashSet<i32> = HashSet::new();
-    let mut systems: Vec<(i32, usize, usize)> = Vec::new();
-    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
-        for e in &eqs {
-            if let SimCode::SimEqSystem::SES_LINEAR { lSystem, .. } = &**e {
-                let size = count(&lSystem.vars) as usize;
-                let nnz = lin_system_nnz(lSystem);
-                if seen.insert(lSystem.indexLinearSystem) {
-                    systems.push((lSystem.indexLinearSystem, size, nnz));
-                }
-            }
-        }
-    };
-    scan(flatten_eqs(&sim_code.parameterEquations));
-    scan(flatten_eqs(&sim_code.initialEquations));
-    scan(flatten_eqs_ll(&sim_code.odeEquations));
-    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
-    systems.sort_by_key(|&(idx, _, _)| idx);
-
-    let mut out = String::new();
-    let mut some_small_density = false;
-    let mut some_big_size = false;
-    for (idx, size, nnz) in &systems {
-        let (size, nnz) = (*size, *nnz);
-        if size == 0 || !lin_use_sparse(size, nnz) {
-            continue;
-        }
-        let density = nnz as f64 / (size * size) as f64;
-        let small_density = density < LSS_MAX_DENSITY;
-        let big_size = size > LSS_MIN_SIZE;
-        let body = if small_density {
-            some_small_density = true;
-            if big_size {
-                some_big_size = true;
-                format!(
-                    "Using sparse solver for linear system {idx},\nbecause density of {density:.3} remains under threshold of {LSS_MAX_DENSITY:.3}\nand size of {size} exceeds threshold of {LSS_MIN_SIZE}."
-                )
-            } else {
-                format!(
-                    "Using sparse solver for linear system {idx},\nbecause density of {density:.3} remains under threshold of {LSS_MAX_DENSITY:.3}."
-                )
-            }
-        } else {
-            some_big_size = true;
-            format!("Using sparse solver for linear system {idx},\nbecause size of {size} exceeds threshold of {LSS_MIN_SIZE}.")
-        };
-        out.push_str(&format_log_stdout(&body));
-    }
-    let hint = if some_small_density {
-        if some_big_size {
-            Some("The maximum density and the minimal system size for using sparse solvers can be\nspecified using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.")
-        } else {
-            Some("The maximum density for using sparse solvers can be specified\nusing the runtime flag '<-lssMaxDensity=value>'.")
-        }
-    } else if some_big_size {
-        Some("The minimal system size for using sparse solvers can be specified\nusing the runtime flag '<-lssMinSize=value>'.")
-    } else {
-        None
-    };
-    if let Some(h) = hint {
-        out.push_str(&format_log_stdout(h));
-    }
-    out
-}
-
-/// Reproduce C's `initializeNonlinearSystems` sparse-solver announcements
-/// (`nonlinearSystem.c`): one message per system handed to kinsol+KLU, keyed on
-/// why (density and/or size), then one aggregate flag-hint. Systems are in
-/// `indexNonLinearSystem` order (C's array order), matching the `sysNum` printed.
-fn collect_nls_systems(sim_code: &SimCode::SimCode) -> Vec<(i32, i32, u32, u32)> {
-    let mut seen: HashSet<i32> = HashSet::new();
-    // (sysNum, equationIndex, size, nnz), deduped, in system-number order.
-    let mut systems: Vec<(i32, i32, u32, u32)> = Vec::new();
-    let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
-        for e in &eqs {
-            if let SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } = &**e {
-                if seen.insert(nlSystem.indexNonLinearSystem) {
-                    let size = lst(&nlSystem.crefs).count();
-                    systems.push((
-                        nlSystem.indexNonLinearSystem,
-                        nlSystem.index,
-                        size as u32,
-                        nls_system_nnz(nlSystem) as u32,
-                    ));
-                }
-            }
-        }
-    };
-    scan(flatten_eqs(&sim_code.parameterEquations));
-    scan(flatten_eqs(&sim_code.initialEquations));
-    scan(flatten_eqs_ll(&sim_code.odeEquations));
-    scan(flatten_eqs_ll(&sim_code.algebraicEquations));
-    systems.sort_by_key(|&(idx, _, _, _)| idx);
-    systems
 }
 
 /// C's `homotopySupport` loop over `nonlinearSystemData`: whether a nonlinear
@@ -4110,61 +4002,6 @@ fn flag_change_log(flags: &simflags::SimFlags) -> String {
             LOG_STDOUT_INFO
         };
         out.push_str(&openmodelica_modelica_utilities::format_log_stdout(&msg, prefix));
-    }
-    out
-}
-
-/// The linear half is fixed at codegen; the nonlinear half moves with the flags.
-fn sparse_solver_log(model: &SimModel, flags: &simflags::SimFlags) -> String {
-    let (min_size, max_density) = simflags::nlss_thresholds(flags);
-    format!("{}{}", model.sparse_solver_log, sparse_nls_log(&model.nls_systems, min_size, max_density))
-}
-
-/// C's `initializeNonlinearSystems` announcement: `-nlssMinSize`/`-nlssMaxDensity`
-/// move both the choice and the numbers it quotes, so it is rendered per run.
-fn sparse_nls_log(systems: &[(i32, i32, u32, u32)], min_size: u32, max_density: f64) -> String {
-    let mut out = String::new();
-    let mut some_small_density = false;
-    let mut some_big_size = false;
-    for &(idx, eq_index, size, nnz) in systems {
-        let (size, nnz) = (size as usize, nnz as usize);
-        let density = nnz as f64 / (size * size) as f64;
-        let big_size = size > min_size as usize;
-        if size == 0 || nnz == 0 || !(density < max_density || big_size) {
-            continue;
-        }
-        let (nlss_max_density, nlss_min_size) = (max_density, min_size);
-        let body = if density < nlss_max_density {
-            some_small_density = true;
-            if big_size {
-                some_big_size = true;
-                format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}\nand size of {size} exceeds threshold of {nlss_min_size}."
-                )
-            } else {
-                format!(
-                    "Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause density of {density:.2} remains under threshold of {nlss_max_density:.2}."
-                )
-            }
-        } else {
-            some_big_size = true;
-            format!("Using sparse solver kinsol for nonlinear system {idx} ({eq_index}),\nbecause size of {size} exceeds threshold of {nlss_min_size}.")
-        };
-        out.push_str(&format_log_stdout(&body));
-    }
-    let hint = if some_small_density {
-        if some_big_size {
-            Some("The maximum density and the minimal system size for using sparse solvers can be\nspecified using the runtime flags '<-nlssMaxDensity=value>' and '<-nlssMinSize=value>'.")
-        } else {
-            Some("The maximum density for using sparse solvers can be specified\nusing the runtime flag '<-nlssMaxDensity=value>'.")
-        }
-    } else if some_big_size {
-        Some("The minimal system size for using sparse solvers can be specified\nusing the runtime flag '<-nlssMinSize=value>'.")
-    } else {
-        None
-    };
-    if let Some(h) = hint {
-        out.push_str(&format_log_stdout(h));
     }
     out
 }
@@ -5292,7 +5129,7 @@ fn lower_linear_system(
 }
 
 /// Whether a torn linear system uses the sparse solver (C's density/size
-/// threshold). `nnz` from `lin_system_nnz` so it agrees with the log message.
+/// threshold), an unknown nonzero count counting as dense.
 fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
     use crate::CodegenWasmJitFunctions::lin_use_sparse;
     if n == 0 {

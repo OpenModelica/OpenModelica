@@ -193,10 +193,8 @@ pub struct SimFlags {
     pub max_step_size: Option<f64>,
     /// `-noEventEmit`: drop the result rows a step that handled an event produces.
     pub no_event_emit: bool,
-    /// `-nlssMinSize=n` / `-nlssMaxDensity=d`: C's `nonlinearSparseSolverMinSize` /
-    /// `nonlinearSparseSolverMaxDensity`, the rule that hands a system to kinsol+KLU.
-    pub nlss_min_size: Option<u32>,
-    pub nlss_max_density: Option<f64>,
+    /// One of the four density/size flags was given. The backend decides now.
+    pub deprecated_density_flag: bool,
     /// `method="optimization"` (the Ipopt collocation solver): `-optimizerNP=<1|3>`
     /// collocation points per interval, and `-optimizerTimeGrid=<file>` listing the
     /// interval end points instead of an equidistant grid.
@@ -666,8 +664,10 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                     return Err(format!("Unknown value `{v}` for flag `-jacobian`"));
                 }
             }
-            "nlssMinSize" => f.nlss_min_size = Some(int(name, &value(name)?)?.max(0) as u32),
-            "nlssMaxDensity" => f.nlss_max_density = Some(real(name, &value(name)?)?),
+            "nlssMinSize" | "nlssMaxDensity" | "lssMinSize" | "lssMaxDensity" => {
+                f.deprecated_density_flag = true;
+                let _ = value(name)?;
+            }
             "maxStepSize" => f.max_step_size = Some(real(name, &value(name)?)?),
             "noEquidistantOutputTime" => {
                 f.no_equidistant_time = Some(
@@ -765,34 +765,12 @@ fn output_format(v: &str) -> Result<String, String> {
 pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
     let g = |v: f64| crate::driver::format_g(v, 6);
     let mut out = Vec::new();
-    if let Some(d) = f.nlss_max_density {
+    if f.deprecated_density_flag {
         out.push((
-            crate::omclog::INFO,
-            format!("Maximum density for using non-linear sparse solver changed to {d:.6}"),
-        ));
-    }
-    if let Some(n) = f.nlss_min_size {
-        out.push((
-            crate::omclog::INFO,
-            format!("Minimum system size for using non-linear sparse solver changed to {n}"),
-        ));
-    }
-    if let Some(v) = f.newton_xtol {
-        out.push((
-            crate::omclog::INFO,
-            format!("Tolerance for updating solution vector in Newton solver changed to {}", g(v)),
-        ));
-    }
-    if let Some(v) = f.newton_ftol {
-        out.push((
-            crate::omclog::INFO,
-            format!("Tolerance for accepting accuracy in Newton solver changed to {}", g(v)),
-        ));
-    }
-    if let Some(v) = f.newton_max_step_factor {
-        out.push((
-            crate::omclog::INFO,
-            format!("Maximum step size factor for a Newton step changed to {}", g(v)),
+            crate::omclog::WARNING,
+            "The flags -lssMaxDensity, -lssMinSize, -nlssMaxDensity and -nlssMinSize are\n\
+             deprecated and ignored: the compiler chooses dense or sparse per system."
+                .to_string(),
         ));
     }
     if f.dae_mode {
@@ -841,12 +819,6 @@ pub fn print_notices(f: &SimFlags) {
             _ => crate::omclog::info(crate::omclog::STDOUT, false, &msg),
         }
     }
-}
-
-/// C's `nonlinearSparseSolverMinSize` / `nonlinearSparseSolverMaxDensity`, with
-/// C's defaults (`simulation_options.h`) where the flags are absent.
-pub fn nlss_thresholds(f: &SimFlags) -> (u32, f64) {
-    (f.nlss_min_size.unwrap_or(1000), f.nlss_max_density.unwrap_or(0.1))
 }
 
 /// The `-steadyState` bound (C's default without `-steadyStateTol`), `None` when
