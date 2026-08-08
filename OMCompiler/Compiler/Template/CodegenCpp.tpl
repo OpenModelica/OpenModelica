@@ -5122,7 +5122,7 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
       let &outputAssign += if intGt(oi, 0) then 'convertArrayLayout(<%tmp%>, <%name%>);'
       '<%tmp%>.getData()'
     else
-      <<<%if iI then 'ConstArray(<%name%>).getData()'
+      <<<%if iI then 'const_cast< <%extType%> *>(ConstArray(<%name%>).getData())'
                 else '<%name%>.getData()'%>>>
 end extCArrayArg;
 
