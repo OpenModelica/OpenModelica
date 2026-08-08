@@ -1500,6 +1500,17 @@ namespace FlatModelica
 
   Cref::Cref(const QJsonObject &value)
   {
+    /* if value is a simple cref, it will have a "name" property
+     * otherwise it will have a "parts" property which is an array of objects, each with a "name" and optional "subscripts" property.
+     * Issue #16031.
+     */
+    auto const name = value["name"];
+
+    if (name.isString()) {
+      _name = name.toString().toStdString();
+      return;
+    }
+
     auto const parts = value["parts"];
 
     if (!parts.isArray()) {
