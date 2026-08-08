@@ -31,6 +31,8 @@ unsafe extern "C" {
     /// Copy up to `max` of the violations the model left with the host's
     /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
+    /// Same for the `reinit`s the model recorded with `rt_reinit_note`.
+    fn rt_host_take_reinits(ptr: u32, max: u32) -> u32;
     /// Open/close C's `noThrowAsserts` phase, on the host: that is where
     /// `rt_assert` lives, whichever driver runs.
     fn rt_host_set_no_throw(v: i32);
@@ -131,6 +133,17 @@ impl SimEngine for InWasmEngine {
         loop {
             let mut buf = [[0i32; 9]; 8];
             let n = unsafe { rt_host_take_warnings(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
+            out.extend_from_slice(&buf[..n.min(buf.len())]);
+            if n < buf.len() {
+                return out;
+            }
+        }
+    }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        let mut out = Vec::new();
+        loop {
+            let mut buf = [(0u32, 0.0f64); 8];
+            let n = unsafe { rt_host_take_reinits(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
             out.extend_from_slice(&buf[..n.min(buf.len())]);
             if n < buf.len() {
                 return out;

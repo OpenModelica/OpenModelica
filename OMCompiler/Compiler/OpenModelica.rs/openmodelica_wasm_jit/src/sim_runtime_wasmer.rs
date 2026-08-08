@@ -982,6 +982,9 @@ impl sim_driver::SimEngine for WasmerEngine {
     fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        crate::host::take_pending_reinits()
+    }
     fn lin_solves(&mut self) -> u64 {
         match self.rt_inst.exports.get_typed_function::<(), u64>(&self.store, "rt_lin_solves") {
             Ok(f) => f.call(&mut self.store).unwrap_or(0),
@@ -1130,6 +1133,9 @@ impl sim_driver::SimEngine for InWasmSession {
     }
     fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
+    }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        crate::host::take_pending_reinits()
     }
 }
 
