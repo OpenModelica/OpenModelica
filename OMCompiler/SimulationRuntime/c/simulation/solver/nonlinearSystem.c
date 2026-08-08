@@ -983,10 +983,16 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
 #endif
 
   /* call residual function */
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
   if (nonlinsys->strictTearingFunctionCall != NULL)
     constraintViolated = nonlinsys->residualFuncConstraints(resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
   else
     nonlinsys->residualFunc(resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
 
   /* replace extrapolated values by current x for discrete step */
   memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
