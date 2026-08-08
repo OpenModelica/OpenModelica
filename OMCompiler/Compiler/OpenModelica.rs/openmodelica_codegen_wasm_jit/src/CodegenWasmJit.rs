@@ -5623,7 +5623,9 @@ fn real_alg_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
 /// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
 fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
     let mut map = HashMap::new();
+    // `derivativeVars`: a `$DER.x` iteration variable otherwise scales at nominal 1.
     let all = lst(&vars.stateVars)
+        .chain(lst(&vars.derivativeVars))
         .chain(lst(&vars.algVars))
         .chain(lst(&vars.discreteAlgVars))
         .chain(lst(&vars.paramVars))
