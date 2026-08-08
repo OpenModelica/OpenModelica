@@ -159,7 +159,7 @@ CMake fork with the toolchain and pass `-Dpthreads_DIR=<prefix>`.
 cmake -S . -B build-win \
   -DCMAKE_TOOLCHAIN_FILE=OMCompiler/Compiler/OpenModelica.rs/.cmake/xwin-toolchain.cmake \
   -DCMAKE_BUILD_TYPE=Release -Dpthreads_DIR=<pthreads4w-prefix> \
-  -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+  -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
   -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
   -DRUST_OMC_TARGET=x86_64-pc-windows-msvc -DOM_ENABLE_GUI_CLIENTS=OFF
 ```

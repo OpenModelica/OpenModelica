@@ -37,6 +37,8 @@ CONFIG_H=$(top_builddir)/Compiler/runtime/config.h
 LIBSIMULATION=libSimulationRuntimeC.dll
 LIBRUNTIME=libOpenModelicaRuntimeC.dll
 LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+OPTIMIZATION_TARGET=optimization
+OPTIMIZATION_DLL_LIBS=$(OPTIMIZATION_LIBS)
 CMINPACK_NO_DLL=-DCMINPACK_NO_DLL
 # Consume fmilib as a static library (libfmilib.a) rather than the import library of
 # fmilib_shared.dll. Because fmilib_shared is also built, fmilib.h otherwise declares the
@@ -65,4 +67,3 @@ endif
 defaultMakefileTarget = Makefile.omdev.mingw
 
 include Makefile.common
-
