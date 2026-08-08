@@ -2392,6 +2392,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(ls)%>;
           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
           linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
@@ -2404,6 +2405,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(ls)%>;
           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
           linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
@@ -2428,6 +2430,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(ls)%>;
           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
           linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
@@ -2438,6 +2441,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
           linearSystemData[<%at.indexLinearSystem%>].size = <%listLength(at.vars)%>;
           linearSystemData[<%at.indexLinearSystem%>].nnz = <%listLength(at.simJac)%>;
+          linearSystemData[<%at.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(at)%>;
           linearSystemData[<%at.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
           linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
@@ -2454,6 +2458,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(ls)%>;
           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
           linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
@@ -2468,6 +2473,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
           linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
           linearSystemData[<%at.indexLinearSystem%>].size = <%listLength(at.vars)%>;
           linearSystemData[<%at.indexLinearSystem%>].nnz = <%listLength(at.simJac)%>;
+          linearSystemData[<%at.indexLinearSystem%>].matrixFormat = <%linearSystemMatrixFormat(at)%>;
           linearSystemData[<%at.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
           linearSystemData[<%at.indexLinearSystem%>].residualFunc = residualFunc<%at.index%>;
           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
@@ -2813,6 +2819,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
 
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].matrixFormat = <%nonlinearSystemMatrixFormat(nls)%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
       <%residualCall%>

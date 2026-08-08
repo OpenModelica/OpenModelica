@@ -86,6 +86,8 @@ import ElementSource;
 
 protected constant String BORDER    = "****************************************";
 protected constant String UNDERLINE = "========================================";
+protected constant list<String> withLSS = {"C", "wasm-jit", "wasm"} "targets that provide a linear sparse solver";
+protected constant list<String> withNSS = {"C", "wasm-jit", "wasm"} "targets that provide a nonlinear sparse solver";
 
 uniontype TearingMethod
   record MINIMAL_TEARING "Only tear discrete variables from loops"
@@ -358,6 +360,10 @@ algorithm
         try
           oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
           outRunMatching := true;
+          if not tearingPaysOff(oComp, ishared, eindex, vindx, ojac, jacType, strongComponentIndexOut, isLinear) then
+            oComp := inComp;
+            outRunMatching := false;
+          end if;
         else
           oComp := inComp;
           outRunMatching := false;
@@ -382,8 +388,6 @@ protected function checkTearingSettings
   input Integer numVars;
   output Boolean activateTearing = false;
 protected
-  constant list<String> withLSS = {"C", "wasm-jit", "wasm"} "targets that provide a linear sparse solver";
-  constant list<String> withNSS = {"C", "wasm-jit", "wasm"} "targets that provide a nonlinear sparse solver";
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
   Integer maxSize;
   Boolean isDense;
@@ -398,7 +402,7 @@ algorithm
 
   // Check if (component is too big) or (matrix is dense and target has no sparse solver)
   isDense := Flags.getConfigString(Flags.MATRIX_FORMAT) == "dense";
-  hasSparseSolver := listMember(Config.simCodeTarget(), (if isLinear then withLSS else withNSS));
+  hasSparseSolver := targetHasSparseSolver(isLinear);
   forcedTearing := isDense and not hasSparseSolver;
   if numVars > maxSize and not forcedTearing then
     Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars),
@@ -418,6 +422,242 @@ algorithm
 
   activateTearing := true;
 end checkTearingSettings;
+
+protected function targetHasSparseSolver
+  input Boolean isLinear;
+  output Boolean hasSparseSolver = listMember(Config.simCodeTarget(), if isLinear then withLSS else withNSS);
+end targetHasSparseSolver;
+
+protected function tearingPaysOff
+"Keeps the torn system unless solving it untorn is clearly cheaper, or unless
+ substituting through the inner equations amplifies an error past what a double
+ carries. The torn matrix does not exist yet, so both its structure and that
+ amplification come from walking the substitution. Costs are in flops."
+  input BackendDAE.StrongComponent tornComp;
+  input BackendDAE.Shared shared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  input Integer strongComponentIndex;
+  input Boolean isLinear;
+  output Boolean keep = true;
+protected
+  constant Real entryCost = 4.0 "flops one Jacobian entry evaluation is worth";
+  constant Real fillFactor = 14.0 "fill-in a sparse factorization sees, measured";
+  constant Real precisionDigits = 16.0 "digits a double carries";
+  constant Real trustedCoeffs = 0.9 "known coefficients the growth estimate needs";
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  list<Integer> tvars, residuals, innerVars;
+  list<tuple<Integer, Real>> stack;
+  tuple<Integer, Real> dep;
+  BackendDAE.Equation dEqn;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.Variables globalKnownVars;
+  array<list<tuple<Integer, Real>>> eqDeps "local equation index -> the local variables it depends on and their coefficients";
+  array<Integer> tvarId, solvedBy, stamp, depth;
+  array<Real> growth "error amplification of the forward substitution, iteration variables being 1";
+  Integer n, nnz, t, m, row, col, v, w, eq, cnt, nnzA, maxRowA, maxDepth, d, valued = 0;
+  Real density, densityA, buildTorn, costDense, costSparse, costTornDense, costTornSparse;
+  Real costTorn, costUntorn, rn, rt, g, coeff, pivot, maxGrowth, digitsLost;
+  Boolean known, isValued;
+algorithm
+  (jac, tvars, residuals, innerEquations, known) := match (ojac, tornComp)
+    case (SOME(jac), BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(
+            tearingvars = tvars, residualequations = residuals, innerEquations = innerEquations)))
+      then (jac, tvars, residuals, innerEquations, true);
+    else ({}, {}, {}, {}, false);
+  end match;
+  if not known then
+    return;
+  end if;
+
+  n := listLength(vindx);
+  nnz := listLength(jac);
+  t := listLength(tvars);
+  m := listLength(innerEquations);
+
+  globalKnownVars := BackendDAEUtil.getGlobalKnownVarsFromShared(shared);
+  eqDeps := arrayCreate(n, {});
+  for entry in jac loop
+    (row, col, dEqn) := entry;
+    (coeff, isValued) := jacEntryMagnitude(dEqn, globalKnownVars);
+    valued := valued + (if isValued then 1 else 0);
+    arrayUpdate(eqDeps, row, (col, coeff) :: eqDeps[row]);
+  end for;
+
+  // inner equations come in solve order, so one pass gives every depth and growth
+  tvarId := arrayCreate(n, 0);
+  growth := arrayCreate(n, 0.0);
+  cnt := 0;
+  for gv in tvars loop
+    cnt := cnt + 1;
+    v := List.position(gv, vindx);
+    arrayUpdate(tvarId, v, cnt);
+    arrayUpdate(growth, v, 1.0);
+  end for;
+
+  solvedBy := arrayCreate(n, 0);
+  depth := arrayCreate(n, 0);
+  maxDepth := 0;
+  for ie in innerEquations loop
+    (eq, innerVars) := match ie
+      case BackendDAE.INNEREQUATION()
+        then (List.position(ie.eqn, eindex), list(List.position(gv, vindx) for gv in ie.vars));
+      case BackendDAE.INNEREQUATIONCONSTRAINTS()
+        then (List.position(ie.eqn, eindex), list(List.position(gv, vindx) for gv in ie.vars));
+    end match;
+    d := 0;
+    g := 0.0;
+    pivot := 0.0;
+    for dep in eqDeps[eq] loop
+      w := Util.tuple21(dep);
+      coeff := Util.tuple22(dep);
+      if listMember(w, innerVars) then
+        pivot := realMax(pivot, coeff);
+      else
+        d := intMax(d, depth[w]);
+        g := g + coeff * growth[w];
+      end if;
+    end for;
+    g := if pivot > 0.0 then g / pivot else g;
+    for v in innerVars loop
+      arrayUpdate(solvedBy, v, eq);
+      arrayUpdate(depth, v, d + 1);
+      arrayUpdate(growth, v, if g > 1e300 then 1e300 else g);
+    end for;
+    maxDepth := intMax(maxDepth, d + 1);
+  end for;
+
+  stamp := arrayCreate(n, 0);
+  nnzA := 0;
+  maxRowA := 0;
+  maxGrowth := 0.0;
+  row := 0;
+  for ge in residuals loop
+    row := row + 1;
+    cnt := 0;
+    eq := List.position(ge, eindex);
+    g := 0.0;
+    pivot := 0.0;
+    for dep in eqDeps[eq] loop
+      w := Util.tuple21(dep);
+      coeff := Util.tuple22(dep);
+      g := g + coeff * growth[w];
+      pivot := realMax(pivot, coeff);
+    end for;
+    maxGrowth := realMax(maxGrowth, if pivot > 0.0 then g / pivot else g);
+    stack := eqDeps[eq];
+    while not listEmpty(stack) loop
+      v := Util.tuple21(listHead(stack));
+      stack := listRest(stack);
+      if stamp[v] <> row then
+        arrayUpdate(stamp, v, row);
+        if tvarId[v] > 0 then
+          cnt := cnt + 1;
+        elseif solvedBy[v] > 0 then
+          stack := listAppend(eqDeps[solvedBy[v]], stack);
+        end if;
+      end if;
+    end while;
+    nnzA := nnzA + cnt;
+    maxRowA := intMax(maxRowA, cnt);
+  end for;
+
+  rn := intReal(n);
+  rt := intReal(t);
+  density := intReal(nnz) / (rn * rn);
+  densityA := if t > 0 then intReal(nnzA) / (rt * rt) else 1.0;
+  digitsLost := if maxGrowth > 1.0 then log10(maxGrowth) else 0.0;
+
+  buildTorn := entryCost * intReal(maxRowA * nnz);
+  costDense := entryCost * intReal(nnz) + solveCost(rn, intReal(nnz), false);
+  costSparse := entryCost * intReal(nnz) + solveCost(rn, intReal(nnz), true, fillFactor);
+  costTornDense := buildTorn + solveCost(rt, intReal(nnzA), false);
+  costTornSparse := buildTorn + solveCost(rt, intReal(nnzA), true);
+
+  // costed at the format the backend will emit for each
+  costUntorn := if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then costSparse else costDense;
+  costTorn := if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then costTornSparse else costTornDense;
+
+  if Flags.isSet(Flags.TEARING_COST) then
+    print("[tearingCost] component " + intString(strongComponentIndex) + " " + (if isLinear then "LS" else "NLS")
+          + " [" + BackendDump.jacobianTypeStr(jacType) + "]"
+          + " n=" + intString(n) + " nnz=" + intString(nnz) + " density=" + realString(density)
+          + " t=" + intString(t) + " inner=" + intString(m) + " nnzA=" + intString(nnzA)
+          + " densityA=" + realString(densityA) + " colors=" + intString(maxRowA) + " chain=" + intString(maxDepth)
+          + " digitsLost=" + realString(digitsLost) + " valuedCoeffs=" + intString(valued) + "/" + intString(nnz)
+          + " cost dense=" + realString(costDense) + " sparse=" + realString(costSparse)
+          + " tornDense=" + realString(costTornDense) + " tornSparse=" + realString(costTornSparse)
+          + " format=" + (if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then "sparse" else "dense")
+          + " tornFormat=" + (if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then "sparse" else "dense") + "\n");
+  end if;
+
+  // a nonlinear system's cost is its Newton iterations, which this does not model
+  if not isLinear then
+    return;
+  end if;
+
+  if digitsLost >= precisionDigits and intReal(valued) >= trustedCoeffs * intReal(nnz) then
+    Error.addMessage(Error.TEARING_AMPLIFIES_ERROR, {intString(strongComponentIndex), intString(m),
+                                                     intString(realInt(digitsLost))});
+    keep := false;
+  elseif costUntorn * Flags.getConfigReal(Flags.TEARING_COST_MARGIN) < costTorn then
+    Error.addMessage(Error.TEARING_NOT_WORTH_IT, {intString(strongComponentIndex), intString(t),
+                                                  intString(realInt(costTorn)), intString(realInt(costUntorn)),
+                                                  intString(n)});
+    keep := false;
+  end if;
+end tearingPaysOff;
+
+protected function jacEntryMagnitude
+"Magnitude of one Jacobian entry, parameters taken at their bound value. Entries
+ that are not a number at compile time count as 1."
+  input BackendDAE.Equation dEqn;
+  input BackendDAE.Variables globalKnownVars;
+  output Real magnitude;
+  output Boolean known;
+protected
+  DAE.Exp exp;
+algorithm
+  (magnitude, known) := matchcontinue dEqn
+    case BackendDAE.RESIDUAL_EQUATION() algorithm
+      exp := dEqn.exp;
+      for i in 1:3 loop
+        (exp, _) := Expression.traverseExpBottomUp(exp, substituteKnownVar, globalKnownVars);
+        (exp, _) := ExpressionSimplify.simplify(exp);
+      end for;
+    then (abs(Expression.toReal(exp)), true);
+    else (1.0, false);
+  end matchcontinue;
+end jacEntryMagnitude;
+
+protected function substituteKnownVar
+  input output DAE.Exp exp;
+  input output BackendDAE.Variables globalKnownVars;
+algorithm
+  exp := matchcontinue exp
+    local
+      BackendDAE.Var var;
+    case DAE.CREF() algorithm
+      (var, _) := BackendVariable.getVarSingle(exp.componentRef, globalKnownVars);
+    then BackendVariable.varBindExp(var);
+    else exp;
+  end matchcontinue;
+end substituteKnownVar;
+
+protected function solveCost
+"One factorization and back-solve, sparse LU modelled as nnz/size per column."
+  input Real size;
+  input Real nnz;
+  input Boolean sparse;
+  input Real fill = 1.0 "fill-in the factorization sees, 1 for an already dense matrix";
+  output Real cost;
+algorithm
+  cost := if size <= 0.0 then 0.0
+          elseif sparse then fill * nnz * nnz / size + 2.0 * nnz
+          else 2.0 / 3.0 * size * size * size + 2.0 * size * size;
+end solveCost;
 
 protected function getUserTearingSet
   input list<Integer> userTVars;
