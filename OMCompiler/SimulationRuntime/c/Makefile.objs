@@ -113,6 +113,7 @@ ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
 else
   SOLVER_OBJS_NONLINEAR_SYSTEMS=nonlinearSolverHomotopy$(OBJ_EXT) \
                                 nonlinearSolverHybrd$(OBJ_EXT) \
+                                nonlinearSolverIpopt$(OBJ_EXT) \
                                 nonlinearValuesList$(OBJ_EXT) \
                                 nonlinearSystem$(OBJ_EXT)
 endif
