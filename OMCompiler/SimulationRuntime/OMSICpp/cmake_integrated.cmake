@@ -138,6 +138,10 @@ endif()
 set(Boost_Library_folder ${Boost_LIBRARY_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# Wrap the resolved Boost libraries in a single INTERFACE target
+add_library(omsicpp_boost_libs INTERFACE)
+target_link_libraries(omsicpp_boost_libs INTERFACE ${Boost_LIBRARIES})
+
 # ── LAPACK / BLAS ─────────────────────────────────────────────────────────────
 find_package(BLAS)
 find_package(LAPACK)
