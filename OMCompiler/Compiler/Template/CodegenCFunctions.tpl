@@ -810,7 +810,7 @@ match var
 case var as VARIABLE(__) then
 
   match var.ty
-  case ty as T_ARRAY(__) then arrayVarAllocInit(var.name, var.ty, ty.dims, var.value, var.bind_from_outside, context, &varDecls, &auxFunction)
+  case ty as T_ARRAY(__) then arrayVarAllocInit(var.name, var.ty, ty.dims, var.value, var.bind_from_outside, var.kind, context, &varDecls, &auxFunction)
 
   case ty as T_COMPLEX(complexClassType=RECORD(__)) then recordVarAllocInit(var.value, var.name, var.bind_from_outside, var.ty, context, &varDecls, &auxFunction)
 
@@ -888,11 +888,33 @@ match subvar
 end match
 end recordInitOutsideBindings;
 
-template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimension> var_dims, Option<DAE.Exp> value, Boolean bind_outside, Context context, Text &varDecls, Text &auxFunction)
+template arrayVarConstLiteralAlias(DAE.VarKind var_kind, Option<DAE.Exp> value, Boolean bind_outside, Text var_name, Context context, Text &varDecls, Text &auxFunction)
+ "A Modelica `constant` array bound to a shared literal can never be assigned, so it can point
+  straight at the literal instead of allocating a fresh copy of it on every call. Restricted to
+  CONST on purpose: any other variability may be written to, and writing through a shared literal
+  would hit read-only memory."
+::=
+  match var_kind
+  case CONST(__) then
+    if bind_outside then
+      ""
+    else
+      (match value
+       case SOME(lit as SHARED_LITERAL(__)) then
+         let &preExp = buffer ""
+         let litExp = daeExp(lit, context, &preExp, &varDecls, &auxFunction)
+         '<%var_name%> = <%litExp%>; /* constant: alias the shared literal, no copy needed */<%\n%>'
+       else "")
+  else ""
+end arrayVarConstLiteralAlias;
+
+template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimension> var_dims, Option<DAE.Exp> value, Boolean bind_outside, DAE.VarKind var_kind, Context context, Text &varDecls, Text &auxFunction)
 ::=
   let type_name = expTypeShort(var_type)
   let var_name = contextCrefNoPrevExp(var_cref, context, &auxFunction)
+  let constAlias = arrayVarConstLiteralAlias(var_kind, value, bind_outside, var_name, context, &varDecls, &auxFunction)
 
+  if constAlias then constAlias else
   match value
     case SOME(rhs_exp) then
       let &preExpBind = buffer ""
@@ -2280,7 +2302,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let &varDecls += if not outStruct then '<%typeNameFull%> <%varName%><%initVar%>;<%\n%>' //else ""
 
   if instDims then
-    let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, contextFunction, &varDecls, &auxFunction)
+    let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, var.kind, contextFunction, &varDecls, &auxFunction)
     ""
   else if isRecordType(var.ty) then
     let &varInits += recordVarAllocInit(var.value, var.name, var.bind_from_outside, var.ty, contextFunction, &varDecls, &auxFunction)
