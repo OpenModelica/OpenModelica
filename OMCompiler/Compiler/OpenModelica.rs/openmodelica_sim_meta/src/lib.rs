@@ -406,6 +406,22 @@ pub struct MetaVar {
     pub filter: u8,
 }
 
+/// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
+/// Values, `pre`-values and real `start`s live in `SimData`; only the names and the
+/// constant attributes it quotes are metadata.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct SotiVars {
+    /// Real variables in real-variable index order (states, derivatives, then the
+    /// other reals) with the `nominal` attribute; a state's runtime nominal comes
+    /// from [`Layout::state_nom_off`] instead.
+    pub reals: Vec<(String, f64)>,
+    /// Integer/Boolean variables with their `start` attribute.
+    pub ints: Vec<(String, i32)>,
+    pub bools: Vec<(String, i32)>,
+    /// String variables with their `start` attribute.
+    pub strings: Vec<(String, String)>,
+}
+
 /// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
 /// which flag lets it back in (C's `shouldFilterOutput` +
 /// `initializeOutputFilter`).
@@ -691,6 +707,14 @@ pub struct SimMeta {
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
     pub zc_desc: Vec<String>,
+    /// Per-relation description, 1:1 with the layout's relations — C's
+    /// `relationDescription`, dumped in the `LOG_EVENTS` relation status block.
+    pub rel_desc: Vec<String>,
+    /// C's `samplesInfo[i].index`, 1:1 with the layout's samples; named in the
+    /// `LOG_EVENTS` time-event line.
+    pub sample_index: Vec<i32>,
+    /// C's `modelData` variable arrays, for the `LOG_SOTI` initialization dump.
+    pub soti: SotiVars,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -1037,6 +1061,31 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.zc_desc {
         put_str(&mut o, d);
     }
+    put_u32(&mut o, m.rel_desc.len() as u32);
+    for d in &m.rel_desc {
+        put_str(&mut o, d);
+    }
+    put_u32(&mut o, m.sample_index.len() as u32);
+    for i in &m.sample_index {
+        put_u32(&mut o, *i as u32);
+    }
+    put_u32(&mut o, m.soti.reals.len() as u32);
+    for (n, v) in &m.soti.reals {
+        put_str(&mut o, n);
+        put_f64(&mut o, *v);
+    }
+    for list in [&m.soti.ints, &m.soti.bools] {
+        put_u32(&mut o, list.len() as u32);
+        for (n, v) in list {
+            put_str(&mut o, n);
+            put_u32(&mut o, *v as u32);
+        }
+    }
+    put_u32(&mut o, m.soti.strings.len() as u32);
+    for (n, v) in &m.soti.strings {
+        put_str(&mut o, n);
+        put_str(&mut o, v);
+    }
     put_u32s(&mut o, &m.sens_params);
     put_u32(&mut o, m.nls_vars.len() as u32);
     for v in &m.nls_vars {
@@ -1336,6 +1385,25 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..ndesc {
         zc_desc.push(r.string()?);
     }
+    let nrdesc = r.u32()? as usize;
+    let mut rel_desc = Vec::with_capacity(nrdesc);
+    for _ in 0..nrdesc {
+        rel_desc.push(r.string()?);
+    }
+    let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
+    let mut soti = SotiVars::default();
+    for _ in 0..r.u32()? {
+        soti.reals.push((r.string()?, r.f64()?));
+    }
+    for _ in 0..r.u32()? {
+        soti.ints.push((r.string()?, r.u32()? as i32));
+    }
+    for _ in 0..r.u32()? {
+        soti.bools.push((r.string()?, r.u32()? as i32));
+    }
+    for _ in 0..r.u32()? {
+        soti.strings.push((r.string()?, r.string()?));
+    }
     let sens_params = r.u32s()?;
     let nsys = r.u32()? as usize;
     let mut nls_vars = Vec::with_capacity(nsys);
@@ -1478,7 +1546,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
+        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, sample_index, soti, sens_params,
         nls_vars, dae, clocks, lin, opt, inputs,
     })
 }
@@ -1528,6 +1596,9 @@ mod tests {
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            sample_index: vec![1],
+            soti: SotiVars::default(),
             sens_params: vec![88],
             nls_vars: vec![NlsVars {
                 eq_index: 1074,

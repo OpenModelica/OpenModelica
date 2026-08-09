@@ -3401,7 +3401,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     }
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
-        fmi_vrs, zc_descriptions(&zero_crossings), sens_params, nls_vars, dae,
+        fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&relations),
+        samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
         opt_info, input_vars,
@@ -4227,6 +4228,9 @@ fn build_sim_meta(
     state_sets: &[StateSetInfo],
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
+    rel_desc: Vec<String>,
+    sample_index: Vec<i32>,
+    soti: openmodelica_sim_meta::SotiVars,
     sens_params: Vec<u32>,
     nls_vars: Vec<openmodelica_sim_meta::NlsVars>,
     dae: Option<openmodelica_sim_meta::DaeInfo>,
@@ -4250,6 +4254,9 @@ fn build_sim_meta(
         state_sets: state_sets.to_vec(),
         fmi_vrs,
         zc_desc,
+        rel_desc,
+        sample_index,
+        soti,
         sens_params,
         nls_vars,
         dae,
@@ -4263,13 +4270,75 @@ fn build_sim_meta(
 /// The Modelica source of each zero-crossing relation (via
 /// `ExpressionBasics::printExpStr`), so the driver can name the crossing that
 /// triggered chattering. A math-event crossing has no relation string.
+/// C's `modelData` variable arrays: the same lists, in the same order, as the
+/// `SimData` variable regions.
+fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVars> {
+    // C's `info.name`: a derivative reads `der(x)`, other `$` names stay raw.
+    let named = |sv: &SimCodeVar::SimVar| -> Result<String> {
+        let raw = cref_display(&sv.name)?.to_string();
+        Ok(match raw.strip_prefix("$DER.") {
+            Some(rest) => format!("der({rest})"),
+            None => raw,
+        })
+    };
+    let mut reals = Vec::new();
+    for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
+        reals.push((named(sv)?, const_real(&sv.nominalValue).unwrap_or(1.0)));
+    }
+    let mut ints = Vec::new();
+    for sv in lst(&vars.intAlgVars) {
+        ints.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
+    }
+    let mut bools = Vec::new();
+    for sv in lst(&vars.boolAlgVars) {
+        bools.push((named(sv)?, const_int(&sv.initialValue).unwrap_or(0)));
+    }
+    let mut strings = Vec::new();
+    for sv in lst(&vars.stringAlgVars) {
+        strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
+    }
+    Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings })
+}
+
+fn const_real(e: &Option<Arc<DAE::Exp>>) -> Option<f64> {
+    match e.as_deref()? {
+        DAE::Exp::RCONST { real } => Some(real.into_inner()),
+        DAE::Exp::ICONST { integer } => Some(*integer as f64),
+        _ => None,
+    }
+}
+
+fn const_int(e: &Option<Arc<DAE::Exp>>) -> Option<i32> {
+    match e.as_deref()? {
+        DAE::Exp::ICONST { integer } => Some(*integer),
+        DAE::Exp::BCONST { bool } => Some(*bool as i32),
+        DAE::Exp::ENUM_LITERAL { index, .. } => Some(*index),
+        _ => None,
+    }
+}
+
+fn const_str(e: &Option<Arc<DAE::Exp>>) -> Option<String> {
+    match e.as_deref()? {
+        DAE::Exp::SCONST { string } => Some(string.to_string()),
+        _ => None,
+    }
+}
+
+fn rel_descriptions(relations: &[Option<Arc<DAE::Exp>>]) -> Vec<String> {
+    relations.iter().map(|r| r.as_ref().map(|e| dump_exp(e)).unwrap_or_default()).collect()
+}
+
+fn dump_exp(e: &Arc<DAE::Exp>) -> String {
+    openmodelica_frontend_dump::ExpressionBasics::printExpStr(e.clone())
+        .map(|s| s.to_string())
+        .unwrap_or_default()
+}
+
 fn zc_descriptions(crossings: &[ZcInfo]) -> Vec<String> {
     crossings
         .iter()
         .map(|zc| match zc {
-            ZcInfo::Bool { expr } => openmodelica_frontend_dump::ExpressionBasics::printExpStr(expr.clone())
-                .map(|s| s.to_string())
-                .unwrap_or_default(),
+            ZcInfo::Bool { expr } => dump_exp(expr),
             ZcInfo::Math { .. } => String::new(),
         })
         .collect()

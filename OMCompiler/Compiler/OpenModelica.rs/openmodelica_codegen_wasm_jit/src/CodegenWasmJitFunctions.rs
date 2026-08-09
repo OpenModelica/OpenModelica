@@ -245,6 +245,10 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// output row the emitted `simulate` loop just stored — the driver's per-row
 /// `LOG_ASSERT` step, which that loop cannot reach from wasm. `warn` selects the
 /// level; a nonzero result means a suppressed `assert()` ends the run.
+///
+/// `rt_reinit_note(state_off, value)` records an executed `reinit` for the driver's
+/// `LOG_EVENTS` block; C prints that line from the model itself, but the block's
+/// indentation belongs to whichever driver owns the run.
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
@@ -258,6 +262,7 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     ),
     ("rt_print", &[WTy::I32], &[]),
     ("rt_row_asserts", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_reinit_note", &[WTy::I32, WTy::F64], &[]),
 ];
 
 /// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
@@ -1893,7 +1898,8 @@ impl<'a> FnCtx<'a> {
             W::ASSIGN { left, right, .. } => compile_assign(self, left, right),
             W::REINIT { stateVar, value, .. } => {
                 let lhs = DAE::Exp::CREF { componentRef: stateVar.clone(), ty: crate::CodegenWasmJit::t_real() };
-                compile_assign(self, &lhs, value)
+                compile_assign(self, &lhs, value)?;
+                emit_reinit_note(self, stateVar)
             }
             // `terminate(msg)`: request a clean early end of the simulation by
             // raising the `SimData` terminate flag; the drivers poll it after each
@@ -5407,10 +5413,8 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 };
                 return compile_array_ew(ctx, exp1, exp2, op_code, ty);
             }
-            let a = compile_exp(ctx, exp1)?;
-            coerce(ctx, a, WTy::I32);
-            let b = compile_exp(ctx, exp2)?;
-            coerce(ctx, b, WTy::I32);
+            compile_bool_operand(ctx, exp1)?;
+            compile_bool_operand(ctx, exp2)?;
             match operator {
                 DAE::Operator::AND { .. } => ctx.emit(we::Instruction::I32And),
                 DAE::Operator::OR { .. } => ctx.emit(we::Instruction::I32Or),
@@ -5908,10 +5912,13 @@ fn compile_relation_indexed(
     // The slot address `data + eff_index*4`. A relation inside a `for`-loop shares
     // one AST node across iterations, so its effective index is
     // `index + (iterator - i)/j` (C's `daeExpRelationSim`); otherwise it is `index`.
+    // The crossing function evaluates the scalarized copies outside that loop, so
+    // the iterator does not exist there and it keeps the base `index`, as C does.
+    let zc_context = ctx.sim()?.zc_context;
     let slot = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalGet(data));
     ctx.emit(we::Instruction::I32Const(index));
-    if let Some((iter, i, j)) = asub {
+    if let Some((iter, i, j)) = asub.as_ref().filter(|_| !zc_context) {
         let w = compile_exp(ctx, iter)?;
         coerce(ctx, w, WTy::I32);
         ctx.emit(we::Instruction::I32Const(*i));
@@ -5924,7 +5931,7 @@ fn compile_relation_indexed(
     ctx.emit(we::Instruction::I32Mul);
     ctx.emit(we::Instruction::I32Add); // data + eff_index*4
     ctx.emit(we::Instruction::LocalSet(slot));
-    if ctx.sim()?.zc_context {
+    if zc_context {
         if real_ineq {
             compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
         } else {
@@ -6063,10 +6070,17 @@ fn nominal_const(e: &DAE::Exp) -> f64 {
 fn compile_relation_fresh(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp) -> Result<WTy> {
     use DAE::Operator as O;
     let operand_wty = operand_type_of_relation(op)?;
-    let a = compile_exp(ctx, e1)?;
-    coerce(ctx, a, operand_wty);
-    let b = compile_exp(ctx, e2)?;
-    coerce(ctx, b, operand_wty);
+    if matches!(relation_operand_sigty(op), Ok(SigTy::Bool)) {
+        // C compares Booleans through `!`, so a value outside {0,1} still compares
+        // by truth value.
+        compile_bool_operand(ctx, e1)?;
+        compile_bool_operand(ctx, e2)?;
+    } else {
+        let a = compile_exp(ctx, e1)?;
+        coerce(ctx, a, operand_wty);
+        let b = compile_exp(ctx, e2)?;
+        coerce(ctx, b, operand_wty);
+    }
     let instr = match (op, operand_wty) {
         (O::LESS { .. }, WTy::F64) => we::Instruction::F64Lt,
         (O::LESS { .. }, WTy::I32) => we::Instruction::I32LtS,
@@ -6088,6 +6102,20 @@ fn compile_relation_fresh(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2
 
 fn operand_type_of_relation(op: &DAE::Operator) -> Result<WTy> {
     Ok(relation_operand_sigty(op)?.wty())
+}
+
+/// Compile a Boolean operand of `and`/`or`/a Boolean relation as a 0/1 i32. C's
+/// `!e`/`e && f` take any nonzero as true and an `external "C"` output can be such
+/// a value, so the truth value is materialized unless the form already gives it.
+fn compile_bool_operand(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<()> {
+    use DAE::Exp as E;
+    let w = compile_exp(ctx, e)?;
+    coerce(ctx, w, WTy::I32);
+    if !matches!(e, E::BCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. }) {
+        ctx.emit(we::Instruction::I32Const(0));
+        ctx.emit(we::Instruction::I32Ne);
+    }
+    Ok(())
 }
 
 /// The `SigTy` of a relational operator's operands (distinguishes String, whose
@@ -7054,6 +7082,22 @@ fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
     ctx.emit(we::Instruction::I32Const(len as i32));
     ctx.emit(we::Instruction::MemoryInit { mem: 0, data_index: 0 });
     ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// Hand the executed `reinit` to the driver for C's `reinit <var> = <value>` line.
+/// The state's `SimData` offset names it; the value is re-read from the slot.
+fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) -> Result<()> {
+    let key = sim_cref_key(stateVar)?;
+    let Some(slot) = ctx.sim()?.vars.get(&key).copied() else { return Ok(()) };
+    if slot.wty != WTy::F64 {
+        return Ok(());
+    }
+    let data = ctx.sim()?.data_local;
+    ctx.emit(we::Instruction::I32Const(slot.off as i32));
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
+    ctx.emit(we::Instruction::Call(env_extra_index("rt_reinit_note")?));
     Ok(())
 }
 
