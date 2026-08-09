@@ -29,6 +29,7 @@ pub const SUNDIALS: bool = cfg!(sundials);
 
 pub mod sig;
 pub mod model;
+pub mod dylink;
 
 // A wasm trap collapses to the crate's `&'static str` error on the way out of the
 // engine, losing the trap kind and the backtrace. The engine parks its message
@@ -78,3 +79,6 @@ pub mod sim_runtime;
 #[cfg(feature = "jit")]
 #[path = "wasi_shim.rs"]
 pub mod wasi_shim;
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+#[path = "dylink_wasmtime.rs"]
+pub mod dylink_engine;

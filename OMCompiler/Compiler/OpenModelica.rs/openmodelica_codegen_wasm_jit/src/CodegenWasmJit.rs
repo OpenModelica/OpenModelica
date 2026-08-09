@@ -85,7 +85,7 @@ use openmodelica_sim_meta::{
 use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
 use openmodelica_wasm_jit::wasi_shim;
-pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ModelCompileJob, SimModel};
+pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ExtLibrary, ModelCompileJob, SimModel};
 #[cfg(feature = "jit")]
 pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
 #[cfg(feature = "jit")]
@@ -862,6 +862,9 @@ thread_local! {
     /// callers (the interactive session) share the hook but must not split. Armed
     /// for one firing.
     static SPLIT_ARMED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// Taken when the teardown hook fires, so destructor output follows the
+    /// success line.
+    static SIM_OUTPUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
 }
 
 /// Init-done hook: take the initialization phase's output, then restart the
@@ -871,6 +874,13 @@ fn on_init_done() {
         return;
     }
     INIT_OUTPUT.with(|c| *c.borrow_mut() = Some(openmodelica_wasi::wasi::take_stdout_capture()));
+    openmodelica_wasi::wasi::start_stdout_capture();
+}
+
+/// The same split for what the external objects' destructors print: C runs them
+/// after "The simulation finished successfully.".
+fn on_teardown() {
+    SIM_OUTPUT.with(|c| *c.borrow_mut() = Some(openmodelica_wasi::wasi::take_stdout_capture()));
     openmodelica_wasi::wasi::start_stdout_capture();
 }
 
@@ -939,6 +949,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     }
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
+    SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
+    sim_driver::set_teardown_hook(on_teardown);
     SPLIT_ARMED.with(|a| a.set(true));
     sim_driver::init_host_hooks();
     sim_driver::set_result_file_reader(read_result_values);
@@ -974,7 +986,15 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     SPLIT_ARMED.with(|a| a.set(false));
     // Everything captured after the split is the simulation phase (plus `extra`:
     // LOG_STATS / chattering lines). `INIT_OUTPUT` is `None` when init failed.
-    let sim_output = format!("{}{extra}", openmodelica_wasi::wasi::take_stdout_capture());
+    // With the hook fired, the capture holds the destructors' output instead.
+    let teardown_output = SIM_OUTPUT.with(|c| c.borrow_mut().take());
+    let tail = openmodelica_wasi::wasi::take_stdout_capture();
+    let (sim_capture, post_capture) = match teardown_output {
+        Some(sim) => (sim, tail),
+        None => (tail, String::new()),
+    };
+    let post = format!("{post_capture}{post}");
+    let sim_output = format!("{sim_capture}{extra}");
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
@@ -1126,6 +1146,8 @@ mod session {
         LAST_SIM_LOG.with(|c| c.borrow_mut().clear());
         INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
         sim_driver::set_init_done_hook(on_init_done);
+    SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
+    sim_driver::set_teardown_hook(on_teardown);
         SPLIT_ARMED.with(|a| a.set(true));
         sim_driver::init_host_hooks();
         sim_driver::set_result_file_reader(read_result_values);
@@ -1432,6 +1454,167 @@ use openmodelica_wasi_libc::{
     SUNDIALS_DYLINK, WASI_P1_ADAPTER,
 };
 
+// ===========================================================================
+// The model's own `external "C"` libraries
+// ===========================================================================
+
+/// Resolve the `Library` annotations (already wasm module names, from
+/// `SimCodeFunctionUtil`) against the library directories. A name that resolves to
+/// nothing is reported here, not later as an unresolvable `ext.<fn>` import.
+pub(crate) fn resolve_ext_libraries(
+    mp: &SimCodeFunction::MakefileParams,
+    notes: &mut Vec<String>,
+) -> Result<Vec<ExtLibrary>> {
+    let mut dirs: Vec<String> = vec![String::new()]; // relative to the working directory
+    for d in lst(&mp.libPaths) {
+        dirs.push(format!("{d}/"));
+    }
+    let mut out: Vec<ExtLibrary> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for lib in lst(&mp.libs) {
+        let lib = lib.to_string();
+        // The library list is shared with the other code generators.
+        if lib.starts_with('-') || !seen.insert(lib.clone()) {
+            continue;
+        }
+        let Some((path, bytes)) = find_ext_library(&lib, &dirs) else {
+            notes.push(format!(
+                "`{lib}` was not found (looked in {}); a wasm target loads a prebuilt shared \
+                 library, built with `clang --target=wasm32-wasip1 -fPIC -shared`",
+                dirs.iter().map(|d| if d.is_empty() { "." } else { d.trim_end_matches('/') })
+                    .collect::<Vec<_>>().join(", ")
+            ));
+            continue;
+        };
+        out.push(ExtLibrary { name: path, bytes });
+    }
+    Ok(out)
+}
+
+/// Compile the model's `Include` annotations into a wasm library: C *source* has no
+/// `Library` to load. Native only; the browser omc has no compiler. A failure is a
+/// note, not an error: only a symbol nothing defines is fatal.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn compile_include_library(
+    prefix: &str,
+    includes: &[String],
+    include_dirs: &[String],
+    notes: &mut Vec<String>,
+) -> Result<Option<ExtLibrary>> {
+    use std::process::Command;
+    if includes.is_empty() {
+        return Ok(None);
+    }
+    let sysroot = wasi_sysroot();
+    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
+    let dir = std::env::temp_dir().join(format!("om-wasm-include-{}-{prefix}", std::process::id()));
+    std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
+    let tu = dir.join(format!("{prefix}_includes.c"));
+    let out = dir.join(format!("{prefix}_includes.wasm"));
+    std::fs::write(&tu, includes.join("\n") + "\n")
+        .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
+
+    let mut cmd = Command::new(&clang);
+    cmd.args(["--target=wasm32-wasip1", "-O1", "-fPIC", "-shared", "-nodefaultlibs"])
+        .arg(format!("--sysroot={}", sysroot.display()))
+        .args(["-Wl,--export-all", "-Wl,--allow-undefined"]);
+    // Compiled in a temporary directory, so `#include "x.h"` needs the model's own.
+    if let Ok(cwd) = std::env::current_dir() {
+        cmd.arg("-I").arg(cwd);
+    }
+    // `IncludeDirectory` annotations, already `-I"..."` strings.
+    for inc in include_dirs {
+        cmd.arg(inc.trim_matches('"'));
+    }
+    cmd.arg("-o").arg(&out).arg(&tu);
+    if let Some(builtins) = wasm_builtins(&sysroot) {
+        cmd.arg(builtins);
+    }
+    let output = match cmd.output() {
+        Ok(o) => o,
+        Err(e) => {
+            notes.push(format!("`{clang}` could not be run to compile the `Include` C sources: {e}"));
+            return Ok(None);
+        }
+    };
+    if !output.status.success() {
+        notes.push(format!(
+            "the `Include` C sources did not compile for the wasm target:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+        return Ok(None);
+    }
+    let bytes = std::fs::read(&out).map_err(|_| "CodegenWasmJit: cannot read the compiled include library")?;
+    let _ = std::fs::remove_dir_all(&dir);
+    Ok(Some(ExtLibrary { name: format!("{prefix}_includes.wasm"), bytes }))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn compile_include_library(
+    _prefix: &str,
+    includes: &[String],
+    _include_dirs: &[String],
+    notes: &mut Vec<String>,
+) -> Result<Option<ExtLibrary>> {
+    if includes.is_empty() {
+        return Ok(None);
+    }
+    notes.push(
+        "the implementation comes from an `Include` annotation with C source, which has to be \
+         compiled — the browser omc has no compiler. Provide it as a `Library` built with \
+         `clang --target=wasm32-wasip1 -fPIC -shared`"
+            .to_string(),
+    );
+    Ok(None)
+}
+
+/// The sysroot omc ships, unless pointed elsewhere.
+#[cfg(not(target_arch = "wasm32"))]
+fn wasi_sysroot() -> std::path::PathBuf {
+    if let Ok(p) = std::env::var("OMC_WASI_SYSROOT") {
+        return std::path::PathBuf::from(p);
+    }
+    let home = openmodelica_util::Settings::getInstallationDirectoryPath()
+        .map(|p| p.to_string())
+        .unwrap_or_default();
+    std::path::PathBuf::from(home).join("lib/wasm32-wasi/omc")
+}
+
+/// The shipped sysroot carries a copy; otherwise probe clang, whose 21 driver
+/// looks under a per-triple directory while Debian still uses `lib/wasi`.
+#[cfg(not(target_arch = "wasm32"))]
+fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
+    let shipped = sysroot.join("lib/wasm32-wasip1/libclang_rt.builtins-wasm32.a");
+    if shipped.exists() {
+        return Some(shipped);
+    }
+    let out = std::process::Command::new(std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned()))
+        .arg("-print-resource-dir")
+        .output()
+        .ok()?;
+    let res = std::path::PathBuf::from(String::from_utf8_lossy(&out.stdout).trim().to_string());
+    [
+        res.join("lib/wasm32-unknown-wasip1/libclang_rt.builtins.a"),
+        res.join("lib/wasi/libclang_rt.builtins-wasm32.a"),
+    ]
+    .into_iter()
+    .find(|p| p.exists())
+}
+
+/// `<dir><name>` or `<dir>lib<name>`, the two spellings a `Library="foo"`
+/// annotation is written with.
+fn find_ext_library(name: &str, dirs: &[String]) -> Option<(String, Vec<u8>)> {
+    let stem = name.strip_suffix(".wasm").unwrap_or(name);
+    for dir in dirs {
+        for candidate in [format!("{dir}{stem}.wasm"), format!("{dir}lib{stem}.wasm")] {
+            if let Ok(bytes) = openmodelica_wasi::fs::read(&candidate) {
+                return Some((candidate, bytes));
+            }
+        }
+    }
+    None
+}
+
 /// Renames the model's `rt`/`ext` import modules → `env`, the dylink convention
 /// `wit_component::Linker` resolves against (so `ext.<fn>` binds to the
 /// ModelicaExternalC side module's export `<fn>`).
@@ -1546,7 +1729,12 @@ fn first_external_import(model_wasm: &[u8]) -> Option<String> {
 /// the browser omc too). When the model uses `external "C"`, ModelicaExternalC +
 /// PIC `libc.so` are added as shared-everything libraries and libc's preview1
 /// imports bridged to the component's preview2 WASI by the reactor adapter.
-fn link_fmu_component(model_wasm: &[u8], adapter: &[u8], sundials: bool) -> Result<Vec<u8>> {
+fn link_fmu_component(
+    model_wasm: &[u8],
+    adapter: &[u8],
+    sundials: bool,
+    ext_libs: &[ExtLibrary],
+) -> Result<Vec<u8>> {
     if adapter.is_empty() {
         return Err("CodegenWasmJit: FMI3 adapter unavailable (build wasm32-unknown-unknown + -Z build-std)");
     }
@@ -1565,6 +1753,10 @@ fn link_fmu_component(model_wasm: &[u8], adapter: &[u8], sundials: bool) -> Resu
         // runtime rt_alloc over one shared heap) is intentional. SUNDIALS needs libc
         // too, so it brings the same libraries along.
         if has_ext {
+            // First, so a symbol they define wins over ModelicaExternalC's.
+            for lib in ext_libs {
+                l = l.library(&lib.name, &lib.bytes, false).map_err(link_err)?;
+            }
             l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
         }
         l = l.library("libc", LIBC_PIC, false).map_err(link_err)?;
@@ -1829,7 +2021,7 @@ fn emit_fmu(
         }
         let sundials = cs && fmu_needs_sundials(&model.method);
         let component =
-            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials)?;
+            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials, &model.ext_libs)?;
         let model_id = sanitize_identifier(&model.model_name);
         let mut entries = vec![
             ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
@@ -3030,6 +3222,21 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             }
         }
     }
+    // A `Library` on a function the model never reaches must not fail the build.
+    let mut ext_lib_notes: Vec<String> = Vec::new();
+    let ext_libs = if ext_imports.is_empty() {
+        Vec::new()
+    } else {
+        let mut libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
+        // What the `Library` annotations did not provide may come from an
+        // `Include` carrying the C source.
+        let includes: Vec<String> = lst(&sim_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
+        let dirs: Vec<String> = lst(&sim_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        if let Some(l) = compile_include_library(&sim_code.fileNamePrefix, &includes, &dirs, &mut ext_lib_notes)? {
+            libs.push(l);
+        }
+        libs
+    };
 
     // Function index space: imports (env builtins, rt runtime, env-extra, then
     // the `ext.*` externals), then the model's Modelica functions, then the
@@ -3954,6 +4161,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         prepared: Mutex::new(None),
         layout,
         result_vars,
+        ext_libs,
+        ext_lib_notes,
         ext_imports,
         model_name,
         start_time: settings.startTime.into_inner(),
@@ -7143,7 +7352,7 @@ mod link_tests {
                 continue; // omc built without the wasm32 toolchain or without sundials
             }
             assert!(
-                link_fmu_component(&build_stub_model(), adapter, sundials).is_ok(),
+                link_fmu_component(&build_stub_model(), adapter, sundials, &[]).is_ok(),
                 "{label} adapter does not link into a component: {}",
                 openmodelica_util::Error::printMessagesStr(false)
             );

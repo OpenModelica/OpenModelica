@@ -304,6 +304,30 @@ fn wty_valtype(w: crate::sig::WTy) -> wasmtime::ValType {
     }
 }
 
+/// Why an `external "C"` function could not be found, and what to do about it. The
+/// codegen's notes come out here, where a library that yielded nothing has become a
+/// missing symbol.
+fn unresolved_external_detail(name: &str, model: &SimModel) -> String {
+    let mut s = if model.ext_libs.is_empty() {
+        format!(
+            "  `{name}` is in none of the model's libraries — the model declares no `Library` \
+             annotation that resolves to a wasm library. Build the implementation with \
+             `clang --target=wasm32-wasip1 -fPIC -shared` and name it in `Library`."
+        )
+    } else {
+        format!(
+            "  `{name}` is in none of the model's libraries ({}). Check that the library exports it \
+             (`-Wl,--export-all`, or `-Wl,--export={name}`).",
+            model.ext_libs.iter().map(|l| l.name.as_str()).collect::<Vec<_>>().join(", "),
+        )
+    };
+    for note in &model.ext_lib_notes {
+        s.push_str("\n  ");
+        s.push_str(note);
+    }
+    s
+}
+
 /// Define the model's external "C" function imports (wasm module `ext`) from the
 /// host. Uses the model's `ext_imports` (the C-call `SigTy` signature) rather than
 /// the wasm `FuncType`, because the latter can't distinguish an `i32` that is a
@@ -312,12 +336,15 @@ fn wty_valtype(w: crate::sig::WTy) -> wasmtime::ValType {
 /// memory (`memory`).
 fn define_external_imports(
     linker: &mut wasmtime::Linker<WasiCtx>,
+    store: &mut wasmtime::Store<WasiCtx>,
     model: &SimModel,
     memory: wasmtime::Memory,
-    rt_str_new: wasmtime::TypedFunc<u32, u32>,
-    rt_str_data: wasmtime::TypedFunc<u32, u32>,
+    rt: &crate::dylink_engine::ExtRt,
+    libs: &crate::dylink_engine::Loaded,
     nls: NlsHooks,
 ) -> Result<()> {
+    let rt_str_new = rt.str_new.clone();
+    let rt_str_data = rt.str_data.clone();
     registry_reset();
     openmodelica_util::dynload::install_modelica_message_interception(
         openmodelica_modelica_utilities::modelica_message_hook,
@@ -330,12 +357,17 @@ fn define_external_imports(
             sig.wasm_params().iter().map(|s| wty_valtype(s.wty())),
             sig.wasm_results().iter().map(|s| wty_valtype(s.wty())),
         );
+        // The model's own libraries shadow a same-named symbol in the process.
+        if let Some(target) = libs.func(&sig.name).cloned() {
+            if let Some(f) = crate::dylink_engine::bind_in_wasm_external(store, sig, &functype, target, rt)
+                .map_err(|_| "external \"C\": cannot bind a library function")?
+            {
+                wt(linker.define(&mut *store, "ext", &sig.name, f))?;
+                continue;
+            }
+        }
         let addr = openmodelica_util::dynload::external_symbol(&sig.name).ok_or_else(|| {
-            crate::set_engine_error_detail(format!(
-                "  `{}` is in none of the loaded libraries — the wasm-jit target cannot \
-                 build a model's own external C sources",
-                sig.name,
-            ));
+            crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model));
             "external \"C\" function not found in any loaded library"
         })?;
         let name = sig.name.clone();
@@ -783,10 +815,18 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         recovering: wts(rt_inst.get_typed_func::<(), i32>(&mut store, "rt_nls_recovering"))?,
         note: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,
     };
-    define_external_imports(&mut linker, model, memory, rt_str_new, rt_str_data, nls)?;
-    define_print_import(&mut linker, memory)?;
     // `rt_row_asserts` is called by the model, which only imports `memory`.
     crate::host::set_sim_memory(memory);
+    let ext_rt = crate::dylink_engine::ExtRt {
+        str_new: rt_str_new,
+        str_data: rt_str_data,
+        alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
+        free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
+        record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+    };
+    let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
+    define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs, nls)?;
+    define_print_import(&mut linker, memory)?;
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;

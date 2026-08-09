@@ -452,9 +452,10 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
     })
 }
 
-/// Rebuild an `Absyn.Path` from a dotted record name (`"A.B.C"`).
+/// Rebuild an `Absyn.Path` from a dotted record name. A record declaration's name
+/// is fully qualified (`".A.B"`): the leading `.` is a marker, not an identifier.
 fn path_from_dotted(s: &str) -> Arc<Absyn::Path> {
-    let parts: Vec<&str> = s.split('.').collect();
+    let parts: Vec<&str> = s.trim_start_matches('.').split('.').collect();
     let mut it = parts.iter().rev();
     let last = it.next().copied().unwrap_or("");
     let mut p = Absyn::Path::IDENT { name: ArcStr::from(last) };

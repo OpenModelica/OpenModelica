@@ -23,6 +23,12 @@ pub struct SimModel {
     /// The `ext.<extName>` host imports (external "C" functions) with the full
     /// C-call shape, so the host trampoline can marshal strings/arrays/pointers.
     pub ext_imports: Vec<ExtCallSig>,
+    /// The model's own `external "C"` libraries, loaded into the simulation's
+    /// memory, where they define the `ext_imports` the runtime cannot resolve.
+    pub ext_libs: Vec<ExtLibrary>,
+    /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
+    /// symbol then turns out to be missing.
+    pub ext_lib_notes: Vec<String>,
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
@@ -63,6 +69,14 @@ impl SimModel {
     pub fn run_meta(&self) -> SimMeta {
         openmodelica_sim_meta::simflags::with_flags(|f| self.meta.with_flags(f))
     }
+}
+
+/// One resolved `external "C"` library, read at codegen time so a run needs no
+/// filesystem.
+#[derive(Clone)]
+pub struct ExtLibrary {
+    pub name: String,
+    pub bytes: Vec<u8>,
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,

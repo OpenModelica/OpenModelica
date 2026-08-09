@@ -570,6 +570,21 @@ static INIT_DONE_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_init_done_hook(f: fn()) {
     INIT_DONE_HOOK.store(f as usize, Ordering::Relaxed);
 }
+// Fires before the external objects are destroyed. C prints "The simulation
+// finished successfully." before destroying them, so the host keeps their output
+// apart from the simulation's.
+static TEARDOWN_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_teardown_hook(f: fn()) {
+    TEARDOWN_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn signal_teardown() {
+    let p = TEARDOWN_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
+}
+
 /// Public because the in-wasm driver's hook cannot reach the host's capture: it
 /// relays the boundary over `env.rt_host_init_done`, which calls this.
 pub fn signal_init_done() {
@@ -2472,6 +2487,7 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
             ),
         );
     }
+    signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
     let mut params = Vec::new();
     for v in &model.vars {

@@ -42,7 +42,9 @@
 // `CevalScript` caller resolves them; the rest of the module is idiomatic Rust.
 #![allow(non_snake_case)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+// The record layout is shared with the host, which reads records this code built.
+use openmodelica_wasm_jit::sig::{record_layout, RecordLayout};
 use std::sync::Arc;
 
 use metamodelica::Result;
@@ -484,7 +486,55 @@ pub(crate) struct FnInfo {
 
 /// Build the wasm module for `fnCode`. Returns the encoded module bytes and the
 /// input/output `SigTy`s of the main function (for the sidecar).
-fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec<SigTy>, Vec<SigTy>)> {
+/// Read back what [`write_ext_sig`] wrote.
+pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
+    let mut f = line.split('\t');
+    let (Some(name), Some(lang), Some(ret), Some(args), Some(outs)) =
+        (f.next(), f.next(), f.next(), f.next(), f.next())
+    else {
+        return Err("CodegenWasmJit: malformed external \"C\" signature in the .wasm.sig sidecar");
+    };
+    let tys = parse_sig_types(args)?;
+    if tys.len() != outs.chars().count() {
+        return Err("CodegenWasmJit: external \"C\" signature has a stale output mask");
+    }
+    Ok(ExtCallSig {
+        name: name.to_string(),
+        lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
+        args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
+        ret: if ret == "-" { None } else { parse_sig_types(ret)?.into_iter().next() },
+    })
+}
+
+/// `<symbol>\t<C|F>\t<return code or ->\t<argument codes>\t<one 0/1 per argument>`,
+/// a `1` marking an `_Out_`. The flags are separate because an argument code is
+/// variable-length.
+fn write_ext_sig(e: &ExtCallSig) -> String {
+    let mut args = String::new();
+    let mut outs = String::new();
+    for (ty, is_out) in &e.args {
+        ty.write_code(&mut args);
+        outs.push(if *is_out { '1' } else { '0' });
+    }
+    let mut ret = String::new();
+    match &e.ret {
+        Some(t) => t.write_code(&mut ret),
+        None => ret.push('-'),
+    }
+    let lang = if e.lang == ExtLang::Fortran77 { 'F' } else { 'C' };
+    format!("{}\t{lang}\t{ret}\t{args}\t{outs}", e.name)
+}
+
+/// A lowered function module and what its sidecar has to record: the main
+/// function's signature, and the `external "C"` functions the module calls out to.
+struct BuiltModule {
+    bytes: Vec<u8>,
+    in_sig: Vec<SigTy>,
+    out_sig: Vec<SigTy>,
+    ext_imports: Vec<ExtCallSig>,
+}
+
+fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<BuiltModule> {
     set_record_decls(&fn_code.extraRecordDecls)?;
     // Collect the functions: the main function first (wasm index BUILTINS.len()),
     // then the dependencies.
@@ -499,18 +549,36 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
         // `RECORD_CONSTRUCTOR` but are lowered inline (`E::RECORD`), and unknown
         // external / function-pointer dependencies cannot be JITed and, if
         // actually called, fail loudly at that call site instead.
-        if matches!(&**f, SimCodeFunction::Function::Function::FUNCTION { .. }) || external_known(f) {
+        if matches!(&**f, SimCodeFunction::Function::Function::FUNCTION { .. })
+            || external_known(f)
+            || external_general(f)
+        {
             funcs.push(&**f);
         }
     }
 
+    // The `external "C"` functions reached from here, as `ext.<extName>` imports.
+    let mut ext_imports: Vec<ExtCallSig> = Vec::new();
+    let mut ext_seen: HashSet<String> = HashSet::new();
+    for f in &funcs {
+        if external_general_why(f).is_ok() {
+            let sig = external_import_sig(f)?;
+            if ext_seen.insert(sig.name.clone()) {
+                ext_imports.push(sig);
+            }
+        }
+    }
+
     // Imported functions occupy the low function indices: the `env` math
-    // builtins, then the `rt` heap-runtime functions; generated functions
-    // follow. (The imported `memory` has its own index space and does not
-    // shift function indices.)
-    let base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
+    // builtins, the `rt` heap-runtime functions, then the `ext` externals;
+    // generated functions follow.
+    let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
+    let base = ext_base + ext_imports.len() as u32;
     // Map mangled function name -> (local id, signature) so CALLs can resolve.
     let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    for (i, sig) in ext_imports.iter().enumerate() {
+        by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
+    }
     let mut sigs: Vec<FnSig> = Vec::with_capacity(funcs.len());
     for (id, f) in funcs.iter().enumerate() {
         let (name, sig) = function_signature(f)?;
@@ -530,6 +598,12 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
     for (_, params, results) in ENV_EXTRA {
         types.ty().function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
     }
+    for sig in &ext_imports {
+        types.ty().function(
+            sig.wasm_params().iter().map(|s| s.wty().val()),
+            sig.wasm_results().iter().map(|s| s.wty().val()),
+        );
+    }
     for sig in &sigs {
         types.ty().function(sig.params.iter().map(|s| s.wty().val()), sig.results.iter().map(|s| s.wty().val()));
     }
@@ -543,14 +617,19 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
         "memory",
         we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
     );
+    // All three come from the runtime instance the host registers as `rt`: the math
+    // builtins are in-wasm (libm), not host functions.
     for (i, (name, _, _)) in BUILTINS.iter().enumerate() {
-        imports.import("env", *name, we::EntityType::Function(i as u32));
+        imports.import("rt", *name, we::EntityType::Function(i as u32));
     }
     for (j, (name, _, _)) in RT_BUILTINS.iter().enumerate() {
         imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + j) as u32));
     }
     for (k, (name, _, _)) in ENV_EXTRA.iter().enumerate() {
-        imports.import("env", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
+        imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
+    }
+    for (i, sig) in ext_imports.iter().enumerate() {
+        imports.import("ext", &sig.name, we::EntityType::Function(ext_base + i as u32));
     }
 
     // Compile the function bodies first (collecting any String literals into a
@@ -665,7 +744,7 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<(Vec<u8>, Vec
 
     // Signature types of the main function for the sidecar.
     let (in_sig, out_sig) = main_sig_types(main)?;
-    Ok((bytes, in_sig, out_sig))
+    Ok(BuiltModule { bytes, in_sig, out_sig, ext_imports })
 }
 
 /// The mangled name and wasm signature of a generated function.
@@ -808,17 +887,33 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
     if ext_lang(language).is_none() {
         return Err(format!("external language \"{language}\" is not supported"));
     }
-    let arg_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. });
-    let ret_ok = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr);
+    // The host converts a record field by field, so each field must marshal too.
+    fn record_ok(s: &SigTy) -> bool {
+        match s {
+            SigTy::Record { fields, .. } => fields.iter().all(|(_, t)| {
+                matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Array { .. }) || record_ok(t)
+            }),
+            _ => false,
+        }
+    }
+    let arg_ok = |s: &SigTy| {
+        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. })
+            || record_ok(s)
+    };
+    let ret_ok = |s: &SigTy| {
+        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr) || record_ok(s)
+    };
     let n_out = (&**outVars).into_iter().count();
     // Each declared output is written by at most one `extArgs` entry (or the
     // return value); one left unwritten keeps its binding, as in the C target.
     let mut written = vec![false; n_out];
-    let mut claim = |oi: usize| -> bool {
+    // Written once — except that a record output may be filled through its pointer
+    // *and* have one field assigned from the return value, different lvalues.
+    let mut claim = |oi: usize, field: bool| -> bool {
         if oi == 0 {
             return true;
         }
-        oi <= n_out && !std::mem::replace(&mut written[oi - 1], true)
+        oi <= n_out && (field || !std::mem::replace(&mut written[oi - 1], true))
     };
     for a in &**extArgs {
         let ty = match &**a {
@@ -831,15 +926,15 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
         if !arg_ok(&ty) {
             return Err(format!("argument type {ty:?} cannot be marshalled"));
         }
-        if !claim(ext_arg_output_index(a)) {
+        if !claim(ext_arg_output_index(a), false) {
             return Err("an argument writes an output the function does not declare".to_string());
         }
     }
     match &**extReturn {
         A::SIMNOEXTARG => {}
-        A::SIMEXTARG { type_, outputIndex, .. } => {
+        A::SIMEXTARG { type_, outputIndex, cref, .. } => {
             let t = sig_ty_quiet(type_).map_err(|e| e.to_string())?;
-            if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize) {
+            if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize, cref_field(cref).is_some()) {
                 return Err(format!("return type {t:?} cannot be marshalled"));
             }
         }
@@ -2144,15 +2239,20 @@ fn compile_external_function(
         let results = emit_general_external_call(&mut ctx, &sig.name, &input_args, &sig.wasm_params())?;
         // The declared output each wasm result feeds, in result order: the C
         // return value first, then each scalar/String `_Out_` arg.
-        let mut targets: Vec<usize> = Vec::new();
-        if let A::SIMEXTARG { outputIndex, .. } = &**extReturn {
-            targets.push(*outputIndex as usize - 1);
+        // `(declared output, the field of it this value assigns)`.
+        let mut targets: Vec<(usize, Option<String>)> = Vec::new();
+        if let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn {
+            targets.push((*outputIndex as usize - 1, cref_field(cref)));
         }
         for a in &**extArgs {
             let oi = ext_arg_output_index(a);
             let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })));
             if oi != 0 && scalar {
-                targets.push(oi - 1);
+                let field = match &**a {
+                    A::SIMEXTARG { cref, .. } => cref_field(cref),
+                    _ => None,
+                };
+                targets.push((oi - 1, field));
             }
         }
         if results.len() != targets.len() {
@@ -2165,7 +2265,23 @@ fn compile_external_function(
             return Err("CodegenWasmJit: external scalar-return/output count mismatch");
         }
         for k in (0..targets.len()).rev() {
-            let (out_idx, out_sty) = ctx.outputs[targets[k]].clone();
+            let (target, field) = targets[k].clone();
+            let (out_idx, out_sty) = ctx.outputs[target].clone();
+            // Must follow the whole-record store through the pointer argument, which
+            // it does: results go back-to-front.
+            if let Some(field) = field {
+                let SigTy::Record { fields, .. } = &out_sty else {
+                    openmodelica_wasm_jit::set_engine_error_detail(format!(
+                        "  {}, external `{extName}`: `{field}` is a field of an output that is not a record",
+                        fn_path(),
+                    ));
+                    return Err("CodegenWasmJit: external output field on a non-record");
+                };
+                let vt = ctx.alloc_temp(results[k].wty());
+                ctx.emit(we::Instruction::LocalSet(vt));
+                store_fresh_into_field(&mut ctx, out_idx, fields, &field, vt)?;
+                continue;
+            }
             if results[k].wty() != out_sty.wty() {
                 openmodelica_wasm_jit::set_engine_error_detail(format!(
                     "  {}, external `{extName}`: output {k} is {:?} in the C call but \
@@ -2512,6 +2628,18 @@ fn var_name_ty(v: &SimCodeFunction::Variable::Variable) -> Result<(String, SigTy
 
 /// The identifier of a scalar `CREF_IDENT` component reference (no subscripts /
 /// qualification, which only arise for arrays / records).
+/// The field when a reference is `<var>.<field>` — an external call assigning one
+/// member of a record output (`external "C" r.y = f(…)`).
+fn cref_field(cr: &DAE::ComponentRef) -> Option<String> {
+    match cr {
+        DAE::ComponentRef::CREF_QUAL { componentRef, .. } => match &**componentRef {
+            DAE::ComponentRef::CREF_IDENT { ident, .. } => Some(ident.to_string()),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 fn cref_ident(cr: &DAE::ComponentRef) -> Result<String> {
     match cr {
         DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } => {
@@ -2797,49 +2925,8 @@ const ARR_TOTAL_OFF: u32 = 12;
 const ARR_DIMS_OFF: u32 = 16;
 
 // -------------------------------------------------------------------------
-// Record object layout (mirrors the runtime's record object)
+// Record object layout (`openmodelica_wasm_jit::sig`, shared with the hosts)
 // -------------------------------------------------------------------------
-
-/// Byte size of one record field: Real is 8, everything else (Integer/Boolean
-/// and every heap handle) is 4.
-fn field_size(t: &SigTy) -> u32 {
-    if matches!(t, SigTy::Real) { 8 } else { 4 }
-}
-
-fn align_up(n: u32, a: u32) -> u32 {
-    (n + a - 1) & !(a - 1)
-}
-
-/// The byte layout of a record object's payload. `data_off` is the offset from
-/// the object base to the first field (after the refcount, `nheap`, and the
-/// inline heap-field table); `field_off[i]` is field `i`'s offset within the
-/// field-data area; `heap` lists `(elem_kind, field_off)` for the heap fields
-/// (the inline release table); `size` is the total payload to allocate. Must
-/// agree with `rec_data_off` / the field layout in the runtime.
-struct RecordLayout {
-    data_off: u32,
-    size: u32,
-    field_off: Vec<u32>,
-    heap: Vec<(u32, u32)>,
-}
-
-fn record_layout(fields: &[(ArcStr, SigTy)]) -> RecordLayout {
-    let nheap = fields.iter().filter(|(_, t)| t.is_heap()).count() as u32;
-    let data_off = align_up(8 + nheap * 8, 8);
-    let mut off = 0u32;
-    let mut field_off = Vec::with_capacity(fields.len());
-    let mut heap = Vec::new();
-    for (_, t) in fields {
-        let sz = field_size(t);
-        off = align_up(off, sz);
-        field_off.push(off);
-        if t.is_heap() {
-            heap.push((t.elem_kind(), off));
-        }
-        off += sz;
-    }
-    RecordLayout { data_off, size: data_off + align_up(off, 8), field_off, heap }
-}
 
 /// Resolve a record field by name to `(absolute offset from the object base,
 /// field type)`.
@@ -3914,16 +4001,14 @@ fn compile_for_int_range(
     let pw = compile_exp(ctx, stop)?;
     coerce(ctx, pw, WTy::I32);
     ctx.emit(we::Instruction::LocalSet(stop_l));
+    emit_step_check(ctx, step, step_l)?;
 
-    // block { loop { (it>stop) -> br 1; block { body }; it+=step; br 0 } }
-    // Assumes a positive step (the common case for generated loops). The inner
-    // block is the `continue` target — falling through runs the increment.
+    // block { loop { past stop -> br 1; block { body }; it+=step; br 0 } }
+    // The inner block is the `continue` target — falling through runs the increment.
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
     let break_level = ctx.ctrl_depth;
     ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
-    ctx.emit(we::Instruction::LocalGet(it));
-    ctx.emit(we::Instruction::LocalGet(stop_l));
-    ctx.emit(we::Instruction::I32GtS);
+    emit_range_done(ctx, step, it, step_l, stop_l);
     ctx.emit(we::Instruction::BrIf(1));
     compile_loop_body(ctx, break_level, body)?;
     ctx.emit(we::Instruction::LocalGet(it));
@@ -4053,7 +4138,57 @@ fn emit_range_iter(
     let pw = compile_exp(ctx, stop)?;
     coerce(ctx, pw, WTy::I32);
     ctx.emit(we::Instruction::LocalSet(stop_l));
+    emit_step_check(ctx, step, step_l)?;
     Ok((it, step_l, stop_l))
+}
+
+fn const_step(step: &Option<Arc<DAE::Exp>>) -> Option<i32> {
+    match step {
+        None => Some(1),
+        Some(e) => match &**e {
+            DAE::Exp::ICONST { integer } => Some(*integer),
+            _ => None,
+        },
+    }
+}
+
+/// Leave `it` has passed `stop` on the stack — which way, per C's
+/// `in_range_integer`, is the step's sign.
+fn emit_range_done(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, it: u32, step_l: u32, stop_l: u32) {
+    ctx.emit(we::Instruction::LocalGet(it));
+    ctx.emit(we::Instruction::LocalGet(stop_l));
+    match const_step(step) {
+        Some(k) if k < 0 => ctx.emit(we::Instruction::I32LtS),
+        Some(_) => ctx.emit(we::Instruction::I32GtS),
+        None => {
+            ctx.emit(we::Instruction::I32GtS);
+            ctx.emit(we::Instruction::LocalGet(it));
+            ctx.emit(we::Instruction::LocalGet(stop_l));
+            ctx.emit(we::Instruction::I32LtS);
+            ctx.emit(we::Instruction::LocalGet(step_l));
+            ctx.emit(we::Instruction::I32Const(0));
+            ctx.emit(we::Instruction::I32GtS);
+            ctx.emit(we::Instruction::Select);
+        }
+    }
+}
+
+const ZERO_STEP: &str = "assertion range step != 0 failed";
+
+/// A zero step never reaches `stop`; C's generated code asserts on it.
+fn emit_step_check(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, step_l: u32) -> Result<()> {
+    match const_step(step) {
+        Some(0) => emit_runtime_error(ctx, ZERO_STEP),
+        Some(_) => Ok(()),
+        None => {
+            ctx.emit(we::Instruction::LocalGet(step_l));
+            ctx.emit(we::Instruction::I32Eqz);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_runtime_error(ctx, ZERO_STEP)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+    }
 }
 
 /// Evaluate an Integer range into a fresh local holding its element count,
@@ -4065,17 +4200,34 @@ fn emit_range_count(
     stop: &DAE::Exp,
 ) -> Result<u32> {
     let cnt = ctx.alloc_temp(WTy::I32);
+    // A zero step would divide by zero below, before any loop asserts on it.
+    let step_l = match (const_step(step), step) {
+        (Some(0), _) => {
+            emit_runtime_error(ctx, ZERO_STEP)?;
+            None
+        }
+        (None, Some(e)) => {
+            let l = ctx.alloc_temp(WTy::I32);
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(l));
+            emit_step_check(ctx, step, l)?;
+            Some(l)
+        }
+        _ => None,
+    };
     let pw = compile_exp(ctx, stop)?;
     coerce(ctx, pw, WTy::I32);
     let sw = compile_exp(ctx, start)?;
     coerce(ctx, sw, WTy::I32);
     ctx.emit(we::Instruction::I32Sub);
-    match step {
-        Some(e) => {
+    match (step_l, step) {
+        (Some(l), _) => ctx.emit(we::Instruction::LocalGet(l)),
+        (None, Some(e)) => {
             let w = compile_exp(ctx, e)?;
             coerce(ctx, w, WTy::I32);
         }
-        None => ctx.emit(we::Instruction::I32Const(1)),
+        (None, None) => ctx.emit(we::Instruction::I32Const(1)),
     }
     ctx.emit(we::Instruction::I32DivS);
     ctx.emit(we::Instruction::I32Const(1));
@@ -4110,9 +4262,7 @@ fn emit_red_nest(
     let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
     ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
-    ctx.emit(we::Instruction::LocalGet(it));
-    ctx.emit(we::Instruction::LocalGet(stop_l));
-    ctx.emit(we::Instruction::I32GtS);
+    emit_range_done(ctx, step, it, step_l, stop_l);
     ctx.emit(we::Instruction::BrIf(1));
     match &iter.guardExp {
         Some(guard) => {
@@ -8759,14 +8909,36 @@ pub fn translateFunctions(fnCode: SimCodeFunction::FunctionCode) {
 }
 
 fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
-    let (bytes, in_sig, out_sig) = build_module(fn_code)?;
+    let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
     let base = fn_code.name.to_string();
-    // Sidecar: line 1 = input type codes, line 2 = output type codes.
+    // Sidecar: input type codes, output type codes, then a `lib`/`ext` line per
+    // external "C" library and per function called in one.
     let mut in_codes = String::new();
     in_sig.iter().for_each(|s| s.write_code(&mut in_codes));
     let mut out_codes = String::new();
     out_sig.iter().for_each(|s| s.write_code(&mut out_codes));
-    let sig = format!("{in_codes}\n{out_codes}\n");
+    let mut sig = format!("{in_codes}\n{out_codes}\n");
+    if !ext_imports.is_empty() {
+        let mut notes: Vec<String> = Vec::new();
+        for lib in crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)? {
+            sig.push_str(&format!("lib\t{}\n", lib.name));
+        }
+        // An implementation given as C source in an `Include`.
+        let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &mut notes)? {
+            let path = format!("{base}_includes.wasm");
+            openmodelica_wasi::fs::write(&path, &l.bytes)
+                .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
+            sig.push_str(&format!("lib\t{path}\n"));
+        }
+        for e in &ext_imports {
+            sig.push_str(&format!("ext\t{}\n", write_ext_sig(e)));
+        }
+        for n in &notes {
+            sig.push_str(&format!("note\t{}\n", n.replace('\n', " ")));
+        }
+    }
     // Native writes the module + sidecar to disk; wasm has no OS filesystem, so
     // the facade stages them in the VFS where `load_and_execute` reads them back.
     openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
