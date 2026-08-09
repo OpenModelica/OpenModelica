@@ -16,6 +16,8 @@ use openmodelica_ast::Absyn;
 use openmodelica_frontend_types::Values;
 
 use super::SigTy;
+use openmodelica_wasm_jit::sig::ExtCallSig;
+use openmodelica_wasi::wasi::WasiCtx;
 
 /// wasmtime errors carry their own (re-exported) `anyhow`, which does not unify
 /// with ours under the feature set we build with; flatten via the message.
@@ -47,7 +49,7 @@ struct JitCache {
     engine: wasmtime::Engine,
     /// Host-imported math builtins (module `"env"`); identical for every module,
     /// so built once and reused for every instantiation.
-    env_linker: wasmtime::Linker<()>,
+    env_linker: wasmtime::Linker<WasiCtx>,
     /// The static linear-memory runtime ([`RUNTIME_WASM`]), compiled once. A
     /// fresh instance is created per call to give each evaluation its own heap.
     runtime_module: wasmtime::Module,
@@ -89,11 +91,106 @@ fn get_or_compile_module(cache: &JitCache, bytes: &[u8]) -> Result<wasmtime::Mod
         .clone())
 }
 
-/// Parsed `.wasm.sig` sidecar: scalar types of the main function's inputs and
-/// outputs.
+/// The runtime does not export this one; it is the host's.
+fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, WasiCtx>, handle: i32| {
+        if handle == 0 {
+            return;
+        }
+        // [refcount:u32][len:u32][utf8]
+        let data = memory.data(&caller);
+        let h = handle as usize;
+        let Some(lenb) = data.get(h + 4..h + 8) else { return };
+        let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
+        if let Some(bytes) = data.get(h + 8..h + 8 + len) {
+            openmodelica_wasi::wasi::stdout_write(bytes);
+        }
+    }))?;
+    Ok(())
+}
+
+/// Load the `external "C"` libraries the sidecar names and bind the module's
+/// `ext.<name>` imports to them, with the loader a simulation uses.
+fn define_external_imports(
+    store: &mut wasmtime::Store<WasiCtx>,
+    linker: &mut wasmtime::Linker<WasiCtx>,
+    rt_inst: wasmtime::Instance,
+    memory: wasmtime::Memory,
+    sig: &Sig,
+) -> Result<()> {
+    use openmodelica_wasm_jit::dylink_engine as dl;
+    if sig.ext_imports.is_empty() {
+        return Ok(());
+    }
+    openmodelica_wasm_jit::host::set_sim_memory(memory);
+    let ext_rt = dl::ExtRt {
+        str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
+        str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
+        alloc: wt(rt_inst.get_typed_func(&mut *store, "rt_alloc"))?,
+        free: wt(rt_inst.get_typed_func(&mut *store, "rt_free"))?,
+        record_new: wt(rt_inst.get_typed_func(&mut *store, "rt_record_new"))?,
+    };
+    let mut libs = Vec::with_capacity(sig.libs.len() + 1);
+    let libc = openmodelica_wasi_libc::LIBC_PIC;
+    if libc.is_empty() {
+        return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
+                    load an external \"C\" library");
+    }
+    libs.push(dl::Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    for path in &sig.libs {
+        let bytes = openmodelica_wasi::fs::read(path)
+            .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
+        libs.push(dl::Library { name: path.clone(), bytes });
+    }
+    let table = rt_inst
+        .get_table(&mut *store, "__indirect_function_table")
+        .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export")?;
+    let host = dl::modelica_utilities_imports(&mut *store, &ext_rt);
+    let engine = linker.engine().clone();
+    let loaded = dl::load(&mut *store, &engine, memory, table, &ext_rt.alloc, &libs, &host)
+        .map_err(|e| record_dylink_error(e))?;
+    for s in &sig.ext_imports {
+        let functype = wasmtime::FuncType::new(
+            &engine,
+            s.wasm_params().iter().map(|t| valtype(t.wty())),
+            s.wasm_results().iter().map(|t| valtype(t.wty())),
+        );
+        let target = loaded.func(&s.name).cloned().ok_or_else(|| {
+            record_dylink_error(format!(
+                "external \"C\" function `{}` is in none of the model's libraries{}",
+                s.name,
+                sig.notes.iter().map(|n| format!("\n  {n}")).collect::<String>()
+            ))
+        })?;
+        let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
+            .map_err(record_dylink_error)?
+            .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
+        wt(linker.define(&mut *store, "ext", &s.name, f))?;
+    }
+    Ok(())
+}
+
+/// The reason (a missing symbol, a library built without `-shared`) is specific
+/// and useless if swallowed.
+fn record_dylink_error(e: String) -> &'static str {
+    crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: {e}"));
+    "CodegenWasmJit: cannot load the model's external \"C\" libraries"
+}
+
+fn valtype(w: openmodelica_wasm_jit::sig::WTy) -> wasmtime::ValType {
+    match w {
+        openmodelica_wasm_jit::sig::WTy::I32 => wasmtime::ValType::I32,
+        openmodelica_wasm_jit::sig::WTy::F64 => wasmtime::ValType::F64,
+    }
+}
+
+/// Parsed `.wasm.sig` sidecar.
 struct Sig {
     inputs: Vec<SigTy>,
     outputs: Vec<SigTy>,
+    libs: Vec<String>,
+    ext_imports: Vec<ExtCallSig>,
+    notes: Vec<String>,
 }
 
 fn read_sig(path: &str) -> Result<Sig> {
@@ -104,7 +201,18 @@ fn read_sig(path: &str) -> Result<Sig> {
     };
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
-    Ok(Sig { inputs, outputs })
+    let mut libs = Vec::new();
+    let mut ext_imports = Vec::new();
+    let mut notes = Vec::new();
+    for line in lines {
+        match line.split_once('\t') {
+            Some(("lib", rest)) => libs.push(rest.to_string()),
+            Some(("ext", rest)) => ext_imports.push(super::parse_ext_sig(rest)?),
+            Some(("note", rest)) => notes.push(rest.to_string()),
+            _ => {}
+        }
+    }
+    Ok(Sig { inputs, outputs, libs, ext_imports, notes })
 }
 
 
@@ -145,17 +253,29 @@ pub(super) fn load_and_execute(
     // module name "rt", plus the `env` math builtins.
     let cache = jit_cache();
     let module = get_or_compile_module(cache, &bytes)?;
-    let mut store = wasmtime::Store::new(&cache.engine, ());
+    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new(".", Vec::new()));
     let rt_inst = wt(cache.env_linker.instantiate(&mut store, &cache.runtime_module))?;
     let mut linker = cache.env_linker.clone();
     wt(linker.instance(&mut store, "rt", rt_inst))?;
-    let instance = wt(linker.instantiate(&mut store, &module))?;
 
     // Runtime entry points needed to marshal heap values (strings, arrays) in
     // and out of the shared heap.
     let memory = rt_inst
         .get_memory(&mut store, "memory")
         .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
+    // `print(s)` in an evaluated function, onto the same stdout a simulation uses.
+    define_print_import(&mut linker, memory)?;
+    define_external_imports(&mut store, &mut linker, rt_inst, memory, &sig).inspect_err(|e| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot bind the external \"C\" functions of `{file_name}`: {e}"
+        ))
+    })?;
+    let instance = linker.instantiate(&mut store, &module).map_err(|e| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot instantiate the JIT module for `{file_name}`: {e}"
+        ));
+        "CodegenWasmJit: wasm engine error"
+    })?;
     let rt = RtFns {
         mem: memory,
         str_new: wt(rt_inst.get_typed_func(&mut store, "rt_str_new"))?,
@@ -270,7 +390,8 @@ struct RtFns {
     rec_new: wasmtime::TypedFunc<(i32, i32), i32>,
 }
 
-type Store = wasmtime::Store<()>;
+// A WASI context so a loaded library (and its libc) has real file I/O.
+type Store = wasmtime::Store<WasiCtx>;
 
 /// Build a `wasmtime::Val` (scalar, or an `i32` handle into the heap) for the
 /// argument value `v` of the given Modelica type. Heap values (strings, arrays)
@@ -451,9 +572,10 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
     })
 }
 
-/// Rebuild an `Absyn.Path` from a dotted record name (`"A.B.C"`).
+/// Rebuild an `Absyn.Path` from a dotted record name. A record declaration's name
+/// is fully qualified (`".A.B"`): the leading `.` is a marker, not an identifier.
 fn path_from_dotted(s: &str) -> Arc<Absyn::Path> {
-    let parts: Vec<&str> = s.split('.').collect();
+    let parts: Vec<&str> = s.trim_start_matches('.').split('.').collect();
     let mut it = parts.iter().rev();
     let last = it.next().copied().unwrap_or("");
     let mut p = Absyn::Path::IDENT { name: ArcStr::from(last) };
@@ -550,10 +672,10 @@ mod tests {
 
     /// The precompiled runtime, instantiated over the same host imports the
     /// production linker provides.
-    fn runtime_instance() -> (wasmtime::Store<()>, wasmtime::Instance) {
+    fn runtime_instance() -> (Store, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
         let mut linker = wasmtime::Linker::new(&engine);
         openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();
@@ -562,7 +684,7 @@ mod tests {
 
     /// Read the bytes of a runtime string handle out of an instance's memory.
     fn read_rt_string(
-        store: &mut wasmtime::Store<()>,
+        store: &mut Store,
         inst: &wasmtime::Instance,
         mem: wasmtime::Memory,
         handle: i32,
@@ -771,7 +893,7 @@ mod tests {
         }
 
         // rt_str_pad: write a string into a fresh runtime object, then pad.
-        let make = |store: &mut wasmtime::Store<()>, s: &str| -> i32 {
+        let make = |store: &mut Store, s: &str| -> i32 {
             let h = str_new.call(&mut *store, s.len() as i32).unwrap();
             let d = str_data.call(&mut *store, h).unwrap() as usize;
             mem.write(&mut *store, d, s.as_bytes()).unwrap();

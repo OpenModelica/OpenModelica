@@ -922,6 +922,17 @@ function(omc_rust_setup_codegen)
             DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
   endif()
 
+  # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
+  # against. Under the wasm triple with an `omc` subdirectory so it cannot be
+  # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
+  # builtins so it matches the libc.so omc resolves imports against.
+  install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
+          DESTINATION lib/wasm32-wasi/omc COMPONENT omc)
+  if(_wasi_builtins)
+    install(FILES ${_wasi_builtins}
+            DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
+  endif()
+
   # The native egui OMShell client (omshell_egui), built when the GUI clients are
   # enabled (OM_ENABLE_GUI_CLIENTS, the same flag that drives OMEdit). It links the
   # compiler in-process as an ordinary cargo dependency (omshell_omc ->

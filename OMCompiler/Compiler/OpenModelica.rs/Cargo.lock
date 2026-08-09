@@ -6919,6 +6919,7 @@ dependencies = [
  "openmodelica_sim_meta",
  "openmodelica_util",
  "openmodelica_wasi",
+ "openmodelica_wasi_libc",
  "rsparse",
  "wasm-encoder 0.252.0",
  "wasmer",

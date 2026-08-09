@@ -26,11 +26,16 @@ mod wasmtime_impl {
 
     type Linker = wasmtime::Linker<WasiCtx>;
 
-    /// Borrow `(SliceMem, ctx)` from the caller, or return ERRNO_FAULT if the
-    /// guest exports no `memory`.
+    /// Borrow `(SliceMem, ctx)` from the caller, or ERRNO_FAULT if there is no
+    /// memory. A shared library imports the memory rather than exporting one, so
+    /// fall back to the one the engine registered for the run.
     macro_rules! mem_ctx {
         ($caller:expr) => {{
-            match $caller.get_export("memory").and_then(|e| e.into_memory()) {
+            let mem = $caller
+                .get_export("memory")
+                .and_then(|e| e.into_memory())
+                .or_else(crate::host::get_sim_memory);
+            match mem {
                 Some(m) => {
                     let (data, ctx) = m.data_and_store_mut(&mut $caller);
                     (SliceMem(data), ctx)

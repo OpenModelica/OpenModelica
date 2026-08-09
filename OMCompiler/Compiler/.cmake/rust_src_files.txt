@@ -317,6 +317,8 @@ openmodelica_wasi_libc/external_c_callbacks.c
 openmodelica_wasm_jit/Cargo.toml
 openmodelica_wasm_jit/build.rs
 openmodelica_wasm_jit/external_c_stubs.c
+openmodelica_wasm_jit/src/dylink.rs
+openmodelica_wasm_jit/src/dylink_wasmtime.rs
 openmodelica_wasm_jit/src/engine_config.rs
 openmodelica_wasm_jit/src/host.rs
 openmodelica_wasm_jit/src/lib.rs

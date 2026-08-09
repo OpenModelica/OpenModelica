@@ -16,7 +16,27 @@ rtest special directives added to help creating testcases:
   Useful if you e.g. want to disable compiling functions with gcc while you flatten code.  
   You can also set the environment variable RTEST_OMCFLAGS if you want to insert these flags for all commands you run.
 * setup_command: gcc ...  
-  Will execute the provided command before running omc.
+  Will execute the provided command before running omc.  
+  A command that builds an external "C" library should not name a compiler
+  directly; use the variables rtest exports so the test also works for the
+  wasm-jit target, which needs the library as a PIC dylink `.wasm` module
+  rather than a host object file:
+
+      // setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o foo$OMC_EXTLIB_EXT foo.c $OMC_EXTLIB_LIBS
+
+  | Variable | Default | wasm-jit |
+  | --- | --- | --- |
+  | `OMC_CC` | `gcc` | `clang --target=wasm32-wasip1 --sysroot=$OPENMODELICAHOME/lib/wasm32-wasi/omc` |
+  | `OMC_CFLAGS` | `-fPIC` | `-fPIC` |
+  | `OMC_EXTLIB_FLAGS` | `-c` | `-shared -nodefaultlibs -Wl,--export-all -Wl,--allow-undefined` |
+  | `OMC_EXTLIB_LIBS` | (empty) | the wasm32 compiler-rt builtins archive |
+  | `OMC_EXTLIB_EXT` | `.o` | `.wasm` |
+  | `OMC_AR` | `ar` | `true` (a dylink module is already linked) |
+
+  Each is taken from the environment when already set, so a run can point them
+  at another toolchain. The wasm values are used when the target under test is
+  wasm-jit (`OPENMODELICA_TEST_SIMCODETARGET` or `--simCodeTarget=` in
+  `RTEST_OMCFLAGS`).
 * teardown_command: rm -f ...  
   Will execute the provided command after running omc.
 * suite: metamodelica, 63bit  

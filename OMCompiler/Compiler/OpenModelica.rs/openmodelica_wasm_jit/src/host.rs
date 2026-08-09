@@ -176,6 +176,8 @@ mod sim_memory {
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub use sim_memory::set as set_sim_memory;
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub use sim_memory::get as get_sim_memory;
 
 fn record_assert(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32) {
     PENDING_ASSERT.with(|p| {
