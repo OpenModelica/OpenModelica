@@ -130,8 +130,6 @@ SIMDJSON_DIR=3rdParty/simdjson
 SIMDJSON_BUILD_DIR=$(SIMDJSON_DIR)/build
 LIBSIMDJSONLIB=libsimdjson.a
 
-SUITESPARSE_LIBS=
-
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 

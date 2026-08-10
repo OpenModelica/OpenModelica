@@ -63,18 +63,22 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
 
   # SUNDIALS Header
   find_path(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h"
-    ${SUNDIALS_PATH}/include/sundials NO_DEFAULT_PATH)
+    ${SUNDIALS_PATH}/include NO_DEFAULT_PATH)
 
   message(STATUS "Sundials include:")
   message(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
   # SUNDIALS Libraries
+  find_library(SUNDIALS_CORE                 NAMES sundials_core                 PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_LIBRARY_NVEC         NAMES sundials_nvecserial           PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_KINSOL               NAMES sundials_kinsol               PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_SUNLINSOLKLU         NAMES sundials_sunlinsolklu         PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_SUNLINSOLLAPACKDENSE NAMES sundials_sunlinsollapackdense PATHS ${SUNDIALS_LIB_DIR})
 
   # Check if all libraries found
+  if(NOT SUNDIALS_CORE)
+    message(FATAL_ERROR "Could not find libsundials_core!")
+  endif()
   if(NOT SUNDIALS_LIBRARY_NVEC)
     message(FATAL_ERROR "Could not find libsundials_nvecserial!")
   endif()
@@ -87,12 +91,16 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
   if(NOT SUNDIALS_SUNLINSOLLAPACKDENSE)
     message(FATAL_ERROR "Could not find sundials_sunlinsollapackdense!")
   endif()
+  if(NOT SUNDIALS_INCLUDE_DIR)
+    message(FATAL_ERROR "Could not find sundials/sundials_config.h below ${SUNDIALS_PATH}/include!")
+  endif()
 
   set(SUNDIALS_LIBRARIES
-    ${SUNDIALS_LIBRARY_NVEC}
     ${SUNDIALS_KINSOL}
     ${SUNDIALS_SUNLINSOLKLU}
-    ${SUNDIALS_SUNLINSOLLAPACKDENSE})
+    ${SUNDIALS_SUNLINSOLLAPACKDENSE}
+    ${SUNDIALS_LIBRARY_NVEC}
+    ${SUNDIALS_CORE})
   message(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
 endif()
 
@@ -109,7 +117,6 @@ add_library(${OMSISolverName}
 target_include_directories(${OMSISolverName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 if(NOT TARGET omc::3rd::sundials::kinsol)
   target_include_directories(${OMSISolverName} SYSTEM PUBLIC "${SUNDIALS_INCLUDE_DIR}")
-  target_compile_definitions(${OMSISolverName} PRIVATE ${SUNDIALS_VERSION_DEFS})
 endif()
 
 set_target_properties(${OMSISolverName} PROPERTIES MACOSX_RPATH ON)

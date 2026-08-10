@@ -678,6 +678,8 @@ clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
 
 # build sundials
+# Keep these options in sync with 3rdParty/CMakeLists.txt, which applies the
+# same settings when SUNDIALS is built through the CMake build system.
 sundials: suitesparse
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
@@ -687,18 +689,24 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX="`pwd`" \
 		-DCMAKE_INSTALL_INCLUDEDIR=include \
-		-DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON \
-		-DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
+		-DBUILD_SHARED_LIBS:Bool=ON \
+		-DBUILD_STATIC_LIBS:Bool=ON \
 		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
 		-DLDFLAGS="$(LDFLAGS)" \
-		-DSUNDIALS_KLU_ENABLE:Bool=ON \
-		-DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" \
+		-DSUNDIALS_PRECISION=DOUBLE \
+		-DSUNDIALS_INDEX_SIZE=64 \
+		-DSUNDIALS_ENABLE_KLU:Bool=ON \
+		-DSUNDIALS_ENABLE_KLU_CHECKS:Bool=OFF \
+		-DKLU_LIBRARY_DIR="$(builddir_lib_omc)" \
 		-DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
-		$(SUITESPARSE_LIBS) \
-		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF \
-		-DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF \
-		-DSUNDIALS_EXAMPLES_INSTALL=OFF $(IS_MINGW32) $(IS_MINGW64) \
-		-DSUNDIALS_LAPACK_ENABLE:Bool=ON \
+		-DSUNDIALS_ENABLE_C_EXAMPLES:Bool=OFF \
+		-DSUNDIALS_ENABLE_CXX_EXAMPLES:Bool=OFF \
+		-DSUNDIALS_ENABLE_EXAMPLES_INSTALL:Bool=OFF \
+		-DSUNDIALS_ENABLE_BENCHMARKS:Bool=OFF \
+		-DSUNDIALS_TEST_ENABLE_UNIT_TESTS:Bool=OFF \
+		-DSUNDIALS_ENABLE_ERROR_CHECKS:Bool=OFF \
+		-DSUNDIALS_ENABLE_FORTRAN:Bool=OFF \
+		-DSUNDIALS_ENABLE_LAPACK:Bool=ON \
 		-DLAPACK_LIBRARIES="$(LD_LAPACK)" \
 		-DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS) \
 		-DCMAKE_POSITION_INDEPENDENT_CODE=ON)
@@ -706,8 +714,16 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	$(MAKE) -C 3rdParty/sundials/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
+	# The headers go below $(builddir_inc)/sundials, i.e. as
+	# <inc>/sundials/{sundials,idas,cvode,kinsol,nvector,sunlinsol,...}/, which is
+	# what SimulationRuntime/c/Makefile.common's -I$(builddir_inc)/sundials/,
+	# SimulationRuntime/cpp and SimulationRuntime/OMSICpp all expect, and what the
+	# CMake build produces by bumping CMAKE_INSTALL_INCLUDEDIR for the subdirectory
+	# (see 3rdParty/CMakeLists.txt). Wiped first so a layout from an older build
+	# cannot be left behind to shadow the current headers.
+	rm -rf $(builddir_inc)/sundials
 	mkdir -p $(builddir_inc)/sundials
-	(cp -pfr 3rdParty/sundials/build/include/* $(builddir_inc))
+	(cp -pfr 3rdParty/sundials/build/include/* $(builddir_inc)/sundials)
 
 	# copy the libs to the build/lib/omc directory
 	find 3rdParty/sundials/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
@@ -715,36 +731,21 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
 	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
 	# see http://mac-os-forge.2317878.n4.nabble.com/install-name-tool-problem-with-symlinks-on-Xcode-12-2-td406984.html
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvode.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvodes.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.5.4.0.dylib "$(builddir_lib_omc)/libsundials_ida.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.4.4.0.dylib "$(builddir_lib_omc)/libsundials_idas.4.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.5.4.0.dylib "$(builddir_lib_omc)/libsundials_kinsol.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecmanyvector.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecmanyvector.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolband.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsoldense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsoldense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolklu.3.4.0.dylib   "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackdense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolpcg.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolpcg.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspbcgs.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspbcgs.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspfgmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspfgmr.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspgmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspgmr.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolsptfqmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolsptfqmr.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixband.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixdense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixdense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixsparse.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixsparse.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunnonlinsolfixedpoint.2.4.0.dylib "$(builddir_lib_omc)/libsundials_sunnonlinsolfixedpoint.2.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunnonlinsolnewton.2.4.0.dylib "$(builddir_lib_omc)/libsundials_sunnonlinsolnewton.2.4.0.dylib"
+	# Every SUNDIALS package carries its own VERSION (see 3rdParty/sundials/CMakeLists.txt:
+	# ida is 7.8.0, idas 6.8.0, the sunmatrix/sunlinsol ones 5.8.0, ...), so derive the
+	# names from what was installed rather than listing them and having to chase every bump.
+	test ! `uname` = Darwin || for lib in "$(builddir_lib_omc)"/libsundials_*.*.*.*.dylib; do \
+		if test ! -f "$$lib" || test -L "$$lib"; then continue; fi; \
+		install_name_tool -id "@rpath/`basename "$$lib"`" "$$lib"; \
+	done
 
-	# fix the rpath in some of the libs
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsoldense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixsparse.3.dylib "@rpath/libsundials_sunmatrixsparse.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixband.3.dylib "@rpath/libsundials_sunmatrixband.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsolband.3.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixband.3.dylib "@rpath/libsundials_sunmatrixband.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
+	# fix the rpath in the libs that link against other sundials libs
+	test ! `uname` = Darwin || for lib in "$(builddir_lib_omc)"/libsundials_*.*.*.*.dylib; do \
+		if test ! -f "$$lib" || test -L "$$lib"; then continue; fi; \
+		for dep in `otool -L "$$lib" | awk 'NR > 1 { print $$1 }' | grep '^libsundials_'`; do \
+			install_name_tool -change "$$dep" "@rpath/$$dep" "$$lib"; \
+		done; \
+	done
 
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))

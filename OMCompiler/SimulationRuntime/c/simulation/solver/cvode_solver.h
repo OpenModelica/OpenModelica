@@ -40,9 +40,9 @@
 
 #ifdef WITH_SUNDIALS
 
-#include <sundials/sundials_context.h>  /* SUNContext */
-#include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
-#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
+#include <sundials/sundials_context.h>              /* SUNContext */
+#include <cvode/cvode.h>                            /* prototypes for CVODE fcts., consts. */
+#include <nvector/nvector_serial.h>                 /* serial N_Vector types, fcts., macros */
 #include <sunlinsol/sunlinsol_dense.h>              /* Default dense linear solver */
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>   /* Default dense linear solver */
 
@@ -59,7 +59,7 @@ typedef enum CVODE_ITER
   CV_ITER_NEWTON       =2,   /* Newton iteration (default) */
 
   CV_ITER_MAX
-}CVODE_ITER;
+} CVODE_ITER;
 
 typedef struct CVODE_USERDATA
 {
@@ -77,7 +77,7 @@ typedef struct CVODE_CONFIG
                                 * CV_ITER_FIXED_POINT = 1 for fixed-point-iteration
                                 * CV_ITER_NEWTON = 2 for Newton iterations */
 
-  sunbooleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
+  sunbooleantype internalSteps;   /* if TRUE internal step of the integrator are used, default FALSE */
   JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
 
   /* Optional configurations */
@@ -93,21 +93,20 @@ typedef struct CVODE_CONFIG
                                 * For CV_BDF defaults to BDF_Q_MAX=5. */
   int maxConvFailPerStep;      /* Maximum number of nonlinear solver convergence failures permitted during one step.
                                 * Default value is 10. */
-  sunbooleantype BDFStabDetect;   /* BDF stability limit detection.
-                                * Only usable for lmm=CV_BDF. */
-  sunbooleantype solverRootFinding;  /* True if internal root finding should be used, false otherwiese.
-                                   * Disable for FMI */
+  sunbooleantype BDFStabDetect;     /* BDF stability limit detection.
+                                     * Only usable for lmm=CV_BDF. */
+  sunbooleantype solverRootFinding; /* True if internal root finding should be used, false otherwiese.
+                                     * Disable for FMI */
 } CVODE_CONFIG;
 
 typedef struct CVODE_SOLVER
 {
-  CVODE_CONFIG config;        /* CVODE configuration */
-  sunbooleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
-  long int N;                 /* Number of unknowns / states */
+  CVODE_CONFIG config;          /* CVODE configuration */
+  sunbooleantype isInitialized; /* Boolean flag if problem is initilaized with start value for y */
+  long int N;                   /* Number of unknowns / states */
 
-  SUNContext sunctx;          /* SUNDIALS simulation context. Since SUNDIALS 6 every
-                                 SUNDIALS object has to be created with one. Owned by
-                                 this struct, one per solver instance so that solvers
+  SUNContext sunctx;          /* SUNDIALS simulation context. Owned by this
+                                 struct, one per solver instance so that solvers
                                  running in different threads stay independent. */
 
   /* work arrays */
@@ -118,7 +117,7 @@ typedef struct CVODE_SOLVER
   SUNLinearSolver linSol;     /* Linear solver object */
   N_Vector y_linSol;          /* Template for cloning vectors needed inside linear solver */
   SUNMatrix J;                /* Sparse matrix template for cloning matrices needed within
-                               linear solver */
+                                 linear solver */
 
   /* Non-linear solver data */
   SUNNonlinearSolver nonLinSol; /* Non-linear solver object */

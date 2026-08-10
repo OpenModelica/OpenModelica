@@ -253,14 +253,9 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
 }
 
 /**
- * @brief Mute SUNDIALS' own output for a context, use the OMC log streams.
+ * @brief Mute SUNDIALS' own output for a context.
  *
- * Since SUNDIALS 7 the per package error handlers are gone and package level
- * messages go through the SUNLogger, which writes to stderr/stdout by default.
- * Recoverable conditions like a singular Jacobian in a KINSOL setup are already
- * reported by checkReturnFlag_SUNDIALS and OMC_LOG_NLS / OMC_LOG_SOLVER, so keep
- * OMC as the single place deciding what the user sees. Info and debug are compiled
- * out at our SUNDIALS_LOGGING_LEVEL; muted anyway in case it is ever raised.
+ * Use the OMC log streams instead.
  *
  * @param sunctx  SUNDIALS context whose logger should be muted.
  */

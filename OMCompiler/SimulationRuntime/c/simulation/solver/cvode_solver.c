@@ -576,7 +576,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_Create failed.");
   sundialsSilenceLogger(cvodeData->sunctx);
 
-  /* Set error handler. Replaces CVodeSetErrHandlerFn, which is gone since SUNDIALS 7. */
+  /* Set error handler */
   flag = SUNContext_PushErrHandler(cvodeData->sunctx, cvodeErrorHandlerFunction, cvodeData);
   assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
 

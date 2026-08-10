@@ -23,6 +23,7 @@ const LIBS: &[&str] = &[
     "sundials_sunmatrixsparse",
     "sundials_sunmatrixdense",
     "sundials_nvecserial",
+    "sundials_core",
     "klu",
     "umfpack",
     "amd",
