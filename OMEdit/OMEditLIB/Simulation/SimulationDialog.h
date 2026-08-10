@@ -105,6 +105,14 @@ private:
   QLineEdit *mpMaxStepSizeTextBox;
   Label *mpMaxIntegrationOrderLabel;
   SpinBox *mpMaxIntegrationOrderSpinBox;
+  Label *mpGBODESettingsLabel;
+  QToolButton *mpGBODESettingsToggleButton;
+  QWidget *mpGBODESettingsWidget;
+  QCheckBox *mpGBODEMultirateCheckBox;
+  QWidget *mpGBODEMultiRateWidget;
+  QMap<QString, ComboBox*> mGBODEComboBoxes;
+  QMap<QString, QLineEdit*> mGBODETextBoxes;
+  QMap<QString, QCheckBox*> mGBODECheckBoxes;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
   Label *mpNumberOfProcessorsLabel;
@@ -204,6 +212,13 @@ private:
   void performSimulation(const SimulationOptions &simulationOptions);
   void runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters);
   void saveDialogGeometry();
+  void applyDefaultGBODESettings(const QString &gbodeMethod);
+  void setGBODEMethod(const QString &gbodeMethod);
+  void addGBODESetting(QGridLayout *pLayout, int row, int settingIndex);
+  bool applyGBODESimulationFlag(const QString &flag, const QString &value);
+  void applyGBODESimulationFlags(const QStringList &simulationFlags, QString *pGBODEMethod = 0, bool *pGBODEFastMethodSet = 0, bool expandSettings = false);
+  void removeGBODESimulationFlags(QStringList *pSimulationFlags) const;
+  void appendGBODESimulationFlags(QStringList *pSimulationFlags, const QString &gbodeMethod) const;
 public:
   void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);
   void removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow);
@@ -224,6 +239,8 @@ public slots:
   void simulate();
   void reject();
 private slots:
+  void setGBODESettingsExpanded(bool expanded);
+  void setGBODEMultirate(bool enabled);
   void resultFileNameChanged(int index);
   void showVariableFilterHelp();
 };
