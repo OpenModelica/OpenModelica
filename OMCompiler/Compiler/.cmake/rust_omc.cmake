@@ -315,7 +315,7 @@ ExternalProject_Add(rust_wasi_pic_sysroot
 option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse solver in wasm-jit runtime)." ON)
 
 if(RUST_OMC_ENABLE_SUNDIALS)
-  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
+  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials)
   set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
@@ -569,7 +569,7 @@ if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
 endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
-       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials"
        "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
        # The PIC dylink side module compiles the sources again and needs the
        # `sundials_config.h` the wasm ExternalProject generates.

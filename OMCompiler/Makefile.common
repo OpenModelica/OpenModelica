@@ -595,7 +595,7 @@ clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPcl
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	(rm -rf SimulationRuntime/build_c)
-	rm -rf 3rdParty/sundials-5.4.0/build
+	rm -rf 3rdParty/sundials/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
 	$(OMBUILDDIR)/bin/omc $(OMBUILDDIR)/bin/omc.exe $(OMBUILDDIR)/bin/omc-diff $(OMBUILDDIR)/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
@@ -680,9 +680,9 @@ clean-sqlite3:
 # build sundials
 sundials: suitesparse
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
-$(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
-	mkdir -p 3rdParty/sundials-5.4.0/build
-	(cd 3rdParty/sundials-5.4.0/build && \
+$(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
+	mkdir -p 3rdParty/sundials/build
+	(cd 3rdParty/sundials/build && \
 		$(CMAKE) .. -G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX="`pwd`" \
@@ -703,14 +703,14 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 		-DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS) \
 		-DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 
-	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
+	$(MAKE) -C 3rdParty/sundials/build install
 	# Test SUNDIALS but allow it to fail
-	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
+	#-$(MAKE) -C 3rdParty/sundials/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
 	mkdir -p $(builddir_inc)/sundials
-	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(builddir_inc))
+	(cp -pfr 3rdParty/sundials/build/include/* $(builddir_inc))
 
 	# copy the libs to the build/lib/omc directory
-	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
+	find 3rdParty/sundials/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
 	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
 	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
@@ -747,11 +747,11 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixband.3.dylib "@rpath/libsundials_sunmatrixband.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
 
 	# copy the dlls to the build bin directory
-	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials-5.4.0/build/lib/*$(SHREXT) $(builddir_bin))
+	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"
 
 clean-sundials:
-	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/sundials"
+	rm -rf 3rdParty/sundials/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/sundials"
 
 # Build libffi
 LIBFFI=3rdParty/libffi
