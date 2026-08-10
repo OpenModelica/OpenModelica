@@ -201,8 +201,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_Create failed.");
   sundialsSilenceLogger(idaData->sunctx);
 
-  /* Set error handler. Replaces IDASetErrHandlerFn, which is gone since SUNDIALS 7. */
-  flag = SUNContext_PushErrHandler(idaData->sunctx, idaErrorHandlerFunction, idaData);
+  /* Set error handler */
+  flag = SUNContext_PushErrHandler(idaData->sunctx, sundialsErrorHandlerFunction, idaData);
   assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
 
   idaData->ida_mem = IDACreate(idaData->sunctx);
@@ -601,10 +601,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     flag = IDASetSensErrCon(idaData->ida_mem, TRUE);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSensErrCon");
 */
-    /* allocate result workspace.
-     * N_VCloneVectorArrayEmpty is gone since SUNDIALS 7, so allocate the array and
-     * wrap the rows of the sensitivity matrix directly instead of cloning empty
-     * vectors and attaching the data afterwards. */
+    /* allocate result workspace */
     idaData->ySResult = N_VNewVectorArray(idaData->Ns, idaData->sunctx);
     for(i = 0; i < idaData->Ns; ++i)
     {

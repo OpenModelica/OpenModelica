@@ -36,12 +36,7 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sundials_selftest() -> i32 {
     let common_ok = klu::Common::defaults().is_some();
-    let mut kin = unsafe { kinsol::KINCreate() };
-    let kin_ok = !kin.is_null();
-    if kin_ok {
-        unsafe { kinsol::KINFree(&mut kin) };
-    }
-    (common_ok && kin_ok) as i32
+    (common_ok && kinsol::probe()) as i32
 }
 
 #[cfg(not(sundials))]
@@ -479,18 +474,21 @@ pub(crate) mod kinsol {
     pub type NVector = *mut c_void;
     pub type SunMatrix = *mut c_void;
     pub type SunLinSol = *mut c_void;
+    pub type SunContext = *mut c_void;
 
     type SysFn = extern "C" fn(u: NVector, fval: NVector, user: *mut c_void) -> c_int;
     type JacFn = extern "C" fn(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, t1: NVector, t2: NVector) -> c_int;
-    type ErrFn = extern "C" fn(code: c_int, module: *const u8, function: *const u8, msg: *mut u8, user: *mut c_void);
 
     unsafe extern "C" {
-        pub fn KINCreate() -> *mut c_void;
-        pub fn KINFree(kinmem: *mut *mut c_void);
+        fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
+        fn SUNContext_Free(ctx: *mut SunContext) -> c_int;
+        fn SUNContext_ClearErrHandlers(ctx: SunContext) -> c_int;
+
+        fn KINCreate(ctx: SunContext) -> *mut c_void;
+        fn KINFree(kinmem: *mut *mut c_void);
         fn KINInit(kinmem: *mut c_void, func: SysFn, tmpl: NVector) -> c_int;
         fn KINSol(kinmem: *mut c_void, uu: NVector, strategy: c_int, u_scale: NVector, f_scale: NVector) -> c_int;
         fn KINSetUserData(kinmem: *mut c_void, user: *mut c_void) -> c_int;
-        fn KINSetErrHandlerFn(kinmem: *mut c_void, eh: ErrFn, user: *mut c_void) -> c_int;
         fn KINSetFuncNormTol(kinmem: *mut c_void, tol: f64) -> c_int;
         fn KINSetScaledStepTol(kinmem: *mut c_void, tol: f64) -> c_int;
         fn KINSetNumMaxIters(kinmem: *mut c_void, iters: c_long) -> c_int;
@@ -500,21 +498,23 @@ pub(crate) mod kinsol {
         fn KINSetLinearSolver(kinmem: *mut c_void, ls: SunLinSol, a: SunMatrix) -> c_int;
         fn KINSetJacFn(kinmem: *mut c_void, jac: JacFn) -> c_int;
         fn KINGetFuncNorm(kinmem: *mut c_void, fnorm: *mut f64) -> c_int;
-        fn N_VNew_Serial(len: i32) -> NVector;
+        fn N_VNew_Serial(len: i32, ctx: SunContext) -> NVector;
         fn N_VDestroy(v: NVector);
         fn N_VGetArrayPointer(v: NVector) -> *mut f64;
         fn N_VConst(c: f64, z: NVector);
         fn N_VWL2Norm(x: NVector, w: NVector) -> f64;
-        fn SUNSparseMatrix(m: i32, n: i32, nnz: i32, sparsetype: c_int) -> SunMatrix;
+        fn SUNSparseMatrix(m: i32, n: i32, nnz: i32, sparsetype: c_int, ctx: SunContext) -> SunMatrix;
         fn SUNMatDestroy(a: SunMatrix);
         fn SUNSparseMatrix_Data(a: SunMatrix) -> *mut f64;
         fn SUNSparseMatrix_IndexPointers(a: SunMatrix) -> *mut i32;
         fn SUNSparseMatrix_IndexValues(a: SunMatrix) -> *mut i32;
-        fn SUNLinSol_KLU(y: NVector, a: SunMatrix) -> SunLinSol;
+        fn SUNLinSol_KLU(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinSol;
         fn SUNLinSol_KLUReInit(s: SunLinSol, a: SunMatrix, nnz: i32, reinit_type: c_int) -> c_int;
         fn SUNLinSolFree(s: SunLinSol) -> c_int;
     }
 
+    const SUN_SUCCESS: c_int = 0;
+    const SUN_COMM_NULL: c_int = 0;
     const CSC_MAT: c_int = 0;
     const SUNKLU_REINIT_PARTIAL: c_int = 2;
     const KIN_NONE: c_int = 0;
@@ -611,13 +611,42 @@ pub(crate) mod kinsol {
         0
     }
 
-    /// KINSOL writes its own diagnostics to `stderr`, which is captured and dropped
-    /// during a simulation; the return code carries everything the ladder needs.
-    extern "C" fn silent(_code: c_int, _module: *const u8, _function: *const u8, _msg: *mut u8, _user: *mut c_void) {}
+    /// A silent context: KINSOL writes its own diagnostics to `stderr`, which is
+    /// captured and dropped during a simulation, and the return code carries
+    /// everything the ladder needs.
+    fn context() -> SunContext {
+        let mut ctx: SunContext = core::ptr::null_mut();
+        if unsafe { SUNContext_Create(SUN_COMM_NULL, &mut ctx) } != SUN_SUCCESS {
+            return core::ptr::null_mut();
+        }
+        unsafe { SUNContext_ClearErrHandlers(ctx) };
+        ctx
+    }
+
+    /// Smoke test for [`rt_sundials_selftest`](super::rt_sundials_selftest): a
+    /// context and a KINSOL memory block can be allocated and freed.
+    pub fn probe() -> bool {
+        let ctx = context();
+        if ctx.is_null() {
+            return false;
+        }
+        let mut kin = unsafe { KINCreate(ctx) };
+        let ok = !kin.is_null();
+        unsafe {
+            if ok {
+                KINFree(&mut kin);
+            }
+            let mut ctx = ctx;
+            SUNContext_Free(&mut ctx);
+        }
+        ok
+    }
 
     /// One system's KINSOL memory, kept across solves as C keeps its `NLS_KINSOL_DATA`:
     /// the KLU symbolic factorization, the strategy and the step factor all persist.
     pub struct Solver {
+        /// Outlives every object below it; freed last.
+        ctx: SunContext,
         kin: *mut c_void,
         u: NVector,
         xscale: NVector,
@@ -635,13 +664,18 @@ pub(crate) mod kinsol {
 
     impl Solver {
         pub fn new(n: usize, nnz: usize) -> Option<Solver> {
+            let ctx = context();
+            if ctx.is_null() {
+                return None;
+            }
             let mut s = Solver {
-                kin: unsafe { KINCreate() },
-                u: unsafe { N_VNew_Serial(n as i32) },
-                xscale: unsafe { N_VNew_Serial(n as i32) },
-                fscale: unsafe { N_VNew_Serial(n as i32) },
-                ftmp: unsafe { N_VNew_Serial(n as i32) },
-                j: unsafe { SUNSparseMatrix(n as i32, n as i32, nnz as i32, CSC_MAT) },
+                ctx,
+                kin: unsafe { KINCreate(ctx) },
+                u: unsafe { N_VNew_Serial(n as i32, ctx) },
+                xscale: unsafe { N_VNew_Serial(n as i32, ctx) },
+                fscale: unsafe { N_VNew_Serial(n as i32, ctx) },
+                ftmp: unsafe { N_VNew_Serial(n as i32, ctx) },
+                j: unsafe { SUNSparseMatrix(n as i32, n as i32, nnz as i32, CSC_MAT, ctx) },
                 ls: core::ptr::null_mut(),
                 n,
                 nnz,
@@ -655,12 +689,11 @@ pub(crate) mod kinsol {
             {
                 return None;
             }
-            s.ls = unsafe { SUNLinSol_KLU(s.u, s.j) };
+            s.ls = unsafe { SUNLinSol_KLU(s.u, s.j, s.ctx) };
             if s.ls.is_null() {
                 return None;
             }
             unsafe {
-                KINSetErrHandlerFn(s.kin, silent, core::ptr::null_mut());
                 if KINInit(s.kin, residual, s.u) != KIN_SUCCESS
                     || KINSetLinearSolver(s.kin, s.ls, s.j) != KIN_SUCCESS
                     || KINSetJacFn(s.kin, jacobian) != KIN_SUCCESS
@@ -832,6 +865,10 @@ pub(crate) mod kinsol {
                     if !v.is_null() {
                         N_VDestroy(v);
                     }
+                }
+                // Last: everything above was created with it.
+                if !self.ctx.is_null() {
+                    SUNContext_Free(&mut self.ctx);
                 }
             }
         }

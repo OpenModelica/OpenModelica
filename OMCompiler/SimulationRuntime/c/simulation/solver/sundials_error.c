@@ -273,7 +273,7 @@ void sundialsSilenceLogger(SUNContext sunctx) {
 }
 
 /**
- * @brief Error handler function for CVODE
+ * @brief Error handler function for the integrators, CVODE and IDA.
  *
  * Registered on the SUNContext with SUNContext_PushErrHandler.
  *
@@ -285,14 +285,14 @@ void sundialsSilenceLogger(SUNContext sunctx) {
  * @param err_user_data  Pointer to user data given with SUNContext_PushErrHandler.
  * @param sunctx         SUNDIALS context, unused.
  */
-void cvodeErrorHandlerFunction(int line, const char *func, const char *file,
-                               const char *msg, SUNErrCode err_code,
-                               void *err_user_data, SUNContext sunctx)
+void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
+                                  const char *msg, SUNErrCode err_code,
+                                  void *err_user_data, SUNContext sunctx)
 {
   UNUSED(sunctx);   /* Disables compiler warning */
 
   if (err_user_data != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### SUNDIALS error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> function %s\n -> at %s:%d", err_code, func, file, line);
     /* Package level codes (CV_ and IDA_ ones) are not SUNErrCodes, so
      * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
@@ -878,31 +878,6 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     messageClose(logLevel);
     free(buffer);
     free(tmpBuffer);
-  }
-}
-
-/**
- * @brief Error handler function for IDA
- *
- * @param errorCode   Error code from IDA
- * @param module      Name of the IDA module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with IDASetUserData.
- */
-void idaErrorHandlerFunction(int line, const char *func, const char *file,
-                             const char *msg, SUNErrCode err_code,
-                             void *err_user_data, SUNContext sunctx)
-{
-  UNUSED(sunctx);   /* Disables compiler warning */
-
-  if (err_user_data != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> function %s\n -> at %s:%d", err_code, func, file, line);
-    /* Package level codes (CV_ and IDA_ ones) are not SUNErrCodes, so
-     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg ? msg : SUNGetErrMsg(err_code));
-    messageClose(OMC_LOG_SOLVER);
   }
 }
 

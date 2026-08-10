@@ -214,10 +214,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   }
   sundialsSilenceLogger(kinsolData->sunctx);
 
-  /* Set error handler. Replaces KINSetErrHandlerFn, which is gone since SUNDIALS 7.
-   * KINSetPrintLevel and KINSetInfoHandlerFn are gone as well; KINSOL's progress
-   * output goes through the SUNLogger now, which is compiled out at our logging
-   * level, so OMC_LOG_NLS_V no longer forwards KINSOL's internal chatter. */
+  /* Set error handler */
   if (SUNContext_PushErrHandler(kinsolData->sunctx, kinsolErrorHandlerFunction, kinsolData) != SUN_SUCCESS) {
     throwStreamPrint(NULL, "KINSOL: In function SUNContext_PushErrHandler: An error occurred.");
   }

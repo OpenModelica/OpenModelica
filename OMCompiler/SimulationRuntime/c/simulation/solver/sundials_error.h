@@ -89,13 +89,12 @@ void sundialsSilenceLogger(SUNContext sunctx);
  * the SUNContext with SUNContext_PushErrHandler instead. The SUNDIALS module and
  * error string are no longer passed in - we get the source location and a
  * SUNErrCode. */
-void cvodeErrorHandlerFunction(int line, const char *func, const char *file,
-                               const char *msg, SUNErrCode err_code,
-                               void *err_user_data, SUNContext sunctx);
+/* Shared by CVODE and IDA; KINSOL has its own because it reports the failing
+ * equation system on OMC_LOG_NLS. */
+void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
+                                  const char *msg, SUNErrCode err_code,
+                                  void *err_user_data, SUNContext sunctx);
 #ifndef OMC_FMI_RUNTIME
-void idaErrorHandlerFunction(int line, const char *func, const char *file,
-                             const char *msg, SUNErrCode err_code,
-                             void *err_user_data, SUNContext sunctx);
 void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
                                 const char *msg, SUNErrCode err_code,
                                 void *err_user_data, SUNContext sunctx);

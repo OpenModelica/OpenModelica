@@ -18,6 +18,7 @@ pub type SunIndex = i32;
 pub type NVector = *mut c_void;
 pub type SunMatrix = *mut c_void;
 type SunLinearSolver = *mut c_void;
+type SunContext = *mut c_void;
 
 /// `int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)`.
 pub type RhsFn = unsafe extern "C" fn(f64, NVector, NVector, *mut c_void) -> c_int;
@@ -27,34 +28,51 @@ pub type RootFn = unsafe extern "C" fn(f64, NVector, *mut f64, *mut c_void) -> c
 const CV_BDF: c_int = 2;
 const CV_NORMAL: c_int = 1;
 
+const SUN_SUCCESS: c_int = 0;
+const SUN_COMM_NULL: c_int = 0;
+
 const CV_SUCCESS: c_int = 0;
 const CV_TSTOP_RETURN: c_int = 1;
 const CV_ROOT_RETURN: c_int = 2;
+
+/// A fresh `SUNContext`, or null. One per solver: they carry the last error and
+/// the logger, so sharing one across solvers would share that state too.
+fn sun_context() -> SunContext {
+    let mut ctx: SunContext = core::ptr::null_mut();
+    if unsafe { SUNContext_Create(SUN_COMM_NULL, &mut ctx) } != SUN_SUCCESS {
+        return core::ptr::null_mut();
+    }
+    ctx
+}
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const CV_TOO_MUCH_WORK: c_int = -1;
 
 unsafe extern "C" {
-    fn N_VNew_Serial(vec_length: SunIndex) -> NVector;
+    /// `SUNComm` is a plain `int` without MPI, and `SUN_COMM_NULL` is 0.
+    fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
+    fn SUNContext_Free(ctx: *mut SunContext) -> c_int;
+
+    fn N_VNew_Serial(vec_length: SunIndex, ctx: SunContext) -> NVector;
     fn N_VDestroy(v: NVector);
     fn N_VGetArrayPointer(v: NVector) -> *mut f64;
 
-    fn SUNDenseMatrix(m: SunIndex, n: SunIndex) -> SunMatrix;
+    fn SUNDenseMatrix(m: SunIndex, n: SunIndex, ctx: SunContext) -> SunMatrix;
     fn SUNDenseMatrix_Data(a: SunMatrix) -> *mut f64;
     fn SUNMatDestroy(a: SunMatrix);
-    fn SUNLinSol_Dense(y: NVector, a: SunMatrix) -> SunLinearSolver;
+    fn SUNLinSol_Dense(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinearSolver;
     fn SUNLinSolFree(s: SunLinearSolver) -> c_int;
 
-    fn SUNSparseMatrix(m: SunIndex, n: SunIndex, nnz: SunIndex, sparsetype: c_int) -> SunMatrix;
+    fn SUNSparseMatrix(m: SunIndex, n: SunIndex, nnz: SunIndex, sparsetype: c_int, ctx: SunContext) -> SunMatrix;
     fn SUNSparseMatrix_Data(a: SunMatrix) -> *mut f64;
     fn SUNSparseMatrix_IndexPointers(a: SunMatrix) -> *mut SunIndex;
     fn SUNSparseMatrix_IndexValues(a: SunMatrix) -> *mut SunIndex;
-    fn SUNLinSol_KLU(y: NVector, a: SunMatrix) -> SunLinearSolver;
+    fn SUNLinSol_KLU(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinearSolver;
 
-    fn SUNLinSol_SPGMR(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
-    fn SUNLinSol_SPBCGS(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
-    fn SUNLinSol_SPTFQMR(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
+    fn SUNLinSol_SPGMR(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
+    fn SUNLinSol_SPBCGS(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
+    fn SUNLinSol_SPTFQMR(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
 
-    fn CVodeCreate(lmm: c_int) -> *mut c_void;
+    fn CVodeCreate(lmm: c_int, ctx: SunContext) -> *mut c_void;
     fn CVodeFree(mem: *mut *mut c_void);
     fn CVodeInit(mem: *mut c_void, f: RhsFn, t0: f64, y0: NVector) -> c_int;
     fn CVodeReInit(mem: *mut c_void, t0: f64, y0: NVector) -> c_int;
@@ -98,6 +116,8 @@ pub enum Stop {
 /// Jacobian, per-state nominal-scaled tolerances, and CVODE's own root finding
 /// on the zero-crossings — the configuration `cvode_solver.c` builds.
 pub struct Cvode {
+    /// Outlives every object below it; freed last.
+    ctx: SunContext,
     mem: *mut c_void,
     y: NVector,
     atol: NVector,
@@ -136,19 +156,24 @@ impl Cvode {
         root: Option<RootFn>,
     ) -> Option<Cvode> {
         let n = y0.len();
+        let ctx = sun_context();
+        if ctx.is_null() {
+            return None;
+        }
         let mut cv = unsafe {
-            let y = N_VNew_Serial(n as SunIndex);
-            let atol_v = N_VNew_Serial(n as SunIndex);
-            let jac = SUNDenseMatrix(n as SunIndex, n as SunIndex);
+            let y = N_VNew_Serial(n as SunIndex, ctx);
+            let atol_v = N_VNew_Serial(n as SunIndex, ctx);
+            let jac = SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx);
             if y.is_null() || atol_v.is_null() || jac.is_null() {
                 return None;
             }
-            let lin_sol = SUNLinSol_Dense(y, jac);
-            let mem = CVodeCreate(CV_BDF);
+            let lin_sol = SUNLinSol_Dense(y, jac, ctx);
+            let mem = CVodeCreate(CV_BDF, ctx);
             if lin_sol.is_null() || mem.is_null() {
                 return None;
             }
             Cvode {
+                ctx,
                 mem,
                 y,
                 atol: atol_v,
@@ -289,6 +314,8 @@ impl Drop for Cvode {
             SUNMatDestroy(self.jac);
             N_VDestroy(self.atol);
             N_VDestroy(self.y);
+            // Last: everything above was created with it.
+            SUNContext_Free(&mut self.ctx);
         }
     }
 }
@@ -323,7 +350,7 @@ const CSC_MAT: c_int = 0;
 const PREC_NONE: c_int = 0;
 
 unsafe extern "C" {
-    fn IDACreate() -> *mut c_void;
+    fn IDACreate(ctx: SunContext) -> *mut c_void;
     fn IDAFree(mem: *mut *mut c_void);
     fn IDAInit(mem: *mut c_void, res: IdaResFn, t0: f64, yy0: NVector, yp0: NVector) -> c_int;
     fn IDAReInit(mem: *mut c_void, t0: f64, yy0: NVector, yp0: NVector) -> c_int;
@@ -406,6 +433,8 @@ pub struct IdaOptions {
 /// nominal-scaled tolerances, KLU or dense direct linear solver, and IDA's own
 /// root finding on the zero-crossings — the configuration `ida_solver.c` builds.
 pub struct Ida {
+    /// Outlives every object below it; freed last.
+    ctx: SunContext,
     mem: *mut c_void,
     y: NVector,
     yp: NVector,
@@ -455,13 +484,17 @@ impl Ida {
         opts: &IdaOptions,
     ) -> Option<Ida> {
         let n = y0.len();
+        let ctx = sun_context();
+        if ctx.is_null() {
+            return None;
+        }
         let mut ida = unsafe {
-            let y = N_VNew_Serial(n as SunIndex);
-            let yp = N_VNew_Serial(n as SunIndex);
-            let atol_v = N_VNew_Serial(n as SunIndex);
+            let y = N_VNew_Serial(n as SunIndex, ctx);
+            let yp = N_VNew_Serial(n as SunIndex, ctx);
+            let atol_v = N_VNew_Serial(n as SunIndex, ctx);
             let j = match ls {
-                IdaLs::Dense => SUNDenseMatrix(n as SunIndex, n as SunIndex),
-                IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT),
+                IdaLs::Dense => SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx),
+                IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx),
                 _ => core::ptr::null_mut(),
             };
             if [y, yp, atol_v].iter().any(|p| p.is_null()) || (j.is_null() && !ls.matrix_free()) {
@@ -469,17 +502,18 @@ impl Ida {
             }
             // Krylov `maxl` is the system size, as `ida_solver.c` passes it.
             let lin_sol = match ls {
-                IdaLs::Dense => SUNLinSol_Dense(y, j),
-                IdaLs::Klu => SUNLinSol_KLU(y, j),
-                IdaLs::Spgmr => SUNLinSol_SPGMR(y, PREC_NONE, n as c_int),
-                IdaLs::Spbcg => SUNLinSol_SPBCGS(y, PREC_NONE, n as c_int),
-                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(y, PREC_NONE, n as c_int),
+                IdaLs::Dense => SUNLinSol_Dense(y, j, ctx),
+                IdaLs::Klu => SUNLinSol_KLU(y, j, ctx),
+                IdaLs::Spgmr => SUNLinSol_SPGMR(y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Spbcg => SUNLinSol_SPBCGS(y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(y, PREC_NONE, n as c_int, ctx),
             };
-            let mem = IDACreate();
+            let mem = IDACreate(ctx);
             if lin_sol.is_null() || mem.is_null() {
                 return None;
             }
             Ida {
+                ctx,
                 mem,
                 y,
                 yp,
@@ -534,7 +568,7 @@ impl Ida {
     /// so `IDACalcIC` can solve for the latter and (with `suppress_alg`) the local
     /// error test can leave them out.
     pub fn set_id(&mut self, id: &[f64], suppress_alg: bool) -> bool {
-        let v = unsafe { N_VNew_Serial(self.n as SunIndex) };
+        let v = unsafe { N_VNew_Serial(self.n as SunIndex, self.ctx) };
         if v.is_null() {
             return false;
         }
@@ -773,6 +807,8 @@ impl Drop for Ida {
             N_VDestroy(self.atol);
             N_VDestroy(self.yp);
             N_VDestroy(self.y);
+            // Last: everything above was created with it.
+            SUNContext_Free(&mut self.ctx);
         }
     }
 }

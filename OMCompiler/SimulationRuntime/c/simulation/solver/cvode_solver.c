@@ -577,7 +577,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   sundialsSilenceLogger(cvodeData->sunctx);
 
   /* Set error handler */
-  flag = SUNContext_PushErrHandler(cvodeData->sunctx, cvodeErrorHandlerFunction, cvodeData);
+  flag = SUNContext_PushErrHandler(cvodeData->sunctx, sundialsErrorHandlerFunction, cvodeData);
   assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
 
   /* Initialize states */
