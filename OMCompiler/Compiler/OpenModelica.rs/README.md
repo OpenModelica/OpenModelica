@@ -178,3 +178,51 @@ cmake --build build-web --target install
 python3 -m http.server -d build-web/install_cmake/share/omc/web/ 8000
 # Then open a browser at http://localhost:8000
 ```
+
+The bundle also carries `fmu-aot.wasm`, `openmodelica_fmi_ls_wasm_aot` built for
+`wasm32-wasip1`: wasmtime's compiler half, which
+`buildModelFMU(..., platforms={"wasm","linux64"})` runs in a worker to compile the
+exported component for a native platform (the browser omc cannot do it in
+process — cranelift's pass timing calls `Instant::now()`, which panics on
+wasm32-unknown-unknown). It is fetched only when such an export runs, and it
+answers over a `SharedArrayBuffer`, so serve the bundle with the cross-origin
+isolation headers (`scripts/coi_server.py`) or the platform list stays empty.
+The FMI simulator page uses the same compiler to add native binaries to an FMU
+someone else produced.
+
+## Native platforms for an FMU (`RUST_OMC_FMU_NATIVE_TARGETS`)
+
+An exported wasm FMU can also carry, per platform, the component as machine code
+plus the loader library that serves the FMI 3.0 C API from it. omc needs one
+build of `openmodelica_fmi_ls_wasm_to_native` per platform; the host's own is
+always built, the rest are named as rustc triples:
+
+```bash
+cmake -S . -B build -DOM_OMC_ENABLE_RUST=ON \
+  -DRUST_OMC_FMU_NATIVE_TARGETS=aarch64-unknown-linux-gnu,x86_64-pc-windows-msvc,aarch64-apple-darwin \
+  -DRUST_OMC_MACOS_SDK=/path/to/MacOSX15.5.sdk
+```
+
+They are installed to `lib/omc/fmu-loaders/`, or staged in the web bundle as
+`fmu-loaders/` for the page and the omc worker to fetch on demand — not linked
+into omc. **A named target that will not build fails the build**, rather than
+quietly shipping an omc that offers fewer platforms; `OMC_FMU_NATIVE_OPTIONAL=1`
+makes the whole set best-effort again. Each needs its Rust target (`rustup target
+add`) and a C toolchain, since `wasmtime-wasi` compiles a C fiber:
+
+| target | needs |
+|---|---|
+| `*-pc-windows-msvc` | `cargo install cargo-xwin`, plus `llvm-lib` on `PATH` (`ln -s $(command -v llvm-lib-21) ~/.local/bin/llvm-lib`). For the 32-bit target the xwin cache must hold the x86 CRT: `XWIN_ARCH=x86,x86_64`. |
+| non-host `*-linux-gnu` | `cargo install cargo-zigbuild` + `pip install ziglang` |
+| `*-apple-darwin` | the same zig setup **and** an unpacked `MacOSX<version>.sdk` in `RUST_OMC_MACOS_SDK` (or `SDKROOT`; a macOS host needs neither) — `cap-time-ext` links `CoreFoundation`, which zig does not ship. Nothing else: the SDK's `.tbd` stubs are all the link needs. |
+
+Only x86-64 and aarch64 can be served: the component is turned into machine code
+by cranelift, whose backends are x86-64, aarch64, riscv64 and s390x. There is no
+32-bit x86 route, so `i686-*` is rejected when asked for.
+
+`OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides the cargo subcommand for
+one target, e.g. `cargo build` when a real cross gcc is installed.
+
+`-DRUST_OMC_FMU_LOADERS=<dir>` takes every platform found in `<dir>` from there
+instead of cross-building it again — a multi-stage CI points its wasm stage at the
+native stage's `fmu-loaders/`. Trusted, not checked, like `RUST_OMC_WASM_RUNTIME`.

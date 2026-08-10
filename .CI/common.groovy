@@ -453,6 +453,8 @@ void buildRustOMC() {
       -DRUST_OMC_TIMINGS=ON \
       -DRUST_OMC_THREADS=4 \
       -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
+      -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
+      -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
       -DRUST_OMC_WASM_RUNTIME_OUT=${env.WORKSPACE}/runtime.wasm
   """
   // O3 is the default release opt-level; CI uses O2 to cut build time.
@@ -495,6 +497,35 @@ void buildRustOMC() {
   stash name: 'omc-cmake-rust-gui-inputs',
         includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
                   'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
+  // The cross-built FMU loaders for the web stage. Not stashed in place: that is
+  // the web build's own staging directory, which it empties before reading them.
+  sh 'rm -rf fmu-loaders && cp -a build_cmake/OMCompiler/Compiler/fmu-loaders .'
+  stash name: 'fmu-loaders', includes: 'fmu-loaders/**'
+}
+
+// Platforms an exported wasm FMU can also serve natively (the host's own
+// x86_64-linux is always built, and is not listed). Each is a cross build of the
+// FMU loader library, so **the image must carry that platform's toolchain** —
+// naming one it cannot build fails the build rather than quietly shipping an omc
+// that offers fewer platforms:
+//   rustup target add aarch64-unknown-linux-gnu x86_64-pc-windows-msvc \
+//                     aarch64-pc-windows-msvc x86_64-apple-darwin aarch64-apple-darwin
+//   cargo install cargo-xwin cargo-zigbuild && pip install ziglang
+//   ln -s "$(command -v llvm-lib-21)" /usr/local/bin/llvm-lib   # cc-rs looks for this name
+//   a macOS SDK at fmuMacosSdk()                                # the darwin triples
+// Drop a triple from this list (or set OMC_FMU_NATIVE_OPTIONAL=1) to build
+// without one.
+// 32-bit platforms are absent on purpose: the component is compiled by cranelift,
+// which has no x86-32 backend, so no `.cwasm` can be produced for them.
+String fmuNativeTargets() {
+  return 'aarch64-unknown-linux-gnu,x86_64-pc-windows-msvc,' +
+         'aarch64-pc-windows-msvc,x86_64-apple-darwin,aarch64-apple-darwin'
+}
+
+// Where the stages that build loaders bind-mount the agent's macOS SDK (grep the
+// Jenkinsfile for MacOSX.sdk when adding one); a build without it fails.
+String fmuMacosSdk() {
+  return env.OM_FMU_MACOS_SDK ?: '/mnt/MacOSX.sdk'
 }
 
 // Shared web cmake configure; `extra` appends stage-specific flags.
@@ -509,6 +540,9 @@ void configureWeb(String extra) {
       -DRUST_OMC_PREBUILT_GENERATED_SRC=ON \
       -DRUST_OMC_TIMINGS=ON \
       -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
+      -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
+      -DRUST_OMC_FMU_LOADERS=${env.WORKSPACE}/fmu-loaders \
+      -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
       -DOM_USE_CCACHE=OFF \
       -DCMAKE_INSTALL_PREFIX=install_web \
       ${extra}
@@ -538,6 +572,7 @@ void buildRustWeb() {
   unstash 'runtime-sources-mo'
   restoreGeneratedSrc()
   unstash 'omc-cmake-rust-gui-inputs'
+  unstash 'fmu-loaders'
   configureWeb('-DRUST_OMC_WEB_QT=OFF')
   withEmSccache {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()}"

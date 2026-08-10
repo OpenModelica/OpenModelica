@@ -85,6 +85,40 @@ fn trap() -> ! {
     unreachable!("wasm runtime trap on host test build")
 }
 
+// `rt_reinit_note(state_off, value)`: the model records an executed `reinit` for
+// the driver's `LOG_EVENTS` block. Every generated model imports it, so every
+// host-free consumer must define it — the standalone export and the FMI3 adapter
+// alike. A host-instantiated runtime (`host_log`) must NOT: the host binds that
+// import to its own recorder, and an export of the same name collides with it
+// under the `rt` namespace.
+#[cfg(not(feature = "host_log"))]
+mod reinit_notes {
+    struct Reinits(core::cell::UnsafeCell<alloc::vec::Vec<(u32, f64)>>);
+    unsafe impl Sync for Reinits {}
+    static REINITS: Reinits = Reinits(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_reinit_note(off: i32, value: f64) {
+        if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::EVENTS) {
+            unsafe { &mut *REINITS.0.get() }.push((off as u32, value));
+        }
+    }
+
+    /// The notes recorded since the last call, for a driver's `LOG_EVENTS` block.
+    pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
+        core::mem::take(unsafe { &mut *REINITS.0.get() })
+    }
+}
+
+#[cfg(not(feature = "host_log"))]
+pub use reinit_notes::take_reinit_notes;
+
+/// With a host present the notes live host-side (`rt_host_take_reinits`).
+#[cfg(feature = "host_log")]
+pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
+    alloc::vec::Vec::new()
+}
+
 // The standalone-export entry point (`_start` + the in-wasm driver), only on the
 // wasm32-wasip1 target. It uses std (file I/O over WASI) + daskr + the shared
 // sim-meta / mat-writer crates, all wasi-gated, so the no_std JIT runtime

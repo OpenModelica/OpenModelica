@@ -1,5 +1,6 @@
 // name: fmi3_array_nonscalarized
 // keywords: FMI 3.0 export array non-scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html
 //
@@ -7,6 +8,7 @@
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
 // <Dimension> and IS dimensioned in the FMU init (numberOfDimensions = 1).
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
 loadString("
@@ -31,6 +33,8 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_array_nonscala
 readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

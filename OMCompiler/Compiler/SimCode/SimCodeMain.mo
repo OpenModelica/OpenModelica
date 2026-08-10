@@ -823,9 +823,9 @@ protected function callTargetTemplatesFMU
   input String FMUType;
   input Absyn.Program program;
 protected
-  // The wasm FMU export (target "wasm-jit") emits an fmi-ls-wasm component; the
-  // testsuite has no wasm toolchain, so fall back to C there.
-  String fmuTarget = if target == "wasm-jit" and Testsuite.isRunning() then "C" else target;
+  // "wasm" is the standalone simulation target and has no FMU export of its own;
+  // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
+  String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
@@ -835,6 +835,8 @@ algorithm
       String fmutmp;
       String guid;
       String modelDescriptionStr;
+      String terminalsAndIconsStr;
+      list<SimCode.FmiTerminal> terminals;
       Boolean b, exportDocumentation;
       Boolean needSundials = false;
       String fileprefix, fileNamePrefixHash;
@@ -855,12 +857,16 @@ algorithm
         guid := System.getUUIDStr();
         modelDescriptionStr := Tpl.textString(
           CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
+        // The same XML the C target writes into terminalsAndIcons/.
+        terminals := SimCodeUtil.getFMI3Terminals(simCode);
+        terminalsAndIconsStr := if listEmpty(terminals) then ""
+          else Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals));
         if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-          CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+          CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, terminalsAndIconsStr);
         elseif FMI.isFMICSType(FMUType) then
-          CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+          CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, terminalsAndIconsStr);
         else
-          CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+          CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, terminalsAndIconsStr);
         end if;
       then ();
 

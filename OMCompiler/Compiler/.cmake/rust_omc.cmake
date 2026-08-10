@@ -505,6 +505,38 @@ list(APPEND CARGO_ENV
      # Preview1 adapter for FMI wasm FMU export.
      "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
 
+# Native platforms an exported wasm FMU can also serve
+# (`buildModelFMU(..., platforms={"wasm","win64"})`). omc embeds one loader
+# library per platform, so each is a cross build of
+# `openmodelica_fmi_ls_wasm_to_native` and needs that platform's C toolchain —
+# cargo-xwin for the MSVC targets, cargo-zigbuild for Apple and non-host Linux.
+# A named target that will not build fails the build (OMC_FMU_NATIVE_OPTIONAL=1
+# makes the set best-effort). The host's own platform is always built and need
+# not be listed.
+set(RUST_OMC_FMU_NATIVE_TARGETS "" CACHE STRING
+    "Extra rustc target triples to build FMU loader libraries for (comma-separated).")
+if(RUST_OMC_FMU_NATIVE_TARGETS)
+  list(APPEND CARGO_ENV "OMC_FMU_NATIVE_TARGETS=${RUST_OMC_FMU_NATIVE_TARGETS}")
+endif()
+# Loaders from a previous build, reused instead of cross-built again; whatever is
+# missing is still built. Same hand-off as RUST_OMC_WASM_RUNTIME.
+set(RUST_OMC_FMU_LOADERS "" CACHE PATH
+    "Directory of prebuilt FMU loader libraries to reuse (empty = build them).")
+if(RUST_OMC_FMU_LOADERS)
+  list(APPEND CARGO_ENV "OMC_FMU_LOADERS_IN=${RUST_OMC_FMU_LOADERS}")
+endif()
+# zig ships no Apple frameworks, so an *-apple-darwin loader needs an SDK.
+set(RUST_OMC_MACOS_SDK "" CACHE PATH
+    "macOS SDK for the *-apple-darwin FMU loaders (MacOSX<version>.sdk).")
+if(RUST_OMC_MACOS_SDK)
+  list(APPEND CARGO_ENV "OMC_FMU_MACOS_SDK=${RUST_OMC_MACOS_SDK}")
+endif()
+# The libraries themselves are not linked into omc — a native one reads them from
+# lib/omc/fmu-loaders, the browser one fetches them from the web bundle — so the
+# build script drops them here for CMake to install.
+set(RUST_FMU_LOADERS_DIR ${CMAKE_CURRENT_BINARY_DIR}/fmu-loaders)
+list(APPEND CARGO_ENV "OMC_FMU_LOADERS_OUT=${RUST_FMU_LOADERS_DIR}")
+
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
   if(TARGET sundials_cvode_static)
@@ -922,6 +954,11 @@ function(omc_rust_setup_codegen)
             DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
   endif()
 
+  # The FMI 3.0 loader libraries an exported wasm FMU is given for a native
+  # platform. Read at export time, not linked into omc.
+  install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
+          DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+
   # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
   # against. Under the wasm triple with an `omc` subdirectory so it cannot be
   # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
@@ -1112,6 +1149,34 @@ function(omc_rust_omshell_web_page _label _binname _srcindex)
   # web/omc/, and (re)creates ${_web_dir}; this page then adds its files. The
   # single install(DIRECTORY ${_web_dir}) in omc_rust_setup_wasm stages it all.
   add_dependencies(rust_omshell_${_label}_web rust_wasm)
+endfunction()
+
+# The FMU native-platform compiler for the browser: `openmodelica_fmi_ls_wasm_aot`
+# built for wasm32-wasip1 (a compiler-only wasmtime), staged as web/fmu-aot.wasm
+# and loaded on demand by wasm/fmu-aot-worker.js. Not embedded in the omc module:
+# it is ~13 MB and only an export that asks for a native platform needs it.
+#
+# wasip1, not wasm32-unknown-unknown, because cranelift's pass timing calls
+# `Instant::now()`, which panics there. Always release — a debug cranelift is far
+# too slow to compile a model with.
+#
+# Its own `[workspace]` and target dir, so the compiler-only wasmtime never meets
+# the host workspace's resolution. Reads omc_rust_setup_wasm's _web_dir.
+function(omc_rust_fmu_aot_module)
+  set(_aot_src ${RUST_OMC_DIR}/openmodelica_fmi_ls_wasm_aot)
+  set(_aot_target_dir ${CMAKE_CURRENT_BINARY_DIR}/fmu-aot-target)
+  set(_aot_artifact ${_aot_target_dir}/wasm32-wasip1/release/openmodelica_fmi_ls_wasm_aot.wasm)
+  add_custom_target(rust_fmu_aot ALL
+    WORKING_DIRECTORY ${_aot_src}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
+            --manifest-path ${_aot_src}/Cargo.toml
+            --target wasm32-wasip1 --target-dir ${_aot_target_dir}
+    COMMAND ${CMAKE_COMMAND} -E copy ${_aot_artifact} ${_web_dir}/fmu-aot.wasm
+    COMMENT "Rust: FMU native-platform compiler (wasm32-wasip1) -> ${_web_dir}/fmu-aot.wasm"
+    VERBATIM)
+  # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
+  add_dependencies(rust_fmu_aot rust_wasm)
 endfunction()
 
 # Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
@@ -1457,6 +1522,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/fmu-aot.js
+        ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -1474,6 +1541,8 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/plot.js
                 ${RUST_OMC_DIR}/wasm/theme.css
+                ${RUST_OMC_DIR}/wasm/fmu-aot.js
+                ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -1561,6 +1630,7 @@ function(omc_rust_setup_wasm)
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
     ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
@@ -1581,6 +1651,10 @@ function(omc_rust_setup_wasm)
   # above so the page drives omc in-browser, and installed to
   # <datarootdir>/omc/web-omshell-<gui>/. A Node host has no DOM, so the pages are
   # built only for the browser host.
+  if(_host STREQUAL "web")
+    omc_rust_fmu_aot_module()
+  endif()
+
   if(OM_ENABLE_GUI_CLIENTS)
     if(_host STREQUAL "web")
       omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)

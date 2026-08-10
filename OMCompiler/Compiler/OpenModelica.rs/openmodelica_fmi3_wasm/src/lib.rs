@@ -272,6 +272,9 @@ impl SimEngine for Engine {
     fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         None
     }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        openmodelica_codegen_wasm_jit_runtime::take_reinit_notes()
+    }
     fn clean_nls_history(&mut self, time: f64) {
         openmodelica_codegen_wasm_jit_runtime::rt_nls_clean_history(time);
     }

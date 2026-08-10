@@ -1,0 +1,31 @@
+# Ahead-of-time compiler for an fmi-ls-wasm component, itself compiled to
+# wasm32-wasip1: the half of the native-platform FMU export that a host without
+# a native wasmtime — the browser omc — cannot do in process.
+#
+# `Instant::now()` works on wasip1, which is the whole reason this target is used:
+# cranelift's `timing` feature reaches it, and on wasm32-unknown-unknown that
+# panics ("time not implemented on this platform").
+#
+# Standalone `[workspace]` so the host workspace never resolves against this
+# wasmtime (compiler only, no `runtime`).
+[package]
+name = "openmodelica_fmi_ls_wasm_aot"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The compiler half only: no `runtime`, so nothing here needs to execute wasm.
+# `all-arch` is what lets one module emit every platform's machine code, and the
+# `gc` features must match the loader's engine or the artifact is rejected there.
+wasmtime = { version = "45", default-features = false, features = [
+  "std", "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+] }
+
+[profile.release]
+opt-level = 2
+strip = true
+
+[workspace]

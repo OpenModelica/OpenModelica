@@ -93,6 +93,9 @@ pub(crate) use openmodelica_wasm_jit::model::{
     encode_overrides, inwasm_driver_enabled, sim_bench_enabled, INWASM_SLOT_NAMES,
 };
 
+#[path = "CodegenWasmJit/native_fmu.rs"]
+pub(crate) mod native_fmu;
+
 #[path = "CodegenWasmJit/linearize.rs"]
 pub(crate) mod linearize;
 
@@ -672,6 +675,12 @@ pub fn fmu_cs_solvers() -> Vec<&'static str> {
         .unwrap_or_default()
 }
 
+/// The `platforms=` values `buildModelFMU` can serve besides `"wasm"`: those this
+/// omc has a loader library for.
+pub fn fmu_platforms() -> Vec<String> {
+    native_fmu::available()
+}
+
 /// Parse `simflags` as an argv and install the result for this run. omc hands the
 /// flags over as one string, which for every other target a shell splits into the
 /// executable's argv; `argv[0]` stands in for the program name a WASI command would
@@ -1049,6 +1058,24 @@ pub fn set_clock(f: fn() -> f64) {
 #[cfg(all(feature = "jit", target_arch = "wasm32"))]
 pub fn set_cancel_poll(f: fn() -> bool) {
     sim_driver::set_cancel_poll(f);
+}
+
+/// Install the host's compiler for an FMU's native platforms, for an omc that
+/// cannot link wasmtime in. `preload` is called as soon as an export is known to
+/// need one, `compile` once the component is built.
+#[cfg(any(not(feature = "fmu-native"), target_arch = "wasm32"))]
+pub fn set_fmu_aot(
+    compile: fn(&[u8], &str) -> core::result::Result<Vec<u8>, String>,
+    preload: fn(),
+) {
+    native_fmu::set_aot_compiler(compile, preload);
+}
+
+/// Install the host's source for the FMU loader libraries, which a wasm omc does
+/// not carry (they are files in the web bundle).
+#[cfg(target_arch = "wasm32")]
+pub fn set_fmu_loaders(fetch: fn(&str) -> Option<Vec<u8>>, platforms: Vec<String>) {
+    native_fmu::set_loader_source(fetch, platforms);
 }
 
 #[cfg(feature = "jit")]
@@ -1701,6 +1728,50 @@ fn model_to_dylink(model_wasm: &[u8]) -> Result<Vec<u8>> {
     Ok(add_dylink0(&m.finish()))
 }
 
+/// `wit_component` rejects a library exporting both `__wasm_call_ctors` and
+/// `_initialize`, which is what clang's reactor mode emits. Keep the dylink
+/// convention. `openmodelica_wasi_libc` does this to ModelicaExternalC at build
+/// time; a model's own `Library=`/`Include=` arrives already built.
+fn drop_redundant_initialize(lib: &[u8]) -> Vec<u8> {
+    let mut has_ctors = false;
+    let mut has_initialize = false;
+    for payload in wasmparser::Parser::new(0).parse_all(lib).flatten() {
+        if let wasmparser::Payload::ExportSection(reader) = payload {
+            for e in reader.into_iter().flatten() {
+                has_ctors |= e.name == "__wasm_call_ctors";
+                has_initialize |= e.name == "_initialize";
+            }
+        }
+    }
+    if !(has_ctors && has_initialize) {
+        return lib.to_vec();
+    }
+    struct DropInitialize;
+    impl wasm_encoder::reencode::Reencode for DropInitialize {
+        type Error = std::convert::Infallible;
+        fn parse_export_section(
+            &mut self,
+            exports: &mut wasm_encoder::ExportSection,
+            section: wasmparser::ExportSectionReader<'_>,
+        ) -> Result<(), wasm_encoder::reencode::Error<Self::Error>> {
+            for e in section {
+                let e = e?;
+                if e.name != "_initialize" {
+                    exports.export(e.name, self.export_kind(e.kind)?, self.external_index(e.kind, e.index)?);
+                }
+            }
+            Ok(())
+        }
+    }
+    use wasm_encoder::reencode::Reencode;
+    let mut re = DropInitialize;
+    let mut m = wasm_encoder::Module::new();
+    match re.parse_core_module(&mut m, wasmparser::Parser::new(0), lib) {
+        Ok(()) => m.finish(),
+        Err(_) => lib.to_vec(),
+    }
+}
+
 /// The first `external "C"` import (module `ext`) in the model, if any. A
 /// host-free FMU has no host to provide these, so the export names the function
 /// rather than failing later inside `wit_component`.
@@ -1754,8 +1825,10 @@ fn link_fmu_component(
         // too, so it brings the same libraries along.
         if has_ext {
             // First, so a symbol they define wins over ModelicaExternalC's.
-            for lib in ext_libs {
-                l = l.library(&lib.name, &lib.bytes, false).map_err(link_err)?;
+            let ext_bytes: Vec<Vec<u8>> =
+                ext_libs.iter().map(|lib| drop_redundant_initialize(&lib.bytes)).collect();
+            for (lib, bytes) in ext_libs.iter().zip(&ext_bytes) {
+                l = l.library(&lib.name, bytes, false).map_err(link_err)?;
             }
             l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
         }
@@ -1859,15 +1932,31 @@ fn crc32(data: &[u8]) -> u32 {
     !crc
 }
 
-/// A minimal store-method ZIP, so the `.fmu` is assembled in-process rather than
-/// by an external `zip`.
-fn zip_store(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
+/// Raw deflate (ZIP method 8), or `None` when the input is not worth compressing.
+fn deflate(data: &[u8]) -> Option<Vec<u8>> {
+    if data.len() < 256 {
+        return None;
+    }
+    Some(miniz_oxide::deflate::compress_to_vec(data, 6))
+}
+
+/// A ZIP assembled in-process rather than by an external `zip`, deflated unless
+/// that would grow the entry.
+fn zip_archive(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
     let mut out = Vec::new();
     let mut central = Vec::new();
     let le16 = |v: u16, o: &mut Vec<u8>| o.extend_from_slice(&v.to_le_bytes());
     let le32 = |v: u32, o: &mut Vec<u8>| o.extend_from_slice(&v.to_le_bytes());
     let mut offsets: Vec<u32> = Vec::new();
-    for (name, data) in entries {
+    // Deflate once: the central directory must agree with the local headers.
+    let stored: Vec<(u16, Vec<u8>)> = entries
+        .iter()
+        .map(|(_, data)| match deflate(data) {
+            Some(z) if z.len() < data.len() => (8, z),
+            _ => (0, data.clone()),
+        })
+        .collect();
+    for ((name, data), (method, payload)) in entries.iter().zip(&stored) {
         offsets.push(out.len() as u32);
         let crc = crc32(data);
         let n = name.as_bytes();
@@ -1875,30 +1964,30 @@ fn zip_store(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
         le32(0x0403_4b50, &mut out);
         le16(20, &mut out); // version needed
         le16(0, &mut out); // flags
-        le16(0, &mut out); // method: store
+        le16(*method, &mut out);
         le16(0, &mut out); // mod time
         le16(0x21, &mut out); // mod date (1980-01-01)
         le32(crc, &mut out);
-        le32(data.len() as u32, &mut out); // compressed size
+        le32(payload.len() as u32, &mut out); // compressed size
         le32(data.len() as u32, &mut out); // uncompressed size
         le16(n.len() as u16, &mut out);
         le16(0, &mut out); // extra len
         out.extend_from_slice(n);
-        out.extend_from_slice(data);
+        out.extend_from_slice(payload);
     }
     let cd_start = out.len() as u32;
-    for ((name, data), off) in entries.iter().zip(&offsets) {
+    for (((name, data), (method, payload)), off) in entries.iter().zip(&stored).zip(&offsets) {
         let crc = crc32(data);
         let n = name.as_bytes();
         le32(0x0201_4b50, &mut central);
         le16(20, &mut central); // version made by
         le16(20, &mut central); // version needed
         le16(0, &mut central); // flags
-        le16(0, &mut central); // method
+        le16(*method, &mut central);
         le16(0, &mut central); // time
         le16(0x21, &mut central); // date
         le32(crc, &mut central);
-        le32(data.len() as u32, &mut central);
+        le32(payload.len() as u32, &mut central);
         le32(data.len() as u32, &mut central);
         le16(n.len() as u16, &mut central);
         le16(0, &mut central); // extra
@@ -1931,8 +2020,9 @@ pub fn emitMeFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    terminals_and_icons: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, (FMI3_ME_ADAPTER, &[]), "ME")
+    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_ME_ADAPTER, &[]), "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -1941,8 +2031,9 @@ pub fn emitCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    terminals_and_icons: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
+    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -1952,8 +2043,58 @@ pub fn emitMeCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    terminals_and_icons: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+}
+
+/// The platforms `platforms={...}` named besides `"wasm"`.
+fn requested_native_platforms() -> Vec<String> {
+    openmodelica_util::Flags::getConfigString(openmodelica_util::Flags::FMU_NATIVE_PLATFORMS.clone())
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Per platform named in `platforms={...}` besides `"wasm"`: the component
+/// compiled ahead of time for it, plus the loader that serves the FMI 3.0 C API
+/// from that artifact. The FMU then works with a WebAssembly-unaware importer.
+fn add_native_platforms(
+    entries: &mut Vec<(String, Vec<u8>)>,
+    component: &[u8],
+    model_id: &str,
+) -> Result<()> {
+    for name in requested_native_platforms() {
+        let Some(platform) = native_fmu::lookup(&name) else {
+            record_error(format!(
+                "CodegenWasmJit: `{name}` is not a platform a wasm FMU can be built for. \
+                 Available: {}.",
+                native_fmu::PLATFORMS.iter().map(|p| p.fmi).collect::<Vec<_>>().join(", ")
+            ));
+            return Err("CodegenWasmJit: unknown FMU platform");
+        };
+        let Some(loader) = native_fmu::loader(platform) else {
+            record_error(format!(
+                "CodegenWasmJit: this omc has no FMI loader library for `{}`, so an FMU \
+                 cannot serve that platform. Available: {}. Rebuild omc with \
+                 OMC_FMU_NATIVE_TARGETS={} to add it.",
+                platform.fmi,
+                native_fmu::available().join(", "),
+                platform.triple
+            ));
+            return Err("CodegenWasmJit: no FMU loader for the requested platform");
+        };
+        let cwasm = native_fmu::precompile(component, platform)?;
+        entries.push((
+            format!("binaries/{}/{}", platform.fmi, native_fmu::loader_file_name(platform, model_id)),
+            loader,
+        ));
+        entries.push((format!("resources/{}.cwasm", platform.fmi), cwasm));
+    }
+    Ok(())
 }
 
 /// The distinct CAD file references (`<type>` values ending in a CAD extension)
@@ -1987,11 +2128,17 @@ fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     model_description: ArcStr,
+    terminals_and_icons: ArcStr,
     adapter: (&[u8], &[u8]),
     kind: &str,
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
+    // Emitting the model takes seconds; a host that compiles the native platforms
+    // out of process can spend them loading its compiler.
+    if !requested_native_platforms().is_empty() {
+        native_fmu::preload_aot_compiler();
+    }
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
         // Shared linear memory across model + runtime + ModelicaExternalC, so
@@ -2025,8 +2172,15 @@ fn emit_fmu(
         let model_id = sanitize_identifier(&model.model_name);
         let mut entries = vec![
             ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
-            (format!("binaries/wasm32-wasip2/{model_id}.wasm"), component),
         ];
+        if !terminals_and_icons.is_empty() {
+            entries.push((
+                "terminalsAndIcons/terminalsAndIcons.xml".to_string(),
+                terminals_and_icons.as_bytes().to_vec(),
+            ));
+        }
+        add_native_platforms(&mut entries, &component, &model_id)?;
+        entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
         // Ship the -d=visxml scene as a resource (the <Visualization> annotation
         // points at it), plus the CAD files it references so the scene is
         // self-contained. openmodelica_wasi::fs, not std::fs, which no-ops on wasm.
@@ -2045,7 +2199,7 @@ fn emit_fmu(
                 }
             }
         }
-        let fmu = zip_store(&entries);
+        let fmu = zip_archive(&entries);
         write_output(&fmu_path, &fmu).map_err(|_| "CodegenWasmJit: cannot write .fmu")?;
         Ok(())
     })();
