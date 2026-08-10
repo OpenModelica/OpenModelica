@@ -67,6 +67,7 @@ SUITESPARSE_SHARED=@SUITESPARSE_SHARED@
 SUNDIALS_TARGET=sundials
 
 EXTRA_MACOS_FLAGS_SUNDIALS=@EXTRA_MACOS_FLAGS_SUNDIALS@
+SUNDIALS_RPATH_LDFLAGS=@SUNDIALS_RPATH_LDFLAGS@
 
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...

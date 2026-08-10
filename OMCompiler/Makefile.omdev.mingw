@@ -130,6 +130,9 @@ SIMDJSON_DIR=3rdParty/simdjson
 SIMDJSON_BUILD_DIR=$(SIMDJSON_DIR)/build
 LIBSIMDJSONLIB=libsimdjson.a
 
+# Windows has no rpath; the DLLs are found next to the executable anyway.
+SUNDIALS_RPATH_LDFLAGS=
+
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 

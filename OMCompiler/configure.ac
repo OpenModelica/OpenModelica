@@ -39,6 +39,7 @@ AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
+AC_SUBST(SUNDIALS_RPATH_LDFLAGS)
 AC_SUBST(PRIMME_LDFLAGS)
 AC_SUBST(PRIMME_TARGET)
 AC_SUBST(COLPACK_LDFLAGS)
@@ -749,6 +750,7 @@ if test "$DARWIN" = "1"; then
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-rpath,@loader_path"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
@@ -781,6 +783,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LINK="cp -frl"
   # No RPATH in Windows :(
   RPATH=""
+  SUNDIALS_RPATH_LDFLAGS=""
   RPATH_QMAKE=""
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
@@ -819,6 +822,7 @@ else
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID $COLPACK_LDFLAGS"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-z,origin -Wl,-rpath,\$\$ORIGIN"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""

@@ -692,7 +692,6 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 		-DBUILD_SHARED_LIBS:Bool=ON \
 		-DBUILD_STATIC_LIBS:Bool=ON \
 		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
-		-DLDFLAGS="$(LDFLAGS)" \
 		-DSUNDIALS_PRECISION=DOUBLE \
 		-DSUNDIALS_INDEX_SIZE=64 \
 		-DSUNDIALS_ENABLE_KLU:Bool=ON \
@@ -709,7 +708,8 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 		-DSUNDIALS_ENABLE_LAPACK:Bool=ON \
 		-DLAPACK_LIBRARIES="$(LD_LAPACK)" \
 		-DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS) \
-		-DCMAKE_POSITION_INDEPENDENT_CODE=ON)
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+		-DCMAKE_SHARED_LINKER_FLAGS='$(SUNDIALS_RPATH_LDFLAGS)')
 
 	$(MAKE) -C 3rdParty/sundials/build install
 	# Test SUNDIALS but allow it to fail
