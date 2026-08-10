@@ -36,6 +36,7 @@ extern "C" int computeColPackColumnColoring(
   }
 
   try {
+    // verification of the input sparsity pattern
     if (leadindex[0] != 0 || leadindex[nCols] != nnz) return 0;
 
     std::vector<unsigned int> rowNnz(nRows, 0);
@@ -53,6 +54,7 @@ extern "C" int computeColPackColumnColoring(
       }
     }
 
+    // create a row-wise representation of the sparsity pattern for ColPack
     std::vector<std::vector<unsigned int>> rowStorage(nRows);
     std::vector<unsigned int*> sparsity(nRows);
     std::vector<unsigned int> rowOffset(nRows, 0);
@@ -70,6 +72,7 @@ extern "C" int computeColPackColumnColoring(
       }
     }
 
+    // run the partial column coloring algorithm
     ColPack::BipartiteGraphPartialColoringInterface coloring(
         SRC_MEM_ADOLC, sparsity.data(), static_cast<int>(nRows), static_cast<int>(nCols));
     if (coloring.PartialDistanceTwoColoring("SMALLEST_LAST", "COLUMN_PARTIAL_DISTANCE_TWO") != _TRUE) {
