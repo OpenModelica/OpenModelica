@@ -1893,7 +1893,7 @@ static int callSparseJacobian(double currentTime, double cj,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
   int i;
-  int flag;
+  SUNErrCode flag;
 
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);

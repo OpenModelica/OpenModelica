@@ -84,13 +84,8 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
 void sundialsSilenceLogger(SUNContext sunctx);
 
-/* Error handlers. Since SUNDIALS 7 there is no per-package error handler
- * (CVodeSetErrHandlerFn and friends are gone); a SUNErrHandlerFn is registered on
- * the SUNContext with SUNContext_PushErrHandler instead. The SUNDIALS module and
- * error string are no longer passed in - we get the source location and a
- * SUNErrCode. */
-/* Shared by CVODE and IDA; KINSOL has its own because it reports the failing
- * equation system on OMC_LOG_NLS. */
+/* Error handlers. A SUNErrHandlerFn is registered on the SUNContext with
+ * SUNContext_PushErrHandler instead. */
 void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
                                   const char *msg, SUNErrCode err_code,
                                   void *err_user_data, SUNContext sunctx);

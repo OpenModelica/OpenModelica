@@ -207,8 +207,6 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->linearSolverMethod = userData->nlsData->nlsLinearSolver;
   kinsolData->solved = NLS_FAILED;
 
-  /* Create the SUNDIALS context first - every other SUNDIALS object below is
-   * created with it. */
   if (SUNContext_Create(SUN_COMM_NULL, &kinsolData->sunctx) != SUN_SUCCESS) {
     throwStreamPrint(NULL, "KINSOL: In function SUNContext_Create: An error occurred.");
   }
@@ -1009,7 +1007,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
   N_Vector x = kinsolData->initialGuess;
 
   int i, j;
-  int ret;
+  SUNErrCode ret;
 
   /* If noScaling flag is used overwrite mode */
   if (omc_flag[FLAG_NO_SCALING]) {
@@ -1038,7 +1036,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
       /* Scale the current Jacobian */
       SUNMatCopy_Sparse(kinsolData->J, kinsolData->scaledJ);  /* Copy J into scaledJ */
       ret = _omc_SUNSparseMatrixVecScaling(kinsolData->scaledJ, kinsolData->xScale);
-      if (ret != 0) {
+      if (ret != SUN_SUCCESS) {
         errorStreamPrint(OMC_LOG_STDOUT, 0, "KINSOL: _omc_SUNSparseMatrixVecScaling failed.");
       }
     } else {
@@ -1160,7 +1158,8 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
 static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
                                               NONLINEAR_SYSTEM_DATA *nlsData,
                                               NLS_KINSOL_DATA *kinsolData) {
-  int flag;
+  int flag;             /* KIN_* and KINLS_* codes, which are plain macros */
+  SUNErrCode sunFlag;   /* SUNLinearSolver codes, which are not */
   double fNorm;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double *xScaling = NV_DATA_S(kinsolData->xScale);
@@ -1208,9 +1207,9 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
         nlsData->sparsePattern) {
       /* Complete symbolic and numeric factorizations */
-      flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
-                                 kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
+      sunFlag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
+                                    kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
+      checkReturnFlag_SUNDIALS(sunFlag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
       return TRUE;
     }
     break;

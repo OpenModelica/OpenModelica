@@ -42,8 +42,8 @@ static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
-static void checkReturnFlag_SUNLS(int flag, const char *functionName);
-static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
+static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName);
+static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName);
 #endif
 
 /**
@@ -54,7 +54,7 @@ static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
  * SUNDIALS_SUNLS_FLAG or SUNDIALS_UNKNOWN_FLAG.
  *
  * @param flag          Return value of Sundials routine.
- * @param type          Type of Sundials flag returned by routine specifyied by
+ * @param type          Type of Sundials flag returned by routine specified by
  *                      functionName.
  * @param functionName  Name of Sundials function that returned the flag.
  */
@@ -63,9 +63,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   switch (type) {
   case SUNDIALS_UNKNOWN_FLAG:
     if (flag < 0) {
-      //assertStreamPrint(NULL, NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
-      throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
+      throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %i occurred in function %s.", flag, functionName);
     }
+    break;
   case SUNDIALS_CV_FLAG:
     checkReturnFlag_CV(flag, functionName);
     break;
@@ -105,7 +105,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
  */
 static void checkReturnFlag_CV(int flag, const char *functionName) {
 
-  const char* flagName = CVodeGetLinReturnFlagName(flag);
+  const char* flagName = CVodeGetReturnFlagName(flag);
 
   switch (flag) {
     case CV_SUCCESS:
@@ -143,7 +143,7 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function failed at the first call.", flagName, functionName);
       break;
     case CV_REPTD_RHSFUNC_ERR:
-      throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had repetead recoverable errors.", flagName, functionName);
+      throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had repeated recoverable errors.", flagName, functionName);
       break;
     case CV_UNREC_RHSFUNC_ERR:
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had a recoverable error, but no recovery is possible.", flagName, functionName);
@@ -310,7 +310,7 @@ void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
  */
 static void checkReturnFlag_KIN(int flag, const char *functionName) {
 
-  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
+  const char* flagName = KINGetReturnFlagName(flag);
 
   switch (flag) {
   case KIN_SUCCESS:
@@ -776,7 +776,7 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
  * @param flag          Return value of SUNLS routine.
  * @param functionName  Name of SUNLS function that returned the flag.
  */
-static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
+static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName) {
   if (flag == SUN_SUCCESS) {
     return;
   }
@@ -793,7 +793,7 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
  * @param flag          Return value of SUNMatrix routine.
  * @param functionName  Name of SUNMatrix function that returned the flag.
  */
-static void checkReturnFlag_SUNMatrix(int flag, const char *functionName) {
+static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName) {
   if (flag == SUN_SUCCESS) {
     return;
   }

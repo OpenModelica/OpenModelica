@@ -229,10 +229,6 @@ static void B_nlsKinsolConfigSetup(B_NLS_KINSOL_DATA *kinsolData) {
 /**
  * @brief Error handler function given to the SUNContext.
  *
- * Since SUNDIALS 7 there is no KINSetErrHandlerFn any more; a SUNErrHandlerFn is
- * pushed onto the SUNContext instead, and it reports a source location plus a
- * SUNErrCode rather than a module name and an error string.
- *
  * @param line           Line in the SUNDIALS source where the error was raised.
  * @param func           Name of the SUNDIALS function in which the error occurred.
  * @param file           SUNDIALS source file where the error was raised.
@@ -396,17 +392,12 @@ B_NLS_KINSOL_DATA* B_nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelic
   kinsolData->linearSolverMethod = userData->nlsData->nlsLinearSolver;
   kinsolData->solved = NLS_FAILED;
 
-  /* Create the SUNDIALS context first - every other SUNDIALS object below is
-   * created with it. */
   if (SUNContext_Create(SUN_COMM_NULL, &kinsolData->sunctx) != SUN_SUCCESS) {
     throwStreamPrint(NULL, "experimental-kinsol: In function SUNContext_Create: An error occurred.");
   }
   sundialsSilenceLogger(kinsolData->sunctx);
 
-  /* Set error handler. Replaces KINSetErrHandlerFn, which is gone since SUNDIALS 7.
-   * KINSetPrintLevel and KINSetInfoHandlerFn are gone as well; KINSOL's progress
-   * output goes through the SUNLogger now, which is compiled out at our logging
-   * level, so OMC_LOG_NLS_V no longer forwards KINSOL's internal chatter. */
+  /* Set error handler */
   if (SUNContext_PushErrHandler(kinsolData->sunctx, B_kinsolErrorHandlerFunction, kinsolData) != SUN_SUCCESS) {
     throwStreamPrint(NULL, "experimental-kinsol: In function SUNContext_PushErrHandler: An error occurred.");
   }
@@ -1260,7 +1251,7 @@ static void B_nlsKinsolFScaling(DATA *data, B_NLS_KINSOL_DATA *kinsolData,
   N_Vector x = kinsolData->initialGuess;
 
   int i, j;
-  int ret;
+  SUNErrCode ret;
 
   /* If noScaling flag is used overwrite mode */
   if (omc_flag[FLAG_NO_SCALING]) {
@@ -1289,7 +1280,7 @@ static void B_nlsKinsolFScaling(DATA *data, B_NLS_KINSOL_DATA *kinsolData,
       /* Scale the current Jacobian */
       SUNMatCopy_Sparse(kinsolData->J, kinsolData->scaledJ);  /* Copy J into scaledJ */
       ret = _omc_SUNSparseMatrixVecScaling(kinsolData->scaledJ, kinsolData->xScale);
-      if (ret != 0) {
+      if (ret != SUN_SUCCESS) {
         errorStreamPrint(OMC_LOG_STDOUT, 0, "experimental-kinsol: _omc_SUNSparseMatrixVecScaling failed.");
       }
     } else {
@@ -1408,7 +1399,8 @@ static void B_nlsKinsolConfigPrint(B_NLS_KINSOL_DATA *kinsolData,
 static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
                                               NONLINEAR_SYSTEM_DATA *nlsData,
                                               B_NLS_KINSOL_DATA *kinsolData) {
-  int flag;
+  int flag;             /* KIN_* and KINLS_* codes, which are plain macros */
+  SUNErrCode sunFlag;   /* SUNLinearSolver codes, which are not */
   double fNorm;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   long outL;
@@ -1455,9 +1447,9 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
         nlsData->sparsePattern) {
       /* Complete symbolic and numeric factorizations */
-      flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
-                                 kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
+      sunFlag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
+                                    kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
+      checkReturnFlag_SUNDIALS(sunFlag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
       return TRUE;
     }
     break;
