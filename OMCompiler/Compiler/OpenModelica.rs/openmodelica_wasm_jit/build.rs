@@ -72,7 +72,7 @@ fn main() {
     build_native_fmu_loaders(&crate_dir, &out_dir);
 }
 
-/// Build the FMI 3.0 loader (`openmodelica_fmi_ls_wasm_to_native`) once per
+/// Build the FMI loader (`openmodelica_fmi_ls_wasm_to_native`, both versions) once per
 /// platform an exported FMU may run on: this machine's plus
 /// `OMC_FMU_NATIVE_TARGETS`. Independent of omc's *own* target, so a wasm omc
 /// gets them too.
@@ -921,6 +921,9 @@ fn hash_inputs(runtime_dir: &Path, extra_dirs: &[PathBuf]) -> (String, Vec<PathB
         if !seen.insert(key) {
             continue;
         }
+        // The directory too: a new file is invisible to a rerun-if-changed list
+        // built from the files that existed last time.
+        println!("cargo:rerun-if-changed={}", dir.join("src").display());
         collect_files(&dir.join("src"), &mut files);
         let manifest = dir.join("Cargo.toml");
         for m in ["Cargo.toml", "Cargo.lock"] {

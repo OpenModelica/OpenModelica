@@ -14839,6 +14839,20 @@ algorithm
   end match;
 end getFMI3TypeOffset;
 
+public function getFMI2ValueReferenceOffsets
+  "The offsets that turn an FMI 2.0 value reference, which is unique only per base
+   type, into the globally unique FMI 3.0 one, in the order Real, Integer, Boolean,
+   String. The wasm FMU export ships them with the FMU so its loader can serve the
+   FMI 2.0 API from a component that speaks FMI 3.0."
+  input SimCode.ModelInfo modelInfo;
+  output list<Integer> offsets;
+algorithm
+  offsets := {getFMI3TypeOffset(DAE.T_REAL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_INTEGER_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_BOOL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_STRING_DEFAULT, modelInfo)};
+end getFMI2ValueReferenceOffsets;
+
 public function getFMI3ValueReference
   "Returns the globally unique value reference of a variable for the FMI 3.0
    export. It is the per-base-type value reference (see getValueReference) shifted

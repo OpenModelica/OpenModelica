@@ -1907,19 +1907,6 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
     Ok(out)
 }
 
-/// Model-identifier / file-safe name from the model name.
-fn sanitize_identifier(name: &str) -> String {
-    let mut s: String = name
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
-        .collect();
-    if s.is_empty() || s.as_bytes()[0].is_ascii_digit() {
-        s.insert(0, '_');
-    }
-    s
-}
-
-
 /// CRC-32 (IEEE) for the ZIP entries.
 fn crc32(data: &[u8]) -> u32 {
     let mut crc: u32 = 0xffff_ffff;
@@ -2012,17 +1999,17 @@ fn zip_archive(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
     out
 }
 
-/// `CodegenWasmJit.emitMeFmu` / `emitCsFmu`: build the FMI 3.0 wasm FMU for
-/// `sim_code` and write it to `fmu_path` (`modelDescription` +
-/// `binaries/wasm32-wasip2/<id>.wasm`). Host-free: no `wasm-merge`, no `zip`.
+/// `CodegenWasmJit.emitMeFmu` / `emitCsFmu`: build the wasm FMU for `sim_code`
+/// and write it to `fmu_path`. Host-free: no `wasm-merge`, no `zip`.
 pub fn emitMeFmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    terminals_and_icons: ArcStr,
+    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_ME_ADAPTER, &[]), "ME")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_ME_ADAPTER, &[]), "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -2031,9 +2018,10 @@ pub fn emitCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    terminals_and_icons: ArcStr,
+    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -2043,9 +2031,17 @@ pub fn emitMeCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    terminals_and_icons: ArcStr,
+    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, terminals_and_icons, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+}
+
+/// The FMI version being exported, `"3.0"` unless `buildModelFMU` asked otherwise.
+fn fmi_version() -> String {
+    let v = openmodelica_util::Flags::getConfigString(openmodelica_util::Flags::FMI_VERSION.clone())
+        .unwrap_or_default();
+    if v.is_empty() { "3.0".to_string() } else { v.to_string() }
 }
 
 /// The platforms `platforms={...}` named besides `"wasm"`.
@@ -2060,12 +2056,13 @@ fn requested_native_platforms() -> Vec<String> {
 }
 
 /// Per platform named in `platforms={...}` besides `"wasm"`: the component
-/// compiled ahead of time for it, plus the loader that serves the FMI 3.0 C API
-/// from that artifact. The FMU then works with a WebAssembly-unaware importer.
+/// compiled ahead of time for it, plus the loader that serves the FMI C API from
+/// that artifact. The FMU then works with a WebAssembly-unaware importer.
 fn add_native_platforms(
     entries: &mut Vec<(String, Vec<u8>)>,
     component: &[u8],
     model_id: &str,
+    version: &str,
 ) -> Result<()> {
     for name in requested_native_platforms() {
         let Some(platform) = native_fmu::lookup(&name) else {
@@ -2076,6 +2073,7 @@ fn add_native_platforms(
             ));
             return Err("CodegenWasmJit: unknown FMU platform");
         };
+        let dir = native_fmu::fmi_dir(platform, version);
         let Some(loader) = native_fmu::loader(platform) else {
             record_error(format!(
                 "CodegenWasmJit: this omc has no FMI loader library for `{}`, so an FMU \
@@ -2089,12 +2087,34 @@ fn add_native_platforms(
         };
         let cwasm = native_fmu::precompile(component, platform)?;
         entries.push((
-            format!("binaries/{}/{}", platform.fmi, native_fmu::loader_file_name(platform, model_id)),
+            format!("binaries/{dir}/{}", native_fmu::loader_file_name(platform, model_id)),
             loader,
         ));
+        // The FMI 3.0 tuple in both versions: it is what the loader looks for.
         entries.push((format!("resources/{}.cwasm", platform.fmi), cwasm));
     }
     Ok(())
+}
+
+/// One `--fmiFlags` entry, out of the `"name" : "value"` pairs `CodegenFMU`
+/// renders into `resources/<prefix>_flags.json`.
+fn fmi_flag(json: &str, name: &str) -> Option<String> {
+    let key = format!("\"{name}\"");
+    json.match_indices(&key).find_map(|(i, _)| {
+        let rest = json[i + key.len()..].trim_start().strip_prefix(':')?.trim_start().strip_prefix('"')?;
+        Some(rest[..rest.find('"')?].to_string())
+    })
+}
+
+/// `fmi2GetReal` and friends name a base type, not a value-reference space: the
+/// loader recovers the component's value reference by adding the offset for the
+/// type the call names (`SimCodeUtil.getFMI2ValueReferenceOffsets`).
+fn fmi2_vr_offsets(sim_code: &SimCode::SimCode) -> Result<String> {
+    let offsets = openmodelica_backend::SimCodeUtil::getFMI2ValueReferenceOffsets(sim_code.modelInfo.clone());
+    let [real, integer, boolean, string] = lst(&offsets).collect::<Vec<_>>()[..] else {
+        return Err("CodegenWasmJit: expected four FMI 2.0 value-reference offsets");
+    };
+    Ok(format!("{{\"real\":{real},\"integer\":{integer},\"boolean\":{boolean},\"string\":{string}}}\n"))
 }
 
 /// The distinct CAD file references (`<type>` values ending in a CAD extension)
@@ -2128,12 +2148,22 @@ fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     model_description: ArcStr,
-    terminals_and_icons: ArcStr,
+    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    simulation_flags_json: ArcStr,
     adapter: (&[u8], &[u8]),
     kind: &str,
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
+    // C's FMU reads `-s` from _flags.json at run time; this one is linked against
+    // one solver, so the flag has to reach the export. On the settings it reaches
+    // both the adapter choice and the metadata the driver reads.
+    let mut sim_code = sim_code;
+    if let (Some(s), Some(settings)) =
+        (fmi_flag(&simulation_flags_json, "s"), sim_code.simulationSettingsOpt.as_mut())
+    {
+        settings.method = ArcStr::from(s.as_str());
+    }
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
     if !requested_native_platforms().is_empty() {
@@ -2169,18 +2199,42 @@ fn emit_fmu(
         let sundials = cs && fmu_needs_sundials(&model.method);
         let component =
             link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials, &model.ext_libs)?;
-        let model_id = sanitize_identifier(&model.model_name);
+        // The modelIdentifier modelDescription.xml declares, not the class name:
+        // an importer resolves `binaries/<platform>/<modelIdentifier>`.
+        let model_id = model_name_prefix(&sim_code);
         let mut entries = vec![
             ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
         ];
-        if !terminals_and_icons.is_empty() {
+        // terminalsAndIcons/, documentation/ — whatever the caller rendered.
+        for (name, content) in lst(&extra_files) {
+            entries.push((name.to_string(), content.as_bytes().to_vec()));
+        }
+        // What the FMU was built with, where C's carries what its runtime reads.
+        if !simulation_flags_json.is_empty() {
             entries.push((
-                "terminalsAndIcons/terminalsAndIcons.xml".to_string(),
-                terminals_and_icons.as_bytes().to_vec(),
+                format!("resources/{}_flags.json", sim_code.fileNamePrefix),
+                simulation_flags_json.as_bytes().to_vec(),
             ));
         }
-        add_native_platforms(&mut entries, &component, &model_id)?;
-        entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
+        let version = fmi_version();
+        add_native_platforms(&mut entries, &component, &model_id, &version)?;
+        if version == "2.0" {
+            if requested_native_platforms().is_empty() {
+                record_error(format!(
+                    "CodegenWasmJit: an FMI 2.0 FMU can only be loaded through a native binary — \
+                     fmi-ls-wasm, which is what platforms={{\"wasm\"}} alone produces, is layered on \
+                     FMI 3.0. Add the platforms to serve ({}), or export with version=\"3.0\".",
+                    native_fmu::available().join(", ")
+                ));
+                return Err("CodegenWasmJit: an FMI 2.0 FMU needs a native platform");
+            }
+            entries.push(("resources/fmi2vr.json".to_string(), fmi2_vr_offsets(&sim_code)?.into_bytes()));
+            // Not in binaries/: an FMI 2.0 FMU is not an fmi-ls-wasm one. Here so
+            // a platform can still be added to it later, as the browser page does.
+            entries.push((format!("resources/{model_id}.wasm"), component));
+        } else {
+            entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
+        }
         // Ship the -d=visxml scene as a resource (the <Visualization> annotation
         // points at it), plus the CAD files it references so the scene is
         // self-contained. openmodelica_wasi::fs, not std::fs, which no-ops on wasm.
@@ -2205,7 +2259,7 @@ fn emit_fmu(
     })();
     if let Err(e) = &outcome {
         if openmodelica_util::Error::getNumErrorMessages() == errs_before {
-            record_error(format!("CodegenWasmJit: cannot build FMI3 {kind} FMU: {e:#}"));
+            record_error(format!("CodegenWasmJit: cannot build FMI {} {kind} FMU: {e:#}", fmi_version()));
         }
     }
     outcome
@@ -3563,11 +3617,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         ti
     });
     // `functionUpdateSynchronous`/`functionEquationsSynchronous`: (i32,i32) -> ().
-    let sync_fn_type = (!clocks.is_empty()).then(|| {
+    let sync_fn_type = {
         let ti = types.len();
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
         ti
-    });
+    };
     // Function references met while lowering the bodies add thunks to the closure
     // pool; this global holds their shared-table base.
     let closure_global = crate::CodegenWasmJitFunctions::closure_base_global(nls_types.is_some());
@@ -3978,19 +4032,17 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         bodies.extend(opt_jac_fns);
         base
     };
-    // Synchronous features: emitted only for a model with clocked partitions, so a
-    // clock-free model's module is unchanged.
-    let sync_idx = match clocks.is_empty() {
-        true => None,
-        false => {
-            let init = import_base + bodies.len() as u32;
-            bodies.push(build_init_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
-            bodies.push(build_update_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
-            bodies.push(build_equations_synchronous_fn(
-                &clocks, &layout, &var_map, &eq_index, &by_name, &mut literals,
-            )?);
-            Some((init, init + 1, init + 2))
-        }
+    // Synchronous features. Always emitted, as the C target emits them (empty
+    // without clocked partitions): an FMU adapter cannot import them
+    // conditionally without leaving a clock-free model's `env` import unresolved.
+    let sync_idx = {
+        let init = import_base + bodies.len() as u32;
+        bodies.push(build_init_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_update_synchronous_fn(&clocks, &layout, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_equations_synchronous_fn(
+            &clocks, &layout, &var_map, &eq_index, &by_name, &mut literals,
+        )?);
+        (init, init + 1, init + 2)
     };
     // Emitted only for a DAE-mode model: its absence is how the standalone export and
     // the FMU adapters know the model is an explicit ODE.
@@ -4055,11 +4107,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     for _ in 0..OPT_JAC_FNS.len() {
         functions.function(eqfn_type); // optJac{B,C,D}{_const,}: (i32) -> ()
     }
-    if let Some(ti) = sync_fn_type {
-        functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
-        functions.function(ti); // functionUpdateSynchronous: (i32, i32) -> ()
-        functions.function(ti); // functionEquationsSynchronous: (i32, i32) -> ()
-    }
+    functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
+    functions.function(sync_fn_type); // functionUpdateSynchronous: (i32, i32) -> ()
+    functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
     }
@@ -4164,11 +4214,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     for (k, name) in OPT_JAC_FNS.iter().enumerate() {
         exports.export(*name, we::ExportKind::Func, opt_jac_idx + k as u32);
     }
-    if let Some((init, update, eqs)) = sync_idx {
-        exports.export("functionInitSynchronous", we::ExportKind::Func, init);
-        exports.export("functionUpdateSynchronous", we::ExportKind::Func, update);
-        exports.export("functionEquationsSynchronous", we::ExportKind::Func, eqs);
-    }
+    let (sync_init, sync_update, sync_eqs) = sync_idx;
+    exports.export("functionInitSynchronous", we::ExportKind::Func, sync_init);
+    exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
+    exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
     if let Some(idx) = dae_residuals_idx {
         exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
     }
@@ -4224,11 +4273,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     ] {
         names.push((idx, name.to_string()));
     }
-    if let Some((init, update, eqs)) = sync_idx {
-        names.push((init, "functionInitSynchronous".to_string()));
-        names.push((update, "functionUpdateSynchronous".to_string()));
-        names.push((eqs, "functionEquationsSynchronous".to_string()));
-    }
+    names.push((sync_init, "functionInitSynchronous".to_string()));
+    names.push((sync_update, "functionUpdateSynchronous".to_string()));
+    names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
     if let Some(idx) = dae_residuals_idx {
         names.push((idx, "evaluateDAEResiduals".to_string()));
     }
@@ -6359,7 +6406,8 @@ fn build_linz_plan(
     Ok(LinzPlan { frames, rows, cols, jacs, real_rows, real_cols })
 }
 
-/// C's `modelNamePrefix`, which the frames quote as the model's description.
+/// C's `modelNamePrefix`: the linearization frames quote it as the model's
+/// description, and it is the FMU's modelIdentifier.
 fn model_name_prefix(sim_code: &SimCode::SimCode) -> String {
     openmodelica_util::System::makeC89Identifier(sim_code.fileNamePrefix.clone()).to_string()
 }
@@ -7418,6 +7466,8 @@ mod link_tests {
             [we::ValType::I32, we::ValType::F64, we::ValType::F64, we::ValType::I32],
             [we::ValType::I32],
         );
+        // 4: (i32,i32)->()  (functionUpdateSynchronous / functionEquationsSynchronous)
+        types.ty().function([we::ValType::I32, we::ValType::I32], []);
         m.section(&types);
 
         let mut imports = we::ImportSection::new();
@@ -7440,16 +7490,23 @@ mod link_tests {
         let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
             .iter()
             .copied()
-            .filter(|n| *n != "simulate" && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE)
+            .filter(|n| {
+                *n != "simulate"
+                    && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE
+                    && *n != openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC
+                    && *n != openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC
+            })
             .collect();
 
         let mut funcs = we::FunctionSection::new();
         for _ in &one_arg {
-            funcs.function(1); // (i32)->()
+            funcs.function(1);
         }
         funcs.function(2); // om_meta_ptr
         funcs.function(2); // om_meta_len
         funcs.function(3); // simulate
+        funcs.function(4); // functionUpdateSynchronous
+        funcs.function(4); // functionEquationsSynchronous
         m.section(&funcs);
 
         // Defined-func indices start at 1 (rt_alloc is import 0).
@@ -7461,6 +7518,16 @@ mod link_tests {
         exports.export("om_meta_ptr", we::ExportKind::Func, meta_ptr_idx);
         exports.export("om_meta_len", we::ExportKind::Func, meta_ptr_idx + 1);
         exports.export("simulate", we::ExportKind::Func, meta_ptr_idx + 2);
+        exports.export(
+            openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC,
+            we::ExportKind::Func,
+            meta_ptr_idx + 3,
+        );
+        exports.export(
+            openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC,
+            we::ExportKind::Func,
+            meta_ptr_idx + 4,
+        );
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
@@ -7485,6 +7552,14 @@ mod link_tests {
         sim.instruction(&I::I32Const(0));
         sim.instruction(&I::End);
         code.function(&sim);
+        // functionUpdateSynchronous(_, _): noop.
+        let mut sync_update = we::Function::new([]);
+        sync_update.instruction(&I::End);
+        code.function(&sync_update);
+        // functionEquationsSynchronous(_, _): noop.
+        let mut sync_eqs = we::Function::new([]);
+        sync_eqs.instruction(&I::End);
+        code.function(&sync_eqs);
         m.section(&code);
 
         m.finish()

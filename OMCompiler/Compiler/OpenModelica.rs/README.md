@@ -193,9 +193,10 @@ someone else produced.
 ## Native platforms for an FMU (`RUST_OMC_FMU_NATIVE_TARGETS`)
 
 An exported wasm FMU can also carry, per platform, the component as machine code
-plus the loader library that serves the FMI 3.0 C API from it. omc needs one
-build of `openmodelica_fmi_ls_wasm_to_native` per platform; the host's own is
-always built, the rest are named as rustc triples:
+plus the loader library that serves the FMI C API from it. One build of
+`openmodelica_fmi_ls_wasm_to_native` serves both FMI 2.0 and FMI 3.0 — it exports
+both symbol sets and an FMU declares one `fmiVersion` — so omc needs one per
+platform; the host's own is always built, the rest are named as rustc triples:
 
 ```bash
 cmake -S . -B build -DOM_OMC_ENABLE_RUST=ON \

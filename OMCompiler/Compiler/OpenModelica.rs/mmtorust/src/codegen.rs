@@ -2077,6 +2077,11 @@ fn generate_lib_file(hier: &InstanceHierarchy<'_>, this_dir: &str, default_dir: 
     if std::path::Path::new(&format!("{this_dir}/ModelInstanceReference.rs")).exists() {
         writeln!(out, "pub mod ModelInstanceReference;").unwrap();
     }
+    // Hand-written `OMGraphics_*` external bodies, reached from generated
+    // `CevalScriptBackend.rs` via `external_c_calls::external_c_impl_path`.
+    if std::path::Path::new(&format!("{this_dir}/OMGraphicsExt.rs")).exists() {
+        writeln!(out, "pub mod OMGraphicsExt;").unwrap();
+    }
     // (The typed OMEdit interface ABI lives in its own hand-maintained crate,
     // `openmodelica_scripting_qt`, written by `emit_scripting_api_qt`; it is not
     // declared here.)

@@ -788,6 +788,16 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         // `NFApi` (same crate) declares these externals, so `crate::` resolves.
         "ModelInstanceReference_store" => Some("crate::ModelInstanceReference::store"),
         "ModelInstanceReference_release" => Some("crate::ModelInstanceReference::release"),
+        // FMI 3.0 graphical representation (runtime/OMGraphics.cpp), hand-written
+        // in `openmodelica_backend_main/src/OMGraphicsExt.rs`. Only
+        // `CevalScriptBackend` (same crate) declares these externals.
+        "OMGraphics_iconSVGFromHandle" => Some("crate::OMGraphicsExt::iconSVGFromHandle"),
+        "OMGraphics_graphicalRepresentationXMLFromHandle" => Some("crate::OMGraphicsExt::graphicalRepresentationXMLFromHandle"),
+        "OMGraphics_placedConnectorCount" => Some("crate::OMGraphicsExt::placedConnectorCount"),
+        "OMGraphics_placedConnectorInfo" => Some("crate::OMGraphicsExt::placedConnectorInfo"),
+        "OMGraphics_placedConnectorIconSVG" => Some("crate::OMGraphicsExt::placedConnectorIconSVG"),
+        "OMGraphics_writeIconPNGFromHandle" => Some("crate::OMGraphicsExt::writeIconPNGFromHandle"),
+        "OMGraphics_writePlacedConnectorIconPNG" => Some("crate::OMGraphicsExt::writePlacedConnectorIconPNG"),
         _ => None,
     }
 }

@@ -1,5 +1,6 @@
 // name: fmi2_array_nonscalarized
 // keywords: FMI 2.0 export array non-scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_nonscalarized.fmu fmi2_array_nonscalarized.fmutmp/ fmi2_array_nonscalarized.dims fmi2_array_nonscalarized.log fmi2_array_nonscalarized_info.json index.html
 //

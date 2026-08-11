@@ -123,6 +123,7 @@ openmodelica_backend/src/HpcOmBenchmarkExt.rs
 openmodelica_backend_main/Cargo.toml
 openmodelica_backend_main/src/Globals.rs
 openmodelica_backend_main/src/ModelInstanceReference.rs
+openmodelica_backend_main/src/OMGraphicsExt.rs
 openmodelica_backend_main/src/capi.rs
 openmodelica_backend_tools/Cargo.toml
 openmodelica_backend_tools/src/CevalScriptOMSimulator_wasm.rs
@@ -184,6 +185,7 @@ openmodelica_fmi_ls_wasm_aot/Cargo.toml
 openmodelica_fmi_ls_wasm_aot/src/lib.rs
 openmodelica_fmi_ls_wasm_to_native/Cargo.lock
 openmodelica_fmi_ls_wasm_to_native/Cargo.toml
+openmodelica_fmi_ls_wasm_to_native/src/fmi2.rs
 openmodelica_fmi_ls_wasm_to_native/src/lib.rs
 openmodelica_codegen_xml/Cargo.toml
 openmodelica_dump_extra/Cargo.toml
