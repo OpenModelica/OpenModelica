@@ -17,8 +17,37 @@
 //!    otherwise fail with instructions.
 
 use std::collections::BTreeMap;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+
+/// Run a nested build. Captured, not inherited: concurrent children would
+/// interleave, and none may write on this script's `cargo:` stdout.
+fn run(cmd: &mut Command, what: &str) -> Result<(), String> {
+    let out = cmd
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|e| format!("could not spawn {what}: {e}"))?;
+    std::io::stderr().write_all(&out.stderr).ok();
+    if !out.status.success() {
+        return Err(format!("{what} exited with {}", out.status));
+    }
+    Ok(())
+}
+
+/// `items.iter().map(f)`, one thread each, results in input order; a worker panic
+/// resurfaces here. Spawning all at once does not oversubscribe: the nested
+/// cargos share this build's jobserver through `CARGO_MAKEFLAGS`.
+fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let f = &f;
+    std::thread::scope(|s| {
+        let handles: Vec<_> = items.iter().map(|it| s.spawn(move || f(it))).collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+            .collect()
+    })
+}
 
 fn main() {
     let crate_dir = PathBuf::from(env("CARGO_MANIFEST_DIR"));
@@ -64,12 +93,16 @@ fn main() {
     // The JIT runtime (wasm32-unknown-unknown) and the standalone runtime
     // (wasm32-wasip1) are built from the same sources; both must run on every
     // invocation (the JIT build short-circuits on its own cache/override).
-    build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
-    build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
-    build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
-    build_external_c_wasm(&crate_dir, &out_dir);
-    build_fmi3_me_adapter(&crate_dir, &out_dir);
-    build_native_fmu_loaders(&crate_dir, &out_dir);
+    std::thread::scope(|s| {
+        s.spawn(|| build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash));
+        s.spawn(|| build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir));
+        s.spawn(|| {
+            build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
+        });
+        s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
+        s.spawn(|| build_fmi3_me_adapter(&crate_dir, &out_dir));
+        s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
+    });
 }
 
 /// Build the FMI loader (`openmodelica_fmi_ls_wasm_to_native`, both versions) once per
@@ -136,7 +169,18 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     // the install rather than leaving one nothing indexes.
     std::fs::remove_dir_all(&staging).ok();
     std::fs::create_dir_all(&staging).expect("create the FMU loader staging dir");
-    let mut index = String::new();
+    struct Loader {
+        target: String,
+        requested: bool,
+        platform: String,
+        artifact: String,
+        ext: String,
+        dest: PathBuf,
+        stamp: PathBuf,
+        hash: String,
+        build: bool,
+    }
+    let mut loaders = Vec::new();
     for (target, requested) in &targets {
         let Some((platform, artifact)) = loader_artifact_name(target) else {
             let msg = format!(
@@ -156,36 +200,58 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         let cached = dest.exists()
             && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
             && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash);
-        let ext = Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so");
+        let ext =
+            Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so").to_owned();
         let handed_over = prebuilt
             .as_ref()
             .map(|d| d.join(format!("{platform}.{ext}")))
             .filter(|f| f.is_file());
-        if let (false, Some(f)) = (cached, handed_over) {
-            copy(&f, &dest);
+        if let (false, Some(f)) = (cached, &handed_over) {
+            copy(f, &dest);
             std::fs::write(&stamp, &hash).ok();
-        } else if !cached {
-            match build_native_loader(&loader_dir, out_dir, target, &artifact, &xwin_arch, sdk.as_deref()) {
-                Ok(produced) => {
-                    copy(&produced, &dest);
-                    std::fs::write(&stamp, &hash).ok();
-                }
-                Err(e) => {
-                    let msg = format!(
-                        "could not build the FMU loader for {target} ({e}), so an exported FMU \
-                         cannot offer the {platform} platform. A cross target needs its Rust \
-                         target and a C toolchain: cargo-xwin for *-pc-windows-msvc, \
-                         cargo-zigbuild (+ ziglang) otherwise, and a macOS SDK in \
-                         OMC_FMU_MACOS_SDK for *-apple-darwin. \
-                         Set OMC_FMU_NATIVE_OPTIONAL=1 to build without it."
-                    );
-                    assert!(!*requested || optional, "{msg}");
-                    println!("cargo:warning={msg}");
-                    continue;
-                }
-            }
         }
-        copy(&dest, &staging.join(format!("{platform}.{ext}")));
+        loaders.push(Loader {
+            target: target.clone(),
+            requested: *requested,
+            platform,
+            artifact,
+            ext,
+            dest,
+            stamp,
+            hash,
+            build: !cached && handed_over.is_none(),
+        });
+    }
+
+    // A wasmtime-linking cdylib per platform, none filling the machine alone.
+    let built = par_map(&loaders, |l| {
+        if !l.build {
+            return Ok(());
+        }
+        build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref())
+            .map(|produced| {
+                copy(&produced, &l.dest);
+                std::fs::write(&l.stamp, &l.hash).ok();
+            })
+    });
+
+    let mut index = String::new();
+    for (l, outcome) in loaders.iter().zip(built) {
+        let Loader { target, platform, ext, .. } = l;
+        if let Err(e) = outcome {
+            let msg = format!(
+                "could not build the FMU loader for {target} ({e}), so an exported FMU \
+                 cannot offer the {platform} platform. A cross target needs its Rust \
+                 target and a C toolchain: cargo-xwin for *-pc-windows-msvc, \
+                 cargo-zigbuild (+ ziglang) otherwise, and a macOS SDK in \
+                 OMC_FMU_MACOS_SDK for *-apple-darwin. \
+                 Set OMC_FMU_NATIVE_OPTIONAL=1 to build without it."
+            );
+            assert!(!l.requested || optional, "{msg}");
+            println!("cargo:warning={msg}");
+            continue;
+        }
+        copy(&l.dest, &staging.join(format!("{platform}.{ext}")));
         index.push_str(&format!(
             "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":\"{platform}.{ext}\",\"ext\":\".{ext}\"}}",
             if index.is_empty() { "" } else { "," }
@@ -321,20 +387,15 @@ fn build_native_loader(
     } else {
         cmd.env_remove("RUSTFLAGS");
     }
-    let status = cmd
-        .current_dir(loader_dir)
+    cmd.current_dir(loader_dir)
         .args(cargo_subcommand(target))
         .args(["--release", "--target", target])
         .arg("--target-dir")
         .arg(&target_dir)
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        .status()
-        .map_err(|e| format!("could not spawn cargo: {e}"))?;
-    if !status.success() {
-        return Err(format!("cargo build for {target} exited with {status}"));
-    }
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    run(&mut cmd, &format!("cargo build for {target}"))?;
     let produced = target_dir.join(target).join("release").join(artifact);
     if !produced.exists() {
         return Err(format!("expected library not found at {}", produced.display()));
@@ -347,9 +408,7 @@ fn build_native_loader(
 /// Built here regardless of omc's own target arch: build scripts run on the host.
 /// Mandatory: a failed build aborts rather than shipping an omc without it.
 fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path) {
-    for v in ADAPTER_VARIANTS {
-        build_fmi3_adapter(crate_dir, out_dir, v);
-    }
+    par_map(ADAPTER_VARIANTS, |v| build_fmi3_adapter(crate_dir, out_dir, v));
 }
 
 /// One FMI3 adapter build: a WIT world selected by Cargo features, from the same
@@ -454,8 +513,8 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
     let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
         -Clink-arg=--allow-undefined";
-    let status = Command::new(cargo)
-        .current_dir(adapter_dir)
+    let mut cmd = Command::new(cargo);
+    cmd.current_dir(adapter_dir)
         .args(["build", "-Z", "build-std=core,alloc,panic_abort", "--release", "--target", target])
         .args(v.cargo_args)
         .arg("--target-dir")
@@ -463,12 +522,8 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
         .env("RUSTFLAGS", rustflags)
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        .status()
-        .map_err(|e| format!("could not spawn cargo: {e}"))?;
-    if !status.success() {
-        return Err(format!("cargo build (dylink) exited with {status}"));
-    }
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    run(&mut cmd, &format!("cargo build (dylink, {})", v.label))?;
     let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
     if !produced.exists() {
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
@@ -578,8 +633,8 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let builtins = find_wasm_builtins().ok_or_else(|| {
         "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
     }).unwrap_or_else(|e| panic!("{e}"));
-    let status = Command::new(&clang)
-        .args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
+    let mut cmd = Command::new(&clang);
+    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
                "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB",
                "-Wno-error=implicit-function-declaration"])
         .arg(format!("--sysroot={sysroot}"))
@@ -590,15 +645,9 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .arg(&builtins)
         .arg("-Wl,--export-all")
         .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
-        .arg("-o").arg(&dest)
-        .status()
-        .map_err(|e| format!("spawn {clang}: {e}")).unwrap_or_else(|e| {
-            panic!("modelicaexternalc.wasm: {e}")
-        });
-    if !status.success() {
-        panic!("clang exited with {status} (building modelicaexternalc.wasm, \
-                --target=wasm32-wasip1, sysroot {sysroot})");
-    }
+        .arg("-o").arg(&dest);
+    let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");
+    run(&mut cmd, &what).unwrap_or_else(|e| panic!("{e}"));
     if !std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false) {
         panic!("modelicaexternalc.wasm is empty");
     }
@@ -885,10 +934,7 @@ fn build_runtime_wasm_named(
         // agrees with what this script actually produced.
         None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
     }
-    let status = cmd.status().map_err(|e| format!("could not spawn cargo: {e}"))?;
-    if !status.success() {
-        return Err(format!("cargo build for {target} exited with {status}"));
-    }
+    run(&mut cmd, &format!("cargo build for {target} ({target_dir_prefix})"))?;
     let produced = target_dir
         .join(target)
         .join("release")
