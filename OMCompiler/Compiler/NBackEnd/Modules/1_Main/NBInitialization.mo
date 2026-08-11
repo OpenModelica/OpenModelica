@@ -44,6 +44,7 @@ protected
   // NF imports
   import Algorithm = NFAlgorithm;
   import Call = NFCall;
+  import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -51,6 +52,7 @@ protected
   import NFFunction.Function;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -124,6 +126,10 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
+
+            // derive $START equations for variables with no start attribute whose
+            // defining equations can be evaluated from already-known $START values
+            (variables, initialVars, equations, initialEqs) := createDerivedStartEquations(variables, initialVars, equations, initialEqs, eqData.uniqueIndex);
 
             // clone all initial variables and remove clocked variables
             clonedVars := VariablePointers.clone(initialVars);
@@ -474,7 +480,7 @@ public
     input Pointer<Integer> idx;
     input Boolean fixed;
   protected
-    Expression start_exp, start_var_exp, e;
+    Expression start_exp, start_var_exp, e, e_eval;
     Pointer<Variable> var_ptr, start_var;
     ComponentRef name;
     Option<Pointer<Equation>> start_eq = NONE();
@@ -505,9 +511,21 @@ public
       start_eq := match BVariable.getStartAttribute(var_ptr)
         // create from start expression only if its not literal
         case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-          (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
-          start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          // Try to evaluate the start expression to a literal for XML serialization.
+          // tryEvalArrayConstructor handles TYPED_ARRAY_CONSTRUCTORs by substituting
+          // concrete iterator values so Ceval can resolve per-module CREFs.
+          // If literal evaluation fails (e.g., when start depends on Evaluate=false
+          // parameters), fall back to creating a parameter binding start equation
+          // ($START.x = start_expr) that is solved before the init NLS, giving the
+          // correct non-zero initial guess without requiring literal start values.
+          e_eval := Util.getOptionOrDefault(tryEvalArrayConstructor(e), Ceval.tryEvalExp(e));
+          if Expression.isLiteralXML(e_eval) then
+            Pointer.update(var_ptr, BVariable.setStartAttribute(Pointer.access(var_ptr), e_eval, true));
+          else
+            (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+            start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+            Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          end if;
         then start_eq;
 
         // exit the function, no start equation is created
@@ -525,6 +543,78 @@ public
       end if;
     end if;
   end createStartEquationSlice;
+
+  function tryEvalArrayConstructor
+    "Manually expand a TYPED_ARRAY_CONSTRUCTOR with a constant integer range by
+     substituting concrete iterator values into the body expression, then evaluate
+     each element via Ceval. Enables Ceval to resolve component-path CREFs that
+     contain the iterator as a subscript (e.g. stack.module[v].X_start) by looking
+     them up with a specific index in the NF instance tree.
+     Returns NONE() if the expression is not a single-iterator constructor with a
+     constant integer range, or if any element cannot be evaluated to a literal."
+    input Expression e;
+    output Option<Expression> result = NONE();
+  protected
+    Expression body_subst, elem;
+    ComponentRef iter_cref;
+    list<Expression> elems = {};
+    UnorderedMap<ComponentRef, Expression> replacements;
+    list<Integer> range_vals;
+  algorithm
+    _ := match e
+      local
+        Call ctor;
+        InstNode iter_node;
+        Expression range_exp;
+        Integer n_start, n_stop, n_step;
+
+      case Expression.CALL(call = ctor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        // Only handle single-iterator constructors
+        if listLength(ctor.iters) <> 1 then return; end if;
+        // Extract the single iterator and its range expression
+        _ := match ctor.iters
+          case {(iter_node, range_exp)} then ();
+          else algorithm return; then ();
+        end match;
+
+        // Extract concrete integer values from the range expression.
+        // Match range_exp directly first (it's already literal in the common case);
+        // fall back to Ceval only if the bounds are not yet literal integers.
+        range_vals := match range_exp
+          case Expression.RANGE(start = Expression.INTEGER(value = n_start), step = NONE(), stop = Expression.INTEGER(value = n_stop))
+            then List.intRange2(n_start, n_stop);
+          case Expression.RANGE(start = Expression.INTEGER(value = n_start), step = SOME(Expression.INTEGER(value = n_step)), stop = Expression.INTEGER(value = n_stop))
+            then List.intRange3(n_start, n_step, n_stop);
+          else
+            match Ceval.tryEvalExp(range_exp)
+              case Expression.RANGE(start = Expression.INTEGER(value = n_start), step = NONE(), stop = Expression.INTEGER(value = n_stop))
+                then List.intRange2(n_start, n_stop);
+              case Expression.RANGE(start = Expression.INTEGER(value = n_start), step = SOME(Expression.INTEGER(value = n_step)), stop = Expression.INTEGER(value = n_stop))
+                then List.intRange3(n_start, n_step, n_stop);
+              else {};
+            end match;
+        end match;
+        if listEmpty(range_vals) then return; end if;
+
+        iter_cref := ComponentRef.fromNode(iter_node, InstNode.getType(iter_node));
+        for v in range_vals loop
+          // Substitute the iterator wherever it appears (including inside subscripts
+          // of component-path CREFs) with the concrete integer value
+          replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap.add(iter_cref, Expression.INTEGER(v), replacements);
+          body_subst := Expression.map(ctor.exp, function Replacements.applySimpleExp(replacements = replacements));
+          // Ceval can now look up concrete CREFs like stack.module[1].X_start via NF instance tree
+          elem := Ceval.tryEvalExp(body_subst);
+          if not Expression.isLiteralXML(elem) then
+            return;
+          end if;
+          elems := elem :: elems;
+        end for;
+        result := SOME(Expression.ARRAY(ctor.ty, listArray(listReverse(elems)), true));
+      then ();
+      else ();
+    end match;
+  end tryEvalArrayConstructor;
 
   function createStartExpressionSlice
     input Expression exp;
@@ -553,7 +643,7 @@ public
           ((old_iter, _), (new_iter, _, _)) := tpl;
           UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
         end for;
-      then (Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements)), iterator);
+      then (Expression.map(Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements)), dropStartPrefix), iterator);
 
       // use the start attribute itself
       else algorithm
@@ -568,6 +658,18 @@ public
       then (start_exp, iterator);
     end match;
   end createStartExpressionSlice;
+
+  protected function dropStartPrefix
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF()
+        then if ComponentRef.firstName(exp.cref) == "$START" then
+          Expression.CREF(exp.ty, ComponentRef.rest(exp.cref))
+        else exp;
+      else exp;
+    end match;
+  end dropStartPrefix;
 
   function createStartVariableSlice
     input Slice<VariablePointer> var_slice;
@@ -619,6 +721,399 @@ public
     // create start variable name with subscripts and create start expression
     (var_ptr, name, start_var, start_cref) := createStartVar(var_ptr, name, subscripts);
   end createIteratedStartCref;
+
+  function createDerivedStartEquations
+    "Creates $START equations for variables that have no start attribute but whose
+     defining equation can be evaluated from already-known $START values.
+     Gives the NLS solver a physically consistent warm-start and prevents
+     division-by-zero in the analytical Jacobian."
+    input output VariablePointers variables;
+    input output VariablePointers initialVars;
+    input output EquationPointers equations;
+    input output EquationPointers initialEqs;
+    input Pointer<Integer> idx;
+  protected
+    Pointer<list<Pointer<Variable>>> ptr_new_vars = Pointer.create({});
+    Pointer<list<Pointer<Equation>>> ptr_new_eqs  = Pointer.create({});
+    list<Pointer<Equation>> new_eqs;
+  algorithm
+    EquationPointers.mapPtr(initialEqs, function tryDeriveStart(
+      ptr_new_vars = ptr_new_vars, ptr_new_eqs = ptr_new_eqs, idx = idx));
+    new_eqs := Pointer.access(ptr_new_eqs);
+    if not listEmpty(new_eqs) then
+      // Only add to init variables, not simulation variables (same pattern as unfixed $START vars)
+      initialVars := BVariable.VariablePointers.addList(Pointer.access(ptr_new_vars), initialVars);
+      // Add equations to both sets (same pattern as createStartEquations)
+      equations   := EquationPointers.addList(new_eqs, equations);
+      initialEqs  := EquationPointers.addList(new_eqs, initialEqs);
+      if Flags.isSet(Flags.INITIALIZATION) then
+        print(List.toStringCustom(new_eqs, function Equation.pointerToString(str = "\t"),
+          StringUtil.headline_4("Created Derived Start Equations (" + intString(listLength(new_eqs)) + "):"), "", "\n", "", false) + "\n\n");
+      end if;
+    end if;
+  end createDerivedStartEquations;
+
+  function tryDeriveStart
+    "Tries to create a $START equation from a given equation if the LHS is a
+     single CREF with no $START and all RHS variables have $START or are
+     parameters/constants/iterators."
+    input output Pointer<Equation> eqn_ptr;
+    input Pointer<list<Pointer<Variable>>> ptr_new_vars;
+    input Pointer<list<Pointer<Equation>>> ptr_new_eqs;
+    input Pointer<Integer> idx;
+  protected
+    Equation eqn = Pointer.access(eqn_ptr);
+    Expression rhs, start_rhs;
+    ComponentRef v_cref, start_cref;
+    Pointer<Variable> var_ptr, start_var;
+    Pointer<Equation> start_eq;
+    EquationKind kind;
+  algorithm
+    () := match eqn
+      // Top-level scalar: only derive $START when the LHS has no literal array subscripts
+      // (which would create a partial array $START variable with only one element assigned)
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = v_cref), rhs = rhs)
+        guard lhsSubscriptsAllIterators(v_cref) and
+              derivedStartEligible(v_cref, rhs)
+        algorithm
+          (start_cref, start_var) := BVariable.makeStartVar(v_cref);
+          start_rhs := Expression.map(rhs, substituteStartCref);
+          var_ptr := BVariable.getVarPointer(v_cref, sourceInfo());
+          kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+          start_eq := Equation.makeAssignment(Expression.fromCref(start_cref), start_rhs, idx,
+            NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+          Pointer.update(ptr_new_vars, start_var :: Pointer.access(ptr_new_vars));
+          Pointer.update(ptr_new_eqs, start_eq :: Pointer.access(ptr_new_eqs));
+        then ();
+
+      case Equation.FOR_EQUATION()
+        algorithm
+          tryDeriveStartForBody(eqn, ptr_new_vars, ptr_new_eqs, idx);
+        then ();
+
+      else ();
+    end match;
+  end tryDeriveStart;
+
+  function tryDeriveStartForBody
+    "Processes a FOR_EQUATION body, creating derived $START equations for
+     eligible body equations. Handles nested FOR_EQUATIONs by accumulating
+     the merged iterator. Only processes fully-indexed arrays (all subscripts
+     in the LHS are iterator CREFs)."
+    input Equation for_eqn;
+    input Pointer<list<Pointer<Variable>>> ptr_new_vars;
+    input Pointer<list<Pointer<Equation>>> ptr_new_eqs;
+    input Pointer<Integer> idx;
+  protected
+    Iterator iter;
+    list<Equation> body;
+  algorithm
+    Equation.FOR_EQUATION(iter = iter, body = body) := for_eqn;
+    tryDeriveStartBodyRecursive(iter, body, ptr_new_vars, ptr_new_eqs, idx);
+  end tryDeriveStartForBody;
+
+  function tryDeriveStartBodyRecursive
+    "Recursively processes FOR_EQUATION bodies with accumulated iterator.
+     Only creates derived $START equations when all LHS subscripts are iterator
+     CREFs, ensuring full array coverage."
+    input Iterator accum_iter;
+    input list<Equation> body;
+    input Pointer<list<Pointer<Variable>>> ptr_new_vars;
+    input Pointer<list<Pointer<Equation>>> ptr_new_eqs;
+    input Pointer<Integer> idx;
+  protected
+    Iterator inner_iter;
+    Expression rhs, start_rhs;
+    ComponentRef v_cref, v_base, start_cref;
+    Pointer<Variable> var_ptr, start_var;
+    Pointer<Equation> start_eq;
+    EquationKind kind;
+  algorithm
+    for body_eqn in body loop
+      () := match body_eqn
+        // Nested FOR: recurse with merged iterator
+        case Equation.FOR_EQUATION(iter = inner_iter)
+          algorithm
+            tryDeriveStartBodyRecursive(
+              Iterator.merge({accum_iter, inner_iter}),
+              body_eqn.body, ptr_new_vars, ptr_new_eqs, idx);
+          then ();
+
+        // SCALAR_EQUATION inside FOR: check all LHS subscripts are iterators
+        // and that each iterator range covers the full declared dimension
+        // (prevents partial-array $START from loops like for $i1 in 1:3 over Real[4])
+        case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = v_cref), rhs = rhs)
+          guard lhsSubscriptsAllIterators(v_cref) and
+                lhsLeafCoversFull(v_cref, accum_iter) and
+                derivedStartEligible(ComponentRef.stripSubscriptsAll(v_cref), rhs)
+          algorithm
+            (start_cref, start_var) := BVariable.makeStartVar(v_cref);
+            start_rhs := Expression.map(rhs, substituteStartCref);
+            v_base := ComponentRef.stripSubscriptsAll(v_cref);
+            var_ptr := BVariable.getVarPointer(v_base, sourceInfo());
+            kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+            start_eq := Equation.makeAssignment(Expression.fromCref(start_cref), start_rhs, idx,
+              NBEquation.START_STR, accum_iter, EquationAttributes.default(kind, true));
+            Pointer.update(ptr_new_vars, start_var :: Pointer.access(ptr_new_vars));
+            Pointer.update(ptr_new_eqs, start_eq :: Pointer.access(ptr_new_eqs));
+          then ();
+
+        // ARRAY_EQUATION inside FOR: same check
+        case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = v_cref), rhs = rhs)
+          guard lhsSubscriptsAllIterators(v_cref) and
+                lhsLeafCoversFull(v_cref, accum_iter) and
+                derivedStartEligible(ComponentRef.stripSubscriptsAll(v_cref), rhs)
+          algorithm
+            (start_cref, start_var) := BVariable.makeStartVar(v_cref);
+            start_rhs := Expression.map(rhs, substituteStartCref);
+            v_base := ComponentRef.stripSubscriptsAll(v_cref);
+            var_ptr := BVariable.getVarPointer(v_base, sourceInfo());
+            kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+            start_eq := Equation.makeAssignment(Expression.fromCref(start_cref, true), start_rhs, idx,
+              NBEquation.START_STR, accum_iter, EquationAttributes.default(kind, true));
+            Pointer.update(ptr_new_vars, start_var :: Pointer.access(ptr_new_vars));
+            Pointer.update(ptr_new_eqs, start_eq :: Pointer.access(ptr_new_eqs));
+          then ();
+
+        else ();
+      end match;
+    end for;
+  end tryDeriveStartBodyRecursive;
+
+  function lhsSubscriptsAllIterators
+    "Returns true if all subscripts in the fully-qualified cref are iterator
+     variable CREFs or WHOLE (:). Used to ensure a FOR body equation covers
+     the full target array (not a partial fixed-index slice).
+     Note: idx_expr is bound from sub.index so MetaModelica can narrow its type
+     in the inner match (sub.index.cref is not valid since sub.index : Expression)."
+    input ComponentRef cref;
+    output Boolean result = true;
+  protected
+    Pointer<Variable> var_ptr;
+    Expression idx_expr;
+  algorithm
+    for sub in ComponentRef.subscriptsAllFlat(cref) loop
+      () := match sub
+        case Subscript.WHOLE() then ();
+        case Subscript.INDEX()
+          algorithm
+            idx_expr := sub.index;
+            () := match idx_expr
+              case Expression.CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE()))
+                algorithm
+                  var_ptr := BVariable.getVarPointer(idx_expr.cref, sourceInfo());
+                  result := BVariable.isIterator(var_ptr);
+                then ();
+              else
+                algorithm
+                  result := false;
+                then ();
+            end match;
+          then ();
+        else
+          algorithm
+            result := false;
+          then ();
+      end match;
+      if not result then
+        return;
+      end if;
+    end for;
+  end lhsSubscriptsAllIterators;
+
+  function lhsLeafCoversFull
+    "Returns true if every iterator subscript in v_cref covers the full
+     declared dimension of its node. Prevents partial-array $START variables
+     when a FOR loop range (e.g. 1:3) is smaller than the declared size (e.g. 4)."
+    input ComponentRef v_cref;
+    input Iterator accum_iter;
+    output Boolean result = true;
+  protected
+    list<ComponentRef> iter_names;
+    list<Expression> iter_ranges;
+    list<Option<Iterator>> iter_maps;
+  algorithm
+    (iter_names, iter_ranges, iter_maps) := Iterator.getFrames(accum_iter);
+    result := crefCoversFullDims(v_cref, iter_names, iter_ranges);
+  end lhsLeafCoversFull;
+
+  function crefCoversFullDims
+    "Walks the CREF chain and for each node with subscripts checks that
+     each iterator subscript range covers the full declared dimension."
+    input ComponentRef v_cref;
+    input list<ComponentRef> iter_names;
+    input list<Expression> iter_ranges;
+    output Boolean result = true;
+  protected
+    InstNode cur_node;
+    list<Subscript> cur_subs;
+    ComponentRef cur_rest;
+    Type node_ty;
+    list<Dimension> dims;
+    Subscript sub;
+    Dimension dim;
+    Expression idx_expr;
+    Integer n, dim_sz, range_sz;
+  algorithm
+    () := match v_cref
+      case ComponentRef.CREF(node = cur_node, subscripts = cur_subs, restCref = cur_rest)
+        algorithm
+          node_ty := InstNode.getType(cur_node);
+          dims := Type.arrayDims(node_ty);
+          n := min(listLength(cur_subs), listLength(dims));
+          for i in 1:n loop
+            sub := listGet(cur_subs, i);
+            dim := listGet(dims, i);
+            () := match sub
+              case Subscript.INDEX()
+                algorithm
+                  idx_expr := sub.index;
+                  () := match idx_expr
+                    case Expression.CREF()
+                      algorithm
+                        try
+                          dim_sz := Dimension.size(dim, false);
+                          range_sz := iterRangeSizeByName(idx_expr.cref, iter_names, iter_ranges);
+                          if range_sz > 0 and range_sz <> dim_sz then
+                            result := false;
+                          end if;
+                        else
+                          result := false;
+                        end try;
+                      then ();
+                    else ();
+                  end match;
+                then ();
+              case Subscript.WHOLE() then ();
+              else ();
+            end match;
+            if not result then return; end if;
+          end for;
+          if result then
+            result := crefCoversFullDims(cur_rest, iter_names, iter_ranges);
+          end if;
+        then ();
+      else ();
+    end match;
+  end crefCoversFullDims;
+
+  function iterRangeSizeByName
+    "Returns the range size for a given iterator name cref, or 0 if not found."
+    input ComponentRef iter_name;
+    input list<ComponentRef> frame_names;
+    input list<Expression> frame_ranges;
+    output Integer sz = 0;
+  protected
+    ComponentRef name;
+    Expression range;
+  algorithm
+    for tpl in List.zip(frame_names, frame_ranges) loop
+      (name, range) := tpl;
+      if ComponentRef.isEqual(name, iter_name) then
+        sz := Expression.rangeSize(range, false);
+        return;
+      end if;
+    end for;
+  end iterRangeSizeByName;
+
+  function derivedStartEligible
+    "Returns true if a derived $START equation can be created:
+     the LHS has no $START yet, is not a parameter, all non-parameter /
+     non-iterator CREFs in the RHS already have $START variables,
+     and the LHS is not a field of a record (which would confuse adjacency)."
+    input ComponentRef v_cref;
+    input Expression rhs;
+    output Boolean eligible;
+  protected
+    Pointer<Variable> var_ptr;
+    Pointer<Boolean> ok = Pointer.create(true);
+  algorithm
+    var_ptr := BVariable.getVarPointer(v_cref, sourceInfo());
+    eligible :=
+      not BVariable.isParamOrConst(var_ptr) and
+      not BVariable.isDummyVariable(var_ptr) and
+      not isSome(BVariable.getVarStart(var_ptr)) and
+      not lhsParentIsRecord(v_cref);
+    if eligible then
+      Expression.map(rhs, function checkCrefHasStart(ok = ok));
+      eligible := Pointer.access(ok);
+    end if;
+  end derivedStartEligible;
+
+  function lhsParentIsRecord
+    "Returns true if the immediate parent component of v_cref in the CREF chain
+     is a record type. Scalar $START variables for individual record fields
+     confuse the adjacency matrix record handling, so we skip them."
+    input ComponentRef v_cref;
+    output Boolean result = false;
+  protected
+    InstNode parent_node;
+    Type parent_ty;
+  algorithm
+    () := match v_cref
+      case ComponentRef.CREF(restCref = ComponentRef.CREF(node = parent_node))
+        algorithm
+          parent_ty := InstNode.getType(parent_node);
+          result := Type.isRecord(parent_ty);
+        then ();
+      else ();
+    end match;
+  end lhsParentIsRecord;
+
+  function checkCrefHasStart
+    "Mapped over expressions: sets ok to false if any variable CREF lacks a $START."
+    input output Expression exp;
+    input Pointer<Boolean> ok;
+  protected
+    Pointer<Variable> var_ptr;
+  algorithm
+    () := match exp
+      case Expression.CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE()))
+        algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          if not BVariable.isParamOrConst(var_ptr) and
+             not BVariable.isIterator(var_ptr) and
+             not BVariable.isDummyVariable(var_ptr) and
+             not isSome(BVariable.getVarStart(var_ptr))
+          then
+            Pointer.update(ok, false);
+          end if;
+        then ();
+      else ();
+    end match;
+  end checkCrefHasStart;
+
+  function substituteStartCref
+    "Replaces non-parameter, non-iterator variable CREFs with their $START versions.
+     Intended to be called via Expression.map()."
+    input output Expression exp;
+  protected
+    Pointer<Variable> var_ptr;
+    Option<Pointer<Variable>> start_opt;
+    ComponentRef start_cref;
+  algorithm
+    exp := match exp
+      local
+        Expression result;
+      case Expression.CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE()))
+        algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          result := exp;
+          if not BVariable.isParamOrConst(var_ptr) and
+             not BVariable.isIterator(var_ptr) and
+             not BVariable.isDummyVariable(var_ptr)
+          then
+            start_opt := BVariable.getVarStart(var_ptr);
+            if isSome(start_opt) then
+              start_cref := BVariable.getVarName(Util.getOption(start_opt));
+              start_cref := ComponentRef.copySubscripts(exp.cref, start_cref);
+              result := Expression.fromCref(start_cref);
+            end if;
+          end if;
+        then result;
+      else exp;
+    end match;
+  end substituteStartCref;
 
   public function createPreEquation
     "creates d = $PRE.d equations"
