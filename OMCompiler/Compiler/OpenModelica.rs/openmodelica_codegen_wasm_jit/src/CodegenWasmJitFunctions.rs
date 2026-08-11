@@ -4727,6 +4727,18 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
     Ok(())
 }
 
+/// [`sim_cref_key`] for the call sites with no fallback left: it names the cref in
+/// a recorded message. The callers that recover must not record one.
+fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
+    sim_cref_key(cr).map_err(|e| {
+        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(Arc::new(cr.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"));
+        e
+    })
+}
+
 fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Result<()> {
     for sub in &**subs {
         match &**sub {
@@ -4741,9 +4753,9 @@ fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Resul
                     s.push_str(&index.to_string());
                     s.push(']');
                 }
-                other => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
+                _ => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
             },
-            other => return Err("CodegenWasmJit: unsupported subscript in simulation cref"),
+            _ => return Err("CodegenWasmJit: unsupported subscript in simulation cref"),
         }
     }
     Ok(())
@@ -5121,7 +5133,7 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     // resolve the element address at run time instead of via a static slot key.
     if let Some((base, sub_exps)) = array_ref_of(cref)? {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
-            if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
                 let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?;
                 match wty {
                     WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
@@ -5149,7 +5161,7 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
         }
     }
-    let key = sim_cref_key(cref)?;
+    let key = sim_cref_key_fatal(cref)?;
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
         None => {
@@ -5256,7 +5268,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     // Array element with a non-constant subscript: store to the run-time address.
     if let Some((base, sub_exps)) = array_ref_of(cref)? {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
-            if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
                 let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?; // [addr]
                 let rw = rhs.push(ctx)?;
                 coerce(ctx, rw, wty);
@@ -5275,7 +5287,21 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
             return Ok(true);
         }
     }
-    let key = sim_cref_key(cref)?;
+    // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
+    // to a gathered copy of the whole array and scatter that back.
+    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if !is_scalar_index(&subs, group.dims.len() as u32) {
+                let arr = ctx.alloc_temp(WTy::I32);
+                emit_sim_array_gather(ctx, &group)?;
+                ctx.emit(we::Instruction::LocalSet(arr));
+                compile_slice_assign(ctx, arr, &subs, rhs)?;
+                emit_sim_array_scatter(ctx, &group, RhsSource::Temp { local: arr, wty: WTy::I32 })?;
+                return Ok(true);
+            }
+        }
+    }
+    let key = sim_cref_key_fatal(cref)?;
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
         None => {
@@ -5352,6 +5378,13 @@ pub(crate) fn sim_const_store(
     }
     if sim_slice_of(cref)?.is_some() {
         return Ok(None);
+    }
+    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+        if let Some(group) = sim.array_groups.get(&base) {
+            if !is_scalar_index(&subs, group.dims.len() as u32) {
+                return Ok(None);
+            }
+        }
     }
     let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
     if slot.negate || slot.heap {
