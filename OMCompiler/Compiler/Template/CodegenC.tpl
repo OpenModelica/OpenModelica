@@ -3512,12 +3512,22 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           >>
+      case SIMVAR(type_=T_INTEGER(__))
+      case SIMVAR(type_=T_ENUMERATION(__)) then
+        <<
+        <%cComment%>
+        /* Integer iteration variable: nominal is a Real-only attribute, use neutral scaling. */
+        sysData->nominal[i] = 1.0;
+        sysData->min[i]     = <%crefAttributes(cr)%>.min;
+        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        >>
       else
         <<
         <%cComment%>
-        sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
-        sysData->min[i]     = <%crefAttributes(cr)%>.min;
-        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        /* iteration variable without nominal/min/max attributes: use defaults */
+        sysData->nominal[i] = 1.0;
+        sysData->min[i]     = -DBL_MAX;
+        sysData->max[i++]   = DBL_MAX;
         >>
 
   ;separator="\n")
