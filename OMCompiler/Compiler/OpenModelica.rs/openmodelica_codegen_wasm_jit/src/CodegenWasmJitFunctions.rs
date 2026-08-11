@@ -3184,6 +3184,51 @@ fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &Arc<List<Arc<DAE::Exp>
     emit_record_construction(ctx, &fields, &field_exps)
 }
 
+/// A `METARECORDCALL` carries no `T_COMPLEX`, so its layout comes from the
+/// module's record declarations.
+fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    let Some(declared) = record_decl_fields(&path_str) else {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: boxed record constructor for undeclared record `{path_str}`"
+        ));
+        return Err("CodegenWasmJit: boxed record constructor for an undeclared record");
+    };
+    let mut fields = Vec::with_capacity(declared.len());
+    for (name, ty) in declared.iter() {
+        fields.push((name.clone(), sig_ty(ty)?));
+    }
+    Ok(SigTy::Record { path: path_str, fields: Arc::new(fields) })
+}
+
+/// The boxed record constructor the frontend emits instead of `E::RECORD` for a
+/// record captured by a function reference (C: `mmc_mk_boxN(index, &R__desc,
+/// args…)`). Our closures hold values unboxed, so it builds a plain record.
+fn compile_metarecord(
+    ctx: &mut FnCtx,
+    path: &Arc<Absyn::Path>,
+    args: &Arc<List<Arc<DAE::Exp>>>,
+    fieldNames: &Arc<List<ArcStr>>,
+) -> Result<()> {
+    let SigTy::Record { fields, .. } = metarecord_sigty(path)? else {
+        return Err("CodegenWasmJit: boxed record constructor with non-record type");
+    };
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let namev: Vec<&ArcStr> = (&**fieldNames).into_iter().collect();
+    if argv.len() != fields.len() || namev.len() != argv.len() {
+        return Err("CodegenWasmJit: boxed record constructor arity mismatch");
+    }
+    let mut field_exps = Vec::with_capacity(fields.len());
+    for (fname, _) in fields.iter() {
+        let pos = namev
+            .iter()
+            .position(|n| n.as_str() == fname.as_str())
+            .ok_or_else(|| "CodegenWasmJit: boxed record constructor missing field")?;
+        field_exps.push(argv[pos]);
+    }
+    emit_record_construction(ctx, &fields, &field_exps)
+}
+
 /// A record-constructor *call* `R(v1, v2, …)` (a `CALL` whose result is a record
 /// and which is not a generated function): the positional arguments are the
 /// fields in declaration order.
@@ -4291,9 +4336,11 @@ fn emit_red_nest(
 /// locals — so the same mechanism covers all four. The `array(...)`
 /// comprehension (`foldExp` absent — `{expr for i in A, j in B}`) builds a fresh
 /// array: its dimensions are the iterator counts in reverse order (the last
-/// iterator is the outermost), filled row-major. Per-iterator `guardExp`s are
-/// honored in the folding forms (a guarded array comprehension — a MetaModelica
-/// list form — and non-scalar/heap elements bail loudly).
+/// iterator is the outermost), filled row-major. An array-valued body flattens
+/// into extra trailing dimensions ([`compile_array_comprehension_flat`]) and a
+/// heap accumulator folds from the first value ([`compile_fold_heap`]).
+/// Per-iterator `guardExp`s are honored in the folding forms; a guarded array
+/// comprehension — a MetaModelica list form — bails loudly.
 fn compile_reduction(
     ctx: &mut FnCtx,
     info: &DAE::ReductionInfo,
@@ -4306,10 +4353,10 @@ fn compile_reduction(
     }
 
     if let Some(fold) = &info.foldExp {
-        // Folding reduction. `info.exprType` is the (scalar) accumulator type.
+        // Folding reduction. `info.exprType` is the accumulator type.
         let elem_sty = sig_ty(&info.exprType)?;
         if elem_sty.is_heap() {
-            return Err("CodegenWasmJit: non-scalar reduction result not supported");
+            return compile_fold_heap(ctx, info, fold, expr, &iters, elem_sty);
         }
         let elem_wty = elem_sty.wty();
         let Some(default) = &info.defaultValue else {
@@ -4340,8 +4387,8 @@ fn compile_reduction(
         return Err("CodegenWasmJit: guarded array comprehension not supported");
     }
     let elem_sty = exp_sigty(expr)?;
-    if elem_sty.is_heap() {
-        return Err("CodegenWasmJit: array comprehension with non-scalar elements not supported");
+    if let SigTy::Array { elem: base, rank: erank } = &elem_sty {
+        return compile_array_comprehension_flat(ctx, expr, &iters, base, *erank);
     }
     let elem_wty = elem_sty.wty();
     let n = iters.len() as u32;
@@ -4402,6 +4449,181 @@ fn compile_reduction(
         Ok(())
     })?;
     ctx.emit(we::Instruction::LocalGet(res));
+    Ok(WTy::I32)
+}
+
+/// A folding reduction whose accumulator is a heap value (`sum(v .^ i for i in
+/// 3:N)` over vectors). C's `daeExpReduction` has no scalar default for these, so
+/// it starts from the first value and throws on an empty range.
+fn compile_fold_heap(
+    ctx: &mut FnCtx,
+    info: &DAE::ReductionInfo,
+    fold: &DAE::Exp,
+    expr: &DAE::Exp,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    elem_sty: SigTy,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let release_fn = elem_sty
+        .release_fn()
+        .ok_or("CodegenWasmJit: heap reduction accumulator without a release entry point")?;
+    let acc = ctx.alloc_temp(WTy::I32);
+    let foldval = ctx.alloc_temp(WTy::I32);
+    let found = ctx.alloc_temp(WTy::I32);
+    // Registered only for this reduction: left in `ctx.locals`, the function
+    // epilogue would release the accumulator we hand back as an owned value.
+    let res_name = info.resultName.to_string();
+    let fold_name = info.foldName.to_string();
+    let prev_res = ctx.locals.insert(res_name.clone(), (acc, elem_sty.clone()));
+    let prev_fold = ctx.locals.insert(fold_name.clone(), (foldval, elem_sty.clone()));
+    for l in [acc, foldval, found] {
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::LocalSet(l));
+    }
+    emit_red_nest(ctx, iters, &mut |ctx| {
+        let nv = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, expr)?; // owned element
+        ctx.emit(I::LocalSet(nv));
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::Call(rt_index(release_fn)?));
+        ctx.emit(I::LocalGet(nv));
+        ctx.emit(I::LocalSet(foldval));
+        ctx.emit(I::LocalGet(found));
+        ctx.emit(I::If(we::BlockType::Empty));
+        let folded = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, fold)?; // owned; reads both locals retained
+        ctx.emit(I::LocalSet(folded));
+        ctx.emit(I::LocalGet(acc));
+        ctx.emit(I::Call(rt_index(release_fn)?));
+        ctx.emit(I::LocalGet(folded));
+        ctx.emit(I::LocalSet(acc));
+        ctx.emit(I::Else);
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::Call(rt_index("rt_retain")?));
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::LocalSet(acc));
+        ctx.emit(I::I32Const(1));
+        ctx.emit(I::LocalSet(found));
+        ctx.emit(I::End);
+        Ok(())
+    })?;
+    ctx.emit(I::LocalGet(found));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_runtime_error(ctx, "Reduction over an empty range has no value")?;
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(foldval));
+    ctx.emit(I::Call(rt_index(release_fn)?));
+    match prev_res {
+        Some(v) => ctx.locals.insert(res_name, v),
+        None => ctx.locals.remove(&res_name),
+    };
+    match prev_fold {
+        Some(v) => ctx.locals.insert(fold_name, v),
+        None => ctx.locals.remove(&fold_name),
+    };
+    ctx.emit(I::LocalGet(acc));
+    Ok(WTy::I32)
+}
+
+/// An `array(...)` comprehension whose body is itself an array: one flat array of
+/// rank `iterators + erank`, leading axes the iterator counts (last iterator
+/// outermost) and trailing ones the body's own — C's `alloc_<t>(&res, 1 + |dims|,
+/// length, dims…)`. C takes those trailing dims from the body's type and bails
+/// when they are not resolvable; they are read off the first value here.
+fn compile_array_comprehension_flat(
+    ctx: &mut FnCtx,
+    expr: &DAE::Exp,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    base: &SigTy,
+    erank: u32,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let n = iters.len() as u32;
+    let mut counts = Vec::with_capacity(iters.len());
+    for it in iters {
+        let DAE::Exp::RANGE { start, step, stop, .. } = &*it.exp else {
+            return Err("CodegenWasmJit: array comprehension over a non-range iterator not supported");
+        };
+        counts.push(emit_range_count(ctx, start, step, stop)?);
+    }
+    let outer = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::LocalSet(outer));
+    for c in &counts {
+        ctx.emit(I::LocalGet(outer));
+        ctx.emit(I::LocalGet(*c));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::LocalSet(outer));
+    }
+    let res = ctx.alloc_temp(WTy::I32);
+    let idx = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(res));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(idx));
+    let kind = base.elem_kind() as i32;
+    let set_outer_dims = |ctx: &mut FnCtx| -> Result<()> {
+        for d in 0..n {
+            ctx.emit(I::LocalGet(res));
+            ctx.emit(I::I32Const(d as i32));
+            ctx.emit(I::LocalGet(counts[(n - 1 - d) as usize]));
+            ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+        }
+        Ok(())
+    };
+    let rev: Vec<&Arc<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
+    emit_red_nest(ctx, &rev, &mut |ctx| {
+        let h = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, expr)?; // owned element array
+        ctx.emit(I::LocalSet(h));
+        ctx.emit(I::LocalGet(res));
+        ctx.emit(I::I32Eqz);
+        ctx.emit(I::If(we::BlockType::Empty));
+        ctx.emit(I::I32Const(kind));
+        ctx.emit(I::I32Const((n + erank) as i32));
+        ctx.emit(I::LocalGet(outer));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::Call(rt_index("rt_array_new")?));
+        ctx.emit(I::LocalSet(res));
+        set_outer_dims(ctx)?;
+        for k in 0..erank {
+            ctx.emit(I::LocalGet(res));
+            ctx.emit(I::I32Const((n + k) as i32)); // rt_array_set_dim: 0-based
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::I32Const((k + 1) as i32)); // rt_array_dim: 1-based
+            ctx.emit(I::Call(rt_index("rt_array_dim")?));
+            ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+        }
+        ctx.emit(I::End);
+        ctx.emit(I::LocalGet(res));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::Call(rt_index("rt_array_blit")?));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::Call(rt_index("rt_array_release")?));
+        Ok(())
+    })?;
+    // An empty range produced no value to take the body's shape from; the result
+    // is empty either way, so those axes stay zero.
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::I32Const(kind));
+    ctx.emit(I::I32Const((n + erank) as i32));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::Call(rt_index("rt_array_new")?));
+    ctx.emit(I::LocalSet(res));
+    set_outer_dims(ctx)?;
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(res));
     Ok(WTy::I32)
 }
 
@@ -5620,6 +5842,10 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             compile_record(ctx, ty, exps, comp)?;
             Ok(WTy::I32)
         }
+        E::METARECORDCALL { path, args, fieldNames, .. } => {
+            compile_metarecord(ctx, path, args, fieldNames)?;
+            Ok(WTy::I32)
+        }
         // Record field access on an expression result: `f().field`.
         E::RSUB { exp, fieldName, .. } => compile_rsub(ctx, exp, fieldName),
         E::REDUCTION { reductionInfo, expr, iterators } => {
@@ -5662,7 +5888,65 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             closures::compile_parteval(ctx, exp)?;
             Ok(WTy::I32)
         }
-        other => return Err("CodegenWasmJit: expression not yet supported"),
+        other => return Err(unsupported_exp(other)),
+    }
+}
+
+/// Name the expression we could not lower in a recorded message; the `Result`
+/// error is a `&'static str`.
+fn unsupported_exp(exp: &DAE::Exp) -> &'static str {
+    let shown = openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(exp.clone()))
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: expression not yet supported: `{shown}` ({})",
+        exp_variant_name(exp)
+    ));
+    "CodegenWasmJit: expression not yet supported"
+}
+
+/// The `DAE.Exp` constructor name, for diagnostics.
+fn exp_variant_name(exp: &DAE::Exp) -> &'static str {
+    use DAE::Exp as E;
+    match exp {
+        E::ICONST { .. } => "ICONST",
+        E::RCONST { .. } => "RCONST",
+        E::SCONST { .. } => "SCONST",
+        E::BCONST { .. } => "BCONST",
+        E::CLKCONST { .. } => "CLKCONST",
+        E::ENUM_LITERAL { .. } => "ENUM_LITERAL",
+        E::CREF { .. } => "CREF",
+        E::BINARY { .. } => "BINARY",
+        E::UNARY { .. } => "UNARY",
+        E::LBINARY { .. } => "LBINARY",
+        E::LUNARY { .. } => "LUNARY",
+        E::RELATION { .. } => "RELATION",
+        E::IFEXP { .. } => "IFEXP",
+        E::CALL { .. } => "CALL",
+        E::RECORD { .. } => "RECORD",
+        E::PARTEVALFUNCTION { .. } => "PARTEVALFUNCTION",
+        E::ARRAY { .. } => "ARRAY",
+        E::MATRIX { .. } => "MATRIX",
+        E::RANGE { .. } => "RANGE",
+        E::TUPLE { .. } => "TUPLE",
+        E::CAST { .. } => "CAST",
+        E::ASUB { .. } => "ASUB",
+        E::TSUB { .. } => "TSUB",
+        E::RSUB { .. } => "RSUB",
+        E::SIZE { .. } => "SIZE",
+        E::CODE { .. } => "CODE",
+        E::EMPTY { .. } => "EMPTY",
+        E::REDUCTION { .. } => "REDUCTION",
+        E::LIST { .. } => "LIST",
+        E::CONS { .. } => "CONS",
+        E::META_TUPLE { .. } => "META_TUPLE",
+        E::META_OPTION { .. } => "META_OPTION",
+        E::METARECORDCALL { .. } => "METARECORDCALL",
+        E::MATCHEXPRESSION { .. } => "MATCHEXPRESSION",
+        E::BOX { .. } => "BOX",
+        E::UNBOX { .. } => "UNBOX",
+        E::SHARED_LITERAL { .. } => "SHARED_LITERAL",
+        E::PATTERN { .. } => "PATTERN",
     }
 }
 
@@ -5826,6 +6110,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
         // A record constructor / field access carry their type directly.
         E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty_quiet(ty)?,
+        E::METARECORDCALL { path, .. } => metarecord_sigty(path)?,
         E::TSUB { ty, .. } => sig_ty_quiet(ty)?,
         // A function reference: what the value it produces may be called with.
         E::PARTEVALFUNCTION { ty, .. } => closures::reference_sigty(ty)?,

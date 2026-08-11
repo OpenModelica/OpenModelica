@@ -1608,7 +1608,10 @@ pub fn emit_terminal_row(
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
     write_i32(e, sim_data + layout.terminal_off, 1)?;
-    let updated = iterate_discrete(e, sim_data, layout);
+    // A discrete call, so relations are live (C's `updateDiscreteSystem`
+    // prologue): a condition that only becomes true at `stop` flips here.
+    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    let updated = refresh_relations(e, sim_data, layout).and_then(|_| iterate_discrete(e, sim_data, layout));
     write_i32(e, sim_data + layout.terminal_off, 0)?;
     updated?;
     check_nls(e, sim_data, layout)?;
