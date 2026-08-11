@@ -4729,13 +4729,13 @@ protected
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-  // platforms={"wasm"} routes to the fmi-ls-wasm component export, and so does
-  // the wasm simCodeTarget on its own — there is no C to package either way.
+  // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
+  // is the C export's business even under the wasm simCodeTarget.
+  Boolean wasmRequested = listMember("wasm", platforms);
+  Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
+  Boolean isWasmFMU = (wasmRequested or wasmTarget) and FMUVersion <> "1.0";
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
-  Boolean wasmRequested = listMember("wasm", platforms);
-  Boolean isWasmFMU = wasmRequested or Config.simCodeTarget() == "wasm-jit"
-                                    or Config.simCodeTarget() == "wasm";
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
 algorithm
   cache := inCache;
@@ -4751,6 +4751,11 @@ algorithm
   if not FMI.canExportFMU(FMUVersion, FMUType) then
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
+    return;
+  end if;
+  if wasmRequested and FMUVersion == "1.0" then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
   end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
@@ -4778,6 +4783,9 @@ algorithm
     FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
     // Every other entry names a native platform the FMU should also serve.
     FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(nativePlatforms, ","));
+  elseif wasmTarget then
+    // A browser omc has no C code generator and says so from there.
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "C");
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);

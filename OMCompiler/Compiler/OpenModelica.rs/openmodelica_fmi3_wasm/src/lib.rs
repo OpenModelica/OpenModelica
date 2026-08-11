@@ -54,6 +54,9 @@ unsafe extern "C" {
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn initSample(sim_data: u32);
+    fn functionInitSynchronous(sim_data: u32);
+    fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
+    fn functionEquationsSynchronous(sim_data: u32, idx: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
@@ -107,6 +110,16 @@ fn logger() -> &'static mut Logger {
 fn log_raw(status: Status, cat: u32, msg: &str) {
     let l = logger();
     fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+}
+
+/// [`Engine::call1`] was asked for a model function this adapter does not import.
+const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
+
+/// A runtime/driver failure. The FMI status alone tells the importer nothing, and
+/// C's FMUs report the reason through the logger, so say it before failing.
+fn err_status(msg: &str) -> Status {
+    fmi_log(Status::Error, CAT_ERROR, msg);
+    Status::Error
 }
 
 /// C's `FILTERED_LOG` / `isCategoryLogged`.
@@ -252,19 +265,31 @@ impl SimEngine for Engine {
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "initSample" => initSample(arg),
+                "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
-                _ => return Err("fmi3-me: unknown model function"),
+                _ => return Err(UNKNOWN_MODEL_FN),
             }
         }
         Ok(())
     }
-    // Importing `evaluateDAEResiduals` would leave every non-DAE model with an
-    // unresolved `model.*` import.
-    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> driver::Result<()> {
-        Err("fmi3-me: --daeMode models cannot be exported as an FMU")
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        unsafe {
+            match name {
+                driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
+                driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
+                // Importing `evaluateDAEResiduals` would leave every non-DAE model
+                // with an unresolved `model.*` import.
+                _ => return Err("fmi3-me: --daeMode models cannot be exported as an FMU"),
+            }
+        }
+        Ok(())
     }
+    /// A name this adapter does not import is a function the model does not have.
     fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        self.call1(name, arg)
+        match self.call1(name, arg) {
+            Err(UNKNOWN_MODEL_FN) => Ok(()),
+            r => r,
+        }
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
@@ -308,9 +333,8 @@ impl Vrs {
 struct MeState {
     sim_data: u32,
     layout: Layout,
-    /// The whole metadata blob: CS needs the solver settings, the state sets and
-    /// the Jacobian sparsity to build its driver, not just the layout.
-    #[cfg(feature = "cs")]
+    /// The whole metadata blob: the start state comes from it at instantiate, and
+    /// CS builds its driver from the solver settings, state sets and sparsity.
     meta: openmodelica_sim_meta::SimMeta,
     /// Built on exit-initialization-mode, once the model is initialized.
     #[cfg(feature = "cs")]
@@ -364,6 +388,14 @@ impl MeState {
         self.write_i32(off, h as i32);
         rt::rt_release(old);
     }
+    /// C's `fmi2Instantiate`/`fmi2Reset`: the `start` attributes, readable before
+    /// the importer leaves Initialization Mode. A failure here is left to the
+    /// initial solve, which is where it is reported.
+    fn seed_start_state(&self) {
+        let mut e = Engine;
+        let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
+    }
+
     /// Refresh algebraics/derivatives so getters report consistent values.
     fn eval(&self) {
         let mut e = Engine;
@@ -437,11 +469,10 @@ fn new_state() -> Option<MeState> {
     unsafe {
         core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
     }
-    Some(MeState {
+    let st = MeState {
         sim_data,
         layout,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
-        #[cfg(feature = "cs")]
         meta,
         #[cfg(feature = "cs")]
         cs: None,
@@ -452,7 +483,9 @@ fn new_state() -> Option<MeState> {
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
         samples: None,
-    })
+    };
+    st.seed_start_state();
+    Some(st)
 }
 
 /// The metadata blob the emitter embedded in the model module.
@@ -526,8 +559,8 @@ macro_rules! shared_instance_methods {
         let mut e = Engine;
         let start_time = st.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
-        if run_initialization(&mut e, st.sim_data, &st.layout, &[], start_time).is_err() {
-            return Status::Error;
+        if let Err(err) = run_initialization(&mut e, st.sim_data, &st.layout, &[], start_time) {
+            return err_status(err);
         }
         // Apply deferred String parameter sets now that init equations have run, so
         // they land in the slots last (mirrors the numeric init_overrides above).
@@ -581,18 +614,18 @@ macro_rules! shared_instance_methods {
             st.cs = Some(d);
             match r {
                 Ok(up) => up,
-                Err(_) => return Err(Status::Error),
+                Err(err) => return Err(err_status(err)),
             }
         } else {
             match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
                 Ok(up) => up,
-                Err(_) => return Err(Status::Error),
+                Err(err) => return Err(err_status(err)),
             }
         };
         #[cfg(not(feature = "cs"))]
         let up = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
             Ok(up) => up,
-            Err(_) => return Err(Status::Error),
+            Err(err) => return Err(err_status(err)),
         };
 
         Ok(DiscreteStatesInfo {
@@ -612,11 +645,24 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// Back to the instantiated state: what initialization and the steps after it
+    /// built goes with the `SimData` it was built over, or the next run continues
+    /// from the last one.
     fn reset(&self) -> Status {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
         unsafe {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
+        st.in_init = false;
+        st.init_overrides.clear();
+        st.init_start_overrides.clear();
+        st.init_string_overrides.clear();
+        st.samples = None;
+        #[cfg(feature = "cs")]
+        {
+            st.cs = None;
+        }
+        st.seed_start_state();
         Status::Ok
     }
 
@@ -1101,7 +1147,7 @@ impl GuestCoSimulationInstance for Instance {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             match CsDriver::new(&mut e, &meta, sim_data, t) {
                 Ok(d) => st.cs = Some(d),
-                Err(_) => return Err(Status::Error),
+                Err(e) => return Err(err_status(e)),
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
@@ -1132,7 +1178,7 @@ impl GuestCoSimulationInstance for Instance {
                 terminate_simulation: true,
                 early_return: false,
             }),
-            Err(_) => Err(Status::Error),
+            Err(e) => Err(err_status(e)),
         }
     }
 

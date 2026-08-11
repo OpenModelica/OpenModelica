@@ -1996,42 +1996,7 @@ impl<'a> FnCtx<'a> {
                 compile_assign(self, &lhs, value)?;
                 emit_reinit_note(self, stateVar)
             }
-            // `terminate(msg)`: request a clean early end of the simulation by
-            // raising the `SimData` terminate flag; the drivers poll it after each
-            // communication point and stop (writing results up to that row). The
-            // message and source position go to C's `TermMsg`/`TermInfo` slots.
-            W::TERMINATE { message, source } => {
-                let data = self.sim()?.data_local;
-                let off = self.sim()?.terminate_off;
-                let info_off = self.sim()?.term_info_off;
-                let info = &source.info;
-                let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
-                self.emit(we::Instruction::LocalGet(data));
-                let mw = compile_exp(self, message)?;
-                if mw != WTy::I32 {
-                    return Err("CodegenWasmJit: terminate message is not a String");
-                }
-                self.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
-                self.emit(we::Instruction::LocalGet(data));
-                emit_str_literal(self, file.as_bytes())?;
-                self.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
-                let pos = [
-                    info.lineNumberStart,
-                    info.columnNumberStart,
-                    info.lineNumberEnd,
-                    info.columnNumberEnd,
-                    info.isReadOnly as i32,
-                ];
-                for (i, v) in pos.iter().enumerate() {
-                    self.emit(we::Instruction::LocalGet(data));
-                    self.emit(we::Instruction::I32Const(*v));
-                    self.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
-                }
-                self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::I32Const(1));
-                self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
-                Ok(())
-            }
+            W::TERMINATE { message, source } => emit_terminate(self, message, source),
             W::ASSERT { condition, message, level, source } => emit_assert(self, condition, message, level, source),
             W::NORETCALL { exp, .. } => emit_noretcall(self, exp),
         }
@@ -3588,6 +3553,42 @@ fn emit_noretcall(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     Ok(())
 }
 
+/// `terminate(msg)`: raise the `SimData` terminate flag, which the drivers poll
+/// after each communication point, and fill C's `TermMsg`/`TermInfo` slots.
+/// Shared by `STMT_TERMINATE` and the `when`-body `TERMINATE`.
+fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::ElementSource) -> Result<()> {
+    let data = ctx.sim()?.data_local;
+    let off = ctx.sim()?.terminate_off;
+    let info_off = ctx.sim()?.term_info_off;
+    let info = &source.info;
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    ctx.emit(we::Instruction::LocalGet(data));
+    let mw = compile_exp(ctx, message)?;
+    if mw != WTy::I32 {
+        return Err("CodegenWasmJit: terminate message is not a String");
+    }
+    ctx.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
+    ctx.emit(we::Instruction::LocalGet(data));
+    emit_str_literal(ctx, file.as_bytes())?;
+    ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
+    let pos = [
+        info.lineNumberStart,
+        info.columnNumberStart,
+        info.lineNumberEnd,
+        info.columnNumberEnd,
+        info.isReadOnly as i32,
+    ];
+    for (i, v) in pos.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Const(*v));
+        ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
+    }
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+    Ok(())
+}
+
 /// C's `assertCommon`: `if (!cond) { rt_assert(msg, assert_cond, file, line/col…);
 /// unreachable }`, the host formatting the three as `omc_assert` does. A warning-level
 /// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
@@ -3860,6 +3861,16 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
         }
         S::STMT_NORETCALL { exp, .. } => emit_noretcall(ctx, exp),
         S::STMT_ASSERT { cond, msg, level, source } => emit_assert(ctx, cond, msg, level, source),
+        S::STMT_TERMINATE { msg, source } => emit_terminate(ctx, msg, source),
+        // `reinit` in an algorithm: the assignment plus the note that the
+        // `when`-body REINIT also leaves.
+        S::STMT_REINIT { var, value, .. } => {
+            let DAE::Exp::CREF { componentRef, .. } = &**var else {
+                return Err("CodegenWasmJit: reinit of something other than a variable");
+            };
+            compile_assign(ctx, var, value)?;
+            emit_reinit_note(ctx, componentRef)
+        }
         S::STMT_FOR { iter, range, statementLst, type_, .. } => compile_for(ctx, iter, range, statementLst, type_),
         S::STMT_BREAK { .. } => {
             let (brk, _) = *ctx

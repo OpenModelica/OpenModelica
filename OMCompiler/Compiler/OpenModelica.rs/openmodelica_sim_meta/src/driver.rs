@@ -1045,6 +1045,16 @@ pub fn format_g(v: f64, p: i32) -> String {
     trim(format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
 }
 
+/// C's `%e`: six decimals on the mantissa, a two-digit exponent.
+pub fn format_e(v: f64) -> String {
+    if !v.is_finite() {
+        return format!("{v}");
+    }
+    let exp = if v == 0.0 { 0 } else { libm::floor(libm::log10(libm::fabs(v))) as i32 };
+    let m = v / libm::pow(10.0, exp as f64);
+    format!("{m:.6}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
+}
+
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
 /// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
 /// block, once per site. Called by the drivers after each accepted output step.
@@ -1253,7 +1263,7 @@ pub fn run_initialization(
 ) -> Result<()> {
     init_model(e, sim_data, layout, inputs, start_time, None)?;
     signal_init_done();
-    Ok(())
+    terminate_at_init(e, sim_data, layout)
 }
 
 /// [`run_initialization`] where the caller has the metadata the `LOG_SOTI` dump
@@ -1261,6 +1271,16 @@ pub fn run_initialization(
 pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
     signal_init_done();
+    terminate_at_init(e, sim_data, &model.layout)
+}
+
+/// C asks after `initializeModel` reported success and before the main loop: a
+/// `terminate()` from an initial equation ends the run at `startTime`. The drivers
+/// see the same flag after the first output row and stop there.
+fn terminate_at_init(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if read_i32(e, sim_data + layout.terminate_off)? != 0 {
+        report_terminate(e, sim_data, layout, true)?;
+    }
     Ok(())
 }
 
@@ -1278,6 +1298,7 @@ pub fn run_initialization_with_clocks(
     sync.take_fired(e, model.start_time)?;
     log_event_status(e, sim_data, model, omclog::EVENTS)?;
     signal_init_done();
+    terminate_at_init(e, sim_data, &model.layout)?;
     Ok(sync)
 }
 
@@ -1379,6 +1400,17 @@ fn run_initialization_impl(
 /// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
 /// `updateBoundVariableAttributes`: every variable back at its start value with
 /// the bound parameters recomputed. Run before each attempt at the initial system.
+/// C's `fmi2Instantiate`/`fmi2Reset` run `setAllParamsToStart` +
+/// `setAllVarsToStart` there too, not only in `initializeModel`: a get before
+/// Initialization Mode is left must report the `start` attributes, and an equation
+/// over a zeroed `SimData` can produce a NaN instead.
+pub fn seed_start_state(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
+    // `functionInitDelay` before any equation function, as in `init_model`.
+    write_f64(e, sim_data + TIME_OFF, model.start_time)?;
+    e.call1_if_present("functionInitDelay", sim_data)?;
+    seed_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))
+}
+
 fn seed_start_values(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -1476,25 +1508,28 @@ fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bo
     if read_i32(e, sim_data + layout.terminate_off)? == 0 {
         return steady_state_reached(e, sim_data, layout);
     }
-    if term_report::mark() {
-        let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
-        let msg = read_rt_string(e, w(0)?)?;
-        let file = read_rt_string(e, w(1)?)?;
-        // C prints the source position raw (`printInfo`), outside the message system.
-        if !file.is_empty() {
-            let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-            log_line(&format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
-        }
-        omclog::info(
-            omclog::STDOUT,
-            false,
-            &format!(
-                "Simulation call terminate() at time {}\nMessage : {msg}",
-                format_f(read_f64(e, sim_data + TIME_OFF)?),
-            ),
-        );
-    }
+    report_terminate(e, sim_data, layout, false)?;
     Ok(true)
+}
+
+/// C's `checkSimulationTerminated` notice: the source position raw (`printInfo`,
+/// outside the message system) then the message, once per run. `at_init` picks
+/// the wording C uses before the main loop.
+fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_init: bool) -> Result<()> {
+    if !term_report::mark() {
+        return Ok(());
+    }
+    let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
+    let msg = read_rt_string(e, w(0)?)?;
+    let file = read_rt_string(e, w(1)?)?;
+    if !file.is_empty() {
+        let ro = if w(6)? != 0 { "readonly" } else { "writable" };
+        log_line(&format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
+    }
+    let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
+    let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
+    omclog::info(omclog::STDOUT, false, &format!("Simulation call terminate() {at}\nMessage : {msg}"));
+    Ok(())
 }
 
 /// C's `-steadyState` (`perform_simulation.c.inc`): the run ends once every state
@@ -3807,6 +3842,35 @@ struct CvodeState {
 
 #[cfg(sundials)]
 impl CvodeState {
+    /// `cvode_solver.c`'s `LOG_SOLVER` banner. The configuration is fixed here, so
+    /// every line but the tolerance is constant.
+    fn log_configuration(&self) {
+        for line in [
+            "CVODE linear multistep method CV_BDF",
+            "CVODE maximum integration order CV_ITER_NEWTON",
+            "CVODE use equidistant time grid YES",
+        ] {
+            omclog::info(omclog::SOLVER, false, line);
+        }
+        omclog::info(
+            omclog::SOLVER,
+            false,
+            &format!("CVODE Using relative error tolerance {}", format_e(self.rtol)),
+        );
+        for line in [
+            "CVODE Using dense internal linear solver SUNLinSol_Dense.",
+            "CVODE Use internal dense numeric jacobian method.",
+            "CVODE uses internal root finding method NO",
+            "CVODE maximum absolut step size 0",
+            "CVODE initial step size is set automatically",
+            "CVODE maximum integration order 5",
+            "CVODE maximum number of nonlinear convergence failures permitted during one step 10",
+            "CVODE BDF stability limit detection algorithm OFF",
+        ] {
+            omclog::info(omclog::SOLVER, false, line);
+        }
+    }
+
     /// The CVODE block is built on the first step, when `y` first holds the state
     /// to start from. `ctx` is the callbacks' `user_data`; it lives on the stack of
     /// one `advance`, so it is rebound on every call rather than stored.
@@ -3819,6 +3883,7 @@ impl CvodeState {
                     *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root,
                 )
                 .ok_or("CodegenWasmJit: CVODE initialization failed")?;
+                self.log_configuration();
                 self.cv.insert(cv)
             }
         };

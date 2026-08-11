@@ -1397,6 +1397,17 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   } else {
     platforms.append("static"); // default is static
   }
+#if defined(__EMSCRIPTEN__)
+  // A browser omc has no C code generator, so the model always goes into a wasm
+  // FMU. "static"/"dynamic" name the C link modes and mean nothing here; every
+  // other entry is a native platform the FMU should also serve, which is what an
+  // FMI 2.0 FMU needs to be loadable at all.
+  platforms.removeAll("static");
+  platforms.removeAll("dynamic");
+  if (!platforms.contains("wasm")) {
+    platforms.append("wasm");
+  }
+#endif
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
