@@ -85,7 +85,7 @@ my $osname = $^O;
 # a '// suite: <name>' line in its header. A test runs only if all of the suites
 # it belongs to are enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr);
+my @tag_suites = qw(metamodelica 63bit antlr fmuCSources);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -95,6 +95,7 @@ my %suite_enabled = (
   metamodelica => 1,  # Needs MetaModelica code generation, i.e. the C runtime.
   '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
   antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
+  fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
 );
 
 sub set_suites {

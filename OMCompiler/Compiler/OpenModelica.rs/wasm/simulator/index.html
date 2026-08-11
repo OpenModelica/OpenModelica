@@ -215,7 +215,9 @@
       </div>
       <label for="csSolver">CS solver</label>
       <select id="csSolver"></select>
-      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer.</p>
+      <label>Also run natively on</label>
+      <div class="chk-group" id="fmuPlatforms"></div>
+      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
     </div>
     <div class="modal-foot">
       <button class="ghost" id="exportCancel">Cancel</button>
@@ -227,6 +229,7 @@
 <script type="module">
 import { AnimView } from '../anim/anim-view.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { attachFmuAot } from '../fmu-aot.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
 // ready fast, and a second that installs the MSL in the background and takes
@@ -362,6 +365,9 @@ function makeWorker(tag) {
     w._cancel = new Int32Array(new SharedArrayBuffer(16));
     w.postMessage({ cmd: 'setCancelBuffer', buf: w._cancel.buffer });
   }
+  // A worker cannot spawn the FMU compiler itself; connect it to the shared one
+  // before `init`, so the platform list is known by then.
+  attachFmuAot(w);
   if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
   return w;
 }
@@ -467,6 +473,30 @@ function fillCsSolvers(values) {
   if (!values || !values.length) return;
   sel.replaceChildren(...values.map((v) => new Option(v, v)));
   sel.value = values.includes(keep) ? keep : values[0];
+}
+
+// The platforms this build has an FMI loader for. Empty when it has none, or when
+// the page is not cross-origin isolated (see fmu-aot.js).
+const PLATFORM_NAMES = {
+  'x86_64-linux': 'Linux x86-64', 'aarch64-linux': 'Linux ARM64',
+  'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
+  'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
+};
+function fillPlatforms(values) {
+  const group = el('fmuPlatforms');
+  if (!values || !values.length) {
+    group.replaceChildren(Object.assign(document.createElement('span'), {
+      className: 'modal-hint',
+      textContent: 'None available in this build — export with a desktop omc.',
+    }));
+    return;
+  }
+  group.replaceChildren(...values.map((p) => {
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: p });
+    const label = Object.assign(document.createElement('label'), { className: 'chk' });
+    label.append(box, ' ' + (PLATFORM_NAMES[p] || p));
+    return label;
+  }));
 }
 
 // The selectors plus `-lv` (log streams). Of these the runtime acts on LOG_STATS;
@@ -900,7 +930,7 @@ function downloadBlob(name, bytes) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 let exporting = false;
-async function exportFmu({ fmuType, method }) {
+async function exportFmu({ fmuType, method, platforms }) {
   if (running || exporting) return;
   const text = srcEl.value;
   if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
@@ -915,7 +945,7 @@ async function exportFmu({ fmuType, method }) {
     const name = parseModelName(text);
     const lm = await call(worker, 'loadSource', { text, name });
     if (!lm.ok) return fail(lm.error);
-    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method });
+    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method, platforms });
     if (r.cancelled) { setStatus('Export cancelled.'); return; }
     if (!r.ok) return fail(r.error);
     downloadBlob(r.filename, r.bytes);
@@ -943,8 +973,9 @@ window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !exportBac
 el('exportGo').addEventListener('click', () => {
   const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
   const method = fmiCs.checked ? csSolver.value : undefined;
+  const platforms = [...el('fmuPlatforms').querySelectorAll('input:checked')].map((c) => c.value);
   closeExport();
-  exportFmu({ fmuType, method });
+  exportFmu({ fmuType, method, platforms });
 });
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
@@ -976,6 +1007,7 @@ exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id ==
     if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
     fillSolverMenus(v.solverOptions);
     fillCsSolvers(v.fmuCsSolvers);
+    fillPlatforms(v.fmuPlatforms);
     runBtn.disabled = false;
     el('exportFmu').disabled = false;
     setStatus('Ready. ' + v.version);

@@ -30,6 +30,17 @@ extern "C" {
     // `omc_enable_progress_sink`, so the global need not exist otherwise.
     #[wasm_bindgen(js_namespace = globalThis, js_name = __omcReportProgress)]
     fn omc_report_progress_js(permille: i32, phase: i32);
+    // The FMU native-platform compiler, in its own worker. Only called after
+    // `omc_enable_fmu_aot`, so the globals need not exist otherwise.
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcAotPreload)]
+    fn omc_aot_preload_js();
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcAotCompile, catch)]
+    fn omc_aot_compile_js(component: &[u8], triple: &str) -> Result<Vec<u8>, JsValue>;
+    // The loader libraries, which a wasm omc does not carry (bundle files).
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcFmuPlatforms)]
+    fn omc_fmu_platforms_js() -> Vec<String>;
+    #[wasm_bindgen(js_namespace = globalThis, js_name = __omcFmuLoader)]
+    fn omc_fmu_loader_js(platform: &str) -> Option<Vec<u8>>;
 }
 
 fn wall_ms() -> f64 {
@@ -59,6 +70,28 @@ pub fn omc_enable_cancel_poll() {
 #[wasm_bindgen]
 pub fn omc_enable_progress_sink() {
     metamodelica::cancel::set_progress_sink(report_progress);
+}
+
+fn aot_preload() {
+    omc_aot_preload_js();
+}
+
+fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
+    omc_aot_compile_js(component, triple)
+        .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+}
+
+/// Let `buildModelFMU(..., platforms={"wasm", "linux64"})` serve native platforms
+/// here: the component is compiled by a wasm32-wasip1 build of wasmtime in another
+/// worker, and the loader libraries come from the bundle. The host must define the
+/// globals first — see `wasm/fmu-aot.js`.
+#[wasm_bindgen]
+pub fn omc_enable_fmu_aot() {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_aot(aot_compile, aot_preload);
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_loaders(
+        omc_fmu_loader_js,
+        omc_fmu_platforms_js(),
+    );
 }
 
 // The compiler emits stdout/stderr in fragments (a `print` call need not end on
@@ -465,6 +498,16 @@ pub fn omc_fmu_cs_solvers() -> JsValue {
     let arr = js_sys::Array::new();
     for v in openmodelica_codegen_wasm_jit::CodegenWasmJit::fmu_cs_solvers() {
         arr.push(&JsValue::from_str(v));
+    }
+    arr.into()
+}
+
+/// The native platforms an exported FMU can serve. Needs [`omc_enable_fmu_aot`].
+#[wasm_bindgen]
+pub fn omc_fmu_platforms() -> JsValue {
+    let arr = js_sys::Array::new();
+    for v in openmodelica_codegen_wasm_jit::CodegenWasmJit::fmu_platforms() {
+        arr.push(&JsValue::from_str(&v));
     }
     arr.into()
 }

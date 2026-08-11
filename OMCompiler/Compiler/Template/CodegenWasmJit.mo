@@ -107,6 +107,7 @@ function emitMeFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String terminalsAndIcons "FMI 3.0 Terminals XML, empty when the model has none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
   fail();
@@ -120,6 +121,7 @@ function emitCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String terminalsAndIcons "FMI 3.0 Terminals XML, empty when the model has none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
   fail();
@@ -133,6 +135,7 @@ function emitMeCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String terminalsAndIcons "FMI 3.0 Terminals XML, empty when the model has none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
   fail();

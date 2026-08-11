@@ -315,6 +315,7 @@ pipeline {
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
@@ -599,6 +600,7 @@ pipeline {
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
@@ -625,6 +627,7 @@ pipeline {
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
                    "-e EM_CACHE=/cache/emscripten " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }

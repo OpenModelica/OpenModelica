@@ -141,7 +141,7 @@ impl SimEngine for StandaloneEngine {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
-        core::mem::take(unsafe { &mut *REINITS.0.get() })
+        crate::take_reinit_notes()
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
@@ -312,19 +312,6 @@ pub extern "C" fn rt_print(handle: i32) {
         let mut out = std::io::stdout();
         let _ = out.write_all(bytes);
         let _ = out.flush();
-    }
-}
-
-/// Executed `reinit`s awaiting the driver's `LOG_EVENTS` block; single-threaded.
-struct Reinits(core::cell::UnsafeCell<Vec<(u32, f64)>>);
-unsafe impl Sync for Reinits {}
-static REINITS: Reinits = Reinits(core::cell::UnsafeCell::new(Vec::new()));
-
-/// In-wasm `rt_reinit_note`, the standalone counterpart of the host import.
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_reinit_note(off: i32, value: f64) {
-    if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::EVENTS) {
-        unsafe { &mut *REINITS.0.get() }.push((off as u32, value));
     }
 }
 

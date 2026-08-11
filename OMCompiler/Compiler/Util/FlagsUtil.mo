@@ -439,7 +439,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_TYPE,
   Flags.FMU_PLATFORMS,
   Flags.FMU_VERSION,
-  Flags.TEARING_COST_MARGIN
+  Flags.TEARING_COST_MARGIN,
+  Flags.FMU_NATIVE_PLATFORMS
 };
 
 public function new

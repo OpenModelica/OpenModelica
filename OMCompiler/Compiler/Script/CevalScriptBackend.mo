@@ -4729,8 +4729,14 @@ protected
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-  // platforms={"wasm"} routes to the fmi-ls-wasm component export (Model Exchange).
-  Boolean isWasmFMU = listMember("wasm", platforms);
+  // platforms={"wasm"} routes to the fmi-ls-wasm component export, and so does
+  // the wasm simCodeTarget on its own — there is no C to package either way.
+  // Reached through the target, the caller still wants an FMU the ordinary
+  // tooling can load, so it gets this machine's platform too.
+  Boolean wasmRequested = listMember("wasm", platforms);
+  Boolean isWasmFMU = wasmRequested or Config.simCodeTarget() == "wasm-jit"
+                                    or Config.simCodeTarget() == "wasm";
+  list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4770,6 +4776,8 @@ algorithm
   // reverted by buildModelFMU's saveFlags wrapper.
   if isWasmFMU then
     FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    // Every other entry names a native platform the FMU should also serve.
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(nativePlatforms, ","));
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
@@ -4888,6 +4896,13 @@ algorithm
     end if;
   end if;
 end callBuildModelFMU;
+
+protected function isNotWasmPlatform
+  "\"static\"/\"dynamic\" are the C target's own platform names, meaningless once
+   the export is a wasm one; every other entry names a native platform."
+  input String platform;
+  output Boolean keep = not (platform == "wasm" or platform == "static" or platform == "dynamic");
+end isNotWasmPlatform;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
