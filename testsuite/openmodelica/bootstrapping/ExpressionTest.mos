@@ -1,6 +1,7 @@
 // name: ExpressionTest
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("ExpressionTest.mo");getErrorString();

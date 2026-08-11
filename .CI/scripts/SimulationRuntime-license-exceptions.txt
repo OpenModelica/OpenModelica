@@ -273,6 +273,7 @@ testsuite/
 doc/
 OMCompiler/Examples/
 OMCompiler/Compiler/OpenModelica.rs/wasm/simulator/examples/
+OMCompiler/Compiler/OpenModelica.rs/openmodelica_codegen_wasm_jit/testmodels/
 !OMCompiler/Examples/GenerateDoc.mos
 
 # =============================================================================

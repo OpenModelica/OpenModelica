@@ -42,6 +42,13 @@ pub fn init(args: &[ArcStr]) -> Result<()> {
     Ok(())
 }
 
+/// Set the version `getVersion()` and `omc --version` report, normally
+/// `capi::set_version(openmodelica_revision::REVISION.into())`. Call it before
+/// [`init`]; an unset version reports as `"unknown"`.
+pub fn set_version(version: ArcStr) {
+    openmodelica_util::Settings::setVersionNr(version);
+}
+
 /// Evaluate one interactive command string (e.g. `"getVersion()"`).
 ///
 /// Returns `(keep_running, reply)`, mirroring [`Main::handleCommand`]: a normal

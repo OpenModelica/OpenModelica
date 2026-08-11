@@ -1,0 +1,46 @@
+// name: AliasCyclic8
+// keywords: NewBackend, Alias, ASSC
+// status: correct
+// function: Testing Bareiss algorithm.
+
+loadString("
+  model AliasCyclic8
+    Integer a, b, c, d;       // constant simple
+  equation
+    2002 = 2002*a + 2002*d;
+    0 = 1001*b + 1001*c;
+    -1001 = 1001*c + 1001*d;
+    0 = 1001*b + 1001*a;
+  end AliasCyclic8;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(AliasCyclic8); getErrorString();
+diffSimulationResults("AliasCyclic8_res.mat", "ReferenceFiles/AliasCyclic8_res.mat", "AliasCyclic8_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) 0 = 1001 * b + 1001 * a; ($RES_SIM_0)
+// 	[SCAL] (1) -1001 = 1001 * c + 1001 * d; ($RES_SIM_1)
+// 	[SCAL] (1) 2002 = 2002 * a + 2002 * d; ($RES_SIM_3)
+// 	[SCAL] (1) 0 = 1001 * b + 1001 * c; ($RES_SIM_2)
+//
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: AliasCyclic8"
+// end SimulationResult;
+// "Error: Internal error NBASSC.tracebackZeroRows failed because sparse matrix is singular, for more information please use -d=dumpASSC.
+// "
+// (false, {})
+// endResult

@@ -22,9 +22,14 @@ find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
 set(RUST_OMC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
     CACHE PATH "Canonical Rust omc source tree (mirrored into the per-build copy).")
+# sccache hashes CARGO_MANIFEST_DIR into the Rust cache key, so a per-checkout
+# working copy makes every crate a guaranteed miss; CI pins this (.CI/common.groovy
+# rustWorkDir()).
+set(RUST_OMC_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    CACHE PATH "Parent directory of the per-build Rust working copy (rust-src).")
 # Not cached: a normal set() shadows a stale cache from before this was per-build,
 # so reconfiguring an existing build dir picks up the new path.
-set(RUST_OMC_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-src)
+set(RUST_OMC_DIR ${RUST_OMC_WORK_DIR}/rust-src)
 set(RUST_SRC_MANIFEST ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_files.txt)
 
 # Mirror now so the configure-time reads below (.gitignore, susanSources.txt) see
@@ -433,6 +438,29 @@ if(RUST_OMC_ENABLE_SUNDIALS)
 endif()
 
 # ---------------------------------------------------------------------------
+# Ipopt for `method="optimization"` (the classic dynamic-optimization runtime),
+# collected like the host SUNDIALS archives above. Host-only: MUMPS is Fortran 90,
+# so there is no wasm build and an in-wasm runtime reports the same
+# "Ipopt is needed but not available" a C runtime without OMC_HAVE_IPOPT does.
+# ---------------------------------------------------------------------------
+if(OM_OMC_ENABLE_OPTIMIZATION AND TARGET ipopt)
+  set(RUST_IPOPT_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-ipopt-native
+      CACHE PATH "Directory the host Ipopt archives are collected into.")
+  set(_native_ipopt_libs ipopt dmumps mumps_common seq metis)
+  set(_native_ipopt_files "")
+  foreach(_lib IN LISTS _native_ipopt_libs)
+    list(APPEND _native_ipopt_files $<TARGET_FILE:${_lib}>)
+  endforeach()
+  add_custom_target(rust_ipopt_native_collect
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_IPOPT_NATIVE_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${_native_ipopt_files} ${RUST_IPOPT_NATIVE_DIR}/lib/
+    DEPENDS ${_native_ipopt_libs}
+    COMMENT "Rust: collecting host Ipopt archives -> ${RUST_IPOPT_NATIVE_DIR}/lib/"
+    VERBATIM)
+endif()
+
+# ---------------------------------------------------------------------------
 # Preview1→preview2 reactor adapter (mandatory for FMI wasm FMU export).
 # ---------------------------------------------------------------------------
 set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
@@ -455,6 +483,11 @@ endif()
 # Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
 # so the cargo build.rs uses them rather than rebuilding.
 # ---------------------------------------------------------------------------
+# The revision this omc reports, tagged "-rust" where the C build says "-cmake".
+# file(GENERATE), not file(WRITE): it keeps the timestamp when the revision is
+# unchanged, so reconfiguring alone rebuilds nothing.
+set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
+file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-rust\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
@@ -463,10 +496,46 @@ list(APPEND CARGO_ENV
      # ModelicaExternalC C-Sources dir (the crate builds from a synced copy whose
      # relative path can't reach the real location).
      "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
+     # A *path*, not the revision itself: that in the environment would be part
+     # of every rustc invocation and miss the whole compilation cache on each
+     # commit. Only the leaf openmodelica_revision crate reads the file.
+     "OMC_REVISION_FILE=${RUST_OMC_REVISION_FILE}"
      # Prebuilt PIC wasi-libc sysroot (with -fPIC libc.so) built by rust_wasi_pic_sysroot.
      "OMC_WASI_PIC_SYSROOT=${RUST_WASI_PIC_SYSROOT}"
      # Preview1 adapter for FMI wasm FMU export.
      "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
+
+# Native platforms an exported wasm FMU can also serve
+# (`buildModelFMU(..., platforms={"wasm","win64"})`). omc embeds one loader
+# library per platform, so each is a cross build of
+# `openmodelica_fmi_ls_wasm_to_native` and needs that platform's C toolchain —
+# cargo-xwin for the MSVC targets, cargo-zigbuild for Apple and non-host Linux.
+# A named target that will not build fails the build (OMC_FMU_NATIVE_OPTIONAL=1
+# makes the set best-effort). The host's own platform is always built and need
+# not be listed.
+set(RUST_OMC_FMU_NATIVE_TARGETS "" CACHE STRING
+    "Extra rustc target triples to build FMU loader libraries for (comma-separated).")
+if(RUST_OMC_FMU_NATIVE_TARGETS)
+  list(APPEND CARGO_ENV "OMC_FMU_NATIVE_TARGETS=${RUST_OMC_FMU_NATIVE_TARGETS}")
+endif()
+# Loaders from a previous build, reused instead of cross-built again; whatever is
+# missing is still built. Same hand-off as RUST_OMC_WASM_RUNTIME.
+set(RUST_OMC_FMU_LOADERS "" CACHE PATH
+    "Directory of prebuilt FMU loader libraries to reuse (empty = build them).")
+if(RUST_OMC_FMU_LOADERS)
+  list(APPEND CARGO_ENV "OMC_FMU_LOADERS_IN=${RUST_OMC_FMU_LOADERS}")
+endif()
+# zig ships no Apple frameworks, so an *-apple-darwin loader needs an SDK.
+set(RUST_OMC_MACOS_SDK "" CACHE PATH
+    "macOS SDK for the *-apple-darwin FMU loaders (MacOSX<version>.sdk).")
+if(RUST_OMC_MACOS_SDK)
+  list(APPEND CARGO_ENV "OMC_FMU_MACOS_SDK=${RUST_OMC_MACOS_SDK}")
+endif()
+# The libraries themselves are not linked into omc — a native one reads them from
+# lib/omc/fmu-loaders, the browser one fetches them from the web bundle — so the
+# build script drops them here for CMake to install.
+set(RUST_FMU_LOADERS_DIR ${CMAKE_CURRENT_BINARY_DIR}/fmu-loaders)
+list(APPEND CARGO_ENV "OMC_FMU_LOADERS_OUT=${RUST_FMU_LOADERS_DIR}")
 
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
@@ -479,6 +548,10 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   endif()
 endif()
 
+if(TARGET rust_ipopt_native_collect)
+  list(APPEND CARGO_ENV "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
+endif()
+
 # Source paths (fallback for raw cargo builds without CMake).
 if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
@@ -486,7 +559,10 @@ endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse")
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
+       # The PIC dylink side module compiles the sources again and needs the
+       # `sundials_config.h` the wasm ExternalProject generates.
+       "OMC_SUNDIALS_WASM_INCLUDE=${_sundials_ep_build}/include")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
@@ -843,6 +919,9 @@ function(omc_rust_setup_codegen)
       add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
     endif()
   endif()
+  if(TARGET rust_ipopt_native_collect)
+    add_dependencies(rust_libopenmodelica rust_ipopt_native_collect)
+  endif()
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
@@ -873,6 +952,22 @@ function(omc_rust_setup_codegen)
   else()
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/${RUST_OMC_CDYLIB_NAME}
             DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+  endif()
+
+  # The FMI 3.0 loader libraries an exported wasm FMU is given for a native
+  # platform. Read at export time, not linked into omc.
+  install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
+          DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+
+  # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
+  # against. Under the wasm triple with an `omc` subdirectory so it cannot be
+  # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
+  # builtins so it matches the libc.so omc resolves imports against.
+  install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
+          DESTINATION lib/wasm32-wasi/omc COMPONENT omc)
+  if(_wasi_builtins)
+    install(FILES ${_wasi_builtins}
+            DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
   # The native egui OMShell client (omshell_egui), built when the GUI clients are
@@ -1054,6 +1149,34 @@ function(omc_rust_omshell_web_page _label _binname _srcindex)
   # web/omc/, and (re)creates ${_web_dir}; this page then adds its files. The
   # single install(DIRECTORY ${_web_dir}) in omc_rust_setup_wasm stages it all.
   add_dependencies(rust_omshell_${_label}_web rust_wasm)
+endfunction()
+
+# The FMU native-platform compiler for the browser: `openmodelica_fmi_ls_wasm_aot`
+# built for wasm32-wasip1 (a compiler-only wasmtime), staged as web/fmu-aot.wasm
+# and loaded on demand by wasm/fmu-aot-worker.js. Not embedded in the omc module:
+# it is ~13 MB and only an export that asks for a native platform needs it.
+#
+# wasip1, not wasm32-unknown-unknown, because cranelift's pass timing calls
+# `Instant::now()`, which panics there. Always release — a debug cranelift is far
+# too slow to compile a model with.
+#
+# Its own `[workspace]` and target dir, so the compiler-only wasmtime never meets
+# the host workspace's resolution. Reads omc_rust_setup_wasm's _web_dir.
+function(omc_rust_fmu_aot_module)
+  set(_aot_src ${RUST_OMC_DIR}/openmodelica_fmi_ls_wasm_aot)
+  set(_aot_target_dir ${CMAKE_CURRENT_BINARY_DIR}/fmu-aot-target)
+  set(_aot_artifact ${_aot_target_dir}/wasm32-wasip1/release/openmodelica_fmi_ls_wasm_aot.wasm)
+  add_custom_target(rust_fmu_aot ALL
+    WORKING_DIRECTORY ${_aot_src}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
+            --manifest-path ${_aot_src}/Cargo.toml
+            --target wasm32-wasip1 --target-dir ${_aot_target_dir}
+    COMMAND ${CMAKE_COMMAND} -E copy ${_aot_artifact} ${_web_dir}/fmu-aot.wasm
+    COMMENT "Rust: FMU native-platform compiler (wasm32-wasip1) -> ${_web_dir}/fmu-aot.wasm"
+    VERBATIM)
+  # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
+  add_dependencies(rust_fmu_aot rust_wasm)
 endfunction()
 
 # Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
@@ -1399,6 +1522,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/fmu-aot.js
+        ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         # Shared 3D animation view (anim/), used by both simulator pages.
         ${RUST_OMC_DIR}/wasm/anim/animation.js
         ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -1416,6 +1541,8 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/plot.js
                 ${RUST_OMC_DIR}/wasm/theme.css
+                ${RUST_OMC_DIR}/wasm/fmu-aot.js
+                ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
@@ -1503,6 +1630,7 @@ function(omc_rust_setup_wasm)
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
     ${_web_launcher_extra}
     DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
@@ -1523,6 +1651,10 @@ function(omc_rust_setup_wasm)
   # above so the page drives omc in-browser, and installed to
   # <datarootdir>/omc/web-omshell-<gui>/. A Node host has no DOM, so the pages are
   # built only for the browser host.
+  if(_host STREQUAL "web")
+    omc_rust_fmu_aot_module()
+  endif()
+
   if(OM_ENABLE_GUI_CLIENTS)
     if(_host STREQUAL "web")
       omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)

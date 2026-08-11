@@ -183,12 +183,17 @@ const SQRT_EPS: f64 = 1.4901161193847656e-08;
 const FD_DELTA: f64 = 6.664001874625056e-08;
 /// Newton/LM convergence tolerance: stop once a residual / step measure drops below.
 const NEWTON_EPS: f64 = 1.0e-6;
-/// C's `newtonFTol`/`newtonXTol` (nonlinearSolverHomotopy.c). `newton_solve`
-/// mirrors C's residual-gated convergence: a step-stall counts as success only
-/// when the residual is also small (`< NEWTON_FTOL*1e3`), else it fails so the
-/// homotopy globaliser engages instead of accepting a non-root.
-const NEWTON_FTOL: f64 = 1.0e-12;
-const NEWTON_XTOL: f64 = 1.0e-12;
+/// C's `newtonFTol`/`newtonXTol` (nonlinearSolverHomotopy.c), which `-newtonFTol` /
+/// `-newtonXTol` move. `newton_solve` mirrors C's residual-gated convergence: a
+/// step-stall counts as success only when the residual is also small
+/// (`< ftol*1e3`), else it fails so the homotopy globaliser engages instead of
+/// accepting a non-root.
+fn newton_ftol() -> f64 {
+    crate::solvers::newton_ftol()
+}
+fn newton_xtol() -> f64 {
+    crate::solvers::newton_xtol()
+}
 const MAX_ITER: i32 = 100;
 /// Line-search damping floor (2^-10): below this, keep the small step and let the
 /// outer iteration retry (or hit the iteration limit → recoverable failure).
@@ -558,7 +563,7 @@ fn homotopy_solve(
 
         // ---- Corrector: Newton with coordinate `pos` fixed ----
         let last_step = y1[n] >= 1.0;
-        let h_eps = if last_step { NEWTON_FTOL } else { H_EPS };
+        let h_eps = if last_step { newton_ftol() } else { H_EPS };
         let mut pos = if last_step { n as i32 } else { tangent_pos };
         let mut step_accept = false;
         let mut corrector_ok = true;
@@ -672,7 +677,7 @@ pub(crate) fn newton_solve(
 
     eval(x, &mut fvec);
     let mut error_f = enorm(&fvec);
-    if error_f < NEWTON_FTOL {
+    if error_f < newton_ftol() {
         return true;
     }
     f_old.copy_from_slice(&fvec);
@@ -758,15 +763,16 @@ pub(crate) fn newton_solve(
         if neg_steps > 20 {
             return false;
         }
-        let f_small = error_f < NEWTON_FTOL || scaled_error_f < NEWTON_FTOL;
-        let x_small = delta_x < NEWTON_XTOL || delta_x_scaled < NEWTON_XTOL;
+        let (ftol, xtol) = (newton_ftol(), newton_xtol());
+        let f_small = error_f < ftol || scaled_error_f < ftol;
+        let x_small = delta_x < xtol || delta_x_scaled < xtol;
         if f_small && x_small {
             return true;
         }
-        small_steps += (delta_x < NEWTON_XTOL * 100.0 || delta_x_scaled < NEWTON_XTOL * 100.0) as i32;
+        small_steps += (delta_x < xtol * 100.0 || delta_x_scaled < xtol * 100.0) as i32;
         if x_small || small_steps > 20 {
             // Stalled step: accept only with a small residual (C's ftol*1e3), else fail.
-            return error_f < NEWTON_FTOL * 1.0e3 || scaled_error_f < NEWTON_FTOL * 1.0e3;
+            return error_f < ftol * 1.0e3 || scaled_error_f < ftol * 1.0e3;
         }
         iter += 1;
         if iter > MAX_ITER {
@@ -906,19 +912,18 @@ fn hybrd_scaled(
     arm_attempt();
     let mut hooks =
         minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
-    let status = minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
+    minpack::hybrd_hooked(&mut seval, &mut hooks, n, x, fvec, 1e-12, maxfev, 1e-12, 100.0);
     drop(seval);
     for i in 0..n {
         x[i] *= scale[i];
     }
-    nls_accept(status, fvec)
+    nls_accept(fvec)
 }
 
-/// A solve succeeds when MINPACK reports convergence or the residual is already at
-/// the tolerance (an exact Jacobian can reach the root before the step test fires,
-/// leaving `Stalled` with a machine-zero residual).
-fn nls_accept(status: minpack::Status, fvec: &[f64]) -> bool {
-    status == minpack::Status::Converged || enorm(fvec) <= 1.0e-12
+/// A solve succeeds only when the residual is at C's `local_tol`: MINPACK's
+/// `info == 1` is a step test (the trust region collapsed), not a root.
+fn nls_accept(fvec: &[f64]) -> bool {
+    enorm(fvec) <= 1.0e-12
 }
 
 /// C's `resScaling` over the Jacobian `hybrd` last formed. C reads
@@ -1047,12 +1052,14 @@ fn hybrd_c(
             }
             (enorm(&fvec), enorm(&scaled))
         };
+        // C's `if (info < 4 && xerror > local_tol && xerror_scaled > local_tol) info = 4`:
+        // only the residual decides, and a rejected run advances a rung.
         let accurate = xerror <= local_tol || xerror_scaled <= local_tol;
         if non_continuous && !accurate {
             non_continuous = false;
         }
 
-        if status == minpack::Status::Converged || accurate {
+        if accurate {
             nlsx.copy_from_slice(&xv);
             x.copy_from_slice(&xv);
             // C confirms the solution by evaluating there once more; an assert at it
@@ -1206,14 +1213,13 @@ fn hybrj_scaled(
     arm_attempt();
     let mut hooks =
         minpack::Hooks { abort: Some(&attempt_aborted), fjacobian: None, diag: None };
-    let status =
-        minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
+    minpack::hybrj_hooked(&mut seval, &mut sjac, &mut hooks, n, x, fvec, 1e-12, maxfev, 100.0);
     drop(seval);
     drop(sjac);
     for i in 0..n {
         x[i] *= scale[i];
     }
-    nls_accept(status, fvec)
+    nls_accept(fvec)
 }
 
 /// `-nlsLS`: which backend the linear solve inside the sparse nonlinear solver
@@ -1566,8 +1572,8 @@ fn newton_c(
 ) -> (bool, bool) {
     const ALPHA: f64 = 1.0e-1;
     const LAMBDA_MIN_C: f64 = 1.0e-4;
-    let ftol_sq = NEWTON_FTOL * NEWTON_FTOL;
-    let xtol_sq = NEWTON_XTOL * NEWTON_XTOL;
+    let ftol_sq = newton_ftol() * newton_ftol();
+    let xtol_sq = newton_xtol() * newton_xtol();
     let nsq = |v: &[f64]| -> f64 {
         let e = enorm(v);
         e * e
@@ -1684,14 +1690,15 @@ fn newton_c(
         let grad_f = -2.0 * error_f_sqrd;
         let grad_f_scaled = -2.0 * error_f_sqrd_scaled;
 
-        // λ1: back off from the full step until the residual eval is finite.
+        // λ1: back off from the full step while the residual asserts (C's `longjmp`);
+        // an overflowed but finite one goes to the damping below, which collapses λ.
         let mut lambda1 = 1.0;
         loop {
             for i in 0..n {
                 x1[i] = x[i] + lambda1 * step[i];
             }
             eval(&x1, &mut fvec);
-            if fvec.iter().all(|v| v.abs() < 1e30) {
+            if !assert_hit() {
                 break;
             }
             lambda1 *= 0.655;
@@ -2147,11 +2154,9 @@ fn solve_newton_c(
     }
 }
 
-/// KINSOL function-norm / scaled-step stopping tolerances (C's `newtonFTol` /
-/// `newtonXTol`, `model_help.c`) and the norm below which C accepts a less
-/// accurate solution rather than failing (`FTOL_WITH_LESS_ACCURACY`).
-const KIN_FNORMTOL: f64 = 1.0e-12;
-const KIN_SCSTEPTOL: f64 = 1.0e-12;
+/// The norm below which C accepts a less accurate solution rather than failing
+/// (`FTOL_WITH_LESS_ACCURACY`). KINSOL's own stopping tolerances are C's
+/// `newtonFTol`/`newtonXTol`, i.e. [`newton_ftol`]/[`newton_xtol`].
 const KIN_FTOL_LESS_ACCURACY: f64 = 1.0e-6;
 
 /// `‖diag(scale)·v‖∞`, the norm KINSOL's stopping tests use.
@@ -2289,7 +2294,7 @@ fn newton_sparse_solve(
             if !fnorm.is_finite() {
                 break;
             }
-            if fnorm <= KIN_FNORMTOL {
+            if fnorm <= newton_ftol() {
                 solved = true;
                 break;
             }
@@ -2332,7 +2337,7 @@ fn newton_sparse_solve(
             }
             x.copy_from_slice(&xnew);
             fnorm = fnew;
-            if step <= KIN_SCSTEPTOL {
+            if step <= newton_xtol() {
                 solved = fnorm < KIN_FTOL_LESS_ACCURACY;
                 break;
             }
@@ -2566,160 +2571,140 @@ pub extern "C" fn rt_solve_nls(
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
     // it to leave the slots and torn variables set.
     let mut settled = false;
-    // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
-    // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
-    // O(n^3) per step, which is what the sparse choice exists to avoid.
-    let converged = if sparse {
-        kinsol_sparse_solve(
-            n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-            pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
-        )
-    } else if pick == Nls::Newton {
-        solve_newton_c(
-            n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
-            has_jac,
-        )
-    } else if pick == Nls::Homotopy {
-        // Both start directions, as C's runHomotopy.
-        let mut ok = false;
-        for &dir in &[1.0f64, -1.0] {
-            let mut hx = guess.clone();
-            if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                x.copy_from_slice(&hx);
-                ok = true;
-                break;
-            }
-        }
-        ok
-    } else {
-        // C's default `NLS_MIXED` runs `solveHomotopy`, whose primary solver is
-        // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
-        // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
-        // Both share the retry/homotopy tail below.
-        let start = x.clone();
-        // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
-        // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
-        let mut nlsx = start.clone();
-        let mut converged = false;
-        if matches!(pick, Nls::Default | Nls::Mixed) {
-            (converged, settled) = newton_c(
-                n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                has_jac,
-            );
-            if !converged {
-                stat_inc(STAT_NLS_NEWTON_FAIL);
-                x.copy_from_slice(&start);
-            }
-        }
-        settled &= converged;
-        let mut solve = |x: &mut [f64], fvec: &mut [f64]| {
-            if has_jac {
-                hybrj_scaled(n, x, fvec, &nominal, maxfev, &mut eval, &mut jaceval)
-            } else {
-                hybrd_scaled(n, x, fvec, &nominal, maxfev, &mut eval)
-            }
-        };
-        if !converged {
-            // `solveHybrd` reads whichever vector `solveHomotopy` overwrote with the
-            // point its entry phase settled on, so it restarts from that either way.
-            x.copy_from_slice(&nlsx);
-            converged = solve(&mut x, &mut fvec);
-        }
-        if !converged {
-            stat_inc(STAT_NLS_RETRY);
-            x.copy_from_slice(&warm);
-            converged = solve(&mut x, &mut fvec);
-        }
-        drop(solve);
-        if !converged {
-            stat_inc(STAT_NLS_RETRY);
-            x.copy_from_slice(&warm);
-            converged = newton_solve(n, &mut x, &mut eval);
-        }
-        // C's init ladder: newtonAlgorithm, then solveHybrd (retry ladder) from x0.
-        if !converged && saved_rel_fresh == 2 {
-            x.copy_from_slice(&guess);
-            converged = newton_c(
-                n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+    // C's `alreadyTested`: the mixed re-check below fires at most once.
+    let mut retried = false;
+    // C's `x0`, which the mixed retry restarts from.
+    let start_point = x.clone();
+    let converged = loop {
+        // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
+        // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
+        // O(n^3) per step, which is what the sparse choice exists to avoid.
+        let converged = if sparse {
+            kinsol_sparse_solve(
+                n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
+                pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
+            )
+        } else if pick == Nls::Newton {
+            solve_newton_c(
+                n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
                 has_jac,
             )
-            .0;
-        }
-        // Numeric-Jacobian hybrd, then LM, from the last iterate and from the guess.
-        if !converged {
-            stat_inc(STAT_NLS_RETRY);
-            converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-        }
-        if !converged {
-            x.copy_from_slice(&guess);
-            converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-        }
-        if !converged {
-            x.copy_from_slice(&guess);
-            converged = lm_solve(n, &mut x, &mut eval);
-        }
-        if !converged {
-            x.copy_from_slice(&warm);
-            converged = lm_solve(n, &mut x, &mut eval);
-        }
-        // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
-        if !converged && saved_rel_fresh == 2 {
-            // Forward then reversed start direction, as C's runHomotopy.
-            for &dir in &[1.0f64, -1.0f64] {
+        } else if pick == Nls::Homotopy {
+            // Both start directions, as C's runHomotopy.
+            let mut ok = false;
+            for &dir in &[1.0f64, -1.0] {
                 let mut hx = guess.clone();
                 if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
                     x.copy_from_slice(&hx);
-                    converged = true;
+                    ok = true;
                     break;
                 }
             }
-        }
-        // C's `NLS_MIXED`: whatever `solveHomotopy` leaves unsolved goes to the full
-        // `solveHybrd` ladder, which is where the hardest systems are actually solved.
-        if !converged {
-            stat_inc(STAT_NLS_RETRY);
-            // C's `discreteCall` is set for an initial system too; only an event call
-            // has relations to hold, so only there does the continuity flag move.
-            let mut set_cont = |c: bool| {
-                if saved_rel_fresh == 1 {
-                    unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+            ok
+        } else {
+            // C's default `NLS_MIXED` runs `solveHomotopy`, whose primary solver is
+            // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
+            // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
+            // Both share the retry/homotopy tail below.
+            let start = x.clone();
+            // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
+            // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
+            let mut nlsx = start.clone();
+            let mut converged = false;
+            if matches!(pick, Nls::Default | Nls::Mixed) {
+                (converged, settled) = newton_c(
+                    n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                    has_jac,
+                );
+                if !converged {
+                    stat_inc(STAT_NLS_NEWTON_FAIL);
+                    x.copy_from_slice(&start);
                 }
-            };
-            converged = hybrd_c(
-                n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
-                &mut set_cont,
-            );
-        }
-        converged
-    };
-    if converged {
-        // Leave the slots + torn variables at the solution. C's `solveHomotopy`: a
-        // mixed system at an event re-checks the relations live at the solution and,
-        // if the branch moved, re-solves once from the start point with them live.
-        if mixed {
-            unsafe { store_u32(rel_fresh_addr, 1) };
-            eval(&x, &mut scratch);
-            if (0..n_rel).any(|i| unsafe { load_u32(rel_addr + i * 4) } != rel_backup[i as usize]) {
-                let held = core::mem::replace(&mut x, warm.clone());
-                let ok = if sparse {
-                    kinsol_sparse_solve(
-                        n, &mut x, &warm, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-                        pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
-                    )
-                } else if has_jac {
-                    hybrj_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval, &mut jaceval)
-                } else {
-                    hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval)
-                };
-                if !ok {
-                    x = held;
-                }
-                eval(&x, &mut scratch);
             }
-            unsafe { store_u32(rel_fresh_addr, 0) };
-        } else if !settled {
-            eval(&x, &mut scratch);
+            settled &= converged;
+            // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
+            if !converged {
+                stat_inc(STAT_NLS_RETRY);
+                // C's `discreteCall` is set for an initial system too; only an event call
+                // has relations to hold, so only there does the continuity flag move.
+                let mut set_cont = |c: bool| {
+                    if saved_rel_fresh == 1 {
+                        unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+                    }
+                };
+                converged = hybrd_c(
+                    n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
+                    &mut set_cont,
+                );
+            }
+            // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
+            // `nls_accept` takes only a point at tolerance, so none can report a non-root.
+            if !converged {
+                stat_inc(STAT_NLS_RETRY);
+                x.copy_from_slice(&warm);
+                converged = newton_solve(n, &mut x, &mut eval);
+            }
+            // An initial system gets a second `newtonAlgorithm`, from `x0`.
+            if !converged && saved_rel_fresh == 2 {
+                x.copy_from_slice(&guess);
+                converged = newton_c(
+                    n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                    has_jac,
+                )
+                .0;
+            }
+            if !converged {
+                stat_inc(STAT_NLS_RETRY);
+                converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+            }
+            if !converged {
+                x.copy_from_slice(&guess);
+                converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+            }
+            if !converged {
+                x.copy_from_slice(&guess);
+                converged = lm_solve(n, &mut x, &mut eval);
+            }
+            if !converged {
+                x.copy_from_slice(&warm);
+                converged = lm_solve(n, &mut x, &mut eval);
+            }
+            // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
+            if !converged && saved_rel_fresh == 2 {
+                // Forward then reversed start direction, as C's runHomotopy.
+                for &dir in &[1.0f64, -1.0f64] {
+                    let mut hx = guess.clone();
+                    if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                        x.copy_from_slice(&hx);
+                        converged = true;
+                        break;
+                    }
+                }
+            }
+            converged
+        };
+        // C's `solveHomotopy` mixed tail: relations live at the solution, and if the
+        // branch moved, the *same* ladder again from the start point with them live.
+        if !converged || !mixed || retried {
+            break converged;
         }
+        unsafe { store_u32(rel_fresh_addr, 1) };
+        eval(&x, &mut scratch);
+        settled = true;
+        if (0..n_rel).all(|i| unsafe { load_u32(rel_addr + i * 4) } == rel_backup[i as usize]) {
+            break converged;
+        }
+        retried = true;
+        settled = false;
+        x.copy_from_slice(&start_point);
+    };
+    if retried {
+        // `hybrd_c`'s rung may have left the flag held.
+        unsafe { store_u32(rel_fresh_addr, 1) };
+    }
+    // Leave the slots + torn variables at the solution.
+    if converged && !settled {
+        eval(&x, &mut scratch);
     }
     for i in 0..n {
         unsafe { store_f64(scale_addr + (i * 8) as u32, res_scaling[i]) };

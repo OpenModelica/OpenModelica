@@ -40,6 +40,69 @@ export async function readZip(buf) {
   return files;
 }
 
+async function deflateRaw(bytes) {
+  const s = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+
+const CRC = Int32Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c;
+});
+function crc32(bytes) {
+  let c = -1;
+  for (const b of bytes) c = CRC[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+
+// Write a Map of name -> bytes back out as a deflated ZIP, so an FMU can be handed
+// back with entries added. Counterpart of [`readZip`]; no ZIP64.
+export async function writeZip(files) {
+  const enc = new TextEncoder();
+  const local = [];
+  const central = [];
+  let offset = 0;
+  for (const [name, bytes] of files) {
+    const nameBytes = enc.encode(name);
+    const deflated = await deflateRaw(bytes);
+    const stored = deflated.length >= bytes.length;
+    const data = stored ? bytes : deflated;
+    const head = new DataView(new ArrayBuffer(30));
+    head.setUint32(0, 0x04034b50, true);
+    head.setUint16(4, 20, true);
+    head.setUint16(8, stored ? 0 : 8, true);
+    head.setUint16(12, 33, true); // 1980-01-01, the epoch a ZIP date field can hold
+    head.setUint32(14, crc32(bytes), true);
+    head.setUint32(18, data.length, true);
+    head.setUint32(22, bytes.length, true);
+    head.setUint16(26, nameBytes.length, true);
+    local.push(new Uint8Array(head.buffer), nameBytes, data);
+
+    const dir = new DataView(new ArrayBuffer(46));
+    dir.setUint32(0, 0x02014b50, true);
+    dir.setUint16(4, 20, true);
+    dir.setUint16(6, 20, true);
+    dir.setUint16(10, stored ? 0 : 8, true);
+    dir.setUint16(14, 33, true);
+    dir.setUint32(16, crc32(bytes), true);
+    dir.setUint32(20, data.length, true);
+    dir.setUint32(24, bytes.length, true);
+    dir.setUint16(28, nameBytes.length, true);
+    dir.setUint32(42, offset, true);
+    central.push(new Uint8Array(dir.buffer), nameBytes);
+    offset += 30 + nameBytes.length + data.length;
+  }
+  const centralSize = central.reduce((n, p) => n + p.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.size, true);
+  end.setUint16(10, files.size, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...local, ...central, new Uint8Array(end.buffer)]);
+}
+
 // FMI 3.0 variable element name -> the get/set suffix used by the WIT methods.
 // Enumeration is an Int64 in FMI 3.0.
 const TYPES = {

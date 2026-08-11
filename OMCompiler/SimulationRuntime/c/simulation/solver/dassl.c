@@ -168,6 +168,28 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y,
 
 
 /*
+ * \brief Read the states' nominal values into the absolute tolerances.
+ *
+ * Re-read by updateSolverNominals once initialization has computed the nominals
+ * that are parameter expressions.
+ */
+void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
+{
+  int i;
+
+  infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
+  for(i=0; i<dasslData->N; ++i)
+  {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
+    dasslData->rtol[i] = data->simulationInfo->tolerance;
+    dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
+  }
+  messageClose(OMC_LOG_SOLVER);
+}
+
+/*
  * \brief Configure DASSL solver
  *
  * Allocate memory for intern data of `dasslData`.
@@ -235,17 +257,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
 
   /* set nominal values of the states for absolute tolerances */
   dasslData->info[1] = 1;
-  infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
-  for(i=0; i<dasslData->N; ++i)
-  {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
-    dasslData->nominal[i] = fmax(fabs(nominal), 1e-32);
-    dasslData->rtol[i] = data->simulationInfo->tolerance;
-    dasslData->atol[i] = data->simulationInfo->tolerance * dasslData->nominal[i];
-    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
-  }
-  messageClose(OMC_LOG_SOLVER);
-
+  dassl_setNominals(data, dasslData);
 
 
   /* let dassl return at every internal step */
@@ -1259,7 +1271,6 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t* threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
-  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hh, delta_hhh, deltaInv;
   double ysave;
   int ires;
@@ -1271,7 +1282,8 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   for(col=dasslData->N-1; col >= 0; col--)
   {
     delta_hhh = *h * yprime[col];
-    delta_hh = delta_h * fmax(fmax(fabs(y[col]),fabs(delta_hhh)), dasslData->jacNominalFactor*dasslData->nominal[col]);
+    delta_hh = numericalJacobianStep(y[col], delta_hhh, fabs(1. / wt[col]),
+                                     dasslData->jacNominalFactor * dasslData->nominal[col]);
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[col] + delta_hh - y[col];    // Due to floating-point arithmetic rounding errors can result in: delta_hh != y[i] + delta_hh - y[i]
     deltaInv = 1. / delta_hh;
@@ -1326,7 +1338,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   const int index = data->callback->INDEX_JAC_A;
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
-  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hhh;
   int ires;
   double* delta_hh = dasslData->delta_hh;
@@ -1344,7 +1355,8 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)), dasslData->jacNominalFactor*dasslData->nominal[ii]);
+        delta_hh[ii] = numericalJacobianStep(y[ii], delta_hhh, fabs(1./wt[ii]),
+                                             dasslData->jacNominalFactor * dasslData->nominal[ii]);
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 

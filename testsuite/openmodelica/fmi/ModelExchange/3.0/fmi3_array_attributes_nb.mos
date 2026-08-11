@@ -1,11 +1,13 @@
 // name: fmi3_array_attributes_nb
 // keywords: FMI 3.0 export array nominal scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi3_array_attributes_nb.fmu fmi3_array_attributes_nb.fmutmp/ fmi3_array_attributes_nb.dims fmi3_array_attributes_nb.log fmi3_array_attributes_nb_info.json index.html
 //
 // #15926, FMI 3.0, new backend, scalarized (default), C runtime. A scalarized
 // array element must not be dimensioned in the exported FMU init.
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 loadString("
@@ -24,6 +26,8 @@ system("unzip -cqq fmi3_array_attributes_nb.fmu sources/fmi3_array_attributes_nb
 readFile("fmi3_array_attributes_nb.dims"); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

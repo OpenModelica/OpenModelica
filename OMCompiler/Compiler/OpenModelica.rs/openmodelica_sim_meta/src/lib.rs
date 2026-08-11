@@ -25,8 +25,16 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod fixedstep;
+pub mod gbode;
+pub mod linearize;
 pub mod omclog;
+/// `-csvInput`, which needs a filesystem: host builds only.
+#[cfg(feature = "std")]
+pub(crate) mod extinput;
+pub mod optimization;
 pub mod simflags;
+pub mod sync;
 #[cfg(sundials)]
 pub mod sundials;
 
@@ -44,6 +52,26 @@ pub const REAL_OFF: u32 = 8;
 /// i32 words in the fired-`terminate` info block at [`Layout::term_info_off`]:
 /// `msg`, `file`, `lineStart`, `colStart`, `lineEnd`, `colEnd`, `readOnly`.
 pub const TERM_INFO_WORDS: u32 = 7;
+
+/// Bytes per base clock / sub-clock in `SimData` — the mutable half of C's
+/// `BASECLOCK_DATA` / `SUBCLOCK_DATA`; the constant half is in [`BaseClockMeta`].
+pub const BASECLOCK_BYTES: u32 = 40;
+pub const SUBCLOCK_BYTES: u32 = 24;
+
+/// Field offsets inside those blocks, baked into the emitted module and read back
+/// by the driver.
+pub mod clock_field {
+    pub const INTERVAL: u32 = 0;
+    pub const PREV_INTERVAL: u32 = 8;
+    pub const LAST_ACTIVATION: u32 = 16;
+    pub const COUNT: u32 = 24;
+    pub const INTERVAL_COUNTER: u32 = 28;
+    pub const RESOLUTION: u32 = 32;
+
+    pub const SUB_PREV_INTERVAL: u32 = 0;
+    pub const SUB_LAST_ACTIVATION: u32 = 8;
+    pub const SUB_COUNT: u32 = 16;
+}
 
 /// The wasm value type a scalar occupies in `SimData` (4-byte `i32` for
 /// Integer/Boolean, 8-byte `f64` for Real). The single definition used by both
@@ -67,8 +95,8 @@ pub struct Layout {
     /// `functionAlgebraics` also runs the discrete update / saves `pre`, so
     /// drivers call it only in the once-per-step order.
     pub has_when: bool,
-    /// The model uses `homotopy()`, so a `functionInitialEquations_lambda0` is
-    /// emitted and the driver may fall back to homotopy continuation.
+    /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
+    /// the driver runs the continuation over `functionInitialEquations_lambda0`.
     pub has_homotopy: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: u32,
@@ -92,6 +120,9 @@ pub struct Layout {
     /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
     /// the driver for the run's final discrete update.
     pub terminal_off: u32,
+    /// `initial()` flag (i32): C's `data->simulationInfo->initial`, raised by the
+    /// driver for the whole initialization phase.
+    pub initial_off: u32,
     /// C's `TermMsg`/`TermInfo`: the fired `terminate(...)`'s message and source
     /// position, as `[msg, file, lineStart, colStart, lineEnd, colEnd, readOnly]`
     /// (i32 each; the first two are String handles).
@@ -135,16 +166,63 @@ pub struct Layout {
     pub mathevents_off: u32,
     /// Zero-crossing hysteresis tolerance slot (f64).
     pub zctol_off: u32,
-    /// Base of the overridable start-value region (one f64 per state).
+    /// C's `realVarsData[i].attribute.start`: one f64 per real variable, in
+    /// real-variable index order (states, derivatives, algebraics).
+    /// `functionInitStartValues` fills it; `-iif`/`-override` may replace entries;
+    /// the driver then copies it over the live region (C's `setAllVarsToStart`).
     pub start_off: u32,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
     pub state_nom_off: u32,
+    /// Base of the per-state `max` attribute, written the same way; C's
+    /// `functionJacAC_num` flips its difference quotient at the bound.
+    pub state_max_off: u32,
+    /// Base of the linearization scratch (f64): the symbolic `A|B|C|D` the
+    /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
+    pub linz_off: u32,
+    pub n_linz: u32,
+    /// `method="optimization"`: the attribute arrays C reads out of the `_init.xml`
+    /// (`realVarsData[i].attribute`), one entry per real variable in real-variable
+    /// index order — `min`, `max`, `nominal` as f64 and `useNominal` as i32
+    /// (`start` is [`Layout::start_off`], which every model has). Written by
+    /// `functionUpdateBoundVariableAttributes` once the parameters are known; the
+    /// optimizer also *writes* `nominal` back, as C does.
+    /// `n_opt_attr` is 0 for a model without an optimization problem.
+    pub n_opt_attr: u32,
+    pub opt_min_off: u32,
+    pub opt_max_off: u32,
+    pub opt_nom_off: u32,
+    pub opt_use_nom_off: u32,
     /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
     /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
     /// as a result row's last columns.
     pub n_sens: u32,
     pub sens_off: u32,
+    /// `--daeMode`: C's `daeModeData->nResidualVars`, also the size of the implicit
+    /// system IDA solves. 0 ⇒ an explicit ODE, and no `dae_*` region exists.
+    pub n_dae_res: u32,
+    /// Base of `daeModeData->residualVars` (f64 each).
+    pub dae_res_off: u32,
+    pub n_dae_aux: u32,
+    /// Base of `daeModeData->auxiliaryVars` (f64 each).
+    pub dae_aux_off: u32,
+    /// `daeModeData->nAlgebraicDAEVars`: the unknowns IDA carries after the states,
+    /// so `n_dae_res == n_states + n_dae_alg`.
+    pub n_dae_alg: u32,
+    /// Base of their `nominal` attributes, written like `state_nom_off`.
+    pub dae_alg_nom_off: u32,
+    /// Number of synchronous base clocks (`SimCode.clockedPartitions`).
+    pub n_base_clocks: u32,
+    /// Base of the per-base-clock state ([`BASECLOCK_BYTES`] each).
+    pub clock_off: u32,
+    /// Total number of sub-clocks over all base clocks.
+    pub n_sub_clocks: u32,
+    /// Base of the per-sub-clock state ([`SUBCLOCK_BYTES`] each), flattened in
+    /// base-clock order — [`BaseClockMeta::sub_base`] indexes into it.
+    pub subclock_off: u32,
+    /// Base of the per-base-clock `$_clkfire` flags (one i32 each): an event
+    /// clock's `when`-body raises its flag, the driver fires and clears it.
+    pub clock_fire_off: u32,
     pub total: u32,
 }
 
@@ -171,6 +249,13 @@ impl Layout {
         n_nlsjac_f64: u32,
         n_math: u32,
         n_sens: u32,
+        n_dae_res: u32,
+        n_dae_aux: u32,
+        n_dae_alg: u32,
+        n_base_clocks: u32,
+        n_sub_clocks: u32,
+        n_linz: u32,
+        n_opt_attr: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -189,7 +274,8 @@ impl Layout {
         let pre_bool_off = pre_int_off + n_int_alg * 4;
         let terminate_off = pre_bool_off + n_bool_alg * 4;
         let terminal_off = terminate_off + 4;
-        let term_info_off = terminal_off + 4;
+        let initial_off = terminal_off + 4;
+        let term_info_off = initial_off + 4;
         let n_out_off = term_info_off + TERM_INFO_WORDS * 4;
         let nls_fail_off = n_out_off + 4;
         let lambda_off = (nls_fail_off + 4 + 7) & !7;
@@ -207,21 +293,51 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let state_nom_off = start_off + n_states * 8;
-        let sens_off = state_nom_off + n_states * 8;
-        let total = sens_off + n_sens * 8;
+        let state_nom_off = start_off + n_real * 8;
+        let state_max_off = state_nom_off + n_states * 8;
+        let sens_off = state_max_off + n_states * 8;
+        let dae_res_off = sens_off + n_sens * 8;
+        let dae_aux_off = dae_res_off + n_dae_res * 8;
+        let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
+        let clock_off = dae_alg_nom_off + n_dae_alg * 8;
+        let subclock_off = clock_off + n_base_clocks * BASECLOCK_BYTES;
+        let clock_fire_off = subclock_off + n_sub_clocks * SUBCLOCK_BYTES;
+        let linz_off = (clock_fire_off + n_base_clocks * 4 + 7) & !7;
+        let opt_min_off = linz_off + n_linz * 8;
+        let opt_max_off = opt_min_off + n_opt_attr * 8;
+        let opt_nom_off = opt_max_off + n_opt_attr * 8;
+        let opt_use_nom_off = opt_nom_off + n_opt_attr * 8;
+        let total = opt_use_nom_off + n_opt_attr * 4;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
-            terminate_off, terminal_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
+            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, state_nom_off, n_sens, sens_off, total,
+            mathevents_off, zctol_off, start_off, state_nom_off, state_max_off, n_sens, sens_off,
+            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
+            n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
+            n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off, total,
         }
     }
 
-    /// Byte offset of state `i`'s overridable start-value slot.
-    pub fn state_start_off(&self, i: u32) -> u32 {
+    /// Byte offset of base clock `i`'s state block.
+    pub fn base_clock_off(&self, i: u32) -> u32 {
+        self.clock_off + i * BASECLOCK_BYTES
+    }
+    /// Byte offset of the sub-clock at flat index `k`.
+    pub fn sub_clock_off(&self, k: u32) -> u32 {
+        self.subclock_off + k * SUBCLOCK_BYTES
+    }
+
+    /// Byte offset of real variable `i`'s `start` attribute slot.
+    pub fn real_start_off(&self, i: u32) -> u32 {
         self.start_off + i * 8
+    }
+
+    /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
+    /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
+    pub fn dae_mode(&self) -> bool {
+        self.n_dae_res > 0
     }
 
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
@@ -290,6 +406,22 @@ pub struct MetaVar {
     pub filter: u8,
 }
 
+/// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
+/// Values, `pre`-values and real `start`s live in `SimData`; only the names and the
+/// constant attributes it quotes are metadata.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct SotiVars {
+    /// Real variables in real-variable index order (states, derivatives, then the
+    /// other reals) with the `nominal` attribute; a state's runtime nominal comes
+    /// from [`Layout::state_nom_off`] instead.
+    pub reals: Vec<(String, f64)>,
+    /// Integer/Boolean variables with their `start` attribute.
+    pub ints: Vec<(String, i32)>,
+    pub bools: Vec<(String, i32)>,
+    /// String variables with their `start` attribute.
+    pub strings: Vec<(String, String)>,
+}
+
 /// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
 /// which flag lets it back in (C's `shouldFilterOutput` +
 /// `initializeOutputFilter`).
@@ -318,6 +450,103 @@ pub struct JacAInfo {
     pub rows_by_col: Vec<Vec<u32>>,
 }
 
+/// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct DaeInfo {
+    /// C's `daeModeData->algIndexes` as `SimData` offsets, in the order they follow
+    /// the states in IDA's `y`.
+    pub alg_offs: Vec<u32>,
+    /// `daeModeData->sparsePattern`: `∂F/∂(y, y')` with its coloring. `None` ⇒ no
+    /// pattern, which the KLU linear solver cannot work without.
+    pub sparsity: Option<JacAInfo>,
+}
+
+/// `--linearizationDumpLanguage`: the frame, the matrix rendering and the
+/// file name.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum LinLanguage {
+    #[default]
+    Modelica,
+    Matlab,
+    Julia,
+    Python,
+}
+
+impl LinLanguage {
+    /// The extension `linearized_model` gets.
+    pub fn ext(self) -> &'static str {
+        match self {
+            LinLanguage::Modelica => ".mo",
+            LinLanguage::Matlab => ".m",
+            LinLanguage::Julia => ".jl",
+            LinLanguage::Python => ".py",
+        }
+    }
+}
+
+/// One `input`/`output` variable's `SimData` slot.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct LinVar {
+    pub off: u32,
+    pub negate: bool,
+}
+
+/// What `-l` needs beyond the ODE: C's `nInputVars`/`nOutputVars` as `SimData`
+/// slots (standing in for its `input_function`/`output_function`), and the
+/// `linear_model_frame()` the code generator baked the dump language into.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct LinInfo {
+    /// Slots of the top-level `input` variables, in `u`/`B` column order.
+    pub input_vars: Vec<LinVar>,
+    /// Slots of the top-level `output` variables, in `y`/`C` row order.
+    pub output_vars: Vec<LinVar>,
+    pub language: LinLanguage,
+    /// C's `linear_model_frame()` / `linear_model_datarecovery_frame()`: a printf
+    /// frame with `%s` per matrix/vector (and `%g` for the stop time). Empty is
+    /// what the template emits when linearization is disabled or too big.
+    pub frame: String,
+    pub frame_datarec: String,
+    /// What C's empty frame prints before it.
+    pub disabled_reason: String,
+    /// Bit `k` ⇒ matrix `k` (`A`,`B`,`C`,`D`) has a symbolic `linearJac*` export,
+    /// C's `initialAnalyticJacobian<X>` availability. Bit 0 is also C's
+    /// `sizeTmpVars > 0`, which decides whether the numeric pass runs.
+    pub sym_mask: u8,
+    /// C's `modelData->runTestsuite`: shortens the created-model notice.
+    pub run_testsuite: bool,
+    /// Rows of each matrix: `nStates` for `A`/`B`, `nOutputVars` for `C`/`D`.
+    pub jac_rows: [u32; 4],
+    pub jac_cols: [u32; 4],
+}
+
+/// The compile-time half of C's `SUBCLOCK_DATA` (its `CLOCK_STATS` live in `SimData`).
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct SubClockMeta {
+    /// `shiftCounter/resolution` of `shiftSample`/`backSample`, relative to the
+    /// base clock.
+    pub shift_num: i64,
+    pub shift_den: i64,
+    /// `subSample(u, f)` is `f/1`, `superSample(u, f)` is `1/f`.
+    pub factor_num: i64,
+    pub factor_den: i64,
+    /// Trigger an event at the sub-clock's activation time.
+    pub hold_events: bool,
+    /// The sub-clock names a `solverMethod` (C's `"External"`). Only the
+    /// `LOG_SYNCHRONOUS` dump distinguishes it; it is driven like any other.
+    pub external_solver: bool,
+}
+
+/// The compile-time half of C's `BASECLOCK_DATA`.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct BaseClockMeta {
+    pub is_event_clock: bool,
+    /// An `INFERRED_CLOCK` base clock, defaulted to `Clock(1, 1)` with a warning.
+    pub inferred: bool,
+    /// Flat index of this clock's first sub-clock in the sub-clock region.
+    pub sub_base: u32,
+    pub sub: Vec<SubClockMeta>,
+}
+
 /// Dynamic state-selection metadata for one `$STATESET`. All offsets are
 /// SimData-relative bytes.
 #[derive(Clone, PartialEq, Debug)]
@@ -335,6 +564,83 @@ pub struct StateSetInfo {
     pub seed_offs: Vec<u32>,
     /// Jacobian result slots (f64), row order (`n_dummy` of them) — column output.
     pub result_offs: Vec<u32>,
+}
+
+/// One symbolic Jacobian the optimizer differentiates through: C's
+/// `analyticJacobians[INDEX_JAC_{B,C,D}]` with the parts `diffSynColoredOptimizerSystem`
+/// reads. Not square (B/C are `nStates+nInputVars` columns by
+/// `nStates + nOptimizeConstraints (+ lagrange, + mayer)` rows), so both dimensions
+/// are carried.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct OptJac {
+    pub n_cols: u32,
+    pub n_rows: u32,
+    /// Each color: the 0-based columns seeded together (C's `sparsePattern->colorCols`
+    /// inverted, as [`JacAInfo::colors`]).
+    pub colors: Vec<Vec<u32>>,
+    /// `rows_by_col[col]` = the 0-based nonzero rows of that column (C's
+    /// `leadindex`/`index` pair).
+    pub rows_by_col: Vec<Vec<u32>>,
+    /// Seed slots in column order (C's `seedVars`): the optimizer writes the
+    /// variable's nominal value into the columns of one color and 0 elsewhere.
+    pub seed_offs: Vec<u32>,
+    /// Result slots in row order (C's `resultVars`).
+    pub result_offs: Vec<u32>,
+    /// Model export evaluating one column, and the seed-independent equations to
+    /// run first (C's `constantEqns`); empty when there are none.
+    pub column_fn: String,
+    pub const_fn: String,
+}
+
+/// C's `$OMC$objectMayerTerm`: the real-variable index holding the term's value
+/// and the Jacobian rows its derivative lands in (C's `index_Dres` / `index_DresB`
+/// / `index_DresC`, its `derIndex`). A row is `None` when the backend did not
+/// differentiate the term into that matrix.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct OptTerm {
+    pub index: u32,
+    pub row_b: Option<u32>,
+    pub row_c: Option<u32>,
+}
+
+/// What `method="optimization"` needs from the model beyond the ODE: the
+/// constraint counts, the objective terms, the input variables and the symbolic
+/// Jacobians. `None` ⇒ the model was not translated with
+/// `--generateDynamicJacobian`/Optimica, and C's generated `mayer`/`lagrange`
+/// stubs would report "The model was not compiled with -g=Optimica".
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct OptInfo {
+    /// C's `nOptimizeConstraints` / `nOptimizeFinalConstraints`. Their variables are
+    /// the *last* real variables, so the first constrained index (C's `index_con`)
+    /// is `n_real - (n_con + n_final_con)`.
+    pub n_con: u32,
+    pub n_final_con: u32,
+    /// Real-variable indices of the `input` variables, in C's `inputVars` order —
+    /// the optimizer's `u` (C's `getInputVarIndicesInOptimization`).
+    pub inputs: Vec<u32>,
+    /// C's `OPT_LOOP_INPUT`: an input whose value is taken from another variable's
+    /// slot when the initial guess comes from a file (C's `setInputData(data, 1)`).
+    /// Pairs of (input index into [`inputs`], source real index).
+    pub loop_inputs: Vec<(u32, u32)>,
+    pub mayer: Option<OptTerm>,
+    pub lagrange: Option<OptTerm>,
+    /// Every real variable's name, in real-variable index order. C reads
+    /// `realVarsData[i].info.name`; the result variables are not enough here — an
+    /// input or a constraint variable (`$y`, `$EqCon$y`) is not among them.
+    pub real_names: Vec<String>,
+    /// C's `getTimeGrid`: the `$OPT_TGRID` parameter slots defining a model-supplied
+    /// time grid; empty ⇒ the equidistant grid from `numberOfIntervals`.
+    pub tgrid: Vec<u32>,
+    /// Slot holding the Optimica `startTime` class attribute (C's `startTimeOpt`,
+    /// which starts a pre-simulation phase before `t0`); `None` ⇒ C's default of
+    /// `startTime - 1.0`, i.e. no pre-simulation.
+    pub start_time_opt: Option<u32>,
+    /// C's `INDEX_JAC_B`/`_C`/`_D`. `B` and `C` are required (the constraint
+    /// Jacobian and its final-point variant); `D` exists only with final
+    /// constraints.
+    pub jac_b: Option<OptJac>,
+    pub jac_c: Option<OptJac>,
+    pub jac_d: Option<OptJac>,
 }
 
 /// Solver statistics filled by the driver and rendered into the simulation log by
@@ -362,9 +668,9 @@ pub struct FmiVr {
     pub wty: WTy,
     /// The variable is a negated alias of the slot at `off`; a read negates it.
     pub negate: bool,
-    /// A state's start-value slot, 0 for everything else. An Initialization Mode
-    /// set must land here: `functionInitStartValues` runs after the parameter
-    /// overrides and would overwrite `off` from `$START`.
+    /// A real variable's `start` attribute slot, 0 for everything else. An
+    /// Initialization Mode set must land here: `setAllVarsToStart` runs after the
+    /// parameter overrides and would overwrite `off` from it.
     pub start_off: u32,
     /// The variable is a String: `off` is its i32 runtime-String-handle slot, so
     /// the adapter reads/writes it through `rt_str_*` rather than as a number.
@@ -401,6 +707,14 @@ pub struct SimMeta {
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
     pub zc_desc: Vec<String>,
+    /// Per-relation description, 1:1 with the layout's relations — C's
+    /// `relationDescription`, dumped in the `LOG_EVENTS` relation status block.
+    pub rel_desc: Vec<String>,
+    /// C's `samplesInfo[i].index`, 1:1 with the layout's samples; named in the
+    /// `LOG_EVENTS` time-event line.
+    pub sample_index: Vec<i32>,
+    /// C's `modelData` variable arrays, for the `LOG_SOTI` initialization dump.
+    pub soti: SotiVars,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -408,6 +722,30 @@ pub struct SimMeta {
     /// solver order — C reads the same list out of the `_info.json` `defines` array
     /// to name the unknowns in its `-lv=LOG_NLS` blocks.
     pub nls_vars: Vec<NlsVars>,
+    /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
+    pub dae: Option<DaeInfo>,
+    /// Synchronous base clocks in `base_idx` order; empty for a model with no
+    /// clocked partitions.
+    pub clocks: Vec<BaseClockMeta>,
+    /// What `-l` needs; `None` for a target that emits no linearization support.
+    pub lin: Option<LinInfo>,
+    /// What `method="optimization"` needs; `None` for a model without an
+    /// optimization problem.
+    pub opt: Option<OptInfo>,
+    /// C's `modelData->nInputVars` / `inputNames`: each `input` variable in
+    /// declaration order. `-csvInput` matches its columns against the names.
+    pub inputs: Vec<InputVar>,
+}
+
+/// One `input` variable, as `-csvInput` reaches it: `off` is a real input's `start`
+/// attribute slot (published by `setAllVarsToStart`) and any other type's own slot,
+/// which is where C's `input_function` puts it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct InputVar {
+    pub off: u32,
+    pub wty: WTy,
+    /// The result name the file's column header has to match.
+    pub name: String,
 }
 
 /// [`SimMeta::nls_vars`] entry.
@@ -488,8 +826,109 @@ impl SimMeta {
         if let Some(h) = crate::simflags::with_flags(|f| f.step_size) {
             return h;
         }
+        self.translated_step_size()
+    }
+
+    /// [`step_size`](Self::step_size) as the model was translated, ignoring
+    /// `-stepSize`: what C reads out of the init XML.
+    fn translated_step_size(&self) -> f64 {
         let n = if self.n_intervals > 0 { self.n_intervals } else { 500 };
         (self.stop_time - self.start_time) / n as f64
+    }
+
+    /// C's `read_experiment` (`simulation_input_xml.c`) plus the step-size checks
+    /// `solver_main.c` makes right after it: the run scalars the model was translated
+    /// with, overridden by the command line. [`n_intervals`](Self::n_intervals) is C's
+    /// `numSteps`, which the output grid is cut from, so a moved step size lands there.
+    ///
+    /// Called once per run by whichever entry point owns the driver.
+    pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
+        use crate::omclog::{self, STDOUT};
+        let translated = self.translated_step_size();
+        let mut recalc = false;
+        if let Some(t) = f.start_time {
+            self.start_time = t;
+            recalc = true;
+        }
+        if let Some(t) = f.stop_time {
+            self.stop_time = t;
+            recalc = true;
+        }
+        let span = self.stop_time - self.start_time;
+        let mut step = match f.step_size {
+            Some(h) => h,
+            None if recalc => {
+                omclog::warning(
+                    STDOUT,
+                    true,
+                    "Start or stop time was overwritten, but no new integrator step size was \
+                     provided.",
+                );
+                omclog::info(STDOUT, false, "Re-calculating step size for 500 intervals.");
+                omclog::info(STDOUT, false, "Use `-stepSize=<value>` to silence this warning.");
+                omclog::close_warning(STDOUT);
+                span / 500.0
+            }
+            None => translated,
+        };
+        let min_step = 4.0 * f64::EPSILON * libm::fmax(libm::fabs(self.start_time), libm::fabs(self.stop_time));
+        if step < min_step && span > 0.0 {
+            omclog::warning(
+                STDOUT,
+                false,
+                &alloc::format!(
+                    "The step-size {} is too small. Adjust the step-size to {}.",
+                    crate::driver::format_g(step, 6),
+                    crate::driver::format_g(min_step, 6)
+                ),
+            );
+            step = min_step;
+        }
+        if step > span + 1e-7 {
+            omclog::warning(STDOUT, true, "Integrator step size greater than length of experiment");
+            omclog::info(
+                STDOUT,
+                false,
+                &alloc::format!(
+                    "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
+                    self.start_time,
+                    self.stop_time,
+                    step
+                ),
+            );
+            omclog::close_warning(STDOUT);
+        }
+        // Only when a flag moved it: `n_intervals` is exact where C re-derives it
+        // from the step size the init XML carries.
+        if (recalc || f.step_size.is_some()) && span > 0.0 && step > 0.0 {
+            self.n_intervals = libm::round(span / step) as u32;
+        }
+        if let Some(t) = f.tolerance {
+            self.tolerance = t;
+        }
+        if let Some(fmt) = &f.output_format {
+            self.output_format = fmt.clone();
+        }
+        if f.noemit {
+            self.output_format = String::from("empty");
+        }
+        // C's `startNonInteractiveSimulation`, after `read_experiment`.
+        if let Some(t) = f.linearize {
+            self.stop_time = t;
+            omclog::info(
+                STDOUT,
+                false,
+                &alloc::format!("Linearization will be performed at point of time: {t:.6}"),
+            );
+        }
+    }
+
+    /// [`apply_flags`](Self::apply_flags) on a copy, for a caller whose metadata is
+    /// shared between runs.
+    pub fn with_flags(&self, f: &crate::simflags::SimFlags) -> SimMeta {
+        let mut m = self.clone();
+        m.apply_flags(f);
+        m
     }
 }
 
@@ -501,7 +940,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 8;
+const VERSION: u32 = 12;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -529,15 +968,31 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
-        l.terminate_off, l.terminal_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
+        l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.state_nom_off, l.n_sens, l.sens_off, l.total,
+        l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
+        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
+        l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
+        l.linz_off, l.n_linz,
+        l.n_opt_attr, l.opt_min_off, l.opt_max_off, l.opt_nom_off, l.opt_use_nom_off,
+        l.total,
     ] {
         put_u32(o, v);
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+}
+fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
+    match j {
+        None => o.push(0),
+        Some(j) => {
+            o.push(1);
+            put_u32(o, j.n);
+            put_u32s2(o, &j.colors);
+            put_u32s2(o, &j.rows_by_col);
+        }
+    }
 }
 fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
     match k {
@@ -581,15 +1036,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_kind(&mut o, &v.kind);
         o.push(v.filter);
     }
-    match &m.jac_a {
-        None => o.push(0),
-        Some(j) => {
-            o.push(1);
-            put_u32(&mut o, j.n);
-            put_u32s2(&mut o, &j.colors);
-            put_u32s2(&mut o, &j.rows_by_col);
-        }
-    }
+    put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
     for s in &m.state_sets {
         put_u32(&mut o, s.n_candidates);
@@ -614,6 +1061,31 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.zc_desc {
         put_str(&mut o, d);
     }
+    put_u32(&mut o, m.rel_desc.len() as u32);
+    for d in &m.rel_desc {
+        put_str(&mut o, d);
+    }
+    put_u32(&mut o, m.sample_index.len() as u32);
+    for i in &m.sample_index {
+        put_u32(&mut o, *i as u32);
+    }
+    put_u32(&mut o, m.soti.reals.len() as u32);
+    for (n, v) in &m.soti.reals {
+        put_str(&mut o, n);
+        put_f64(&mut o, *v);
+    }
+    for list in [&m.soti.ints, &m.soti.bools] {
+        put_u32(&mut o, list.len() as u32);
+        for (n, v) in list {
+            put_str(&mut o, n);
+            put_u32(&mut o, *v as u32);
+        }
+    }
+    put_u32(&mut o, m.soti.strings.len() as u32);
+    for (n, v) in &m.soti.strings {
+        put_str(&mut o, n);
+        put_str(&mut o, v);
+    }
     put_u32s(&mut o, &m.sens_params);
     put_u32(&mut o, m.nls_vars.len() as u32);
     for v in &m.nls_vars {
@@ -622,6 +1094,104 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         for n in &v.names {
             put_str(&mut o, n);
         }
+    }
+    match &m.dae {
+        None => o.push(0),
+        Some(d) => {
+            o.push(1);
+            put_u32s(&mut o, &d.alg_offs);
+            put_jac(&mut o, &d.sparsity);
+        }
+    }
+    put_u32(&mut o, m.clocks.len() as u32);
+    for c in &m.clocks {
+        o.push(c.is_event_clock as u8);
+        o.push(c.inferred as u8);
+        put_u32(&mut o, c.sub_base);
+        put_u32(&mut o, c.sub.len() as u32);
+        for s in &c.sub {
+            for v in [s.shift_num, s.shift_den, s.factor_num, s.factor_den] {
+                o.extend_from_slice(&v.to_le_bytes());
+            }
+            o.push(s.hold_events as u8);
+            o.push(s.external_solver as u8);
+        }
+    }
+    match &m.lin {
+        None => o.push(0),
+        Some(l) => {
+            o.push(1);
+            for g in [&l.input_vars, &l.output_vars] {
+                put_u32(&mut o, g.len() as u32);
+                for v in g {
+                    put_u32(&mut o, v.off);
+                    o.push(v.negate as u8);
+                }
+            }
+            o.push(l.language as u8);
+            put_str(&mut o, &l.frame);
+            put_str(&mut o, &l.frame_datarec);
+            put_str(&mut o, &l.disabled_reason);
+            o.push(l.sym_mask);
+            o.push(l.run_testsuite as u8);
+            for v in l.jac_rows.iter().chain(l.jac_cols.iter()) {
+                put_u32(&mut o, *v);
+            }
+        }
+    }
+    match &m.opt {
+        None => o.push(0),
+        Some(t) => {
+            o.push(1);
+            put_u32(&mut o, t.n_con);
+            put_u32(&mut o, t.n_final_con);
+            put_u32s(&mut o, &t.inputs);
+            put_u32(&mut o, t.loop_inputs.len() as u32);
+            for &(i, src) in &t.loop_inputs {
+                put_u32(&mut o, i);
+                put_u32(&mut o, src);
+            }
+            for term in [&t.mayer, &t.lagrange] {
+                match term {
+                    None => o.push(0),
+                    Some(x) => {
+                        o.push(1);
+                        put_u32(&mut o, x.index);
+                        for row in [x.row_b, x.row_c] {
+                            put_u32(&mut o, row.map_or(u32::MAX, |r| r));
+                        }
+                    }
+                }
+            }
+            put_u32(&mut o, t.real_names.len() as u32);
+            for n in &t.real_names {
+                put_str(&mut o, n);
+            }
+            put_u32s(&mut o, &t.tgrid);
+            put_u32(&mut o, t.start_time_opt.unwrap_or(u32::MAX));
+            for j in [&t.jac_b, &t.jac_c, &t.jac_d] {
+                match j {
+                    None => o.push(0),
+                    Some(j) => {
+                        o.push(1);
+                        put_u32(&mut o, j.n_cols);
+                        put_u32(&mut o, j.n_rows);
+                        put_u32s2(&mut o, &j.colors);
+                        put_u32s2(&mut o, &j.rows_by_col);
+                        put_u32s(&mut o, &j.seed_offs);
+                        put_u32s(&mut o, &j.result_offs);
+                        put_str(&mut o, &j.column_fn);
+                        put_str(&mut o, &j.const_fn);
+                    }
+                }
+            }
+        }
+    }
+    put_u32(&mut o, m.inputs.len() as u32);
+    for v in &m.inputs {
+        put_u32(&mut o, v.off);
+        o.push(matches!(v.wty, WTy::F64) as u8);
+        put_str(&mut o, &v.name);
     }
     o
 }
@@ -642,6 +1212,9 @@ impl<'a> Reader<'a> {
     }
     fn f64(&mut self) -> Result<f64, &'static str> {
         Ok(f64::from_le_bytes(self.take(8)?.try_into().unwrap()))
+    }
+    fn i64(&mut self) -> Result<i64, &'static str> {
+        Ok(i64::from_le_bytes(self.take(8)?.try_into().unwrap()))
     }
     fn u8(&mut self) -> Result<u8, &'static str> {
         Ok(self.take(1)?[0])
@@ -667,6 +1240,12 @@ impl<'a> Reader<'a> {
         }
         Ok(v)
     }
+    fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
+        Ok(match self.u8()? {
+            0 => None,
+            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+        })
+    }
     fn layout(&mut self) -> Result<Layout, &'static str> {
         let mut l = Layout {
             n_states: self.u32()?,
@@ -685,6 +1264,7 @@ impl<'a> Reader<'a> {
             pre_bool_off: self.u32()?,
             terminate_off: self.u32()?,
             terminal_off: self.u32()?,
+            initial_off: self.u32()?,
             term_info_off: self.u32()?,
             n_out_off: self.u32()?,
             nls_fail_off: self.u32()?,
@@ -706,8 +1286,27 @@ impl<'a> Reader<'a> {
             zctol_off: self.u32()?,
             start_off: self.u32()?,
             state_nom_off: self.u32()?,
+            state_max_off: self.u32()?,
             n_sens: self.u32()?,
             sens_off: self.u32()?,
+            n_dae_res: self.u32()?,
+            dae_res_off: self.u32()?,
+            n_dae_aux: self.u32()?,
+            dae_aux_off: self.u32()?,
+            n_dae_alg: self.u32()?,
+            dae_alg_nom_off: self.u32()?,
+            n_base_clocks: self.u32()?,
+            clock_off: self.u32()?,
+            n_sub_clocks: self.u32()?,
+            subclock_off: self.u32()?,
+            clock_fire_off: self.u32()?,
+            linz_off: self.u32()?,
+            n_linz: self.u32()?,
+            n_opt_attr: self.u32()?,
+            opt_min_off: self.u32()?,
+            opt_max_off: self.u32()?,
+            opt_nom_off: self.u32()?,
+            opt_use_nom_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -755,10 +1354,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..nvars {
         vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
     }
-    let jac_a = match r.u8()? {
-        0 => None,
-        _ => Some(JacAInfo { n: r.u32()?, colors: r.u32s2()?, rows_by_col: r.u32s2()? }),
-    };
+    let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
@@ -789,6 +1385,25 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..ndesc {
         zc_desc.push(r.string()?);
     }
+    let nrdesc = r.u32()? as usize;
+    let mut rel_desc = Vec::with_capacity(nrdesc);
+    for _ in 0..nrdesc {
+        rel_desc.push(r.string()?);
+    }
+    let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
+    let mut soti = SotiVars::default();
+    for _ in 0..r.u32()? {
+        soti.reals.push((r.string()?, r.f64()?));
+    }
+    for _ in 0..r.u32()? {
+        soti.ints.push((r.string()?, r.u32()? as i32));
+    }
+    for _ in 0..r.u32()? {
+        soti.bools.push((r.string()?, r.u32()? as i32));
+    }
+    for _ in 0..r.u32()? {
+        soti.strings.push((r.string()?, r.string()?));
+    }
     let sens_params = r.u32s()?;
     let nsys = r.u32()? as usize;
     let mut nls_vars = Vec::with_capacity(nsys);
@@ -801,10 +1416,138 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         nls_vars.push(NlsVars { eq_index, names });
     }
+    let dae = match r.u8()? {
+        0 => None,
+        _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
+    };
+    let nclocks = r.u32()? as usize;
+    let mut clocks = Vec::with_capacity(nclocks);
+    for _ in 0..nclocks {
+        let is_event_clock = r.u8()? != 0;
+        let inferred = r.u8()? != 0;
+        let sub_base = r.u32()?;
+        let nsub = r.u32()? as usize;
+        let mut sub = Vec::with_capacity(nsub);
+        for _ in 0..nsub {
+            sub.push(SubClockMeta {
+                shift_num: r.i64()?,
+                shift_den: r.i64()?,
+                factor_num: r.i64()?,
+                factor_den: r.i64()?,
+                hold_events: r.u8()? != 0,
+                external_solver: r.u8()? != 0,
+            });
+        }
+        clocks.push(BaseClockMeta { is_event_clock, inferred, sub_base, sub });
+    }
+    let lin = match r.u8()? {
+        0 => None,
+        _ => {
+            let mut group = || -> Result<Vec<LinVar>, &'static str> {
+                let n = r.u32()? as usize;
+                let mut out = Vec::with_capacity(n);
+                for _ in 0..n {
+                    out.push(LinVar { off: r.u32()?, negate: r.u8()? != 0 });
+                }
+                Ok(out)
+            };
+            let input_vars = group()?;
+            let output_vars = group()?;
+            let language = match r.u8()? {
+                0 => LinLanguage::Modelica,
+                1 => LinLanguage::Matlab,
+                2 => LinLanguage::Julia,
+                3 => LinLanguage::Python,
+                _ => return Err("sim_meta: bad LinLanguage tag"),
+            };
+            let frame = r.string()?;
+            let frame_datarec = r.string()?;
+            let disabled_reason = r.string()?;
+            let sym_mask = r.u8()?;
+            let run_testsuite = r.u8()? != 0;
+            let mut dims = [0u32; 8];
+            for d in &mut dims {
+                *d = r.u32()?;
+            }
+            let (rows, cols) = dims.split_at(4);
+            Some(LinInfo {
+                input_vars,
+                output_vars,
+                language,
+                frame,
+                frame_datarec,
+                disabled_reason,
+                sym_mask,
+                run_testsuite,
+                jac_rows: rows.try_into().unwrap(),
+                jac_cols: cols.try_into().unwrap(),
+            })
+        }
+    };
+    let opt = match r.u8()? {
+        0 => None,
+        _ => {
+            let n_con = r.u32()?;
+            let n_final_con = r.u32()?;
+            let inputs = r.u32s()?;
+            let nloop = r.u32()? as usize;
+            let mut loop_inputs = Vec::with_capacity(nloop);
+            for _ in 0..nloop {
+                loop_inputs.push((r.u32()?, r.u32()?));
+            }
+            let mut term = || -> Result<Option<OptTerm>, &'static str> {
+                Ok(match r.u8()? {
+                    0 => None,
+                    _ => {
+                        let index = r.u32()?;
+                        let mut row = || r.u32().map(|v| (v != u32::MAX).then_some(v));
+                        Some(OptTerm { index, row_b: row()?, row_c: row()? })
+                    }
+                })
+            };
+            let mayer = term()?;
+            let lagrange = term()?;
+            let n_names = r.u32()? as usize;
+            let mut real_names = Vec::with_capacity(n_names);
+            for _ in 0..n_names {
+                real_names.push(r.string()?);
+            }
+            let tgrid = r.u32s()?;
+            let start_time_opt = { let v = r.u32()?; (v != u32::MAX).then_some(v) };
+            let mut jac = || -> Result<Option<OptJac>, &'static str> {
+                Ok(match r.u8()? {
+                    0 => None,
+                    _ => Some(OptJac {
+                        n_cols: r.u32()?,
+                        n_rows: r.u32()?,
+                        colors: r.u32s2()?,
+                        rows_by_col: r.u32s2()?,
+                        seed_offs: r.u32s()?,
+                        result_offs: r.u32s()?,
+                        column_fn: r.string()?,
+                        const_fn: r.string()?,
+                    }),
+                })
+            };
+            let jac_b = jac()?;
+            let jac_c = jac()?;
+            let jac_d = jac()?;
+            Some(OptInfo {
+                n_con, n_final_con, inputs, loop_inputs, mayer, lagrange, real_names, tgrid,
+                start_time_opt, jac_b, jac_c, jac_d,
+            })
+        }
+    };
+    let mut inputs = Vec::new();
+    for _ in 0..r.u32()? {
+        let off = r.u32()?;
+        let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
+        inputs.push(InputVar { off, wty, name: r.string()? });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, sens_params,
-        nls_vars,
+        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, sample_index, soti, sens_params,
+        nls_vars, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -816,7 +1559,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -853,11 +1596,67 @@ mod tests {
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            sample_index: vec![1],
+            soti: SotiVars::default(),
             sens_params: vec![88],
             nls_vars: vec![NlsVars {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
             }],
+            dae: Some(DaeInfo {
+                alg_offs: vec![32, 40],
+                sparsity: Some(JacAInfo {
+                    n: 4,
+                    colors: vec![vec![0, 2], vec![1, 3]],
+                    rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                }),
+            }),
+            clocks: vec![BaseClockMeta {
+                is_event_clock: false,
+                inferred: false,
+                sub_base: 0,
+                sub: vec![
+                    SubClockMeta { shift_num: 0, shift_den: 1, factor_num: 1, factor_den: 1, hold_events: false, external_solver: false },
+                    SubClockMeta { shift_num: 1, shift_den: 3, factor_num: 4, factor_den: 1, hold_events: true, external_solver: false },
+                ],
+            }],
+            lin: Some(LinInfo {
+                input_vars: vec![LinVar { off: 40, negate: false }],
+                output_vars: vec![LinVar { off: 48, negate: true }],
+                language: LinLanguage::Julia,
+                frame: "function linearized_model()\n%s%s%s%s%s%s\nend".to_string(),
+                frame_datarec: String::new(),
+                disabled_reason: String::new(),
+                sym_mask: 0b1011,
+                run_testsuite: false,
+                jac_rows: [2, 2, 1, 1],
+                jac_cols: [2, 1, 2, 1],
+            }),
+            opt: Some(OptInfo {
+                n_con: 1,
+                n_final_con: 1,
+                inputs: vec![4],
+                loop_inputs: vec![(0, 3)],
+                mayer: Some(OptTerm { index: 5, row_b: None, row_c: Some(2) }),
+                lagrange: Some(OptTerm { index: 6, row_b: Some(2), row_c: Some(3) }),
+                real_names: vec!["x".to_string(), "der(x)".to_string()],
+                tgrid: vec![120, 128],
+                start_time_opt: Some(136),
+                jac_b: Some(OptJac {
+                    n_cols: 3,
+                    n_rows: 2,
+                    colors: vec![vec![0], vec![1, 2]],
+                    rows_by_col: vec![vec![0], vec![0, 1], vec![1]],
+                    seed_offs: vec![400, 408, 416],
+                    result_offs: vec![424, 432],
+                    column_fn: "optJacB".to_string(),
+                    const_fn: String::new(),
+                }),
+                jac_c: None,
+                jac_d: None,
+            }),
+            inputs: vec![InputVar { off: 96, wty: WTy::F64, name: "u".to_string() }],
         }
     }
 
@@ -902,6 +1701,37 @@ mod tests {
         simflags::set_flags(f);
         let only_k = |n: &str| n == "k";
         assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
+    }
+
+    /// C's `read_experiment`: the command line replaces what the model was
+    /// translated with, and `numSteps` follows the step size.
+    #[test]
+    fn apply_flags_is_cs_read_experiment() {
+        let flags = |args: &[&str]| {
+            let argv: Vec<String> =
+                core::iter::once("model".into()).chain(args.iter().map(|a| a.to_string())).collect();
+            simflags::parse(&argv).expect("parses")
+        };
+        // Untouched by an empty command line.
+        let m = sample().with_flags(&simflags::SimFlags::default());
+        assert_eq!((m.start_time, m.stop_time, m.n_intervals), (0.0, 1.0, 500));
+
+        // Moving the interval alone re-cuts it into 500 intervals, as C does.
+        let m = sample().with_flags(&flags(&["-startTime=1", "-stopTime=3"]));
+        assert_eq!((m.start_time, m.stop_time, m.n_intervals), (1.0, 3.0, 500));
+
+        // `-stepSize` is what `numSteps` is derived from.
+        let f = flags(&["-stopTime=2", "-stepSize=0.01", "-tolerance=1e-9", "-outputFormat=empty"]);
+        let m = sample().with_flags(&f);
+        assert_eq!((m.stop_time, m.n_intervals, m.tolerance), (2.0, 200, 1e-9));
+        assert_eq!(m.output_format, "empty");
+        // ... and `step_size()` still reports the exact value asked for.
+        simflags::set_flags(f);
+        assert_eq!(m.step_size(), 0.01);
+        simflags::set_flags(simflags::SimFlags::default());
+
+        // `-noemit` is `-outputFormat=empty`.
+        assert_eq!(sample().with_flags(&flags(&["-noemit"])).output_format, "empty");
     }
 
     #[test]

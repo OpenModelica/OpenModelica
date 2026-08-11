@@ -29,6 +29,11 @@
   .grid2 label.chk:not([hidden]) { color:var(--fg); display:flex; align-items:center; gap:7px; white-space:normal; cursor:pointer; font-size:13px; }
   .grid2 label.chk input { width:auto; margin:0; }
   input:disabled { color:var(--muted); }
+  #nativePanel { padding:0 2px 6px; }
+  #nativePanel .chk-group { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+  #nativePanel .chk { display:flex; align-items:center; gap:7px; color:var(--fg); font-size:13px; cursor:pointer; }
+  #nativePanel .chk input { width:auto; margin:0; }
+  #nativePanel .modal-hint { color:var(--muted); font-size:12px; margin:8px 0 0; }
 
   #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
   .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:7px 18px; }
@@ -94,6 +99,16 @@
       </div>
     </div>
 
+    <div class="section-label" id="nativeLabel" hidden>Add native binaries</div>
+    <div id="nativePanel" hidden>
+      <div class="chk-group" id="nativePlatforms"></div>
+      <button class="ghost" id="nativeGo" disabled>Build native FMU</button>
+      <p class="modal-hint">Compiles this FMU's component ahead of time for the
+      platforms you tick and repacks it with the matching FMI 3.0 loader library,
+      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
+      the compiler runs here.</p>
+    </div>
+
     <div class="section-label">Inputs, parameters and start values</div>
     <div id="icPanel">
       <div class="ic-grid" id="icGrid"></div>
@@ -127,7 +142,8 @@
 </main>
 
 <script type="module">
-import { loadFmu, readResource } from './fmu.js';
+import { loadFmu, readResource, findComponent, writeZip } from './fmu.js';
+import { loaderIndex, loaderBytes, compileForPlatform } from '../fmu-aot.js';
 import { simulate } from './master.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
 import { AnimView } from '../anim/anim-view.js';
@@ -191,6 +207,7 @@ async function openFile(file) {
     renderFields();
     applyDefaults();
     runBtn.disabled = false;
+    nativeGo.disabled = !nativeGroup.querySelector('input:checked');
     setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.common.getVersion()}.`);
   } catch (e) {
     fmu = null;
@@ -480,6 +497,63 @@ function renderFigures(rec, finite) {
 figToggle.onclick = () => {
   viewMode = (viewMode === 'all') ? 'auto' : 'all';
   if (lastRec) renderCharts(lastRec);
+};
+
+// ── native binaries for the loaded FMU ───────────────────────────────────────
+// The component is compiled here (fmu-aot-worker.js, wasmtime built for wasip1)
+// and repacked with the prebuilt loader library for each platform, so this works
+// on any FMI-LS-WASM FMU, whoever produced it.
+const PLATFORM_NAMES = {
+  'x86_64-linux': 'Linux x86-64', 'aarch64-linux': 'Linux ARM64',
+  'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
+  'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
+};
+const nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
+let loaders = [];
+
+(async () => {
+  loaders = await loaderIndex();
+  if (!loaders.length) return;
+  nativeGroup.replaceChildren(...loaders.map((e) => {
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: e.platform });
+    box.onchange = () => { nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked'); };
+    const label = Object.assign(document.createElement('label'), { className: 'chk' });
+    label.append(box, ' ' + (PLATFORM_NAMES[e.platform] || e.platform));
+    return label;
+  }));
+  el('nativeLabel').hidden = el('nativePanel').hidden = false;
+})();
+
+nativeGo.onclick = async () => {
+  const picked = [...nativeGroup.querySelectorAll('input:checked')].map((c) => c.value);
+  if (!fmu || !picked.length) return;
+  nativeGo.disabled = true;
+  const id = (fmu.md.cs || fmu.md.me).modelIdentifier;
+  try {
+    const component = findComponent(fmu.files, fmu.md);
+    const files = new Map(fmu.files);
+    for (const platform of picked) {
+      const entry = loaders.find((e) => e.platform === platform);
+      setStatus(`Compiling for ${platform}…`, 'busy');
+      const t0 = performance.now();
+      const cwasm = await compileForPlatform(component, entry.triple);
+      log('host', `${platform}: ${cwasm.length} bytes in ${Math.round(performance.now() - t0)} ms`);
+      files.set(`binaries/${platform}/${id}${entry.ext}`, await loaderBytes(entry));
+      files.set(`resources/${platform}.cwasm`, cwasm);
+    }
+    const blob = await writeZip(files);
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: `${id}-native.fmu`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`);
+  } catch (e) {
+    setStatus(`Native build failed: ${e.message}`, 'err');
+    log('host', e.stack || e.message);
+  } finally {
+    nativeGo.disabled = false;
+  }
 };
 
 addEventListener('resize', () => charts.redraw());

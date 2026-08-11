@@ -73,7 +73,7 @@ pub(crate) fn build_init_fn(
     exps: &[Arc<DAE::Exp>],
     base_global: u32,
     by_name: &HashMap<String, FnInfo>,
-    literals: &mut Vec<Vec<u8>>,
+    literals: &mut super::Literals,
 ) -> Result<we::Function> {
     HOISTING.with(|h| h.set(false));
     let mut ctx = FnCtx {

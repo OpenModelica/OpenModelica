@@ -1,6 +1,7 @@
 // name: IntegerLiterals (64-bit)
 // keywords: integer
 // status: correct
+// suite: 63bit
 //
 // Tests declaration of integers
 //

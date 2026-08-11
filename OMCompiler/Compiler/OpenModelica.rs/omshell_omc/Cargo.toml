@@ -21,6 +21,8 @@ omshell_core = { path = "../omshell_core" }
 # default set so translateModel/buildModel behave as in a normal omc.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 openmodelica_backend_main = { workspace = true, features = ["cpp", "codegen_c", "codegen_fmu"] }
+# This build's revision, reported as the compiler version (see init()).
+openmodelica_revision.workspace = true
 arcstr.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

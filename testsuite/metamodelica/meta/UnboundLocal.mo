@@ -1,5 +1,6 @@
 // cflags: +g=MetaModelica -d=-newInst
 // status: correct
+// suite: metamodelica
 
 model UnboundLocal
   function g
@@ -96,15 +97,15 @@ end UnboundLocal;
 // equation
 //   r = UnboundLocal.f(time);
 // end UnboundLocal;
-// [metamodelica/meta/UnboundLocal.mo:17:5-17:11:writable] Warning: y was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:18:5-18:19:writable] Warning: o was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:18:5-18:19:writable] Warning: ix1 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:19:5-19:15:writable] Warning: ix3 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:20:5-20:20:writable] Warning: ix2 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:24:7-24:17:writable] Warning: ix4 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:34:7-34:18:writable] Warning: ix6 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:36:5-43:14:writable] Warning: j was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:39:14-40:7:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:42:14-43:5:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:18:5-18:11:writable] Warning: y was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: o was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: ix1 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:20:5-20:15:writable] Warning: ix3 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:21:5-21:20:writable] Warning: ix2 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:25:7-25:17:writable] Warning: ix4 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:35:7-35:18:writable] Warning: ix6 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:37:5-44:14:writable] Warning: j was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:40:14-41:7:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:43:14-44:5:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 //
 // endResult

@@ -919,9 +919,15 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* TODO: change input to residualFunc from data to systemData */
   nlsData->residualFunc(&resUserData, x, f, &iflag);
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
   solverData->numberOfFunctionEvaluations++;
 
   return 0;
@@ -941,9 +947,15 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
   int retVal;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* TODO: change input to residualFunc from data to systemData */
   retVal = nlsData->residualFuncConstraints(&resUserData, x, f, &iflag);
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
   solverData->numberOfFunctionEvaluations++;
 
   return retVal;
@@ -958,6 +970,9 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
 static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
 
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
@@ -989,6 +1004,9 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
   nlsData->numberOfJEval++;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+  omc_util_restore_pool_state(mem_pool_state);
+#endif
 
   return 0;
 }

@@ -247,6 +247,7 @@ enum GB_METHOD {
   RK_SIRK3_2_3L2SA,   /* sirk3l */
   RK_SIRK3_2_4L3SA,   /* sirk3 */
   RK_SIRK3_2_5L3SA,   /* sirk3s5 */
+  RK_SIRK4_3_LAGUERRE,/* sirk4lag*/
   RK_SIRK4_3_5L3SA,   /* sirk4 */
   RK_SIRK5_4_5L3SA,   /* sirk5 */
   RK_SIRK4_3_6L4SA,   /* sirk4s6 */

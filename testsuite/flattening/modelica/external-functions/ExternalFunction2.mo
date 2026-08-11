@@ -1,8 +1,8 @@
 // name:     ExternalFunction2
 // keywords: external function,code generation,constant propagation
 // status:   correct
-// setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o ExternalFunction2_f.o ExternalFunction2_f.c
-// teardown_command: rm -f ExternalFunction2_f.o ext__f*
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ExternalFunction2_f$OMC_EXTLIB_EXT ExternalFunction2_f.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -f ExternalFunction2_f$OMC_EXTLIB_EXT ext__f*
 //
 // Constant evaluation of function calls. Result of a function call with
 // constant arguments is inserted into flat modelica.

@@ -248,7 +248,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
-  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value in the numerical Jacobian's finite-difference step.",
+  /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value the numerical Jacobian differences over below a variable's absolute tolerance.",
   /* FLAG_JACOBIAN_THREADS */             "[int default: 1] value specifies the number of threads for jacobian evaluation in dassl or ida.",
   /* FLAG_L */                            "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */              "emit data recovery matrices with model linearization",
@@ -491,9 +491,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Select the calculation method for Jacobian used by the integration method:\n",
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */
   "  The numerical Jacobian differences column i over\n"
-  "    delta_h * max(|x[i]|, |h*x'[i]|, factor*nominal[i])\n"
-  "  so the step never falls below the scale the variable is nominally of.\n"
-  "  Lower the factor for a model that is non-smooth at the default step;\n"
+  "    delta_h * max(|x[i]|, |h*x'[i]|)\n"
+  "  and, where that is inside the variable's own absolute tolerance and so is\n"
+  "  no scale of its own, over delta_h*factor*nominal[i] instead.\n"
+  "  Lower the factor for a model that is non-smooth at that wider step;\n"
   "  the value is a Double with default value 1.0.",
   /* FLAG_JACOBIAN_THREADS */
   "  Value specifies the number of threads for jacobian evaluation in dassl or ida."
@@ -1091,6 +1092,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_SIRK3_2_3L2SA */   "sirk3l",
   /* RK_SIRK3_2_4L3SA */   "sirk3",
   /* RK_SIRK3_2_5L3SA */   "sirk3s5",
+  /* RK_SIRK4_3_LAGUERRE */"sirk4lag",
   /* RK_SIRK4_3_5L3SA */   "sirk4",
   /* RK_SIRK5_4_5L3SA */   "sirk5",
   /* RK_SIRK4_3_6L4SA */   "sirk4s6",
@@ -1156,6 +1158,7 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_SIRK3_2_3L2SA */   "Singly-implicit Runge-Kutta SIRK3(2)3L[2]SA (order 3, L-stable)",
   /* RK_SIRK3_2_4L3SA */   "Singly-implicit Runge-Kutta SIRK3(2)4L[3]SA (order 3, L-stable)",
   /* RK_SIRK3_2_5L3SA */   "Singly-implicit Runge-Kutta SIRK3(2)5L[3]SA (order 3, L-stable)",
+  /* RK_SIRK4_3_LAGUERRE */"Singly-implicit Runge-Kutta SIRK4(3) Laguerre (order 4, A(89.548*)-stable)",
   /* RK_SIRK4_3_5L3SA */   "Singly-implicit Runge-Kutta SIRK4(3)5L[3]SA (order 4, L-stable)",
   /* RK_SIRK5_4_5L3SA */   "Singly-implicit Runge-Kutta SIRK5(4)5L[3]SA (order 5, L-stable)",
   /* RK_SIRK4_3_6L4SA */   "Singly-implicit Runge-Kutta SIRK4(3)6L[4]SA (order 4, L-stable)",

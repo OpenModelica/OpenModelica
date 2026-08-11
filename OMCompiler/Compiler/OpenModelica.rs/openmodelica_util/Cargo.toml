@@ -14,6 +14,9 @@ openmodelica_util_datatypes_basic.workspace=true
 arcstr.workspace=true
 match_deref.workspace=true
 libc.workspace=true
+# Backs System::regex and System::Regex on every target; posix_to_rust
+# translates the POSIX syntax first.
+regex = "1"
 # GraphML reader in the hand-written TaskGraphResults.rs; also the
 # modelDescription.xml parser in the hand-written FMIExt.rs.
 roxmltree.workspace=true
@@ -40,10 +43,6 @@ rayon.workspace = true
 # targets the `lapack-nalgebra` feature opts in (the optional dep above).
 [target.'cfg(any(target_arch = "wasm32", target_os = "windows"))'.dependencies]
 nalgebra = { version = "0.33", default-features = false, features = ["std"] }
-# No POSIX libc regcomp/regexec on wasm or Windows; System::regex is
-# reimplemented over the pure-Rust `regex` crate (POSIX ERE maps directly; BRE
-# is translated first).
-regex = "1"
 
 [features]
 # `zeromq` is NOT a default feature: it pulls native libzmq (no wasm target),

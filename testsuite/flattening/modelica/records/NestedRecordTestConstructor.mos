@@ -1,8 +1,8 @@
 // name:     Record-in-Record Constructor
 // keywords: algorithm
 // status:   correct
-// setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o External_C_RecordTest.o External_C_RecordTest.c
-// teardown_command: rm -f External_C_RecordTest.o
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o External_C_RecordTest$OMC_EXTLIB_EXT External_C_RecordTest.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -f External_C_RecordTest$OMC_EXTLIB_EXT
 // cflags: -d=-newInst
 
 loadFile("RecordTest.mo");
