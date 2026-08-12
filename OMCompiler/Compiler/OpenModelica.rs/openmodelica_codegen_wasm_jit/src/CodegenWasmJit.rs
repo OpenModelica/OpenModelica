@@ -85,7 +85,7 @@ use openmodelica_sim_meta::{
 use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
 use openmodelica_wasm_jit::wasi_shim;
-pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ExtLibrary, ModelCompileJob, SimModel};
+pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ExtIncludes, ExtLibrary, ModelCompileJob, SimModel};
 #[cfg(feature = "jit")]
 pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
 #[cfg(feature = "jit")]
@@ -421,7 +421,7 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
-    let outcome = build_sim_model(&simCode, false).and_then(|model| {
+    let outcome = build_sim_model(&simCode, false, ExtHost::SIM).and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), Arc::new(model));
         Ok(())
@@ -963,6 +963,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_teardown_hook(on_teardown);
     SPLIT_ARMED.with(|a| a.set(true));
+    openmodelica_wasm_jit::host::native_stdout::install();
     sim_driver::init_host_hooks();
     sim_driver::set_result_file_reader(read_result_values);
     let (meta, experiment_log) = run_experiment(&model, &flags);
@@ -1178,6 +1179,7 @@ mod session {
     SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_teardown_hook(on_teardown);
         SPLIT_ARMED.with(|a| a.set(true));
+        openmodelica_wasm_jit::host::native_stdout::install();
         sim_driver::init_host_hooks();
         sim_driver::set_result_file_reader(read_result_values);
         let (meta, experiment_log) = run_experiment(&model, &flags);
@@ -1413,7 +1415,7 @@ use openmodelica_wasm_jit::RUNTIME_WASIP1;
 /// `wasm-merge` is an external tool, absent in the omc wasm build.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
-    let model = build_sim_model(sim_code, false)?;
+    let model = build_sim_model(sim_code, false, ExtHost::Wasm)?;
     merge_standalone(&model.wasm)
 }
 
@@ -1487,23 +1489,47 @@ use openmodelica_wasi_libc::{
 // The model's own `external "C"` libraries
 // ===========================================================================
 
-/// Resolve the `Library` annotations (already wasm module names, from
-/// `SimCodeFunctionUtil`) against the library directories. A name that resolves to
-/// nothing is reported here, not later as an unresolvable `ext.<fn>` import.
+/// What the `Library` annotations resolved to. `SimCodeFunctionUtil` emits each
+/// one twice: the wasm module name, then the host linker spec.
+#[derive(Default)]
+pub(crate) struct ExtLibraries {
+    pub wasm: Vec<ExtLibrary>,
+    /// In link order, for a native host to fall back to.
+    pub native: Vec<String>,
+    /// `#include` lines for the C sources a `Library` named, which the C target
+    /// hands to the compiler rather than the linker.
+    pub sources: Vec<String>,
+}
+
+/// Resolve the `Library` annotations against the library directories. A name that
+/// resolves to nothing is reported here, not later as an unresolvable `ext.<fn>`
+/// import.
 pub(crate) fn resolve_ext_libraries(
     mp: &SimCodeFunction::MakefileParams,
     notes: &mut Vec<String>,
-) -> Result<Vec<ExtLibrary>> {
+) -> Result<ExtLibraries> {
     let mut dirs: Vec<String> = vec![String::new()]; // relative to the working directory
     for d in lst(&mp.libPaths) {
         dirs.push(format!("{d}/"));
     }
-    let mut out: Vec<ExtLibrary> = Vec::new();
+    for lib in lst(&mp.libs) {
+        if let Some(d) = lib.strip_prefix("-L") {
+            dirs.push(format!("{}/", d.trim_matches('"')));
+        }
+    }
+    let mut out = ExtLibraries::default();
     let mut seen: HashSet<String> = HashSet::new();
     for lib in lst(&mp.libs) {
         let lib = lib.to_string();
-        // The library list is shared with the other code generators.
-        if lib.starts_with('-') || !seen.insert(lib.clone()) {
+        if !seen.insert(lib.clone()) {
+            continue;
+        }
+        if !lib.ends_with(".wasm") {
+            if let Some(path) = find_source_library(&lib, &dirs) {
+                out.sources.push(format!("#include \"{}\"", path.replace('\\', "/")));
+            } else if let Some(path) = find_native_library(&lib, &dirs) {
+                out.native.push(path);
+            }
             continue;
         }
         let Some((path, bytes)) = find_ext_library(&lib, &dirs) else {
@@ -1515,7 +1541,7 @@ pub(crate) fn resolve_ext_libraries(
             ));
             continue;
         };
-        out.push(ExtLibrary { name: path, bytes });
+        out.wasm.push(ExtLibrary { name: path, bytes });
     }
     Ok(out)
 }
@@ -1540,7 +1566,8 @@ pub(crate) fn compile_include_library(
     std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
-    std::fs::write(&tu, includes.join("\n") + "\n")
+    let prologue = openmodelica_wasm_jit::model::INCLUDE_TU_PROLOGUE_WASM;
+    std::fs::write(&tu, prologue.to_owned() + &includes.join("\n") + "\n")
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);
@@ -1550,6 +1577,9 @@ pub(crate) fn compile_include_library(
     // Compiled in a temporary directory, so `#include "x.h"` needs the model's own.
     if let Ok(cwd) = std::env::current_dir() {
         cmd.arg("-I").arg(cwd);
+    }
+    for dir in openmodelica_wasm_jit::model::omc_c_include_dirs() {
+        cmd.arg("-I").arg(dir);
     }
     // `IncludeDirectory` annotations, already `-I"..."` strings.
     for inc in include_dirs {
@@ -1628,6 +1658,58 @@ fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
     ]
     .into_iter()
     .find(|p| p.exists())
+}
+
+/// The `external "C"` functions none of `libs` exports — what an `Include` still
+/// has to provide.
+fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<String> {
+    let mut defined: HashSet<&str> = HashSet::new();
+    for lib in libs {
+        for payload in wasmparser::Parser::new(0).parse_all(&lib.bytes).flatten() {
+            if let wasmparser::Payload::ExportSection(exports) = payload {
+                defined.extend(exports.into_iter().flatten().map(|e| e.name));
+            }
+        }
+    }
+    ext_imports.iter().map(|s| s.name.as_str()).filter(|n| !defined.contains(n)).map(String::from).collect()
+}
+
+/// A `Library` naming a C source file, which gcc compiles rather than links.
+fn find_source_library(spec: &str, dirs: &[String]) -> Option<String> {
+    if !spec.ends_with(".c") && !spec.ends_with(".cc") && !spec.ends_with(".cpp") && !spec.ends_with(".cxx") {
+        return None;
+    }
+    dirs.iter().map(|d| format!("{d}{spec}")).find(|p| openmodelica_wasi::fs::exists(p))
+}
+
+/// The platform shared library a host linker spec names. A `-lfoo` nothing under
+/// `dirs` provides stays a plain soname, for the system loader to find the way the
+/// linker would; static archives and object files have no loadable form at all.
+fn find_native_library(spec: &str, dirs: &[String]) -> Option<String> {
+    if cfg!(target_arch = "wasm32") {
+        return None; // no dynamic loader to fall back to
+    }
+    let (prefix, suffix) = (std::env::consts::DLL_PREFIX, std::env::consts::DLL_SUFFIX);
+    let name = match spec.strip_prefix("-l") {
+        Some(n) => n,
+        // Any other linker flag (`-L`, `-Wl,…`, `-pthread`) names no library.
+        None if spec.starts_with('-') => return None,
+        None => spec,
+    };
+    if name.ends_with(".a") || name.ends_with(".o") || name.ends_with(".obj") || name.ends_with(".lib") {
+        return None;
+    }
+    if name.contains(suffix) || name.contains(std::path::MAIN_SEPARATOR) {
+        return dirs.iter().map(|d| format!("{d}{name}")).find(|p| std::path::Path::new(p).exists());
+    }
+    for dir in dirs {
+        for candidate in [format!("{dir}{prefix}{name}{suffix}"), format!("{dir}{name}{suffix}")] {
+            if std::path::Path::new(&candidate).exists() {
+                return Some(candidate);
+            }
+        }
+    }
+    (spec != name).then(|| format!("{prefix}{name}{suffix}"))
 }
 
 /// `<dir><name>` or `<dir>lib<name>`, the two spellings a `Library="foo"`
@@ -2175,7 +2257,7 @@ fn emit_fmu(
     let outcome = (|| -> Result<()> {
         // Shared linear memory across model + runtime + ModelicaExternalC, so
         // `external "C"` calls pass real pointers, not handles.
-        let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(&sim_code, true))?;
+        let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(&sim_code, true, ExtHost::Wasm))?;
         if let Some(func) = first_external_import(&model.wasm) {
             if !external_c_available() {
                 record_error(format!(
@@ -3259,8 +3341,22 @@ fn collect_clocks(partitions: &Arc<List<SimCode::ClockedPartition>>) -> Result<V
     Ok(out)
 }
 
+/// Where the model will run, which decides how an `Include` C source is built: for
+/// the host, or for an artifact that is itself wasm (an FMU, the standalone module).
+#[derive(Clone, Copy, PartialEq)]
+enum ExtHost {
+    Native,
+    Wasm,
+}
+
+impl ExtHost {
+    /// A simulation run. The browser omc has neither a host compiler nor a dynamic
+    /// loader, so there a run is as wasm as an exported FMU.
+    const SIM: ExtHost = if cfg!(target_arch = "wasm32") { ExtHost::Wasm } else { ExtHost::Native };
+}
+
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
-fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimModel> {
+fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
@@ -3436,19 +3532,44 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     }
     // A `Library` on a function the model never reaches must not fail the build.
     let mut ext_lib_notes: Vec<String> = Vec::new();
-    let ext_libs = if ext_imports.is_empty() {
-        Vec::new()
-    } else {
-        let mut libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
-        // What the `Library` annotations did not provide may come from an
-        // `Include` carrying the C source.
-        let includes: Vec<String> = lst(&sim_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
-        let dirs: Vec<String> = lst(&sim_code.makefileParams.includes).map(|s| s.to_string()).collect();
-        if let Some(l) = compile_include_library(&sim_code.fileNamePrefix, &includes, &dirs, &mut ext_lib_notes)? {
-            libs.push(l);
+    let mut ext_libs = ExtLibraries::default();
+    let mut ext_includes = None;
+    if !ext_imports.is_empty() {
+        ext_libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
+        // What the `Library` annotations did not provide may come from an `Include`
+        // carrying the C source, though most carry only the declarations.
+        let mp = &sim_code.makefileParams;
+        let sources: Vec<String> = lst(&sim_code.externalFunctionIncludes)
+            .map(|s| s.to_string())
+            .chain(std::mem::take(&mut ext_libs.sources))
+            .collect();
+        let dirs: Vec<String> = lst(&mp.includes).map(|s| s.to_string()).collect();
+        let prefix = sim_code.fileNamePrefix.to_string();
+        if !sources.is_empty() {
+            match ext_host {
+                // Built on demand, for a symbol the loaded libraries turn out not
+                // to define.
+                ExtHost::Native => {
+                    ext_includes = Some(ExtIncludes {
+                        sources,
+                        include_dirs: dirs,
+                        ccompiler: mp.ccompiler.to_string(),
+                        cflags: mp.cflags.to_string(),
+                        dllext: mp.dllext.to_string(),
+                        prefix,
+                    })
+                }
+                // A wasm artifact carries every implementation, so the same
+                // decision has to be made here, off the libraries' exports.
+                ExtHost::Wasm if !missing_ext_symbols(&ext_imports, &ext_libs.wasm).is_empty() => {
+                    if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mut ext_lib_notes)? {
+                        ext_libs.wasm.push(l);
+                    }
+                }
+                ExtHost::Wasm => {}
+            }
         }
-        libs
-    };
+    }
 
     // Function index space: imports (env builtins, rt runtime, env-extra, then
     // the `ext.*` externals), then the model's Modelica functions, then the
@@ -3670,17 +3791,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         metamodelica::cancel::bail_if_cancelled()?;
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
-    // Every parameter is initialized from its binding expression in declaration
+    // C's `setAllParamsToStart`: every parameter from its binding, in declaration
     // order (the backend sorts dependent parameters so a binding only references
-    // earlier ones), then `parameterEquations` runs for the computed ones.
+    // earlier ones). `parameterEquations` belongs to `functionUpdateBoundParameters`
+    // alone — evaluated in both, an external object's constructor runs twice.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
     let mut chunks: Vec<we::Function> = Vec::new();
     let mut splits: Vec<SplitFn> = Vec::new();
-    let param_units: Vec<EqUnit> = param_bindings
-        .iter()
-        .map(|(cref, exp)| EqUnit::Binding(cref, exp))
-        .chain(param_eqs.iter().map(|e| EqUnit::Eq(e, None)))
-        .collect();
+    let param_units: Vec<EqUnit> =
+        param_bindings.iter().map(|(cref, exp)| EqUnit::Binding(cref, exp)).collect();
     splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
@@ -4382,7 +4501,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         prepared: Mutex::new(None),
         layout,
         result_vars,
-        ext_libs,
+        ext_libs: ext_libs.wasm,
+        ext_native_libs: ext_libs.native,
+        ext_includes,
         ext_lib_notes,
         ext_imports,
         model_name,
@@ -4905,7 +5026,7 @@ fn collect_param_bindings(
         // dependencies that are still 0 (or a null handle). A *constant* binding reads
         // nothing, so it is stored regardless — C's `setAllParamsToStart`.
         if let Some(v) = &p.initialValue {
-            if !is_const_exp(v) && sim_cref_key(&p.name).map(|k| computed.contains(&k)).unwrap_or(false) {
+            if !is_const_exp(v) && sim_cref_key(&p.name).map(|k| is_computed(&k, computed)).unwrap_or(false) {
                 continue;
             }
             out.push((p.name.clone(), v.clone()));
@@ -4924,6 +5045,16 @@ fn is_const_exp(e: &DAE::Exp) -> bool {
             | DAE::Exp::SCONST { .. }
             | DAE::Exp::ENUM_LITERAL { .. }
     )
+}
+
+/// Whether an equation list assigns `key`, directly or as one element of its array:
+/// the `SimVar`s are scalarized (`ts[1]`), an array assign names the whole `ts`.
+fn is_computed(key: &str, computed: &std::collections::HashSet<String>) -> bool {
+    computed.contains(key)
+        || key
+            .strip_suffix(']')
+            .and_then(|k| k.rfind('['))
+            .is_some_and(|i| computed.contains(&key[..i]))
 }
 
 /// Keys of the crefs assigned by a `SimEqSystem` list (scalar/array assigns).
@@ -5476,15 +5607,15 @@ fn build_update_bound_attrs_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets, u32)> = Vec::new();
+    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)> = Vec::new();
     for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
-        let targets = sim_cref_key(cref)
-            .ok()
-            .map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string())
-            .and_then(|k| attr_targets.get(&k))
-            .cloned()
-            .unwrap_or_default();
-        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8));
+        let key = sim_cref_key(cref).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
+        let targets = key.as_deref().and_then(|k| attr_targets.get(k)).cloned().unwrap_or_default();
+        let var = match attr {
+            Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)).copied(),
+            _ => None,
+        };
+        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8, var));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);

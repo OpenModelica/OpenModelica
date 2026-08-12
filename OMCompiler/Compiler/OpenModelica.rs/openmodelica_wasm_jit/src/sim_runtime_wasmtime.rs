@@ -307,25 +307,73 @@ fn wty_valtype(w: crate::sig::WTy) -> wasmtime::ValType {
 /// Why an `external "C"` function could not be found, and what to do about it. The
 /// codegen's notes come out here, where a library that yielded nothing has become a
 /// missing symbol.
-fn unresolved_external_detail(name: &str, model: &SimModel) -> String {
-    let mut s = if model.ext_libs.is_empty() {
+fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[String]) -> String {
+    let searched: Vec<&str> = model
+        .ext_libs
+        .iter()
+        .map(|l| l.name.as_str())
+        .chain(model.ext_native_libs.iter().map(|s| s.as_str()))
+        .collect();
+    let mut s = if searched.is_empty() {
         format!(
             "  `{name}` is in none of the model's libraries — the model declares no `Library` \
-             annotation that resolves to a wasm library. Build the implementation with \
-             `clang --target=wasm32-wasip1 -fPIC -shared` and name it in `Library`."
+             annotation that resolves to one. Name a wasm module built with \
+             `clang --target=wasm32-wasip1 -fPIC -shared`, or, for a native run, the platform \
+             shared library the C target would link."
         )
     } else {
         format!(
             "  `{name}` is in none of the model's libraries ({}). Check that the library exports it \
              (`-Wl,--export-all`, or `-Wl,--export={name}`).",
-            model.ext_libs.iter().map(|l| l.name.as_str()).collect::<Vec<_>>().join(", "),
+            searched.join(", "),
         )
     };
-    for note in &model.ext_lib_notes {
+    for note in model.ext_lib_notes.iter().chain(load_errors) {
         s.push_str("\n  ");
         s.push_str(note);
     }
     s
+}
+
+/// The model's `external "C"` implementations outside wasm, resolved on demand: the
+/// platform libraries its `Library` annotations name, then — only once those and the
+/// process image have come up short — its `Include` C source.
+#[derive(Default)]
+struct NativeExternals {
+    handles: Vec<usize>,
+    loaded: bool,
+    built_includes: bool,
+    errors: Vec<String>,
+}
+
+impl NativeExternals {
+    fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
+        if !self.loaded {
+            self.loaded = true;
+            let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
+            self.handles = handles;
+            self.errors = errors;
+        }
+        if let Some(addr) = openmodelica_util::dynload::external_symbol_in(&self.handles, name) {
+            return Some(addr);
+        }
+        if !self.built_includes {
+            self.built_includes = true;
+            if let Some(inc) = &model.ext_includes {
+                match inc.compile() {
+                    Ok(path) => {
+                        let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+                        // Searched first: it is the model's own source.
+                        self.handles.splice(0..0, h);
+                        self.errors.extend(errors);
+                    }
+                    Err(e) => self.errors.push(e),
+                }
+                return openmodelica_util::dynload::external_symbol_in(&self.handles, name);
+            }
+        }
+        None
+    }
 }
 
 /// Define the model's external "C" function imports (wasm module `ext`) from the
@@ -346,11 +394,13 @@ fn define_external_imports(
     let rt_str_new = rt.str_new.clone();
     let rt_str_data = rt.str_data.clone();
     registry_reset();
+    sim_driver::clear_runtime_error();
     openmodelica_util::dynload::install_modelica_message_interception(
         openmodelica_modelica_utilities::modelica_message_hook,
         openmodelica_modelica_utilities::modelica_warning_hook,
     );
     let engine = linker.engine().clone();
+    let mut native = NativeExternals::default();
     for sig in &model.ext_imports {
         let functype = wasmtime::FuncType::new(
             &engine,
@@ -366,8 +416,8 @@ fn define_external_imports(
                 continue;
             }
         }
-        let addr = openmodelica_util::dynload::external_symbol(&sig.name).ok_or_else(|| {
-            crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model));
+        let addr = native.resolve(&sig.name, model).ok_or_else(|| {
+            crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model, &native.errors));
             "external \"C\" function not found in any loaded library"
         })?;
         let name = sig.name.clone();
@@ -495,6 +545,8 @@ unsafe fn call_external(
     let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut slots: Vec<Slot> = Vec::with_capacity(sig.args.len());
     let mut cstrings: Vec<std::ffi::CString> = Vec::new();
+    // `const char**` argument vectors, kept alive alongside the strings they point at.
+    let mut str_arrays: Vec<Vec<*const std::os::raw::c_char>> = Vec::new();
     let mut types: Vec<Type> = Vec::with_capacity(sig.args.len());
     // One 8-byte native cell per `_Out_` pointer arg (fits int/double/pointer),
     // in output order; the C call writes through the pointer we pass.
@@ -513,6 +565,11 @@ unsafe fn call_external(
             // pre-allocated on the wasm side and passed by pointer (filled in place,
             // like an input array — handled by the `Array` arm below).
             if *is_out && !matches!(ty, SigTy::Array { .. }) {
+                // The cell is one C value wide, and a record output is a struct
+                // whose layout only its own C declaration fixes.
+                if !matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Ptr) {
+                    return Err("CodegenWasmJit: external \"C\" : output argument type not marshalled");
+                }
                 let mut cell: Box<[u8; 8]> = Box::new([0u8; 8]);
                 slots.push(Slot::P(cell.as_mut_ptr() as *mut c_void));
                 types.push(Type::pointer());
@@ -566,6 +623,31 @@ unsafe fn call_external(
                     let (dims, data_off) = crate::host::array_abi::dims_and_data(mem, off)
                         .ok_or("external \"C\" : malformed array argument")?;
                     let base = off + data_off;
+                    // Only scalar elements are already a native array. A `String[:]`
+                    // is in-wasm handles, not the `const char**` C declares, so it
+                    // is rebuilt; anything else has no C form at all.
+                    if let SigTy::Str = &**elem {
+                        if *is_out {
+                            return Err("CodegenWasmJit: external \"C\" : a String output array is not marshalled");
+                        }
+                        let n = dims.iter().product::<usize>();
+                        let mut ptrs: Vec<*const std::os::raw::c_char> = Vec::with_capacity(n);
+                        for k in 0..n {
+                            let h = u32::from_le_bytes(mem[base + k * 4..base + k * 4 + 4].try_into().unwrap()) as usize;
+                            let len = u32::from_le_bytes(mem[h + 4..h + 8].try_into().unwrap()) as usize;
+                            let cs = std::ffi::CString::new(&mem[h + 8..h + 8 + len])
+                                .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
+                            ptrs.push(cs.as_ptr());
+                            cstrings.push(cs);
+                        }
+                        slots.push(Slot::P(ptrs.as_mut_ptr() as *mut c_void));
+                        str_arrays.push(ptrs);
+                        types.push(Type::pointer());
+                        continue;
+                    }
+                    if !matches!(&**elem, SigTy::Real | SigTy::Int | SigTy::Bool) {
+                        return Err("CodegenWasmJit: external \"C\" : array element type not marshalled");
+                    }
                     if fortran && dims.len() > 1 {
                         let esz = crate::host::array_abi::elem_size(elem);
                         let n = dims.iter().product::<usize>() * esz;
@@ -623,7 +705,11 @@ unsafe fn call_external(
             nls.note(caller)?;
             return zero_results(sig, caller, rt_str_new, rets);
         }
-        openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
+        // The run reports itself through its log alone, as C's separate executable
+        // does, so the buffer the message also went to is rolled back.
+        let msg = openmodelica_error::ErrorExt::take_last_runtime_error();
+        openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
+        sim_driver::note_runtime_error(&msg.unwrap_or_else(|| format!("external \"C\" `{}` failed", sig.name)));
         return Err("CodegenWasmJit: external \"C\" raised a runtime error");
     }
     openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);

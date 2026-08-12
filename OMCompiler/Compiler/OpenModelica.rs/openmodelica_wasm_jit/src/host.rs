@@ -542,3 +542,108 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     );
     Ok(HostMem(mem_env))
 }
+
+/// Redirect the process's stdout/stderr into the run's log for one capture phase
+/// (`openmodelica_wasi::wasi::set_native_capture`). A temp file, not a pipe, which
+/// would deadlock on its buffer with nothing draining it; `fflush(NULL)` empties
+/// libc's own buffers into it before each read.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod native_stdout {
+    use std::cell::RefCell;
+
+    /// Raw CRT fds throughout: a `File` must not own the same one, or both close it.
+    struct Redirect {
+        fd: i32,
+        saved_out: i32,
+        saved_err: i32,
+    }
+
+    thread_local! {
+        static ACTIVE: RefCell<Option<Redirect>> = const { RefCell::new(None) };
+    }
+
+    pub fn install() {
+        openmodelica_wasi::wasi::set_native_capture(begin, end);
+    }
+
+    fn begin() {
+        ACTIVE.with(|a| {
+            let mut a = a.borrow_mut();
+            if a.is_some() {
+                return;
+            }
+            let Some(fd) = scratch_fd() else { return };
+            unsafe {
+                let (saved_out, saved_err) = (libc::dup(1), libc::dup(2));
+                if saved_out < 0 || saved_err < 0 {
+                    libc::close(fd);
+                    return;
+                }
+                libc::fflush(std::ptr::null_mut());
+                libc::dup2(fd, 1);
+                libc::dup2(fd, 2);
+                *a = Some(Redirect { fd, saved_out, saved_err });
+            }
+        });
+    }
+
+    fn end() -> Vec<u8> {
+        ACTIVE.with(|a| {
+            let Some(r) = a.borrow_mut().take() else { return Vec::new() };
+            let mut out = Vec::new();
+            unsafe {
+                libc::fflush(std::ptr::null_mut());
+                libc::dup2(r.saved_out, 1);
+                libc::dup2(r.saved_err, 2);
+                libc::close(r.saved_out);
+                libc::close(r.saved_err);
+                libc::lseek(r.fd, 0, libc::SEEK_SET);
+                let mut buf = [0u8; 8192];
+                loop {
+                    let n = libc::read(r.fd, buf.as_mut_ptr() as *mut _, buf.len() as _);
+                    if n <= 0 {
+                        break;
+                    }
+                    out.extend_from_slice(&buf[..n as usize]);
+                }
+                libc::close(r.fd);
+            }
+            out
+        })
+    }
+
+    /// A file only this redirect can reach: unlinked at once on unix, delete-on-close
+    /// on Windows, where an open file cannot be unlinked.
+    fn scratch_fd() -> Option<i32> {
+        let path = std::env::temp_dir().join(format!("om-simout-{}", std::process::id()));
+        let mut opts = std::fs::File::options();
+        opts.read(true).write(true).create(true).truncate(true);
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::OpenOptionsExt;
+            const FILE_FLAG_DELETE_ON_CLOSE: u32 = 0x0400_0000;
+            opts.custom_flags(FILE_FLAG_DELETE_ON_CLOSE);
+        }
+        let file = opts.open(&path).ok()?;
+        #[cfg(unix)]
+        {
+            let _ = std::fs::remove_file(&path);
+            Some(std::os::fd::IntoRawFd::into_raw_fd(file))
+        }
+        // `_open_osfhandle` takes the handle over, so `File` must give it up first.
+        #[cfg(windows)]
+        {
+            let h = std::os::windows::io::IntoRawHandle::into_raw_handle(file);
+            match unsafe { libc::open_osfhandle(h as isize, 0) } {
+                fd if fd >= 0 => Some(fd),
+                _ => None,
+            }
+        }
+    }
+}
+
+/// The browser has no process stdout to redirect.
+#[cfg(target_arch = "wasm32")]
+pub mod native_stdout {
+    pub fn install() {}
+}
