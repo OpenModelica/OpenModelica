@@ -11,6 +11,21 @@
  * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
  * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
+/*! File jacobian_colpack.cpp
  */
 
 #ifdef OMC_HAVE_COLPACK
@@ -100,26 +115,4 @@ extern "C" int computeColPackColumnColoring(
     return 0;
   }
 }
-
-#else
-
-extern "C" int computeColPackColumnColoring(
-    unsigned int nRows,
-    unsigned int nCols,
-    const unsigned int* leadindex,
-    const unsigned int* index,
-    unsigned int nnz,
-    unsigned int* colorCols,
-    unsigned int* maxColors)
-{
-  (void)nRows;
-  (void)nCols;
-  (void)leadindex;
-  (void)index;
-  (void)nnz;
-  (void)colorCols;
-  (void)maxColors;
-  return 0;
-}
-
 #endif

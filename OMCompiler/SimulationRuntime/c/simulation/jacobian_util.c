@@ -25,7 +25,7 @@
  *
  */
 
-/*! File jac_util.c
+/*! File jacobian_util.c
  */
 
 #include "jacobian_util.h"
