@@ -1,0 +1,240 @@
+// name:     assert
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+
+loadString("
+  model model_assert_DR
+    Real a(uncertain = Uncertainty.refine);
+    Real b(uncertain = Uncertainty.refine);
+    parameter Real c=5 annotation(__OpenModelica_BoundaryCondition = true);
+    Real table_real[2]={1.0,2.0};
+  equation
+    a=b;
+    a=c;
+    assert(table_real[1]==1.0,\"Assert\");
+  end model_assert_DR;
+  ");
+getErrorString();
+
+simulate(model_assert_DR, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ModelInfo: model_assert_DR
+// ==========================================================================
+//
+//
+// OrderedVariables (5)
+// ========================================
+// 1: table_real[2]:VARIABLE()  type: Real [2]
+// 2: table_real[1]:VARIABLE()  type: Real [2]
+// 3: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 4: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 5: c:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (4, 5)
+// ========================================
+// 1/1 (1): c = 5.0   [binding |0|0|0|0|]
+// 2/2 (2): table_real = {1.0, 2.0}   [dynamic |0|0|0|0|]
+// 3/4 (1): a = b   [dynamic |0|0|0|0|]
+// 4/5 (1): a = c   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 5
+// var 5 is solved in eqn 1
+//
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: c: (1/1): (1): c = 5.0
+// 4: a: (4/5): (1): a = c
+// 3: b: (3/4): (1): a = b
+// 2: table_real[1]: (2/2): (2): table_real = {1.0, 2.0}
+// 1: table_real[2]: (2/3): (2): table_real = {1.0, 2.0}
+//
+//
+// Variables of interest (2)
+// ========================================
+// 1: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: c:VARIABLE()  type: Real
+//
+//
+// Binding equations:(1)
+// ============================================================
+//
+// 5: c: (1/1): (1): c = 5.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(2)
+// ============================================================
+//
+// 3: b: (3/4): (1): a = b
+// 4: a: (4/5): (1): a = c
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>3: b: (3/4): (1): a = b
+// Procedure success
+//
+// >>>4: a: (4/5): (1): a = c
+// c is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (5)
+// ========================================
+// 1: table_real[2]:VARIABLE()  type: Real [2]
+// 2: table_real[1]:VARIABLE()  type: Real [2]
+// 3: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 4: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 5: c:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (4, 5)
+// ========================================
+// 1/1 (1): a = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): c = 5.0   [binding |0|0|0|0|]
+// 3/3 (2): table_real = {1.0, 2.0}   [dynamic |0|0|0|0|]
+// 4/5 (1): a = b   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 5
+// var 4 is solved in eqn 1
+// var 5 is solved in eqn 2
+//
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: c: (2/2): (1): c = 5.0
+// 4: a: (1/1): (1): a = 0.0
+// 3: b: (4/5): (1): a = b
+// 2: table_real[1]: (3/3): (2): table_real = {1.0, 2.0}
+// 1: table_real[2]: (3/4): (2): table_real = {1.0, 2.0}
+//
+//
+// Variables of interest (2)
+// ========================================
+// 1: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: c:VARIABLE()  type: Real
+//
+//
+// Binding equations:(2)
+// ============================================================
+//
+// 5: c: (2/2): (1): c = 5.0
+// 4: a: (1/1): (1): a = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(1)
+// ============================================================
+//
+// 3: b: (4/5): (1): a = b
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>3: b: (4/5): (1): a = b
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {4}
+// SET_S: {}
+//
+//
+// SET_C (1, 1)
+// ========================================
+// 1/1 (1): a = b   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{3, 4} (2)
+// ========================================
+// 1: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{4}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{3, 4} (2)
+// ========================================
+// 1: b:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: a:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 2 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'model_assert_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | DataReconciliation Starting!
+// LOG_STDOUT        | info    | model_assert_DR
+// LOG_STDOUT        | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// "[<interactive>:10:5-10:40:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
+// "
+// endResult

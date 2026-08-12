@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 BASELINE = ../../rtest -b
 
 TESTFILES = \
+assert.mos\
 DistillationTower.mos\
 VDI2048Exple.mos\
 Pipe1.mos\
