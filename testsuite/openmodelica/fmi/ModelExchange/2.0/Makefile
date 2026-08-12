@@ -33,6 +33,7 @@ fmi2_array_attributes_nb.mos \
 fmi2_array_attributes.mos \
 fmi2_array_nonscalarized.mos \
 fmi2_arrays_initial_unknowns.mos \
+fmi2_string_variability.mos \
 fmi_export_derivative_annotation.mos \
 fmi_export_derivative_annotation_buildings.mos \
 fmi_export_derivative_annotation_unused.mos \
