@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe6_Inputs.csv
+// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

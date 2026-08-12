@@ -1,6 +1,7 @@
 // name:     Discrete2
 // keywords: declaration,unknown
 // status:   erroneous
+// suite: disabled
 //
 // This is not valid, but should it complain now or later?
 

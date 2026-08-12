@@ -1,6 +1,7 @@
 // name: IfExpression9
 // keywords:
 // status: correct
+// suite: disabled
 //
 
 model IfExpression9

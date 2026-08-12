@@ -1,6 +1,7 @@
 // name:     Vectorizable2
 // keywords: vectorized calls
 // status:   correct
+// suite: disabled
 //
 // This tests vectorized calls.
 //

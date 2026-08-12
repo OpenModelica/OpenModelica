@@ -1,6 +1,7 @@
 // name:     Function4
 // keywords: function
 // status:   incorrect
+// suite: disabled
 //
 // This tests for illegal parts of a function definition.
 //

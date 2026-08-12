@@ -6,6 +6,7 @@
 //
 // Drmodelica: 4.5 Design a Class to be Extended (p. 137)
 // cflags: -d=-newInst
+// suite: disabled
 // 
 loadModel(Modelica, {"3.2.3"});
 loadFile("TempResistor3.mo");

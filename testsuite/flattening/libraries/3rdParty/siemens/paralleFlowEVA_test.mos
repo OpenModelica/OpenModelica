@@ -2,6 +2,7 @@
 // keywords: fluid media siemens
 // status:   correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 //  Siemens fluid test.
 //

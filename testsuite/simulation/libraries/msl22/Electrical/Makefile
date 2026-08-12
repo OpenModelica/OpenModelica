@@ -11,7 +11,6 @@ ShowVariableResistor2.mos \
 FAILINGTESTFILES=  \
 CharacteristicThyristors2.mos \
 HeatingNPN_OrGate2.mos \
-HeatingResistor.mos \
 OvervoltageProtection2.mos \
 Rectifier2.mos \
 ShowSaturatingInductor2.mos \
@@ -56,4 +55,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

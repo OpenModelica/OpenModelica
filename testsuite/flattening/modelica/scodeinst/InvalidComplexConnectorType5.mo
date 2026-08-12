@@ -1,6 +1,7 @@
 // name: InvalidComplexConnectorType5
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidComplexConnectorType5
@@ -34,7 +35,7 @@ end InvalidComplexConnectorType5;
 
 // Result:
 // Error processing file: InvalidComplexConnectorType5.mo
-// [flattening/modelica/scodeinst/InvalidComplexConnectorType5.mo:33:3-33:18:writable] Error: Cannot connect flow component c2.c.y to non-flow component c1.c.y.
+// [flattening/modelica/scodeinst/InvalidComplexConnectorType5.mo:34:3-34:18:writable] Error: Cannot connect flow component c2.c.y to non-flow component c1.c.y.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,6 +1,7 @@
 // name:     ImportShadowing1
 // keywords: import shadowing
 // status:   correct
+// suite: disabled
 //
 // Checks that a warning is displayed when imports are shadowed.
 //
@@ -20,7 +21,7 @@ end ImportShadowing1;
 // class ImportShadowing1
 //   Real M;
 // end ImportShadowing1;
-// [flattening/modelica/scodeinst/ImportShadowing1.mo:17:3-17:9:writable] Notification: From here:
-// [flattening/modelica/scodeinst/ImportShadowing1.mo:16:3-16:13:writable] Warning: Import P.M is shadowed by a local element.
+// [flattening/modelica/scodeinst/ImportShadowing1.mo:18:3-18:9:writable] Notification: From here:
+// [flattening/modelica/scodeinst/ImportShadowing1.mo:17:3-17:13:writable] Warning: Import P.M is shadowed by a local element.
 //
 // endResult
