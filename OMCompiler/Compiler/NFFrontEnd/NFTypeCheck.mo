@@ -85,12 +85,12 @@ import Inline = NFInline;
 
 public
 type MatchKind = enumeration(
-  EXACT "Exact match",
-  CAST  "Matched by casting, e.g. Integer to Real",
+  EXACT            "Exact match",
+  CAST             "Matched by casting, e.g. Integer to Real",
   UNKNOWN_EXPECTED "The expected type was unknown",
   UNKNOWN_ACTUAL   "The actual type was unknown",
-  GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
-  PLUG_COMPATIBLE "Component by component matching, e.g. class A R r; end A; is plug compatible with class B R r; end B;",
+  GENERIC          "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
+  PLUG_COMPATIBLE  "Component by component matching, e.g. class A R r; end A; is plug compatible with class B R r; end B;",
   NOT_COMPATIBLE
 );
 
@@ -137,8 +137,7 @@ end isValidArgumentMatch;
 function isValidPlugCompatibleMatch
   input MatchKind kind;
   output Boolean v = kind == MatchKind.EXACT
-                     or kind == MatchKind.PLUG_COMPATIBLE
-                     ;
+                     or kind == MatchKind.PLUG_COMPATIBLE;
 end isValidPlugCompatibleMatch;
 
 type MatchOptions = Integer;
@@ -2227,6 +2226,7 @@ protected
   list<Dimension> rest_dims2 = dims2, cdims = {};
   Dimension dim2;
   Boolean compat;
+  MatchKind match_kind;
 algorithm
   if not isCompatibleMatch(matchKind) then
     return;
@@ -2258,21 +2258,17 @@ function matchDimensions
   input Dimension dim1;
   input Dimension dim2;
   output Dimension compatibleDim;
-  output Boolean compatible;
+  output Boolean compatible = true;
 algorithm
   if Dimension.isEqualKnown(dim1, dim2) then
     compatibleDim := dim1;
-    compatible := true;
   else
     if not Dimension.isKnown(dim1) then
       compatibleDim := dim2;
-      compatible := true;
     elseif not Dimension.isKnown(dim2) then
       compatibleDim := dim1;
-      compatible := true;
     elseif Dimension.isResizable(dim1) and Dimension.isResizable(dim2) then
       compatibleDim := dim1;
-      compatible := true;
     else
       compatibleDim := dim1;
       compatible := false;
@@ -3212,13 +3208,12 @@ function matchIfBranches
   input Type trueType;
   input output Expression falseBranch;
   input Type falseType;
+  input InstContext.Type context;
   input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
   (compatibleType, matchKind) := match (trueType, falseType)
-    local
-
     case (Type.ARRAY(), Type.ARRAY())
       algorithm
         // Check that both branches have the same element type.
@@ -3234,13 +3229,23 @@ algorithm
         (compatibleType, matchKind) :=
           matchArrayDims(trueType.dimensions, falseType.dimensions, compatibleType, matchKind, options);
 
-        if isIncompatibleMatch(matchKind) and
-           listLength(trueType.dimensions) == listLength(falseType.dimensions) then
-          // If the branches have the same element type and number of dimensions
-          // but the dimensions aren't the same, create a conditional array type.
-          compatibleType := Type.CONDITIONAL_ARRAY(Type.copyElementType(trueType, compatibleType),
-                                                   Type.copyElementType(falseType, compatibleType),
-                                                   NFType.Branch.NONE);
+        if listLength(trueType.dimensions) == listLength(falseType.dimensions) and
+           isIncompatibleMatch(matchKind) or
+           not List.isEqualOnTrue(trueType.dimensions, falseType.dimensions, Dimension.isSame) then
+          // The branches are allowed to have different array dimensions as long as
+          // they have compatible element types and the same number of dimensions.
+          if InstContext.inSubexpression(context) then
+            // Unify the types if the if-expression is part of a larger expression,
+            // because we can't really handle conditional array sizes in that case.
+            compatibleType := Type.unifyArrays(Type.copyElementType(trueType, compatibleType),
+                                               Type.copyElementType(falseType, compatibleType));
+          else
+            // Otherwise, create a conditional array type to allow determining the actual type later.
+            compatibleType := Type.CONDITIONAL_ARRAY(Type.copyElementType(trueType, compatibleType),
+                                                     Type.copyElementType(falseType, compatibleType),
+                                                     NFType.Branch.NONE);
+          end if;
+
           matchKind := MatchKind.EXACT;
         end if;
       then

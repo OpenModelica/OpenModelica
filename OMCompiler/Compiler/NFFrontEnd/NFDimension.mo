@@ -350,6 +350,26 @@ public
     end match;
   end isEqualKnownSize;
 
+  function isSame
+    input Dimension dim1;
+    input Dimension dim2;
+    output Boolean same;
+  algorithm
+    same := match (dim1, dim2)
+      case (RAW_DIM(), RAW_DIM())
+        then InstNode.isSame(dim1.scope, dim2.scope) and
+             AbsynUtil.subscriptEqual(dim1.dim, dim2.dim);
+      case (UNTYPED(), UNTYPED()) then Expression.isEqual(dim1.dimension, dim2.dimension);
+      case (INTEGER(), INTEGER()) then dim1.size == dim2.size;
+      case (BOOLEAN(), BOOLEAN()) then true;
+      case (ENUM(), ENUM()) then Type.isEqual(dim1.enumType, dim2.enumType);
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (UNKNOWN(), UNKNOWN()) then true;
+      else false;
+    end match;
+  end isSame;
+
   function isSizeOf
     "Returns true if the dimension is size(node, index)."
     input Dimension dim;
