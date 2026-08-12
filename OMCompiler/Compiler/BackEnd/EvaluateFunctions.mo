@@ -672,7 +672,8 @@ protected
   AvlTreePathFunction.Tree funcs;
   DAE.Type ty, singleOutputType;
   list<BackendDAE.Equation> constEqs;
-  list<DAE.ComponentRef> outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsLhs,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
+  list<DAE.ComponentRef> outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsInFunc, constScalarCrefsLhs,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
+  list<DAE.Statement> copyOutStmts;
   list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, updatedVarOutputs, newOutputVars;
   list<DAE.Exp> exps, expsIn, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps;
   list<DAE.Subscript> sub;
@@ -837,13 +838,13 @@ algorithm
         changed := funcIsPartConst or funcIsConst;
 
         // build the new lhs, the new statements for the function, the constant parts...
-        (updatedVarOutputs,outputExp,varScalarCrefsInFunc) := buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
+        (updatedVarOutputs,outputExp,varScalarCrefsInFunc,constScalarCrefsInFunc,copyOutStmts) := buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
         (constScalarCrefsLhs,constComplexCrefs) := buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
           //print("constScalarExps\n"+stringDelimitList(List.map(constScalarExps,ExpressionBasics.printExpStr),"\n")+"\n");
           //print("constComplexExps\n"+stringDelimitList(List.map(constComplexExps,ExpressionBasics.printExpStr),"\n")+"\n");
 
         if not funcIsConst then
-          (algs,constEqs) := buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsLhs),repl);
+          (algs,constEqs) := buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefsInFunc,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsLhs),copyOutStmts,repl);
         else
           constEqs := {};
         end if;
@@ -853,7 +854,8 @@ algorithm
         elements := listAppend(updatedVarOutputs,elements);
         elements := listAppend(allInputs,elements);
         elements := List.unique(elements);
-        (func,path) := updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
+        newOutputVars := List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
+        (func,path) := updateFunctionBody(func,elements,idx, newOutputVars, allOutputs);
         funcs := if funcIsPartConst then AvlTreePathFunction.addDaeFunction({func},funcs) else funcs;
         idx := if funcIsPartConst or funcIsConst then (idx+1) else idx;
 
@@ -863,7 +865,6 @@ algorithm
         lhsExps := getCrefsForRecord(lhsExpIn);
         outputExp := if isConstRec then DAE.TUPLE(lhsExps) else outputExp;
         // which rhs
-        newOutputVars := List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
         outputVarTypes := List.map(newOutputVars,DAEUtil.getVariableType);
         outputVarNames := List.map(newOutputVars,DAEUtil.varName);
         attr2 := DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,SOME(outputVarNames)));
@@ -1180,15 +1181,19 @@ author: Waurich TUD 2014-04"
   output list<DAE.Element> varOutputs; // the protected and output variable elements of the function body
   output DAE.Exp outputExpOut;  // the outputs(lhs) of the function call
   output list<DAE.ComponentRef> varScalarCrefsInFunc;  // these crefs have to be updated (makeIdentCref) in the function algorithms
+  output list<DAE.ComponentRef> constScalarCrefsInFunc;  // dito for the constant scalars
+  output list<DAE.Statement> copyOutStmts;  // copy the scalars out of the kept complex output
 protected
   list<Integer> pos;
   DAE.ComponentRef lhsCref;
   DAE.Exp outputExp;
-  list<DAE.ComponentRef> varScalarCrefs1, outputCrefs, allOutputCrefs, allOutputCrefs2, protCrefs;
+  DAE.Element newOutput, protVar;
+  DAE.Statement copyStmt;
+  list<DAE.ComponentRef> varScalarCrefs1, outputCrefs, allOutputCrefs, allOutputCrefs2, protCrefs, scalarizedCrefs;
   list<DAE.Element> funcOutputs,funcProts,funcSOutputs,funcSProts;
   list<DAE.Exp> expLst, varScalarExps;
 algorithm
-  (varOutputs,outputExpOut,varScalarCrefsInFunc) := matchcontinue(constComplexCrefs, varComplexCrefs, constScalarCrefs, varScalarCrefs, lhsExpIn)
+  (varOutputs,outputExpOut,varScalarCrefsInFunc,constScalarCrefsInFunc,copyOutStmts) := matchcontinue(constComplexCrefs, varComplexCrefs, constScalarCrefs, varScalarCrefs, lhsExpIn)
     case(_, _, {}, {}, DAE.TUPLE(PR=expLst))
       algorithm
         // only 1d or complex outputs in a tuple exp
@@ -1201,10 +1206,10 @@ algorithm
         funcOutputs := List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts := List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs := listAppend(funcOutputs,funcProts);
-      then (varOutputs,outputExp,varScalarCrefsInFunc);
+      then (varOutputs,outputExp,varScalarCrefsInFunc,constScalarCrefs,{});
     case(_, _, _, _, DAE.LBINARY())
       then
-        ({},lhsExpIn,{});
+        ({},lhsExpIn,{},constScalarCrefs,{});
     case(_, _, _, _, DAE.TUPLE(PR=expLst))
       algorithm
         // a tuple including variable and constant parts
@@ -1233,7 +1238,7 @@ algorithm
         varScalarExps := List.map1(pos,List.getIndexFirst,expLst);
         varScalarExps := List.map(varScalarExps,scalarRecExpForOneDimRec);
         outputExp := if List.hasOneElement(varScalarExps) then listHead(varScalarExps) else DAE.TUPLE(varScalarExps);
-      then (varOutputs,outputExp,varScalarCrefsInFunc);
+      then (varOutputs,outputExp,varScalarCrefsInFunc,constScalarCrefs,{});
     case(_, _, _, _, DAE.TUPLE(PR=expLst))
       algorithm
         true := listEmpty(List.flatten(scalarOutputs));
@@ -1247,7 +1252,7 @@ algorithm
         funcOutputs := List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts := List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs := listAppend(funcOutputs,funcProts);
-      then (varOutputs,outputExp,varScalarCrefsInFunc);
+      then (varOutputs,outputExp,varScalarCrefsInFunc,constScalarCrefs,{});
     case({}, {}, _, {}, _)
       algorithm
         // only constant scalarOutputs
@@ -1257,23 +1262,40 @@ algorithm
         expLst := List.map(outputCrefs,Expression.crefExp);
         outputExp := DAE.TUPLE(expLst);
       then
-        ({},outputExp,{});
+        ({},outputExp,{},constScalarCrefs,{});
    case(_, _, _, _, _)
       algorithm
         lhsCref := Expression.expCref(lhsExpIn);
-        allOutputCrefs := List.map(allOutputs,DAEUtil.varCref);
         funcOutputs := List.map2(varComplexCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts := List.map2(constComplexCrefs,generateProtectedElements,allOutputs,lhsExpIn);
-        funcSOutputs := List.map2(varScalarCrefs,generateOutputElements,allOutputs,lhsExpIn);
-        funcSProts := List.map2(constScalarCrefs,generateProtectedElements,allOutputs,lhsExpIn);
+
+        // keep the complex parent so the body stays valid however it assigns the record
+        scalarizedCrefs := listAppend(varScalarCrefs,constScalarCrefs);
+        funcSProts := {};
+        for outVar in allOutputs loop
+          if List.exist1(scalarizedCrefs,ComponentReferenceBasics.crefFirstIdentEqual,DAEUtil.varCref(outVar)) then
+            protVar := DAEUtil.setElementVarVisibility(outVar,DAE.PROTECTED());
+            funcSProts := DAEUtil.setElementVarDirection(protVar,DAE.BIDIR())::funcSProts;
+          end if;
+        end for;
+
+        funcSOutputs := {};
+        copyOutStmts := {};
+        for cref in varScalarCrefs loop
+          (newOutput,copyStmt) := generateScalarOutputElement(cref,allOutputs);
+          funcSOutputs := newOutput::funcSOutputs;
+          copyOutStmts := copyStmt::copyOutStmts;
+        end for;
+        funcSOutputs := listReverse(funcSOutputs);
+        copyOutStmts := listReverse(copyOutStmts);
+
         varOutputs := List.flatten({funcOutputs, funcSOutputs, funcProts, funcSProts});
-        //varOutputs = List.map2(varScalarCrefs,generateOutputElements,allOutputs,lhsExpIn);
         varScalarCrefs1 := List.map(varScalarCrefs,ComponentReference.crefStripFirstIdent);
         varScalarCrefs1 := List.map1(varScalarCrefs1,ComponentReference.joinCrefsR,lhsCref);
         varScalarExps := List.map(varScalarCrefs1,Expression.crefExp);
         outputExp := if List.hasOneElement(varScalarExps) then listHead(varScalarExps) else DAE.TUPLE(varScalarExps);
       then
-        (varOutputs,outputExp,varScalarCrefs);
+        (varOutputs,outputExp,{},{},copyOutStmts);
     else
       algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -1417,6 +1439,60 @@ algorithm
   end matchcontinue;
 end checkIfOutputIsEvaluatedConstant;
 
+
+protected function generateScalarOutputElement
+  "Makes a scalar output for a part of a complex output and the statement copying it out."
+  input DAE.ComponentRef cref;
+  input list<DAE.Element> inFuncOutputs;
+  output DAE.Element newOutput;
+  output DAE.Statement copyStmt;
+protected
+  DAE.Type ty;
+  DAE.ComponentRef newCref;
+algorithm
+  ty := ComponentReference.crefTypeFull(cref);
+  newCref := ComponentReferenceBasics.makeCrefIdent(flattenCrefIdent(cref),ty,{});
+  newOutput := match listHead(inFuncOutputs)
+    local
+      DAE.Element var;
+    case var as DAE.VAR()
+      algorithm
+        var.componentRef := newCref;
+        var.ty := ty;
+        var.dims := {};
+        var.binding := NONE();
+        var.direction := DAE.OUTPUT();
+        var.protection := DAE.PUBLIC();
+      then var;
+  end match;
+  copyStmt := DAE.STMT_ASSIGN(ty,Expression.crefToExp(newCref),Expression.crefToExp(cref),DAE.emptyElementSource);
+end generateScalarOutputElement;
+
+protected function flattenCrefIdent
+  "o.i.b[2] -> o_i_b_2"
+  input DAE.ComponentRef cref;
+  output String ident;
+algorithm
+  ident := match cref
+    local
+      DAE.ComponentRef rest;
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+    case DAE.CREF_QUAL(ident=id,subscriptLst=subs,componentRef=rest)
+      then id + flattenSubscripts(subs) + "_" + flattenCrefIdent(rest);
+    case DAE.CREF_IDENT(ident=id,subscriptLst=subs)
+      then id + flattenSubscripts(subs);
+  end match;
+end flattenCrefIdent;
+
+protected function flattenSubscripts
+  input list<DAE.Subscript> subs;
+  output String str = "";
+algorithm
+  for sub in subs loop
+    str := str + "_" + ExpressionDump.subscriptString(sub);
+  end for;
+end flattenSubscripts;
 
 protected function generateOutputElements "generates the scalar outputs for the new function
 author:Waurich TUD 2014-03"
@@ -1583,17 +1659,18 @@ protected function buildPartialFunction "build a partial function for the variab
 author:Waurich TUD 2014-03"
   input tuple<list<DAE.ComponentRef>,list<DAE.Element>> varPart;
   input tuple<list<DAE.ComponentRef>,list<DAE.Exp>,list<DAE.ComponentRef>,list<DAE.Exp>,list<DAE.ComponentRef>> constPart;
+  input list<DAE.Statement> copyOutStmts;
   input BackendVarTransform.VariableReplacements replIn;
   output list<DAE.Element> algsOut;
   output list<BackendDAE.Equation> eqsOut;
 protected
-  list<DAE.ComponentRef> constScalarCrefs ,varScalarCrefs, constComplCrefs, constScalarCrefsOut;
+  list<DAE.ComponentRef> constScalarCrefsInFunc, varScalarCrefs, constComplCrefs, constScalarCrefsOut;
   list<DAE.Element> funcAlgs;
   list<DAE.Exp> constComplExps, constScalarExps, lhsExps1, lhsExps2;
   list<DAE.Statement> stmts1;
 algorithm
   (varScalarCrefs,funcAlgs) := varPart;
-  (constScalarCrefs,constScalarExps,constComplCrefs,constComplExps,constScalarCrefsOut) := constPart;
+  (constScalarCrefsInFunc,constScalarExps,constComplCrefs,constComplExps,constScalarCrefsOut) := constPart;
 
   funcAlgs := List.filterOnTrue(funcAlgs,DAEUtil.isAlgorithm);// get only the algs, not protected vars or stuff
   // generate the additional equations for the constant scalar values and the constant complex ones
@@ -1611,7 +1688,8 @@ algorithm
 
   // build new crefs for the scalars
   (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,varScalarCrefs));
-  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,constScalarCrefs));
+  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,constScalarCrefsInFunc));
+  stmts1 := listAppend(stmts1,copyOutStmts) annotation(__OpenModelica_DisableListAppendWarning=true);
   algsOut := {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts1),DAE.emptyElementSource)};
 end buildPartialFunction;
 
