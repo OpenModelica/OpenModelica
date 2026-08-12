@@ -48,6 +48,17 @@ end doubleReversalSpatialDistribution;"); getErrorString();
 
 // Simulate over 3 segments of 1s each: v=+2, v=-2, v=+2.
 simulate(doubleReversalSpatialDistribution, stopTime=3.0); getErrorString();
+
+// Phase 1: v=+2, in0=1
+val(leftOutput, 0.25);  val(rightOutput, 0.25);
+val(leftOutput, 0.75);  val(rightOutput, 0.75);
+// Phase 2: v=-2, in1=-1
+val(leftOutput, 1.25);  val(rightOutput, 1.25);
+val(leftOutput, 1.75);  val(rightOutput, 1.75);
+// Phase 3: v=+2, in0=1
+val(leftOutput, 2.25);  val(rightOutput, 2.25);
+val(leftOutput, 2.75);  val(rightOutput, 2.75);
+
 // Result:
 // true
 // ""
@@ -63,4 +74,16 @@ simulate(doubleReversalSpatialDistribution, stopTime=3.0); getErrorString();
 // "
 // end SimulationResult;
 // ""
+// 1.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// -1.0
+// -1.0
+// -1.0
+// 1.0
+// -1.0
+// 1.0
+// 1.0
 // endResult

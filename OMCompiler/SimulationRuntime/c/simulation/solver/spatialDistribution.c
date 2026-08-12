@@ -361,11 +361,12 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     realDirection = 0 /* standing still */;
   }
 
-  /* Derive the storage direction from the sign of the actual change of x. */
+  /* Derive storage direction from the sign of the actual change of x.
+   * Note: deltaX = oldPosX - posX, so realDirection > 0 means x decreased. */
   if (realDirection > 0) {
-    isPositiveVelocity = 0 /* false: x decreased, write at the back */;
+    isPositiveVelocity = 0;
   } else if (realDirection < 0) {
-    isPositiveVelocity = 1 /* true: x increased, write at the front */;
+    isPositiveVelocity = 1;
   }
   if (isPositiveVelocity) {
     TRANSPORTED_QUANTITY_DATA* front = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
