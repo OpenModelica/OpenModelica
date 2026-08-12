@@ -56,7 +56,7 @@ use openmodelica_simcode_types::SimCodeFunction;
 use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, Attr, AttrTargets, BUILTINS, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
+    ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
@@ -2366,6 +2366,12 @@ pub(crate) struct SimVarMap {
     start_slots: Arc<HashMap<String, u32>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     array_groups: Arc<HashMap<String, ArrayGroup>>,
+    /// `varKind = CONST` variables own no `SimData` slot: a reference is the
+    /// binding literal, as in C's `varArrayNameValues`. `const_groups` is the
+    /// `array_groups` counterpart, `const_acc` its transient accumulator.
+    consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
+    const_groups: Arc<HashMap<String, ConstGroup>>,
+    const_acc: HashMap<String, Vec<(Vec<i32>, Arc<DAE::Exp>, WTy)>>,
     /// Transient accumulator: base cref key -> the scalarized elements seen
     /// (subscripts, byte offset, value type). Finalized into `array_groups` at the
     /// end of [`build_var_map`].
@@ -2750,6 +2756,9 @@ fn build_var_map(
         starts: Arc::default(),
         start_slots: Arc::default(),
         array_groups: Arc::default(),
+        consts: Arc::default(),
+        const_groups: Arc::default(),
+        const_acc: HashMap::new(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
@@ -2922,9 +2931,23 @@ fn build_var_map(
     // in the result too, e.g. visualization colors). Record their values so a
     // constant's aliases resolve below.
     let mut const_of: HashMap<String, f64> = HashMap::new();
-    for sv in lst(&vars.constVars).chain(lst(&vars.intConstVars)).chain(lst(&vars.boolConstVars)) {
+    let const_lists = [
+        (&vars.constVars, Some(WTy::F64)),
+        (&vars.intConstVars, Some(WTy::I32)),
+        (&vars.boolConstVars, Some(WTy::I32)),
+        (&vars.stringConstVars, None),
+    ];
+    for sv in const_lists.iter().flat_map(|(l, wty)| lst(l).map(move |sv| (sv, *wty))) {
+        let (sv, wty) = sv;
+        let key = sim_cref_key(&sv.name)?;
+        if let Some(exp) = sv.initialValue.clone() {
+            Arc::make_mut(&mut map.consts).insert(key.clone(), exp.clone());
+            if let (Some(wty), Some((base, subs))) = (wty, array_element_of(&sv.name)?) {
+                map.const_acc.entry(base).or_default().push((subs, exp, wty));
+            }
+        }
         let Some(value) = const_value(&sv.initialValue) else { continue };
-        const_of.insert(sim_cref_key(&sv.name)?, value);
+        const_of.insert(key, value);
         if let Some(name) = result_name(&cref_display(&sv.name)?) {
             result_vars.push(ResultVar {
                 name,
@@ -3117,6 +3140,41 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
             continue;
         }
         Arc::make_mut(&mut map.array_groups).insert(base, ArrayGroup { base_off, wty, dims, total });
+    }
+    finalize_const_groups(map)
+}
+
+/// [`finalize_array_groups`] for constants, which own no slots: the group is the
+/// row-major list of its elements' literals.
+fn finalize_const_groups(map: &mut SimVarMap) -> Result<()> {
+    let acc = std::mem::take(&mut map.const_acc);
+    for (base, mut elems) in acc {
+        let Some(rank) = elems.first().map(|(s, _, _)| s.len()) else { continue };
+        if elems.iter().any(|(s, _, _)| s.len() != rank) {
+            continue; // ragged rank
+        }
+        if elems.iter().any(|(subs, _, _)| subs.iter().any(|&ix| ix < 1)) {
+            continue;
+        }
+        let mut dims = vec![0u32; rank];
+        for (subs, _, _) in &elems {
+            for (axis, &ix) in subs.iter().enumerate() {
+                dims[axis] = dims[axis].max(ix as u32);
+            }
+        }
+        let total: u32 = dims.iter().product();
+        if total as usize != elems.len() {
+            continue; // not every element is its own constant
+        }
+        let wty = elems[0].2;
+        if elems.iter().any(|(_, _, w)| *w != wty) {
+            continue;
+        }
+        elems.sort_by_key(|(subs, _, _)| {
+            subs.iter().enumerate().fold(0u32, |lin, (axis, &ix)| lin * dims[axis] + (ix as u32 - 1))
+        });
+        let values = elems.into_iter().map(|(_, e, _)| e).collect();
+        Arc::make_mut(&mut map.const_groups).insert(base, ConstGroup { wty, dims, values });
     }
     Ok(())
 }
@@ -5088,6 +5146,8 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
+        consts: var_map.consts.clone(),
+        const_groups: var_map.const_groups.clone(),
         terminate_off: var_map.terminate_off,
         terminal_off: var_map.terminal_off,
         initial_off: var_map.initial_off,
@@ -7070,6 +7130,8 @@ fn build_nls_fns(
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
+        consts: var_map.consts.clone(),
+        const_groups: var_map.const_groups.clone(),
         terminate_off: var_map.terminate_off,
         terminal_off: var_map.terminal_off,
         initial_off: var_map.initial_off,
