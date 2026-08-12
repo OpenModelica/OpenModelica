@@ -97,6 +97,15 @@ pub(crate) mod dl {
         !unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_NOW) }.is_null()
     }
 
+    /// Global scope, deferred binding: for libraries that reference each other, so
+    /// the order they are loaded in need not be a topological one.
+    pub fn open_global_deferred(name: &str) -> std::result::Result<usize, String> {
+        let c = CString::new(name).map_err(|_| "NUL byte in path".to_owned())?;
+        unsafe { libc::dlerror() };
+        let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_LAZY) };
+        if h.is_null() { Err(last_error()) } else { Ok(h as usize) }
+    }
+
     pub fn sym(handle: usize, name: &str) -> Option<usize> {
         let c = CString::new(name).ok()?;
         let p = unsafe { libc::dlsym(handle as *mut c_void, c.as_ptr()) };
@@ -178,6 +187,14 @@ pub(crate) mod dl {
             GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_PIN, c.as_ptr(), &mut module);
         }
         true
+    }
+
+    /// The Windows loader always binds lazily and has no global scope; a plain
+    /// `LoadLibrary` is what [`open_global_deferred`] means here.
+    pub fn open_global_deferred(name: &str) -> std::result::Result<usize, String> {
+        let c = CString::new(name).map_err(|_| "NUL byte in path".to_owned())?;
+        let h = unsafe { LoadLibraryA(c.as_ptr()) };
+        if h.is_null() { Err(last_error()) } else { Ok(h as usize) }
     }
 
     pub fn sym(handle: usize, name: &str) -> Option<usize> {
@@ -429,11 +446,42 @@ pub fn runtime_symbol(name: &str) -> Option<usize> {
 /// process image (self + globally-loaded libraries, incl. libm). Returns the
 /// function address, or `None` if no loaded library provides it.
 pub fn external_symbol(name: &str) -> Option<usize> {
+    ensure_sim_libs();
+    let me = dl::open_self().ok()?;
+    dl::sym(me, name)
+}
+
+fn ensure_sim_libs() {
     ensure_runtime_solibs();
     ensure_ffi_solibs();
     ensure_sim_error_interception();
-    let me = dl::open_self().ok()?;
-    dl::sym(me, name)
+}
+
+/// The platform shared libraries a model's `Library` annotations name, which the C
+/// target would have linked into the simulation executable. Loaded once per path (a
+/// model may be resimulated), into the global scope so they resolve against the C
+/// runtime's `ModelicaError` and each other. Returns why any that would not load did
+/// not, alongside the handles.
+pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
+    static LOADED: LazyLock<Mutex<HashMap<String, std::result::Result<usize, String>>>> =
+        LazyLock::new(|| Mutex::new(HashMap::new()));
+    ensure_sim_libs();
+    let mut loaded = LOADED.lock().unwrap();
+    let mut handles = Vec::new();
+    let mut errors = Vec::new();
+    for path in paths {
+        match loaded.entry(path.clone()).or_insert_with(|| dl::open_global_deferred(path)) {
+            Ok(h) => handles.push(*h),
+            Err(e) => errors.push(format!("`{path}` could not be loaded: {e}")),
+        }
+    }
+    (handles, errors)
+}
+
+/// Resolve against `handles` — the model's own libraries, which shadow a same-named
+/// symbol elsewhere — then against the process image.
+pub fn external_symbol_in(handles: &[usize], name: &str) -> Option<usize> {
+    handles.iter().find_map(|&h| dl::sym(h, name)).or_else(|| external_symbol(name))
 }
 
 /// Install the panic-mode `ModelicaError`/`omc_assert` interception for the

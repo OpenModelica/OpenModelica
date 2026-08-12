@@ -22,14 +22,31 @@ thread_local! {
 /// console on the web target.
 pub fn start_stdout_capture() {
     STDOUT_CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
+    NATIVE_CAPTURE.with(|h| h.get().map(|(begin, _)| begin()));
 }
 
 /// End capture and return the accumulated bytes as a lossy-UTF-8 string.
 pub fn take_stdout_capture() -> String {
+    let native = NATIVE_CAPTURE.with(|h| h.get().map(|(_, end)| end())).unwrap_or_default();
     STDOUT_CAPTURE
         .with(|c| c.borrow_mut().take())
-        .map(|v| String::from_utf8_lossy(&v).into_owned())
+        .map(|mut v| {
+            v.extend_from_slice(&native);
+            String::from_utf8_lossy(&v).into_owned()
+        })
         .unwrap_or_default()
+}
+
+thread_local! {
+    static NATIVE_CAPTURE: std::cell::Cell<Option<(fn(), fn() -> Vec<u8>)>> = const { std::cell::Cell::new(None) };
+}
+
+/// Extend the capture over the *process's* stdout, which a `dlopen`ed external "C"
+/// library's `printf` reaches directly — past the WASI shim, past `ModelicaMessage`.
+/// C's simulation executable has a stdout of its own, so that output belongs in the
+/// run's log too.
+pub fn set_native_capture(begin: fn(), end: fn() -> Vec<u8>) {
+    NATIVE_CAPTURE.with(|h| h.set(Some((begin, end))));
 }
 
 /// Write to stdout (fd 1) through the same capture/host routing as a guest

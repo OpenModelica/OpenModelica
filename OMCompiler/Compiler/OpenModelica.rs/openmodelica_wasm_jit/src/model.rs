@@ -26,6 +26,11 @@ pub struct SimModel {
     /// The model's own `external "C"` libraries, loaded into the simulation's
     /// memory, where they define the `ext_imports` the runtime cannot resolve.
     pub ext_libs: Vec<ExtLibrary>,
+    /// The same implementations as platform shared libraries, for a symbol no wasm
+    /// library defines: a native host dlopens them and calls in through libffi.
+    /// Empty in the browser.
+    pub ext_native_libs: Vec<String>,
+    pub ext_includes: Option<ExtIncludes>,
     /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
     /// symbol then turns out to be missing.
     pub ext_lib_notes: Vec<String>,
@@ -77,6 +82,97 @@ impl SimModel {
 pub struct ExtLibrary {
     pub name: String,
     pub bytes: Vec<u8>,
+}
+
+/// The model's `Include` annotations, and what it takes to build them: host C source
+/// the C target compiles into the simulation executable. Built only once a symbol
+/// turns out to be missing from every library — an `Include` most often just declares
+/// what a `Library` defines, and a header-only unit would produce nothing to load.
+#[derive(Clone, Default)]
+pub struct ExtIncludes {
+    pub sources: Vec<String>,
+    /// `IncludeDirectory` annotations, already `-I"…"` strings.
+    pub include_dirs: Vec<String>,
+    pub ccompiler: String,
+    pub cflags: String,
+    pub dllext: String,
+    /// Names the object after the model, as the C target does.
+    pub prefix: String,
+}
+
+impl ExtIncludes {
+    /// Build the sources into a host shared library and return its path. Per-process
+    /// temp directory: it stays mapped as long as the model can be resimulated.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn compile(&self) -> std::result::Result<String, String> {
+        use std::process::Command;
+        let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+        let tu = dir.join(format!("{}_includes.c", self.prefix));
+        let out = dir.join(format!("{}_includes{}", self.prefix, self.dllext));
+        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n")
+            .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
+
+        let mut cmd = Command::new(&self.ccompiler);
+        cmd.args(["-shared", "-fPIC", "-O1"]);
+        // `--cflags`, minus the make variables it is written to be expanded with.
+        cmd.args(self.cflags.split_whitespace().filter(|f| !f.starts_with("${") && !f.starts_with("$(")));
+        // Compiled in a temporary directory, so `#include "x.h"` needs the model's own.
+        if let Ok(cwd) = std::env::current_dir() {
+            cmd.arg("-I").arg(cwd);
+        }
+        for dir in omc_c_include_dirs() {
+            cmd.arg("-I").arg(dir);
+        }
+        for inc in &self.include_dirs {
+            cmd.arg(inc.trim_matches('"'));
+        }
+        cmd.arg("-o").arg(&out).arg(&tu);
+        let output = cmd
+            .output()
+            .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;
+        if !output.status.success() {
+            return Err(format!(
+                "the `Include` C sources did not compile:\n{}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        let _ = std::fs::remove_file(&tu);
+        Ok(out.to_string_lossy().into_owned())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn compile(&self) -> std::result::Result<String, String> {
+        Err("the implementation comes from an `Include` annotation with C source, which has to be \
+             compiled — the browser omc has no compiler. Provide it as a `Library` built with \
+             `clang --target=wasm32-wasip1 -fPIC -shared`"
+            .to_string())
+    }
+}
+
+/// What the C target's generated `<prefix>_includes.h` opens with, so external C
+/// source sees the same declarations wherever it is built.
+pub const INCLUDE_TU_PROLOGUE: &str = "\
+#include \"openmodelica.h\"       /* Defines OPENMODELICA_H_ for libraries to test if called from OpenModelica. */\n\
+#include \"ModelicaUtilities.h\"  /* Make Modelica C util functions available for external includes. */\n";
+
+/// The same for a wasm unit, where `openmodelica.h` cannot be opened — it reaches the
+/// Boehm GC and `setjmp`. Name what external source uses it for instead.
+pub const INCLUDE_TU_PROLOGUE_WASM: &str = "\
+#include <stddef.h>\n\
+#include <stdio.h>\n\
+#include <stdlib.h>\n\
+#include <string.h>\n\
+#include <math.h>\n\
+#include \"ModelicaUtilities.h\"\n";
+
+/// omc's own C headers, plus the bundled `gc.h` that `openmodelica.h` reaches —
+/// the `-I` set the C target's makefile compiles the same source with.
+pub fn omc_c_include_dirs() -> [String; 2] {
+    let home = openmodelica_util::Settings::getInstallationDirectoryPath()
+        .map(|p| p.to_string())
+        .unwrap_or_default();
+    [format!("{home}/include/omc/c"), format!("{home}/include/omc")]
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,

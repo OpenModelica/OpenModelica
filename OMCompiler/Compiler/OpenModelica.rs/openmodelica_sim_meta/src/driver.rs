@@ -375,7 +375,32 @@ pub fn enrich_trap_init(e: &mut dyn SimEngine, err: &'static str, start_time: f6
     enrich_trap_impl(e, err, Some(start_time))
 }
 
+/// Set by [`note_runtime_error`]; consumed by the trap it precedes.
+static RUNTIME_ERROR: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// C's `va_throwStreamPrint(NULL, …)`, which an external function's `ModelicaError`
+/// reaches: log the message on `LOG_ASSERT` and unwind. It has no condition and no
+/// source position, so the trap that follows must not go looking for the assertion
+/// block a model `assert()` would have left.
+pub fn note_runtime_error(msg: &str) {
+    // The whole `vsnprintf` buffer is one message, so a format ending in a
+    // newline must not turn into a blank line.
+    omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, msg.trim_end());
+    RUNTIME_ERROR.store(true, Ordering::Relaxed);
+}
+
+/// Drop one a previous run left behind (only a trap consumes it).
+pub fn clear_runtime_error() {
+    RUNTIME_ERROR.store(false, Ordering::Relaxed);
+}
+
 fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
+    if RUNTIME_ERROR.swap(false, Ordering::Relaxed) {
+        if init_time.is_some() {
+            omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
+        }
+        return ASSERT_ERR;
+    }
     let Some(pa) = e.take_pending_assert() else { return err };
     let cond = read_rt_string(e, pa[7]).unwrap_or_default();
     let info = AssertInfo {
@@ -1497,20 +1522,23 @@ fn seed_start_values(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    // C's `initialization` order: `setAllParamsToStart`, the start values (here the
+    // start expressions, then `-iif`/`-override`), `setAllVarsToStart`.
     e.call1("functionParameters", sim_data)?;
-    // Params first (a start expression may read one), then the start attributes —
-    // the expressions, then the `$START.<var>` equations that bind one to a
-    // parameter — then `-iif`/`-override`, then C's `setAllVarsToStart`.
     apply_param_overrides(e, sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
     apply_external_input(e, sim_data, inputs)?;
-    e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
-    log_bound_attr_updates(e, sim_data, layout, model);
+    // C's `read_init_from_file` branch runs them *before* `importStartValues`, giving
+    // the file the last word on a start value.
+    let from_file = crate::simflags::with_flags(|f| f.init_file.is_some());
+    if from_file {
+        update_bound_values(e, sim_data, layout, model)?;
+    }
     apply_start_overrides(e, sim_data)?;
     set_all_vars_to_start(e, sim_data, layout, model)?;
-    // C runs `updateBoundParameters` *after* `setAllVarsToStart`: those equations
-    // also assign the constant-bound variables, which the copy would undo.
-    e.call1("functionUpdateBoundParameters", sim_data)?;
+    if !from_file {
+        update_bound_values(e, sim_data, layout, model)?;
+    }
     // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
     // an initial equation sees `start`, not 0.
     seed_pre_from_live(e, sim_data, layout)?;
@@ -1518,6 +1546,20 @@ fn seed_start_values(
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;
     }
+    Ok(())
+}
+
+/// C's `updateBoundParameters` + `updateBoundVariableAttributes`, always a pair and
+/// after `setAllVarsToStart`, whose copy would undo the variables they assign.
+fn update_bound_values(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    e.call1("functionUpdateBoundParameters", sim_data)?;
+    e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
+    log_bound_attr_updates(e, sim_data, layout, model);
     Ok(())
 }
 

@@ -1747,7 +1747,7 @@ impl<'a> FnCtx<'a> {
         &mut self,
         defaults: &[(u32, f64)],
         int_defaults: &[(u32, i32)],
-        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets, u32)],
+        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (off, value) in defaults {
@@ -1764,7 +1764,7 @@ impl<'a> FnCtx<'a> {
             return Ok(());
         }
         let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
-        for (attr, exp, targets, log_off) in attrs {
+        for (attr, exp, targets, log_off, var) in attrs {
             let w = compile_exp(self, exp)?;
             coerce(self, w, WTy::F64);
             self.emit(we::Instruction::LocalSet(raw));
@@ -1801,6 +1801,19 @@ impl<'a> FnCtx<'a> {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(raw));
                 self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            }
+            // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
+            // holds a reference-counted handle.
+            if let Some(slot) = var.filter(|s| !s.negate && !s.heap) {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(raw));
+                match slot.wty {
+                    WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
+                    _ => {
+                        self.emit(we::Instruction::I32TruncSatF64S);
+                        self.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
+                    }
+                }
             }
             if targets.nls.is_empty() {
                 continue;
@@ -9300,7 +9313,9 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     let mut sig = format!("{in_codes}\n{out_codes}\n");
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
-        for lib in crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)? {
+        // Only the wasm modules: the function JIT calls them wasm->wasm, with no
+        // libffi trampoline to reach a platform library through.
+        for lib in &crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?.wasm {
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
         // An implementation given as C source in an `Include`.

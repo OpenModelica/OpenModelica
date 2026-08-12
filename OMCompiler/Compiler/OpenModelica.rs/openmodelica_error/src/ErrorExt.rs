@@ -456,6 +456,17 @@ pub fn initAssertionFunctions() {
     ASSERT_FUNCTIONS_REGISTERED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+std::thread_local! {
+    static LAST_RUNTIME_ERROR: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+/// The most recent `ModelicaError`/`omc_assert` from an external function, as the
+/// function wrote it. A simulation host reports it the way C's `throwStreamPrint`
+/// does — on the run's log, not through the error buffer the run rolls back.
+pub fn take_last_runtime_error() -> Option<String> {
+    LAST_RUNTIME_ERROR.with(|c| c.borrow_mut().take())
+}
+
 /// Append a positionless `RUNTIME`/`Error` message to the buffer — the analogue
 /// of `c_add_message(NULL, 0, ErrorType_runtime, ErrorLevel_error, str, ...)`.
 /// With no source location it renders as `Error: <msg>`, matching the C
@@ -463,6 +474,7 @@ pub fn initAssertionFunctions() {
 /// `ModelicaError`/`ModelicaFormatError` interception (see
 /// [`registerModelicaFormatError`]).
 fn add_runtime_error_message(msg: &str) {
+    LAST_RUNTIME_ERROR.with(|c| *c.borrow_mut() = Some(msg.to_owned()));
     addSourceMessage(
         0,
         MessageType::SIMULATION, // C `ErrorType_runtime` → prints as RUNTIME
