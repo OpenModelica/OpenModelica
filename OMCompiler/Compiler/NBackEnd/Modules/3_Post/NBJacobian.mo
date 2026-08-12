@@ -624,6 +624,9 @@ protected
     Adjacency.Matrix fullLocal, sparsity;
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> adj_base_seen;
+    list<Pointer<Variable>> adj_seed_list;
+    ComponentRef adj_base_cref;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if isSome(strongComponents) then
@@ -713,7 +716,21 @@ protected
     // Using part.adjacencyMatrix (the `full` param) would fail because residual
     // equations created by finalize() during tearing get new names and don't
     // appear in the partition's pre-tearing adjacency matrix.
-    adjacencyVars := VariablePointers.clone(seedCandidates);
+    // Build adjacencyVars from unique base variable ptrs derived from seedCandidates.
+    // When seedCandidates contains scalar element ptrs for partial-slice NLS iter vars,
+    // all elements of the same array share the same base ptr. Using base ptrs here
+    // preserves pseudo=true subscript-stripped lookup in getDependentCref, which matches
+    // any element expression (e.g. module[i].T for iterator i) to the base column.
+    adj_base_seen := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    adj_seed_list := {};
+    for v in VariablePointers.toList(seedCandidates) loop
+      adj_base_cref := ComponentRef.stripSubscriptsAll(BVariable.getVarName(v));
+      if not UnorderedSet.contains(adj_base_cref, adj_base_seen) then
+        UnorderedSet.add(adj_base_cref, adj_base_seen);
+        adj_seed_list := BVariable.getVarPointer(BVariable.getVarName(v), sourceInfo()) :: adj_seed_list;
+      end if;
+    end for;
+    adjacencyVars := VariablePointers.fromList(listReverse(adj_seed_list));
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
     // For ODE Jacobians, also include state derivatives as adjacency variables.
     // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).

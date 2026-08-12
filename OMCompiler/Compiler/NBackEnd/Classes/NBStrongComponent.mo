@@ -1228,7 +1228,7 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   algorithm
-    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) and not ComponentRef.hasSubscripts(cref) then
+    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) and isFullVariableCref(cref) then
       comp := SINGLE_COMPONENT(
         var       = Slice.getT(var_slice),
         eqn       = Slice.getT(eqn_slice),
@@ -1247,6 +1247,22 @@ public
   // ############################################################
 
 protected
+  function isFullVariableCref
+    "Returns true if the cref refers to a complete (non-sliced) variable.
+     Model-level parent subscripts (e.g. module[k]) just identify scalarized
+     instances and do not make the cref a partial slice. Array variables with
+     no subscripts anywhere are also full."
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      // HEAD has no subscripts and is scalar: full scalar variable even if
+      // parent model nodes carry subscripts (scalarized instance path).
+      case ComponentRef.CREF(subscripts = {})
+        then Type.isScalar(cref.ty) or not ComponentRef.hasSubscripts(cref);
+      else false;
+    end match;
+  end isFullVariableCref;
   function getLoopVarsAndEqns
     "adds the equation and matched variable to accumulated lists.
     used to collect algebraic loops.

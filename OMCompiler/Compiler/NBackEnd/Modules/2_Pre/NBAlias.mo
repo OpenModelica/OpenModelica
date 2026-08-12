@@ -527,6 +527,9 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
+      local
+        Equation body;
+
       case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
@@ -540,6 +543,16 @@ protected
       case BEquation.RECORD_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
+
+      // FOR_EQUATION with a single scalar body: check that both sides of the body
+      // are simple and that both crefs refer to full variables (no subscripts on
+      // the head node after stripping the iterator). The stripped crefs must be
+      // trackable as complete variables, not partial slices.
+      case BEquation.FOR_EQUATION(body = {body as BEquation.SCALAR_EQUATION()})
+        guard(isSimpleExp(body.lhs) and isSimpleExp(body.rhs)) algorithm
+        crefTpl := Expression.fold(body.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(body.lhs, findCrefs, crefTpl);
       then crefTpl;
 
       else crefTpl;
@@ -702,9 +715,19 @@ protected
       // variable found
       // 1. not time and not param or const
       // 2. less than two previous variables
-      // 3. if it is an array, it has to be the full array. no slice replacement here
-      case Expression.CREF()
-        guard((tpl.varCount < 2) and not ComponentRef.hasSubscripts(exp.cref))
+      // 3. the cref must refer to a COMPLETE variable, not a partial slice:
+      //    - no HEAD subscripts (those would make it a slice of an array variable)
+      //    - the cref must match the variable's stored name exactly.
+      //      This rejects e.g. module[k].cathodeChannel.Tin when Tin is stored
+      //      as the array variable module.cathodeChannel.Tin : Real[N] (the [k]
+      //      subscript on the model parent makes the cref an array element, not
+      //      a full variable). Connector variables scalarized per instance (e.g.
+      //      module[k].cathodeElPin.v stored as a scalar named module[k].cathodeElPin.v)
+      //      pass because the cref and stored name agree.
+      case Expression.CREF(cref = ComponentRef.CREF(subscripts = {}))
+        guard(tpl.varCount < 2 and
+              (not ComponentRef.hasSubscripts(exp.cref) or
+               ComponentRef.isEqual(exp.cref, BVariable.getVarName(BVariable.getVarPointer(exp.cref, sourceInfo())))))
         algorithm
           // add the variable to the list and bump var count
           tpl.cr_lst := exp.cref :: tpl.cr_lst;

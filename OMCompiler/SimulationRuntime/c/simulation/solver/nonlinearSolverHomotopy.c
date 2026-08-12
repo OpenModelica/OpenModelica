@@ -848,11 +848,15 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
-  /* apply scaling to each column */
+  if (!sp) return 0; /* pattern removed; jac is zeroed, solver will fail numerically */
+
+  /* apply scaling to each column; use sizeCols as row stride to match the
+   * square sizeCols×sizeCols layout written by evalJacobian */
   for (j = 0; j < jacobian->sizeCols; j++) {
     for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
       l = sp->index[ii];
-      k = j*jacobian->sizeRows + l;
+      if (l >= (unsigned int)jacobian->sizeCols) continue; /* skip auxiliary rows */
+      k = j*jacobian->sizeCols + l;
       jac[k] *= solverData->xScaling[j];
     }
   }
