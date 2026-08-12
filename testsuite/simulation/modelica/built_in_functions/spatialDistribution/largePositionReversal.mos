@@ -1,0 +1,57 @@
+// name:                largePositionReversal.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f largePositionReversalSpatialDistribution*
+//
+// One reversal after the position coordinate has grown to O(1e3) transport
+// lengths, where one ulp at 1.0 is below the resolution of the coordinate.
+// Steps stay below one length, so the profile is walked instead of flushed.
+
+loadModel(Modelica); getErrorString();
+loadString("model largePositionReversalSpatialDistribution
+  extends Modelica.Icons.Example;
+  Real leftInput = 111.0;
+  Real rightInput = 222.0;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {0.0, 0.0};
+  parameter Real v0 = 5000;
+  Real v;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = if time < 1 then v0 else -v0;
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end largePositionReversalSpatialDistribution;"); getErrorString();
+
+simulate(largePositionReversalSpatialDistribution, stopTime=2.0, numberOfIntervals=12000); getErrorString();
+
+val(leftOutput, 0.0);
+val(rightOutput, 0.0);
+val(leftOutput, 0.5);
+val(rightOutput, 0.5);
+val(leftOutput, 1.5);
+val(rightOutput, 1.5);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "largePositionReversalSpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 12000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'largePositionReversalSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 111.0
+// 111.0
+// 222.0
+// 222.0
+// endResult

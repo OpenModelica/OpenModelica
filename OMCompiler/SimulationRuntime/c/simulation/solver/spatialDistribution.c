@@ -36,6 +36,7 @@
 #include "../../openmodelica.h"
 #include "epsilon.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -67,11 +68,37 @@ typedef struct TRANSPORTED_EVENT_DATA {
 
 
 /* Private function prototypes */
-double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos);
-double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos);
-void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity, double position, double value, int isEvent);
-int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue);
-int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity);
+double interpolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos);
+double extrapolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos);
+void addNewNodeSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity, double position, double value, int isEvent);
+int findOppositeEndSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue);
+int pruneSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity);
+
+
+/* SPATIAL_EPS and SPATIAL_ZERO_DELTA_X are absolute, positions and values are
+ * not: scale them, clamped at 1 so nothing gets tighter than unscaled. */
+static const double SPATIAL_EPS_ULPS = 8.0;
+
+static double spatialScale(double a, double b) {
+  double scaleA = fabs(a);
+  double scaleB = fabs(b);
+  double scale = (scaleA > scaleB) ? scaleA : scaleB;
+  return (scale > 1.0) ? scale : 1.0;
+}
+
+static double spatialPosEps(double posA, double posB) {
+  return SPATIAL_EPS_ULPS * SPATIAL_EPS * spatialScale(posA, posB);
+}
+
+static double spatialValEps(double valA, double valB) {
+  return SPATIAL_EPS_ULPS * SPATIAL_EPS * spatialScale(valA, valB);
+}
+
+/* Never below the resolution of the position coordinate. */
+static double spatialZeroDeltaX(double posA, double posB) {
+  double posEps = spatialPosEps(posA, posB);
+  return (SPATIAL_ZERO_DELTA_X > posEps) ? SPATIAL_ZERO_DELTA_X : posEps;
+}
 
 // ############################################################################
 //
@@ -180,11 +207,11 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
     messageClose(OMC_LOG_STDOUT);
     omc_throw_function(threadData);
   }
-  for (i=0; i<length-2; i++) {
+  for (i=0; i<length-1; i++) {
     if (initPnts[i] > initPnts[i+1]) {
       errorStreamPrint(OMC_LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
       errorStreamPrint(OMC_LOG_STDOUT, 0, "initialPoints[%i] > initialPoints[%i]", i, i+1);
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "%f > %f", initVals[i], initPnts[i+1]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "%f > %f", initPnts[i], initPnts[i+1]);
       messageClose(OMC_LOG_STDOUT);
       omc_throw_function(threadData);
     }
@@ -312,37 +339,36 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     realDirection = 0 /* standing still */;
   }
 
-  /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity. */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
-    // TODO: This is probably still a sign that we didn't handle some event or event search correctly.
-    isPositiveVelocity  = !isPositiveVelocity;
+  /* deltaX = oldPosX - posX, so realDirection > 0 means x decreased */
+  if (realDirection > 0) {
+    isPositiveVelocity = 0;
+  } else if (realDirection < 0) {
+    isPositiveVelocity = 1;
   }
-
-  /* Add new node (oldPosX-deltaX, in0) or (oldPosX-deltaX+1, in1) to list
-   * Check if it an event and only save it if has a discrete change in in0 or in1.
-   */
+  /* Event nodes go onto the edge position: prune computes edge positions as
+   * edge +/- 1, so -posX can be an ulp on the wrong side of the edge. */
   if (isPositiveVelocity) {
     TRANSPORTED_QUANTITY_DATA* front = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
-    if (fabs(-posX - front->position) < SPATIAL_EPS) {
-      if (fabs(front->value - in0) > SPATIAL_EPS) {
-        addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX, in0, 1 /* true */);
+    if (fabs(-posX - front->position) < spatialPosEps(-posX, front->position)) {
+      if (fabs(front->value - in0) > spatialValEps(front->value, in0)) {
+        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, front->position, in0, 1 /* true */);
       }
     } else {
-      addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX, in0, 0 /* false */);
+      addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX, in0, 0 /* false */);
     }
   } else {
     TRANSPORTED_QUANTITY_DATA* last = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
-    if (fabs(-posX+1 - last->position) < SPATIAL_EPS) {
-      if (fabs(last->value - in1) > SPATIAL_EPS) {
-        addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX+1, in1, 1 /* true */);
+    if (fabs(-posX+1 - last->position) < spatialPosEps(-posX+1, last->position)) {
+      if (fabs(last->value - in1) > spatialValEps(last->value, in1)) {
+        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, last->position, in1, 1 /* true */);
       }
     } else {
-      addNewNodeSpatialDistribution(spatialDistribution, isPositiveVelocity, -posX+1, in1, 0 /* false */);
+      addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX+1, in1, 0 /* false */);
     }
   }
 
   /* Remove nodes that droppen of spatial distribution */
-  walkedOverEvents = pruneSpatialDistribution(spatialDistribution, isPositiveVelocity);
+  walkedOverEvents = pruneSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
@@ -388,7 +414,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   int realDirection;
   int jumped = 0;
   double deltaX;
-  double eventPreValue;
+  double eventPreValue = NAN;   /* only written if an event is walked over */
   double outValue;
   double out0;      /* First output variable */
   double out1Val;   /* Second output variable, only written to *out1 if out1 != NULL */
@@ -416,21 +442,20 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     realDirection = 0 /* standing still */;
   }
 
-  /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity.
-   * This still indicates something wrong, so we don't extrapolate the output */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
+  if (deltaX > spatialZeroDeltaX(spatialDistribution->oldPosX, posX) &&
+      ((isPositiveVelocity && realDirection > 0) || (!isPositiveVelocity && realDirection < 0))) {
     isPositiveVelocity  = !isPositiveVelocity;
     jumped = 1 /* true */;
   }
 
   /* Check if x was reinitialized */
-  if (deltaX > SPATIAL_ZERO_DELTA_X && data->simulationInfo->discreteCall) {
+  if (deltaX > spatialZeroDeltaX(spatialDistribution->oldPosX, posX) && data->simulationInfo->discreteCall) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "x got reinitialized during an event at time %f. OpenModelica can't handle that.", data->localData[0]->timeValue);
     omc_throw_function(threadData);
   }
 
   /* Special case: Zero progress */
-  if (deltaX < SPATIAL_EPS) {
+  if (deltaX < spatialPosEps(spatialDistribution->oldPosX, posX)) {
     firstNodeData = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
     lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
     out0 = firstNodeData->value;
@@ -444,7 +469,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   }
 
   /* Get value of ou0/out1 by walkling over list */
-  walkedOverEvents = findOppositeEndSpatialDistribution(spatialDistribution, in0, in1, posX, isPositiveVelocity, &eventPreValue, &outValue);
+  walkedOverEvents = findOppositeEndSpatialDistribution(threadData, spatialDistribution, in0, in1, posX, isPositiveVelocity, &eventPreValue, &outValue);
 
   /* Handle events that would come out of spatialDistribution */
   if (walkedOverEvents > 1) {
@@ -452,7 +477,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
     messageCloseWarning(OMC_LOG_STDOUT);
   }
-  if (walkedOverEvents>0 && !data->simulationInfo->discreteCall) {
+  if (walkedOverEvents>0 && !data->simulationInfo->discreteCall && !isnan(eventPreValue)) {
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
     outValue = eventPreValue;
   }
@@ -462,21 +487,21 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   secondNodeData = dataDoubleEndedList(getNextNodeDoubleEndedList(getFirstNodeDoubleEndedList(transportedQuantityList)));
   lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
   forelastNodeData = dataDoubleEndedList(getPreviousNodeDoubleEndedList(getLastNodeDoubleEndedList(transportedQuantityList)));
+  /* jumped only suppresses the extrapolation: in0/in1 must not be used, the
+   * velocity sign that selects between them is what is in doubt here. */
   if (isPositiveVelocity) {
-    if (jumped) {
-      out0 = in0;
-    } else if (deltaX > SPATIAL_EPS && fabs(firstNodeData->position-secondNodeData->position)>SPATIAL_EPS) {
-      out0 = extrapolateTransportedQuantity(firstNodeData, secondNodeData, -posX);
+    if (!jumped && deltaX > spatialPosEps(spatialDistribution->oldPosX, posX) &&
+        fabs(firstNodeData->position-secondNodeData->position) > spatialPosEps(firstNodeData->position, secondNodeData->position)) {
+      out0 = extrapolateTransportedQuantity(threadData, firstNodeData, secondNodeData, -posX);
     } else {
       out0 = firstNodeData->value;
     }
     out1Val = outValue;
   } else {
     out0 = outValue;
-    if (jumped) {
-      out1Val = in1;
-    } else if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS) {
-      out1Val = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
+    if (!jumped && deltaX > spatialPosEps(spatialDistribution->oldPosX, posX) &&
+        fabs(forelastNodeData->position-lastNodeData->position) > spatialPosEps(forelastNodeData->position, lastNodeData->position)) {
+      out1Val = extrapolateTransportedQuantity(threadData, forelastNodeData, lastNodeData, -posX+1);
     } else {
       out1Val = lastNodeData->value;
     }
@@ -512,6 +537,9 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
  * @param posX                Value of position x.
  * @param isPositiveVelocity  Unused
  * @return double             Value of zeroCrossing at position posX.
+ *
+ * Event positions are compared with the absolute SPATIAL_EPS: a wider tolerance
+ * flips the value before the event is reached, leaving no sign change to find.
  */
 double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, unsigned int index, unsigned int relationIndex, double posX, int isPositiveVelocity) {
   /* Variables */
@@ -633,7 +661,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
  * @param interpolationPos        Position where to interpolate.
  * @return double                 Interpolated value
  */
-double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos) {
+double interpolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos) {
   double leftPosition, rightPosition;
   double leftValue, rightValue;
   double distPos;
@@ -645,7 +673,7 @@ double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
   rightValue = rightData->value;
   distPos = rightPosition - leftPosition;
 
-  assertStreamPrint(NULL, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
+  assertStreamPrint(threadData, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
 
   interpolatedValue = leftValue  * ((rightPosition-interpolationPos)/distPos)
                     + rightValue * ((interpolationPos-leftPosition)/distPos);
@@ -662,7 +690,7 @@ double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
  * @param extrapolationPos      Position where to interpolate.
  * @return double               Extrapolated value.
  */
-double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos) {
+double extrapolateTransportedQuantity(threadData_t *threadData, const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos) {
   double leftPosition, rightPosition;
   double leftValue, rightValue;
   double distPos;
@@ -674,7 +702,7 @@ double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
   rightValue = rightData->value;
   distPos = rightPosition - leftPosition;
 
-  assertStreamPrint(NULL, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
+  assertStreamPrint(threadData, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
 
   extrapolatedValue = leftValue + (rightValue-leftValue)/(distPos) * (extrapolationPos - leftPosition);
   return extrapolatedValue;
@@ -693,7 +721,7 @@ double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
  * @param value                       Value of new node.
  * @param isEvent                     Boolean value if new node is an event node.
  */
-void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double position, double value, int isEvent) {
+void addNewNodeSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int front, double position, double value, int isEvent) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -710,12 +738,12 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
   if (front) {
     // Make sure new first node is smaller then previous first node
     TRANSPORTED_QUANTITY_DATA* oldFront = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
-    assertStreamPrint(NULL, position<=oldFront->position, "New front position is not smaller then previous first node.");
+    assertStreamPrint(threadData, position<=oldFront->position, "New front position is not smaller then previous first node.");
     pushFrontDoubleEndedList(transportedQuantityList, (const void*) &newNodeData);
   } else {
     // Make sure new first node is smaller then previous first node
     TRANSPORTED_QUANTITY_DATA* oldEnd = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
-    assertStreamPrint(NULL, position>=oldEnd->position, "New end position is not bigger then previous last node.");
+    assertStreamPrint(threadData, position>=oldEnd->position, "New end position is not bigger then previous last node.");
     pushBackDoubleEndedList(transportedQuantityList, (const void*) &newNodeData);
   }
 
@@ -731,7 +759,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
       } else {
         // Make sure new first node is smaller then previous first node
         TRANSPORTED_EVENT_DATA* oldEventFront = (TRANSPORTED_EVENT_DATA*) firstDataDoubleEndedList(storedEventsList);
-        assertStreamPrint(NULL, position<=oldEventFront->position, "New front position is not smaller then previous first event node.");
+        assertStreamPrint(threadData, position<=oldEventFront->position, "New front position is not smaller then previous first event node.");
         newEventNodeData.zeroCrossValue = oldEventFront->zeroCrossValue*(-1);
       }
       pushFrontDoubleEndedList(storedEventsList, (const void*) &newEventNodeData);
@@ -741,7 +769,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
       } else {
         // Make sure new first node is smaller then previous first node
         TRANSPORTED_EVENT_DATA* oldEventEnd = (TRANSPORTED_EVENT_DATA*) lastDataDoubleEndedList(storedEventsList);
-        assertStreamPrint(NULL, position>=oldEventEnd->position, "New end position is not bigger then previous last event node.");
+        assertStreamPrint(threadData, position>=oldEventEnd->position, "New end position is not bigger then previous last event node.");
         newEventNodeData.zeroCrossValue = oldEventEnd->zeroCrossValue*(-1);
       }
       pushBackDoubleEndedList(storedEventsList, (const void*) &newEventNodeData);
@@ -766,7 +794,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
  *                                    This value is only written when function returned 1 or greater.
  * @return int                        Return number of events that were encountered.
  */
-int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue) {
+int findOppositeEndSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -780,6 +808,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
   TRANSPORTED_QUANTITY_DATA* lastNodeData;
   TRANSPORTED_QUANTITY_DATA tempData;
   double edgeNodePosition;
+  double readPosition;
   double currentDistance;
   int walkedOverEvents = 0;
 
@@ -797,7 +826,8 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
       //                                                  |
       tempData.position = -posX;
       tempData.value = in0;
-      *outValue = interpolateTransportedQuantity(&tempData, firstNodeData, -posX + 1);
+      *outValue = interpolateTransportedQuantity(threadData, &tempData, firstNodeData, -posX + 1);
+      *eventPreValue = *outValue;
       return doubleEndedListLen(storedEventsList);
     }
   } else {
@@ -807,28 +837,38 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
       //                                                                                  |
       tempData.position = -posX+1;
       tempData.value = in1;
-      *outValue = interpolateTransportedQuantity(lastNodeData, &tempData, -posX);
+      *outValue = interpolateTransportedQuantity(threadData, lastNodeData, &tempData, -posX);
+      *eventPreValue = *outValue;
       return doubleEndedListLen(storedEventsList);
     }
   }
 
   /* Step 1
-   * Walk over list, starting from opposite side of edgeNode,
-   * until distance between currentNode and edgeNode < 1.
+   * Walk from the opposite end to the read position: z(1,t) sits at -posX+1 and
+   * z(0,t) at -posX, for the x of this call. Clamped to the stored profile in
+   * case x moved backwards since the last stored step.
    */
   if (isPositiveVelocity) {
     edgeNodePosition = firstNodeData->position;
+    readPosition = -posX+1;
+    if (readPosition > lastNodeData->position) {
+      readPosition = lastNodeData->position;
+    }
     currentNode = lastNode;
   } else {
     edgeNodePosition = lastNodeData->position;
+    readPosition = -posX;
+    if (readPosition < firstNodeData->position) {
+      readPosition = firstNodeData->position;
+    }
     currentNode = firstNode;
   }
   currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
   currentDistance = fabs(currentNodeData->position - edgeNodePosition);
-  if (currentDistance + SPATIAL_EPS < 1) {
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodePosition) < 1) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug report about it.");
-    omc_throw_function(NULL);
+    omc_throw_function(threadData);
     return walkedOverEvents;
   }
 
@@ -850,14 +890,16 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
     /* Check for event:
      * Current node position equal to previous visited node position
      */
-    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < SPATIAL_EPS) {
+    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < spatialPosEps(prevVisitedNodeData->position, currentNodeData->position)) {
       *eventPreValue = prevVisitedNodeData->value;
       walkedOverEvents += 1;
     }
 
-    /* Check if distance between currentNode and edgeNode is < 1 */
-    currentDistance = fabs(currentNodeData->position - edgeNodePosition);
-    if (currentDistance + SPATIAL_EPS < 1) {
+    /* Check if the read position is passed */
+    currentDistance = fabs(currentNodeData->position - readPosition);
+    if (currentDistance > spatialPosEps(currentNodeData->position, readPosition) &&
+        (isPositiveVelocity ? currentNodeData->position < readPosition
+                            : currentNodeData->position > readPosition)) {
       break;
     } else {
       prevVisitedNode = currentNode;
@@ -866,20 +908,20 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
   }
 
   /* Step 2
-   * Interpolate at edgeNodePosition +/- 1.
+   * Interpolate at the read position.
    */
   if (currentNode == NULL) {
-    /* Walked over all elements of list */
+    /* Read position is at or beyond the far end of the stored profile */
     if (isPositiveVelocity) {
-      *outValue = lastNodeData->value;
-    } else {
       *outValue = firstNodeData->value;
+    } else {
+      *outValue = lastNodeData->value;
     }
   } else {
     if (isPositiveVelocity) {
-      *outValue = interpolateTransportedQuantity(currentNodeData, prevVisitedNodeData, edgeNodePosition + 1);
+      *outValue = interpolateTransportedQuantity(threadData, currentNodeData, prevVisitedNodeData, readPosition);
     } else {
-      *outValue = interpolateTransportedQuantity(prevVisitedNodeData, currentNodeData, edgeNodePosition - 1);
+      *outValue = interpolateTransportedQuantity(threadData, prevVisitedNodeData, currentNodeData, readPosition);
     }
   }
 
@@ -898,7 +940,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
  *                                    This value is only written when function returned 1 or greater.
  * @return int                        Return number of events that were encountered.
  */
-int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity) {
+int pruneSpatialDistribution(threadData_t *threadData, SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity) {
   /* Variables */
   DOUBLE_ENDED_LIST* transportedQuantityList = spatialDistribution->transportedQuantity;
   DOUBLE_ENDED_LIST* storedEventsList = spatialDistribution->storedEvents;
@@ -928,9 +970,9 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
   currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
-  if (currentDistance + SPATIAL_EPS < 1) {
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function pruneSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
-    omc_throw_function(NULL);
+    omc_throw_function(threadData);
   }
 
   /* Move to neighbor */
@@ -948,13 +990,13 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
     /* Check for event:
      * Current node position equal to previous visited node position
      */
-    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < SPATIAL_EPS) {
+    if (fabs(prevVisitedNodeData->position - currentNodeData->position) < spatialPosEps(prevVisitedNodeData->position, currentNodeData->position)) {
       walkedOverEvents += 1;
     }
 
     /* Check if distance between currentNode and edgeNode is < 1 */
     currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
-    if (currentDistance + SPATIAL_EPS < 1) {
+    if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
       break;
     } else {
       prevVisitedNode = currentNode;
@@ -965,12 +1007,12 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   /* Step 2
    * Interpolate at edgeNode->position +/- 1.
    */
-  if (currentDistance + SPATIAL_EPS < 1) {
+  if (currentDistance + spatialPosEps(currentNodeData->position, edgeNodeData->position) < 1) {
     if (isPositiveVelocity) {
-      prevVisitedNodeData->value = interpolateTransportedQuantity(currentNodeData, prevVisitedNodeData, edgeNodeData->position + 1);
+      prevVisitedNodeData->value = interpolateTransportedQuantity(threadData, currentNodeData, prevVisitedNodeData, edgeNodeData->position + 1);
       prevVisitedNodeData->position = edgeNodeData->position + 1;
     } else {
-      prevVisitedNodeData->value = interpolateTransportedQuantity(prevVisitedNodeData, currentNodeData, edgeNodeData->position - 1);
+      prevVisitedNodeData->value = interpolateTransportedQuantity(threadData, prevVisitedNodeData, currentNodeData, edgeNodeData->position - 1);
       prevVisitedNodeData->position = edgeNodeData->position - 1;
     }
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Interpolate at %s", isPositiveVelocity?"end":"front");
@@ -992,7 +1034,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   if (doubleEndedListLen(storedEventsList) > 0) {
     if (isPositiveVelocity) {
       eventData = lastDataDoubleEndedList(storedEventsList);
-      while (edgeNodeData->position+1 + SPATIAL_ZERO_DELTA_X < eventData->position) {
+      while (edgeNodeData->position+1 + spatialZeroDeltaX(edgeNodeData->position, eventData->position) < eventData->position) {
         spatialDistribution->lastStoredEventValue = eventData->zeroCrossValue;
         removeLastDoubleEndedList(storedEventsList);
         if (doubleEndedListLen(storedEventsList) == 0) {
@@ -1003,7 +1045,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
       }
     } else {
       eventData = firstDataDoubleEndedList(storedEventsList);
-      while (edgeNodeData->position-1 - SPATIAL_ZERO_DELTA_X > eventData->position) {
+      while (edgeNodeData->position-1 - spatialZeroDeltaX(edgeNodeData->position, eventData->position) > eventData->position) {
         spatialDistribution->lastStoredEventValue = eventData->zeroCrossValue;
         removeFirstDoubleEndedList(storedEventsList);
         if (doubleEndedListLen(storedEventsList) == 0) {
