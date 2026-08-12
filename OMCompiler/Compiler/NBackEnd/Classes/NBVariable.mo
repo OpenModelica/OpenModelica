@@ -990,18 +990,30 @@ function isJacobianResultVar
 
   function isFixed
     extends checkVar;
+  protected
+    Option<Binding> fixed_opt;
+    Binding fixed;
   algorithm
     // FIXME use VariableAttributes.isFixed()?
-    b := match var.backendinfo.attributes
-      local
-        Binding fixed;
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
-      else false;
+    fixed_opt := match var.backendinfo.attributes
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then SOME(fixed);
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then SOME(fixed);
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then SOME(fixed);
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then SOME(fixed);
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then SOME(fixed);
+      else NONE();
     end match;
+    // When fixed is explicitly set, use that value.
+    // Otherwise, parameters are fixed=true by default per the Modelica spec.
+    if isSome(fixed_opt) then
+      SOME(fixed) := fixed_opt;
+      b := Expression.isAllTrue(Binding.getTypedExp(fixed));
+    else
+      b := match var.backendinfo.varKind
+        case VariableKind.PARAMETER() then true;
+        else false;
+      end match;
+    end if;
   end isFixed;
 
   function isFixable
@@ -1978,6 +1990,12 @@ function isJacobianResultVar
 
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
+        // Evaluate constant binding expressions to their literal values so the
+        // init XML serializer can write correct per-element start values instead
+        // of leaving an unevaluated array expression that would serialize as 0.0.
+        // tryEvalExp is safe here: it catches errors and returns the original on
+        // failure, and this function is only called when hasEvaluableBinding is true.
+        start := Ceval.tryEvalExp(SimplifyExp.simplify(start));
         binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, overwrite);
         var.backendinfo := binfo;
       then var;

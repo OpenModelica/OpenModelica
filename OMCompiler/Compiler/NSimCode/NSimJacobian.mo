@@ -42,6 +42,7 @@ encapsulated package NSimJacobian
 public
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
@@ -314,6 +315,8 @@ public
           SimJacobian jac;
           UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
+          UnorderedMap<ComponentRef, Integer> min_sub_map;
+          UnorderedMap<ComponentRef, SimVar> min_sv_map;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
           // temporarily save the generic call map from simcode to recover it afterwards
@@ -358,28 +361,57 @@ public
           // subscripts).  Templates look up $SEED.x when they see $SEED.x[$i1]
           // with an iterator subscript; the virtual SimVar's index encodes the
           // offset so (&seedVars[index])[$i1-1] reaches the correct element.
+          //
+          // Two-pass: first find the MINIMUM outer subscript per base-cref group
+          // (the hash-ordered seedVars traversal does not guarantee ascending
+          // module order), then create virtual SimVars using that minimum seed so
+          // the base index is always non-negative.
+          min_sub_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+          min_sv_map  := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+
           for sv in seedVars loop
             if ComponentRef.hasSubscripts(sv.name) then
-              () := match ComponentRef.getSubscripts(sv.name)
+              () := match ComponentRef.outermostIntegerSubscript(sv.name)
                 local
                   ComponentRef base_cref;
-                  Integer sub_val;
-                  SimVar virtual_sv;
-                case {Subscript.INDEX(index = Expression.INTEGER(sub_val))}
-                  guard sub_val > 1
+                  Integer sub_val, cur_min;
+                case sub_val guard sub_val > 1
                   algorithm
                     base_cref := ComponentRef.stripSubscriptsAll(sv.name);
-                    if not UnorderedMap.contains(base_cref, jac_map) then
-                      virtual_sv := sv;
-                      virtual_sv.name := base_cref;
-                      virtual_sv.index := sv.index - (sub_val - 1);
-                      virtual_sv.arrayCref := NONE();
-                      UnorderedMap.add(base_cref, virtual_sv, jac_map);
+                    if UnorderedMap.contains(base_cref, min_sub_map) then
+                      cur_min := UnorderedMap.getSafe(base_cref, min_sub_map, sourceInfo());
+                      if sub_val < cur_min then
+                        UnorderedMap.add(base_cref, sub_val, min_sub_map);
+                        UnorderedMap.add(base_cref, sv, min_sv_map);
+                      end if;
+                    else
+                      UnorderedMap.add(base_cref, sub_val, min_sub_map);
+                      UnorderedMap.add(base_cref, sv, min_sv_map);
                     end if;
                   then ();
                 else ();
               end match;
             end if;
+          end for;
+
+          for tpl in UnorderedMap.toList(min_sv_map) loop
+            () := match tpl
+              local
+                ComponentRef base_cref;
+                SimVar min_sv, virtual_sv;
+                Integer cur_min;
+              case (base_cref, min_sv)
+                algorithm
+                  cur_min := UnorderedMap.getSafe(base_cref, min_sub_map, sourceInfo());
+                  if not UnorderedMap.contains(base_cref, jac_map) then
+                    virtual_sv := min_sv;
+                    virtual_sv.name := base_cref;
+                    virtual_sv.index := min_sv.index - crefFlatOffset(min_sv.name);
+                    virtual_sv.arrayCref := NONE();
+                    UnorderedMap.add(base_cref, virtual_sv, jac_map);
+                  end if;
+                then ();
+            end match;
           end for;
 
           jac := SIM_JAC(
@@ -640,6 +672,93 @@ public
 
   constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {},
     Sparsity.EMPTY(), {}, NONE(), false, false, -1, "");
+
+  protected function collectNodeSubDimPairsOuterFirst
+    "Collect (sub_val, dim_size) pairs for a single CREF node's subscripts and
+     dimension list, in outer→inner (natural subscript) order. Only INTEGER
+     subscripts are included; non-integer subscripts consume their dimension slot
+     without emitting a pair. Always has an else case."
+    input list<Subscript> subs;
+    input list<Dimension> dims;
+    output list<tuple<Integer, Integer>> pairs;
+  algorithm
+    pairs := match (subs, dims)
+      local
+        Subscript s;
+        list<Subscript> rest_subs;
+        Dimension d;
+        list<Dimension> rest_dims;
+        Integer v;
+        list<tuple<Integer, Integer>> rest_pairs;
+      case ({}, _) then {};
+      case (_, {}) then {};
+      case (s :: rest_subs, d :: rest_dims)
+        algorithm
+          rest_pairs := collectNodeSubDimPairsOuterFirst(rest_subs, rest_dims);
+        then
+          match s
+            local Integer v2;
+            case Subscript.INDEX(index = Expression.INTEGER(v2)) then (v2, Dimension.size(d)) :: rest_pairs;
+            else rest_pairs;
+          end match;
+      else {};
+    end match;
+  end collectNodeSubDimPairsOuterFirst;
+
+  protected function crefSubDimPairsLeafToRoot
+    "Collect (integer_subscript_value, dimension_size) pairs from the innermost
+     (leaf) CREF node to the outermost (root), in inner-first order globally.
+     Within each node, multiple subscripts are handled in inner→outer order
+     (reversed from the outer→inner subscript list so the accumulation works).
+     Uses InstNode.getType(node) (the pre-subscript type) rather than cref.ty
+     (the post-subscript element type) so that record-field subscripts like
+     module[2] (where cref.ty = Module, not Module[10]) recover the full array
+     dimension needed to compute correct flat offsets."
+    input ComponentRef cref;
+    output list<tuple<Integer, Integer>> pairs;
+  algorithm
+    pairs := match cref
+      local
+        list<Subscript> subs;
+        Type node_ty;
+        ComponentRef rest;
+        list<tuple<Integer, Integer>> rest_pairs, node_pairs;
+      case ComponentRef.CREF(node = _, subscripts = subs, restCref = rest)
+        algorithm
+          rest_pairs := crefSubDimPairsLeafToRoot(rest);
+          // Use the node's own declared type (before applying these subscripts)
+          // so record-valued fields also expose their array dimensions.
+          node_ty := InstNode.getType(cref.node);
+          // Collect this node's pairs outer-first, then reverse to get inner-first.
+          // Append rest_pairs (which are from the outer/restCref direction) after.
+          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, Type.arrayDims(node_ty)));
+        then
+          listAppend(node_pairs, rest_pairs);
+      else {};
+    end match;
+  end crefSubDimPairsLeafToRoot;
+
+  protected function crefFlatOffset
+    "Compute the 0-based flat array index encoded by all integer subscripts in
+     the cref chain, using row-major (C-style) layout. For example, x[2][1] in
+     a 10×10 array returns (2-1)*10 + (1-1) = 10. Used to compute the virtual
+     SimVar index so that (&seedVars[virtual.idx])[(i1-1)*d2+...+(iN-1)] maps
+     correctly to the actual seed index for every valid subscript combination."
+    input ComponentRef cref;
+    output Integer offset = 0;
+  protected
+    list<tuple<Integer, Integer>> pairs;
+    Integer inner_prod = 1, sub_val, dim_sz;
+  algorithm
+    // pairs is in inner-first order: process each pair with accumulated inner_prod.
+    // flat = sum_i (sub[i]-1) * product_of_dims_more_inner_than_i
+    pairs := crefSubDimPairsLeafToRoot(cref);
+    for pair in pairs loop
+      (sub_val, dim_sz) := pair;
+      offset := offset + (sub_val - 1) * inner_prod;
+      inner_prod := inner_prod * dim_sz;
+    end for;
+  end crefFlatOffset;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NSimJacobian;

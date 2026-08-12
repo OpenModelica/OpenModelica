@@ -173,10 +173,14 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   }
 
   if (isDense) {
-    /* memset to zero for dense, since solvers might destroy "hard zeros"
-     * does not apply for sparse, since the values are overwritten */
-    memset(jac, 0.0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+    /* Dense NLS Jacobian: callers allocate a square sizeCols×sizeCols buffer.
+     * Use sizeCols as both row count and stride so that non-square Jacobians
+     * (sizeRows > sizeCols, with auxiliary residual rows beyond the NLS size)
+     * do not write past the end of the caller's buffer. */
+    memset(jac, 0, (size_t)jacobian->sizeCols * jacobian->sizeCols * sizeof(modelica_real));
   }
+
+  if (!sp) return; /* no sparsity pattern; Jacobian entries cannot be filled */
 
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
@@ -196,9 +200,10 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             /* sparse case */
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
-          else {
-            /* dense case */
-            jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+          else if (row < jacobian->sizeCols) {
+            /* dense case: column-major, sizeCols rows per column.
+             * Skip auxiliary rows (row >= sizeCols) that lie outside the NLS matrix. */
+            jac[column * jacobian->sizeCols + row] = jacobian->resultVars[row];
           }
         }
         /* de-activate seed variable for the corresponding color */
@@ -586,6 +591,7 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
   sparsePattern->index = (unsigned int*) malloc(nnz*sizeof(unsigned int));
   sparsePattern->colorCols = (unsigned int*) malloc(n_leadIndex*sizeof(unsigned int));
   sparsePattern->maxColors = maxColors;
+  sparsePattern->sizeCols = n_leadIndex;
 
   return sparsePattern;
 }

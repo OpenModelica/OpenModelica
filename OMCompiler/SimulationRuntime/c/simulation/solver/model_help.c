@@ -403,19 +403,29 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  for(i=1; i < nlsSize; i++)
+  /* Use sizeCols (actual allocated columns) for leadindex bounds to avoid OOB when
+   * the Jacobian has fewer seed directions than NLS unknowns (nSeeds < nlsSize). */
   {
-    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
-      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
-      return FALSE;
+    unsigned int nCheckCols = sparsePattern->sizeCols < (unsigned int)nlsSize
+                              ? sparsePattern->sizeCols : (unsigned int)nlsSize;
+    for(i=1; i < (int)nCheckCols; i++)
+    {
+      if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+        warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
+        return FALSE;
+      }
     }
   }
 
   /* check cols (or rows?) */
   colCheck = (char*) calloc(nlsSize, sizeof(char));
 
-  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  for(i=0; i < (int)sparsePattern->leadindex[sparsePattern->sizeCols]; i++)
   {
+    /* Row index may exceed nlsSize when the Jacobian has auxiliary equations
+     * beyond the NLS residuals (sizeRows > nCols). Skip those rows to avoid
+     * out-of-bounds writes into colCheck[nlsSize]. */
+    if (sparsePattern->index[i] >= (unsigned int)nlsSize) continue;
     colCheck[sparsePattern->index[i]] = TRUE;
   }
 
