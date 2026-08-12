@@ -1231,10 +1231,10 @@ algorithm
             a_simCode=simCode,
             a_FMUVersion=FMUVersion,
             a_sourceFiles=model_all_gen_files,
-            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
-            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
-            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
-            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+            a_runtimeObjectFiles=objectFilesOf(shared_source_files),
+            a_dgesvObjectFiles=objectFilesOf(dgesv_sources),
+            a_cminpackObjectFiles=objectFilesOf(cminpack_sources),
+            a_sundialsObjectFiles=objectFilesOf(simrt_c_sundials_sources)),
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(
           CodegenFMU.settingsfile,
@@ -2183,6 +2183,38 @@ algorithm
     Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
   end for;
 end copyFiles;
+
+protected function objectFilesOf
+  "The object files a list of runtime sources compiles to, for the makefile of a
+   source FMU.
+
+   Only a one character extension is rewritten, which in practice is the .c that
+   the generated makefile has a rule for. Anything longer is left out and reported:
+   the file would need a rule of its own, and replacing the substring \".c\" in a
+   name like jacobian_colpack.cpp used to give jacobian_colpack.opp, an object that
+   nothing can build. That went unnoticed because it only breaks when somebody
+   builds the FMU from its sources with the makefile."
+  input list<String> sourceFiles;
+  output list<String> objectFiles = {};
+protected
+  String ext;
+algorithm
+  for f in sourceFiles loop
+    ext := "";
+    for part in System.strtok(f, ".") loop
+      ext := part; // the last one is the extension
+    end for;
+    if stringLength(ext) == 1 then
+      // drop the extension character and put the object one in its place
+      objectFiles := substring(f, 1, stringLength(f) - 1) + "o" :: objectFiles;
+    else
+      Error.addCompilerWarning("Leaving " + f + " out of the object files of the FMU makefile: "
+        + "only a one character source extension can be turned into an object file, and the "
+        + "makefile has no rule for '." + ext + "'.");
+    end if;
+  end for;
+  objectFiles := listReverse(objectFiles);
+end objectFilesOf;
 
 annotation(__OpenModelica_Interface="backend_main");
 end SimCodeMain;
