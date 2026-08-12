@@ -130,15 +130,17 @@ fn fmi_log(status: Status, cat: u32, msg: &str) {
     }
 }
 
-/// The runtime's and driver's log lines. They exist only because [`stream_mask`]
-/// switched their stream on, so the category is `logAll` rather than a per-line one.
+/// The runtime's and driver's log lines: whatever stream they came from is lost
+/// by here, so the category is `logAll` rather than a per-line one.
 fn log_sink(s: &str) {
     if logger().on {
         log_raw(Status::Ok, CAT_ALL, s);
     }
 }
 
-/// The `-lv` streams the model-diagnostics categories stand for.
+/// The `-lv` streams the model-diagnostics categories stand for. Only
+/// `set-debug-logging` reaches this: C's FMU leaves every stream but stdout and
+/// assert off.
 fn stream_mask(cats: u32) -> omclog::Mask {
     let mut streams: Vec<&str> = Vec::new();
     for (cat, stream) in [
@@ -162,7 +164,7 @@ fn init_logging(name: String, logging_on: bool) {
     l.on = logging_on;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
-    omclog::set_mask(stream_mask(l.cats));
+    omclog::set_mask(omclog::ALWAYS_ON);
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.

@@ -48,6 +48,7 @@
     border-top:1px solid var(--border); background:var(--panel); }
   .log-head { display:flex; align-items:center; gap:8px; }
   .log-head .section-label { flex:1 1 auto; }
+  .log-head .dropped { color:var(--muted); font-size:12px; }
   .log-body { flex:1 1 auto; overflow-y:auto; padding:2px 12px 8px;
     font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; }
   .log-body .warning, .log-body .stderr { color:var(--warn); }
@@ -134,6 +135,7 @@
     <div class="log-pane">
       <div class="log-head">
         <div class="section-label">FMU log</div>
+        <span class="dropped" id="logDropped"></span>
         <button class="icon-btn" id="logClear" title="Clear the log">✕</button>
       </div>
       <div class="log-body" id="log"><span class="empty">No messages.</span></div>
@@ -169,16 +171,40 @@ let animView = null;    // shared 3D animation panel, if the FMU carries a <Visu
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
 
+// A node plus a forced layout per message takes the tab down when an FMU logs
+// thousands of lines per step: bounded scrollback, flushed once per frame.
+const LOG_MAX = 2000;
+let logPending = [], logFrame = 0, logDropped = 0;
+
 function log(cls, text) {
   if (!logCount++) logEl.replaceChildren();
-  const line = document.createElement('div');
-  line.className = cls;
-  line.textContent = text;
+  logPending.push([cls, text]);
+  if (logPending.length > LOG_MAX) { logPending.shift(); logDropped++; }
+  if (!logFrame) logFrame = requestAnimationFrame(flushLog);
+}
+
+function flushLog() {
+  logFrame = 0;
   const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
-  logEl.appendChild(line);
+  const frag = document.createDocumentFragment();
+  for (const [cls, text] of logPending) {
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    frag.appendChild(line);
+  }
+  logPending = [];
+  logEl.appendChild(frag);
+  while (logEl.childElementCount > LOG_MAX) { logEl.firstElementChild.remove(); logDropped++; }
+  el('logDropped').textContent = logDropped ? `${logDropped} earlier messages dropped` : '';
   if (atBottom) logEl.scrollTop = logEl.scrollHeight;
 }
-el('logClear').onclick = () => { logEl.innerHTML = '<span class="empty">No messages.</span>'; logCount = 0; };
+
+el('logClear').onclick = () => {
+  logEl.innerHTML = '<span class="empty">No messages.</span>';
+  logCount = 0; logPending = []; logDropped = 0;
+  el('logDropped').textContent = '';
+};
 
 // --- loading ----------------------------------------------------------------
 openBtn.onclick = () => fileEl.click();
@@ -280,7 +306,9 @@ function renderFields() {
     nm.innerHTML = escapeHtml(v.name)
       + (isInput ? '<span class="in">f(t)</span>' : isStart(v) ? '<span class="in">start</span>' : '');
     const input = document.createElement('input');
-    input.value = v.start != null ? v.start : (v.tag === 'Boolean' ? 'false' : '0');
+    // An input must be driven; a parameter with no declared start is left unset.
+    input.value = v.start != null ? v.start : isInput ? (v.tag === 'Boolean' ? 'false' : '0') : '';
+    input.placeholder = input.value === '' ? 'unset' : '';
     input.spellcheck = false;
     const unit = document.createElement('span');
     unit.className = 'unit';
@@ -321,11 +349,12 @@ function collectFields() {
   const inputs = [], parameters = [];
   for (const f of fields) {
     f.input.classList.remove('bad');
-    const src = f.input.value.trim() || '0';
+    const src = f.input.value.trim();
+    if (f.kind === 'parameter' && f.v.start == null && src === '') continue;
     const target = f.kind === 'input' ? inputs : parameters;
     try {
       if (f.v.tag === 'String') { target.push({ vr: f.v.vr, type: 'String', value: () => f.input.value }); continue; }
-      const fn = compileExpr(src, f.v.name);
+      const fn = compileExpr(src || '0', f.v.name);
       target.push({ vr: f.v.vr, type: f.v.type, value: fn });
     } catch (e) { f.input.classList.add('bad'); throw e; }
   }
