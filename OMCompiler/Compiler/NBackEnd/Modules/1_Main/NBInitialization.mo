@@ -482,7 +482,7 @@ public
   protected
     Expression start_exp, start_var_exp, e, e_eval;
     Pointer<Variable> var_ptr, start_var;
-    ComponentRef name;
+    ComponentRef name, start_cref;
     Option<Pointer<Equation>> start_eq = NONE();
     EquationKind kind;
     Iterator iterator;
@@ -522,8 +522,12 @@ public
           if Expression.isLiteralXML(e_eval) then
             Pointer.update(var_ptr, BVariable.setStartAttribute(Pointer.access(var_ptr), e_eval, true));
           else
-            (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
-            start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+            // The equation LHS must be the $START pseudo-variable's own cref (start_cref),
+            // not the plain variable's name: this creates "$START.x = <expr>" so the
+            // solver gets a warm-start guess, not a direct assignment to x itself
+            // (x is unfixed here, so it's a genuine unknown, not directly determined).
+            (start_exp, var_ptr, name, start_var, start_cref, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+            start_eq := SOME(Equation.makeAssignment(Expression.fromCref(start_cref, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
             Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
           end if;
         then start_eq;
