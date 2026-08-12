@@ -224,7 +224,26 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     }
 
     // A wasmtime-linking cdylib per platform, none filling the machine alone.
+    // MSVC targets use `cargo xwin` which races on its clang symlink setup when
+    // two instances run concurrently; build them sequentially.
+    let mut xwin_results: Vec<_> = Vec::new();
+    let xwin: Vec<_> = loaders
+        .iter()
+        .filter(|l| l.build && l.target.ends_with("-msvc"))
+        .collect();
+    for l in &xwin {
+        xwin_results.push(
+            build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref())
+                .map(|produced| {
+                    copy(&produced, &l.dest);
+                    std::fs::write(&l.stamp, &l.hash).ok();
+                }),
+        );
+    }
     let built = par_map(&loaders, |l| {
+        if l.target.ends_with("-msvc") {
+            return Ok(());
+        }
         if !l.build {
             return Ok(());
         }
@@ -236,8 +255,15 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     });
 
     let mut index = String::new();
+    let mut xwin_results_iter = xwin_results.into_iter();
     for (l, outcome) in loaders.iter().zip(built) {
         let Loader { target, platform, ext, .. } = l;
+        // MSVC targets were built sequentially (not through par_map)
+        let outcome = if l.target.ends_with("-msvc") && l.build {
+            xwin_results_iter.next().unwrap()
+        } else {
+            outcome
+        };
         if let Err(e) = outcome {
             let msg = format!(
                 "could not build the FMU loader for {target} ({e}), so an exported FMU \
