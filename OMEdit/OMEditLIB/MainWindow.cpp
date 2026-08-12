@@ -57,6 +57,8 @@
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
+#include "Util/NavigationManagerView.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
@@ -223,6 +225,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
+  // Create the NavigationManager which detects the back/forward navigation globally
+  NavigationManager::instance();
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
 #else
@@ -315,6 +319,15 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSearchDockWidget->setWidget(mpSearchWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
   mpSearchDockWidget->hide();
+  // Create NavigationManagerDockWidget dock
+  if (isDebug()) {
+    mpNavigationManagerDockWidget = new QDockWidget(tr("Navigation Manager"), this);
+    mpNavigationManagerDockWidget->setObjectName("NavigationManager");
+    mpNavigationManagerDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
+    mpNavigationManagerView = new NavigationManagerView(this);
+    mpNavigationManagerDockWidget->setWidget(mpNavigationManagerView);
+    addDockWidget(Qt::BottomDockWidgetArea, mpNavigationManagerDockWidget);
+  }
 #if !defined(__EMSCRIPTEN__)
   // create the GDB adapter instance
   GDBAdapter::create();
@@ -2089,6 +2102,20 @@ void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 }
 
 /*!
+ * \brief MainWindow::switchToPerspectiveTab
+ * Switches to the perspective tab with the given index. Used by the global
+ * back/forward navigation history to restore a perspective switch.
+ * \param tabIndex
+ */
+void MainWindow::switchToPerspectiveTab(int tabIndex)
+{
+  if (tabIndex < 0 || tabIndex >= mpPerspectiveTabbar->count()) {
+    tabIndex = 0;
+  }
+  mpPerspectiveTabbar->setCurrentIndex(tabIndex);
+}
+
+/*!
  * \brief MainWindow::showSearchBrowser
  * Shows the Search Browser, selects the search text if any and sets the focus on it.
  */
@@ -3732,6 +3759,7 @@ void MainWindow::cancelOmcOperation()
  */
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
+  NavigationManager::instance()->recordNavigationPoint(tabIndex);
   switch (tabIndex) {
     case 0:
       switchToWelcomePerspective();
@@ -4678,6 +4706,9 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
+  if (isDebug()) {
+    pViewWindowsMenu->addAction(mpNavigationManagerDockWidget->toggleViewAction());
+  }
 #if !defined(__EMSCRIPTEN__)
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());

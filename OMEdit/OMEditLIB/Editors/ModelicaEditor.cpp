@@ -45,6 +45,7 @@
 #include "Options/OptionsDialog.h"
 #include "Debugger/Breakpoints/BreakpointMarker.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Options/NotificationsDialog.h"
 
 #include <QCompleter>
@@ -648,7 +649,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
      */
     OptionsDialog::instance()->emitModelicaEditorSettingsChanged();
     mpPlainTextEdit->foldAll();
-    mpPlainTextEdit->clearNavigationHistory();
+    NavigationManager::instance()->clearNavigationHistory(mpPlainTextEdit);
   }
 }
 

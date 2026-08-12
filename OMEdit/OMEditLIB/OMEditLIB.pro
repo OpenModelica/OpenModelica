@@ -93,6 +93,8 @@ SOURCES += Util/Helper.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
+  Util/NavigationManager.cpp \
+  Util/NavigationManagerView.cpp \
   MainWindow.cpp \
   LoadCompiledModelDialog.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
@@ -213,6 +215,8 @@ HEADERS  += Util/Helper.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
+  Util/NavigationManager.h \
+  Util/NavigationManagerView.h \
   MainWindow.h \
   LoadCompiledModelDialog.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \

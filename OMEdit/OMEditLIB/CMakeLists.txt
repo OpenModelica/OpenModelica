@@ -22,6 +22,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
                       Util/DirectoryOrFileSelector.cpp
+                      Util/NavigationManager.cpp
+                      Util/NavigationManagerView.cpp
                       MainWindow.cpp
                       LoadCompiledModelDialog.cpp
                       OMC/OMCProxy.cpp
@@ -155,6 +157,8 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
                       Util/DirectoryOrFileSelector.h
+                      Util/NavigationManager.h
+                      Util/NavigationManagerView.h
                       MainWindow.h
                       LoadCompiledModelDialog.h
                       OMC/OMCProxy.h

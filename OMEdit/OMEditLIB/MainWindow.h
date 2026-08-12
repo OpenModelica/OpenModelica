@@ -101,6 +101,7 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
+class NavigationManagerView;
 
 class MainWindow : public QMainWindow
 {
@@ -291,6 +292,8 @@ private:
   SearchWidget *mpSearchWidget;
   QDockWidget *mpSearchDockWidget;
   QDockWidget *mpMessagesDockWidget;
+  NavigationManagerView *mpNavigationManagerView = nullptr;
+  QDockWidget *mpNavigationManagerDockWidget = nullptr;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
@@ -498,6 +501,7 @@ public slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void switchToPerspectiveTab(int tabIndex);
   void showSearchBrowser();
   void createNewModelicaClass();
   void createNewMOSFile();
