@@ -477,9 +477,11 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
         Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_seg}{sim_output}"),
-        // A failed assertion has already logged C's `LOG_ASSERT` block; any other
-        // failure needs its reason spelled out.
-        Err(e) if *e == sim_driver::ASSERT_ERR => format!("{init_seg}{sim_output}"),
+        // A failed assertion has already logged C's `LOG_ASSERT` block, and a failed
+        // initialization its `LOG_INIT` reason; anything else needs spelling out.
+        Err(e) if *e == sim_driver::ASSERT_ERR || *e == sim_driver::INIT_FAILED_ERR => {
+            format!("{init_seg}{sim_output}")
+        }
         Err(e) => format!(
             "{init_seg}{sim_output}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
             with_engine_detail(e)
@@ -3339,6 +3341,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         // The optimizer's attribute arrays: one entry per real variable, only for a
         // model that carries an optimization problem.
         if optimization::is_optimization(sim_code) { 2 * n_states + n_real_alg } else { 0 },
+        bound_attr_equations(sim_code).len() as u32,
+        removed_init_residuals(sim_code).len() as u32,
         has_when,
         has_homotopy,
     );
@@ -3817,6 +3821,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&relations),
+        param_vars(vars)?, attr_log_entries(sim_code)?,
+        removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
@@ -4016,7 +4022,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             .copied()
             .collect();
         bodies.push(build_update_bound_attrs_fn(
-            sim_code, &defaults, &opt_attrs.ints, &attr_targets, &var_map, &by_name, &mut literals,
+            sim_code, &layout, &defaults, &opt_attrs.ints, &attr_targets, &var_map, &by_name,
+            &mut literals,
         )?);
         idx
     };
@@ -4043,6 +4050,16 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
             &clocks, &layout, &var_map, &eq_index, &by_name, &mut literals,
         )?);
         (init, init + 1, init + 2)
+    };
+    // C's over-determined check; a stub when nothing was removed.
+    let removed_init_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if count(&sim_code.removedInitialEquations) == 0 {
+            empty_eqfn()
+        } else {
+            build_removed_init_eqs_fn(sim_code, &layout, &var_map, &eq_index, &by_name, &mut literals)?
+        });
+        idx
     };
     // Emitted only for a DAE-mode model: its absence is how the standalone export and
     // the FMU adapters know the model is an explicit ODE.
@@ -4110,6 +4127,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
     functions.function(sync_fn_type); // functionUpdateSynchronous: (i32, i32) -> ()
     functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
+    functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
     }
@@ -4215,6 +4233,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
         exports.export(*name, we::ExportKind::Func, opt_jac_idx + k as u32);
     }
     let (sync_init, sync_update, sync_eqs) = sync_idx;
+    exports.export("functionRemovedInitialEquations", we::ExportKind::Func, removed_init_idx);
     exports.export("functionInitSynchronous", we::ExportKind::Func, sync_init);
     exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
     exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
@@ -4273,6 +4292,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool) -> Result<SimMode
     ] {
         names.push((idx, name.to_string()));
     }
+    names.push((removed_init_idx, "functionRemovedInitialEquations".to_string()));
     names.push((sync_init, "functionInitSynchronous".to_string()));
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
@@ -4639,6 +4659,9 @@ fn build_sim_meta(
     fmi_vrs: Vec<FmiVr>,
     zc_desc: Vec<String>,
     rel_desc: Vec<String>,
+    params: openmodelica_sim_meta::ParamVars,
+    attr_log: Vec<openmodelica_sim_meta::AttrLog>,
+    removed_init_desc: Vec<String>,
     sample_index: Vec<i32>,
     soti: openmodelica_sim_meta::SotiVars,
     sens_params: Vec<u32>,
@@ -4665,6 +4688,9 @@ fn build_sim_meta(
         fmi_vrs,
         zc_desc,
         rel_desc,
+        params,
+        attr_log,
+        removed_init_desc,
         sample_index,
         soti,
         sens_params,
@@ -4708,6 +4734,45 @@ fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVa
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
     Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings })
+}
+
+/// C's `modelData` parameter arrays: the same lists, in the same order, as the
+/// `SimData` parameter regions.
+fn param_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::ParamVars> {
+    let mut reals = Vec::new();
+    for sv in lst(&vars.paramVars) {
+        reals.push((cref_display(&sv.name)?.to_string(), const_real(&sv.initialValue).unwrap_or(0.0), sv.isFixed));
+    }
+    let mut ints = Vec::new();
+    for sv in lst(&vars.intParamVars) {
+        ints.push((cref_display(&sv.name)?.to_string(), const_int(&sv.initialValue).unwrap_or(0), sv.isFixed));
+    }
+    let mut bools = Vec::new();
+    for sv in lst(&vars.boolParamVars) {
+        bools.push((cref_display(&sv.name)?.to_string(), const_int(&sv.initialValue).unwrap_or(0), sv.isFixed));
+    }
+    let mut strings = Vec::new();
+    for sv in lst(&vars.stringParamVars) {
+        strings.push((cref_display(&sv.name)?.to_string(), const_str(&sv.initialValue).unwrap_or_default()));
+    }
+    Ok(openmodelica_sim_meta::ParamVars { reals, ints, bools, strings })
+}
+
+/// Name and attribute kind of every attribute-log slot.
+fn attr_log_entries(sim_code: &SimCode::SimCode) -> Result<Vec<openmodelica_sim_meta::AttrLog>> {
+    let mut out = Vec::new();
+    for (attr, cref, _) in bound_attr_equations(sim_code) {
+        let raw = cref_display(cref)?.to_string();
+        let name = raw.strip_prefix("$START.").unwrap_or(&raw).to_string();
+        let kind = match attr {
+            Attr::Min => 0,
+            Attr::Max => 1,
+            Attr::Nominal => 2,
+            Attr::Start => 3,
+        };
+        out.push(openmodelica_sim_meta::AttrLog { kind, name });
+    }
+    Ok(out)
 }
 
 fn const_real(e: &Option<Arc<DAE::Exp>>) -> Option<f64> {
@@ -4837,16 +4902,28 @@ fn collect_param_bindings(
     {
         // A parameter an equation computes must not also be assigned from its binding
         // here: the prelude runs before both equation lists, so the binding would see
-        // dependencies that are still 0 (or a null handle). C leaves such a parameter
-        // at the 0 of a `_init.xml` entry with no `start`.
+        // dependencies that are still 0 (or a null handle). A *constant* binding reads
+        // nothing, so it is stored regardless — C's `setAllParamsToStart`.
         if let Some(v) = &p.initialValue {
-            if sim_cref_key(&p.name).map(|k| computed.contains(&k)).unwrap_or(false) {
+            if !is_const_exp(v) && sim_cref_key(&p.name).map(|k| computed.contains(&k)).unwrap_or(false) {
                 continue;
             }
             out.push((p.name.clone(), v.clone()));
         }
     }
     out
+}
+
+/// A literal the `_init.xml` would carry verbatim as a `start` attribute.
+fn is_const_exp(e: &DAE::Exp) -> bool {
+    matches!(
+        e,
+        DAE::Exp::ICONST { .. }
+            | DAE::Exp::RCONST { .. }
+            | DAE::Exp::BCONST { .. }
+            | DAE::Exp::SCONST { .. }
+            | DAE::Exp::ENUM_LITERAL { .. }
+    )
 }
 
 /// Keys of the crefs assigned by a `SimEqSystem` list (scalar/array assigns).
@@ -5187,6 +5264,54 @@ fn build_init_sample_fn(
     Ok(func)
 }
 
+/// The initial equations the backend removed as redundant, kept as `0 = <exp>`
+/// checks. A `SCONST` residual is C's `res = 0`, never inconsistent.
+fn removed_init_residuals(sim_code: &SimCode::SimCode) -> Vec<&Arc<DAE::Exp>> {
+    lst(&sim_code.removedInitialEquations)
+        .filter_map(|eq| match &**eq {
+            SimCode::SimEqSystem::SES_RESIDUAL { exp, .. } => Some(exp),
+            _ => None,
+        })
+        .filter(|exp| !matches!(&***exp, DAE::Exp::SCONST { .. }))
+        .collect()
+}
+
+/// Build `functionRemovedInitialEquations(SimData*)`. The first residual off zero
+/// stops the function; a non-residual entry is an ordinary equation.
+fn build_removed_init_eqs_fn(
+    sim_code: &SimCode::SimCode,
+    layout: &SimLayout,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    ctx.emit_removed_init_reset(layout.removed_init_idx_off)?;
+    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    let mut index = 0u32;
+    for eq in lst(&sim_code.removedInitialEquations) {
+        match &**eq {
+            SimCode::SimEqSystem::SES_RESIDUAL { exp, .. } => {
+                if matches!(&**exp, DAE::Exp::SCONST { .. }) {
+                    continue;
+                }
+                emit_sim_const_stores(&mut ctx, &core::mem::take(&mut pending))?;
+                ctx.emit_removed_init_residual(
+                    index,
+                    exp,
+                    layout.removed_init_res_off,
+                    layout.removed_init_idx_off,
+                )?;
+                index += 1;
+            }
+            _ => lower_unit(&mut ctx, &EqUnit::Eq(eq, None), eq_index, &mut pending)?,
+        }
+    }
+    emit_sim_const_stores(&mut ctx, &pending)?;
+    Ok(finish_fn(ctx))
+}
+
 /// Build `functionInitSynchronous(SimData*)` — C's `function_initSynchronous`.
 fn build_init_synchronous_fn(
     clocks: &[ClockInfo],
@@ -5316,20 +5441,12 @@ fn build_init_start_values_fn(
     Ok(func)
 }
 
-/// Build `functionUpdateBoundVariableAttributes(SimData*)`. An attribute bound to a
-/// parameter is not a constant, so the backend hands it over as an equation; only
-/// here, after `functionParameters`, does it have a value. Attributes nothing reads
-/// back are skipped.
-fn build_update_bound_attrs_fn(
+/// The attribute equations in C's `min`, `max`, `nominal`, `start` group order.
+/// A start equation assigns `$START.<var>`, i.e. that variable's `start` attribute.
+fn bound_attr_equations(
     sim_code: &SimCode::SimCode,
-    defaults: &[(u32, f64)],
-    int_defaults: &[(u32, i32)],
-    attr_targets: &HashMap<String, AttrTargets>,
-    var_map: &SimVarMap,
-    by_name: &HashMap<String, FnInfo>,
-    literals: &mut Literals,
-) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets)> = Vec::new();
+) -> Vec<(Attr, &Arc<DAE::ComponentRef>, &Arc<DAE::Exp>)> {
+    let mut out = Vec::new();
     for (attr, eqs) in [
         (Attr::Min, &sim_code.minValueEquations),
         (Attr::Max, &sim_code.maxValueEquations),
@@ -5337,27 +5454,37 @@ fn build_update_bound_attrs_fn(
         (Attr::Start, &sim_code.startValueEquations),
     ] {
         for eq in lst(eqs) {
-            let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq else { continue };
-            // A start-value equation assigns `$START.<var>` (C writes it into the
-            // variable's `start` attribute); the others name the variable itself.
-            let Some(t) = sim_cref_key(cref)
-                .ok()
-                .map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string())
-                .and_then(|k| attr_targets.get(&k))
-            else {
-                continue;
-            };
-            let wanted = match attr {
-                Attr::Nominal => !t.nom_offs.is_empty() || !t.opt_nom_offs.is_empty(),
-                Attr::Max => !t.max_offs.is_empty() || !t.opt_max_offs.is_empty(),
-                Attr::Min => !t.opt_min_offs.is_empty(),
-                Attr::Start => !t.start_offs.is_empty(),
-            };
-            if t.nls.is_empty() && !wanted {
-                continue;
+            if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq {
+                out.push((attr, cref, exp));
             }
-            attrs.push((attr, exp.clone(), t.clone()));
         }
+    }
+    out
+}
+
+/// Build `functionUpdateBoundVariableAttributes(SimData*)`. An attribute bound to a
+/// parameter is not a constant, so the backend hands it over as an equation; only
+/// here, after `functionParameters`, does it have a value. Every attribute is
+/// evaluated (as C does) and left in the log region, whatever else it feeds.
+fn build_update_bound_attrs_fn(
+    sim_code: &SimCode::SimCode,
+    layout: &SimLayout,
+    defaults: &[(u32, f64)],
+    int_defaults: &[(u32, i32)],
+    attr_targets: &HashMap<String, AttrTargets>,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let mut attrs: Vec<(Attr, Arc<DAE::Exp>, AttrTargets, u32)> = Vec::new();
+    for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
+        let targets = sim_cref_key(cref)
+            .ok()
+            .map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string())
+            .and_then(|k| attr_targets.get(&k))
+            .cloned()
+            .unwrap_or_default();
+        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);

@@ -213,6 +213,7 @@ pub const MODEL_FNS: &[&str] = &[
     "linearJacB",
     "linearJacC",
     "linearJacD",
+    "functionRemovedInitialEquations",
 ];
 
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
@@ -809,6 +810,8 @@ pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to 
 pub const ALARM_ABORT_ERR: &str = "CodegenWasmJit: simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
+/// C's `initialization()` returning nonzero: the reason is already logged.
+pub const INIT_FAILED_ERR: &str = "initialization failed";
 
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
 /// before a run (the driver can only return a `&'static str`).
@@ -1125,29 +1128,31 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> Stri
     let during = if initial { "during initialization " } else { "" };
     let t = format_f(time);
     let head = format!("The following assertion has been violated {during}at time {t}");
-    // A generated `assert()` always names its condition, and C prints it with the
+    let ro_str = if info.read_only { "readonly" } else { "writable" };
+    let pos = format!(
+        "[{}:{}:{}-{}:{}:{ro_str}]",
+        info.file, info.line_start, info.col_start, info.line_end, info.col_end,
+    );
+    // An equation `assert()` always names its condition, and C prints it with the
     // message as one message's second line — including for a backend-generated
-    // variable, whose `FILE_INFO` is empty (`$finalCon$…`'s min/max guard). A
-    // condition-less violation is C's `assertCommonVar` (the math-domain guards).
+    // variable, whose `FILE_INFO` is empty (`$finalCon$…`'s min/max guard). Without
+    // a condition it is C's `FUNCTION_CONTEXT` `omc_assert` (position and message
+    // only) or `assertCommonVar` (the math-domain guards, neither).
     if cond.is_empty() {
-        return head;
+        return if info.file.is_empty() { head } else { format!("{pos}\n{}", info.msg) };
     }
     let body = format!("(({cond})) --> \"{}\"", info.msg);
     if info.file.is_empty() {
         return format!("{head}\n{body}");
     }
-    let ro_str = if info.read_only { "readonly" } else { "writable" };
-    format!(
-        "[{}:{}:{}-{}:{}:{ro_str}]\n{head}\n{body}",
-        info.file, info.line_start, info.col_start, info.line_end, info.col_end,
-    )
+    format!("{pos}\n{head}\n{body}")
 }
 
 fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
     let block = assert_block(info, cond, time, initial);
     // C's `assertCommonVar` (the math-domain guards, no condition and no source
     // position): the warning names the time, a debug line carries the message.
-    if cond.is_empty() {
+    if cond.is_empty() && info.file.is_empty() {
         omclog::warning(omclog::ASSERT, false, &block);
         omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, &info.msg);
         return;
@@ -1319,6 +1324,7 @@ fn init_model(
     if let Some(m) = model {
         dump_initial_solution(e, sim_data, m);
     }
+    omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
     // C's `storePreValues` after the initial solve (initialization.c:903).
     seed_pre_from_live(e, sim_data, layout)?;
     // Seed the continuous phase's held relations from a full discrete fixed point.
@@ -1349,6 +1355,7 @@ fn run_initialization_impl(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
     // C's `updateStaticDataOfNonlinearSystems`.
     omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
     omclog::close(omclog::NLS);
@@ -1364,13 +1371,43 @@ fn run_initialization_impl(
     // C's `IIM_NONE`: every variable keeps its start value, the initial system is
     // never solved. C still marks the systems solved before it picks the method.
     if crate::simflags::with_flags(|f| f.init_method) == crate::simflags::InitMethod::None {
+        log_init_method("none", "sets all variables to their start values and skips the initialization process");
         write_i32(e, sim_data + layout.nls_fail_off, 0)?;
         return Ok(());
     }
+    log_init_method("symbolic", "solves the initialization problem symbolically - default");
 
-    // C's `symbolic_initialization`: a model with `homotopy()` goes straight to the
-    // global equidistant continuation, unless `-noHomotopyOnFirstTry` asks for the
-    // direct solve first with the continuation as the fallback.
+    symbolic_initialization(e, sim_data, layout, inputs, model)
+}
+
+/// C's `INIT_METHOD_NAME`/`INIT_METHOD_DESC` line.
+fn log_init_method(name: &str, desc: &str) {
+    omclog::info(omclog::INIT, false, &format!("initialization method: {name:<15} [{desc}]"));
+}
+
+/// C's `symbolic_initialization`: solve, then check the equations the backend
+/// removed as redundant.
+fn symbolic_initialization(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    solve_initial_system(e, sim_data, layout, inputs, model)?;
+    check_removed_initial_equations(e, sim_data, layout, model)
+}
+
+/// A model with `homotopy()` goes straight to the global equidistant continuation,
+/// unless `-noHomotopyOnFirstTry` asks for the direct solve first with the
+/// continuation as the fallback.
+fn solve_initial_system(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
     if !layout.has_homotopy {
         return direct_initial_solve(e, sim_data, layout);
     }
@@ -1395,6 +1432,48 @@ fn run_initialization_impl(
     run_homotopy_continuation(e, sim_data, layout)?;
     init_report::set_homotopy_steps(homotopy_steps() as u32);
     Ok(())
+}
+
+/// C's over-determined check: the removed initial equations are residuals of the
+/// solution just found, and one off zero means the problem has none.
+fn check_removed_initial_equations(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    if layout.n_removed_init == 0 {
+        return Ok(());
+    }
+    e.call1("functionRemovedInitialEquations", sim_data)?;
+    let idx = read_i32(e, sim_data + layout.removed_init_idx_off)?;
+    if idx == 0 {
+        return Ok(());
+    }
+    let res = read_f64(e, sim_data + layout.removed_init_res_off)?;
+    let desc = model
+        .and_then(|m| m.removed_init_desc.get(idx as usize - 1))
+        .map(String::as_str)
+        .unwrap_or_default();
+    omclog::error(
+        omclog::INIT,
+        false,
+        &format!(
+            "The initialization problem is inconsistent due to the following equation: 0 != {} = {desc}",
+            format_g(res, 6)
+        ),
+    );
+    Err(report_init_failure())
+}
+
+/// C's `solver_main` reaction to a failed `initialization()`.
+fn report_init_failure() -> &'static str {
+    omclog::warning(
+        omclog::STDOUT,
+        false,
+        "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.",
+    );
+    INIT_FAILED_ERR
 }
 
 /// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
@@ -1426,8 +1505,12 @@ fn seed_start_values(
     e.call1("functionInitStartValues", sim_data)?;
     apply_external_input(e, sim_data, inputs)?;
     e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
+    log_bound_attr_updates(e, sim_data, layout, model);
     apply_start_overrides(e, sim_data)?;
     set_all_vars_to_start(e, sim_data, layout, model)?;
+    // C runs `updateBoundParameters` *after* `setAllVarsToStart`: those equations
+    // also assign the constant-bound variables, which the copy would undo.
+    e.call1("functionUpdateBoundParameters", sim_data)?;
     // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
     // an initial equation sees `start`, not 0.
     seed_pre_from_live(e, sim_data, layout)?;
@@ -1436,6 +1519,121 @@ fn seed_start_values(
         e.call1("initSample", sim_data)?;
     }
     Ok(())
+}
+
+/// C's `updateBoundVariableAttributes` log, over the values the model left in the
+/// attribute-log region. A group's header appears even when it is empty, as C's
+/// unconditional `infoStreamPrint` in that function gives.
+fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) {
+    if !omclog::active(omclog::INIT) {
+        return;
+    }
+    let entries: &[crate::AttrLog] = model.map_or(&[], |m| &m.attr_log);
+    for (kind, name) in crate::ATTR_NAME.iter().enumerate() {
+        let header = match *name {
+            "start" => "primary start-values".to_string(),
+            _ => format!("{name}-values"),
+        };
+        omclog::info(omclog::INIT, true, &format!("updating {header}"));
+        if omclog::active(omclog::INIT_V) {
+            for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
+                let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
+                let line = match *name {
+                    "start" => format!("updated start value: {}(start={})", a.name, format_g(v, 6)),
+                    _ => format!("{}({name}={})", a.name, format_g(v, 6)),
+                };
+                omclog::info(omclog::INIT_V, false, &line);
+            }
+        }
+        omclog::close(omclog::INIT);
+    }
+}
+
+/// C's `printParameters` (`model_help.c`), which `dumpInitialSolution` opens with.
+fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
+    if !omclog::active(omclog::INIT_V) {
+        return;
+    }
+    let p = &model.params;
+    let layout = &model.layout;
+    // C's `-override` rewrites the `_init.xml` entry, `start` included.
+    let ov = overrides_store::params();
+    let start_of = |off: u32, v: f64| ov.iter().find(|o| o.0 == off).map_or(v, |o| o.2);
+    omclog::info(omclog::INIT_V, true, "parameter values");
+    let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
+        if lines.is_empty() {
+            return;
+        }
+        omclog::info(omclog::INIT_V, true, header);
+        for l in &lines {
+            omclog::info(omclog::INIT_V, false, l);
+        }
+        omclog::close(omclog::INIT_V);
+    };
+    let fixed = |f: bool| if f { "true" } else { "false" };
+    group(
+        "real parameters",
+        p.reals
+            .iter()
+            .enumerate()
+            .map(|(i, (n, start, f))| {
+                let off = layout.rparam_off + i as u32 * 8;
+                let v = read_f64(e, sim_data + off).unwrap_or(0.0);
+                format!(
+                    "[{}] parameter Real {n}(start={}, fixed={}) = {}",
+                    i + 1,
+                    format_g(start_of(off, *start), 6),
+                    fixed(*f),
+                    format_g(v, 6)
+                )
+            })
+            .collect(),
+    );
+    group(
+        "integer parameters",
+        p.ints
+            .iter()
+            .enumerate()
+            .map(|(i, (n, start, f))| {
+                let off = layout.iparam_off + i as u32 * 4;
+                let v = read_i32(e, sim_data + off).unwrap_or(0);
+                let start = start_of(off, *start as f64) as i32;
+                format!("[{}] parameter Integer {n}(start={start}, fixed={}) = {v}", i + 1, fixed(*f))
+            })
+            .collect(),
+    );
+    let b = |v: i32| if v != 0 { "true" } else { "false" };
+    group(
+        "boolean parameters",
+        p.bools
+            .iter()
+            .enumerate()
+            .map(|(i, (n, start, f))| {
+                let off = layout.bparam_off + i as u32 * 4;
+                let v = read_i32(e, sim_data + off).unwrap_or(0);
+                format!(
+                    "[{}] parameter Boolean {n}(start={}, fixed={}) = {}",
+                    i + 1,
+                    b(start_of(off, *start as f64) as i32),
+                    fixed(*f),
+                    b(v)
+                )
+            })
+            .collect(),
+    );
+    group(
+        "string parameters",
+        p.strings
+            .iter()
+            .enumerate()
+            .map(|(i, (n, start))| {
+                let h = read_i32(e, sim_data + layout.sparam_off + i as u32 * 4).unwrap_or(0);
+                let v = read_rt_string(e, h).unwrap_or_default();
+                format!("[{}] parameter String {n}(start=\"{start}\") = \"{v}\"", i + 1)
+            })
+            .collect(),
+    );
+    omclog::close(omclog::INIT_V);
 }
 
 /// Solve the initial system at lambda = 1, where `homotopy(a, s)` is `a`.
@@ -1839,6 +2037,7 @@ fn refresh_relations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -
 /// after the initial system is solved and *before* the pre-values are stored — so
 /// a derivative still reads `(pre: 0)`.
 fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
+    print_parameters(e, sim_data, model);
     if !omclog::active(omclog::SOTI) {
         return;
     }

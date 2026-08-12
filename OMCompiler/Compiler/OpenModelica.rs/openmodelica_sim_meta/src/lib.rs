@@ -223,6 +223,15 @@ pub struct Layout {
     /// Base of the per-base-clock `$_clkfire` flags (one i32 each): an event
     /// clock's `when`-body raises its flag, the driver fires and clears it.
     pub clock_fire_off: u32,
+    /// One f64 per attribute `functionUpdateBoundVariableAttributes` computes; C
+    /// prints those values from inside that function, which the driver cannot.
+    pub n_attr_log: u32,
+    pub attr_log_off: u32,
+    /// Residuals `functionRemovedInitialEquations` checks; 0 ⇒ it is a stub.
+    pub n_removed_init: u32,
+    /// The rejected residual (f64) and its 1-based index (i32); index 0 ⇒ consistent.
+    pub removed_init_res_off: u32,
+    pub removed_init_idx_off: u32,
     pub total: u32,
 }
 
@@ -256,6 +265,8 @@ impl Layout {
         n_sub_clocks: u32,
         n_linz: u32,
         n_opt_attr: u32,
+        n_attr_log: u32,
+        n_removed_init: u32,
         has_when: bool,
         has_homotopy: bool,
     ) -> Self {
@@ -307,7 +318,10 @@ impl Layout {
         let opt_max_off = opt_min_off + n_opt_attr * 8;
         let opt_nom_off = opt_max_off + n_opt_attr * 8;
         let opt_use_nom_off = opt_nom_off + n_opt_attr * 8;
-        let total = opt_use_nom_off + n_opt_attr * 4;
+        let attr_log_off = (opt_use_nom_off + n_opt_attr * 4 + 7) & !7;
+        let removed_init_res_off = attr_log_off + n_attr_log * 8;
+        let removed_init_idx_off = removed_init_res_off + 8;
+        let total = removed_init_idx_off + 4;
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
@@ -316,7 +330,9 @@ impl Layout {
             mathevents_off, zctol_off, start_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
-            n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off, total,
+            n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
+            n_attr_log, attr_log_off,
+            n_removed_init, removed_init_res_off, removed_init_idx_off, total,
         }
     }
 
@@ -421,6 +437,28 @@ pub struct SotiVars {
     /// String variables with their `start` attribute.
     pub strings: Vec<(String, String)>,
 }
+
+/// C's `modelData` parameter arrays (name, `start`, `fixed`) in the order of the
+/// `SimData` parameter regions, which hold the values `printParameters` reports.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ParamVars {
+    pub reals: Vec<(String, f64, bool)>,
+    pub ints: Vec<(String, i32, bool)>,
+    pub bools: Vec<(String, i32, bool)>,
+    /// C prints no `fixed` for a String parameter.
+    pub strings: Vec<(String, String)>,
+}
+
+/// The variable (C's `info.name`) an [`Layout::attr_log_off`] slot belongs to, and
+/// which attribute of it — an index into [`ATTR_NAME`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct AttrLog {
+    pub kind: u8,
+    pub name: String,
+}
+
+/// [`AttrLog::kind`], in the group order C prints.
+pub const ATTR_NAME: [&str; 4] = ["min", "max", "nominal", "start"];
 
 /// [`MetaVar::filter`] bits: what keeps a variable out of the result file, and
 /// which flag lets it back in (C's `shouldFilterOutput` +
@@ -715,6 +753,13 @@ pub struct SimMeta {
     pub sample_index: Vec<i32>,
     /// C's `modelData` variable arrays, for the `LOG_SOTI` initialization dump.
     pub soti: SotiVars,
+    /// C's `modelData` parameter arrays, for the `LOG_INIT_V` parameter dump.
+    pub params: ParamVars,
+    /// 1:1 with the [`Layout::attr_log_off`] slots.
+    pub attr_log: Vec<AttrLog>,
+    /// Modelica source of each residual `functionRemovedInitialEquations` checks;
+    /// C bakes the same text into the generated `errorStreamPrint`.
+    pub removed_init_desc: Vec<String>,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -976,6 +1021,8 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
         l.linz_off, l.n_linz,
         l.n_opt_attr, l.opt_min_off, l.opt_max_off, l.opt_nom_off, l.opt_use_nom_off,
+        l.n_attr_log, l.attr_log_off,
+        l.n_removed_init, l.removed_init_res_off, l.removed_init_idx_off,
         l.total,
     ] {
         put_u32(o, v);
@@ -1063,6 +1110,34 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     }
     put_u32(&mut o, m.rel_desc.len() as u32);
     for d in &m.rel_desc {
+        put_str(&mut o, d);
+    }
+    put_u32(&mut o, m.params.reals.len() as u32);
+    for (n, v, f) in &m.params.reals {
+        put_str(&mut o, n);
+        put_f64(&mut o, *v);
+        o.push(*f as u8);
+    }
+    for list in [&m.params.ints, &m.params.bools] {
+        put_u32(&mut o, list.len() as u32);
+        for (n, v, f) in list {
+            put_str(&mut o, n);
+            put_u32(&mut o, *v as u32);
+            o.push(*f as u8);
+        }
+    }
+    put_u32(&mut o, m.params.strings.len() as u32);
+    for (n, v) in &m.params.strings {
+        put_str(&mut o, n);
+        put_str(&mut o, v);
+    }
+    put_u32(&mut o, m.attr_log.len() as u32);
+    for a in &m.attr_log {
+        o.push(a.kind);
+        put_str(&mut o, &a.name);
+    }
+    put_u32(&mut o, m.removed_init_desc.len() as u32);
+    for d in &m.removed_init_desc {
         put_str(&mut o, d);
     }
     put_u32(&mut o, m.sample_index.len() as u32);
@@ -1307,6 +1382,11 @@ impl<'a> Reader<'a> {
             opt_max_off: self.u32()?,
             opt_nom_off: self.u32()?,
             opt_use_nom_off: self.u32()?,
+            n_attr_log: self.u32()?,
+            attr_log_off: self.u32()?,
+            n_removed_init: self.u32()?,
+            removed_init_res_off: self.u32()?,
+            removed_init_idx_off: self.u32()?,
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
@@ -1389,6 +1469,27 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut rel_desc = Vec::with_capacity(nrdesc);
     for _ in 0..nrdesc {
         rel_desc.push(r.string()?);
+    }
+    let mut params = ParamVars::default();
+    for _ in 0..r.u32()? {
+        params.reals.push((r.string()?, r.f64()?, r.u8()? != 0));
+    }
+    for list in [&mut params.ints, &mut params.bools] {
+        for _ in 0..r.u32()? {
+            list.push((r.string()?, r.u32()? as i32, r.u8()? != 0));
+        }
+    }
+    for _ in 0..r.u32()? {
+        params.strings.push((r.string()?, r.string()?));
+    }
+    let mut attr_log = Vec::new();
+    for _ in 0..r.u32()? {
+        attr_log.push(AttrLog { kind: r.u8()?, name: r.string()? });
+    }
+    let nridesc = r.u32()? as usize;
+    let mut removed_init_desc = Vec::with_capacity(nridesc);
+    for _ in 0..nridesc {
+        removed_init_desc.push(r.string()?);
     }
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
@@ -1546,8 +1647,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, sample_index, soti, sens_params,
-        nls_vars, dae, clocks, lin, opt, inputs,
+        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
+        removed_init_desc, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -1559,7 +1660,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1597,6 +1698,17 @@ mod tests {
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            params: ParamVars {
+                reals: vec![("a".to_string(), 1.5, true)],
+                ints: vec![("i".to_string(), 3, false)],
+                bools: vec![("b".to_string(), 1, true)],
+                strings: vec![("s".to_string(), "two".to_string())],
+            },
+            attr_log: vec![
+                AttrLog { kind: 0, name: "x".to_string() },
+                AttrLog { kind: 3, name: "y".to_string() },
+            ],
+            removed_init_desc: vec!["4.0 - z".to_string()],
             sample_index: vec![1],
             soti: SotiVars::default(),
             sens_params: vec![88],

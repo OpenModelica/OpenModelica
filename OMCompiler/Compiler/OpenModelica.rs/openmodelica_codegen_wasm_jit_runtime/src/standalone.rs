@@ -49,6 +49,7 @@ unsafe extern "C" {
     fn functionInitDelay(sim_data: u32);
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
+    fn functionRemovedInitialEquations(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn linearJacA(sim_data: u32);
@@ -109,6 +110,7 @@ impl SimEngine for StandaloneEngine {
                 "functionInitDelay" => functionInitDelay(arg),
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
+                "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "linearJacA" => linearJacA(arg),
