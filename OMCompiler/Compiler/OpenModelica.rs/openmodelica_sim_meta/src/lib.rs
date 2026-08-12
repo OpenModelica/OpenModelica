@@ -98,6 +98,10 @@ pub struct Layout {
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
     pub has_homotopy: bool,
+    /// The model has `delay(...)` or `spatialDistribution(...)`, i.e. an operator
+    /// with an internal history that `functionStoreDelayed` /
+    /// `functionStoreSpatialDistribution` must be fed at every accepted point.
+    pub has_history_ops: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: u32,
     pub rparam_off: u32,
@@ -269,6 +273,7 @@ impl Layout {
         n_removed_init: u32,
         has_when: bool,
         has_homotopy: bool,
+        has_history_ops: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -323,7 +328,7 @@ impl Layout {
         let removed_init_idx_off = removed_init_res_off + 8;
         let total = removed_init_idx_off + 4;
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
+            n_states, n_real_alg, has_when, has_homotopy, has_history_ops, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
@@ -1029,6 +1034,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+    o.push(l.has_history_ops as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -1390,9 +1396,11 @@ impl<'a> Reader<'a> {
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
+            has_history_ops: false,
         };
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
+        l.has_history_ops = self.u8()? != 0;
         Ok(l)
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
@@ -1660,7 +1668,7 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false),
+            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false, false),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,

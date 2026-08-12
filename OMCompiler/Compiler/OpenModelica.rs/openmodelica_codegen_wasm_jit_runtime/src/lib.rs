@@ -47,6 +47,7 @@ pub use nls::{rt_nls_clean_history, rt_set_step_size};
 #[cfg(test)]
 mod nls_c_trace;
 mod solvers;
+mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.

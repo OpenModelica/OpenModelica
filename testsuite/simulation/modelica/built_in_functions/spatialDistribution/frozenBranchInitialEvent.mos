@@ -1,0 +1,65 @@
+// name:                frozenBranchInitialEvent.mos
+// keywords:            spatialDistribution, event
+// status:              correct
+// teardown_command:    rm -f frozenBranchInitialEventSpatialDistribution*
+//
+// spatialDistribution() frozen inside an if-branch, with a nonzero start value
+// of x *and* a discontinuity in the initial profile. The operator's zero point
+// is only fixed when the branch activates, so the zero-crossing function has to
+// report the value it will have then while the operator is still frozen -- else
+// activating it flips the crossing and reports a state event for a discontinuity
+// that has not moved at all.
+
+loadString("
+model frozenBranchInitialEventSpatialDistribution
+  Real x(start = 1.0, fixed = true) \"Spatial coordinate fed to spatialDistribution\";
+  Boolean active = time >= 0.5 \"Event that gates the spatialDistribution operator\";
+  Real out1 \"Value leaving on the right\";
+equation
+  der(x) = 1;
+  if active then
+    (, out1) = spatialDistribution(2.0, 0.0, x, true,
+                                   initialPoints = {0.0, 0.5, 0.5, 1.0},
+                                   initialValues = {1.0, 1.0, 0.0, 0.0});
+  else
+    out1 = -1.0;
+  end if;
+end frozenBranchInitialEventSpatialDistribution;"); getErrorString();
+
+// The only spatialDistribution event is the initial jump reaching the right
+// boundary, half a length after the operator started: at time 0.5 + 0.5 = 1.
+simulate(frozenBranchInitialEventSpatialDistribution, stopTime = 2.0, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+val(out1, 0.25); // -1.0  operator inactive, out1 from the else-branch
+val(out1, 0.75); //  0.0  active, still transporting the initial profile's tail
+val(out1, 1.25); //  1.0  the initial jump has passed the right boundary
+val(out1, 1.75); //  2.0  the boundary condition has arrived
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "frozenBranchInitialEventSpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'frozenBranchInitialEventSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, true)
+// |                 | |       | | [2] (pre: false) false = time >= 0.5
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [2] (pre:  0) -1 = time >= 0.5
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=0.50000000015
+// |                 | |       | | [2] time >= 0.5
+// LOG_EVENTS        | info    | state event at time=1.00000000015
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_EVENTS        | info    | state event at time=1.50000000015
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.0
+// 0.0
+// 1.0
+// 2.0
+// endResult

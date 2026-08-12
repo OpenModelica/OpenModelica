@@ -203,6 +203,8 @@ pub const MODEL_FNS: &[&str] = &[
     "functionCheckAsserts",
     "functionStoreDelayed",
     "functionInitDelay",
+    "functionStoreSpatialDistribution",
+    "functionInitSpatialDistribution",
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
     "evaluateDAEResiduals",
@@ -1356,11 +1358,16 @@ fn init_model(
     // The initial system does not necessarily touch every relation guarding the
     // continuous equations, so a straight snapshot of `relations[]` here would
     // freeze those at their stale (zero) value and pick the wrong equation branch.
+    // `refresh_relations` first, as C's `updateDiscreteSystem` does: a relation
+    // sitting in a branch no evaluation takes (`if a then .. else if b then ..`,
+    // entered on the `a` side) is reached by nothing but the exact sweep.
+    refresh_relations(e, sim_data, layout)?;
     iterate_discrete(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)?;
     update_relations_pre(e, sim_data, layout)?;
-    // Seed the delay buffers and snapshot `zeroCrossingsPre` for step 1.
-    e.call1_if_present("functionStoreDelayed", sim_data)?;
+    // Seed the delay buffers / transported profiles and snapshot `zeroCrossingsPre`
+    // for step 1.
+    store_operators(e, sim_data, layout)?;
     if layout.n_zc > 0 {
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         save_zc_pre(e, sim_data, layout)?;
@@ -1539,6 +1546,10 @@ fn seed_start_values(
     if !from_file {
         update_bound_values(e, sim_data, layout, model)?;
     }
+    // The initial profiles come from parameter arrays, so this follows the bound
+    // parameters and precedes the initial system (C's `initializeModel`). Idempotent:
+    // it reallocates, so a retried initialization starts from a clean profile.
+    e.call1_if_present("functionInitSpatialDistribution", sim_data)?;
     // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
     // an initial equation sees `start`, not 0.
     seed_pre_from_live(e, sim_data, layout)?;
@@ -1810,6 +1821,35 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
 
 /// C's `updateContinuousSystem`: recompute everything an output row reads. A
 /// `--daeMode` model has no explicit ODE, so that is one algebraic-stage residual.
+/// C's `function_storeDelayed` + `function_storeSpatialDistribution`, the tail of
+/// `updateContinuousSystem`: the operators with an internal history record the point
+/// the model was last evaluated at. A model without any skips it entirely.
+fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if !layout.has_history_ops {
+        return Ok(());
+    }
+    e.call1_if_present("functionStoreDelayed", sim_data)?;
+    e.call1_if_present("functionStoreSpatialDistribution", sim_data)
+}
+
+/// [`store_operators`] at an accepted point the model has not been evaluated at yet:
+/// the whole of C's `updateContinuousSystem`. `spatialDistribution` reads its
+/// boundary conditions out of `SimData`, and its own `x` must not have moved by the
+/// time the discrete update calls it, so the store belongs *before* the event.
+fn store_operators_at(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    time: f64,
+) -> Result<()> {
+    if !layout.has_history_ops {
+        return Ok(());
+    }
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    eval_continuous(e, sim_data, layout)?;
+    store_operators(e, sim_data, layout)
+}
+
 fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
@@ -2172,7 +2212,9 @@ fn log_state_event(time: f64, roots: &[usize], model: &SimMeta) {
         return;
     }
     omclog::info(omclog::EVENTS, true, &format!("state event at time={}", format_g(time, 12)));
-    for &i in roots {
+    // Highest index first: C's `checkForStateEvent` pushes each crossing onto the
+    // front of the event list it then walks, so simultaneous ones come out reversed.
+    for &i in roots.iter().rev() {
         let desc = model.zc_desc.get(i).map(String::as_str).unwrap_or_default();
         omclog::info(omclog::EVENTS, false, &format!("[{}] {desc}", i + 1));
     }
@@ -3006,6 +3048,7 @@ impl Driver for EulerDriver {
                 emit_row(e, &mut self.rows, sim_data, layout, time, stop)
             };
             close_assert_window(e, sim_data).and(emitted)?;
+            store_operators(e, sim_data, layout)?;
             check_nls(e, sim_data, layout)?; // Euler cannot back off — non-convergence is fatal
             // terminate() fired in functionAlgebraics: keep this row, stop the run.
             if terminated(e, sim_data, layout)? {
@@ -3747,6 +3790,7 @@ impl Driver for DasslDriver {
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
+                store_operators(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -3879,6 +3923,7 @@ impl Driver for DasslDriver {
                     let emitted =
                         emit_row(e, &mut self.rows, sim_data, layout, self.t, model.stop_time);
                     close_assert_window(e, sim_data).and(emitted)?;
+                    store_operators(e, sim_data, layout)?;
                     if terminated(e, sim_data, layout)? {
                         break Advance::Terminated;
                     }
@@ -3895,6 +3940,7 @@ impl Driver for DasslDriver {
             open_assert_window();
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
+            store_operators(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated; // terminate() fired: keep this row, stop
             }
@@ -4935,6 +4981,7 @@ impl SolverCore {
                             return Ok(Step::Terminated);
                         }
                     }
+                    store_operators_at(e, sim_data, layout, self.t)?;
                     continue;
                 }
                 // A zero-crossing root at `t` (< target). Handle the state event
@@ -4979,6 +5026,7 @@ impl SolverCore {
                     {
                         capture_pre(e, r, sim_data, layout, troot)?;
                     }
+                    store_operators_at(e, sim_data, layout, troot)?;
                     event_update(e, sim_data, layout, None, troot)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
@@ -4990,6 +5038,9 @@ impl SolverCore {
                         return Ok(Step::Terminated);
                     }
                     fire_clocks(e, sync, model, sim_data, troot, eps, rows.as_deref_mut())?;
+                    // C's "add event to spatialDistribution": the post-event input
+                    // jump becomes a discontinuity in the transported profile.
+                    store_operators(e, sim_data, layout)?;
                     log_reinits(e, model);
                     omclog::close(omclog::EVENTS);
                     if terminated(e, sim_data, layout)? {
@@ -5024,6 +5075,7 @@ impl SolverCore {
                 {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?; // pre-event row (held)
                 }
+                store_operators_at(e, sim_data, layout, te)?;
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
                 refresh_relations(e, sim_data, layout)?;
@@ -5034,6 +5086,7 @@ impl SolverCore {
                 {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
+                store_operators(e, sim_data, layout)?;
                 log_reinits(e, model);
                 omclog::close(omclog::EVENTS);
                 if terminated(e, sim_data, layout)? {
@@ -5064,6 +5117,7 @@ impl SolverCore {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
+                    store_operators(e, sim_data, layout)?;
                     self.read_y(e)?;
                     self.refresh_yp(e)?;
                     self.restart()?;
@@ -5074,6 +5128,14 @@ impl SolverCore {
                 }
             }
             if target >= tout - eps {
+                // C stores after the accepted point's evaluation and before the row is
+                // written, so the row reports the operator's pre-store outputs — an
+                // input-side output extrapolated from the just-stored value would close
+                // the algebraic loop the extrapolation exists to avoid. `rows` is Some
+                // exactly when the caller writes that row and stores after it.
+                if rows.is_none() {
+                    store_operators_at(e, sim_data, layout, self.t)?;
+                }
                 return Ok(Step::Reached { grid_covered });
             }
         }
@@ -5472,6 +5534,7 @@ impl Driver for EventsDriver {
                         if !no_event_emit() {
                             capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
                         }
+                        store_operators_at(e, sim_data, layout, tr)?;
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         if emit_post_event_row(model, tr) {
@@ -5490,7 +5553,9 @@ impl Driver for EventsDriver {
                             self.finished = true;
                             return Ok(Advance::Terminated);
                         }
-                        e.call1_if_present("functionStoreDelayed", sim_data)?;
+                        // C's "add event to spatialDistribution": the post-event
+                        // input jump becomes a discontinuity in the profile.
+                        store_operators(e, sim_data, layout)?;
                         eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
                         log_reinits(e, model);
@@ -5507,6 +5572,7 @@ impl Driver for EventsDriver {
                         if !no_event_emit() {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
+                        store_operators_at(e, sim_data, layout, te)?;
                         write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
                         self.samp.fire(e, sim_data, te)?;
                         refresh_relations(e, sim_data, layout)?;
@@ -5520,7 +5586,7 @@ impl Driver for EventsDriver {
                             return Ok(Advance::Terminated);
                         }
                         self.core.t = te;
-                        e.call1_if_present("functionStoreDelayed", sim_data)?;
+                        store_operators(e, sim_data, layout)?;
                         if layout.n_zc > 0 {
                             eval_zero_crossings(e, sim_data, layout, te, &mut zc0)?;
                             save_zc_pre(e, sim_data, layout)?;
@@ -5544,7 +5610,7 @@ impl Driver for EventsDriver {
                                 self.finished = true;
                                 return Ok(Advance::Terminated);
                             }
-                            e.call1_if_present("functionStoreDelayed", sim_data)?;
+                            store_operators(e, sim_data, layout)?;
                             if layout.n_zc > 0 {
                                 eval_zero_crossings(e, sim_data, layout, subtarget, &mut zc0)?;
                                 save_zc_pre(e, sim_data, layout)?;
@@ -5565,7 +5631,7 @@ impl Driver for EventsDriver {
                         self.finished = true;
                         return Ok(Advance::Terminated);
                     }
-                    e.call1_if_present("functionStoreDelayed", sim_data)?;
+                    store_operators(e, sim_data, layout)?;
                     if layout.n_zc > 0 {
                         eval_zero_crossings(e, sim_data, layout, tout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
@@ -5625,6 +5691,8 @@ impl Driver for EventsDriver {
                 did_step = true;
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
+                // The row's evaluation is this point's `updateContinuousSystem`.
+                store_operators(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     break Advance::Terminated;
                 }
@@ -5871,6 +5939,7 @@ impl Driver for CvodeDriver {
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
+                store_operators(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -5960,6 +6029,7 @@ impl Driver for CvodeDriver {
             open_assert_window();
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
+            store_operators(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated;
             }
@@ -6641,6 +6711,7 @@ impl Driver for IdaDriver {
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
+                store_operators(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -6736,6 +6807,7 @@ impl Driver for IdaDriver {
                     let emitted =
                         emit_row(e, &mut self.rows, sim_data, layout, self.t, model.stop_time);
                     close_assert_window(e, sim_data).and(emitted)?;
+                    store_operators(e, sim_data, layout)?;
                     if terminated(e, sim_data, layout)? {
                         break Advance::Terminated;
                     }
@@ -6749,6 +6821,7 @@ impl Driver for IdaDriver {
             open_assert_window();
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
+            store_operators(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated;
             }

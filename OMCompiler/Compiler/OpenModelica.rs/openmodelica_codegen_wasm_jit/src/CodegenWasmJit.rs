@@ -2416,6 +2416,8 @@ pub(crate) struct SimVarMap {
     clock_fire_off: u32,
     /// Number of `delay(...)` expression buffers (`delayedExps.maxDelayedIndex + 1`).
     n_delays: u32,
+    /// Number of `spatialDistribution(...)` operators (`spatialInfo.maxIndex + 1`).
+    n_spatial: u32,
 }
 
 /// Display name of a model variable's component reference (OMC `.`-separated
@@ -2780,6 +2782,7 @@ fn build_var_map(
         zc_pre_off: layout.zc_pre_off,
         clock_fire_off: layout.clock_fire_off,
         n_delays: 0,
+        n_spatial: 0,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
     // User-settable parameters (isValueChangeable), collected as they are laid out.
@@ -3215,7 +3218,8 @@ pub(crate) enum ZcInfo {
     /// A math-event builtin (`integer`/`floor`/`ceil`/`div`/`mod`): `g =
     /// (test(fresh arg) != test(pre[idx])) ? 1 : -1`, C's `zeroCrossingTpl`. `ops`
     /// are the operands (1 for integer/floor/ceil, 2 for div/mod).
-    Math { kind: MathEventKind, ops: Vec<Arc<DAE::Exp>>, idx: u32 },
+    /// `expr` is the original call, only for the `LOG_EVENTS` description.
+    Math { kind: MathEventKind, ops: Vec<Arc<DAE::Exp>>, idx: u32, expr: Arc<DAE::Exp> },
 }
 
 /// A math-event builtin's discretizing test (what `mathEventsValuePre` compares).
@@ -3298,7 +3302,7 @@ fn collect_zero_crossings(
                 let argv: Vec<Arc<DAE::Exp>> = lst(expLst).cloned().collect();
                 let idx = math_event_index(argv.last().unwrap())?;
                 let ops = argv[..argv.len() - 1].to_vec();
-                out.push(ZcInfo::Math { kind, ops, idx });
+                out.push(ZcInfo::Math { kind, ops, idx, expr: zc.relation_.clone() });
             }
             other => return Err("CodegenWasmJit: unsupported zero-crossing form"),
         }
@@ -3499,6 +3503,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         removed_init_residuals(sim_code).len() as u32,
         has_when,
         has_homotopy,
+        // `delay(...)` / `spatialDistribution(...)`: the driver has to store their
+        // accepted points, which costs an extra evaluation, so it asks first.
+        sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
     );
 
     let (mut var_map, mut result_vars, editable_params, real_starts, import_slots) =
@@ -3526,6 +3533,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     var_map.sample_active_off = layout.sample_active_off;
     // Delay-buffer count (0 when the model has no `delay(...)`).
     var_map.n_delays = (sim_code.delayedExps.maxDelayedIndex + 1).max(0) as u32;
+    // Transported-profile count (`maxIndex` is -1 when the model has none).
+    var_map.n_spatial = (sim_code.spatialInfo.maxIndex + 1).max(0) as u32;
 
     // State sets: register the Jacobian seed/result crefs at the scratch region
     // and collect the driver-side selection metadata (candidate/state/A offsets).
@@ -3997,7 +4006,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     }
     let meta = build_sim_meta(
         &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
-        fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&relations),
+        fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars, dae,
@@ -4168,6 +4177,27 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         });
         idx
     };
+    // `functionStoreSpatialDistribution` / `functionInitSpatialDistribution` (C's
+    // `function_storeSpatialDistribution` + `function_initSpatialDistribution`);
+    // empty stubs when the model has no `spatialDistribution(...)`.
+    let store_spatial_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if var_map.n_spatial == 0 {
+            empty_eqfn()
+        } else {
+            build_store_spatial_fn(sim_code, &var_map, &by_name, &mut literals)?
+        });
+        idx
+    };
+    let init_spatial_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.push(if var_map.n_spatial == 0 {
+            empty_eqfn()
+        } else {
+            build_init_spatial_fn(sim_code, &var_map, &by_name, &mut literals)?
+        });
+        idx
+    };
     // C's `updateBoundParameters`: `parameterEquations` *without* the constant
     // bindings, so re-evaluating the dependent parameters does not undo a
     // perturbation IDAS made to a sensitivity parameter.
@@ -4293,6 +4323,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
+    functions.function(eqfn_type); // functionStoreSpatialDistribution: (i32) -> ()
+    functions.function(eqfn_type); // functionInitSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
     for _ in 0..4 {
@@ -4401,6 +4433,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
+    exports.export("functionStoreSpatialDistribution", we::ExportKind::Func, store_spatial_idx);
+    exports.export("functionInitSpatialDistribution", we::ExportKind::Func, init_spatial_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
     exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
     for (k, name) in ["linearJacA", "linearJacB", "linearJacC", "linearJacD"].iter().enumerate() {
@@ -4454,6 +4488,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ("functionUpdateRelations", update_relations_idx),
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
+        ("functionStoreSpatialDistribution", store_spatial_idx),
+        ("functionInitSpatialDistribution", init_spatial_idx),
         ("functionUpdateBoundParameters", update_bound_params_idx),
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
         ("linearJacA", linz_jac_idx),
@@ -4978,8 +5014,14 @@ fn const_str(e: &Option<Arc<DAE::Exp>>) -> Option<String> {
     }
 }
 
-fn rel_descriptions(relations: &[Option<Arc<DAE::Exp>>]) -> Vec<String> {
-    relations.iter().map(|r| r.as_ref().map(|e| dump_exp(e)).unwrap_or_default()).collect()
+/// One description per relation, from the backend's list rather than from the
+/// subset [`collect_relations`] can evaluate: `delayZeroCrossing` /
+/// `spatialDistributionZeroCrossing` are stored as the bare call, which no target
+/// assigns to `relations[]`, but C's `relationDescription` still names them.
+fn rel_descriptions(
+    rels: &Arc<List<openmodelica_backend_types::BackendDAE::ZeroCrossing>>,
+) -> Vec<String> {
+    lst(rels).map(|zc| dump_exp(&zc.relation_)).collect()
 }
 
 fn dump_exp(e: &Arc<DAE::Exp>) -> String {
@@ -4993,7 +5035,7 @@ fn zc_descriptions(crossings: &[ZcInfo]) -> Vec<String> {
         .iter()
         .map(|zc| match zc {
             ZcInfo::Bool { expr } => dump_exp(expr),
-            ZcInfo::Math { .. } => String::new(),
+            ZcInfo::Math { expr, .. } => dump_exp(expr),
         })
         .collect()
 }
@@ -5762,6 +5804,51 @@ fn build_init_delay_fn(n_delays: u32) -> we::Function {
     f.instruction(&I::Call(rt_index("rt_delay_init").expect("rt_delay_init is a runtime builtin")));
     f.instruction(&I::End);
     f
+}
+
+/// The model's `spatialDistribution(...)` operators, lowest index first (the
+/// backend collects them in reverse).
+fn spatial_ops(sim_code: &SimCode::SimCode) -> Vec<SimCode::SpatialDistribution> {
+    let mut ops: Vec<SimCode::SpatialDistribution> =
+        lst(&sim_code.spatialInfo.spatialDistributions).cloned().collect();
+    ops.sort_by_key(|sd| sd.index);
+    ops
+}
+
+/// Build `functionStoreSpatialDistribution(SimData*)`; see [`FnCtx::emit_store_spatial`].
+fn build_store_spatial_fn(
+    sim_code: &SimCode::SimCode,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let sim = sim_ctx(var_map);
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_store_spatial(&spatial_ops(sim_code))?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionInitSpatialDistribution(SimData*)`; see [`FnCtx::emit_init_spatial`].
+fn build_init_spatial_fn(
+    sim_code: &SimCode::SimCode,
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let sim = sim_ctx(var_map);
+    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
+    ctx.emit_init_spatial(var_map.n_spatial, &spatial_ops(sim_code))?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
 }
 
 /// Lower a single `SimEqSystem` into the current equation function.

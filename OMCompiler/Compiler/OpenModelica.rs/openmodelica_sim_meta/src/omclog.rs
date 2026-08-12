@@ -107,6 +107,7 @@ pub const SIMULATION: Stream = 46;
 pub const SOLVER: Stream = 47;
 pub const SOLVER_V: Stream = 48;
 pub const SOTI: Stream = 50;
+pub const SPATIALDISTR: Stream = 51;
 pub const STATS: Stream = 52;
 pub const STATS_V: Stream = 53;
 pub const SUCCESS: Stream = 54;

@@ -58,6 +58,7 @@ use openmodelica_frontend_dump::AbsynUtil;
 use openmodelica_frontend_dump::ExpressionDumpTpl;
 use openmodelica_tpl::Tpl;
 use openmodelica_frontend_types::{ClassInf, DAE, Values};
+use openmodelica_simcode_types::SimCode;
 use openmodelica_simcode_types::SimCodeFunction;
 
 use wasm_encoder as we;
@@ -458,6 +459,16 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
     ("rt_delay_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
     ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    // `spatialDistribution(...)` transported profiles (runtime `spatial.rs`).
+    // `rt_spatial_eval` returns `out0`; `rt_spatial_out1` hands back the `out1` of
+    // that same call, which is C's `double* out1` out-parameter without a
+    // scratch address.
+    ("rt_spatial_init", &[WTy::I32], &[]),
+    ("rt_spatial_init_profile", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_spatial_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32], &[]),
+    ("rt_spatial_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32, WTy::I32], &[WTy::F64]),
+    ("rt_spatial_out1", &[WTy::I32], &[WTy::F64]),
+    ("rt_spatial_zc", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
@@ -1969,7 +1980,7 @@ impl<'a> FnCtx<'a> {
                     coerce(self, w, WTy::I32);
                     self.emit(we::Instruction::Select);
                 }
-                ZcInfo::Math { kind, ops, idx } => {
+                ZcInfo::Math { kind, ops, idx, .. } => {
                     // gout = (test(fresh arg) != test(held pre)) ? 1 : -1.
                     self.emit(we::Instruction::F64Const(1.0f64.into()));
                     self.emit(we::Instruction::F64Const((-1.0f64).into()));
@@ -2026,6 +2037,75 @@ impl<'a> FnCtx<'a> {
                 coerce(self, w, WTy::F64);
             }
             self.emit(we::Instruction::Call(rt_index("rt_delay_store")?));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionStoreSpatialDistribution`: `rt_spatial_store(idx, time, in0,
+    /// in1, x, positiveVelocity)` per `spatialDistribution(...)` operator (C's
+    /// `function_storeSpatialDistribution`).
+    ///
+    /// An operator inside an `if`-branch is guarded by the same condition as the
+    /// branch: storing while it is inactive would advance a profile the model is not
+    /// reading (#16099).
+    pub(crate) fn emit_store_spatial(
+        &mut self,
+        spatial: &[SimCode::SpatialDistribution],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for sd in spatial {
+            if let Some(cond) = &sd.condition {
+                compile_bool_operand(self, cond)?;
+                self.emit(we::Instruction::If(we::BlockType::Empty));
+            }
+            self.emit(we::Instruction::I32Const(sd.index));
+            self.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            self.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for exp in [&sd.in0, &sd.in1, &sd.pos] {
+                let w = compile_exp(self, exp)?;
+                coerce(self, w, WTy::F64);
+            }
+            let w = compile_exp(self, &sd.dir)?;
+            coerce(self, w, WTy::I32);
+            self.emit(we::Instruction::Call(rt_index("rt_spatial_store")?));
+            if sd.condition.is_some() {
+                self.emit(we::Instruction::End);
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionInitSpatialDistribution`: allocate the operators for this run
+    /// and fill each from its `initialPoints`/`initialValues` parameter arrays (C's
+    /// `allocSpatialDistribution` + `function_initSpatialDistribution`).
+    pub(crate) fn emit_init_spatial(
+        &mut self,
+        n_spatial: u32,
+        spatial: &[SimCode::SpatialDistribution],
+    ) -> Result<()> {
+        self.emit(we::Instruction::I32Const(n_spatial as i32));
+        self.emit(we::Instruction::Call(rt_index("rt_spatial_init")?));
+        for sd in spatial {
+            // The two array handles are owned here and only borrowed by the runtime,
+            // so they go through temps and are released after the call.
+            let mut temps = Vec::new();
+            for exp in [&sd.initPnts, &sd.initVals] {
+                let w = compile_exp(self, exp)?;
+                if w != WTy::I32 {
+                    return Err("CodegenWasmJit: spatialDistribution initialPoints/initialValues is not an array");
+                }
+                let t = self.alloc_temp(WTy::I32);
+                self.emit(we::Instruction::LocalSet(t));
+                temps.push(t);
+            }
+            self.emit(we::Instruction::I32Const(sd.index));
+            for t in &temps {
+                self.emit(we::Instruction::LocalGet(*t));
+            }
+            self.emit(we::Instruction::Call(rt_index("rt_spatial_init_profile")?));
+            for t in &temps {
+                release_temp_array(self, *t)?;
+            }
         }
         Ok(())
     }
@@ -6123,6 +6203,12 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             match results.len() {
                 1 => Ok(results[0].wty()),
                 0 => return Err("CodegenWasmJit: call to used in expression position returns no value"),
+                // Only `spatialDistribution` gets here: used as a scalar it is its
+                // first output, as any multi-output function call is.
+                2 if matches!(&**path, Absyn::Path::IDENT { name } if &**name == "spatialDistribution") => {
+                    ctx.emit(we::Instruction::Drop);
+                    Ok(results[0].wty())
+                }
                 _ => return Err("CodegenWasmJit: call to returns multiple values; not usable in expression position"),
             }
         }
@@ -6935,7 +7021,46 @@ fn compile_call(
         release_temp(ctx, t)?;
         return Ok(Vec::new());
     }
+    // The only two-output builtin: the transported profile lives in the runtime, so
+    // the tuple is one call for `out0` plus a read-back of that call's `out1`.
+    if name == "spatialDistribution" {
+        return compile_spatial_distribution(ctx, args).map(|_| vec![SigTy::Real, SigTy::Real]);
+    }
     compile_math_builtin(ctx, &name, args, attr).map(|s| vec![s])
+}
+
+/// `(out0, out1) = spatialDistribution(index, in0, in1, x, positiveVelocity,
+/// initialPoints, initialValues)` — the backend's form, with the operator index
+/// prepended — leaving both outputs on the stack, first result deepest.
+/// `initialPoints`/`initialValues` are only used during initialization
+/// (`functionInitSpatialDistribution`), as in C.
+fn compile_spatial_distribution(ctx: &mut FnCtx, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
+    use we::Instruction as I;
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    if argv.len() != 7 {
+        return Err("CodegenWasmJit: `spatialDistribution` expects the backend's 7-argument form");
+    }
+    let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+        return Err("CodegenWasmJit: `spatialDistribution` index must be an integer literal");
+    };
+    let (data, rel_fresh_off) = { let s = ctx.sim()?; (s.data_local, s.rel_fresh_off) };
+    ctx.emit(I::I32Const(*index));
+    ctx.emit(I::LocalGet(data)); // time (TIME_OFF = 0)
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
+    for a in &argv[1..4] {
+        let w = compile_exp(ctx, a)?; // in0, in1, x
+        coerce(ctx, w, WTy::F64);
+    }
+    let w = compile_exp(ctx, argv[4])?; // positiveVelocity
+    coerce(ctx, w, WTy::I32);
+    // C's `simulationInfo->discreteCall`: the relation mode is nonzero for an event
+    // update and for the initial system, zero during continuous integration.
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Load(mem_arg(rel_fresh_off, 2)));
+    ctx.emit(I::Call(rt_index("rt_spatial_eval")?));
+    ctx.emit(I::I32Const(*index));
+    ctx.emit(I::Call(rt_index("rt_spatial_out1")?));
+    Ok(())
 }
 
 /// Like [`compile_call`] but for statement position; returns the result types
@@ -7546,6 +7671,31 @@ fn compile_math_builtin(
             ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
             ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
             ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
+            Ok(SigTy::Real)
+        }
+        // spatialDistributionZeroCrossing(index, rindex, x, positiveVelocity): flips
+        // sign each time a stored discontinuity passes the operator's output edge,
+        // holding `zeroCrossingsPre[rindex]` while there is none.
+        "spatialDistributionZeroCrossing" => {
+            need_args(&argv, 4, name)?;
+            if !ctx.sim()?.zc_context {
+                return Err("CodegenWasmJit: spatialDistributionZeroCrossing outside a zero-crossing context");
+            }
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` index must be an integer literal");
+            };
+            let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
+                return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` relation index must be an integer literal");
+            };
+            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            ctx.emit(we::Instruction::I32Const(*index));
+            let w = compile_exp(ctx, argv[2])?; // x
+            coerce(ctx, w, WTy::F64);
+            let w = compile_exp(ctx, argv[3])?; // positiveVelocity
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
+            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::Call(rt_index("rt_spatial_zc")?));
             Ok(SigTy::Real)
         }
         // `terminal()` — C's `simulationInfo->terminal`, true only during the
