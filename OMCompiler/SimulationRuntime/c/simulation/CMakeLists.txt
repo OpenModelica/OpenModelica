@@ -5,6 +5,7 @@ find_package(LAPACK REQUIRED)
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
   "eval_dep.c"
+  "jacobian_colpack.cpp"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -80,6 +81,7 @@ set(OMC_SIMRT_SIMULATION_CINC
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
   "eval_dep.h"
+  "jacobian_colpack.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"
@@ -188,6 +190,11 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
 
 if(OM_OMC_ENABLE_PRIMME)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
+endif()
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_COLPACK)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::colpack)
 endif()
 
 if(OM_OMC_ENABLE_OPTIMIZATION)
