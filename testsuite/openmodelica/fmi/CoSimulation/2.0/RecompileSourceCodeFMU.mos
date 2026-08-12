@@ -1,5 +1,6 @@
 // name:     RecompileSourceCodeFMU
 // keywords: fmu export simulation flags
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf Test_SinSource* Test.SinSource* reCompile.log Test.SinSource.fmu
 //

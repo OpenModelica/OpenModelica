@@ -60,6 +60,8 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   exit 0;
 }
 
+setup_command_toolchain();
+
 system "$OPENMODELICAHOME/bin/omc-diff -v1.4";
 if ($?) {
   print "$OPENMODELICAHOME/bin/omc-diff seems to be missing or of an incompatible version.";
@@ -106,6 +108,68 @@ $eps_mo = 1.0e-7;
 $eps_mos = 5e-3;
 $set_modelica_lib = 1;
 $nodelete = 0;
+
+# The simulation code generator under test.
+sub sim_code_target
+{
+  return $ENV{'OPENMODELICA_TEST_SIMCODETARGET'} if $ENV{'OPENMODELICA_TEST_SIMCODETARGET'};
+  return $1 if $omcflags =~ /--simCodeTarget=(\S+)/;
+  return "";
+}
+
+# The wasm32 compiler-rt builtins. The shipped sysroot carries a copy; otherwise
+# probe clang, whose 21 driver looks under a per-triple directory while the Debian
+# libclang-rt-*-dev-wasm32 packages still use the old lib/wasi layout.
+sub wasm_builtins
+{
+  my $sysroot = shift;
+  return $ENV{'OMC_WASM_BUILTINS'} if $ENV{'OMC_WASM_BUILTINS'};
+  my $shipped = "$sysroot/lib/wasm32-wasip1/libclang_rt.builtins-wasm32.a";
+  return $shipped if -e $shipped;
+  my $res = `clang -print-resource-dir 2>/dev/null`;
+  chomp $res;
+  return "" if !$res;
+  for my $p ("$res/lib/wasm32-unknown-wasip1/libclang_rt.builtins.a",
+             "$res/lib/wasi/libclang_rt.builtins-wasm32.a") {
+    return $p if -e $p;
+  }
+  return "";
+}
+
+# The toolchain a `setup_command` builds an external "C" library with, so a test
+# spells it $OMC_CC/$OMC_CFLAGS/... instead of hardcoding gcc. Anything already set
+# in the environment wins.
+#
+# wasm-jit needs a PIC dylink module rather than a host object file: omc has no
+# linker, so the Library annotation must name the finished, loadable artifact.
+sub setup_command_toolchain
+{
+  my $wasm = sim_code_target() =~ /^wasm/;
+  my $sysroot = $ENV{'OMC_WASI_SYSROOT'} || "$OPENMODELICAHOME/lib/wasm32-wasi/omc";
+  my %tc = $wasm ? (
+    OMC_CC           => "clang --target=wasm32-wasip1 --sysroot=$sysroot",
+    OMC_CFLAGS       => "-fPIC",
+    # --allow-undefined: ModelicaUtilities and libc are bound when omc loads it.
+    OMC_EXTLIB_FLAGS => "-shared -nodefaultlibs -Wl,--export-all -Wl,--allow-undefined",
+    OMC_EXTLIB_LIBS  => wasm_builtins($sysroot),
+    OMC_EXTLIB_EXT   => ".wasm",
+    # A dylink module is already linked.
+    OMC_AR           => "true",
+  ) : (
+    OMC_CC           => "gcc",
+    OMC_CFLAGS       => "-fPIC",
+    OMC_EXTLIB_FLAGS => "-c",
+    OMC_EXTLIB_LIBS  => "",
+    OMC_EXTLIB_EXT   => ".o",
+    OMC_AR           => "ar",
+  );
+  for my $k (keys %tc) {
+    $ENV{$k} = $tc{$k} unless defined $ENV{$k};
+  }
+  if ($wasm && !$ENV{'OMC_EXTLIB_LIBS'}) {
+    print "Warning: no libclang_rt.builtins-wasm32.a found; external \"C\" setup_commands may fail to link.\n";
+  }
+}
 
 sub isMinGW_UCRT {
   my $temp = $ENV{'MSYSTEM'};
@@ -308,6 +372,8 @@ sub runone
         # Ignore; sometimes comes from libhwloc when running docker
       } elsif ($str =~ /^GC Warning:/) {
         # Ignore; comes from libgc
+      } elsif ($str =~ /^wasm-ld[\d.-]*: warning: creating shared libraries, with -shared, is not yet stable/) {
+        # Ignore; comes from a setup_command building a wasm external "C" library
       } else {
         print RES $str;
       }

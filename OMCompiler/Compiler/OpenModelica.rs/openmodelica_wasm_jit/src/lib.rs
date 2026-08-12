@@ -15,12 +15,21 @@ pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fm
 pub static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));
 pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
 
+/// The same two worlds with CVODE/IDA in the embedded driver, for an FMU exported with
+/// `method="cvode"`/`"ida"`; the calls are imports
+/// `openmodelica_wasi_libc::SUNDIALS_DYLINK` resolves.
+pub static FMI3_CS_SUNDIALS_ADAPTER: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_sundials_adapter.wasm"));
+pub static FMI3_MECS_SUNDIALS_ADAPTER: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_sundials_adapter.wasm"));
+
 /// Whether the wasip1 runtimes above have the real SUNDIALS/KLU linked in (the
 /// build script cross-compiled the archives), so a `-lss=klu` run can be served.
 pub const SUNDIALS: bool = cfg!(sundials);
 
 pub mod sig;
 pub mod model;
+pub mod dylink;
 
 // A wasm trap collapses to the crate's `&'static str` error on the way out of the
 // engine, losing the trap kind and the backtrace. The engine parks its message
@@ -46,6 +55,15 @@ mod engine_config;
 #[cfg(all(feature = "jit", not(target_arch = "wasm32")))]
 pub use engine_config::tune_memory;
 
+/// Split the runtime's `-l` blob (`<file name>\0<content>`) into a [`LinFile`].
+pub fn split_lin_blob(bytes: &[u8]) -> Option<openmodelica_sim_meta::linearize::LinFile> {
+    let i = bytes.iter().position(|&b| b == 0)?;
+    Some(openmodelica_sim_meta::linearize::LinFile {
+        name: String::from_utf8_lossy(&bytes[..i]).into_owned(),
+        content: String::from_utf8_lossy(&bytes[i + 1..]).into_owned(),
+    })
+}
+
 // A thin facade over openmodelica_sim_meta::driver; present even in the no-jit
 // stub build, which reads its result types.
 pub mod sim_driver;
@@ -61,3 +79,6 @@ pub mod sim_runtime;
 #[cfg(feature = "jit")]
 #[path = "wasi_shim.rs"]
 pub mod wasi_shim;
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+#[path = "dylink_wasmtime.rs"]
+pub mod dylink_engine;

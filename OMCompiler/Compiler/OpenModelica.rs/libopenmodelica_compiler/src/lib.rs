@@ -87,6 +87,12 @@ pub use openmodelica_util::System::{omc_set_loadmodel_callback, omc_set_plot_cal
 // keep the `#[no_mangle]` symbols in `libOpenModelicaCompiler.so`.
 pub use openmodelica_backend_main::ModelInstanceReference::*;
 
+/// Report this build's revision as the compiler version (`getVersion()`,
+/// `omc --version`); called by every entry point that starts a session.
+fn set_revision() {
+    capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
+}
+
 /// Run the standalone `omc` command-line interface and return its process exit
 /// code (`0` on success, `1` on a failed MetaModelica execution or a panic).
 ///
@@ -105,6 +111,7 @@ pub use openmodelica_backend_main::ModelInstanceReference::*;
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
     use std::io::Write;
+    set_revision();
     let args: Vec<ArcStr> = if argv.is_null() || argc <= 0 {
         Vec::new()
     } else {
@@ -145,6 +152,7 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
 /// passed; use [`omc_compiler_init_args`] to forward flags (e.g. `+locale=…`).
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_compiler_init() -> c_int {
+    set_revision();
     match catch_unwind(|| capi::init(&[])) {
         Ok(Ok(())) => 0,
         Ok(Err(_)) | Err(_) => -1,
@@ -158,6 +166,7 @@ pub extern "C" fn omc_compiler_init() -> c_int {
 /// like [`omc_compiler_init`].
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_compiler_init_args(argv: *const *const c_char, argc: c_int) -> c_int {
+    set_revision();
     let args: Vec<ArcStr> = if argv.is_null() || argc <= 0 {
         Vec::new()
     } else {

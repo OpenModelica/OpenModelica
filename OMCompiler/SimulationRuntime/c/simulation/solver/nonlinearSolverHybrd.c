@@ -316,11 +316,17 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     }
 
     /* call residual function */
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
     if(hybrdData->useXScaling){
       (systemData->residualFunc)(&resUserData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
       (systemData->residualFunc)(&resUserData, x, f, (const int*)iflag);
     }
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    omc_util_restore_pool_state(mem_pool_state);
+#endif
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {

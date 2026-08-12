@@ -128,6 +128,7 @@ pub extern "C" fn omrs_sim_external_end() {
 /// message's first line and for its wrapped lines.
 pub const LOG_STDOUT_INFO: &str = "LOG_STDOUT        | info    | ";
 pub const LOG_STDOUT_WARNING: &str = "LOG_STDOUT        | warning | ";
+pub const LOG_STDOUT_ERROR: &str = "LOG_STDOUT        | error   | ";
 const LOG_CONT: &str = "|                 | |       | ";
 
 /// Prefix each line of a `\n`-separated message, the first with `prefix`.

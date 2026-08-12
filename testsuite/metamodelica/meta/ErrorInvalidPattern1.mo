@@ -1,6 +1,7 @@
 // name: ErrorInvalidPattern1
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 package ErrorInvalidPattern1
 
@@ -19,7 +20,7 @@ end ErrorInvalidPattern1;
 
 // Result:
 // Error processing file: ErrorInvalidPattern1.mo
-// [metamodelica/meta/ErrorInvalidPattern1.mo:12:10-12:19:writable] Error: Invalid pattern: str + "" of type String
+// [metamodelica/meta/ErrorInvalidPattern1.mo:13:10-13:19:writable] Error: Invalid pattern: str + "" of type String
 // Error: Error occurred while flattening model ErrorInvalidPattern1
 //
 // # Error encountered! Exiting...

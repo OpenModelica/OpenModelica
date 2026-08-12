@@ -32,7 +32,7 @@ use openmodelica_sim_meta::driver::{
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, FmiVr, Layout, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
@@ -54,48 +54,180 @@ unsafe extern "C" {
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn initSample(sim_data: u32);
+    fn functionInitSynchronous(sim_data: u32);
+    fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
+    fn functionEquationsSynchronous(sim_data: u32, idx: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
 }
 
-/// The runtime leaves `rt_assert` to the host on this target. A failed assertion
-/// traps, aborting the FMI call; the master surfaces it as a fatal status.
+// ── Messages ─────────────────────────────────────────────────────────────────
+// A component has no stdout, so the `log-message` callback (`fmi3LogMessage`) is
+// the FMU's only channel: `print`, assertions and the `-lv` solver lines all leave
+// through it, with the statuses and categories C's FMU gives them
+// (`fmu3_model_interface.c`).
+
+/// C's `logCategoriesNames`, which is also what `CodegenFMU3` declares in
+/// `modelDescription.xml`. `logFmi3Call` is unused: the adapter logs no call trace.
+const CATEGORIES: [&str; 11] = [
+    "logEvents",
+    "logSingularLinearSystems",
+    "logNonlinearSystems",
+    "logDynamicStateSelection",
+    "logStatusWarning",
+    "logStatusDiscard",
+    "logStatusError",
+    "logStatusFatal",
+    "logStatusPending",
+    "logAll",
+    "logFmi3Call",
+];
+const CAT_EVENTS: u32 = 0;
+const CAT_SINGULAR_LS: u32 = 1;
+const CAT_NLS: u32 = 2;
+const CAT_DSS: u32 = 3;
+const CAT_WARNING: u32 = 4;
+const CAT_ERROR: u32 = 6;
+const CAT_ALL: u32 = 9;
+
+struct Logger {
+    /// `instanceName`, which the callback reports alongside the message.
+    name: String,
+    /// `loggingOn`.
+    on: bool,
+    /// Bit per [`CATEGORIES`] index.
+    cats: u32,
+}
+
+static mut LOGGER: Logger = Logger { name: String::new(), on: false, cats: 0 };
+
+/// The sink is a bare `fn(&str)`, so its context is a static (wasm, single-threaded).
+fn logger() -> &'static mut Logger {
+    unsafe { &mut *core::ptr::addr_of_mut!(LOGGER) }
+}
+
+fn log_raw(status: Status, cat: u32, msg: &str) {
+    let l = logger();
+    fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+}
+
+/// [`Engine::call1`] was asked for a model function this adapter does not import.
+const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
+
+/// A runtime/driver failure. The FMI status alone tells the importer nothing, and
+/// C's FMUs report the reason through the logger, so say it before failing.
+fn err_status(msg: &str) -> Status {
+    fmi_log(Status::Error, CAT_ERROR, msg);
+    Status::Error
+}
+
+/// C's `FILTERED_LOG` / `isCategoryLogged`.
+fn fmi_log(status: Status, cat: u32, msg: &str) {
+    let cats = logger().cats;
+    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+        log_raw(status, cat, msg);
+    }
+}
+
+/// The runtime's and driver's log lines. They exist only because [`stream_mask`]
+/// switched their stream on, so the category is `logAll` rather than a per-line one.
+fn log_sink(s: &str) {
+    if logger().on {
+        log_raw(Status::Ok, CAT_ALL, s);
+    }
+}
+
+/// The `-lv` streams the model-diagnostics categories stand for.
+fn stream_mask(cats: u32) -> omclog::Mask {
+    let mut streams: Vec<&str> = Vec::new();
+    for (cat, stream) in [
+        (CAT_EVENTS, "LOG_EVENTS"),
+        (CAT_SINGULAR_LS, "LOG_LS"),
+        (CAT_NLS, "LOG_NLS"),
+        (CAT_DSS, "LOG_DSS"),
+    ] {
+        if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+            streams.push(stream);
+        }
+    }
+    omclog::mask_from_streams(&streams).unwrap_or(omclog::ALWAYS_ON)
+}
+
+/// C's `omcInstantiate`: every category follows `loggingOn` until
+/// `set-debug-logging` picks specific ones.
+fn init_logging(name: String, logging_on: bool) {
+    let l = logger();
+    l.name = name;
+    l.on = logging_on;
+    l.cats = if logging_on { !0 } else { 0 };
+    driver::set_log_sink(log_sink);
+    omclog::set_mask(stream_mask(l.cats));
+}
+
+/// The runtime `String` behind a handle, empty for the null handle.
+fn rt_string(handle: i32) -> String {
+    use openmodelica_codegen_wasm_jit_runtime as rt;
+    let h = handle as u32;
+    if h == 0 {
+        return String::new();
+    }
+    let len = rt::rt_str_len(h) as usize;
+    let bytes = unsafe { core::slice::from_raw_parts(rt::rt_str_data(h) as *const u8, len) };
+    String::from_utf8_lossy(bytes).into_owned()
+}
+
+/// C's `omc_assert_fmi_common`: the source position, then the message.
+fn assert_message(msg: i32, file: i32, sline: i32) -> String {
+    let msg = rt_string(msg);
+    let file = rt_string(file);
+    if file.is_empty() || sline == 0 {
+        return msg;
+    }
+    alloc::format!("{file}:{sline}: {msg}")
+}
+
+/// The runtime leaves `rt_assert` to the host on this target. C's FMU logs and then
+/// throws; the throw is a trap here, aborting the FMI call, which the master
+/// surfaces as a fatal status.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
-    _msg: i32,
-    _file: i32,
-    _sline: i32,
+    msg: i32,
+    file: i32,
+    sline: i32,
     _scol: i32,
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
     _cond: i32,
 ) -> i32 {
+    fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
     core::arch::wasm32::unreachable()
 }
 
-/// Warning-level assertion: non-fatal, so continue. No host logger here, so the
-/// message is dropped.
+/// Warning-level assertion: non-fatal, so continue (C's `omc_assert_fmi_warning`).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert_warning(
     _cond: i32,
-    _msg: i32,
-    _file: i32,
-    _sline: i32,
+    msg: i32,
+    file: i32,
+    sline: i32,
     _scol: i32,
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
 ) {
+    fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
 
-/// The `print` builtin. No host stdout here, so the output is discarded.
+/// The `print` builtin.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_print(_str: i32) {}
+pub extern "C" fn rt_print(str: i32) {
+    log_sink(&rt_string(str));
+}
 
-/// Per-row assert formatting: no logger, and the FMI master steps the model
-/// instead of the emitted `simulate` loop that calls this.
+/// Per-row assert formatting: the FMI master steps the model instead of the emitted
+/// `simulate` loop that calls this.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_row_asserts(_sim_data: i32, _warn: i32) -> i32 {
     0
@@ -133,20 +265,40 @@ impl SimEngine for Engine {
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "initSample" => initSample(arg),
+                "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
-                _ => return Err("fmi3-me: unknown model function"),
+                _ => return Err(UNKNOWN_MODEL_FN),
             }
         }
         Ok(())
     }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        unsafe {
+            match name {
+                driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
+                driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
+                // Importing `evaluateDAEResiduals` would leave every non-DAE model
+                // with an unresolved `model.*` import.
+                _ => return Err("fmi3-me: --daeMode models cannot be exported as an FMU"),
+            }
+        }
+        Ok(())
+    }
+    /// A name this adapter does not import is a function the model does not have.
     fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        self.call1(name, arg)
+        match self.call1(name, arg) {
+            Err(UNKNOWN_MODEL_FN) => Ok(()),
+            r => r,
+        }
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         None
+    }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        openmodelica_codegen_wasm_jit_runtime::take_reinit_notes()
     }
     fn clean_nls_history(&mut self, time: f64) {
         openmodelica_codegen_wasm_jit_runtime::rt_nls_clean_history(time);
@@ -181,9 +333,8 @@ impl Vrs {
 struct MeState {
     sim_data: u32,
     layout: Layout,
-    /// The whole metadata blob: CS needs the solver settings, the state sets and
-    /// the Jacobian sparsity to build its driver, not just the layout.
-    #[cfg(feature = "cs")]
+    /// The whole metadata blob: the start state comes from it at instantiate, and
+    /// CS builds its driver from the solver settings, state sets and sparsity.
     meta: openmodelica_sim_meta::SimMeta,
     /// Built on exit-initialization-mode, once the model is initialized.
     #[cfg(feature = "cs")]
@@ -220,17 +371,9 @@ impl MeState {
         let mut e = Engine;
         let _ = e.write_bytes(self.sim_data + off, &v.to_le_bytes());
     }
-    /// Read the runtime `String` referenced by the i32 handle in slot `off`. Empty
-    /// for the null handle (an unset String).
+    /// Read the runtime `String` referenced by the i32 handle in slot `off`.
     fn read_string(&self, off: u32) -> String {
-        use openmodelica_codegen_wasm_jit_runtime as rt;
-        let h = self.read_i32(off) as u32;
-        if h == 0 {
-            return String::new();
-        }
-        let len = rt::rt_str_len(h) as usize;
-        let bytes = unsafe { core::slice::from_raw_parts(rt::rt_str_data(h) as *const u8, len) };
-        String::from_utf8_lossy(bytes).into_owned()
+        rt_string(self.read_i32(off))
     }
     /// Store `s` as a fresh runtime `String` handle in slot `off`, releasing the
     /// handle it replaces (a no-op on the null handle).
@@ -245,6 +388,14 @@ impl MeState {
         self.write_i32(off, h as i32);
         rt::rt_release(old);
     }
+    /// C's `fmi2Instantiate`/`fmi2Reset`: the `start` attributes, readable before
+    /// the importer leaves Initialization Mode. A failure here is left to the
+    /// initial solve, which is where it is reported.
+    fn seed_start_state(&self) {
+        let mut e = Engine;
+        let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
+    }
+
     /// Refresh algebraics/derivatives so getters report consistent values.
     fn eval(&self) {
         let mut e = Engine;
@@ -318,11 +469,10 @@ fn new_state() -> Option<MeState> {
     unsafe {
         core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
     }
-    Some(MeState {
+    let st = MeState {
         sim_data,
         layout,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
-        #[cfg(feature = "cs")]
         meta,
         #[cfg(feature = "cs")]
         cs: None,
@@ -333,7 +483,9 @@ fn new_state() -> Option<MeState> {
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
         samples: None,
-    })
+    };
+    st.seed_start_state();
+    Some(st)
 }
 
 /// The metadata blob the emitter embedded in the model module.
@@ -351,7 +503,31 @@ fn read_meta() -> openmodelica_sim_meta::SimMeta {
 macro_rules! shared_instance_methods {
     () => {
 
-    fn set_debug_logging(&self, _logging_on: bool, _categories: Vec<String>) -> Status {
+    /// C's `omcSetDebugLogging`: every category off, then the named ones follow
+    /// `logging_on`. An unknown name is reported unfiltered, as in C.
+    fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
+        let mut cats = 0u32;
+        let mut unknown: Vec<String> = Vec::new();
+        for c in categories {
+            match CATEGORIES.iter().position(|n| *n == c) {
+                Some(i) if logging_on => cats |= 1 << i,
+                Some(_) => {}
+                None => unknown.push(c),
+            }
+        }
+        {
+            let l = logger();
+            l.on = logging_on;
+            l.cats = cats;
+        }
+        omclog::set_mask(stream_mask(cats));
+        for c in unknown {
+            log_raw(
+                Status::Warning,
+                CAT_ERROR,
+                &alloc::format!("logging category '{c}' is not supported by model"),
+            );
+        }
         Status::Ok
     }
 
@@ -382,8 +558,9 @@ macro_rules! shared_instance_methods {
         set_param_overrides(params, starts);
         let mut e = Engine;
         let start_time = st.read_f64(TIME_OFF);
-        if run_initialization(&mut e, st.sim_data, &st.layout, start_time).is_err() {
-            return Status::Error;
+        // No `-csvInput` on the FMI path: the importer drives the inputs.
+        if let Err(err) = run_initialization(&mut e, st.sim_data, &st.layout, &[], start_time) {
+            return err_status(err);
         }
         // Apply deferred String parameter sets now that init equations have run, so
         // they land in the slots last (mirrors the numeric init_overrides above).
@@ -437,18 +614,18 @@ macro_rules! shared_instance_methods {
             st.cs = Some(d);
             match r {
                 Ok(up) => up,
-                Err(_) => return Err(Status::Error),
+                Err(err) => return Err(err_status(err)),
             }
         } else {
             match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
                 Ok(up) => up,
-                Err(_) => return Err(Status::Error),
+                Err(err) => return Err(err_status(err)),
             }
         };
         #[cfg(not(feature = "cs"))]
         let up = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
             Ok(up) => up,
-            Err(_) => return Err(Status::Error),
+            Err(err) => return Err(err_status(err)),
         };
 
         Ok(DiscreteStatesInfo {
@@ -468,11 +645,24 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// Back to the instantiated state: what initialization and the steps after it
+    /// built goes with the `SimData` it was built over, or the next run continues
+    /// from the last one.
     fn reset(&self) -> Status {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
         unsafe {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
+        st.in_init = false;
+        st.init_overrides.clear();
+        st.init_start_overrides.clear();
+        st.init_string_overrides.clear();
+        st.samples = None;
+        #[cfg(feature = "cs")]
+        {
+            st.cs = None;
+        }
+        st.seed_start_state();
         Status::Ok
     }
 
@@ -818,12 +1008,13 @@ macro_rules! shared_instance_methods {
 impl GuestModelExchangeInstance for Instance {
     shared_instance_methods!();
     fn instantiate_model_exchange(
-        _instance_name: String,
+        instance_name: String,
         _instantiation_token: String,
         _resource_path: String,
         _visible: bool,
-        _logging_on: bool,
+        logging_on: bool,
     ) -> Option<ModelExchangeInstance> {
+        init_logging(instance_name, logging_on);
         let st = new_state()?;
         Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
     }
@@ -920,15 +1111,16 @@ impl GuestCoSimulationInstance for Instance {
     shared_instance_methods!();
 
     fn instantiate_co_simulation(
-        _instance_name: String,
+        instance_name: String,
         _instantiation_token: String,
         _resource_path: String,
         _visible: bool,
-        _logging_on: bool,
+        logging_on: bool,
         event_mode_used: bool,
         _early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
+        init_logging(instance_name, logging_on);
         let mut st = new_state()?;
         st.event_mode = event_mode_used;
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
@@ -955,7 +1147,7 @@ impl GuestCoSimulationInstance for Instance {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             match CsDriver::new(&mut e, &meta, sim_data, t) {
                 Ok(d) => st.cs = Some(d),
-                Err(_) => return Err(Status::Error),
+                Err(e) => return Err(err_status(e)),
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
@@ -986,7 +1178,7 @@ impl GuestCoSimulationInstance for Instance {
                 terminate_simulation: true,
                 early_return: false,
             }),
-            Err(_) => Err(Status::Error),
+            Err(e) => Err(err_status(e)),
         }
     }
 

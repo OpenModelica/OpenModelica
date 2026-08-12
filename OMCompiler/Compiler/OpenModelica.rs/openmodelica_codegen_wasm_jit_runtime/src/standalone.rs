@@ -51,6 +51,10 @@ unsafe extern "C" {
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
+    fn linearJacA(sim_data: u32);
+    fn linearJacB(sim_data: u32);
+    fn linearJacC(sim_data: u32);
+    fn linearJacD(sim_data: u32);
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
     /// Pointer to / length of the encoded `SimMeta` blob in linear memory.
     fn om_meta_ptr() -> u32;
@@ -107,6 +111,11 @@ impl SimEngine for StandaloneEngine {
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
+                "linearJacA" => linearJacA(arg),
+                "linearJacB" => linearJacB(arg),
+                "linearJacC" => linearJacC(arg),
+                "linearJacD" => linearJacD(arg),
+                "functionInitSynchronous" => return Err(SYNC_UNSUPPORTED),
                 _ => return Err("wasm-jit standalone: unknown model function"),
             }
         }
@@ -117,8 +126,22 @@ impl SimEngine for StandaloneEngine {
         // call is a no-op when the feature is absent.
         self.call1(name, arg)
     }
+    // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
+    // leave every model without that feature with an unresolved `model.*` import,
+    // so the standalone export supports neither.
+    fn call2(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+        Err(match name {
+            driver::MODEL_FN_DAE => {
+                "wasm-jit standalone: --daeMode models are not supported by the standalone export"
+            }
+            _ => SYNC_UNSUPPORTED,
+        })
+    }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
+    }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        crate::take_reinit_notes()
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
@@ -132,10 +155,18 @@ impl SimEngine for StandaloneEngine {
     }
 }
 
+const SYNC_UNSUPPORTED: &str =
+    "wasm-jit standalone: synchronous (clocked) models are not supported by the standalone export";
+
 /// Run the prepared model with the shared driver and write its result file.
 /// A failure traps (the command then exits nonzero).
 fn run() {
-    let m = read_meta();
+    let mut m = read_meta();
+    driver::set_log_sink(crate::omclog::sink);
+    simflags::with_flags(|f| {
+        simflags::print_notices(f);
+        m.apply_flags(f);
+    });
     let sim_data = crate::rt_alloc(m.layout.total);
     let mut engine = StandaloneEngine;
     crate::nls::rt_set_step_size(m.step_size());
@@ -150,6 +181,19 @@ fn run() {
             core::arch::wasm32::unreachable()
         }
     };
+
+    if let Some(f) = &result.lin {
+        let path = lin_file(&f.name);
+        std::fs::write(&path, &f.content)
+            .expect("wasm-jit standalone: cannot write the linearized model");
+        if let Some(lin) = &m.lin {
+            use openmodelica_sim_meta::omclog::{STDOUT, error, info};
+            let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, f, &path);
+            for msg in &msgs {
+                if is_error { error(STDOUT, false, msg) } else { info(STDOUT, false, msg) }
+            }
+        }
+    }
 
     if m.output_format != "mat" {
         return; // "empty": run only (benchmarking), no file
@@ -190,7 +234,25 @@ fn run() {
         result.n_reals,
         &params,
     );
-    std::fs::write(format!("{}_res.mat", m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+    std::fs::write(result_file(&m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+}
+
+/// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
+/// `<prefix>_res.mat` under `-outputPath`.
+fn result_file(prefix: &str) -> String {
+    simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
+        (Some(r), _) => r.clone(),
+        (None, Some(dir)) => format!("{dir}/{prefix}_res.mat"),
+        (None, None) => format!("{prefix}_res.mat"),
+    })
+}
+
+/// C's `linearize`: `linearized_model.<ext>` under `-outputPath`.
+fn lin_file(name: &str) -> String {
+    simflags::with_flags(|f| match &f.output_path {
+        Some(dir) => format!("{dir}/{name}"),
+        None => name.to_string(),
+    })
 }
 
 /// Wall clock for the driver, in ms since the first reading.

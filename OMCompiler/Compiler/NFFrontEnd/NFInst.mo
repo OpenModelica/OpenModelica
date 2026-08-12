@@ -157,6 +157,29 @@ function instClassInProgram
   output FlatModel flatModel;
   output FunctionTree functions;
   output String flatString "The flat model as a string if dumpFlat = true.";
+algorithm
+  System.reportProgress(-1, 3) "PHASE_INSTANTIATE";
+
+  try
+    (flatModel, functions, flatString) :=
+      instClassInProgram2(classPath, program, annotationProgram, relaxedFrontend, dumpFlat);
+  else
+    System.reportProgress(-1, 0) "PHASE_IDLE";
+    fail();
+  end try;
+
+  System.reportProgress(-1, 0) "PHASE_IDLE";
+end instClassInProgram;
+
+function instClassInProgram2
+  input Absyn.Path classPath;
+  input SCode.Program program;
+  input SCode.Program annotationProgram;
+  input Boolean relaxedFrontend;
+  input Boolean dumpFlat;
+  output FlatModel flatModel;
+  output FunctionTree functions;
+  output String flatString;
 protected
   InstNode top, cls, inst_cls;
   InstContext.Type context;
@@ -287,7 +310,7 @@ algorithm
   //print(AbsynUtil.pathString(classPath) + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 
   clearCaches();
-end instClassInProgram;
+end instClassInProgram2;
 
 function instClassForConnection
   "Instantiates a class given by its fully qualified path, with the result being
@@ -438,7 +461,6 @@ function instantiate
   input InstContext.Type context;
   input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
-  System.reportProgress(-1, 3) "PHASE_INSTANTIATE";
   node := expand(node, context);
 
   if instPartial or not InstNode.isPartial(node) or

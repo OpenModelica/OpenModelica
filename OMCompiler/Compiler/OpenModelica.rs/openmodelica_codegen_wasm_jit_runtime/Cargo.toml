@@ -21,8 +21,11 @@ crate-type = ["cdylib", "rlib"]
 # In-wasm `rt_sim_*` session driver (src/session.rs) + its DAE solver (daskr). On
 # for the no_std JIT and web interactive runtimes; off for the native host-driven
 # runtime, so daskr/sim_meta are not linked there. The FMI3 adapter disables it.
-default = ["session"]
+default = ["session", "host_log"]
 session = ["dep:daskr"]
+# Route `-lv` log lines out through `env.rt_host_log`. Every runtime a wasm host
+# instantiates has it; the FMI3 adapter has no `env` host, and installs its own sink.
+host_log = []
 # Standalone-export driver (src/standalone.rs, `_start` + model-importing), wasip1 only.
 standalone = ["dep:daskr", "dep:openmodelica_mat_writer", "inwasm_solve"]
 # In-wasm sparse solve (rsparse). Off for the native interactive runtime, which

@@ -23,6 +23,12 @@ pub struct SimModel {
     /// The `ext.<extName>` host imports (external "C" functions) with the full
     /// C-call shape, so the host trampoline can marshal strings/arrays/pointers.
     pub ext_imports: Vec<ExtCallSig>,
+    /// The model's own `external "C"` libraries, loaded into the simulation's
+    /// memory, where they define the `ext_imports` the runtime cannot resolve.
+    pub ext_libs: Vec<ExtLibrary>,
+    /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
+    /// symbol then turns out to be missing.
+    pub ext_lib_notes: Vec<String>,
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
@@ -42,17 +48,35 @@ pub struct SimModel {
     pub jac_a: Option<JacAInfo>,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
+    /// C's `realVarsData[i].info.name` and its `attribute.start` slot, in
+    /// real-variable index order. `-iif` imports into these; unlike `-override`
+    /// it reaches every real variable, changeable or not.
+    pub real_starts: Vec<(String, u32)>,
+    /// The rest of what `-iif` imports, likewise by name: the integer and boolean
+    /// variables, and the real, integer and boolean parameters. Their live slot is
+    /// their start here — only reals have a separate attribute array.
+    pub import_slots: Vec<(String, u32, WTy)>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
     pub meta: SimMeta,
-    /// Pre-rendered `LOG_STDOUT` lines announcing which *linear* systems use a
-    /// sparse solver (C's `initializeLinearSystems`), prepended to the sim log.
-    pub sparse_solver_log: String,
-    /// `(sysNum, equationIndex, size, nnz)` per nonlinear system, in C's array
-    /// order. The nonlinear half of that announcement is rendered per run instead,
-    /// because `-nlssMinSize`/`-nlssMaxDensity` move the threshold it reports.
-    pub nls_systems: Vec<(i32, i32, u32, u32)>,
+}
+
+impl SimModel {
+    /// C's `read_experiment`: this run's scalars, i.e. the model's metadata with the
+    /// flags installed for the run applied. The model is shared between runs, so the
+    /// run works off a copy.
+    pub fn run_meta(&self) -> SimMeta {
+        openmodelica_sim_meta::simflags::with_flags(|f| self.meta.with_flags(f))
+    }
+}
+
+/// One resolved `external "C"` library, read at codegen time so a run needs no
+/// filesystem.
+#[derive(Clone)]
+pub struct ExtLibrary {
+    pub name: String,
+    pub bytes: Vec<u8>,
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,
@@ -76,6 +100,8 @@ pub struct EditableParam {
 static INWASM_OVERRIDE: std::sync::atomic::AtomicI8 = std::sync::atomic::AtomicI8::new(-1);
 #[cfg(feature = "jit")]
 static SIM_BENCH_FORCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(feature = "jit")]
+static SINGLE_THREADED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Force the driver choice: `1` in-wasm, `0` host, `-1` default. Wins over the env
 /// var and the target default — wasm has no environment.
@@ -94,6 +120,18 @@ pub fn set_sim_bench(on: bool) {
 pub fn sim_bench_enabled() -> bool {
     SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
         || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
+}
+
+/// Set from `-n`: one processor means no background precompile and no parallel
+/// module compilation, so each phase is timed where it runs.
+#[cfg(feature = "jit")]
+pub fn set_single_threaded(on: bool) {
+    SINGLE_THREADED.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[cfg(feature = "jit")]
+pub fn single_threaded() -> bool {
+    SINGLE_THREADED.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// Whether to run through the in-wasm session driver (`rt_sim_*`) instead of the

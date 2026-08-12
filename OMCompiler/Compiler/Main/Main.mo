@@ -159,6 +159,8 @@ algorithm
     outResult := makeDebugResult(Flags.DUMP, outResult);
     outResult := makeDebugResult(Flags.DUMP_GRAPHVIZ, outResult);
   end if;
+
+  System.reportProgress(-1, 0) "PHASE_IDLE";
 end handleCommand;
 
 protected function handleCommand2

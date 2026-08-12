@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=patternmAllInfo,gen -d=-newInst
 // status: correct
 // teardown_command: rm -f OptimizeContinue_*
+// suite: metamodelica
 
 model OptimizeContinue
   uniontype Ut
@@ -64,12 +65,12 @@ end OptimizeContinue;
 // class OptimizeContinue
 //   constant Real r = 1.0;
 // end OptimizeContinue;
-// [metamodelica/meta/OptimizeContinue.mo:21:5-25:22:writable] Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.
-// [metamodelica/meta/OptimizeContinue.mo:21:5-25:22:writable] Notification: Converted match expression to switch of type #T_UNKNOWN#.
-// [metamodelica/meta/OptimizeContinue.mo:21:5-25:22:writable] Notification: Match input OptimizeContinue.Ut.UT1() is a constant value.
-// [metamodelica/meta/OptimizeContinue.mo:26:5-29:22:writable] Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.
-// [metamodelica/meta/OptimizeContinue.mo:26:5-29:22:writable] Notification: Match input OptimizeContinue.Ut2.UT4(#(1)) is a constant value.
-// [metamodelica/meta/OptimizeContinue.mo:30:5-33:22:writable] Notification: Match input OptimizeContinue.Ut.UT1() is a constant value.
-// [metamodelica/meta/OptimizeContinue.mo:34:5-37:22:writable] Notification: Match input OptimizeContinue.Ut2.UT4(#(1)) is a constant value.
+// [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.
+// [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: Converted match expression to switch of type #T_UNKNOWN#.
+// [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: Match input OptimizeContinue.Ut.UT1() is a constant value.
+// [metamodelica/meta/OptimizeContinue.mo:27:5-30:22:writable] Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.
+// [metamodelica/meta/OptimizeContinue.mo:27:5-30:22:writable] Notification: Match input OptimizeContinue.Ut2.UT4(#(1)) is a constant value.
+// [metamodelica/meta/OptimizeContinue.mo:31:5-34:22:writable] Notification: Match input OptimizeContinue.Ut.UT1() is a constant value.
+// [metamodelica/meta/OptimizeContinue.mo:35:5-38:22:writable] Notification: Match input OptimizeContinue.Ut2.UT4(#(1)) is a constant value.
 //
 // endResult

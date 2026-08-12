@@ -48,7 +48,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd);
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
-SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 #if defined(OMC_HAVE_COLPACK)
 int computeColPackColumnColoring(

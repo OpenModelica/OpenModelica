@@ -14839,6 +14839,20 @@ algorithm
   end match;
 end getFMI3TypeOffset;
 
+public function getFMI2ValueReferenceOffsets
+  "The offsets that turn an FMI 2.0 value reference, which is unique only per base
+   type, into the globally unique FMI 3.0 one, in the order Real, Integer, Boolean,
+   String. The wasm FMU export ships them with the FMU so its loader can serve the
+   FMI 2.0 API from a component that speaks FMI 3.0."
+  input SimCode.ModelInfo modelInfo;
+  output list<Integer> offsets;
+algorithm
+  offsets := {getFMI3TypeOffset(DAE.T_REAL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_INTEGER_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_BOOL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_STRING_DEFAULT, modelInfo)};
+end getFMI2ValueReferenceOffsets;
+
 public function getFMI3ValueReference
   "Returns the globally unique value reference of a variable for the FMI 3.0
    export. It is the per-base-type value reference (see getValueReference) shifted
@@ -16782,6 +16796,74 @@ algorithm
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
+
+protected function matrixFormatC
+  "The SOLVER_MATRIX_FORMAT for a system of this shape. An unknown count, which is
+   any pattern only built at runtime, counts as dense."
+  input Integer size;
+  input Option<Integer> nnz;
+  input Boolean isLinear;
+  output String format;
+protected
+  Integer entries = Util.getOptionOrDefault(nnz, size * size);
+algorithm
+  format := if BackendDAEUtil.useSparseSolver(size, entries, isLinear) then "OMC_MATRIX_SPARSE" else "OMC_MATRIX_DENSE";
+end matrixFormatC;
+
+public function linearSystemMatrixFormat
+  "Format for this linear system, counting nonzeros off the Jacobian's sparsity
+   where there is one, which is what the runtime used to measure itself."
+  input SimCode.LinearSystem ls;
+  output String format;
+protected
+  Option<Integer> nnz;
+algorithm
+  format := match ls
+    case SimCode.LINEARSYSTEM() algorithm
+      nnz := match ls.jacobianMatrix
+        case SOME(SimCode.JAC_MATRIX(sparsity = {})) then simJacNonzeros(ls.simJac);
+        case SOME(SimCode.JAC_MATRIX()) then sparsityNonzeros(ls.jacobianMatrix);
+        else simJacNonzeros(ls.simJac);
+      end match;
+    then matrixFormatC(listLength(ls.vars), nnz, true);
+  end match;
+end linearSystemMatrixFormat;
+
+public function nonlinearSystemMatrixFormat
+  "Format for this nonlinear system."
+  input SimCode.NonlinearSystem nls;
+  output String format;
+algorithm
+  format := match nls
+    case SimCode.NONLINEARSYSTEM()
+      then matrixFormatC(listLength(nls.crefs), sparsityNonzeros(nls.jacobianMatrix), false);
+  end match;
+end nonlinearSystemMatrixFormat;
+
+protected function simJacNonzeros
+  "Entries of A, which a torn system does not give elementwise."
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  output Option<Integer> nnz = if listEmpty(simJac) then NONE() else SOME(listLength(simJac));
+end simJacNonzeros;
+
+protected function sparsityNonzeros
+  "Entries of a Jacobian's sparsity pattern, unknown without one."
+  input Option<SimCode.JacobianMatrix> ojac;
+  output Option<Integer> nnz;
+protected
+  Integer entries = 0;
+algorithm
+  nnz := match ojac
+    local
+      SimCode.SparsityPattern sparsity;
+    case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
+      for col in sparsity loop
+        entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    else NONE();
+  end match;
+end sparsityNonzeros;
 
 public function getExpNominal
   "Returns the nominal value of an expression.

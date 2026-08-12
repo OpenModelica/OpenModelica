@@ -1,6 +1,7 @@
 // name: List5
 // cflags: +g=MetaModelica -d=-newInst
 // status: correct
+// suite: metamodelica
 package P
 uniontype UT
   record R1 end R1;

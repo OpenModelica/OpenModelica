@@ -1,5 +1,6 @@
 // name: fmi3_builddescription.mos
 // keywords: FMI 3.0 export buildDescription source
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml Mbd.log Mbd_info.json index.html
 //
@@ -9,6 +10,7 @@
 // a C SourceFileSet, the FMI_OVERRIDE_FUNCTION_PREFIX defines and the include
 // directories. (A full build from it is exercised separately with an FMI tool.)
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 loadString("model Mbd Real x(start = 1.0); equation der(x) = -x; end Mbd;"); getErrorString();
 
 buildModelFMU(Mbd, version="3.0", fmuType="me"); getErrorString();
@@ -20,6 +22,8 @@ system("grep -E 'fmiBuildDescription fmiVersion|BuildConfiguration modelIdentifi
 system("grep -c '<SourceFile name=\"Mbd.c\"/>' Mbd_bd.xml"); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // "Mbd.fmu"

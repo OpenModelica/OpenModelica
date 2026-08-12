@@ -34,6 +34,6 @@ pub fn take_compiled_model(_model: &SimModel) -> std::result::Result<Module, Str
     return Err(NO_ENGINE.to_string())
 }
 
-pub fn run(_model: &SimModel) -> std::result::Result<RunResult, String> {
+pub fn run(_model: &SimModel, _meta: &openmodelica_sim_meta::SimMeta) -> std::result::Result<RunResult, String> {
     return Err(NO_ENGINE.to_string())
 }

@@ -25,6 +25,38 @@ thread_local! {
     /// C's `noThrowAsserts`: the driver has the model on a provisional state, so
     /// `rt_assert` records instead of telling the caller to trap.
     static NO_THROW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// Executed `reinit`s, `(state SimData offset, value)`, for the driver's
+    /// `LOG_EVENTS` block. Only filled while that stream is on.
+    static PENDING_REINITS: std::cell::RefCell<Vec<(u32, f64)>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// `rt_reinit_note`: record an executed `reinit` while `LOG_EVENTS` is on.
+pub fn record_reinit(off: u32, value: f64) {
+    if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::EVENTS) {
+        PENDING_REINITS.with(|p| p.borrow_mut().push((off, value)));
+    }
+}
+
+/// Take (and clear) the `reinit`s recorded since the last call.
+pub fn take_pending_reinits() -> Vec<(u32, f64)> {
+    PENDING_REINITS.with(|p| core::mem::take(&mut *p.borrow_mut()))
+}
+
+/// Serialise them for the in-wasm driver: `[off: u32][value: f64]` per record.
+const REINIT_BYTES: usize = 16;
+
+fn take_reinits_into(dst: &mut [u8], max: usize) -> u32 {
+    let recs = PENDING_REINITS.with(|p| {
+        let mut p = p.borrow_mut();
+        let n = max.min(p.len()).min(dst.len() / REINIT_BYTES);
+        p.drain(..n).collect::<Vec<_>>()
+    });
+    for (i, (off, v)) in recs.iter().enumerate() {
+        let b = i * REINIT_BYTES;
+        dst[b..b + 4].copy_from_slice(&off.to_le_bytes());
+        dst[b + 8..b + 16].copy_from_slice(&v.to_le_bytes());
+    }
+    recs.len() as u32
 }
 
 /// Driver hook (`driver::set_no_throw_hook`). Opening drops the assertion a
@@ -104,6 +136,9 @@ impl openmodelica_sim_meta::driver::SimEngine for MemEngine<'_> {
     fn call1_if_present(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
+    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> metamodelica::Result<()> {
+        Err("wasm-jit: MemEngine cannot call the model")
+    }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> metamodelica::Result<u32> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
@@ -141,6 +176,8 @@ mod sim_memory {
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub use sim_memory::set as set_sim_memory;
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub use sim_memory::get as get_sim_memory;
 
 fn record_assert(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32) {
     PENDING_ASSERT.with(|p| {
@@ -168,6 +205,55 @@ fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i
     }
     record_assert(cond, msg, file, sline, scol, eline, ecol, read_only);
     1
+}
+
+/// The runtime array object as both engines' external-"C" trampolines read it:
+/// header `[refcount][elem kind][ndims][total][dim…]`, then the flat row-major
+/// elements from the next 8-byte boundary on.
+pub mod array_abi {
+    use crate::sig::SigTy;
+
+    /// Every heap handle is a 4-byte `i32`.
+    pub fn elem_size(elem: &SigTy) -> usize {
+        match elem {
+            SigTy::Real => 8,
+            _ => 4,
+        }
+    }
+
+    /// The dimensions and element-area offset of the array object at `obj`.
+    pub fn dims_and_data(mem: &[u8], obj: usize) -> Option<(Vec<usize>, usize)> {
+        let word = |off: usize| -> Option<usize> {
+            Some(u32::from_le_bytes(mem.get(off..off + 4)?.try_into().ok()?) as usize)
+        };
+        let ndims = word(obj + 8)?;
+        let dims = (0..ndims).map(|k| word(obj + 16 + 4 * k)).collect::<Option<Vec<_>>>()?;
+        Some((dims, (16 + ndims * 4 + 7) & !7))
+    }
+
+    /// Copy `src` to `dst` converting between row-major and column-major storage
+    /// (C's `convert_alloc_*_{to,from}_f77`, without its 2-D-only restriction).
+    pub fn reorder(src: &[u8], dst: &mut [u8], dims: &[usize], esz: usize, to_fortran: bool) {
+        let total: usize = dims.iter().product();
+        let mut idx = vec![0usize; dims.len()];
+        for r in 0..total {
+            let mut c = 0usize;
+            let mut stride = 1usize;
+            for k in 0..dims.len() {
+                c += idx[k] * stride;
+                stride *= dims[k];
+            }
+            let (from, to) = if to_fortran { (r, c) } else { (c, r) };
+            dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+            for k in (0..dims.len()).rev() {
+                idx[k] += 1;
+                if idx[k] < dims[k] {
+                    break;
+                }
+                idx[k] = 0;
+            }
+        }
+    }
 }
 
 // Native rsparse solve behind the `env.rt_host_lin_solve` import, which the native
@@ -262,6 +348,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap("rt", "rt_assert_warning", |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
         record_warning([openmodelica_sim_meta::driver::ASSERT_WARNING, cond, msg, file, sline, scol, eline, ecol, read_only]);
     }))?;
+    wt(linker.func_wrap("rt", "rt_reinit_note", |off: i32, value: f64| record_reinit(off as u32, value)))?;
     wt(linker.func_wrap(
         "rt",
         "rt_row_asserts",
@@ -317,6 +404,20 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
             }
         },
     ))?;
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_take_reinits",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
+            let off = ptr as usize;
+            let end = off + max as usize * REINIT_BYTES;
+            let data = mem.data_mut(&mut caller);
+            match data.get_mut(off..end) {
+                Some(dst) => take_reinits_into(dst, max as usize),
+                None => 0,
+            }
+        },
+    ))?;
     // Solve the CSC system in the caller's (the runtime's) shared memory; the
     // interactive runtime imports this. Returns 0 (solved, `b` overwritten) or 1.
     wt(linker.func_wrap(
@@ -364,6 +465,8 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
             record_warning([openmodelica_sim_meta::driver::ASSERT_WARNING, cond, msg, file, sline, scol, eline, ecol, read_only]);
         }));
+    imports.define("rt", "rt_reinit_note", Function::new_typed(store,
+        |off: i32, value: f64| record_reinit(off as u32, value)));
     // Both memory-reading imports share one env, filled in by `HostMem::set`.
     let mem_env = wasmer::FunctionEnv::new(store, None);
     imports.define(
@@ -413,6 +516,24 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                 let mut buf = vec![0u8; recs.len() * REC_BYTES];
                 let n = write_warnings(&recs, &mut buf);
                 match memory.view(&store).write(ptr as u64, &buf) {
+                    Ok(()) => n,
+                    Err(_) => 0,
+                }
+            },
+        ),
+    );
+    imports.define(
+        "env",
+        "rt_host_take_reinits",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |mut env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, max: u32| -> u32 {
+                let (data, store) = env.data_and_store_mut();
+                let Some(memory) = data.clone() else { return 0 };
+                let mut buf = vec![0u8; max as usize * REINIT_BYTES];
+                let n = take_reinits_into(&mut buf, max as usize);
+                match memory.view(&store).write(ptr as u64, &buf[..n as usize * REINIT_BYTES]) {
                     Ok(()) => n,
                     Err(_) => 0,
                 }

@@ -1,6 +1,7 @@
 // name: DumpTest
 // cflags: +g=MetaModelica -d=-newInst
 // status: correct
+// suite: metamodelica
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("DumpTest.mo");getErrorString();

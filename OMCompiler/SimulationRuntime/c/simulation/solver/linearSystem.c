@@ -45,6 +45,7 @@
 #include "linearSolverUmfpack.h"
 #endif
 #include "linearSolverTotalPivot.h"
+#include "../options.h"
 #include "../simulation_info_json.h"
 
 static void setAElement(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
@@ -69,8 +70,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   int res;
   unsigned int j, maxNumberThreads;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
-  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
-  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   maxNumberThreads = omc_get_max_threads();
 
@@ -129,30 +128,13 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
 #endif
     }
 
-    if (nnz/(double)(size*size) < linearSparseSolverMaxDensity) {
+    /* -ls reaches klu and umfpack too, so naming a solver can override the format. */
+    if (omc_flag[FLAG_LSS]) {
       linsys[i].useSparseSolver = 1;
-      someSmallDensity = 1;
-      if (size > linearSparseSolverMinSize) {
-        someBigSize = 1;
-        infoStreamPrint(OMC_LOG_STDOUT, 0,
-                        "Using sparse solver for linear system %d,\n"
-                        "because density of %.3f remains under threshold of %.3f\n"
-                        "and size of %d exceeds threshold of %d.",
-                        i, nnz/(double)(size*size), linearSparseSolverMaxDensity,
-                        size, linearSparseSolverMinSize);
-      } else {
-        infoStreamPrint(OMC_LOG_STDOUT, 0,
-                        "Using sparse solver for linear system %d,\n"
-                        "because density of %.3f remains under threshold of %.3f.",
-                        i, nnz/(double)(size*size), linearSparseSolverMaxDensity);
-      }
-    } else if (size > linearSparseSolverMinSize) {
+    } else if (omc_flag[FLAG_LS]) {
+      linsys[i].useSparseSolver = 0;
+    } else if (linsys[i].matrixFormat == OMC_MATRIX_SPARSE) {
       linsys[i].useSparseSolver = 1;
-      someBigSize = 1;
-        infoStreamPrint(OMC_LOG_STDOUT, 0,
-                        "Using sparse solver for linear system %d,\n"
-                        "because size of %d exceeds threshold of %d.",
-                        i, size, linearSparseSolverMinSize);
     }
 
     /* Allocate nominal, min and max */
@@ -292,20 +274,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
       }
     }
-  }
-
-  /* print relevant flag information */
-  if(someSmallDensity) {
-    if(someBigSize) {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
-                                     "specified using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.");
-    } else {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
-                                     "using the runtime flag '<-lssMaxDensity=value>'.");
-    }
-  } else if(someBigSize) {
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
-                                   "using the runtime flag '<-lssMinSize=value>'.");
   }
 
   messageClose(OMC_LOG_LS);

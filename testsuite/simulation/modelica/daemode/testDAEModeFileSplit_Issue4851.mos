@@ -1,7 +1,10 @@
 // name: testDAEModeFileSplit_Issue4851.mos
 // status: correct
 // teardown_command: rm -f PowerGrids.Examples.IEEE14bus.IEEE14busGen2Disconnection* output.log
+// cflags: --simCodeTarget=C
 // tests that we split the big 16dae.c files into parts
+// The generated C files are what this checks, so it pins the C target rather
+// than following a corpus-wide --simCodeTarget override.
 
 loadFile("pg.mo");
 getErrorString();
