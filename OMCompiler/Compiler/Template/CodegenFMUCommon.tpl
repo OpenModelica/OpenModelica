@@ -518,7 +518,7 @@ match simVar
   let defaultValueReference = '<%System.tmpTick()%>'
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
+  let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariabilityFMI2(variability, type_)
   let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableFMIIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
@@ -546,6 +546,27 @@ match variability
   case SOME(TUNABLE(__)) then "tunable"
   else ""
 end getVariability2;
+
+template getVariabilityFMI2(Option<Variability> variability, DAE.Type type_)
+ "Returns the variability Attribute of an FMI 2.0 ScalarVariable.
+
+  FMI 2.0 allows variability='continuous' only for Real (FMI 2.0 specification,
+  section 2.2.7), and the attribute defaults to 'continuous' when it is left out.
+  A non-Real variable that is continuous in Modelica, or that carries no
+  variability of its own, therefore has to be written out as discrete -- leaving
+  it to the default would produce an invalid modelDescription.xml.
+
+  FMI 3.0 does not need this: there the default is 'discrete' for every type
+  other than Float32/Float64, so getVariability2 is used as is."
+::=
+match type_
+  case T_REAL(__) then getVariability2(variability)
+  else
+    match variability
+      case SOME(CONTINUOUS(__)) then "discrete"
+      case NONE() then "discrete"
+      else getVariability2(variability)
+end getVariabilityFMI2;
 
 template getCausality2(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
