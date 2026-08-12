@@ -169,8 +169,19 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   SPARSE_PATTERN* sparsePattern_DIRK;
 
   /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[
+    gbData->useAdjJacobian ? data->callback->INDEX_JAC_ADJ : data->callback->INDEX_JAC_A]);
   SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
+  SPARSE_PATTERN* sparsePattern_CSC = NULL;
+
+  if (jacobian->isRowEval) {
+    sparsePattern_CSC = cscToCsr(sparsePattern_ODE, jacobian->sizeCols, jacobian->sizeRows);
+    if (sparsePattern_CSC == NULL) {
+      throwStreamPrint(NULL, "Failed to construct GBODE CSC sparsity from adjoint CSR.");
+    }
+    sparsePattern_ODE = sparsePattern_CSC;
+  }
 
   int sizeRows = jacobian->sizeRows;
   int sizeCols = jacobian->sizeCols;
@@ -222,7 +233,7 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
     }
   }
 
-  if (missingDiags == 0) {
+  if (missingDiags == 0 && !jacobian->isRowEval) {
     // If missingDiags=0 we can re-use coloring (and everything else)
     sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
     memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
@@ -230,6 +241,8 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
     // Calculate new coloring, because of additional nonZeroDiagonals
     ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols, 1);
   }
+
+  freeSparsePattern(sparsePattern_CSC);
 
   return sparsePattern_DIRK;
 }

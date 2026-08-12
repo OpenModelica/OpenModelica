@@ -32,6 +32,7 @@
 
 #include "sundials_util.h"
 #include <sunmatrix/sunmatrix_sparse.h>
+#include <sunmatrix/sunmatrix_dense.h>
 #include <nvector/nvector_serial.h>
 
 
@@ -68,6 +69,38 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   }
   SM_INDEXVALS_S(A)[nth] = row;
   SM_DATA_S(A)[nth] = value;
+}
+
+/**
+ * @brief Set element of dense Sundials matrix.
+ *
+ * Jac(row, column) = value.
+ *
+ * @param row     Row index.
+ * @param column  Column index.
+ * @param nth     Sparsity pattern position (unused for dense).
+ * @param value   Value to set.
+ * @param Jac     Pointer to SUNMatrix (dense).
+ * @param nRows   Number of rows (unused; indexing is handled by SUNDIALS).
+ */
+void setJacElementSundialsDense(int row, int column, int nth, double value, void* Jac, int nRows)
+{
+  UNUSED(nth); UNUSED(nRows);
+  SUNMatrix A = (SUNMatrix)Jac;
+  SM_ELEMENT_D(A, row, column) = value;
+}
+
+/**
+ * @brief Set element of dense Sundials matrix in row-eval (adjoint) mode.
+ *
+ * In row-eval mode evalJacobianOneColor calls setElement(col, row, nth, value, ...),
+ * so arguments are swapped compared to forward mode.
+ */
+void setJacElementSundialsDenseRowEval(int col, int row, int nth, double value, void* Jac, int nRows)
+{
+  UNUSED(nth); UNUSED(nRows);
+  SUNMatrix A = (SUNMatrix)Jac;
+  SM_ELEMENT_D(A, row, col) = value;
 }
 
 /**

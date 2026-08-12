@@ -1348,11 +1348,12 @@ protected
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
-
       if BVariable.isContinuous(v, staticAsContinuous) then
         UnorderedSet.add(BVariable.getVarName(v), seed_set);
       end if;
     end for;
+    // Keep scalar indices aligned with the forward Jacobian. makeVarTraverse
+    // prepends entries, so restore the candidate order before SimCode indexing.
     res_vars := listReverse(Pointer.access(pDer_vars_ptr));
 
     // create pDer vars (also filters out discrete vars)
@@ -1418,7 +1419,7 @@ protected
     unknown_vars  := listAppend(res_vars, tmp_vars);
     all_vars      := unknown_vars;  // add other vars later on
 
-    seed_vars     := Pointer.access(seed_vars_ptr);
+    //seed_vars     := listReverse(Pointer.access(seed_vars_ptr));
     aux_vars      := seed_vars;     // add other auxiliaries later on. TODO: Need to add the SSA vars and the lambda vars from algebraic loops as auxiliaries?
     alias_vars    := {};
     depend_vars   := {};
@@ -1441,6 +1442,17 @@ protected
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;
+
+
+    // print seedCandidates, tmp_vars, res_vars, and adjacencyVars for debugging
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
+      print("Seed candidates:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
+      print("Temporary variables:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Temporary Variables") + "\n");
+      //print("Result variables:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Result Variables") + "\n");
+      print("Adjacency variables:\n" + BVariable.VariablePointers.toString(adjacencyVars, "Adjacency Variables") + "\n");
+    end if;
+
+
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, diff_map, isAdjoint = true);

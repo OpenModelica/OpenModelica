@@ -115,8 +115,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
 //
 // TmpVars (size = 2)
 // ********************

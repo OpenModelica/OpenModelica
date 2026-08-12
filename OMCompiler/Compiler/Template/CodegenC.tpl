@@ -5873,7 +5873,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -5890,7 +5890,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, String modelNamePrefix)
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
 "Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
 ::=
 match sparsity
@@ -5954,6 +5954,10 @@ match sparsity
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
 
+      /* Canonicalize inner indices before conversion or construction of any
+       * position-based recovery mappings. */
+      sortSparseColumns(jacobian->sparsePattern, <%patternCols%>);
+
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
        * generated primal CSC structure to CSR before computing row colors. */
@@ -5973,6 +5977,22 @@ match sparsity
       computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
 
       jacobian->availability = <%availability%>;
+
+      <%if isBidirectional then <<
+      /* Initialize the adjoint pattern before computing the joint star
+       * bicoloring and its recovery metadata. */
+      {
+        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
+        if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
+        jacobian->adjointJacobian = adjJac;
+        if (initBidirectionalRecovery(jacobian)) {
+          jacobian->adjointJacobian = NULL;
+          return 1;
+        }
+        jacobian->isBidirectional = 1;
+      }
+      >> %>
+
       return 0;
     }
     >>
@@ -6730,10 +6750,13 @@ match sparsepattern
       /* Initialize adjoint Jacobian and set up bidirectional evaluation */
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
-        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->isBidirectional = 1;
+        if (<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
         jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
+        if (initBidirectionalRecovery(jacobian)) {
+          jacobian->adjointJacobian = NULL;
+          return 1;
+        }
+        jacobian->isBidirectional = 1;
       }
       >> %>
 

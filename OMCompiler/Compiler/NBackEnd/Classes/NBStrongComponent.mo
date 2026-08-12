@@ -695,7 +695,7 @@ public
   algorithm
     comp := match eqn
       case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr); 
+      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
       case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
       case Equation.IF_EQUATION(body = body) algorithm
         if IfEquationBody.isSplit(body) then

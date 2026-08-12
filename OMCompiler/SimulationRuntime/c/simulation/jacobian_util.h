@@ -42,10 +42,49 @@ JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 void freeJacobianCopy(JACOBIAN* jac);
 
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+#ifdef USE_PARJAC
+void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
+                                        JACOBIAN* jacColumns,
+                                        SPARSE_PATTERN* spp,
+                                        void* matrixA, setJacElementFunc setElement,
+                                        modelica_real dae_cj);
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns);
+void freeAnalyticalJacobian(JACOBIAN** jacColumns);
+#endif
 
-void initBidirectionalRecovery(JACOBIAN* fwd);
-void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+typedef void (*jacobianSetDenseElementFunc)(modelica_real* jac, int row, int column, int nRows, int nCols, modelica_real value);
+typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
+typedef void (*jacobianCleanup_func_ptr)(JACOBIAN* jac);
+void evalJacobianCleanupRowEval(JACOBIAN* jac);
+void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows);
+void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows);
+void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows);
+void evalJacobianOneColor(DATA* data, threadData_t* threadData,
+                           JACOBIAN* jacobian, JACOBIAN* parentJac,
+                           const SPARSE_PATTERN* sp, int color,
+                           unsigned int activeDim, int nRows,
+                           void* matrixA, setJacElementFunc setElement,
+                           jacobianColumn_func_ptr evalFunc,
+                           jacobianCleanup_func_ptr cleanupFunc);
+void evalJacobianColored(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                         void* matrixA, setJacElementFunc setElement,
+                         jacobianCleanup_func_ptr cleanupFunc);
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+void evalJacobianExtended(DATA* data, threadData_t* threadData,
+                   JACOBIAN_METHOD method,
+                   JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* t_jac,
+                   void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
+                   setJacElementFunc setFwd, setJacElementFunc setAdj);
+
+int computeColPackStarBicoloring(unsigned int nRows, unsigned int nCols,
+                                const unsigned int* rowPtr, const unsigned int* colIdx,
+                                unsigned int* rowColors, unsigned int* nRowColors,
+                                unsigned int* colColors, unsigned int* nColColors);
+int initBidirectionalRecovery(JACOBIAN* fwd);
+void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
+                               JACOBIAN* fwd, JACOBIAN* parentJacobian,
+                               void* matrixA, setJacElementFunc setElement,
+                               jacobianCleanup_func_ptr cleanupFunc);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
 SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
@@ -54,7 +93,8 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
 void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex);
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability);
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN** jacobian);
+void initAdjointCSRtoCSCMap(JACOBIAN* jacobian);
 
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
 

@@ -129,8 +129,8 @@ uniontype JacobianMatrix
     Integer partitionIndex;
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
-    Boolean isAdjoint; // true if this jacobian is for adjoint calculation
-    Boolean isBidirectional; // true if part of a bidirectional pair
+    Boolean isAdjoint; // true if this jacobian is an adjoint jacobian
+    Boolean isBidirectional; // true if this is the A jacobian of a bidirectional pair with the ADJ jacobian
     Integer adjointJacobianIndex; // index of adjoint jacobian for bidirectional (-1 if none)
     String adjointMatrixName; // matrix name of adjoint jacobian for bidirectional
   end JAC_MATRIX;

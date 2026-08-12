@@ -455,8 +455,13 @@ public
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0});
             // (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
-            // TODO: these should be collected prior, and are the linear systems of Jacobian (inner linear to compute pDers)
-            // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
+            // Jacobian generation can introduce algebraic loops, e.g. the lambda
+            // system used for an adjoint of a primal algebraic loop. These blocks
+            // consume nonlinear-system indices during their conversion, so collect
+            // them before creating ModelInfo. Otherwise CodegenC does not emit or
+            // initialize their residual functions.
+            // Still does not fix the full issue
+            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
 
             // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));

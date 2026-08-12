@@ -33,6 +33,51 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 
+#ifdef USE_PARJAC
+  #define GC_THREADS
+  #include <gc/omc_gc.h>
+  #include "util/parallel_helper.h"
+#endif
+
+/**
+ * @brief setJacElementFunc-compatible setter for a sparse CSC raw buffer.
+ *
+ * Writes value at the CSC position: jac[nth] = value.
+ * row, col, and nRows are unused; the position is determined solely by nth.
+ */
+void setJacElementRawSparse(int row, int col, int nth, double value, void* jac, int nRows)
+{
+  (void)row; (void)col; (void)nRows;
+  ((modelica_real*)jac)[nth] = value;
+}
+
+/**
+ * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
+ *
+ * Writes value at: jac[col * nRows + row] = value.
+ * nth is unused.
+ */
+void setJacElementRawDenseColumnMajor(int row, int col, int nth, double value, void* jac, int nRows)
+{
+  (void)nth;
+  ((modelica_real*)jac)[col * nRows + row] = value;
+}
+
+
+/**
+ * @brief setJacElementFunc-compatible setter for a dense column-major raw buffer.
+ *
+ * Used in row-wise (adjoint) evaluation where setElement is called as
+ * setElement(currentIndex=col, j=row, nth, value, jac, nRows).
+ * Writes value at: jac[col * nRows + row] = value.
+ * nth is unused.
+ */
+void setJacElementRawDenseColumnMajorRowEval(int col, int row, int nth, double value, void* jac, int nRows)
+{
+  (void)nth;
+  ((modelica_real*)jac)[col * nRows + row] = value;
+}
+
 /**
  * @brief Initialize analytic jacobian.
  *
@@ -88,6 +133,7 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->constantEqns,
     source->sparsePattern);
 
+  jacobian->isRowEval = source->isRowEval;
   jacobian->isBidirectional = source->isBidirectional;
   jacobian->adjointJacobian = source->adjointJacobian;  /* shared pointer, not deep copy */
   jacobian->recoverMask = source->recoverMask;           /* shared pointer, not deep copy */
@@ -138,143 +184,305 @@ void freeJacobianCopy(JACOBIAN *jac)
   }
 }
 
-/*! \fn evalJacobian
+/**
+ * @brief Evaluate a colored Jacobian, auto-selecting fwd/adj setter from jacobian->isRowEval.
  *
- *  compute entries of Jacobian in sparse CSC or dense format
- *  uses coloring (sparsePattern non NULL)
- *
- *  \param [ref] [data]
- *  \param [ref] [threadData]
- *  \param [ref] [jacobian]        Pointer to Jacobian
- *  \param [ref] [parentJacobian]  Pointer to parent Jacobian
- *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense), non zero-initialized
- *  \param [ref] [isDense]         Flag to set dense / sparse output
+ * Thin convenience wrapper around evalJacobianEx for the common case: colored
+ * (non-bicolored) evaluation into a dense or raw-sparse buffer, no custom setters,
+ * no explicit method/t_jac needed. Equivalent to the old evalJacobian().
  */
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
+void evalJacobian(DATA* data, threadData_t* threadData, JACOBIAN* jacobian,
+                   JACOBIAN* parentJacobian, modelica_real* jac,
+                   modelica_boolean isDense)
 {
-  int color, column, row, nz;
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
+  JACOBIAN_METHOD method = jacobian->isRowEval ? COLOREDSYMJACADJ : COLOREDSYMJAC;
+  evalJacobianExtended(data, threadData, method, jacobian, parentJacobian, /*t_jac=*/NULL,
+                 jac, isDense ? JAC_OUTPUT_DENSE : JAC_OUTPUT_SPARSE_RAW,
+                 /*setFwd=*/NULL, /*setAdj=*/NULL);
+}
 
-  /* Dispatch to bidirectional evaluation if applicable */
-  if (jacobian->isBidirectional && jacobian->adjointJacobian) {
-    evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
-    return;
+#ifdef USE_PARJAC
+/**
+ * @brief Evaluate a colored Jacobian in parallel across OpenMP threads.
+ *
+ * Each worker evaluates assigned colors using its own thread-local Jacobian.
+ * Thread-local Jacobians do not have evalColumn set, so the generated callback
+ * is selected from data->callback based on the evaluation orientation.
+ */
+void evalJacobianColoredParallel(DATA* data, threadData_t* threadData,
+                                        JACOBIAN* jacColumns,
+                                        SPARSE_PATTERN* spp,
+                                        void* matrixA, setJacElementFunc setElement,
+                                        modelica_real dae_cj)
+{
+  const int isRowEval = (jacColumns[0].isRowEval == TRUE);
+  jacobianColumn_func_ptr evalFunc = isRowEval
+      ? data->callback->functionJacADJ_column
+      : data->callback->functionJacA_column;
+
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) shared(data, threadData, jacColumns, spp, matrixA, setElement, evalFunc, isRowEval)
+{
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
   }
 
-  /* evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
+  const unsigned int activeDim = t_jac->sizeCols;
+  const int nRows = (int)(isRowEval ? t_jac->sizeCols : t_jac->sizeRows);
+  jacobianCleanup_func_ptr cleanupFunc = isRowEval ? evalJacobianCleanupRowEval : NULL;
+
+  t_jac->dae_cj = dae_cj;
+
+  unsigned int color;
+#pragma omp for
+  for (color = 0; color < spp->maxColors; color++) {
+    evalJacobianOneColor(data, threadData, t_jac, NULL, spp, (int)color,
+                         activeDim, nRows, matrixA, setElement, evalFunc, cleanupFunc);
   }
+}
+}
 
-  if (isDense) {
-    /* memset to zero for dense, since solvers might destroy "hard zeros"
-     * does not apply for sparse, since the values are overwritten */
-    memset(jac, 0.0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+/**
+ * @brief Allocate one thread-local Jacobian per OpenMP worker.
+ *
+ * Dimensions and the sparse pattern are shared with source. Work arrays are
+ * private to each worker so colors can be evaluated independently.
+ */
+void allocateThreadLocalJacobians(JACOBIAN* source, JACOBIAN** jacColumns)
+{
+  int maxTh = omc_get_max_threads();
+  *jacColumns = (JACOBIAN*) malloc(maxTh * sizeof(JACOBIAN));
+  SPARSE_PATTERN* sparsePattern = source->sparsePattern;
+  unsigned int columns     = source->sizeCols;
+  unsigned int rows        = source->sizeRows;
+  unsigned int sizeTmpVars = source->sizeTmpVars;
+  modelica_boolean isRowEval = source->isRowEval;
+  unsigned int i;
+
+  GC_allow_register_threads();
+
+#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, isRowEval) shared(sparsePattern, jacColumns, i)
+  {
+  if (!GC_thread_is_registered()) {
+    struct GC_stack_base sb;
+    memset(&sb, 0, sizeof(sb));
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
   }
-
-  /* evaluate Jacobian */
-  for (color = 0; color < sp->maxColors; color++) {
-    /* activate seed variable for the corresponding color */
-    // direction = 0; direction < sizeDirection; direction++
-    for (column = 0; column < jacobian->sizeCols; column++)
-      if (sp->colorCols[column]-1 == color)
-        jacobian->seedVars[column] = 1.0;
-
-    /* evaluate Jacobian column */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    for (column = 0; column < jacobian->sizeCols; column++) {
-      if (sp->colorCols[column]-1 == color) {
-        for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
-          row = sp->index[nz];
-          if (!isDense) {
-            /* sparse case */
-            jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
-          }
-          else {
-            /* dense case (row major layout for csc format) */
-            jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
-          }
-        }
-        /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[column] = 0.0;
-      }
-    }
+#pragma omp for schedule(runtime)
+  for (i = 0; i < maxTh; ++i) {
+    (*jacColumns)[i].sizeCols      = columns;
+    (*jacColumns)[i].sizeRows      = rows;
+    (*jacColumns)[i].sizeTmpVars   = sizeTmpVars;
+    (*jacColumns)[i].tmpVars       = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+    (*jacColumns)[i].resultVars    = (modelica_real*) calloc(rows, sizeof(modelica_real));
+    (*jacColumns)[i].seedVars      = (modelica_real*) calloc(columns, sizeof(modelica_real));
+    (*jacColumns)[i].sparsePattern = sparsePattern;
+    (*jacColumns)[i].isRowEval     = isRowEval;
+  }
   }
 }
 
-/*!
- * \brief Row-wise Jacobian evaluation.
- *
- * Assumptions:
- *  - jacobian->evalColumn evaluates a row-direction seed (i.e., is a row evaluator)
- *  - sparsePattern is in CSR format:
- *      leadindex: sizeRows + 1 (row pointers)
- *      index:     nnz (column indices)
- *  - colorCols encodes row coloring (1-based color ids)
- *
- * Output:
- *  - If isDense == false: jac is nnz-sized buffer aligned with CSR index order.
- *  - If isDense == true:  jac is dense column-major buffer of size sizeRows*sizeCols
- *                         with J(row, col) stored at jac[col*sizeRows + row].
- */
-void evalJacobianRow(DATA* data, threadData_t *threadData,
-                     JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-                     modelica_real* jac, modelica_boolean isDense)
+/** Free thread-local Jacobians allocated by allocateThreadLocalJacobians. */
+void freeAnalyticalJacobian(JACOBIAN** jacColumns)
 {
-  int color, row, col, nz;
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  const unsigned int nRows = jacobian->sizeRows;
-  const unsigned int nCols = jacobian->sizeCols;
+  int maxTh = omc_get_max_threads();
+  unsigned int i;
 
-  if (!jacobian->isRowEval) {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform row-wise evaluation on column-evaluation Jacobian\n");
-    return;
+  for (i = 0; i < maxTh; ++i) {
+    free((*jacColumns)[i].tmpVars);
+    free((*jacColumns)[i].resultVars);
+    free((*jacColumns)[i].seedVars);
   }
 
-  /* evaluate constant equations of Jacobian (if any) */
+  free(*jacColumns);
+}
+#endif
+
+/**
+ * @brief Evaluate a Jacobian using the specified method and output format.
+ *
+ * Colored methods (COLOREDSYMJAC/SYMJAC/COLOREDSYMJACADJ) dispatch through
+ * evalJacobianColored[Parallel]; the fwd/adj setter choice for built-in formats
+ * is derived from jacobian->isRowEval, so the three colored enum values behave
+ * identically here (kept only for external/legacy compatibility).
+ * BICOLOREDSYMJAC dispatches through evalJacobianBidirectional using setFwd.
+ *
+ * Caller responsibilities: set jac->dae_cj if needed, call setContext/unsetContext
+ * around this function. Dense output is zeroed internally; other formats are not.
+ *
+ * @param jacobian       Primary/meta Jacobian (sizeRows/sizeCols/sparsePattern/isRowEval).
+ * @param parentJacobian Parent context forwarded to evalJacobianColored, or NULL.
+ * @param t_jac          Thread-local copy for parallel eval; pass NULL to use jacobian itself (serial).
+ * @param format         JAC_OUTPUT_DENSE / JAC_OUTPUT_SPARSE_RAW / JAC_OUTPUT_CUSTOM.
+ * @param setFwd/setAdj  Only consulted for JAC_OUTPUT_CUSTOM. BICOLOREDSYMJAC
+ *                        uses setFwd regardless of format.
+ */
+void evalJacobianExtended(DATA* data, threadData_t* threadData,
+                   JACOBIAN_METHOD method,
+                   JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* t_jac,
+                   void* outputMatrix, JACOBIAN_OUTPUT_FORMAT format,
+                   setJacElementFunc setFwd, setJacElementFunc setAdj)
+{
+  jacobianCleanup_func_ptr cleanup = jacobian->isRowEval ? evalJacobianCleanupRowEval : NULL;
+  JACOBIAN* evalJac = t_jac ? t_jac : jacobian;
+
+  /* Resolve setter(s) for the built-in formats; JAC_OUTPUT_CUSTOM keeps whatever
+   * the caller passed in (e.g. a SUNDIALS sparse setter). */
+  switch (format) {
+  case JAC_OUTPUT_DENSE:
+    memset(outputMatrix, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
+    setFwd = setAdj = jacobian->isRowEval
+        ? setJacElementRawDenseColumnMajorRowEval
+        : setJacElementRawDenseColumnMajor;
+    break;
+  case JAC_OUTPUT_SPARSE_RAW:
+    setFwd = setAdj = setJacElementRawSparse;
+    break;
+  case JAC_OUTPUT_CUSTOM:
+    break; /* setFwd/setAdj supplied by caller */
+  }
+
+  switch (method) {
+  case COLOREDSYMJAC:
+  case SYMJAC:
+  case COLOREDSYMJACADJ: {
+    setJacElementFunc setter = jacobian->isRowEval ? setAdj : setFwd;
+#ifndef USE_PARJAC
+    evalJacobianColored(data, threadData, evalJac, parentJacobian, outputMatrix, setter, cleanup);
+#else
+  evalJacobianColoredParallel(data, threadData, evalJac, jacobian->sparsePattern,
+                outputMatrix, setter, jacobian->dae_cj);
+#endif
+    break;
+  }
+  case BICOLOREDSYMJAC: {
+    if (jacobian->isBidirectional && jacobian->adjointJacobian != NULL &&
+        jacobian->recoverMask != NULL && jacobian->adjointJacobian->recoverMask != NULL &&
+        jacobian->adjointJacobian->csrToCscMap != NULL) {
+      evalJacobianBidirectional(data, threadData, jacobian, parentJacobian,
+                                outputMatrix, setFwd, evalJacobianCleanupRowEval);
+    } else {
+      warningStreamPrint(OMC_LOG_JAC, 0,
+          "Bidirectional Jacobian data unavailable; falling back to colored symbolic evaluation.");
+      evalJacobianColored(data, threadData, jacobian, parentJacobian,
+                          outputMatrix, setFwd, cleanup);
+    }
+    break;
+  }
+  default:
+    throwStreamPrint(threadData, "evalJacobian: unsupported method %d", (int)method);
+    break;
+  }
+}
+
+/**
+ * @brief Row-eval cleanup: zeros resultVars and tmpVars after each color.
+ *
+ * Required for row-wise (adjoint) evaluation to prevent accumulation across colors.
+ */
+void evalJacobianCleanupRowEval(JACOBIAN* jac)
+{
+  memset(jac->resultVars, 0, jac->sizeRows * sizeof(modelica_real));
+  memset(jac->tmpVars,    0, jac->sizeTmpVars * sizeof(modelica_real));
+}
+
+/**
+ * @brief Evaluate one color of a Jacobian using a generic element setter.
+ *
+ * Single-color kernel shared by evalJacobianColored (serial) and
+ * evalJacobianColoredParallel (OpenMP). See jacobian_util.h for full documentation.
+ */
+void evalJacobianOneColor(DATA* data, threadData_t* threadData,
+                           JACOBIAN* jacobian, JACOBIAN* parentJac,
+                           const SPARSE_PATTERN* sp, int color,
+                           unsigned int activeDim, int nRows,
+                           void* matrixA, setJacElementFunc setElement,
+                           jacobianColumn_func_ptr evalFunc,
+                           jacobianCleanup_func_ptr cleanupFunc)
+{
+  int j, nth, currentIndex;
+
+  /* Activate seeds for this color */
+  for (j = 0; j < (int)activeDim; j++)
+    if ((int)sp->colorCols[j] - 1 == color)
+      jacobian->seedVars[j] = 1.0;
+
+  evalFunc(data, threadData, jacobian, parentJac);
+
+  /* Scatter results.
+   * Convention: setElement(currentIndex, j, nth, value, matrixA, nRows)
+   * where j is the active (seeded) index and currentIndex is the passive index.
+   * For column eval: j=col, currentIndex=row  => setElement(row, col, nth, ...)
+   * For row eval:    j=row, currentIndex=col  => setElement(col, row, nth, ...)
+   * The caller selects a setter that interprets its arguments accordingly.
+   */
+  for (j = 0; j < (int)activeDim; j++) {
+    if ((int)sp->colorCols[j] - 1 == color) {
+      nth = (int)sp->leadindex[j];
+      while (nth < (int)sp->leadindex[j + 1]) {
+        currentIndex = (int)sp->index[nth];
+        setElement(currentIndex, j, nth, jacobian->resultVars[currentIndex], matrixA, nRows);
+        // infoStreamPrint(OMC_LOG_JAC, 0, "evalJacobianOneColor: color=%d, j=%d, nth=%d, currentIndex=%d, value=%g",
+        //       color, j, nth, currentIndex, jacobian->resultVars[currentIndex]);
+        nth++;
+      }
+      jacobian->seedVars[j] = 0.0;
+    }
+  }
+
+  if (cleanupFunc != NULL)
+    cleanupFunc(jacobian);
+}
+
+/**
+ * @brief Evaluate Jacobian using coloring with a generic element setter.
+ *
+ * Unified evaluation for both column-wise (forward) and row-wise (adjoint) mode,
+ * selected by jacobian->isRowEval.
+ *
+ * Column-wise (isRowEval == FALSE):
+ *   - Seeds are set on columns; sparsePattern is CSC.
+ *   - setElement called as (currentIndex=row, j=col, nz, resultVars[row], ...).
+ *
+ * Row-wise (isRowEval == TRUE):
+ *   - Seeds are set on rows; sparsePattern is CSR.
+ *   - setElement called as (currentIndex=col, j=row, nz, resultVars[col], ...).
+ *   - cleanupFunc should be evalJacobianCleanupRowEval to reset state between colors.
+ *
+ * The caller is responsible for zeroing matrixA before this call if needed.
+ * constantEqns is called internally when present.
+ *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param jacobian        Jacobian to evaluate.
+ * @param parentJacobian  Parent Jacobian (can be NULL).
+ * @param matrixA         Opaque pointer to output matrix; passed through to setElement.
+ * @param setElement      Setter: (row, col, nz_index, value, matrixA, nRows).
+ * @param cleanupFunc     Called after each color; NULL is treated as a no-op.
+ */
+void evalJacobianColored(DATA* data, threadData_t *threadData,
+                         JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                         void* matrixA, setJacElementFunc setElement,
+                         jacobianCleanup_func_ptr cleanupFunc)
+{
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  const int isRowEval = (jacobian->isRowEval == TRUE);
+  const unsigned int activeDim = (int)(isRowEval ? jacobian->sizeRows : jacobian->sizeCols);
+
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  /* memset to zero for dense, since solvers might destroy "hard zeros" */
-  if (isDense) {
-    memset(jac, 0, nRows * nCols * sizeof(modelica_real));
-  }
-
-  /* Ensure seeds are zeroed before use (row seeds) */
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
-
-  /* evaluate Jacobian row-wise using row-coloring */
-  for (color = 0; color < (int)sp->maxColors; color++) {
-    /* activate seed variable(s) for the corresponding color (rows) */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        jacobian->seedVars[row] = 1.0;
-      }
-    }
-
-    /* evaluate all active rows at once (evalColumn acts as evalRow here) */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    /* scatter results */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
-          col = sp->index[nz];
-          if (!isDense) {
-            /* sparse case (CSR value buffer aligned with index order) */
-            jac[nz] = jacobian->resultVars[col];
-          } else {
-            /* dense case (row-major layout for csr format) */
-            jac[row * nCols + col] = jacobian->resultVars[col];
-          }
-        }
-        /* de-activate seed variable for the corresponding color (row) */
-        jacobian->seedVars[row] = 0.0;
-      }
-    }
+  for (int color = 0; color < (int)sp->maxColors; color++) {
+    evalJacobianOneColor(data, threadData, jacobian, parentJacobian, sp, color,
+                         activeDim, jacobian->sizeRows, matrixA, setElement,
+                         jacobian->evalColumn, cleanupFunc);
   }
 }
 
@@ -290,21 +498,59 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
  *
  * @param fwd   Forward jacobian with CSC pattern + column coloring.
  */
-void initBidirectionalRecovery(JACOBIAN* fwd)
+int initBidirectionalRecovery(JACOBIAN* fwd)
 {
-  JACOBIAN* adj = fwd->adjointJacobian;
-  if (!adj) return;
+  JACOBIAN* adj = fwd ? fwd->adjointJacobian : NULL;
+  if (!adj || !fwd->sparsePattern || !adj->sparsePattern) return 1;
 
-  const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
-  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
+  SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
+  SPARSE_PATTERN* adjsp = adj->sparsePattern;
   const unsigned int nCols = fwd->sizeCols;
   const unsigned int nRows = fwd->sizeRows;
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
+  if (adj->sizeCols != nRows || adj->sizeRows != nCols) {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+        "Bidirectional Jacobians have incompatible dimensions.");
+    return 1;
+  }
+
+  /* Bidirectional recovery requires exact CSR(J). The independently emitted
+   * adjoint pattern can under-approximate resizable array equations, while the
+   * forward CSC pattern already contains their expanded runtime structure. */
+  adjsp = cscToCsr(fwdsp, nRows, nCols);
+  if (!adjsp) {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+        "Failed to construct the bidirectional adjoint sparse pattern.");
+    return 1;
+  }
+  freeSparsePattern(adj->sparsePattern);
+  adj->sparsePattern = adjsp;
+  computeColumnColoring(adjsp, nCols, nRows);
+
+#ifdef OMC_HAVE_COLPACK
+  /* The adjoint pattern is CSR(J), which is the format expected by ColPack.
+   * Replace the independent distance-1 colorings with one joint star
+   * bicoloring. If ColPack fails, retain the valid independent colorings. */
+  if (computeColPackStarBicoloring(nRows, nCols,
+                                   adjsp->leadindex, adjsp->index,
+                                   adjsp->colorCols, &adjsp->maxColors,
+                                   fwdsp->colorCols, &fwdsp->maxColors) == 0) {
+    warningStreamPrint(OMC_LOG_JAC, 0,
+                       "Runtime star bicoloring failed.");
+  }
+#endif
+
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
   adj->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
   adj->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
+  if (nnz > 0 && (!fwd->recoverMask || !adj->recoverMask || !adj->csrToCscMap)) {
+    free(fwd->recoverMask); fwd->recoverMask = NULL;
+    free(adj->recoverMask); adj->recoverMask = NULL;
+    free(adj->csrToCscMap); adj->csrToCscMap = NULL;
+    return 1;
+  }
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */
@@ -314,7 +560,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     // iterate over nonzeros (rows with nonzero) in this column via forward CSC pattern
     for (nz = fwdsp->leadindex[j]; nz < fwdsp->leadindex[j+1]; nz++) {
       i = fwdsp->index[nz]; // row index of current nonzero
-      int unique = 1; // assume current column is unique for this nonzero until we find otherwise
+      int unique = cj > 0; // color 0 means this column is covered by row evaluation
       // check all other columns with nonzero in the same row i via adjoint CSR pattern
       for (k = adjsp->leadindex[i]; k < adjsp->leadindex[i+1]; k++) {
         j2 = adjsp->index[k]; // column index of nonzero in same row
@@ -338,7 +584,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     unsigned int ri = adjsp->colorCols[i];
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz];
-      int unique = 1;
+      int unique = ri > 0; // color 0 means this row is covered by column evaluation
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         i2 = fwdsp->index[k];
         if (i2 != i && adjsp->colorCols[i2] == ri) {
@@ -351,12 +597,13 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
   }
 
   /* CSR-to-CSC mapping: for each adjoint CSR position (nonzero), find forward CSC position */
+  // this could maybe be done with initAdjointCSRtoCSCMap
   // iterate over all rows
   for (i = 0; i < nRows; i++) {
     // iterate over all nonzeros in this row via adjoint CSR pattern
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz]; // get column index of current nonzero
-      adj->csrToCscMap[nz] = 0;
+      adj->csrToCscMap[nz] = nnz;
       // iterate over all nonzeros in this column via forward CSC pattern, so the nonzero rows
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         // if row index matches, we found the same nonzero in forward pattern
@@ -366,8 +613,17 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
           break;
         }
       }
+      if (adj->csrToCscMap[nz] == nnz) {
+        free(fwd->recoverMask); fwd->recoverMask = NULL;
+        free(adj->recoverMask); adj->recoverMask = NULL;
+        free(adj->csrToCscMap); adj->csrToCscMap = NULL;
+        warningStreamPrint(OMC_LOG_JAC, 0,
+            "Failed to map bidirectional entry (%u,%u) from CSR to CSC.", i, j);
+        return 1;
+      }
     }
   }
+  return 0;
 }
 
 /**
@@ -376,33 +632,40 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
  * Uses both forward (column) and adjoint (row) evaluations to recover all
  * nonzero entries with fewer total colors than unidirectional coloring.
  *
- * Dense output: column-major jac[col * nRows + row].
- * Sparse output: CSC-indexed jac[nz] matching forward sparse pattern.
+ * The forward and adjoint phases both call setElement as
+ * setElement(row, column, forwardCscNz, value, matrixA, nRows). This lets the
+ * caller select any output format, while the CSR-to-CSC mapping keeps the
+ * adjoint phase's sparsity index compatible with the forward pattern.
+ *
+ * cleanupFunc is invoked for the adjoint Jacobian after each row color. The
+ * forward phase deliberately needs no cleanup: its generated forward code
+ * overwrites its result state for each seed color. Row evaluation accumulates
+ * intermediate state, so it normally uses evalJacobianCleanupRowEval.
  *
  * @param data            Runtime data struct.
  * @param threadData      Thread data for error handling.
  * @param fwd             Forward jacobian (isBidirectional=TRUE, adjointJacobian set).
  * @param parentJacobian  Parent Jacobian for nested use (can be NULL).
- * @param jac             Output buffer.
- * @param isDense         TRUE for dense, FALSE for sparse CSC.
+ * @param matrixA         Opaque output matrix; forwarded to setElement.
+ * @param setElement      Setter called for each recovered entry in forward
+ *                        Jacobian orientation.
+ * @param cleanupFunc     Invoked on the adjoint Jacobian after every row color;
+ *                        NULL is a no-op.
  */
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
                                JACOBIAN* fwd, JACOBIAN* parentJacobian,
-                               modelica_real* jac, modelica_boolean isDense)
+                               void* matrixA, setJacElementFunc setElement,
+                               jacobianCleanup_func_ptr cleanupFunc)
 {
   JACOBIAN* adj = fwd->adjointJacobian;
   const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
   const SPARSE_PATTERN* adjsp = adj->sparsePattern;
   const int nRows = (int)fwd->sizeRows;
   const int nCols = (int)fwd->sizeCols;
-  int color, column, row, nz, j;
+  int color, column, row, nz;
 
   if (fwd->constantEqns) fwd->constantEqns(data, threadData, fwd, parentJacobian);
   if (adj->constantEqns) adj->constantEqns(data, threadData, adj, parentJacobian);
-
-  if (isDense) {
-    memset(jac, 0, (size_t)nRows * (size_t)nCols * sizeof(modelica_real));
-  }
 
   /* Column phase (forward mode, CSC + column coloring) */
   for (color = 0; color < (int)fwdsp->maxColors; color++) {
@@ -417,10 +680,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
         for (nz = (int)fwdsp->leadindex[column]; nz < (int)fwdsp->leadindex[column + 1]; nz++) {
           if (fwd->recoverMask[nz]) {
             row = (int)fwdsp->index[nz];
-            if (isDense)
-              jac[column * nRows + row] = fwd->resultVars[row];
-            else
-              jac[nz] = fwd->resultVars[row];
+            setElement(row, column, nz, fwd->resultVars[row], matrixA, nRows);
           }
         }
         fwd->seedVars[column] = 0.0;
@@ -441,19 +701,15 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
         for (nz = (int)adjsp->leadindex[row]; nz < (int)adjsp->leadindex[row + 1]; nz++) {
           if (adj->recoverMask[nz]) {
             column = (int)adjsp->index[nz];
-            if (isDense)
-              jac[column * nRows + row] = adj->resultVars[column];
-            else
-              jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
+            setElement(row, column, (int)adj->csrToCscMap[nz],
+                       adj->resultVars[column], matrixA, nRows);
           }
         }
         adj->seedVars[row] = 0.0;
       }
     }
-    /* Reset adjoint result vars to zero after reading to prevent accumulation across colors */
-    memset(adj->resultVars, 0, (size_t)nRows * sizeof(modelica_real));
-    // also for tmp vars
-    memset(adj->tmpVars, 0, (size_t)adj->sizeTmpVars * sizeof(modelica_real));
+    if (cleanupFunc != NULL)
+      cleanupFunc(adj);
   }
 }
 
@@ -506,6 +762,8 @@ void jvp(DATA* data, threadData_t *threadData,
   for (unsigned int row = 0; row < nRows; row++) {
     out[row] += jacobian->resultVars[row];
   }
+
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
 }
 
 
@@ -516,8 +774,11 @@ void jvp(DATA* data, threadData_t *threadData,
  * @param threadData      Thread data for error handling.
  * @param jacobian        Jacobian object (must have evalColumn and sparsePattern set).
  * @param parentJacobian  Parent Jacobian (if nested), can be NULL.
- * @param seed            Input seed vector s, length = jacobian->sizeRows.
- * @param out             Output vector y, length = jacobian->sizeCols.
+ * For a row-evaluation Jacobian, sizeCols is the primal row/seed count and
+ * sizeRows is the primal column/result count.
+ *
+ * @param seed            Input seed vector s, length = jacobian->sizeCols.
+ * @param out             Output vector y, length = jacobian->sizeRows.
  * @param zero_out        If true, zero-initialize out before accumulation.
  */
 void vjp(DATA* data, threadData_t *threadData,
@@ -533,13 +794,15 @@ void vjp(DATA* data, threadData_t *threadData,
   const unsigned int nCols = jacobian->sizeCols;
   const unsigned int nRows = jacobian->sizeRows;
 
+  evalJacobianCleanupRowEval(jacobian);
+
   /* Optional: zero output before accumulation */
   if (zero_out) {
-    memset(out, 0, nCols * sizeof(modelica_real));
+    memset(out, 0, nRows * sizeof(modelica_real));
   }
 
   /* Ensure seeds are zeroed before use */
-  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
 
   /* Evaluate constant equations (if any) */
   if (jacobian->constantEqns != NULL) {
@@ -547,7 +810,7 @@ void vjp(DATA* data, threadData_t *threadData,
   }
 
   /* Set all seeds */
-  for (unsigned int row = 0; row < nRows; row++) {
+  for (unsigned int row = 0; row < nCols; row++) {
       jacobian->seedVars[row] = seed[row];
   }
 
@@ -556,9 +819,11 @@ void vjp(DATA* data, threadData_t *threadData,
   jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
   /* Accumulate results into out */
-  for (unsigned int col = 0; col < nCols; col++) {
+  for (unsigned int col = 0; col < nRows; col++) {
     out[col] += jacobian->resultVars[col];
   }
+
+  evalJacobianCleanupRowEval(jacobian);
 }
 
 /**
@@ -584,15 +849,74 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
 
 
 /**
+ * @brief Map compressed source positions to positions in its transpose.
+ *
+ * The source's inner indices become the transpose's outer indices. If
+ * targetLeadindex is non-NULL, it is filled with the transpose's outer
+ * pointers. The map preserves the canonical transpose ordering obtained by
+ * scanning source outer indices in ascending order.
+ */
+static unsigned int* sparsePatternTransposeMap(const SPARSE_PATTERN* source,
+                                                unsigned int sourceOuterCount,
+                                                unsigned int targetOuterCount,
+                                                unsigned int* targetLeadindex)
+{
+  unsigned int* targetHeads;
+  unsigned int* sourceToTargetMap;
+  unsigned int position = 0;
+
+  targetHeads = (unsigned int*) calloc((targetOuterCount ? targetOuterCount : 1), sizeof(unsigned int));
+  sourceToTargetMap = (unsigned int*) malloc((source->nnz ? source->nnz : 1) * sizeof(unsigned int));
+  if (targetHeads == NULL || sourceToTargetMap == NULL) {
+    free(targetHeads);
+    free(sourceToTargetMap);
+    return NULL;
+  }
+
+  /* Count entries in each target outer dimension. */
+  for (unsigned int nz = 0; nz < source->nnz; nz++) {
+    if (source->index[nz] >= targetOuterCount) {
+      free(targetHeads);
+      free(sourceToTargetMap);
+      return NULL;
+    }
+    targetHeads[source->index[nz]]++;
+  }
+
+  /* Turn counts into target offsets. targetHeads remains the running head. */
+  for (unsigned int target = 0; target < targetOuterCount; target++) {
+    const unsigned int count = targetHeads[target];
+    targetHeads[target] = position;
+    if (targetLeadindex != NULL) {
+      targetLeadindex[target] = position;
+    }
+    position += count;
+  }
+  if (targetLeadindex != NULL) {
+    targetLeadindex[targetOuterCount] = position;
+  }
+
+  /* Map every source position to its canonical position in the transpose. */
+  for (unsigned int sourceOuter = 0; sourceOuter < sourceOuterCount; sourceOuter++) {
+    const unsigned int start = source->leadindex[sourceOuter];
+    const unsigned int stop = source->leadindex[sourceOuter + 1];
+    if (stop < start || stop > source->nnz) {
+      free(targetHeads);
+      free(sourceToTargetMap);
+      return NULL;
+    }
+    for (unsigned int nz = start; nz < stop; nz++) {
+      const unsigned int target = source->index[nz];
+      sourceToTargetMap[nz] = targetHeads[target]++;
+    }
+  }
+
+  free(targetHeads);
+  return sourceToTargetMap;
+}
+
+/**
  * @brief Convert a CSC-format sparsity pattern to CSR-format.
- *
- * Input CSC (A):
- *   - Ap = csc->leadindex (size nCols+1), column pointers
- *   - Ai = csc->index     (size nnz),      row indices
- *
- * Output CSR (B):
- *   - Bp = csr->leadindex (size nRows+1), row pointers
- *   - Bj = csr->index     (size nnz),     column indices
  *
  * Complexity: O(nnz + max(nRows, nCols))
  */
@@ -600,74 +924,28 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
                            unsigned int nRows,
                            unsigned int nCols)
 {
+  unsigned int* cscToCsrMap;
+
   if (!csc) return NULL;
 
-  const unsigned int nnz = csc->nnz;
-
   /* Allocate CSR pattern: leadindex size = nRows+1, index size = nnz */
-  SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, /*maxColors*/ 0);
+  SPARSE_PATTERN* csr = allocSparsePattern(nRows, csc->nnz, /*maxColors*/ 0);
   if (!csr) return NULL;
 
-  /* Aliases for clarity */
-  const unsigned int* Ap = csc->leadindex; /* col pointer (CSC) */
-  const unsigned int* Ai = csc->index;     /* row indices (CSC) */
-  unsigned int* Bp = csr->leadindex;       /* row pointer (CSR) */
-  unsigned int* Bj = csr->index;           /* col indices (CSR) */
-
-  /* 1) Count nnz per row (Bp[0..nRows-1]) */
-  memset(Bp, 0, (nRows+1) * sizeof(unsigned int));
-  for (unsigned int k = 0; k < nnz; k++) {
-    const unsigned int row = Ai[k];
-    if (row >= nRows) {
-      /* Out of bounds. Clean up and abort. */
-      freeSparsePattern(csr);
-      return NULL;
-    }
-    Bp[row]++;
+  cscToCsrMap = sparsePatternTransposeMap(csc, nCols, nRows, csr->leadindex);
+  if (cscToCsrMap == NULL) {
+    freeSparsePattern(csr);
+    return NULL;
   }
 
-  /* 2) Exclusive prefix sum over Bp to get row pointers; set Bp[nRows] = nnz */
-  {
-    unsigned int cumsum = 0;
-    for (unsigned int r = 0; r < nRows; r++) {
-      const unsigned int tmp = Bp[r];
-      Bp[r] = cumsum;
-      cumsum += tmp;
-    }
-    Bp[nRows] = nnz;
-  }
-
-  /* 3) Fill CSR column indices Bj using running heads in Bp */
-  for (unsigned int col = 0; col < nCols; col++) {
-    const unsigned int start = Ap[col];
-    const unsigned int stop  = Ap[col + 1];
-    if (stop < start || stop > nnz) {
-      /* Corrupt CSC pointers. Clean up and abort. */
-      freeSparsePattern(csr);
-      return NULL;
-    }
-    for (unsigned int jj = start; jj < stop; jj++) {
-      const unsigned int row = Ai[jj];
-      const unsigned int dest = Bp[row]; /* next free slot in this row */
-      Bj[dest] = col;
-      Bp[row]++; /* advance head */
+  /* Fill CSR index array using the mapping from CSC to CSR. */
+  for (unsigned int column = 0; column < nCols; column++) {
+    for (unsigned int nz = csc->leadindex[column]; nz < csc->leadindex[column + 1]; nz++) {
+      csr->index[cscToCsrMap[nz]] = column;
     }
   }
 
-  /* 4) Restore Bp to row pointers by shifting heads back */
-  {
-    unsigned int last = 0;
-    for (unsigned int r = 0; r <= nRows; r++) {
-      const unsigned int tmp = Bp[r];
-      Bp[r] = last;
-      last = tmp;
-    }
-  }
-
-  /* We don't have row coloring here; keep defaults (zeros). */
-  csr->maxColors = 0;
-  /* nnz was set by allocSparsePattern */
-
+  free(cscToCsrMap);
   return csr;
 }
 
@@ -854,6 +1132,20 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
   }
 }
 
+void initAdjointCSRtoCSCMap(JACOBIAN* jacobian)
+{
+  if (jacobian->csrToCscMap != NULL) {
+    return;
+  }
+  /* Row-evaluation dimensions describe its vectors: sizeCols is the number
+   * of seeded primal rows (CSR outer dimension), while sizeRows is the number
+   * of resulting primal columns (CSC outer dimension after transposition). */
+  jacobian->csrToCscMap = sparsePatternTransposeMap(jacobian->sparsePattern,
+                                                     jacobian->sizeCols,
+                                                     jacobian->sizeRows,
+                                                     NULL);
+}
+
 /**
  * @brief Set Jacobian method from user flag and available Jacobian.
  *
@@ -862,11 +1154,9 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
  * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
  * @return JACOBIAN_METHOD   Returns jacobian method that is availble.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, DATA* data, JACOBIAN** jacobian)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
-  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
-
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (omc_flag[FLAG_JACOBIAN]) {
     for (int method=1; method < JAC_MAX; method++) {
@@ -886,6 +1176,32 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
       omc_throw(threadData);
     }
   }
+
+  if (jacobianMethod == COLOREDSYMJACADJ) {
+    *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+      data->callback->initialAnalyticJacobianADJ(data, threadData, *jacobian);
+    }
+
+    /* An adjoint sparsity pattern alone cannot evaluate an adjoint symbolic
+     * Jacobian. Fall back to the forward Jacobian for numerical evaluation. */
+    if ((*jacobian)->availability != JACOBIAN_AVAILABLE) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Adjoint symbolic Jacobian not available, switching to internal numerical Jacobian.");
+      *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+        data->callback->initialAnalyticJacobianA(data, threadData, *jacobian);
+      }
+      jacobianMethod = INTERNALNUMJAC;
+    }
+  } else {
+    *jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    if ((*jacobian)->availability == JACOBIAN_UNKNOWN) {
+      data->callback->initialAnalyticJacobianA(data, threadData, *jacobian);
+    }
+  }
+
+  JACOBIAN_AVAILABILITY availability = (*jacobian)->availability;
+  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
   /* Check if method is available */
   switch (availability)
@@ -1015,4 +1331,3 @@ unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx)
 
   return row;
 }
-

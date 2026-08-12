@@ -626,11 +626,12 @@ public
                     end match
                   for cref in pder_crefs);
                 else
+                  // gets the pder for each pder cref.
                   try
                     pder_crefs := list(BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false)) for cref in pder_crefs);
                   else
                     Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + List.toString(pder_crefs, ComponentRef.toString)
-                      + " because they were supposed to be a row vars but at least one does not have a corresponding partial derivative."});
+                      + " because they were supposed to be row vars but at least one does not have a corresponding partial derivative."});
                     fail();
                   end try;
                 end if;

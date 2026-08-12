@@ -99,8 +99,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.b
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.a
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.a
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.b
 //
 // TmpVars (size = 4)
 // ********************

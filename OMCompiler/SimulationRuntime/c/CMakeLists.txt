@@ -149,7 +149,7 @@ elseif(MSVC)
 endif(MINGW)
 
 if(OM_OMC_ENABLE_COLPACK)
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_COLPACK)
+  target_compile_definitions(SimulationRuntimeC PUBLIC OMC_HAVE_COLPACK)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::colpack)
 endif()
 
