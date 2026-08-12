@@ -86,6 +86,7 @@ RUNTIMEOPTIMZ_HEADERS = optimization/OptimizerData.h optimization/OptimizerLocal
 RUNTIMESIMULATION_HEADERS = simulation/modelinfo.h \
 simulation/arrayIndex.h \
 simulation/eval_dep.h \
+simulation/jacobian_colpack.h \
 simulation/jacobian_util.h \
 simulation/options.h \
 simulation/simulation_info_json.h \

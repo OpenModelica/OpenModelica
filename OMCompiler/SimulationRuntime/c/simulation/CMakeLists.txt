@@ -81,6 +81,7 @@ set(OMC_SIMRT_SIMULATION_CINC
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
   "eval_dep.h"
+  "jacobian_colpack.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"

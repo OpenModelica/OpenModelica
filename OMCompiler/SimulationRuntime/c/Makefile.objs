@@ -272,6 +272,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
              arrayIndex.h \
              eval_dep.h \
+             jacobian_colpack.h \
              jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
