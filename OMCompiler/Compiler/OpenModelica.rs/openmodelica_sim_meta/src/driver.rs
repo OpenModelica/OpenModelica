@@ -2377,25 +2377,35 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     }
 }
 
-/// Whether this build's `SolverCore` can serve `method` on this model. Shared by
-/// [`make_driver`] and [`CsDriver::new`], neither of which may hand the core a method
-/// it would silently substitute. `dassljac` is dassl with a symbolic Jacobian and `""`
-/// the dassl default.
-fn check_method(method: &str, layout: &SimLayout) -> Result<()> {
-    let supported =
-        matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
-            || (matches!(method, "cvode" | "ida") && cfg!(sundials))
-            // `optimize()`; `drive` handles it before the integrators, and reports
-            // C's "Ipopt is needed but not available." when it was not linked.
-            || method == "optimization";
-    if !supported {
+/// Whether this build's `SolverCore` can serve `method`. `dassljac` is dassl
+/// with a symbolic Jacobian and `""` the dassl default.
+fn check_method(method: &str) -> bool {
+    matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
+        || (matches!(method, "cvode" | "ida") && cfg!(sundials))
+        // `optimize()`; `drive` handles it before the integrators, and reports
+        // C's "Ipopt is needed but not available." when it was not linked.
+        || method == "optimization"
+}
+
+/// Resolve the solver method: apply `-s=`, then default DAE-mode models to IDA
+/// (matching C's `simulation_runtime.cpp` solver override), then validate.
+fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str> {
+    let method = effective_method(method);
+    // C: if the model is compiled in daeMode, overwrite the solver to IDA
+    let method = if dae_mode && method != "ida" {
+        omclog::info(
+            omclog::SIMULATION,
+            false,
+            "overwrite solver method: ida [DAEmode works only with IDA solver]",
+        );
+        "ida"
+    } else {
+        method
+    };
+    if !check_method(method) {
         return Err(UNSUPPORTED_METHOD);
     }
-    // C leaves the choice to the user and then evaluates an empty `functionODE`.
-    if layout.dae_mode() && method != "ida" {
-        return Err("CodegenWasmJit: a model translated with --daeMode can only be simulated with -s=ida");
-    }
-    Ok(())
+    Ok(method)
 }
 
 /// C allocates the solver before initializing the model, and gbode logs its setup
@@ -2422,7 +2432,8 @@ pub fn make_driver(
     sim_data: u32,
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
-    let method = effective_method(method);
+    let layout = &model.layout;
+    let method = resolve_solver_method(method, layout.dae_mode())?;
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
     // C warns about a deprecated `-s=` while it resolves the flag, before it
@@ -2447,13 +2458,10 @@ pub fn make_driver(
         &format!("{} non-linear systems", model.nls_vars.len()),
     );
     omclog::close(omclog::NLS);
-    let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
     for k in 0..layout.n_sens {
         write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
     }
-    // Ahead of the events path below, which returns before the match.
-    check_method(method, layout)?;
     let gbode = alloc_gbode(model, method)?;
 
     // C's `setJacobianMethod` reports INTERNALNUMJAC in DAE mode (no symbolic `A` is
@@ -2562,7 +2570,7 @@ pub fn drive(
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
-    let method = effective_method(method);
+    let method = resolve_solver_method(method, layout.dae_mode())?;
 
     let mut label = "";
     let outcome = (|| -> Result<Vec<f64>> {
@@ -4868,8 +4876,7 @@ impl CsDriver {
     pub fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t: f64) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
-        let method = effective_method(&model.method);
-        check_method(method, layout)?;
+        let method = resolve_solver_method(&model.method, layout.dae_mode())?;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
         let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
