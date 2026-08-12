@@ -302,6 +302,11 @@ algorithm
   // Prepare the final DAE System with Set-C equations as residual equations
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outResidualVars, outOtherVars));
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outResidualEqns, outOtherEqns));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
@@ -716,6 +721,11 @@ algorithm
   // Prepare the final DAE System with Set-B and Set-S' equations
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outBoundaryConditionEquations, outOtherEqns));
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outBoundaryConditionVars, outOtherVars));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
@@ -1103,6 +1113,11 @@ algorithm
 
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.listEquation(allDaeEqs));
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.listVar(listAppend(setSVars, residualVars)));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
   shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
