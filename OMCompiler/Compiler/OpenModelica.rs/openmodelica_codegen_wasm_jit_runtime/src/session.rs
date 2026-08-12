@@ -31,6 +31,8 @@ unsafe extern "C" {
     /// Copy up to `max` of the violations the model left with the host's
     /// `rt_assert`/`rt_assert_warning` (which it imports either way) to `ptr`.
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
+    /// Same for the `reinit`s the model recorded with `rt_reinit_note`.
+    fn rt_host_take_reinits(ptr: u32, max: u32) -> u32;
     /// Open/close C's `noThrowAsserts` phase, on the host: that is where
     /// `rt_assert` lives, whichever driver runs.
     fn rt_host_set_no_throw(v: i32);
@@ -137,6 +139,17 @@ impl SimEngine for InWasmEngine {
             }
         }
     }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        let mut out = Vec::new();
+        loop {
+            let mut buf = [(0u32, 0.0f64); 8];
+            let n = unsafe { rt_host_take_reinits(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
+            out.extend_from_slice(&buf[..n.min(buf.len())]);
+            if n < buf.len() {
+                return out;
+            }
+        }
+    }
     fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
         // The model imports `rt_assert` from the host; a failed assert traps and
         // unwinds out of `rt_sim_advance` to the host, which reports it. Nothing
@@ -171,6 +184,8 @@ struct Session {
     rows: Vec<f64>,
     params: Vec<f64>,
     stats: SolveStats,
+    /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
+    lin: Vec<u8>,
 }
 
 struct SessionCell(UnsafeCell<Option<Session>>);
@@ -252,10 +267,15 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     crate::sundials::reset_caches();
 
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
-    let model = match openmodelica_sim_meta::decode(bytes) {
+    let mut model = match openmodelica_sim_meta::decode(bytes) {
         Ok(m) => m,
         Err(_) => return -1,
     };
+    // A session always has a host, which renders `read_experiment`'s notices from
+    // the same flags; saying it again here would double every line.
+    driver::set_log_sink(|_| {});
+    simflags::with_flags(|f| model.apply_flags(f));
+    driver::set_log_sink(crate::omclog::sink);
 
     crate::nls::rt_set_step_size(model.step_size());
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
@@ -269,7 +289,6 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
-    driver::set_log_sink(crate::omclog::sink);
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_alloc(model.layout.total);
@@ -291,6 +310,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         rows: Vec::new(),
         params: Vec::new(),
         stats: SolveStats::default(),
+        lin: Vec::new(),
     });
     0
 }
@@ -335,6 +355,11 @@ fn finish(s: &mut Session) {
         &s.model.layout,
         s.n_reals,
     );
+    if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
+        s.lin.extend_from_slice(f.name.as_bytes());
+        s.lin.push(0);
+        s.lin.extend_from_slice(f.content.as_bytes());
+    }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     s.finished = true;
 }
@@ -363,6 +388,17 @@ pub extern "C" fn rt_sim_rows_len() -> u32 {
 pub extern "C" fn rt_sim_n_reals() -> u32 {
     session().as_ref().map_or(0, |s| s.n_reals)
 }
+/// `-l`'s linearized model as `<file name>\0<content>`; the host writes the file
+/// (this runtime's WASI is the browser's VFS).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_lin_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.lin.as_ptr() as u32)
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_lin_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.lin.len() as u32)
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_params_ptr() -> u32 {
     session().as_ref().map_or(0, |s| s.params.as_ptr() as u32)

@@ -2,6 +2,7 @@
 // keywords: builtin, array, subscript
 // status:   correct
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
+// suite: metamodelica
 //
 // Checks that subscripting of arrays works correctly.
 //

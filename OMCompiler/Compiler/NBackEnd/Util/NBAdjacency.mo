@@ -613,7 +613,8 @@ public
                 end for;
 
                 if isAdjoint then
-                  // Map each primal result row to its adjoint seed variable. The runtime
+                  // The adjoint evaluates rows of the primal Jacobian. Map each
+                  // primal result row to its adjoint seed variable. The runtime
                   // later transposes the generated primal CSC pattern to CSR.
                   pder_crefs := list(
                     match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), diff_map)
@@ -630,7 +631,7 @@ public
                     pder_crefs := list(BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false)) for cref in pder_crefs);
                   else
                     Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + List.toString(pder_crefs, ComponentRef.toString)
-                      + " because they were supposed to be a row variable but at least one does not have a corresponding partial derivative."});
+                      + " because they were supposed to be row vars but at least one does not have a corresponding partial derivative."});
                     fail();
                   end try;
                 end if;

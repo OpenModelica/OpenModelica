@@ -1437,8 +1437,8 @@ protected
     );
 
     adjacencyVars := VariablePointers.clone(seedCandidates);
-    //adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
-    adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
+    // tmp_vars are diffed so use the undiffed ones for adjacency (but does this adjacency approach even work because the adjoint adds tmp vars to the system which are not part of the original system?)
+    adjacencyVars := VariablePointers.addList(baseTmpVarCandidates, adjacencyVars);
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(VariablePointers.toList(partialCandidates), adjacencyVars);
     end if;

@@ -17,8 +17,37 @@
 //!    otherwise fail with instructions.
 
 use std::collections::BTreeMap;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+
+/// Run a nested build. Captured, not inherited: concurrent children would
+/// interleave, and none may write on this script's `cargo:` stdout.
+fn run(cmd: &mut Command, what: &str) -> Result<(), String> {
+    let out = cmd
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|e| format!("could not spawn {what}: {e}"))?;
+    std::io::stderr().write_all(&out.stderr).ok();
+    if !out.status.success() {
+        return Err(format!("{what} exited with {}", out.status));
+    }
+    Ok(())
+}
+
+/// `items.iter().map(f)`, one thread each, results in input order; a worker panic
+/// resurfaces here. Spawning all at once does not oversubscribe: the nested
+/// cargos share this build's jobserver through `CARGO_MAKEFLAGS`.
+fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let f = &f;
+    std::thread::scope(|s| {
+        let handles: Vec<_> = items.iter().map(|it| s.spawn(move || f(it))).collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+            .collect()
+    })
+}
 
 fn main() {
     let crate_dir = PathBuf::from(env("CARGO_MANIFEST_DIR"));
@@ -45,7 +74,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME");
 
     // Hash of every input that affects the produced wasm.
-    let (mut hash, tracked) = hash_inputs(&runtime_dir);
+    let (mut hash, tracked) = hash_inputs(&runtime_dir, &[]);
     for f in &tracked {
         println!("cargo:rerun-if-changed={}", f.display());
     }
@@ -64,11 +93,314 @@ fn main() {
     // The JIT runtime (wasm32-unknown-unknown) and the standalone runtime
     // (wasm32-wasip1) are built from the same sources; both must run on every
     // invocation (the JIT build short-circuits on its own cache/override).
-    build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash);
-    build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
-    build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir);
-    build_external_c_wasm(&crate_dir, &out_dir);
-    build_fmi3_me_adapter(&crate_dir, &out_dir);
+    std::thread::scope(|s| {
+        s.spawn(|| build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash));
+        s.spawn(|| build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir));
+        s.spawn(|| {
+            build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
+        });
+        s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
+        s.spawn(|| build_fmi3_me_adapter(&crate_dir, &out_dir));
+        s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
+    });
+}
+
+/// Build the FMI loader (`openmodelica_fmi_ls_wasm_to_native`, both versions) once per
+/// platform an exported FMU may run on: this machine's plus
+/// `OMC_FMU_NATIVE_TARGETS`. Independent of omc's *own* target, so a wasm omc
+/// gets them too.
+fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
+    let loader_dir = crate_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_fmi_ls_wasm_to_native");
+    println!("cargo:rerun-if-env-changed=OMC_FMU_NATIVE_TARGETS");
+
+    // `(triple, asked for by name)`. A named target that will not build is fatal:
+    // shipping an omc that quietly offers fewer platforms than the build asked
+    // for is worse than a red build. `OMC_FMU_NATIVE_OPTIONAL` takes the whole
+    // set back to best-effort.
+    println!("cargo:rerun-if-env-changed=OMC_FMU_NATIVE_OPTIONAL");
+    let optional = std::env::var("OMC_FMU_NATIVE_OPTIONAL").is_ok_and(|v| v != "0");
+    let mut targets = vec![(env("HOST"), false)];
+    for t in std::env::var("OMC_FMU_NATIVE_TARGETS").unwrap_or_default().split(',') {
+        let t = t.trim();
+        if !t.is_empty() && !targets.iter().any(|(x, _)| x == t) {
+            targets.push((t.to_owned(), true));
+        }
+    }
+
+    let (digest, files) = hash_inputs(&loader_dir, &[]);
+    for f in &files {
+        println!("cargo:rerun-if-changed={}", f.display());
+    }
+    let sdk = macos_sdk();
+
+    // cargo-xwin keeps only the CRT architectures it was last asked for, so name
+    // every MSVC target's arch up front.
+    let mut archs: Vec<&str> = targets
+        .iter()
+        .map(|(t, _)| t)
+        .filter(|t| t.ends_with("-msvc"))
+        .filter_map(|t| t.split('-').next())
+        .collect();
+    archs.sort();
+    archs.dedup();
+    let xwin_arch = archs.join(",");
+
+    // Not embedded in omc: one native library per platform is ~4 MB that only an
+    // FMU export ever reads. CMake collects them from `OMC_FMU_LOADERS_OUT` and
+    // installs them (lib/omc/fmu-loaders, or the web bundle), with an index for
+    // the browser, which cannot list a directory.
+    println!("cargo:rerun-if-env-changed=OMC_FMU_LOADERS_OUT");
+    let staging = std::env::var_os("OMC_FMU_LOADERS_OUT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| out_dir.join("fmu-loaders"));
+    // Libraries an earlier build produced, taken as-is instead of cross-built
+    // again. Ignored when it is `staging`, which the next lines empty.
+    println!("cargo:rerun-if-env-changed=OMC_FMU_LOADERS_IN");
+    std::fs::create_dir_all(&staging).expect("create the FMU loader staging dir");
+    let staging_real = staging.canonicalize().unwrap_or_else(|_| staging.clone());
+    let prebuilt = std::env::var_os("OMC_FMU_LOADERS_IN")
+        .map(PathBuf::from)
+        .and_then(|d| d.canonicalize().ok())
+        .filter(|d| d.is_dir() && *d != staging_real);
+    // Emptied, so dropping a platform from the list also drops its library from
+    // the install rather than leaving one nothing indexes.
+    std::fs::remove_dir_all(&staging).ok();
+    std::fs::create_dir_all(&staging).expect("create the FMU loader staging dir");
+    struct Loader {
+        target: String,
+        requested: bool,
+        platform: String,
+        artifact: String,
+        ext: String,
+        dest: PathBuf,
+        stamp: PathBuf,
+        hash: String,
+        build: bool,
+    }
+    let mut loaders = Vec::new();
+    for (target, requested) in &targets {
+        let Some((platform, artifact)) = loader_artifact_name(target) else {
+            let msg = format!(
+                "{target} cannot be an FMU platform: the component is compiled by cranelift, \
+                 which only has x86-64 and aarch64 backends among the platforms FMI names"
+            );
+            assert!(!*requested || optional, "{msg}");
+            println!("cargo:warning={msg}");
+            continue;
+        };
+        let dest = out_dir.join(format!("fmu_loader_{platform}"));
+        let stamp = out_dir.join(format!("fmu_loader_{platform}.hash"));
+        let hash = match sdk.as_deref().filter(|_| target.contains("apple")) {
+            Some(sdk) => format!("{digest}-{target}-{sdk}"),
+            None => format!("{digest}-{target}"),
+        };
+        let cached = dest.exists()
+            && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
+            && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash);
+        let ext =
+            Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so").to_owned();
+        let handed_over = prebuilt
+            .as_ref()
+            .map(|d| d.join(format!("{platform}.{ext}")))
+            .filter(|f| f.is_file());
+        if let (false, Some(f)) = (cached, &handed_over) {
+            copy(f, &dest);
+            std::fs::write(&stamp, &hash).ok();
+        }
+        loaders.push(Loader {
+            target: target.clone(),
+            requested: *requested,
+            platform,
+            artifact,
+            ext,
+            dest,
+            stamp,
+            hash,
+            build: !cached && handed_over.is_none(),
+        });
+    }
+
+    // A wasmtime-linking cdylib per platform, none filling the machine alone.
+    let built = par_map(&loaders, |l| {
+        if !l.build {
+            return Ok(());
+        }
+        build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref())
+            .map(|produced| {
+                copy(&produced, &l.dest);
+                std::fs::write(&l.stamp, &l.hash).ok();
+            })
+    });
+
+    let mut index = String::new();
+    for (l, outcome) in loaders.iter().zip(built) {
+        let Loader { target, platform, ext, .. } = l;
+        if let Err(e) = outcome {
+            let msg = format!(
+                "could not build the FMU loader for {target} ({e}), so an exported FMU \
+                 cannot offer the {platform} platform. A cross target needs its Rust \
+                 target and a C toolchain: cargo-xwin for *-pc-windows-msvc, \
+                 cargo-zigbuild (+ ziglang) otherwise, and a macOS SDK in \
+                 OMC_FMU_MACOS_SDK for *-apple-darwin. \
+                 Set OMC_FMU_NATIVE_OPTIONAL=1 to build without it."
+            );
+            assert!(!l.requested || optional, "{msg}");
+            println!("cargo:warning={msg}");
+            continue;
+        }
+        copy(&l.dest, &staging.join(format!("{platform}.{ext}")));
+        index.push_str(&format!(
+            "{}{{\"platform\":{platform:?},\"triple\":{target:?},\"file\":\"{platform}.{ext}\",\"ext\":\".{ext}\"}}",
+            if index.is_empty() { "" } else { "," }
+        ));
+    }
+    std::fs::write(staging.join("index.json"), format!("[{index}]\n")).expect("write the loader index");
+}
+
+/// `(FMI platform tuple, artifact file name)` for a rustc target triple.
+fn loader_artifact_name(target: &str) -> Option<(String, String)> {
+    let arch = target.split('-').next()?;
+    let arch = match arch {
+        "x86_64" => "x86_64",
+        "aarch64" => "aarch64",
+        _ => return None,
+    };
+    let stem = "openmodelica_fmi_ls_wasm_to_native";
+    let (os, artifact) = if target.contains("windows") {
+        ("windows", format!("{stem}.dll"))
+    } else if target.contains("darwin") || target.contains("apple") {
+        ("darwin", format!("lib{stem}.dylib"))
+    } else if target.contains("linux") {
+        ("linux", format!("lib{stem}.so"))
+    } else {
+        return None;
+    };
+    Some((format!("{arch}-{os}"), artifact))
+}
+
+/// The cargo subcommand that can *link* for `target`: the loader is an ordinary
+/// native library (`wasmtime-wasi` compiles a C fiber), so a cross target needs a
+/// cross C toolchain — cargo-xwin for the MSVC CRT/SDK, cargo-zigbuild for the
+/// rest. `OMC_FMU_NATIVE_CARGO_<triple with _ for ->` overrides one target, e.g.
+/// to use a real cross gcc.
+fn cargo_subcommand(target: &str) -> Vec<String> {
+    let key = format!("OMC_FMU_NATIVE_CARGO_{}", target.replace('-', "_"));
+    println!("cargo:rerun-if-env-changed={key}");
+    if let Ok(v) = std::env::var(&key) {
+        return v.split_whitespace().map(str::to_owned).collect();
+    }
+    let sub = if target == env("HOST") {
+        vec!["build"]
+    } else if target.ends_with("-msvc") {
+        vec!["xwin", "build"]
+    } else {
+        vec!["zigbuild"]
+    };
+    sub.into_iter().map(str::to_owned).collect()
+}
+
+/// An unpacked macOS SDK for the `*-apple-darwin` loaders: zig ships no Apple
+/// frameworks and the loader reaches CoreFoundation through `cap-time-ext`.
+/// `OMC_FMU_MACOS_SDK` is CMake's `RUST_OMC_MACOS_SDK`.
+fn macos_sdk() -> Option<String> {
+    println!("cargo:rerun-if-env-changed=OMC_FMU_MACOS_SDK");
+    println!("cargo:rerun-if-env-changed=SDKROOT");
+    ["OMC_FMU_MACOS_SDK", "SDKROOT"]
+        .iter()
+        .filter_map(|k| std::env::var(k).ok())
+        .find(|v| !v.is_empty())
+}
+
+/// zig, cargo-zigbuild and cargo-xwin cache below `$HOME/.cache`, unwritable for
+/// a container uid with no passwd entry. A fixed fallback path: cargo-zigbuild's
+/// linker wrapper lives there and reaches rustc as `-Clinker=`, an sccache key.
+fn cross_toolchain_cache(cmd: &mut Command) {
+    if home_cache_writable() {
+        return;
+    }
+    let cache = std::env::temp_dir().join("omc-cross-toolchain-cache");
+    for (var, dir) in [
+        ("CARGO_ZIGBUILD_CACHE_DIR", "cargo-zigbuild"),
+        ("XWIN_CACHE_DIR", "cargo-xwin"),
+        ("ZIG_GLOBAL_CACHE_DIR", "zig"),
+    ] {
+        if std::env::var_os(var).is_none() {
+            cmd.env(var, cache.join(dir));
+        }
+    }
+}
+
+fn home_cache_writable() -> bool {
+    let Some(dir) = std::env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
+    else {
+        return false;
+    };
+    if std::fs::create_dir_all(&dir).is_err() {
+        return false;
+    }
+    let probe = dir.join(".omc-cache-probe");
+    let ok = std::fs::write(&probe, []).is_ok();
+    std::fs::remove_file(&probe).ok();
+    ok
+}
+
+fn build_native_loader(
+    loader_dir: &Path,
+    out_dir: &Path,
+    target: &str,
+    artifact: &str,
+    xwin_arch: &str,
+    macos_sdk: Option<&str>,
+) -> Result<PathBuf, String> {
+    let target_dir = out_dir.join(format!("fmu-loader-target-{target}"));
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let mut cmd = Command::new(cargo);
+    cross_toolchain_cache(&mut cmd);
+    if !xwin_arch.is_empty() {
+        cmd.env("XWIN_ARCH", xwin_arch);
+    }
+    if target.contains("apple") {
+        match macos_sdk {
+            // zig reports a nonexistent sysroot as the same "framework not found".
+            Some(sdk) if !Path::new(sdk).join("System/Library/Frameworks").is_dir() => {
+                return Err(format!("{sdk} is not a macOS SDK (no System/Library/Frameworks)"));
+            }
+            Some(sdk) => {
+                cmd.env("SDKROOT", sdk);
+            }
+            // A macOS host has its own SDK, found through xcrun.
+            None if env("HOST").contains("apple") => {}
+            None => {
+                return Err("no macOS SDK: point OMC_FMU_MACOS_SDK (CMake RUST_OMC_MACOS_SDK) \
+                            or SDKROOT at an unpacked MacOSX<version>.sdk"
+                    .to_owned())
+            }
+        }
+        // ld64 defaults the install name to the output path, which would put this
+        // build directory in every exported FMU.
+        cmd.env("RUSTFLAGS", format!("-Clink-arg=-Wl,-install_name,@rpath/{artifact}"));
+    } else {
+        cmd.env_remove("RUSTFLAGS");
+    }
+    cmd.current_dir(loader_dir)
+        .args(cargo_subcommand(target))
+        .args(["--release", "--target", target])
+        .arg("--target-dir")
+        .arg(&target_dir)
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    run(&mut cmd, &format!("cargo build for {target}"))?;
+    let produced = target_dir.join(target).join("release").join(artifact);
+    if !produced.exists() {
+        return Err(format!("expected library not found at {}", produced.display()));
+    }
+    Ok(produced)
 }
 
 /// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
@@ -76,9 +408,7 @@ fn main() {
 /// Built here regardless of omc's own target arch: build scripts run on the host.
 /// Mandatory: a failed build aborts rather than shipping an omc without it.
 fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path) {
-    for v in ADAPTER_VARIANTS {
-        build_fmi3_adapter(crate_dir, out_dir, v);
-    }
+    par_map(ADAPTER_VARIANTS, |v| build_fmi3_adapter(crate_dir, out_dir, v));
 }
 
 /// One FMI3 adapter build: a WIT world selected by Cargo features, from the same
@@ -92,11 +422,22 @@ struct AdapterVariant {
     cargo_args: &'static [&'static str],
 }
 
-/// Model Exchange (default features), Co-Simulation, and the combined me_cs world.
+/// Model Exchange (default features), Co-Simulation, and the combined me_cs world; the
+/// `_sundials` variants add CVODE/IDA and are picked only for a `method=` needing them.
 const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant { name: "me", label: "ME", cargo_args: &[] },
     AdapterVariant { name: "cs", label: "CS", cargo_args: &["--no-default-features", "--features", "cs"] },
     AdapterVariant { name: "mecs", label: "me_cs", cargo_args: &["--no-default-features", "--features", "me,cs"] },
+    AdapterVariant {
+        name: "cs_sundials",
+        label: "CS+SUNDIALS",
+        cargo_args: &["--no-default-features", "--features", "cs,sundials"],
+    },
+    AdapterVariant {
+        name: "mecs_sundials",
+        label: "me_cs+SUNDIALS",
+        cargo_args: &["--no-default-features", "--features", "me,cs,sundials"],
+    },
 ];
 
 fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
@@ -107,15 +448,6 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
         .parent()
         .expect("crate has a parent dir")
         .join("openmodelica_fmi3_wasm");
-    let runtime_dir = crate_dir
-        .parent()
-        .expect("crate has a parent dir")
-        .join("openmodelica_codegen_wasm_jit_runtime");
-    let sim_meta_dir = crate_dir
-        .parent()
-        .expect("crate has a parent dir")
-        .join("openmodelica_sim_meta");
-
     let env_override = format!("OMC_FMI3_{}_ADAPTER", v.name.to_uppercase());
     println!("cargo:rerun-if-env-changed={env_override}");
     if let Ok(path) = std::env::var(&env_override) {
@@ -124,32 +456,14 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
         return;
     }
 
-    // The adapter depends on the runtime + sim_meta crates, so hash all three.
-    let mut files = Vec::new();
-    for d in [&adapter_dir, &runtime_dir, &sim_meta_dir] {
-        collect_files(&d.join("src"), &mut files);
-        for m in ["Cargo.toml", "Cargo.lock"] {
-            let p = d.join(m);
-            if p.exists() {
-                files.push(p);
-            }
-        }
-    }
-    collect_files(&adapter_dir.join("wit"), &mut files);
-    files.sort();
+    // Every crate the adapter reaches through a `path` dep, transitively: the
+    // runtime and sim_meta are only the first hop — sim_meta reaches daskr, and a
+    // fixed list bakes a stale solver into the adapter.
+    let (digest, files) = hash_inputs(&adapter_dir, &[adapter_dir.join("wit")]);
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
-    let mut h: u64 = 0xcbf29ce484222325;
-    for f in &files {
-        if let Ok(b) = std::fs::read(f) {
-            for &byte in &b {
-                h ^= byte as u64;
-                h = h.wrapping_mul(0x100000001b3);
-            }
-        }
-    }
-    let hash = format!("{h:016x}-{}", v.name);
+    let hash = format!("{digest}-{}", v.name);
     if dest.exists()
         && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
         && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
@@ -199,8 +513,8 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
     let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
         -Clink-arg=--allow-undefined";
-    let status = Command::new(cargo)
-        .current_dir(adapter_dir)
+    let mut cmd = Command::new(cargo);
+    cmd.current_dir(adapter_dir)
         .args(["build", "-Z", "build-std=core,alloc,panic_abort", "--release", "--target", target])
         .args(v.cargo_args)
         .arg("--target-dir")
@@ -208,12 +522,8 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
         .env("RUSTFLAGS", rustflags)
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .env_remove("RUSTC_WORKSPACE_WRAPPER")
-        .status()
-        .map_err(|e| format!("could not spawn cargo: {e}"))?;
-    if !status.success() {
-        return Err(format!("cargo build (dylink) exited with {status}"));
-    }
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    run(&mut cmd, &format!("cargo build (dylink, {})", v.label))?;
     let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
     if !produced.exists() {
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
@@ -323,8 +633,8 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let builtins = find_wasm_builtins().ok_or_else(|| {
         "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
     }).unwrap_or_else(|e| panic!("{e}"));
-    let status = Command::new(&clang)
-        .args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
+    let mut cmd = Command::new(&clang);
+    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
                "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB",
                "-Wno-error=implicit-function-declaration"])
         .arg(format!("--sysroot={sysroot}"))
@@ -335,15 +645,9 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .arg(&builtins)
         .arg("-Wl,--export-all")
         .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
-        .arg("-o").arg(&dest)
-        .status()
-        .map_err(|e| format!("spawn {clang}: {e}")).unwrap_or_else(|e| {
-            panic!("modelicaexternalc.wasm: {e}")
-        });
-    if !status.success() {
-        panic!("clang exited with {status} (building modelicaexternalc.wasm, \
-                --target=wasm32-wasip1, sysroot {sysroot})");
-    }
+        .arg("-o").arg(&dest);
+    let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");
+    run(&mut cmd, &what).unwrap_or_else(|e| panic!("{e}"));
     if !std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false) {
         panic!("modelicaexternalc.wasm is empty");
     }
@@ -630,10 +934,7 @@ fn build_runtime_wasm_named(
         // agrees with what this script actually produced.
         None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
     }
-    let status = cmd.status().map_err(|e| format!("could not spawn cargo: {e}"))?;
-    if !status.success() {
-        return Err(format!("cargo build for {target} exited with {status}"));
-    }
+    run(&mut cmd, &format!("cargo build for {target} ({target_dir_prefix})"))?;
     let produced = target_dir
         .join(target)
         .join("release")
@@ -651,8 +952,11 @@ fn build_runtime_wasm_named(
 /// in `openmodelica_sim_meta`. Miss them and the cache serves a runtime whose
 /// `decode` no longer matches the emitted blob, which fails at run time
 /// (`rt_sim_start failed`), not at build time.
-fn hash_inputs(runtime_dir: &Path) -> (String, Vec<PathBuf>) {
+fn hash_inputs(runtime_dir: &Path, extra_dirs: &[PathBuf]) -> (String, Vec<PathBuf>) {
     let mut files = Vec::new();
+    for d in extra_dirs {
+        collect_files(d, &mut files);
+    }
     // Hash the runtime crate and every crate it reaches via `path = "..."` deps,
     // discovered transitively from the Cargo.toml files: a hardcoded list silently
     // misses edits to an unlisted path-dep and bakes a stale crate into the wasm.
@@ -663,6 +967,9 @@ fn hash_inputs(runtime_dir: &Path) -> (String, Vec<PathBuf>) {
         if !seen.insert(key) {
             continue;
         }
+        // The directory too: a new file is invisible to a rerun-if-changed list
+        // built from the files that existed last time.
+        println!("cargo:rerun-if-changed={}", dir.join("src").display());
         collect_files(&dir.join("src"), &mut files);
         let manifest = dir.join("Cargo.toml");
         for m in ["Cargo.toml", "Cargo.lock"] {

@@ -40,13 +40,16 @@ wasm-encoder = { workspace = true, features = ["wasmparser"] }
 # the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
 wit-component = "0.252"
 wasmparser = "0.252"
+# Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
+# compresses the same way the native one does.
+miniz_oxide = "0.8"
 
 [features]
 # The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit
 # simulation target). Default on. Built without it, the crate still *emits* wasm
 # modules but cannot execute them (the entry points report the engine absent),
 # and neither wasmtime nor wasmer is pulled in.
-default = ["jit", "sundials"]
+default = ["jit", "sundials", "fmu-native"]
 # `jit` pulls the native default engine (wasmtime); on wasm32 the wasmtime dep
 # is target-absent and wasmer-js is used instead (requires `engine-wasmer`).
 jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
@@ -54,15 +57,27 @@ jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
 # (wasmer then wins over wasmtime), and mandatorily on wasm32 (its `js` backend
 # is the only engine that builds for wasm).
 engine-wasmer = ["jit", "dep:wasmer", "openmodelica_wasm_jit/engine-wasmer"]
+# Compile an exported wasm FMU's component ahead of time for a native platform
+# (`buildModelFMU(platforms={"wasm", "linux64"})`), for which `all-arch` lets one
+# machine target every platform.
+#
+# Native-only, though wasmtime's compiler half does build for wasm32: cranelift
+# enables its `timing` feature unconditionally through wasmtime, and that calls
+# `Instant::now()`, which panics on wasm32-unknown-unknown ("time not implemented
+# on this platform"). Verified in a browser. Until cranelift can be built without
+# it, a browser omc reports the platform as unavailable rather than trapping.
+fmu-native = ["dep:wasmtime"]
 # SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web).
 # CMake sets this via --features when RUST_OMC_ENABLE_SUNDIALS is ON; the
 # runtime's build.rs then links the precompiled wasm32-wasip1 archives.
 sundials = []
 
-# wasmtime is native-only (no wasm32 build); the wasm target ignores
-# engine-wasmtime and always uses wasmer-js.
+# The wasm engine and the FMU cross-compiler, both native-only; the wasm build of
+# omc runs models through wasmer-js instead.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-wasmtime = { workspace = true, optional = true }
+wasmtime = { workspace = true, optional = true, features = [
+  "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+] }
 wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

@@ -2,6 +2,7 @@
 // keywords: Test that Integer works fine
 // status:   correct
 // teardown_command: rm -rf IntegerTest_* IntegerTest.exe IntegerTest.bat IntegerTest.cpp IntegerTest.makefile IntegerTest.libs IntegerTest.log output.log
+// suite: 63bit
 
 
 loadFile("IntegerTest.mo"); getErrorString();

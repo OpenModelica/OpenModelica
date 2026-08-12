@@ -1,6 +1,7 @@
 // name:     Declaration2
 // keywords: declaration
 // status:   incorrect
+// suite: antlr
 //
 // Misuse of component attributes.
 //
@@ -14,7 +15,7 @@ end Declaration2;
 // Error processing file: Declaration2.mo
 // Failed to parse file: Declaration2.mo!
 //
-// [openmodelica/parser/Declaration2.mo:9:12-9:20:writable] Error: No viable alternative near token: discrete
+// [openmodelica/parser/Declaration2.mo:10:12-10:20:writable] Error: No viable alternative near token: discrete
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

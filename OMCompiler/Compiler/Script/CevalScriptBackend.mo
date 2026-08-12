@@ -1609,11 +1609,19 @@ algorithm
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
+          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-          if 0 == System.systemCallRestrictedEnv(sim_call, logFile) then
+          // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
+          if Config.simCodeTarget() == "wasm-jit" then
+            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+          else
+            resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          end if;
+          if 0 == resI then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1677,7 +1685,15 @@ algorithm
           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          // As in the simulate() case: the wasm-jit target runs the JIT-compiled
+          // model in-process instead of spawning an executable.
+          if Config.simCodeTarget() == "wasm-jit" then
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+          elseif Config.simCodeTarget() == "wasm" then
+            resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+          else
+            resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          end if;
           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file := "";
@@ -4713,8 +4729,14 @@ protected
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-  // platforms={"wasm"} routes to the fmi-ls-wasm component export (Model Exchange).
-  Boolean isWasmFMU = listMember("wasm", platforms);
+  // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
+  // is the C export's business even under the wasm simCodeTarget.
+  Boolean wasmRequested = listMember("wasm", platforms);
+  Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
+  Boolean isWasmFMU = (wasmRequested or wasmTarget) and FMUVersion <> "1.0";
+  // Reached through the target, the caller still wants an FMU the ordinary
+  // tooling can load, so it gets this machine's platform too.
+  list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4729,6 +4751,11 @@ algorithm
   if not FMI.canExportFMU(FMUVersion, FMUType) then
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
+    return;
+  end if;
+  if wasmRequested and FMUVersion == "1.0" then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_WASM_FMI1, {});
     return;
   end if;
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
@@ -4754,6 +4781,11 @@ algorithm
   // reverted by buildModelFMU's saveFlags wrapper.
   if isWasmFMU then
     FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    // Every other entry names a native platform the FMU should also serve.
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(nativePlatforms, ","));
+  elseif wasmTarget then
+    // A browser omc has no C code generator and says so from there.
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "C");
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
@@ -4872,6 +4904,13 @@ algorithm
     end if;
   end if;
 end callBuildModelFMU;
+
+protected function isNotWasmPlatform
+  "\"static\"/\"dynamic\" are the C target's own platform names, meaningless once
+   the export is a wasm one; every other entry names a native platform."
+  input String platform;
+  output Boolean keep = not (platform == "wasm" or platform == "static" or platform == "dynamic");
+end isNotWasmPlatform;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";

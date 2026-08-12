@@ -1,5 +1,6 @@
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 model CheckInputScope
 
@@ -22,7 +23,7 @@ end CheckInputScope;
 
 // Result:
 // Error processing file: CheckPatternScope.mo
-// [metamodelica/meta/CheckPatternScope.mo:11:3-14:12:writable] Error: Variable y not found in scope CheckInputScope.P.test.
+// [metamodelica/meta/CheckPatternScope.mo:12:3-15:12:writable] Error: Variable y not found in scope CheckInputScope.P.test.
 // Error: Error occurred while flattening model CheckInputScope
 //
 // # Error encountered! Exiting...

@@ -1,5 +1,6 @@
 // name: fmi2_array_attributes
 // keywords: FMI 2.0 export array nominal scalarized
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_attributes.fmu fmi2_array_attributes.fmutmp/ fmi2_array_attributes.dims fmi2_array_attributes.log fmi2_array_attributes_info.json fmi2_array_attributes_me_FMU* fmi2_array_attributes_res.mat index.html
 //

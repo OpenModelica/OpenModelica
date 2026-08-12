@@ -206,11 +206,21 @@ pub const MODEL_FNS: &[&str] = &[
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
     "evaluateDAEResiduals",
+    "functionInitSynchronous",
+    "functionUpdateSynchronous",
+    "functionEquationsSynchronous",
+    "linearJacA",
+    "linearJacB",
+    "linearJacC",
+    "linearJacD",
 ];
 
-/// The one model entry point that is not `fn(SimData*)`: `--daeMode`'s residual
-/// takes the evaluation stage as a second argument (C's `currentEvalStage`).
+/// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
+/// takes the evaluation stage as a second argument (C's `currentEvalStage`), and
+/// the two synchronous dispatchers take a clock index.
 pub const MODEL_FN_DAE: &str = "evaluateDAEResiduals";
+pub const MODEL_FN_UPDATE_SYNC: &str = "functionUpdateSynchronous";
+pub const MODEL_FN_EQS_SYNC: &str = "functionEquationsSynchronous";
 
 /// C's `EVAL_*` (`dae_mode.c`): which stage of the step an equation belongs to.
 /// `evaluateDAEResiduals` runs exactly those whose `evalStages` intersect it.
@@ -251,6 +261,11 @@ pub trait SimEngine {
     /// sline, scol, eline, ecol, read_only]` (`kind` per `ASSERT_*`). Drained by
     /// the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
     fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+        Vec::new()
+    }
+    /// Take the `reinit`s the model executed since the last call, as `(state
+    /// SimData offset, value)`, for the event's `LOG_EVENTS` block. Default: none.
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         Vec::new()
     }
     /// Linear-system solves the runtime performed in-wasm, which the host driver
@@ -395,6 +410,8 @@ pub struct RunResult {
     pub params: Vec<f64>,
     /// Solver statistics (steps, evaluations, events).
     pub stats: SolveStats,
+    /// `-l`'s linearized model, for the caller to write out.
+    pub lin: Option<crate::linearize::LinFile>,
 }
 
 /// Outcome of one [`Driver::advance`] chunk.
@@ -553,6 +570,21 @@ static INIT_DONE_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_init_done_hook(f: fn()) {
     INIT_DONE_HOOK.store(f as usize, Ordering::Relaxed);
 }
+// Fires before the external objects are destroyed. C prints "The simulation
+// finished successfully." before destroying them, so the host keeps their output
+// apart from the simulation's.
+static TEARDOWN_HOOK: AtomicUsize = AtomicUsize::new(0);
+pub fn set_teardown_hook(f: fn()) {
+    TEARDOWN_HOOK.store(f as usize, Ordering::Relaxed);
+}
+fn signal_teardown() {
+    let p = TEARDOWN_HOOK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
+}
+
 /// Public because the in-wasm driver's hook cannot reach the host's capture: it
 /// relays the boundary over `env.rt_host_init_done`, which calls this.
 pub fn signal_init_done() {
@@ -589,6 +621,29 @@ pub(crate) fn log_line(s: &str) {
         let f: fn(&str) = unsafe { core::mem::transmute(p) };
         f(s);
     }
+}
+
+// C's `importStartValues`, which `-ipopt_init=file` repeats at every collocation
+// point. Opening a result file is the host's job (on the web it has to go through
+// the VFS), so the host installs the reader. `out` arrives holding the current
+// start values and keeps them for a name the file does not carry, as C's does.
+pub type ResultFileReader = fn(&str, &[&str], f64, &mut [f64]) -> core::result::Result<(), String>;
+static RESULT_FILE_READER: AtomicUsize = AtomicUsize::new(0);
+pub fn set_result_file_reader(f: ResultFileReader) {
+    RESULT_FILE_READER.store(f as usize, Ordering::Relaxed);
+}
+pub(crate) fn read_result_file(
+    file: &str,
+    names: &[&str],
+    t: f64,
+    out: &mut [f64],
+) -> core::result::Result<(), String> {
+    let p = RESULT_FILE_READER.load(Ordering::Relaxed);
+    if p == 0 {
+        return Err(format!("unable to read input-file <{file}>"));
+    }
+    let f: ResultFileReader = unsafe { core::mem::transmute(p) };
+    f(file, names, t, out)
 }
 
 /// [`SimEngine::take_pending_warnings`] kinds.
@@ -649,7 +704,7 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
         omclog::DEBUG_TYPE,
         omclog::ASSERT,
         false,
-        &alloc::format!(
+        &format!(
             "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
             failed - 1,
             format_g15(time),
@@ -923,9 +978,47 @@ mod term_report {
     pub use imp::{mark, reset};
 }
 
+/// Whether `-steadyState` was ever satisfied, for the warning C prints when the run
+/// reaches `stopTime` without it. Same shape as [`term_report`].
+mod steady_report {
+    #[cfg(feature = "std")]
+    mod imp {
+        use core::cell::Cell;
+        std::thread_local! {
+            static HIT: Cell<bool> = const { Cell::new(false) };
+        }
+        pub fn reset() {
+            HIT.with(|d| d.set(false));
+        }
+        pub fn mark() {
+            HIT.with(|d| d.set(true));
+        }
+        pub fn hit() -> bool {
+            HIT.with(|d| d.get())
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<bool>);
+        unsafe impl Sync for Store {}
+        static HIT: Store = Store(UnsafeCell::new(false));
+        pub fn reset() {
+            unsafe { *HIT.0.get() = false };
+        }
+        pub fn mark() {
+            unsafe { *HIT.0.get() = true };
+        }
+        pub fn hit() -> bool {
+            unsafe { *HIT.0.get() }
+        }
+    }
+    pub use imp::{hit, mark, reset};
+}
+
 /// Format `%f`-style (C's `%f`: 6 fractional digits), for the assertion time value.
-fn format_f(v: f64) -> String {
-    alloc::format!("{v:.6}")
+pub(crate) fn format_f(v: f64) -> String {
+    format!("{v:.6}")
 }
 
 fn format_g15(v: f64) -> String {
@@ -936,7 +1029,7 @@ fn format_g15(v: f64) -> String {
 /// zeros and a bare decimal point trimmed.
 pub fn format_g(v: f64, p: i32) -> String {
     if !v.is_finite() || v == 0.0 {
-        return alloc::format!("{v}");
+        return format!("{v}");
     }
     let exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
     let trim = |s: String| -> String {
@@ -946,10 +1039,20 @@ pub fn format_g(v: f64, p: i32) -> String {
         s.trim_end_matches('0').trim_end_matches('.').to_string()
     };
     if exp < -4 || exp >= p {
-        let m = trim(alloc::format!("{:.*}", (p - 1) as usize, v / libm::pow(10.0, exp as f64)));
-        return alloc::format!("{m}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs());
+        let m = trim(format!("{:.*}", (p - 1) as usize, v / libm::pow(10.0, exp as f64)));
+        return format!("{m}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs());
     }
-    trim(alloc::format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
+    trim(format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
+}
+
+/// C's `%e`: six decimals on the mantissa, a two-digit exponent.
+pub fn format_e(v: f64) -> String {
+    if !v.is_finite() {
+        return format!("{v}");
+    }
+    let exp = if v == 0.0 { 0 } else { libm::floor(libm::log10(libm::fabs(v))) as i32 };
+    let m = v / libm::pow(10.0, exp as f64);
+    format!("{m:.6}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
 }
 
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
@@ -997,7 +1100,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
             rethrow_store::arm(info);
             armed = true;
         } else {
-            let key = alloc::format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
+            let key = format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
             if assert_warn_store::first_time(key) {
                 omclog::message_text(ty, omclog::ASSERT, false, &line);
             }
@@ -1021,27 +1124,41 @@ pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
 fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> String {
     let during = if initial { "during initialization " } else { "" };
     let t = format_f(time);
+    let head = format!("The following assertion has been violated {during}at time {t}");
+    // A generated `assert()` always names its condition, and C prints it with the
+    // message as one message's second line — including for a backend-generated
+    // variable, whose `FILE_INFO` is empty (`$finalCon$…`'s min/max guard). A
+    // condition-less violation is C's `assertCommonVar` (the math-domain guards).
+    if cond.is_empty() {
+        return head;
+    }
+    let body = format!("(({cond})) --> \"{}\"", info.msg);
     if info.file.is_empty() {
-        return alloc::format!("The following assertion has been violated {during}at time {t}");
+        return format!("{head}\n{body}");
     }
     let ro_str = if info.read_only { "readonly" } else { "writable" };
-    alloc::format!(
-        "[{}:{}:{}-{}:{}:{ro_str}]\n\
-         The following assertion has been violated {during}at time {t}\n\
-         (({cond})) --> \"{}\"",
-        info.file, info.line_start, info.col_start, info.line_end, info.col_end, info.msg,
+    format!(
+        "[{}:{}:{}-{}:{}:{ro_str}]\n{head}\n{body}",
+        info.file, info.line_start, info.col_start, info.line_end, info.col_end,
     )
 }
 
 fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
-    // C's `assertCommonVar` (the math-domain guards, no source position): the warning
-    // names the time, a debug line carries the message.
-    if info.file.is_empty() {
-        omclog::warning(omclog::ASSERT, false, &assert_block(info, cond, time, initial));
+    let block = assert_block(info, cond, time, initial);
+    // C's `assertCommonVar` (the math-domain guards, no condition and no source
+    // position): the warning names the time, a debug line carries the message.
+    if cond.is_empty() {
+        omclog::warning(omclog::ASSERT, false, &block);
         omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, &info.msg);
         return;
     }
-    omclog::error(omclog::ASSERT, false, &assert_block(info, cond, time, initial));
+    // C's generated guard for a backend variable warns (`omc_assert_warning`); one
+    // with a source position is a model `assert()`, which is an error.
+    if info.file.is_empty() {
+        omclog::warning(omclog::ASSERT, false, &block);
+        return;
+    }
+    omclog::error(omclog::ASSERT, false, &block);
 }
 
 /// What the open window has seen: the first assertion suppressed in it, and
@@ -1137,12 +1254,71 @@ pub fn set_abort_slow(v: bool) {
 /// equidistant homotopy continuation (C's `solveWithGlobalHomotopy`), see
 /// `run_initialization_impl`. Leaves lambda = 1, then seeds `relationsPre` for the
 /// continuous phase's held relations.
-pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, start_time: f64) -> Result<()> {
+pub fn run_initialization(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    start_time: f64,
+) -> Result<()> {
+    init_model(e, sim_data, layout, inputs, start_time, None)?;
+    signal_init_done();
+    terminate_at_init(e, sim_data, layout)
+}
+
+/// [`run_initialization`] where the caller has the metadata the `LOG_SOTI` dump
+/// and the discrete start attributes need.
+pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    signal_init_done();
+    terminate_at_init(e, sim_data, &model.layout)
+}
+
+/// C asks after `initializeModel` reported success and before the main loop: a
+/// `terminate()` from an initial equation ends the run at `startTime`. The drivers
+/// see the same flag after the first output row and stop there.
+fn terminate_at_init(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if read_i32(e, sim_data + layout.terminate_off)? != 0 {
+        report_terminate(e, sim_data, layout, true)?;
+    }
+    Ok(())
+}
+
+/// [`run_initialization`] plus C's `initSynchronous`, which `initializeModel` runs
+/// before it reports success — so the clock dump lands in the log's init segment.
+pub fn run_initialization_with_clocks(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    model: &SimMeta,
+) -> Result<crate::sync::Sync> {
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
+    // An event clock whose `when` already fired during the initial discrete update
+    // is only *scheduled* here (C's `data->simulationInfo->initial` case).
+    sync.take_fired(e, model.start_time)?;
+    log_event_status(e, sim_data, model, omclog::EVENTS)?;
+    signal_init_done();
+    terminate_at_init(e, sim_data, &model.layout)?;
+    Ok(sync)
+}
+
+fn init_model(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    start_time: f64,
+    model: Option<&SimMeta>,
+) -> Result<()> {
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_f64(e, sim_data + TIME_OFF, start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
-    run_initialization_impl(e, sim_data, layout)?;
+    write_i32(e, sim_data + layout.initial_off, 1)?;
+    run_initialization_impl(e, sim_data, layout, inputs, model)?;
+    if let Some(m) = model {
+        dump_initial_solution(e, sim_data, m);
+    }
     // C's `storePreValues` after the initial solve (initialization.c:903).
     seed_pre_from_live(e, sim_data, layout)?;
     // Seed the continuous phase's held relations from a full discrete fixed point.
@@ -1156,19 +1332,23 @@ pub fn run_initialization(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayo
     e.call1_if_present("functionStoreDelayed", sim_data)?;
     if layout.n_zc > 0 {
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-        e.call1("functionZeroCrossings", sim_data)?;
         save_zc_pre(e, sim_data, layout)?;
+        e.call1("functionZeroCrossings", sim_data)?;
     }
+    write_i32(e, sim_data + layout.initial_off, 0)?;
     // C's `initializeModel` ends with `checkForAsserts` — before the
     // initialization-success line.
     check_asserts(e, sim_data, layout, omclog::WARNING)?;
-    // Initialization output is complete; the next model output is the simulation
-    // phase. Let the host close the init segment of the capture.
-    signal_init_done();
     Ok(())
 }
 
-fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+fn run_initialization_impl(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
     // C's `updateStaticDataOfNonlinearSystems`.
     omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
     omclog::close(omclog::NLS);
@@ -1178,7 +1358,15 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     let _ = rethrow_store::take();
     set_no_throw(false);
     term_report::reset();
-    seed_start_values(e, sim_data, layout)?;
+    steady_report::reset();
+    seed_start_values(e, sim_data, layout, inputs, model)?;
+
+    // C's `IIM_NONE`: every variable keeps its start value, the initial system is
+    // never solved. C still marks the systems solved before it picks the method.
+    if crate::simflags::with_flags(|f| f.init_method) == crate::simflags::InitMethod::None {
+        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+        return Ok(());
+    }
 
     // C's `symbolic_initialization`: a model with `homotopy()` goes straight to the
     // global equidistant continuation, unless `-noHomotopyOnFirstTry` asks for the
@@ -1203,7 +1391,7 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
     // C's catch arm resets everything to start before the continuation runs.
     init_report::reset();
     let _ = rethrow_store::take();
-    seed_start_values(e, sim_data, layout)?;
+    seed_start_values(e, sim_data, layout, inputs, model)?;
     run_homotopy_continuation(e, sim_data, layout)?;
     init_report::set_homotopy_steps(homotopy_steps() as u32);
     Ok(())
@@ -1212,14 +1400,34 @@ fn run_initialization_impl(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLay
 /// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
 /// `updateBoundVariableAttributes`: every variable back at its start value with
 /// the bound parameters recomputed. Run before each attempt at the initial system.
-fn seed_start_values(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+/// C's `fmi2Instantiate`/`fmi2Reset` run `setAllParamsToStart` +
+/// `setAllVarsToStart` there too, not only in `initializeModel`: a get before
+/// Initialization Mode is left must report the `start` attributes, and an equation
+/// over a zeroed `SimData` can produce a NaN instead.
+pub fn seed_start_state(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
+    // `functionInitDelay` before any equation function, as in `init_model`.
+    write_f64(e, sim_data + TIME_OFF, model.start_time)?;
+    e.call1_if_present("functionInitDelay", sim_data)?;
+    seed_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))
+}
+
+fn seed_start_values(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
     e.call1("functionParameters", sim_data)?;
-    // Params first (a start expression may read one), then fill start slots, then
-    // start overrides (replacing the just-computed start).
+    // Params first (a start expression may read one), then the start attributes —
+    // the expressions, then the `$START.<var>` equations that bind one to a
+    // parameter — then `-iif`/`-override`, then C's `setAllVarsToStart`.
     apply_param_overrides(e, sim_data)?;
-    e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
+    apply_external_input(e, sim_data, inputs)?;
+    e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
     apply_start_overrides(e, sim_data)?;
+    set_all_vars_to_start(e, sim_data, layout, model)?;
     // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
     // an initial equation sees `start`, not 0.
     seed_pre_from_live(e, sim_data, layout)?;
@@ -1275,7 +1483,7 @@ fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimL
 /// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
 /// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
 /// same layout.
-fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
     for i in 0..layout.n_reals_row() {
         rows.push(read_f64(e, sim_data + i * 8)?);
     }
@@ -1292,30 +1500,71 @@ fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &S
     Ok(())
 }
 
-/// True if `terminate()` raised the `SimData` flag during the last step. The
-/// first observation reports it (C's `checkSimulationTerminated`).
+/// Whether the run stops here rather than at `stopTime`: `terminate()` raised the
+/// `SimData` flag during the last step (C's `checkSimulationTerminated`), or
+/// `-steadyState` is satisfied. Every driver asks after each output row, so both
+/// C stop conditions are served in one place. The first observation reports it.
 fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
     if read_i32(e, sim_data + layout.terminate_off)? == 0 {
+        return steady_state_reached(e, sim_data, layout);
+    }
+    report_terminate(e, sim_data, layout, false)?;
+    Ok(true)
+}
+
+/// C's `checkSimulationTerminated` notice: the source position raw (`printInfo`,
+/// outside the message system) then the message, once per run. `at_init` picks
+/// the wording C uses before the main loop.
+fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_init: bool) -> Result<()> {
+    if !term_report::mark() {
+        return Ok(());
+    }
+    let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
+    let msg = read_rt_string(e, w(0)?)?;
+    let file = read_rt_string(e, w(1)?)?;
+    if !file.is_empty() {
+        let ro = if w(6)? != 0 { "readonly" } else { "writable" };
+        log_line(&format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
+    }
+    let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
+    let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
+    omclog::info(omclog::STDOUT, false, &format!("Simulation call terminate() {at}\nMessage : {msg}"));
+    Ok(())
+}
+
+/// C's `-steadyState` (`perform_simulation.c.inc`): the run ends once every state
+/// derivative is under `-steadyStateTol` relative to that state's nominal.
+fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
+    let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol) else {
+        return Ok(false);
+    };
+    if layout.n_states == 0 {
+        return Err("No states in model. Flag -steadyState can only be used if states are present.");
+    }
+    let ders = sim_data + REAL_OFF + layout.n_states * 8;
+    let mut max_der = 0.0f64;
+    for i in 0..layout.n_states {
+        let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
+        let d = libm::fabs(read_f64(e, ders + i * 8)? / nominal);
+        if max_der < d {
+            max_der = d;
+        }
+    }
+    if max_der >= tol {
         return Ok(false);
     }
-    if term_report::mark() {
-        let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
-        let msg = read_rt_string(e, w(0)?)?;
-        let file = read_rt_string(e, w(1)?)?;
-        // C prints the source position raw (`printInfo`), outside the message system.
-        if !file.is_empty() {
-            let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-            log_line(&alloc::format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
-        }
-        omclog::info(
-            omclog::STDOUT,
-            false,
-            &alloc::format!(
-                "Simulation call terminate() at time {}\nMessage : {msg}",
-                format_f(read_f64(e, sim_data + TIME_OFF)?),
-            ),
-        );
-    }
+    steady_report::mark();
+    omclog::info(
+        omclog::STDOUT,
+        false,
+        &format!(
+            "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
+             relative tolerance = {}",
+            format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+            format_g(max_der, 6),
+            format_g(tol, 6),
+        ),
+    );
     Ok(true)
 }
 
@@ -1394,7 +1643,10 @@ pub fn emit_terminal_row(
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_f64(e, sim_data + TIME_OFF, time)?;
     write_i32(e, sim_data + layout.terminal_off, 1)?;
-    let updated = iterate_discrete(e, sim_data, layout);
+    // A discrete call, so relations are live (C's `updateDiscreteSystem`
+    // prologue): a condition that only becomes true at `stop` flips here.
+    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    let updated = refresh_relations(e, sim_data, layout).and_then(|_| iterate_discrete(e, sim_data, layout));
     write_i32(e, sim_data + layout.terminal_off, 0)?;
     updated?;
     check_nls(e, sim_data, layout)?;
@@ -1466,8 +1718,87 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
     Ok(())
 }
 
-/// Upper bound on discrete-update iterations at one event (C's `maxEventIterations`).
+/// C's `initializeModel` input step: `input_function_init` seeds `inputVars` from
+/// the inputs' start attributes, `externalInputUpdate` replaces them with
+/// `-csvInput` at `t0`, and `input_function_updateStartValues` writes them back as
+/// the start attributes — so `setAllVarsToStart` puts the file's values on the
+/// inputs. Runs before the attribute equations and `-iif`, both of which C lets
+/// win over the file.
+#[cfg(feature = "std")]
+fn apply_external_input(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    inputs: &[crate::InputVar],
+) -> Result<()> {
+    if inputs.is_empty() {
+        return Ok(());
+    }
+    let Some(file) = crate::simflags::with_flags(|f| f.csv_input.clone()) else { return Ok(()) };
+    let names: Vec<&str> = inputs.iter().map(|v| v.name.as_str()).collect();
+    let Some(mut ext) = crate::extinput::ExternalInput::load(&file, &names) else { return Ok(()) };
+    // C's `input_function_init`; `externalInputUpdate` rewrites every entry (a
+    // column the file lacks becomes 0, from its `calloc`ed rows), so this only
+    // matters for the shape.
+    let mut u = crate::extinput::empty(inputs.len());
+    let t = read_f64(e, sim_data + TIME_OFF)?;
+    ext.update(t, &mut u);
+    for (input, v) in inputs.iter().zip(&u) {
+        match input.wty {
+            crate::WTy::F64 => write_f64(e, sim_data + input.off, *v)?,
+            crate::WTy::I32 => write_i32(e, sim_data + input.off, *v as i32)?,
+        }
+    }
+    Ok(())
+}
+
+/// `-csvInput` needs a filesystem, which the in-wasm runtime has not.
+#[cfg(not(feature = "std"))]
+fn apply_external_input(
+    _e: &mut dyn SimEngine,
+    _sim_data: u32,
+    _inputs: &[crate::InputVar],
+) -> Result<()> {
+    Ok(())
+}
+
+/// C's `setAllVarsToStart` for the reals: every real variable takes its `start`
+/// attribute. Integer/Boolean/String starts are still the emitted equations'.
+fn set_all_vars_to_start(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) -> Result<()> {
+    // The discrete `start` attributes are constants, so they are metadata rather
+    // than a `SimData` region; C reads them out of the `_init.xml`.
+    if let Some(m) = model {
+        for (i, (_, start)) in m.soti.ints.iter().enumerate() {
+            write_i32(e, sim_data + layout.int_off + i as u32 * 4, *start)?;
+        }
+        for (i, (_, start)) in m.soti.bools.iter().enumerate() {
+            write_i32(e, sim_data + layout.bool_off + i as u32 * 4, *start)?;
+        }
+    }
+    let bytes = ((2 * layout.n_states + layout.n_real_alg) * 8) as usize;
+    if bytes == 0 {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; bytes];
+    e.read_bytes(sim_data + layout.start_off, &mut buf)?;
+    e.write_bytes(sim_data + REAL_OFF, &buf)
+}
+
+/// Upper bound on discrete-update iterations at one event: C's `maxEventIterations`
+/// default, which `-mei` replaces.
 const MAX_EVENT_ITER: usize = 20;
+
+fn max_event_iter() -> usize {
+    crate::simflags::with_flags(|f| f.max_event_iter).map_or(MAX_EVENT_ITER, |n| n as usize)
+}
+
+/// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it is
+/// set to a positive value, else what halving the bracket down to `ttol` takes.
+pub(crate) fn bisection_iterations(width: f64, ttol: f64) -> i64 {
+    match crate::simflags::with_flags(|f| f.max_bisection_iter) {
+        Some(n) if n > 0 => n as i64,
+        _ => 1 + libm::ceil(libm::log(libm::fabs(width) / ttol) / libm::log(2.0)) as i64,
+    }
+}
 
 /// Snapshot the zero-crossing g-values into `zeroCrossingsPre` (C's
 /// `saveZeroCrossings`); `delayZeroCrossing` reads it as the held g-value.
@@ -1502,6 +1833,168 @@ fn refresh_relations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     e.call1("functionUpdateRelations", sim_data)?;
     update_relations_pre(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)
+}
+
+/// C's `dumpInitialSolution` (`initialization.c`): the `LOG_SOTI` block, printed
+/// after the initial system is solved and *before* the pre-values are stored — so
+/// a derivative still reads `(pre: 0)`.
+fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
+    if !omclog::active(omclog::SOTI) {
+        return;
+    }
+    let layout = &model.layout;
+    let soti = &model.soti;
+    let n = layout.n_states as usize;
+    let real = |off: u32| read_f64(e, sim_data + off).unwrap_or(0.0);
+    let pre_real = |off: u32| layout.pre_slot_off(off).map_or(0.0, |p| real(p));
+    let g = |v: f64| format_g(v, 6);
+    omclog::info(omclog::SOTI, true, "### SOLUTION OF THE INITIALIZATION ###");
+    let real_line = |i: usize| {
+        let off = REAL_OFF + i as u32 * 8;
+        let (name, nom) = &soti.reals[i];
+        let nom = if i < n { real(layout.state_nom_off + i as u32 * 8) } else { *nom };
+        format!(
+            "[{}] Real {name}(start={}, nominal={}) = {} (pre: {})",
+            i + 1,
+            g(real(layout.real_start_off(i as u32))),
+            g(nom),
+            g(real(off)),
+            g(pre_real(off))
+        )
+    };
+    if n > 0 && soti.reals.len() >= 2 * n {
+        omclog::info(omclog::SOTI, true, "states variables");
+        for i in 0..n {
+            omclog::info(omclog::SOTI, false, &real_line(i));
+        }
+        omclog::close(omclog::SOTI);
+        omclog::info(omclog::SOTI, true, "derivatives variables");
+        for i in n..2 * n {
+            let off = REAL_OFF + i as u32 * 8;
+            let name = &soti.reals[i].0;
+            let line = format!("[{}] Real {name} = {} (pre: {})", i + 1, g(real(off)), g(pre_real(off)));
+            omclog::info(omclog::SOTI, false, &line);
+        }
+        omclog::close(omclog::SOTI);
+    }
+    if soti.reals.len() > 2 * n {
+        omclog::info(omclog::SOTI, true, "other real variables");
+        for i in 2 * n..soti.reals.len() {
+            omclog::info(omclog::SOTI, false, &real_line(i));
+        }
+        omclog::close(omclog::SOTI);
+    }
+    let i32_at = |off: u32| read_i32(e, sim_data + off).unwrap_or(0);
+    let pre_i32 = |off: u32| layout.pre_slot_off(off).map_or(0, |p| i32_at(p));
+    if !soti.ints.is_empty() {
+        omclog::info(omclog::SOTI, true, "integer variables");
+        for (i, (name, start)) in soti.ints.iter().enumerate() {
+            let off = layout.int_off + i as u32 * 4;
+            let line =
+                format!("[{}] Integer {name}(start={start}) = {} (pre: {})", i + 1, i32_at(off), pre_i32(off));
+            omclog::info(omclog::SOTI, false, &line);
+        }
+        omclog::close(omclog::SOTI);
+    }
+    if !soti.bools.is_empty() {
+        omclog::info(omclog::SOTI, true, "boolean variables");
+        let b = |v: i32| if v != 0 { "true" } else { "false" };
+        for (i, (name, start)) in soti.bools.iter().enumerate() {
+            let off = layout.bool_off + i as u32 * 4;
+            let line = format!(
+                "[{}] Boolean {name}(start={}) = {} (pre: {})",
+                i + 1,
+                b(*start),
+                b(i32_at(off)),
+                b(pre_i32(off))
+            );
+            omclog::info(omclog::SOTI, false, &line);
+        }
+        omclog::close(omclog::SOTI);
+    }
+    if !soti.strings.is_empty() {
+        omclog::info(omclog::SOTI, true, "string variables");
+        for (i, (name, start)) in soti.strings.iter().enumerate() {
+            let cur = read_rt_string(e, i32_at(layout.str_off + i as u32 * 4)).unwrap_or_default();
+            let line = format!("[{}] String {name}(start=\"{start}\") = \"{cur}\" (pre: \"{cur}\")", i + 1);
+            omclog::info(omclog::SOTI, false, &line);
+        }
+        omclog::close(omclog::SOTI);
+    }
+    omclog::close(omclog::SOTI);
+}
+
+/// C's `perform_simulation` event header plus `handleEvents`' crossing list. Left
+/// open until the discrete update has run, so the model's `reinit` lines land in it.
+fn log_state_event(time: f64, roots: &[usize], model: &SimMeta) {
+    if !omclog::active(omclog::EVENTS) {
+        return;
+    }
+    omclog::info(omclog::EVENTS, true, &format!("state event at time={}", format_g(time, 12)));
+    for &i in roots {
+        let desc = model.zc_desc.get(i).map(String::as_str).unwrap_or_default();
+        omclog::info(omclog::EVENTS, false, &format!("[{}] {desc}", i + 1));
+    }
+}
+
+/// C's `algStmtReinit` message, from what the model recorded during the update.
+fn log_reinits(e: &mut dyn SimEngine, model: &SimMeta) {
+    for (off, value) in e.take_pending_reinits() {
+        if !omclog::active(omclog::EVENTS) {
+            continue;
+        }
+        let col = 1 + off.saturating_sub(REAL_OFF) / 8; // column 0 is `time`
+        let name = model
+            .vars
+            .iter()
+            .find(|v| matches!(v.kind, ResultKind::Column { col: c, negate: false } if c == col))
+            .map(|v| v.name.as_str())
+            .unwrap_or_default();
+        omclog::info(omclog::EVENTS, false, &format!("reinit {name} = {}", format_g(value, 6)));
+    }
+}
+
+/// [`log_state_event`] for a time event: C names the samples that fired.
+fn log_time_event(time: f64, samples: &Samples, model: &SimMeta) {
+    if !omclog::active(omclog::EVENTS) {
+        return;
+    }
+    omclog::info(omclog::EVENTS, true, &format!("time event at time={}", format_g(time, 12)));
+    for (k, start, interval) in samples.due(time) {
+        let index = model.sample_index.get(k).copied().unwrap_or(k as i32 + 1);
+        omclog::info(
+            omclog::EVENTS,
+            false,
+            &format!("[{index}] sample({}, {})", format_g(start, 6), format_g(interval, 6)),
+        );
+    }
+}
+
+/// C's `printRelations` + `printZeroCrossings` (`model_help.c`), which
+/// `initializeModel` ends with on `LOG_EVENTS`.
+pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, model: &SimMeta, stream: omclog::Stream) -> Result<()> {
+    if !omclog::active(stream) {
+        return Ok(());
+    }
+    let layout = &model.layout;
+    let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
+    omclog::info(stream, true, &format!("status of relations at time={time}"));
+    for i in 0..layout.n_rel {
+        let flag = |off: u32| if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 { " true" } else { "false" };
+        let desc = model.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+        let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
+        omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+    }
+    omclog::close(stream);
+    omclog::info(stream, true, &format!("status of zero crossings at time={time}"));
+    for i in 0..layout.n_zc {
+        let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
+        let desc = model.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+        let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
+        omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+    }
+    omclog::close(stream);
+    Ok(())
 }
 
 /// Copy `relations[]` into `relationsPre`. Freezing it before an event-iteration
@@ -1539,6 +2032,11 @@ fn eval_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout,
 /// event lies in the bracketed interval.
 fn zc_crossed(a: &[f64], b: &[f64]) -> bool {
     a.iter().zip(b).any(|(&x, &y)| (x < 0.0) != (y < 0.0))
+}
+
+/// Which crossings changed sign — C's `eventLst`.
+fn zc_crossed_idx(a: &[f64], b: &[f64]) -> Vec<usize> {
+    a.iter().zip(b).enumerate().filter(|(_, (x, y))| (**x < 0.0) != (**y < 0.0)).map(|(i, _)| i).collect()
 }
 
 /// Bisect `(t0, t1]` for the earliest zero-crossing, given the values `zc0` at `t0`
@@ -1591,12 +2089,14 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// their pre-event value, so two mutually-triggering crossings never reach a
 /// consistent set and chatter on the integrator instead. Assumes the event time is
 /// already written.
-fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
     // this pass's relations, then re-evaluates the continuous system; the discrete
     // state settles across passes. Comparing the snapshot before and after the
     // evaluation lets an already-settled system stop after a single evaluation.
-    for iter in 0..MAX_EVENT_ITER {
+    let max = max_event_iter();
+    let mut iter = 0usize;
+    loop {
         let prev = discrete_snapshot(e, sim_data, layout)?;
         // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
         // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
@@ -1606,10 +2106,21 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
         update_relations_pre(e, sim_data, layout)?;
         eval_discrete(e, sim_data, layout)?;
         if discrete_snapshot(e, sim_data, layout)? == prev {
-            break;
+            return Ok(());
+        }
+        iter += 1;
+        if iter > max {
+            omclog::message_text(
+                omclog::DEBUG_TYPE,
+                omclog::ASSERT,
+                false,
+                &format!(
+                    "Simulation terminated due to too many, i.e. {max}, event iterations.\n                     This could either indicate an inconsistent system or an undersized limit of                      event iterations.\nThe limit of event iterations can be specified using the                      runtime flag '\u{2013}mei=<value>'."
+                ),
+            );
+            return Err(ASSERT_ERR);
         }
     }
-    Ok(())
 }
 
 /// Per-sample time-event state: each sample's next firing time and its interval,
@@ -1620,6 +2131,8 @@ fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
 pub struct Samples {
     /// Next firing time per sample (starts at the sample's `start`).
     next: Vec<f64>,
+    /// C's `samplesInfo[i].start`, kept for the `LOG_EVENTS` time-event line.
+    start: Vec<f64>,
     interval: Vec<f64>,
     /// Absolute address of the `active` flag array (`sim_data + sample_active_off`).
     active_off: u32,
@@ -1639,11 +2152,21 @@ impl Samples {
             interval.push(read_f64(e, base + 8)?);
         }
         Ok(Samples {
+            start: next.clone(),
             next,
             interval,
             active_off: sim_data + layout.sample_active_off,
             dae: layout.dae_mode(),
         })
+    }
+
+    /// The samples due at `t` as `(k, start, interval)`, C's `handleEvents`
+    /// `LOG_EVENTS` line.
+    pub fn due(&self, t: f64) -> impl Iterator<Item = (usize, f64, f64)> + '_ {
+        let eps = t.abs().max(1.0) * 1e-10;
+        (0..self.next.len())
+            .filter(move |&k| self.next[k] <= t + eps)
+            .map(move |k| (k, self.start[k], self.interval[k]))
     }
 
     /// Time of the next sample event (min of `next`), or +inf if there are none.
@@ -1686,6 +2209,71 @@ impl Samples {
         }
         Ok(())
     }
+}
+
+/// The clock half of C's `simulationUpdate`: fire every timer due at `time`,
+/// running the discrete update in between whenever one asks for an event, until
+/// nothing more fires. `SimData` must already hold the state at `time` — a tick
+/// emits its result row *before* evaluating its partition. Returns whether any
+/// ticked, which makes the caller restart the integrator (`hold()` may have moved).
+fn fire_clocks(
+    e: &mut dyn SimEngine,
+    sync: &mut crate::sync::Sync,
+    model: &SimModel,
+    sim_data: u32,
+    time: f64,
+    eps: f64,
+    mut rows: Option<&mut Vec<f64>>,
+) -> Result<bool> {
+    use crate::sync::Fired;
+    if sync.is_empty() {
+        return Ok(false);
+    }
+    let layout = &model.layout;
+    let mut any = false;
+    let mut did_event = false;
+    for _ in 0..MAX_EVENT_ITER {
+        sync.take_fired(e, time)?;
+        write_f64(e, sim_data + TIME_OFF, time)?;
+        let fired = sync.handle_timers(e, time, eps, rows.as_deref_mut())?;
+        if fired == Fired::None {
+            break;
+        }
+        any = true;
+        rethrow_store::note_event();
+        did_event |= fired == Fired::Event;
+        if fired == Fired::Event {
+            // C's pre-event row: after the partition ran, unlike the tick's own row.
+            if let Some(r) = rows.as_deref_mut()
+                && !no_event_emit()
+            {
+                capture_row(e, r, sim_data, layout)?;
+            }
+            write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+            iterate_discrete(e, sim_data, layout)?;
+            store_relations(e, sim_data, layout)?;
+        }
+        seed_pre_from_live(e, sim_data, layout)?;
+    }
+    if any {
+        // C: "Update continous system because hold() needs to be re-evaluated".
+        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+        eval_continuous(e, sim_data, layout)?;
+        // C truncates the step to the activation time, so its output row lands here.
+        if let Some(r) = rows
+            && (!did_event || emit_post_event_row(model, time))
+        {
+            capture_row(e, r, sim_data, layout)?;
+        }
+    }
+    Ok(any)
+}
+
+/// Output point `row` of the equidistant grid, as C's `perform_simulation`
+/// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
+/// the two round differently and the result files must agree bit for bit.
+fn grid_time(row: u32, start: f64, stop: f64, n_steps: u32) -> f64 {
+    if n_steps == 0 { start } else { row as f64 * (stop - start) / n_steps as f64 + start }
 }
 
 /// Outcome of one [`event_update`] pass.
@@ -1784,8 +2372,58 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
         Some(crate::simflags::Solver::RungeKutta) => "rungekutta",
         Some(crate::simflags::Solver::SymSolver) => "symSolver",
         Some(crate::simflags::Solver::SymSolverSsc) => "symSolverSsc",
+        Some(crate::simflags::Solver::Optimization) => "optimization",
         _ => method,
     }
+}
+
+/// Whether this build's `SolverCore` can serve `method`. `dassljac` is dassl
+/// with a symbolic Jacobian and `""` the dassl default.
+fn check_method(method: &str) -> bool {
+    matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
+        || (matches!(method, "cvode" | "ida") && cfg!(sundials))
+        // `optimize()`; `drive` handles it before the integrators, and reports
+        // C's "Ipopt is needed but not available." when it was not linked.
+        || method == "optimization"
+}
+
+/// Resolve the solver method: apply `-s=`, then default DAE-mode models to IDA
+/// (matching C's `simulation_runtime.cpp` solver override), then validate.
+fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str> {
+    let method = effective_method(method);
+    // C: if the model is compiled in daeMode, overwrite the solver to IDA
+    let method = if dae_mode && method != "ida" {
+        omclog::info(
+            omclog::SIMULATION,
+            false,
+            "overwrite solver method: ida [DAEmode works only with IDA solver]",
+        );
+        "ida"
+    } else {
+        method
+    };
+    if !check_method(method) {
+        return Err(UNSUPPORTED_METHOD);
+    }
+    Ok(method)
+}
+
+/// C allocates the solver before initializing the model, and gbode logs its setup
+/// there, so it is built outside the driver.
+fn alloc_gbode(
+    model: &SimModel,
+    method: &str,
+) -> Result<Option<alloc::boxed::Box<crate::gbode::Gbode>>> {
+    if method != "gbode" {
+        return Ok(None);
+    }
+    let layout = &model.layout;
+    let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
+    let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+    let gb =
+        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors)
+            .map_err(leak_error)?;
+    Ok(Some(alloc::boxed::Box::new(gb)))
 }
 
 pub fn make_driver(
@@ -1794,7 +2432,8 @@ pub fn make_driver(
     sim_data: u32,
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
-    let method = effective_method(method);
+    let layout = &model.layout;
+    let method = resolve_solver_method(method, layout.dae_mode())?;
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
     // C warns about a deprecated `-s=` while it resolves the flag, before it
@@ -1816,44 +2455,14 @@ pub fn make_driver(
     omclog::info(
         omclog::NLS,
         false,
-        &alloc::format!("{} non-linear systems", model.nls_vars.len()),
+        &format!("{} non-linear systems", model.nls_vars.len()),
     );
     omclog::close(omclog::NLS);
-    let layout = &model.layout;
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
     for k in 0..layout.n_sens {
         write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
     }
-    // Ahead of the events path below, which returns before the match.
-    // `dassljac` is dassl with a symbolic Jacobian, which C also falls back from.
-    let supported =
-        matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
-            || (matches!(method, "cvode" | "ida") && cfg!(sundials));
-    if !supported {
-        return Err(UNSUPPORTED_METHOD);
-    }
-    // C leaves the choice to the user and then evaluates an empty `functionODE`.
-    if layout.dae_mode() && method != "ida" {
-        return Err("CodegenWasmJit: a model translated with --daeMode can only be simulated with -s=ida");
-    }
-
-    // C allocates the solver before it initializes the model, and gbode logs its
-    // configuration there, so it is built here rather than inside the driver.
-    let gbode = if method == "gbode" {
-        let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
-        let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-        Some(alloc::boxed::Box::new(
-            crate::gbode::Gbode::new(
-                layout.n_states as usize,
-                tol,
-                layout.n_zc as usize,
-                colors,
-            )
-            .map_err(leak_error)?,
-        ))
-    } else {
-        None
-    };
+    let gbode = alloc_gbode(model, method)?;
 
     // C's `setJacobianMethod` reports INTERNALNUMJAC in DAE mode (no symbolic `A` is
     // generated) and announces the colored-FD fallback. C configures IDA before
@@ -1869,7 +2478,9 @@ pub fn make_driver(
     }
     // DAE mode always takes the `SolverCore` path: the consistent-restart its
     // discrete update needs lives there.
-    let events = layout.n_samples > 0 || layout.n_zc > 0;
+    // A clocked partition is an event source too, and only `EventsDriver` has the
+    // timer list and the consistent restart a tick needs.
+    let events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
     if events || method == "gbode" || layout.dae_mode() {
         let label = match method {
             "cvode" => "cvode-events",
@@ -1908,6 +2519,21 @@ const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
 /// Free external objects (so repeated runs don't leak) and read back parameter
 /// values (result `Param` order) after a run.
 pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<Vec<f64>> {
+    if let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol)
+        && !steady_report::hit()
+    {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            &format!(
+                "Steady state has not been reached.\nThis may be due to too restrictive relative \
+                 tolerance ({}) or short stopTime ({}).",
+                format_g(tol, 6),
+                format_g(model.stop_time, 6),
+            ),
+        );
+    }
+    signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
     let mut params = Vec::new();
     for v in &model.vars {
@@ -1943,16 +2569,56 @@ pub fn drive(
     let stop = model.stop_time;
 
     let mut stats = SolveStats::default();
-    let use_events = layout.n_samples > 0 || layout.n_zc > 0;
-    let method = effective_method(method);
+    let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
+    let method = resolve_solver_method(method, layout.dae_mode())?;
 
     let mut label = "";
     let outcome = (|| -> Result<Vec<f64>> {
+        // `optimize()`: C's `solver_main` initializes the model, then the loop makes a
+        // single `S_OPTIMIZATION` step and breaks — every result row comes from the
+        // optimizer's own `res2file`, and neither the initial nor the terminal row is
+        // emitted around it.
+        if method == "optimization" {
+            // C's `solver_main_step`: with neither a state nor an input there is
+            // nothing to optimize, and it runs explicit Euler instead.
+            let nothing_to_optimize =
+                layout.n_states == 0 && model.opt.as_ref().is_none_or(|o| o.inputs.is_empty());
+            if nothing_to_optimize {
+                label = "euler-host";
+                let (mut driver, _) = make_driver(e, model, sim_data, "euler")
+                    .map_err(|err| enrich_trap_init(e, err, model.start_time))?;
+                loop {
+                    match driver.advance(e, model, f64::INFINITY).map_err(|err| enrich_trap(e, err))? {
+                        Advance::Done | Advance::Terminated => break,
+                        Advance::Cancelled => return Err("CodegenWasmJit: simulation cancelled"),
+                        Advance::Running => continue,
+                    }
+                }
+                driver.fill_stats(model, &mut stats);
+                let mut rows = driver.take_rows();
+                emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+                return Ok(rows);
+            }
+            label = "optimization";
+            if !crate::optimization::AVAILABLE {
+                omclog::warning(omclog::STDOUT, false, crate::optimization::UNAVAILABLE);
+                return Err(crate::optimization::UNAVAILABLE);
+            }
+            #[cfg(all(ipopt, feature = "std"))]
+            {
+                run_initialization_model(e, sim_data, model)
+                    .map_err(|err| enrich_trap_init(e, err, start))?;
+                return crate::optimization::run_optimizer(e, model, sim_data)
+                    .map_err(|err| enrich_trap(e, err));
+            }
+            #[cfg(not(all(ipopt, feature = "std")))]
+            unreachable!("optimization::AVAILABLE is false");
+        }
         if !use_events && method == "euler" && !host_driven {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
-            let mut rows = run_wasm(e, sim_data, n_reals, n_rows, layout, start, stop, &mut stats)?;
+            let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
             emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
             return Ok(rows);
         }
@@ -1996,8 +2662,9 @@ pub fn drive(
     let rows = outcome?;
     stats.method = label;
 
+    let lin = crate::linearize::linearize(e, model, sim_data)?;
     let params = finalize_run(e, model, sim_data)?;
-    Ok((RunResult { rows, n_reals, params, stats }, label))
+    Ok((RunResult { rows, n_reals, params, stats, lin }, label))
 }
 
 /// In-wasm driver: initialize here (so the run initializes like every other
@@ -2010,13 +2677,15 @@ fn run_wasm(
     sim_data: u32,
     n_reals: u32,
     n_rows: u32,
-    layout: &SimLayout,
+    model: &SimModel,
     start: f64,
     stop: f64,
     stats: &mut SolveStats,
 ) -> Result<Vec<f64>> {
+    let layout = &model.layout;
     stats.steps = (n_rows - 1) as u64;
-    run_initialization(e, sim_data, layout, start).map_err(|err| enrich_trap_init(e, err, start))?;
+    run_initialization_model(e, sim_data, model)
+        .map_err(|err| enrich_trap_init(e, err, start))?;
     open_assert_window();
     let called = e.call_simulate(sim_data, start, stop, n_rows - 1);
     let settled = close_assert_window(e, sim_data);
@@ -2049,7 +2718,7 @@ impl EulerDriver {
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2, set by run_initialization); `rt_solve_nls` still holds
         // them internally around its Newton solve.
-        run_initialization(e, sim_data, &model.layout, model.start_time)?;
+        run_initialization_model(e, sim_data, model)?;
         let n_rows = model.n_output_rows();
         let n_reals = model.layout.n_row_total();
         Ok(EulerDriver {
@@ -2070,7 +2739,7 @@ impl Driver for EulerDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let states_base = sim_data + REAL_OFF;
         let ders_base = states_base + n_states * 8;
 
@@ -2086,7 +2755,7 @@ impl Driver for EulerDriver {
             }
             did_step = true;
             // The last row lands exactly on `stop`: the terminal step.
-            let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let time = if self.row == n_steps { stop } else { grid(self.row) };
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
@@ -2113,7 +2782,8 @@ impl Driver for EulerDriver {
             {
                 e.call1("functionODE", sim_data)?;
             }
-            // Forward-Euler update of the states.
+            // Forward-Euler update of the states, over this row's own step.
+            let h = grid(self.row + 1) - grid(self.row);
             for i in 0..n_states {
                 let s = read_f64(e, states_base + i * 8)?;
                 let d = read_f64(e, ders_base + i * 8)?;
@@ -2178,6 +2848,12 @@ struct ResCtx {
     jac_ypsave: Vec<f64>,
     /// Jacobian evaluations (colors summed over all Jacobian assemblies).
     nje: u64,
+    /// `-csvInput` for the optimizer's initial guess: C's `functionODE_residual`
+    /// re-reads the external input at *every* residual evaluation, so the hook is
+    /// applied here rather than only at the step boundaries. Null when there is none;
+    /// type-erased so the optimization module's types stay out of the driver.
+    ext_input: *mut core::ffi::c_void,
+    ext_apply: Option<unsafe fn(*mut core::ffi::c_void, &mut dyn SimEngine, u32, f64)>,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
     ctx_addr: u32,
     /// The FD step's fallback scale: `n_states` nominals owned by the driver.
@@ -2319,6 +2995,9 @@ unsafe fn dassl_res(
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        if let Some(f) = ctx.ext_apply {
+            unsafe { f(ctx.ext_input, e, ctx.sim_data, *t) };
+        }
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
@@ -2546,7 +3225,7 @@ fn log_dassl() -> bool {
 }
 
 fn log_dassl_step(t: f64) {
-    omclog::info(omclog::DASSL, false, &alloc::format!("new step at time = {}", format_g(t, 15)));
+    omclog::info(omclog::DASSL, false, &format!("new step at time = {}", format_g(t, 15)));
 }
 
 /// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
@@ -2557,18 +3236,18 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     let i = |k: usize| iwork.get(k).copied().unwrap_or(0);
     omclog::info(omclog::DASSL, true, "dassl call statistics: ");
     for l in [
-        alloc::format!("value of idid: {idid}"),
-        alloc::format!("current time value: {}", g(t)),
-        alloc::format!("current integration time value: {}", g(r(3))),
-        alloc::format!("step size H to be attempted on next step: {}", g(r(2))),
-        alloc::format!("step size used on last successful step: {}", g(r(6))),
-        alloc::format!("the order of the method used on the last step: {}", i(7)),
-        alloc::format!("the order of the method to be attempted on the next step: {}", i(8)),
-        alloc::format!("number of steps taken so far: {}", i(10)),
-        alloc::format!("number of calls of functionODE() : {}", i(11)),
-        alloc::format!("number of calculation of jacobian : {}", i(12)),
-        alloc::format!("total number of convergence test failures: {}", i(14)),
-        alloc::format!("total number of error test failures: {}", i(13)),
+        format!("value of idid: {idid}"),
+        format!("current time value: {}", g(t)),
+        format!("current integration time value: {}", g(r(3))),
+        format!("step size H to be attempted on next step: {}", g(r(2))),
+        format!("step size used on last successful step: {}", g(r(6))),
+        format!("the order of the method used on the last step: {}", i(7)),
+        format!("the order of the method to be attempted on the next step: {}", i(8)),
+        format!("number of steps taken so far: {}", i(10)),
+        format!("number of calls of functionODE() : {}", i(11)),
+        format!("number of calculation of jacobian : {}", i(12)),
+        format!("total number of convergence test failures: {}", i(14)),
+        format!("total number of error test failures: {}", i(13)),
     ] {
         omclog::info(omclog::DASSL, false, &l);
     }
@@ -2678,7 +3357,7 @@ impl DasslDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2); `rt_solve_nls` still holds them internally.
-        run_initialization(e, sim_data, layout, model.start_time)?;
+        run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -2797,7 +3476,7 @@ impl Driver for DasslDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
         // IDID=1 returns below.
@@ -2823,7 +3502,7 @@ impl Driver for DasslDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -2869,6 +3548,8 @@ impl Driver for DasslDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: self.nje,
+            ext_input: core::ptr::null_mut(),
+            ext_apply: None,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
@@ -2901,7 +3582,7 @@ impl Driver for DasslDriver {
             let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
                 stop
             } else {
-                start + self.row as f64 * h
+                grid(self.row)
             });
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
             // so emit the held state directly instead of stepping.
@@ -3169,6 +3850,35 @@ struct CvodeState {
 
 #[cfg(sundials)]
 impl CvodeState {
+    /// `cvode_solver.c`'s `LOG_SOLVER` banner. The configuration is fixed here, so
+    /// every line but the tolerance is constant.
+    fn log_configuration(&self) {
+        for line in [
+            "CVODE linear multistep method CV_BDF",
+            "CVODE maximum integration order CV_ITER_NEWTON",
+            "CVODE use equidistant time grid YES",
+        ] {
+            omclog::info(omclog::SOLVER, false, line);
+        }
+        omclog::info(
+            omclog::SOLVER,
+            false,
+            &format!("CVODE Using relative error tolerance {}", format_e(self.rtol)),
+        );
+        for line in [
+            "CVODE Using dense internal linear solver SUNLinSol_Dense.",
+            "CVODE Use internal dense numeric jacobian method.",
+            "CVODE uses internal root finding method NO",
+            "CVODE maximum absolut step size 0",
+            "CVODE initial step size is set automatically",
+            "CVODE maximum integration order 5",
+            "CVODE maximum number of nonlinear convergence failures permitted during one step 10",
+            "CVODE BDF stability limit detection algorithm OFF",
+        ] {
+            omclog::info(omclog::SOLVER, false, line);
+        }
+    }
+
     /// The CVODE block is built on the first step, when `y` first holds the state
     /// to start from. `ctx` is the callbacks' `user_data`; it lives on the stack of
     /// one `advance`, so it is rebound on every call rather than stored.
@@ -3181,6 +3891,7 @@ impl CvodeState {
                     *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root,
                 )
                 .ok_or("CodegenWasmJit: CVODE initialization failed")?;
+                self.log_configuration();
                 self.cv.insert(cv)
             }
         };
@@ -3390,7 +4101,7 @@ fn fixed_kind(method: &str) -> Option<crate::fixedstep::FixedKind> {
 /// The driver's errors are `&'static str`, but a solver setup error carries the
 /// offending flag value, so the message is built at runtime. Leaking it is fine:
 /// it happens at most once per run, on the path that aborts the run.
-fn leak_error(s: String) -> &'static str {
+pub(crate) fn leak_error(s: String) -> &'static str {
     alloc::boxed::Box::leak(s.into_boxed_str())
 }
 
@@ -3428,6 +4139,7 @@ struct EventsDriver {
     row: u32,
     pivots: Vec<StateSetPivot>,
     samp: Samples,
+    sync: crate::sync::Sync,
     rows: Vec<f64>,
     /// Resume state for a yield mid output row, so `grid_covered` is not reset.
     mid_row: bool,
@@ -3633,11 +4345,23 @@ impl SolverCore {
     }
 
     /// A time event changes discrete state the derivative may depend on, so a
-    /// solver that carries its own step history has to re-initialize. DASKR only
-    /// needs it when the model has zero-crossings (the existing rule); gbode always
+    /// solver that carries its own step history has to re-initialize. gbode always
     /// does, as C's `didEventStep` is set for time events too.
     fn restart_after_time_event(&self) -> bool {
         matches!(self.solver, Solver::Gbode(_))
+    }
+
+    /// Recompute `yp` after an event, as C's `updateContinuousSystem` does: a
+    /// `reinit` otherwise leaves the next step on the pre-event derivative.
+    fn refresh_yp(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+        if self.dae {
+            return Ok(());
+        }
+        e.call1("functionODE", self.sim_data)?;
+        for i in 0..self.n_states {
+            self.yp[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
+        }
+        Ok(())
     }
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
@@ -3715,6 +4439,8 @@ impl SolverCore {
             jac_ders: Vec::new(),
             jac_ypsave: vec![0.0; self.n_unknowns],
             nje: self.nje,
+            ext_input: core::ptr::null_mut(),
+            ext_apply: None,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
@@ -3859,6 +4585,19 @@ impl SolverCore {
     }
 
     /// The first root function that fired, for the chattering message.
+    /// Every crossing whose indicator flipped at the located root — C's `eventLst`.
+    fn roots_nonzero(&self) -> Vec<usize> {
+        let pos = |r: &[i32]| r.iter().enumerate().filter(|(_, v)| **v != 0).map(|(i, _)| i).collect();
+        match &self.solver {
+            Solver::Daskr(d) => pos(&d.jroot),
+            #[cfg(sundials)]
+            Solver::Cvode(c) => c.cv.as_ref().map(|cv| pos(cv.roots())).unwrap_or_default(),
+            #[cfg(sundials)]
+            Solver::Ida(s) => s.ida.as_ref().map(|ida| pos(ida.roots())).unwrap_or_default(),
+            Solver::Gbode(_) | Solver::Fixed(_) => vec![self.root_index()],
+        }
+    }
+
     fn root_index(&self) -> usize {
         match &self.solver {
             Solver::Daskr(d) => d.jroot.iter().position(|&r| r != 0).unwrap_or(0),
@@ -3890,6 +4629,7 @@ impl SolverCore {
         model: &SimModel,
         ctx: &mut ResCtx,
         samp: &mut Samples,
+        sync: &mut crate::sync::Sync,
         tout: f64,
         deadline: f64,
         mut rows: Option<&mut Vec<f64>>,
@@ -3918,8 +4658,14 @@ impl SolverCore {
             // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             let te = samp.next_time();
-            let target = tout.min(te);
-            self.sample_limit = te;
+            // C's `checkForSynchronous`: never step past the next activation. Snapped
+            // onto `tout` (as samples are) so the last row's time is exactly `stop`.
+            let mut tc = sync.next_time();
+            if (tc - tout).abs() <= eps {
+                tc = tout;
+            }
+            let target = tout.min(te).min(tc);
+            self.sample_limit = te.min(tc);
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
             if target - self.t > eps {
@@ -3959,6 +4705,7 @@ impl SolverCore {
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
+                    log_state_event(troot, &self.roots_nonzero(), model);
                     let step_size = model.step_size();
                     if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
                         let zc = self.root_index();
@@ -4001,15 +4748,16 @@ impl SolverCore {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
+                    fire_clocks(e, sync, model, sim_data, troot, eps, rows.as_deref_mut())?;
+                    log_reinits(e, model);
+                    omclog::close(omclog::EVENTS);
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(Step::Terminated);
+                    }
                     // Re-read states (a reinit may have jumped one), recompute the
                     // consistent derivative, and restart DASKR at troot (INFO(1)=0).
                     self.read_states(e)?;
-                    if !self.dae {
-                        e.call1("functionODE", sim_data)?;
-                        for i in 0..n_states {
-                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
-                        }
-                    }
+                    self.refresh_yp(e)?;
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
                     continue;
@@ -4019,7 +4767,7 @@ impl SolverCore {
             }
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).
-            if te <= tout + eps {
+            if te <= target + eps {
                 // Snap an event near `tout` onto it (keeps the final row at `stop`
                 // despite float drift).
                 let te = if (te - tout).abs() <= eps { tout } else { te };
@@ -4029,6 +4777,7 @@ impl SolverCore {
                     write_f64(e, sim_data + TIME_OFF, te)?;
                     return Ok(Step::Event { time: te });
                 }
+                log_time_event(te, samp, model);
                 if let Some(r) = rows.as_deref_mut()
                     && !no_event_emit()
                 {
@@ -4044,24 +4793,43 @@ impl SolverCore {
                 {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
+                log_reinits(e, model);
+                omclog::close(omclog::EVENTS);
                 if terminated(e, sim_data, layout)? {
                     return Ok(Step::Terminated);
                 }
                 self.read_y(e)?;
                 // A sample may change discrete state the derivative depends on;
                 // recompute yp and restart so the integrator continues consistently.
+                self.refresh_yp(e)?;
                 if layout.n_zc > 0 || self.dae || self.restart_after_time_event() {
-                    if !self.dae {
-                        e.call1("functionODE", sim_data)?;
-                        for i in 0..n_states {
-                            self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
-                        }
-                    }
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
                 }
                 if te >= tout - eps {
                     grid_covered = true;
+                }
+            }
+            // C's `handleTimers`, plus any event clock a `when` body above just fired.
+            if !sync.is_empty() {
+                write_f64(e, sim_data + TIME_OFF, target)?;
+                sync.take_fired(e, target)?;
+            }
+            if sync.next_time() <= target + eps {
+                *did_step = true;
+                write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                eval_continuous(e, sim_data, layout)?;
+                if fire_clocks(e, sync, model, sim_data, target, eps, rows.as_deref_mut())? {
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(Step::Terminated);
+                    }
+                    self.read_y(e)?;
+                    self.refresh_yp(e)?;
+                    self.restart()?;
+                    self.dae_restart(e, ctx)?;
+                    if target >= tout - eps {
+                        grid_covered = true;
+                    }
                 }
             }
             if target >= tout - eps {
@@ -4082,11 +4850,11 @@ impl SolverCore {
 pub struct CsDriver {
     core: SolverCore,
     samp: Samples,
+    sync: crate::sync::Sync,
     pivots: Vec<StateSetPivot>,
-    /// `None` = DASSL; `Some(h)` = fixed-step forward Euler with internal step `h`.
-    /// Only ever set for event-free models (events force DASSL, as in `make_driver`).
-    euler_h: Option<f64>,
-    euler_steps: u64,
+    /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
+    /// variable-step method, which is handed the whole interval.
+    fixed_h: Option<f64>,
     /// A `do_event_update` ran since the last step, so `step_to_event` must re-read
     /// states and restart DASKR.
     resume_reinit: bool,
@@ -4103,15 +4871,17 @@ pub enum CsStep {
 }
 
 impl CsDriver {
-    /// Build over an already-initialized model at time `t`. The integrator follows
-    /// `model.method` (`"euler"` → forward Euler, else DASSL), except that any events
-    /// force DASSL — the same rule `make_driver` applies.
+    /// Build over an already-initialized model at time `t`, integrating with the
+    /// method the FMU was exported with (`buildModelFMU`'s `method=`).
     pub fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t: f64) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
+        let method = resolve_solver_method(&model.method, layout.dae_mode())?;
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
-        let mut core = SolverCore::new(&*e, model, sim_data, t, "dassl", None)?;
+        let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
+        sync.take_fired(e, t)?;
+        let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -4119,15 +4889,9 @@ impl CsDriver {
             }
             core.read_states(e)?;
         }
-        let has_events = layout.n_samples > 0 || layout.n_zc > 0;
-        let euler_h = if !has_events && model.method == "euler" {
-            let n = model.n_intervals.max(1) as f64;
-            let h = (model.stop_time - model.start_time) / n;
-            Some(if h > 0.0 { h } else { f64::INFINITY })
-        } else {
-            None
-        };
-        Ok(CsDriver { core, samp, pivots, euler_h, euler_steps: 0, resume_reinit: false })
+        let h = model.step_size();
+        let fixed_h = fixed_kind(method).map(|_| if h > 0.0 { h } else { f64::INFINITY });
+        Ok(CsDriver { core, samp, sync, pivots, fixed_h, resume_reinit: false })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -4164,18 +4928,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
-        if let Some(h0) = self.euler_h {
-            return self.euler_step_to(e, model, t_target, h0);
-        }
-
-        let mut ctx = self.core.res_ctx(e, layout);
-        let _guard = ResCtxGuard;
-        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
-        let mut did_step = false;
-        let outcome = self.core.integrate_to(
-            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, false,
-        )?;
-        self.core.nfe = ctx.nfe;
+        let outcome = self.integrate_chunked(e, model, t_target, false)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
             // `deadline` is +inf, CS does not cancel, and `stop_at_event` is off on
@@ -4239,14 +4992,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
-        let mut ctx = self.core.res_ctx(e, layout);
-        let _guard = ResCtxGuard;
-        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
-        let mut did_step = false;
-        let outcome = self.core.integrate_to(
-            e, model, &mut ctx, &mut self.samp, t_target, f64::INFINITY, None, &mut did_step, true,
-        )?;
-        self.core.nfe = ctx.nfe;
+        let outcome = self.integrate_chunked(e, model, t_target, true)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
             Step::Event { time } => return Ok(CsStep::Event { time }),
@@ -4291,60 +5037,47 @@ impl CsDriver {
         Ok(up)
     }
 
-    /// Fixed-step forward Euler to `t_target`, sub-stepping by `h0` and landing
-    /// exactly on the communication point. Event-free by construction (see `new`),
-    /// so it never enters Event Mode; non-convergent NLS is fatal (Euler cannot back
-    /// off), matching [`EulerDriver`].
-    fn euler_step_to(
+    /// Integrate to `t_target`: in one go for a variable-step method, or one step per
+    /// call for a fixed-step one. Those steps land on the model's own output grid — the
+    /// sequence the standalone driver produces — so a communication point only cuts the
+    /// last step of an interval short, as an event does. Returns early on `Terminated`
+    /// and, in Event Mode, on the first event.
+    fn integrate_chunked(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         t_target: f64,
-        h0: f64,
-    ) -> Result<CsStep> {
+        stop_at_event: bool,
+    ) -> Result<Step> {
         let layout = &model.layout;
-        let sim_data = self.core.sim_data;
-        let states_base = self.core.states_base;
-        let ders_base = self.core.ders_base;
-        let n_states = self.core.n_states as u32;
         let eps = t_target.abs().max(1.0) * 1e-12;
-        while self.core.t < t_target - eps {
-            let h = (t_target - self.core.t).min(h0);
-            write_f64(e, sim_data + TIME_OFF, self.core.t)?;
-            e.call1("functionODE", sim_data)?;
-            e.call1_if_present("functionAlgebraics", sim_data)?;
-            check_nls(e, sim_data, layout)?;
-            if terminated(e, sim_data, layout)? {
-                return Ok(CsStep::Terminated);
+        let mut ctx = self.core.res_ctx(e, layout);
+        let _guard = ResCtxGuard;
+        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        let mut did_step = false;
+        loop {
+            let target = match self.fixed_h {
+                // The next grid point after `t`; the nudge stops drift just short of
+                // one from producing a step of nearly zero length.
+                Some(h) => {
+                    let k = libm::floor((self.core.t - model.start_time) / h + 1e-10) + 1.0;
+                    (model.start_time + k * h).min(t_target)
+                }
+                None => t_target,
+            };
+            let outcome = self.core.integrate_to(
+                e, model, &mut ctx, &mut self.samp, &mut self.sync, target, f64::INFINITY, None,
+                &mut did_step, stop_at_event,
+            )?;
+            if !matches!(outcome, Step::Reached { .. }) || self.core.t >= t_target - eps {
+                self.core.nfe = ctx.nfe;
+                return Ok(outcome);
             }
-            if !model.state_sets.is_empty()
-                && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)?
-            {
-                e.call1("functionODE", sim_data)?;
-            }
-            for i in 0..n_states {
-                let s = read_f64(e, states_base + i * 8)?;
-                let d = read_f64(e, ders_base + i * 8)?;
-                write_f64(e, states_base + i * 8, s + h * d)?;
-            }
-            self.core.t += h;
-            self.euler_steps += 1;
         }
-        self.core.t = t_target;
-        write_f64(e, sim_data + TIME_OFF, t_target)?;
-        e.call1("functionODE", sim_data)?;
-        e.call1_if_present("functionAlgebraics", sim_data)?;
-        if terminated(e, sim_data, layout)? {
-            return Ok(CsStep::Terminated);
-        }
-        Ok(CsStep::Reached)
     }
 
     pub fn fill_stats(&self, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
-        if self.euler_h.is_some() {
-            stats.steps = self.euler_steps;
-        }
     }
 }
 
@@ -4362,7 +5095,8 @@ impl EventsDriver {
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.
-        run_initialization(e, sim_data, layout, model.start_time)?;
+        crate::sync::clear_fire_flags(e, sim_data, layout)?;
+        let sync = run_initialization_with_clocks(e, sim_data, model)?;
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
@@ -4399,6 +5133,7 @@ impl EventsDriver {
             row: 1,
             pivots,
             samp,
+            sync,
             rows,
             mid_row: false,
             grid_covered: false,
@@ -4425,7 +5160,7 @@ impl Driver for EventsDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: the rows come from `integrate_to`, so one "row"
         // spans the run; `Samples` still bounds each solve.
@@ -4440,7 +5175,7 @@ impl Driver for EventsDriver {
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
         let tout_of = |row: u32| {
-            if no_grid || row == n_steps { stop } else { start + row as f64 * h }
+            if no_grid || row == n_steps { stop } else { grid(row) }
         };
 
         // No continuous states: nothing to integrate, but zero-crossings on `time`
@@ -4473,7 +5208,11 @@ impl Driver for EventsDriver {
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
                     let te = self.samp.next_time();
-                    let subtarget = tout.min(te);
+                    let mut tc = self.sync.next_time();
+                    if (tc - tout).abs() <= eps {
+                        tc = tout;
+                    }
+                    let subtarget = tout.min(te).min(tc);
                     // A state event bracketed in (t, subtarget]?
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
@@ -4485,6 +5224,10 @@ impl Driver for EventsDriver {
                         }
                     }
                     if let Some(tr) = troot {
+                        // The bisection left `SimData` at its last probe; C's
+                        // integrators hand the event handler the system at the root.
+                        eval_zero_crossings(e, sim_data, layout, tr, &mut scratch)?;
+                        log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
                         if !no_event_emit() {
                             capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
                         }
@@ -4499,16 +5242,26 @@ impl Driver for EventsDriver {
                             return Ok(Advance::Terminated);
                         }
                         self.core.t = tr;
+                        // The discrete update may have fired an event clock.
+                        if fire_clocks(e, &mut self.sync, model, sim_data, tr, eps, Some(&mut self.rows))?
+                            && terminated(e, sim_data, layout)?
+                        {
+                            self.finished = true;
+                            return Ok(Advance::Terminated);
+                        }
                         e.call1_if_present("functionStoreDelayed", sim_data)?;
                         eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
+                        log_reinits(e, model);
+                        omclog::close(omclog::EVENTS);
                         continue;
                     }
                     // No state event before the next sample time. Fire the sample if
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
-                    if te <= tout + eps {
+                    if te <= subtarget + eps {
                         let te = if (te - tout).abs() <= eps { tout } else { te };
+                        log_time_event(te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
                         if !no_event_emit() {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
@@ -4531,10 +5284,35 @@ impl Driver for EventsDriver {
                             eval_zero_crossings(e, sim_data, layout, te, &mut zc0)?;
                             save_zc_pre(e, sim_data, layout)?;
                         }
+                        log_reinits(e, model);
+                        omclog::close(omclog::EVENTS);
                         if te >= tout - eps {
                             grid_covered = true;
                         }
-                    } else {
+                    }
+                    if !self.sync.is_empty() {
+                        write_f64(e, sim_data + TIME_OFF, subtarget)?;
+                        self.sync.take_fired(e, subtarget)?;
+                    }
+                    if self.sync.next_time() <= subtarget + eps {
+                        self.core.t = subtarget;
+                        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                        eval_continuous(e, sim_data, layout)?;
+                        if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, eps, Some(&mut self.rows))? {
+                            if terminated(e, sim_data, layout)? {
+                                self.finished = true;
+                                return Ok(Advance::Terminated);
+                            }
+                            e.call1_if_present("functionStoreDelayed", sim_data)?;
+                            if layout.n_zc > 0 {
+                                eval_zero_crossings(e, sim_data, layout, subtarget, &mut zc0)?;
+                                save_zc_pre(e, sim_data, layout)?;
+                            }
+                            if subtarget >= tout - eps {
+                                grid_covered = true;
+                            }
+                        }
+                    } else if te > subtarget + eps {
                         break;
                     }
                 }
@@ -4585,7 +5363,8 @@ impl Driver for EventsDriver {
             // the state the model is evaluated at may still be discarded.
             open_assert_window();
             match self.core.integrate_to(
-                e, model, &mut ctx, &mut self.samp, tout, deadline, Some(&mut self.rows), &mut did_step, false,
+                e, model, &mut ctx, &mut self.samp, &mut self.sync, tout, deadline,
+                Some(&mut self.rows), &mut did_step, false,
             )? {
                 Step::Yielded => {
                     // Resume on the same row; `mid_row` keeps `grid_covered`.
@@ -4761,7 +5540,7 @@ struct CvodeDriver {
 impl CvodeDriver {
     fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
         let layout = &model.layout;
-        run_initialization(e, sim_data, layout, model.start_time)?;
+        run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -4831,7 +5610,7 @@ impl Driver for CvodeDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
 
         // No integration — evaluate outputs on the grid — with no states or an
@@ -4847,7 +5626,7 @@ impl Driver for CvodeDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -4881,6 +5660,8 @@ impl Driver for CvodeDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: 0,
+            ext_input: core::ptr::null_mut(),
+            ext_apply: None,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
@@ -4905,7 +5686,7 @@ impl Driver for CvodeDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let tout = if self.row == n_steps { stop } else { grid(self.row) };
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in cv.y().iter().enumerate() {
@@ -5517,7 +6298,7 @@ impl IdaDriver {
     fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
         let layout = &model.layout;
         let setup = IdaSetup::new(model)?;
-        run_initialization(e, sim_data, layout, model.start_time)?;
+        run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
@@ -5591,7 +6372,7 @@ impl Driver for IdaDriver {
         let n_steps = n_rows - 1;
         let start = model.start_time;
         let stop = model.stop_time;
-        let h = if n_steps == 0 { 0.0 } else { (stop - start) / n_steps as f64 };
+        let grid = |row: u32| grid_time(row, start, stop, n_steps);
         let deadline = deadline_from(budget_ms);
         // `-noEquidistantTimeGrid`: one interval spans the run, rows come from the
         // one-step returns below (`ida_solver.c`'s `idaSmode`).
@@ -5615,7 +6396,7 @@ impl Driver for IdaDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { start + self.row as f64 * h };
+                let time = if self.row == n_steps { stop } else { grid(self.row) };
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -5649,6 +6430,8 @@ impl Driver for IdaDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: 0,
+            ext_input: core::ptr::null_mut(),
+            ext_apply: None,
             ctx_addr: e.context_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
@@ -5672,7 +6455,7 @@ impl Driver for IdaDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if no_grid || self.row == n_steps { stop } else { start + self.row as f64 * h };
+            let tout = if no_grid || self.row == n_steps { stop } else { grid(self.row) };
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {
@@ -5756,5 +6539,114 @@ impl Driver for IdaDriver {
         if let Some(ida) = self.ida.as_ref() {
             fill_sundials_stats(stats, ida.counters());
         }
+    }
+}
+
+// ───────────────────── optimization: the initial guess's stepper ─────────────────────
+
+/// Publish the time the stepper jumped to (the no-state case).
+#[cfg(ipopt)]
+fn driver_write_time(e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+    write_f64(e, sim_data + TIME_OFF, t)
+}
+
+/// C's `smallIntSolverStep` (`optimization/DataManagement/InitialGuess.c`): DASSL
+/// stepped to a given time with no event handling and no output rows.
+///
+/// The optimizer's initial guess is a plain simulation over the collocation grid,
+/// so it reuses the integrator the DASSL driver uses without the event/row
+/// machinery around it. Lives here because [`SolverCore`] and its residual context
+/// are private to this module.
+#[cfg(ipopt)]
+pub(crate) struct GuessStepper {
+    core: SolverCore,
+    /// `-csvInput`'s hook, applied at every residual evaluation like C's.
+    ext: Option<*mut core::ffi::c_void>,
+}
+
+#[cfg(ipopt)]
+impl GuessStepper {
+    /// The model is already initialized (the optimizer's caller did that), so this
+    /// only sizes the integrator and latches the current point as `y`/`y'`.
+    pub(crate) fn new(
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        sim_data: u32,
+        t0: f64,
+    ) -> Result<Self> {
+        daskr::auxiliary::xsetf(0); // DASKR's own printing would corrupt the log
+        let mut core = SolverCore::new(e, model, sim_data, t0, "dassl", None)?;
+        core.read_states(e)?;
+        Ok(GuessStepper { core, ext: None })
+    }
+
+    /// Install `-csvInput`'s external-input hook (a `*mut ExtInputHook`, kept alive
+    /// by the caller for as long as this stepper is used).
+    pub(crate) fn set_external_input(&mut self, hook: *mut core::ffi::c_void) {
+        self.ext = Some(hook);
+    }
+
+    pub(crate) fn time(&self) -> f64 {
+        self.core.t
+    }
+
+    /// Integrate to `tstop` and publish the point, ending with C's
+    /// `updateContinuousSystem`. A solver failure is retried from the current time
+    /// with a halved target, as C halves its step size, up to 10 times.
+    pub(crate) fn step_to(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        tstop: f64,
+    ) -> Result<()> {
+        let layout = &model.layout;
+        // C's `smallIntSolverStep` steps the integrator only when there is a state to
+        // integrate: with none it jumps straight to `tstop` and re-evaluates. DASKR
+        // with `NEQ = 0` would `STOP` inside its Fortran, taking omc down with it.
+        if layout.n_states == 0 {
+            self.core.t = tstop;
+            driver_write_time(e, self.core.sim_data, tstop)?;
+            return eval_continuous(e, self.core.sim_data, layout);
+        }
+        let mut ctx = self.core.res_ctx(e, layout);
+        if let Some(hook) = self.ext {
+            ctx.ext_input = hook;
+            ctx.ext_apply = Some(crate::optimization::EXT_INPUT_APPLY);
+        }
+        let _guard = ResCtxGuard;
+        RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        let mut did_step = false;
+        let mut iter = 0;
+        let mut frac = 1.0;
+        while self.core.t < tstop {
+            let target = self.core.t + frac * (tstop - self.core.t);
+            match self.core.solve_toward(target, &mut ctx, f64::INFINITY, &mut did_step) {
+                // A root is not an event here: C's initial guess does not locate
+                // events, it just keeps integrating toward `tstop`.
+                Ok(Solved::Reached | Solved::Stepped | Solved::Root | Solved::Yielded) => {
+                    frac = 1.0;
+                }
+                Ok(Solved::Cancelled) => return Err("CodegenWasmJit: simulation cancelled"),
+                Err(err) => {
+                    iter += 1;
+                    if iter > 10 {
+                        omclog::warning(
+                            omclog::STDOUT,
+                            false,
+                            &format!(
+                                "Initial guess failure at time {}",
+                                format_g(self.core.t, 12)
+                            ),
+                        );
+                        return Err(err);
+                    }
+                    frac *= 0.5;
+                }
+            }
+        }
+        self.core.write_states(e)?;
+        // C's `dassl_step` publishes the accepted time before `updateContinuousSystem`.
+        driver_write_time(e, self.core.sim_data, self.core.t)?;
+        eval_continuous(e, self.core.sim_data, layout)
     }
 }

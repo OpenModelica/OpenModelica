@@ -69,6 +69,7 @@ import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
 import CodegenFMU;
+import CodegenFMU2;
 import CodegenFMU3;
 import CodegenFMUCpp;
 import CodegenOMSICpp;
@@ -823,9 +824,9 @@ protected function callTargetTemplatesFMU
   input String FMUType;
   input Absyn.Program program;
 protected
-  // The wasm FMU export (target "wasm-jit") emits an fmi-ls-wasm component; the
-  // testsuite has no wasm toolchain, so fall back to C there.
-  String fmuTarget = if target == "wasm-jit" and Testsuite.isRunning() then "C" else target;
+  // "wasm" is the standalone simulation target and has no FMU export of its own;
+  // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
+  String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
@@ -835,7 +836,11 @@ algorithm
       String fmutmp;
       String guid;
       String modelDescriptionStr;
-      Boolean b, exportDocumentation;
+      String simulationFlagsJson;
+      String htmlContent;
+      list<tuple<String,String>> extraFiles;
+      list<SimCode.FmiTerminal> terminals;
+      Boolean b;
       Boolean needSundials = false;
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
@@ -848,19 +853,49 @@ algorithm
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
-        // FMI 3.0 wasm Model-Exchange export: link the model with the ME adapter
-        // into an fmi-ls-wasm component and write the self-contained <name>.fmu
-        // (host-free, all in Rust — no external wasm-merge/zip). The
-        // modelDescription.xml is CodegenFMU3's, same as the C target's.
+        // wasm FMU export: link the model with the adapter into an fmi-ls-wasm
+        // component and write the self-contained <name>.fmu (host-free, all in
+        // Rust — no external wasm-merge/zip).
         guid := System.getUUIDStr();
-        modelDescriptionStr := Tpl.textString(
-          CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
-        if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-          CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
-        elseif FMI.isFMICSType(FMUType) then
-          CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+        extraFiles := {};
+        // The same templates the C target uses, so the XML is byte-identical to
+        // it. No sourceFiles: a wasm FMU carries no C. The XML declaration comes
+        // from fmuModelDescriptionFile, which the C target reaches these through.
+        if FMI.isFMIVersion20(FMUVersion) then
+          modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
+            CodegenFMU2.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
         else
-          CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr);
+          modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
+            CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
+          // The same XML the C target writes into terminalsAndIcons/. FMI 3.0 only.
+          terminals := SimCodeUtil.getFMI3Terminals(simCode);
+          if not listEmpty(terminals) then
+            extraFiles := ("terminalsAndIcons/terminalsAndIcons.xml",
+                           Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals))) :: extraFiles;
+          end if;
+        end if;
+        (htmlFile, htmlContent) := htmlDocumentation(program, simCode, FMUVersion);
+        if htmlFile <> "" then
+          extraFiles := ("documentation/" + htmlFile, htmlContent) :: extraFiles;
+        end if;
+        // The same resources/<prefix>_flags.json the C export ships; the emitter
+        // applies its `s` flag at export, since the component is linked against
+        // one solver and cannot pick another at run time.
+        simulationFlagsJson := match simCode.fmiSimulationFlags
+          local
+            SimCode.FmiSimulationFlags flags;
+            String path;
+          case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=path)) then System.readFile(path);
+          case SOME(flags as SimCode.FMI_SIMULATION_FLAGS()) then
+            Tpl.textString(CodegenFMU.fmuSimulationFlagsFile(Tpl.emptyTxt, flags));
+          else "";
+        end match;
+        if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
+          CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
+        elseif FMI.isFMICSType(FMUType) then
+          CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
+        else
+          CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
         end if;
       then ();
 
@@ -953,12 +988,10 @@ algorithm
         end if;
 
         // create optional html documentation directory
-        (htmlFile, exportDocumentation) := exportHTMLDocumentation(program, simCode, FMUVersion);
-        if exportDocumentation then
+        (htmlFile, htmlContent) := htmlDocumentation(program, simCode, FMUVersion);
+        if htmlFile <> "" then
           Util.createDirectoryTree(fmutmp + "/documentation/");
-          if 0 <> System.systemCall("mv '" + htmlFile + "' '" + fmutmp + "/documentation/" + "'") then
-            Error.addInternalError("Failed to move documentation file " + htmlFile + "", sourceInfo());
-          end if;
+          System.writeFile(fmutmp + "/documentation/" + htmlFile, htmlContent);
         end if;
 
         SimCodeUtil.resetFunctionIndex();
@@ -1263,42 +1296,34 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
-protected function exportHTMLDocumentation
-  "generate html documentation for fmu's from Documentation annotation
+protected function htmlDocumentation
+  "The FMU's documentation/ page, from the model's Documentation annotation
   (e.g) annotation(Documentation(info=\"<html> </html>\",
                                  revisions=\"<html> </html>\",
                                  __OpenModelica_infoHeader = \"<html> </html>\"))
+  An empty file name means the model carries no such annotation.
   "
   input Absyn.Program program;
   input SimCode.SimCode simCode;
   input String FMUVersion;
-  output String fileName;
-  output Boolean export = true;
+  output String fileName = "";
+  output String content = "";
 protected
-  File.File file;
   String info, revisions, infoHeader;
 algorithm
   (info, revisions, infoHeader) := ProgramUtil.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
 
-  // do not export if Documentation annotation does not exist
   if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then
-    export := false;
+    return;
   end if;
 
-  if (FMUVersion == "1.0") then
-    fileName := "_main.html";
-  else
-    fileName := "index.html";
-  end if;
-
-  file := File.File();
-  File.open(file, fileName, File.Mode.Write);
-  File.write(file, infoHeader + "\n");
-  File.write(file, "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n");
-  File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p>\n");
-  File.write(file, "<h4> <u> Information </u> </h4>" + info + "\n");
-  File.write(file, "<h4> <u> Revisions </u> </h4>" + revisions + "\n");
-end exportHTMLDocumentation;
+  fileName := if FMUVersion == "1.0" then "_main.html" else "index.html";
+  content := infoHeader + "\n"
+             + "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n"
+             + "<p> <i>" + simCode.modelInfo.description + "</i> </p>\n"
+             + "<h4> <u> Information </u> </h4>" + info + "\n"
+             + "<h4> <u> Revisions </u> </h4>" + revisions + "\n";
+end htmlDocumentation;
 
 protected function callTargetTemplatesXML
 "Generate target code by passing the SimCode data structure to templates."

@@ -40,6 +40,7 @@ impl Instant {
 
 use crate::sim_driver;
 use crate::model::SimModel;
+use openmodelica_sim_meta::SimMeta;
 use crate::sig::WTy;
 use crate::host::add_host_builtins;
 
@@ -440,8 +441,16 @@ fn define_external_imports(
 
     for sig in &model.ext_imports {
         let name = &sig.name;
-        let func = side_inst.exports.get_function(name)
-            .map_err(|e| "CodegenWasmJit: ModelicaExternalC side module has no")?
+        let func = side_inst
+            .exports
+            .get_function(name)
+            .map_err(|e| {
+                crate::set_engine_error_detail(format!(
+                    "  the ModelicaExternalC side module exports no `{name}` — the web \
+                     target only has the libraries built into it"
+                ));
+                "CodegenWasmJit: external \"C\" function not in the side module"
+            })?
             .clone();
         // Nothing to marshal: bind the export straight in, so the engine calls it
         // wasm->wasm instead of through a host trampoline.
@@ -476,13 +485,15 @@ fn define_external_imports(
 /// Whether the wasm import is already the side module's C export. `Ptr` qualifies:
 /// an external object is an opaque handle only the side module dereferences.
 /// `_Out_` args need a scratch cell, and `Str`/`Array`/`Record` bytes live in the
-/// other memory, so both still need the trampoline.
+/// other memory, so both still need the trampoline — as does every Fortran call,
+/// which takes its arguments by reference.
 fn is_passthrough(sig: &crate::sig::ExtCallSig) -> bool {
     use crate::sig::SigTy;
     fn scalar(t: &SigTy) -> bool {
         matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Ptr)
     }
-    sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
+    sig.lang == crate::sig::ExtLang::C
+        && sig.args.iter().all(|(t, is_out)| !*is_out && scalar(t))
         && sig.ret.as_ref().is_none_or(scalar)
 }
 
@@ -525,8 +536,10 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     // (output SigTy, scratch offset), in output order — matches the import's results.
     let mut out_cells: Vec<(SigTy, u32)> = Vec::new();
     // Output arrays to copy back after the call: (sim array offset, side scratch
-    // offset, byte length, header data offset).
-    let mut out_arrays: Vec<(u32, u32, usize, u32)> = Vec::new();
+    // offset, byte length, header data offset, column-major dims + element size
+    // for a Fortran callee).
+    let mut out_arrays: Vec<(u32, u32, usize, u32, Option<(Vec<usize>, usize)>)> = Vec::new();
+    let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut in_i = 0usize;
     for (ty, is_out) in &sig.args {
         // Scalar/string outputs get an `_Out_` scratch cell (returned as a result);
@@ -542,6 +555,19 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
         }
         let v = &args[in_i];
         in_i += 1;
+        // Fortran passes scalars by reference; give each one a side-memory cell.
+        if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+            let mut raw = [0u8; 8];
+            match ty {
+                SigTy::Real => raw.copy_from_slice(&v.f64().ok_or_else(|| "expected f64 arg")?.to_le_bytes()),
+                _ => raw[..4].copy_from_slice(&v.i32().ok_or_else(|| "expected i32 arg")?.to_le_bytes()),
+            }
+            let cell = malloc.call(&mut store, 8).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            side_mem.view(&store).write(cell as u64, &raw).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            temps.push(cell);
+            call_args.push(Value::I32(cell as i32));
+            continue;
+        }
         match ty {
             SigTy::Real => call_args.push(Value::F64(v.f64().ok_or_else(|| "expected f64 arg")?)),
             SigTy::Int | SigTy::Bool | SigTy::Ptr => {
@@ -561,11 +587,24 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 let off = v.i32().ok_or_else(|| "expected i32 array handle arg")? as u32;
                 let ndims = read_u32_mem(&sim_mem, &store, off + 8)?;
                 let total = read_u32_mem(&sim_mem, &store, off + 12)? as usize;
-                let elem_size = if matches!(**elem, SigTy::Real) { 8 } else { 4 };
+                let elem_size = crate::host::array_abi::elem_size(elem);
                 let data_off = (16 + ndims * 4 + 7) & !7;
                 let bytes = total * elem_size;
                 let mut buf = vec![0u8; bytes];
                 sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                // A Fortran callee reads the array column-major.
+                let f77 = if fortran && ndims > 1 {
+                    let mut dims = Vec::with_capacity(ndims as usize);
+                    for k in 0..ndims {
+                        dims.push(read_u32_mem(&sim_mem, &store, off + 16 + 4 * k)? as usize);
+                    }
+                    let mut col = vec![0u8; bytes];
+                    crate::host::array_abi::reorder(&buf, &mut col, &dims, elem_size, true);
+                    buf = col;
+                    Some((dims, elem_size))
+                } else {
+                    None
+                };
                 let dst = malloc.call(&mut store, bytes as u32).map_err(|_| "CodegenWasmJit: wasm engine error")?;
                 side_mem.view(&store).write(dst as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
                 temps.push(dst);
@@ -573,7 +612,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 // An output array is filled by the callee in side memory; copy it
                 // back into the pre-allocated wasm array after the call.
                 if *is_out {
-                    out_arrays.push((off, dst, bytes, data_off));
+                    out_arrays.push((off, dst, bytes, data_off, f77));
                 }
             }
             _ => return Err("input argument type not marshalled for the web target"),
@@ -584,9 +623,14 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
 
     // Copy each output array back from the side module's memory into its
     // pre-allocated wasm array (the callee filled the side scratch in place).
-    for (woff, dst, bytes, data_off) in &out_arrays {
+    for (woff, dst, bytes, data_off, f77) in &out_arrays {
         let mut buf = vec![0u8; *bytes];
         side_mem.view(&store).read(*dst as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+        if let Some((dims, esz)) = f77 {
+            let mut row = vec![0u8; *bytes];
+            crate::host::array_abi::reorder(&buf, &mut row, dims, *esz, false);
+            buf = row;
+        }
         sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
     }
 
@@ -687,19 +731,19 @@ fn read_side_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, off: u3
     Ok(out)
 }
 
-pub fn run(model: &SimModel) -> std::result::Result<sim_driver::RunResult, String> {
+pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::RunResult, String> {
     let bench = crate::model::sim_bench_enabled();
     if crate::model::inwasm_driver_enabled() {
         return run_inwasm(model, bench);
     }
-    let (mut engine, sim_data) = build_engine(model)?;
+    let (mut engine, sim_data) = build_engine(model, meta)?;
     // `OMC_WASM_SIM_DRIVER=host` forces the native Euler loop over the in-wasm one.
     let host_driven = std::env::var("OMC_WASM_SIM_DRIVER").map(|v| v == "host").unwrap_or(false);
-    let n_steps = model.n_intervals;
+    let n_steps = meta.n_intervals;
     let n_rows = n_steps + 1;
     let t0 = Instant::now();
     let (mut result, driver_label) =
-        sim_driver::drive(&mut *engine, &model.meta, sim_data, model.method.as_str(), host_driven, bench)?;
+        sim_driver::drive(&mut *engine, meta, sim_data, meta.method.as_str(), host_driven, bench)?;
     // The solves ran in-wasm, where the driver's stats cannot see them.
     result.stats.lin_solves = engine.lin_solves();
     if bench {
@@ -747,7 +791,7 @@ struct Instantiated {
 
 /// Compile/join the modules and instantiate them (runtime first, then model,
 /// sharing the runtime's `memory`).
-fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, String> {
+fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<Instantiated, String> {
     let bench = crate::model::sim_bench_enabled();
     let engine = sim_engine();
 
@@ -820,11 +864,12 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         let (nls, nls_ls, ls, lss) = openmodelica_sim_meta::simflags::with_flags(|f| f.solver_codes());
         wts(set.call(&mut store, nls, nls_ls, ls, lss))?;
     }
-    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, f64), ()>(&store, "rt_set_nlss_thresholds") {
-        let (min_size, max_density) = openmodelica_sim_meta::simflags::with_flags(|f| {
-            openmodelica_sim_meta::simflags::nlss_thresholds(f)
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(f64, f64, f64), ()>(&store, "rt_set_newton_tuning") {
+        let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::newton_tuning(f)
         });
-        wts(set.call(&mut store, min_size, max_density))?;
+        wts(set.call(&mut store, ftol, xtol, msf))?;
     }
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_log_streams") {
@@ -836,7 +881,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     {
         let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
         wts(set.call(&mut store, u32::MAX, 0, 0))?;
-        for sys in &model.meta.nls_vars {
+        for sys in &meta.nls_vars {
             let mut blob = Vec::new();
             for n in &sys.names {
                 blob.extend_from_slice(n.as_bytes());
@@ -851,7 +896,7 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
         }
     }
     if let Ok(set) = rt_inst.exports.get_typed_function::<f64, ()>(&store, "rt_set_step_size") {
-        wts(set.call(&mut store, model.meta.step_size()))?;
+        wts(set.call(&mut store, meta.step_size()))?;
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -860,15 +905,15 @@ fn instantiate_modules(model: &SimModel) -> std::result::Result<Instantiated, St
     Ok(Instantiated { store, rt_inst, instance, memory, rt_alloc })
 }
 
-pub fn build_engine(model: &SimModel) -> std::result::Result<(Box<dyn sim_driver::SimEngine + 'static>, u32), String> {
+pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Box<dyn sim_driver::SimEngine + 'static>, u32), String> {
     sim_driver::init_host_hooks(); // cancel poll + model-assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, meta)?;
 
     let layout = &model.layout;
     // Allocate the shared SimData block.
     let sim_data = wts(rt_alloc.call(&mut store, layout.total))?;
 
-    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), dae_func: None };
+    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
     Ok((Box::new(engine), sim_data))
 }
 
@@ -882,7 +927,9 @@ struct WasmerEngine {
     rt_inst: wasmer::Instance,
     funcs: HashMap<String, wasmer::TypedFunction<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
-    dae_func: Option<wasmer::TypedFunction<(u32, u32), ()>>,
+    /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
+    /// synchronous dispatchers), so one cached entry cannot answer for another.
+    funcs2: HashMap<String, wasmer::TypedFunction<(u32, u32), ()>>,
 }
 
 impl WasmerEngine {
@@ -914,11 +961,12 @@ impl sim_driver::SimEngine for WasmerEngine {
         self.call1(name, arg)
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        let f = match self.dae_func.clone() {
-            Some(f) => f,
+        let f = match self.funcs2.get(name) {
+            Some(f) => f.clone(),
             None => {
                 let f = wt(self.instance.exports.get_typed_function::<(u32, u32), ()>(&self.store, name))?;
-                self.dae_func.insert(f).clone()
+                self.funcs2.insert(name.to_string(), f.clone());
+                f
             }
         };
         wt(f.call(&mut self.store, a, b))
@@ -933,6 +981,9 @@ impl sim_driver::SimEngine for WasmerEngine {
     }
     fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
+    }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        crate::host::take_pending_reinits()
     }
     fn lin_solves(&mut self) -> u64 {
         match self.rt_inst.exports.get_typed_function::<(), u64>(&self.store, "rt_lin_solves") {
@@ -970,6 +1021,8 @@ pub struct InWasmSession {
     params_ptr: wasmer::TypedFunction<(), u32>,
     params_len: wasmer::TypedFunction<(), u32>,
     stat_f: wasmer::TypedFunction<u32, u64>,
+    lin_ptr: wasmer::TypedFunction<(), u32>,
+    lin_len: wasmer::TypedFunction<(), u32>,
     free_f: wasmer::TypedFunction<(), ()>,
 }
 
@@ -977,7 +1030,7 @@ pub struct InWasmSession {
 /// metadata blob, and `rt_sim_start` a resumable in-wasm run.
 pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).
@@ -1034,6 +1087,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         params_ptr: gf(&store, "rt_sim_params_ptr")?,
         params_len: gf(&store, "rt_sim_params_len")?,
         stat_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_stat"))?,
+        lin_ptr: gf(&store, "rt_sim_lin_ptr")?,
+        lin_len: gf(&store, "rt_sim_lin_len")?,
         free_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_free"))?,
         store,
         memory,
@@ -1079,6 +1134,9 @@ impl sim_driver::SimEngine for InWasmSession {
     fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
         crate::host::take_pending_warnings()
     }
+    fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
+        crate::host::take_pending_reinits()
+    }
 }
 
 impl InWasmSession {
@@ -1116,7 +1174,22 @@ impl InWasmSession {
         stats.conv_test_fails = stat(4)?;
         stats.state_events = stat(5)?;
         stats.time_events = stat(6)?;
-        Ok(sim_driver::RunResult { rows, n_reals, params, stats })
+        let lin = self.take_lin()?;
+        Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+    }
+
+    /// The runtime's `-l` blob (`<file name>\0<content>`), empty when unasked.
+    fn take_lin(&mut self) -> Result<Option<openmodelica_sim_meta::linearize::LinFile>> {
+        let p = wt(self.lin_ptr.call(&mut self.store))?;
+        let n = wt(self.lin_len.call(&mut self.store))? as usize;
+        let mut bytes = vec![0u8; n];
+        if n > 0 {
+            self.memory
+                .view(&self.store)
+                .read(p as u64, &mut bytes)
+                .map_err(|_| "CodegenWasmJit: linearization read")?;
+        }
+        Ok(crate::split_lin_blob(&bytes))
     }
 }
 

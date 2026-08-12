@@ -8,8 +8,9 @@
 // plus unsolicited { type:'status', id, text } for download progress.
 import init, {
   omc_set_env, omc_init, omc_eval, omc_simulate, omc_set_inwasm_driver,
-  omc_enable_cancel_poll,
+  omc_enable_cancel_poll, omc_enable_fmu_aot, omc_fmu_platforms,
   omc_sim_start, omc_sim_advance, omc_sim_free, omc_sim_solver_options, omc_sim_log,
+  omc_fmu_cs_solvers,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
   omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
@@ -17,6 +18,8 @@ import init, {
 // Shared MultiBody animation core (standalone wasm), the same module the FMI
 // simulator uses; fed here from the omc result store rather than an FMU.
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
+// Compiles an exported FMU's component for a native platform, in its own worker.
+import { installFmuAot } from '../fmu-aot.js';
 
 // Set by a {cmd:'cancelSim'} message; honored by `runResumable` between chunks, so a
 // long sim is cancelled without killing the worker (which would drop the MSL + JIT).
@@ -31,6 +34,8 @@ function clearCancel() { if (cancelFlag) Atomics.store(cancelFlag, 0, 0); }
 // `?driver=` override (0 host, 1 in-wasm), applied once the module is up.
 let driverMode = null;
 let inited = false;
+// Whether an FMU can be exported for a native platform here (see fmu-aot.js).
+let fmuAot = false;
 
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
 // omc prints a String result as a Modelica literal, so undo that: an empty result
@@ -263,6 +268,8 @@ self.onmessage = async (ev) => {
   if (cmd === 'setCancelBuffer') { cancelFlag = new Int32Array(a.buf); return; }
   // May arrive before `init`: the export is unreachable until the module is up.
   if (cmd === 'setDriver') { driverMode = a.mode; if (inited) omc_set_inwasm_driver(a.mode); return; }
+  // The page's port to the shared FMU compiler, posted before `init`.
+  if (cmd === 'fmuAotPort') { installFmuAot(a.port); fmuAot = true; return; }
   const status = (text) => self.postMessage({ type: 'status', id, text });
   const wlog = (text) => self.postMessage({ type: 'log', id, text });
   _plog = wlog;
@@ -282,6 +289,7 @@ self.onmessage = async (ev) => {
         // 0 (no cancel) until the page shares a control block, so it is a no-op then.
         globalThis.__omcPollCancel = () => (cancelFlag ? Atomics.load(cancelFlag, 0) : 0);
         omc_enable_cancel_poll();
+        if (fmuAot) omc_enable_fmu_aot();
         if (driverMode !== null) omc_set_inwasm_driver(driverMode);
         // Emit the MultiBody visualization scene (<model>_visual.xml) for every
         // simulation, so any model with animatable shapes shows a 3D view by
@@ -289,7 +297,8 @@ self.onmessage = async (ev) => {
         // so this API call is how the option gets set (models may still opt in via
         // annotation(__OpenModelica_commandLineOptions="-d=visxml")).
         omc_eval('setCommandLineOptions("-d=visxml")');
-        reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options() });
+        reply({ ok: true, version: omc_eval('getVersion()'), solverOptions: omc_sim_solver_options(),
+                fmuCsSolvers: omc_fmu_cs_solvers(), fmuPlatforms: fmuAot ? omc_fmu_platforms() : [] });
         break;
       }
       case 'warmup': {
@@ -429,8 +438,13 @@ self.onmessage = async (ev) => {
         clearCancel();   // discard a cancel that raced in before this export
         const fmuType = a.fmuType || 'me';
         const method = a.method ? `, method="${a.method}"` : '';
+        // Each extra platform adds a machine-code build of the same component
+        // plus the loader that serves the FMI 3.0 C API from it. Start fetching
+        // the compiler now: 13 MB, and the model takes seconds to emit.
+        if ((a.platforms || []).length) globalThis.__omcAotPreload?.();
+        const platforms = ['wasm', ...(a.platforms || [])].map((p) => `"${p}"`).join(', ');
         const res = (await evalWithDownloads(
-          `buildModelFMU(${a.name}, version="3.0", fmuType="${fmuType}", platforms={"wasm"}${method})`, status)).trim();
+          `buildModelFMU(${a.name}, version="3.0", fmuType="${fmuType}", platforms={${platforms}}${method})`, status)).trim();
         const path = unquote(res);
         if (!path || !path.endsWith('.fmu')) {
           const err = omc_eval('getErrorString()');
