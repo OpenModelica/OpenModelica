@@ -14,6 +14,10 @@ pipeline {
   agent none
   options {
     newContainerPerStage()
+    // Abort the sibling branches as soon as one of them fails: the build is
+    // going to be red anyway and the stages that are still running would keep
+    // the nodes busy for hours.
+    parallelsAlwaysFailFast()
     buildDiscarder(logRotator(daysToKeepStr: "14", artifactNumToKeepStr: "2"))
   }
   environment {
