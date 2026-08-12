@@ -715,7 +715,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 
 #if defined(OMC_HAVE_COLPACK)
   if (computeColPackColumnColoring(
-          nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors)) {
+          nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors) == 0) {
     return;
   }
 #endif

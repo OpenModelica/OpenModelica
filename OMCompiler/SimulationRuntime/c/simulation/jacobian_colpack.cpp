@@ -47,23 +47,23 @@ extern "C" int computeColPackColumnColoring(
   if (!leadindex || !colorCols || !maxColors || (nnz > 0 && !index) ||
       nRows > static_cast<unsigned int>(std::numeric_limits<int>::max()) ||
       nCols > static_cast<unsigned int>(std::numeric_limits<int>::max())) {
-    return 0;
+    return 1;
   }
 
   try {
     // verification of the input sparsity pattern
-    if (leadindex[0] != 0 || leadindex[nCols] != nnz) return 0;
+    if (leadindex[0] != 0 || leadindex[nCols] != nnz) return 1;
 
     std::vector<unsigned int> rowNnz(nRows, 0);
     for (unsigned int col = 0; col < nCols; col++) {
       const unsigned int start = leadindex[col];
       const unsigned int end = leadindex[col + 1];
-      if (end < start || end > nnz) return 0;
+      if (end < start || end > nnz) return 1;
 
       for (unsigned int nz = start; nz < end; nz++) {
         const unsigned int row = index[nz];
         if (row >= nRows || rowNnz[row] == std::numeric_limits<unsigned int>::max()) {
-          return 0;
+          return 1;
         }
         rowNnz[row]++;
       }
@@ -91,18 +91,18 @@ extern "C" int computeColPackColumnColoring(
     ColPack::BipartiteGraphPartialColoringInterface coloring(
         SRC_MEM_ADOLC, sparsity.data(), static_cast<int>(nRows), static_cast<int>(nCols));
     if (coloring.PartialDistanceTwoColoring("SMALLEST_LAST", "COLUMN_PARTIAL_DISTANCE_TWO") != _TRUE) {
-      return 0;
+      return 1; // error case
     }
 
     std::vector<int> colpackColors;
     coloring.GetRightVertexColors(colpackColors);
-    if (colpackColors.size() != nCols) return 0;
+    if (colpackColors.size() != nCols) return 1;
 
     std::vector<unsigned int> colors(nCols);
     unsigned int maxColor = 0;
     for (unsigned int col = 0; col < nCols; col++) {
       const int color = colpackColors[col];
-      if (color < 0 || static_cast<unsigned int>(color) >= nCols) return 0;
+      if (color < 0 || static_cast<unsigned int>(color) >= nCols) return 1;
 
       colors[col] = static_cast<unsigned int>(color) + 1;
       if (colors[col] > maxColor) maxColor = colors[col];
@@ -110,9 +110,9 @@ extern "C" int computeColPackColumnColoring(
 
     for (unsigned int col = 0; col < nCols; col++) colorCols[col] = colors[col];
     *maxColors = maxColor;
-    return 1;
+    return 0; // success case
   } catch (...) {
-    return 0;
+    return 1; // error case
   }
 }
 #endif
