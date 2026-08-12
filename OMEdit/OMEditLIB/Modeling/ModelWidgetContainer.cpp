@@ -55,6 +55,7 @@
 #include "OMS/ModelDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
 #include "Util/ResourceCache.h"
+#include "Util/NavigationManager.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Util/NetworkAccessManager.h"
 #include "QuickInsertWidget.h"
@@ -7504,6 +7505,7 @@ void ModelWidget::showIconView(bool checked)
   if (!checked || (checked && mpIconGraphicsView->isVisible())) {
     return;
   }
+  NavigationManager::instance()->recordNavigationPoint(this, StringHandler::Icon);
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
   mpDiagramGraphicsView->hide();
   if (mpEditor) {
@@ -7538,6 +7540,7 @@ void ModelWidget::showDiagramView(bool checked)
   if (!checked || (checked && mpDiagramGraphicsView->isVisible())) {
     return;
   }
+  NavigationManager::instance()->recordNavigationPoint(this, StringHandler::Diagram);
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
   if (mpIconGraphicsView) {
     mpIconGraphicsView->hide();
@@ -7562,6 +7565,7 @@ void ModelWidget::showTextView(bool checked)
   if (!checked || (checked && mpEditor->isVisible())) {
     return;
   }
+  NavigationManager::instance()->recordNavigationPoint(this, StringHandler::ModelicaText);
   processPendingModelUpdate();
   if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
@@ -8419,6 +8423,16 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // record the navigation point when a different model widget is shown so the back/forward navigation can restore it.
+  if (pModelWidget) {
+    StringHandler::ViewType viewType = StringHandler::Diagram;
+    if (iconGraphicsView) {
+      viewType = StringHandler::Icon;
+    } else if (textView) {
+      viewType = StringHandler::ModelicaText;
+    }
+    NavigationManager::instance()->recordNavigationPoint(pModelWidget, viewType);
+  }
   // update the model if its require update flag is set.
   // reDrawModelWidget updates the documentation and element browser so only try to update them in the else
   if (pModelWidget && pModelWidget->requiresUpdate()) {

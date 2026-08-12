@@ -51,6 +51,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 #include "PlotCurve.h"
+#include "Util/NavigationManager.h"
 
 #include <QObject>
 #include <QDockWidget>
@@ -2988,6 +2989,8 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // record the navigation point when a different plot window is shown so the back/forward navigation can restore it.
+  NavigationManager::instance()->recordNavigationPoint(pSubWindow);
   /* update the tree variables to last active PlotWindow
    * This is done to fix issue #12911.
    * See also VariablesWidget::plotVariables
