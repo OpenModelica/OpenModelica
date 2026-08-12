@@ -2045,6 +2045,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("groupImage")) {
+      mHasGroupImage = true;
       mGroupImage.deserialize(jsonObject.value("groupImage"));
     }
 
