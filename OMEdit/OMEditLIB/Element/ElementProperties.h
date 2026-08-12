@@ -102,6 +102,7 @@ public:
   void setShowStartAndFixed(bool showStartAndFixed) {mShowStartAndFixed = showStartAndFixed;}
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
+  bool hasGroupImage() const {return mHasGroupImage;}
   void updateNameLabel();
   QString getName() const {return mName;}
   QString getExtendName() const {return mExtendName;}
@@ -165,6 +166,7 @@ private:
   StringAnnotation mSaveSelectorFilter;
   StringAnnotation mSaveSelectorCaption;
   StringAnnotation mGroupImage;
+  bool mHasGroupImage = false;
   BooleanAnnotation mConnectorSizing;
 
   QString mName;

@@ -348,6 +348,7 @@ private:
     const Selector &getLoadSelector() const {return mLoadSelector;}
     const Selector &getSaveSelector() const {return mSaveSelector;}
     const Selector &getDirectorySelector() const {return mDirectorySelector;}
+    bool hasGroupImage() const {return mHasGroupImage;}
     const QString &getGroupImage() const {return mGroupImage;}
     const BooleanAnnotation &isConnectorSizing() const {return mConnectorSizing;}
   private:
@@ -361,6 +362,7 @@ private:
     Selector mLoadSelector;
     Selector mSaveSelector;
     Selector mDirectorySelector;
+    bool mHasGroupImage = false;
     StringAnnotation mGroupImage;
     BooleanAnnotation mConnectorSizing;
   };

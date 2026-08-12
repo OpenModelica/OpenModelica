@@ -168,7 +168,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mSaveSelectorFilter = saveSelector.getFilter();
   mSaveSelectorCaption = saveSelector.getCaption();
   mGroupImage = dialogAnnotation.getGroupImage();
-  if (!mGroupImage.isEmpty()) {
+  mHasGroupImage = dialogAnnotation.hasGroupImage();
+  if (mHasGroupImage && !mGroupImage.isEmpty()) {
     mGroupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(mGroupImage);
   }
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
@@ -1868,22 +1869,28 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
  */
 void ElementParameters::addOrUpdateParametersScrollArea(Parameter *pParameter)
 {
-  if (!mTabsMap.contains(pParameter->getTab())) {
-    ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-    GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
-    // set the group image
-    pGroupBox->setGroupImage(pParameter->getGroupImage());
-    pParametersScrollArea->addGroupBox(pGroupBox);
-    mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
+  const QString tab = pParameter->getTab();
+  const QString group = pParameter->getGroup();
+  ParametersScrollArea *pParametersScrollArea = nullptr;
+
+  if (!mTabsMap.contains(tab)) {
+    pParametersScrollArea = new ParametersScrollArea;
+    mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
   } else {
-    ParametersScrollArea *pParametersScrollArea;
-    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
-    GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
-    if (pParametersScrollArea && !pGroupBox) {
-      pGroupBox = new GroupBox(pParameter->getGroup());
-      pParametersScrollArea->addGroupBox(pGroupBox);
-    }
-    // set the group image
+    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
+  }
+
+  if (!pParametersScrollArea) {
+    return;
+  }
+
+  GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(group);
+  if (!pGroupBox) {
+    pGroupBox = new GroupBox(group);
+    pParametersScrollArea->addGroupBox(pGroupBox);
+  }
+  // set the group image if any
+  if (pParameter->hasGroupImage()) {
     pGroupBox->setGroupImage(pParameter->getGroupImage());
   }
 }
