@@ -6,21 +6,10 @@
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 
-loadString("
-  model model_assert_DR
-    Real a(uncertain = Uncertainty.refine);
-    Real b(uncertain = Uncertainty.refine);
-    parameter Real c=5 annotation(__OpenModelica_BoundaryCondition = true);
-    Real table_real[2]={1.0,2.0};
-  equation
-    a=b;
-    a=c;
-    assert(table_real[1]==1.0,\"Assert\");
-  end model_assert_DR;
-  ");
+loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-simulate(model_assert_DR, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.assert, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
 
@@ -28,9 +17,13 @@ getErrorString();
 // true
 // ""
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "
 //
-// ModelInfo: model_assert_DR
+// ModelInfo: NewDataReconciliationSimpleTests.assert
 // ==========================================================================
 //
 //
@@ -227,14 +220,14 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'model_assert_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.assert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/model_assert_DR.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
-// LOG_STDOUT        | info    | model_assert_DR
+// LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.assert
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "[<interactive>:10:5-10:40:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
+// "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/assert.mo:10:3-10:38:writable] Warning: In relation table_real[1] == 1.0, == on Real operands is deprecated in non-function contexts.
 // "
 // endResult
