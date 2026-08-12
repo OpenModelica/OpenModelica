@@ -32,6 +32,7 @@
 #include "options.h"
 #include "../util/omc_file.h"
 #include "eval_dep.h"
+#include "jacobian_colpack.h"
 
 /**
  * @brief Initialize analytic jacobian.
