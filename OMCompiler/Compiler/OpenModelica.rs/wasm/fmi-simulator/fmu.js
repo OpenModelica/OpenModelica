@@ -201,7 +201,11 @@ export function parseModelDescription(xml) {
   for (const e of mv ? Array.from(mv.children) : []) {
     const type = TYPES[e.tagName];
     if (!type) continue;
-    const start = attr(e, 'start');
+    // String and Binary carry their start in a <Start value="…"/> child.
+    const startEl = e.querySelector(':scope > Start');
+    const startAttr = attr(e, 'start');
+    const start = startEl ? attr(startEl, 'value')
+      : startAttr == null ? null : startAttr.trim().split(/\s+/)[0];
     const name = attr(e, 'name') || '';
     variables.push({
       name,
@@ -211,7 +215,7 @@ export function parseModelDescription(xml) {
       numeric: NUMERIC.has(e.tagName),
       causality: attr(e, 'causality') || 'local',
       variability: attr(e, 'variability') || (e.tagName.startsWith('Float') ? 'continuous' : 'discrete'),
-      start: start == null ? null : start.trim().split(/\s+/)[0],
+      start,
       initial: attr(e, 'initial'),
       unit: attr(e, 'unit') || attr(e, 'displayUnit') || '',
       description: attr(e, 'description') || '',
