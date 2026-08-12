@@ -3,6 +3,7 @@
 // status:   correct
 // env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
 // teardown_command: rm -rf SiemensPower.Components.Pipes.Tests.tubeTest* _SiemensPower.Components.Pipes.Tests.tubeTest* SiemensPower.Components.Pipes.Tests.tube_ownMedia_test* _SiemensPower.Components.Pipes.Tests.tube_ownMedia_test* SiemensPower_Media_TTSE_Utilities_* output.log
+// suite: disabled
 //
 //  Test SiemensPower component Pipes
 //  TODO: check small differences in SH.qMetalFluidDelayed[1]

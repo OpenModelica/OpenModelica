@@ -41,4 +41,4 @@ getdeps:
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
 
 failingtest :
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

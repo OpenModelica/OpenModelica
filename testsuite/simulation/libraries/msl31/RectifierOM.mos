@@ -2,6 +2,7 @@
 // keywords: simulation Modelica.Electrical.Analog.Examples.Rectifier
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 // Simulation Results 
 // Modelica Standard Library

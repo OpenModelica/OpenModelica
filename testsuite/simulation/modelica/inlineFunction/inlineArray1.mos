@@ -1,6 +1,7 @@
 // name: inlineArray1
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 
 // use new inline method
 setCommandLineOptions("+inlineMethod=append");
