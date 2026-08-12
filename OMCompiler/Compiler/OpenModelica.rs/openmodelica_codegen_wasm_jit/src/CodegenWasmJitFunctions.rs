@@ -80,11 +80,43 @@ pub(crate) mod runtime;
 #[path = "CodegenWasmJitFunctions/runtime_stub.rs"]
 pub(crate) mod runtime;
 
+thread_local! {
+    /// What is being lowered, for the diagnostics below.
+    static CURRENT_FN: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    static CURRENT_PART: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+}
+
+fn fn_context() -> String {
+    let part = CURRENT_PART.with(|p| p.borrow().clone());
+    CURRENT_FN.with(|f| match (f.borrow().as_str(), part.as_str()) {
+        ("", "") => String::new(),
+        ("", p) => format!(" in {p}"),
+        (name, "") => format!(" in function `{name}`"),
+        (name, p) => format!(" in {p} in function `{name}`"),
+    })
+}
+
+/// Sets `CURRENT_PART` until it drops, restoring the previous value.
+struct PartGuard(String);
+
+impl PartGuard {
+    fn new(part: String) -> Self {
+        PartGuard(CURRENT_PART.with(|p| p.replace(part)))
+    }
+}
+
+impl Drop for PartGuard {
+    fn drop(&mut self) {
+        CURRENT_PART.with(|p| *p.borrow_mut() = std::mem::take(&mut self.0));
+    }
+}
+
 /// Record a message naming the unresolved variable (the `Result` error is a
 /// `&'static str`; `translateModel` surfaces the recorded message).
 fn unknown_variable(name: &str) -> &'static str {
     crate::CodegenWasmJit::record_error(format!(
-        "CodegenWasmJit: reference to unknown variable `{name}`"
+        "CodegenWasmJit: reference to unknown variable `{name}`{}",
+        fn_context()
     ));
     "CodegenWasmJit: reference to unknown variable"
 }
@@ -1060,8 +1092,8 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
             let mut fields = Vec::new();
             match record_decl_fields(&path_str) {
                 Some(decl) => {
-                    for (name, ty) in decl.iter() {
-                        fields.push((name.clone(), sig_ty_quiet(ty)?));
+                    for f in decl.iter() {
+                        fields.push((f.name.clone(), sig_ty_quiet(&f.ty)?));
                     }
                 }
                 None => {
@@ -1096,12 +1128,24 @@ pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
     })
 }
 
+/// One field of a record *declaration* (C's `RECORD_DECL_FULL` variables), which
+/// is what [`emit_record_default`] builds the default constructor from.
+pub(crate) struct RecDeclField {
+    name: ArcStr,
+    ty: Arc<DAE::Type>,
+    /// The declared binding, evaluated in the record's own scope.
+    value: Option<Arc<DAE::Exp>>,
+    /// The binding came from a derived record (`record A = B(k=exp)`) and is
+    /// evaluated in the using scope instead.
+    bind_outside: bool,
+}
+
 std::thread_local! {
     /// One field list per record class (the C target's one `<Rec>` struct), keyed
     /// by definition path. A record *expression*'s `T_COMPLEX` can disagree with
     /// its consumer's about a field type, which would give the two ends different
     /// field offsets; the declaration decides for both.
-    static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<(ArcStr, Arc<DAE::Type>)>>>> =
+    static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<RecDeclField>>>> =
         std::cell::RefCell::new(HashMap::new());
 }
 
@@ -1118,8 +1162,16 @@ pub(crate) fn set_record_decls(
         let path = AbsynUtil::pathString(defPath.clone(), arcstr::literal!("."), true, false)?;
         let mut fields = Vec::new();
         for v in &**variables {
-            let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, .. } = &**v else { continue };
-            fields.push((ArcStr::from(cref_ident(name)?), ty.clone()));
+            let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v
+            else {
+                continue;
+            };
+            fields.push(RecDeclField {
+                name: ArcStr::from(cref_ident(name)?),
+                ty: ty.clone(),
+                value: value.clone(),
+                bind_outside: *bind_from_outside,
+            });
         }
         map.insert(path.to_string(), Arc::new(fields));
     }
@@ -1127,8 +1179,17 @@ pub(crate) fn set_record_decls(
     Ok(())
 }
 
-fn record_decl_fields(path: &str) -> Option<Arc<Vec<(ArcStr, Arc<DAE::Type>)>>> {
+fn record_decl_fields(path: &str) -> Option<Arc<Vec<RecDeclField>>> {
     RECORD_DECLS.with(|r| r.borrow().get(path).cloned())
+}
+
+/// The declaration of record type `ty`, if the module declares one.
+fn record_decl_of(ty: &DAE::Type) -> Result<Option<Arc<Vec<RecDeclField>>>> {
+    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, .. } = ty else {
+        return Ok(None);
+    };
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    Ok(record_decl_fields(&path_str))
 }
 
 /// The module's constant pool: every literal concatenated into the single
@@ -1239,6 +1300,10 @@ pub(crate) struct SimCtx {
     /// as one runtime array object (gather on read, scatter on assign). See
     /// `compile_sim_cref_read`/`compile_sim_cref_assign`.
     pub(crate) array_groups: Arc<HashMap<String, ArrayGroup>>,
+    /// `varKind = CONST` variables own no slot: a reference is the binding
+    /// literal, as in C's `varArrayNameValues`.
+    pub(crate) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
+    pub(crate) const_groups: Arc<HashMap<String, ConstGroup>>,
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
     pub(crate) terminate_off: u32,
@@ -1422,6 +1487,14 @@ pub(crate) struct ArrayGroup {
     pub(crate) dims: Vec<u32>,
     /// Product of `dims` (number of scalar elements).
     pub(crate) total: u32,
+}
+
+/// A constant array's elements, row-major; it owns no `SimData` slots.
+#[derive(Clone)]
+pub(crate) struct ConstGroup {
+    pub(crate) wty: WTy,
+    pub(crate) dims: Vec<u32>,
+    pub(crate) values: Vec<Arc<DAE::Exp>>,
 }
 
 /// A scalar model variable's location within the `SimData` block.
@@ -2061,6 +2134,31 @@ pub(crate) fn compile_function(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
+    CURRENT_FN.with(|c| *c.borrow_mut() = function_path(f));
+    let out = compile_function_body(f, by_name, literals);
+    CURRENT_FN.with(|c| c.borrow_mut().clear());
+    out
+}
+
+fn function_path(f: &SimCodeFunction::Function::Function) -> String {
+    use SimCodeFunction::Function::Function as F;
+    let path = match f {
+        F::FUNCTION { name, .. }
+        | F::PARALLEL_FUNCTION { name, .. }
+        | F::KERNEL_FUNCTION { name, .. }
+        | F::EXTERNAL_FUNCTION { name, .. }
+        | F::RECORD_CONSTRUCTOR { name, .. } => name,
+    };
+    AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)
+        .map(|s| s.to_string())
+        .unwrap_or_default()
+}
+
+fn compile_function_body(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
     if matches!(f, SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { .. }) {
         return compile_external_function(f, by_name, literals);
     }
@@ -2483,12 +2581,13 @@ fn init_var(
     let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = v else {
         return Ok(());
     };
-    let (_, sty) = var_name_ty(v)?;
+    let (vname, sty) = var_name_ty(v)?;
     let Some(slot) = var_slot(ctx, v) else { return Ok(()) };
     if done.contains(&slot) {
         return Ok(());
     }
     done.push(slot);
+    let _g = PartGuard::new(format!("the declaration of `{vname}`"));
     if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
         let (_, elem, dims) = array_allocs.remove(k);
         emit_array_alloc(ctx, slot, &elem, &dims)?;
@@ -2700,7 +2799,13 @@ fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()>
     let (idx, dst_sty) = ctx
         .locals
         .get(&name)
-        .ok_or_else(|| "CodegenWasmJit: assignment to unknown variable")?
+        .ok_or_else(|| {
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: assignment to unknown variable `{name}`{}",
+                fn_context()
+            ));
+            "CodegenWasmJit: assignment to unknown variable"
+        })?
         .clone();
 
     if !subscriptLst.is_empty() {
@@ -3043,6 +3148,9 @@ struct RecField {
     sig: SigTy,
     ty: Arc<DAE::Type>,
     default: Option<Arc<DAE::Exp>>,
+    /// This use site binds the field from outside, so `default` belongs to the
+    /// using scope (see [`RecDeclField::bind_outside`]).
+    bind_outside: bool,
 }
 
 /// The canonical fields of record type `ty`, or `None` if `ty` is not a record.
@@ -3054,7 +3162,7 @@ fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
     let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
     let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
     let declared: Vec<(ArcStr, Arc<DAE::Type>)> = match record_decl_fields(&path_str) {
-        Some(d) => d.iter().cloned().collect(),
+        Some(d) => d.iter().map(|f| (f.name.clone(), f.ty.clone())).collect(),
         None => vars.iter().map(|v| (v.name.clone(), v.ty.clone())).collect(),
     };
     let mut out = Vec::with_capacity(declared.len());
@@ -3063,6 +3171,7 @@ fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
         out.push(RecField {
             sig: sig_ty(&fty)?,
             default: var.and_then(|v| record_field_default(v)),
+            bind_outside: var.is_some_and(|v| v.bind_from_outside),
             ty: fty,
             name,
         });
@@ -3075,39 +3184,84 @@ fn rec_layout(fields: &[RecField]) -> RecordLayout {
 }
 
 /// Default-construct a record value of type `ty` (the C target's
-/// `<Rec>_construct`), leaving the owned handle on the stack.
+/// `<Rec>_construct`), leaving the owned handle on the stack. A declared field
+/// binding is evaluated in the record's own scope (C's `ths->_x`), a
+/// `bind_from_outside` one in this scope; the constructor is inlined here, so
+/// the first scope is made by binding each finished field under its own name.
 fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
     let Some(fields) = record_fields(ty)? else {
         return Err("CodegenWasmJit: default construction of a non-record type");
     };
+    let decl = record_decl_of(ty)?;
+    let decl_of = |name: &ArcStr| decl.as_ref().and_then(|d| d.iter().find(|f| &f.name == name));
     let layout = rec_layout(&fields);
-    let obj = emit_record_alloc(ctx, &layout)?;
-    for (i, f) in fields.iter().enumerate() {
-        let fty = f.sig.clone();
-        match &f.default {
-            Some(exp) => {
-                let w = compile_exp(ctx, exp)?;
-                coerce(ctx, w, fty.wty());
-                if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
-                    if !value_rhs_is_fresh(exp) {
-                        let t = ctx.alloc_temp(WTy::I32);
-                        ctx.emit(we::Instruction::LocalSet(t));
-                        ctx.emit(we::Instruction::LocalGet(t));
-                        ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
-                        ctx.emit(we::Instruction::LocalGet(t));
-                        ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
-                    }
-                }
+    // Evaluated before any field name is shadowed below.
+    let mut outside: Vec<Option<u32>> = Vec::with_capacity(fields.len());
+    for f in &fields {
+        outside.push(match (f.bind_outside, &f.default) {
+            (true, Some(exp)) => {
+                emit_field_value(ctx, &f.sig, exp)?;
+                let t = ctx.alloc_temp(f.sig.wty());
+                ctx.emit(we::Instruction::LocalSet(t));
+                Some(t)
             }
-            None => emit_type_default(ctx, &f.ty)?,
-        }
-        let vt = ctx.alloc_temp(fty.wty());
-        ctx.emit(we::Instruction::LocalSet(vt));
-        ctx.emit(we::Instruction::LocalGet(obj));
-        ctx.emit(we::Instruction::LocalGet(vt));
-        field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+            _ => None,
+        });
     }
+    let obj = emit_record_alloc(ctx, &layout)?;
+    let mut shadowed: Vec<(String, Option<(u32, SigTy)>)> = Vec::new();
+    let result = (|ctx: &mut FnCtx| -> Result<()> {
+        for (i, f) in fields.iter().enumerate() {
+            let fty = f.sig.clone();
+            // A record with no declaration has only the use site's binding.
+            let bound = match decl_of(&f.name) {
+                Some(d) if !d.bind_outside => d.value.clone().or_else(|| f.default.clone()),
+                _ => f.default.clone(),
+            };
+            match (outside[i], &bound) {
+                (Some(t), _) => ctx.emit(we::Instruction::LocalGet(t)),
+                (None, Some(exp)) => {
+                    let _g = PartGuard::new(format!("the default of record field `{}`", f.name));
+                    emit_field_value(ctx, &fty, exp)?;
+                }
+                (None, None) => emit_type_default(ctx, &f.ty)?,
+            }
+            let vt = ctx.alloc_temp(fty.wty());
+            ctx.emit(we::Instruction::LocalSet(vt));
+            ctx.emit(we::Instruction::LocalGet(obj));
+            ctx.emit(we::Instruction::LocalGet(vt));
+            field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+            let name = f.name.to_string();
+            let prev = ctx.locals.insert(name.clone(), (vt, fty));
+            shadowed.push((name, prev));
+        }
+        Ok(())
+    })(ctx);
+    for (name, prev) in shadowed {
+        match prev {
+            Some(v) => ctx.locals.insert(name, v),
+            None => ctx.locals.remove(&name),
+        };
+    }
+    result?;
     ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// One record-field binding, copied if it came from an alias (value semantics).
+fn emit_field_value(ctx: &mut FnCtx, fty: &SigTy, exp: &DAE::Exp) -> Result<()> {
+    let w = compile_exp(ctx, exp)?;
+    coerce(ctx, w, fty.wty());
+    if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
+        if !value_rhs_is_fresh(exp) {
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+        }
+    }
     Ok(())
 }
 
@@ -3204,8 +3358,8 @@ fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
         return Err("CodegenWasmJit: boxed record constructor for an undeclared record");
     };
     let mut fields = Vec::with_capacity(declared.len());
-    for (name, ty) in declared.iter() {
-        fields.push((name.clone(), sig_ty(ty)?));
+    for f in declared.iter() {
+        fields.push((f.name.clone(), sig_ty(&f.ty)?));
     }
     Ok(SigTy::Record { path: path_str, fields: Arc::new(fields) })
 }
@@ -5223,6 +5377,13 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                 emit_sim_array_gather(ctx, &group)?;
                 return Ok(Some(WTy::I32));
             }
+            if let Some(exp) = ctx.sim()?.consts.get(&key).cloned() {
+                return compile_exp(ctx, &exp).map(Some);
+            }
+            if ctx.sim()?.const_groups.contains_key(&key) {
+                emit_const_array(ctx, &key)?;
+                return Ok(Some(WTy::I32));
+            }
             // A whole record model variable: gather its scalar field slots into a
             // fresh runtime record object.
             if try_emit_sim_record_gather(ctx, cref)? {
@@ -5559,6 +5720,43 @@ fn emit_sim_array_gather(ctx: &mut FnCtx, group: &ArrayGroup) -> Result<()> {
     ctx.emit(we::Instruction::I32Add);
     ctx.emit(we::Instruction::I32Const((group.total * stride) as i32));
     ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// [`emit_sim_array_gather`] for a constant array: nothing to copy from, each
+/// element is its own literal.
+fn emit_const_array(ctx: &mut FnCtx, key: &str) -> Result<()> {
+    let group = ctx.sim()?.const_groups.get(key).ok_or("CodegenWasmJit: not a constant array")?;
+    let (wty, dims, values) = (group.wty, group.dims.clone(), group.values.clone());
+    let (ek, stride) = sim_array_elem_kind_stride(wty);
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(dims.len() as i32));
+    ctx.emit(we::Instruction::I32Const(values.len() as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    let data = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::LocalSet(data));
+    for (i, exp) in values.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(data));
+        let w = compile_exp(ctx, exp)?;
+        coerce(ctx, w, wty);
+        let off = i as u32 * stride;
+        match wty {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(off, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(off, 2))),
+        }
+    }
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(())
 }
@@ -5994,8 +6192,9 @@ fn unsupported_exp(exp: &DAE::Exp) -> &'static str {
         .map(|s| s.to_string())
         .unwrap_or_default();
     crate::CodegenWasmJit::record_error(format!(
-        "CodegenWasmJit: expression not yet supported: `{shown}` ({})",
-        exp_variant_name(exp)
+        "CodegenWasmJit: expression not yet supported: `{shown}` ({}){}",
+        exp_variant_name(exp),
+        fn_context()
     ));
     "CodegenWasmJit: expression not yet supported"
 }
