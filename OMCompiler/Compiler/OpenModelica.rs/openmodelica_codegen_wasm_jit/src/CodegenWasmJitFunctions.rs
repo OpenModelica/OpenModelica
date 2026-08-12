@@ -1747,7 +1747,7 @@ impl<'a> FnCtx<'a> {
         &mut self,
         defaults: &[(u32, f64)],
         int_defaults: &[(u32, i32)],
-        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets)],
+        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets, u32)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (off, value) in defaults {
@@ -1764,10 +1764,14 @@ impl<'a> FnCtx<'a> {
             return Ok(());
         }
         let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
-        for (attr, exp, targets) in attrs {
+        for (attr, exp, targets, log_off) in attrs {
             let w = compile_exp(self, exp)?;
             coerce(self, w, WTy::F64);
             self.emit(we::Instruction::LocalSet(raw));
+            // C prints the value from inside this function; the driver reads it here.
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::LocalGet(raw));
+            self.emit(we::Instruction::F64Store(mem_arg(*log_off, 3)));
             if matches!(attr, Attr::Nominal) {
                 for off in &targets.nom_offs {
                     // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
@@ -1937,6 +1941,46 @@ impl<'a> FnCtx<'a> {
             }
             self.emit(we::Instruction::Call(rt_index("rt_delay_store")?));
         }
+        Ok(())
+    }
+
+    /// Clear the rejected-residual index, so a re-run never reports a stale verdict.
+    pub(crate) fn emit_removed_init_reset(&mut self, idx_off: u32) -> Result<()> {
+        let data = self.sim()?.data_local;
+        self.emit(we::Instruction::LocalGet(data));
+        self.emit(we::Instruction::I32Const(0));
+        self.emit(we::Instruction::I32Store(mem_arg(idx_off, 2)));
+        Ok(())
+    }
+
+    /// C's `functionRemovedInitialEquationsBody`: missing zero by more than `1e-5`
+    /// leaves the residual and its 1-based index behind for the driver and ends the
+    /// function, as C's `return 1` does.
+    pub(crate) fn emit_removed_init_residual(
+        &mut self,
+        index: u32,
+        exp: &DAE::Exp,
+        res_off: u32,
+        idx_off: u32,
+    ) -> Result<()> {
+        use we::Instruction as I;
+        let data = self.sim()?.data_local;
+        let res = self.alloc_temp(WTy::F64);
+        let w = compile_exp(self, exp)?;
+        coerce(self, w, WTy::F64);
+        self.emit(I::LocalTee(res));
+        self.emit(I::F64Abs);
+        self.emit(I::F64Const(1e-5f64.into()));
+        self.emit(I::F64Gt);
+        self.emit(I::If(we::BlockType::Empty));
+        self.emit(I::LocalGet(data));
+        self.emit(I::LocalGet(res));
+        self.emit(I::F64Store(mem_arg(res_off, 3)));
+        self.emit(I::LocalGet(data));
+        self.emit(I::I32Const(index as i32 + 1));
+        self.emit(I::I32Store(mem_arg(idx_off, 2)));
+        self.emit(I::Return);
+        self.emit(I::End);
         Ok(())
     }
 
@@ -3602,6 +3646,8 @@ fn emit_assert(
     source: &DAE::ElementSource,
 ) -> Result<()> {
     let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
+    // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
+    let in_function = ctx.sim().is_err();
     let c = compile_exp(ctx, cond)?;
     coerce(ctx, c, WTy::I32);
     ctx.emit(we::Instruction::I32Eqz);
@@ -3612,7 +3658,8 @@ fn emit_assert(
         // The dumped condition (C's `assert_cond`), then the message, then the
         // source position — all consumed by `rt_assert_warning`; execution
         // continues afterwards (no trap).
-        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition
+        let dumped = if in_function { String::new() } else { dumped_exp(cond)? };
+        emit_str_literal(ctx, dumped.as_bytes())?; // dumped condition
         let mw = compile_exp(ctx, msg)?; // owned message String handle
         if mw != WTy::I32 {
             return Err("CodegenWasmJit: assert message is not a String");
@@ -3638,7 +3685,11 @@ fn emit_assert(
     ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
     ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-    emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
+    if in_function {
+        ctx.emit(we::Instruction::I32Const(0));
+    } else {
+        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
+    }
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));

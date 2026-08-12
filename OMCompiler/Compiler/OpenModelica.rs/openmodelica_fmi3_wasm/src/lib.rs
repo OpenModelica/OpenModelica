@@ -53,6 +53,7 @@ unsafe extern "C" {
     fn functionInitDelay(sim_data: u32);
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
+    fn functionRemovedInitialEquations(sim_data: u32);
     fn initSample(sim_data: u32);
     fn functionInitSynchronous(sim_data: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
@@ -264,6 +265,7 @@ impl SimEngine for Engine {
                 "functionInitDelay" => functionInitDelay(arg),
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
+                "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
                 "initSample" => initSample(arg),
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
